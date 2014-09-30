@@ -1,0 +1,151 @@
+%YAML 1.2
+---
+# A schema for a Human Resources department to be used for tests.
+name: hr
+version: 1
+table:
+  Job:
+    column:
+      id: string
+      title: string
+      minSalary: number
+      maxSalary: number
+    constraint:
+      primaryKey: [ id ]
+    index:
+      idx_maxSalary:
+        column: [ maxSalary ]
+        order: desc
+
+  JobHistory:
+    column:
+      employeeId: string
+      startDate: datetime
+      endDate: datetime
+      jobId: string
+      departmentId: string
+    constraint:
+      foreignKey:
+        fk_EmployeeId:
+          localColumn: employeeId
+          reference: Employee
+          remoteColumn: id
+          cascade: true
+        fk_DepartmentId:
+          localColumn: departmentId
+          reference: Department
+          remoteColumn: id
+          cascade: true
+
+  Employee:
+    column:
+      id: string
+      firstName: string
+      lastName: string
+      email: string
+      phoneNumber: string
+      hireDate: datetime
+      jobId: string
+      salary: number
+      commissionPercent: number
+      managerId: string
+      departmentId: string
+      photo: arraybuffer
+    index:
+      idx_salary:
+        column: [ salary ]
+        order: desc
+    constraint:
+      primaryKey: [ id ]
+      foreignKey:
+        fk_JobId:
+          localColumn: jobId
+          reference: Job
+          remoteColumn: id
+          cascade: true
+        fk_DepartmentId:
+          localColumn: departmentId
+          reference: Department
+          remoteColumn: id
+          cascade: true
+      nullable: [ hireDate ]
+
+  Department:
+    column:
+      id: string
+      name: string
+      managerId: string
+      locationId: string
+    constraint:
+      primaryKey: [ id ]
+      foreignKey:
+        fk_ManagerId:
+          localColumn: managerId
+          reference: Employee
+          remoteColumn: id
+          cascade: true
+        fk_LocationId:
+          localColumn: locationId
+          reference: Location
+          remoteColumn: id
+          cascade: true
+
+  Location:
+    column:
+      id: string
+      streetAddress: string
+      postalCode: string
+      city: string
+      stateProvince: string
+      countryId: string
+    constraint:
+      primaryKey: [ id ]
+      foreignKey:
+        fk_CountryId:
+          localColumn: countryId
+          reference: Country
+          remoteColumn: id
+          cascade: true
+
+  Country:
+    column:
+      id: string
+      name: string
+      regionId: string
+    constraint:
+      primaryKey: [ id ]
+      foreignKey:
+        fk_RegionId:
+          localColumn: regionId
+          reference: Region
+          remoteColumn: id
+          cascade: true
+
+  Region:
+    column:
+      id: string
+      name: string
+    constraint:
+      primaryKey: [ id ]
+
+  Holiday:  # Board certified paid holidays
+    column:
+      name: string
+      begin: datetime
+      end: datetime
+    constraint:
+      primaryKey: [ name ]
+    index:
+      idx_begin:
+        column: [ begin ]
+
+  DummyTable:
+    column:
+      arraybuffer: arraybuffer
+      boolean: boolean
+      datetime: datetime
+      integer: integer
+      number: number
+      string: string
+    constraint:
+      primaryKey: [ string ]

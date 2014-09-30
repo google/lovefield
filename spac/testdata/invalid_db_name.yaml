@@ -1,0 +1,9 @@
+%YAML 1.2
+---
+name: Observer  # Should throw: Observer is reserved
+version: 1
+table:
+  Employee:
+    column:
+      id: string
+      name: string

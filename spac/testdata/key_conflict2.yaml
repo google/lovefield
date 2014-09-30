@@ -1,0 +1,15 @@
+%YAML 1.2
+---
+name: sample
+version: 1
+table:
+  Employee:
+    column:
+      id: string
+      name: string
+    constraint:
+      primaryKey: [id]
+    index:
+      idx_Id:
+        column: [id]  # Should throw: the column is already indexed
+        order: desc

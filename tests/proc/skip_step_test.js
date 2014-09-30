@@ -1,0 +1,105 @@
+/**
+ * @license
+ * Copyright 2014 Google Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+goog.setTestOnly();
+goog.require('goog.testing.AsyncTestCase');
+goog.require('goog.testing.jsunit');
+goog.require('lf.Row');
+goog.require('lf.cache.Journal');
+goog.require('lf.proc.Relation');
+goog.require('lf.proc.SkipStep');
+goog.require('lf.testing.MockEnv');
+goog.require('lf.testing.proc.DummyStep');
+
+
+/** @type {!goog.testing.AsyncTestCase} */
+var asyncTestCase = goog.testing.AsyncTestCase.createAndInstall(
+    'SkipStepTest');
+
+
+function setUp() {
+  asyncTestCase.waitForAsync('setUp');
+
+  var env = new lf.testing.MockEnv();
+  env.init().then(function() {
+    asyncTestCase.continueTesting();
+  }, fail);
+}
+
+
+function testExec_SkipLessThanResults() {
+  checkExec(/* sampleDataCount */ 20, /* skip */ 11);
+}
+
+
+function testExec_SkipMoreThanResults() {
+  checkExec(/* sampleDataCount */ 20, /* skip */ 100);
+}
+
+
+function testExec_SkipEqualToResults() {
+  checkExec(/* sampleDataCount */ 20, /* skip */ 20);
+}
+
+
+/**
+ * Checks that the returned results do not include skipped rows.
+ * @param {number} sampleDataCount The total number of rows available.
+ * @param {number} skip The number of rows to be skipped.
+ */
+function checkExec(sampleDataCount, skip) {
+  asyncTestCase.waitForAsync('testExec' + sampleDataCount + skip);
+  var rows = generateSampleRows(sampleDataCount);
+  var tableName = 'dummyTable';
+  var childStep = new lf.testing.proc.DummyStep(
+      lf.proc.Relation.fromRows(rows, [tableName]));
+
+  var step = new lf.proc.SkipStep(skip);
+  step.addChild(childStep);
+
+  var journal = new lf.cache.Journal([]);
+  step.exec(journal).then(function(relation) {
+    var expectedResults = Math.max(sampleDataCount - skip, 0);
+    assertEquals(expectedResults, relation.entries.length);
+    if (expectedResults > 0) {
+      // Check that the skipped results are not returned.
+      for (var i = 0; i < expectedResults; i++) {
+        assertEquals(
+            'id' + String(skip + i),
+            relation.entries[i].row.payload().id);
+      }
+    }
+    asyncTestCase.continueTesting();
+  }, fail);
+}
+
+
+/**
+ * Generates sample data for testing.
+ * @param {number} rowCount The number of sample rows to be generated.
+ * @return {!Array.<!lf.Row>}
+ */
+function generateSampleRows(rowCount) {
+  var rows = new Array(rowCount);
+
+  for (var i = 0; i < rowCount; i++) {
+    rows[i] = lf.Row.create({
+      'id': 'id' + i.toString()
+    });
+  }
+
+  return rows;
+}

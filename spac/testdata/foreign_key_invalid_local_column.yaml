@@ -1,0 +1,24 @@
+%YAML 1.2
+---
+name: sample
+version: 1
+table:
+  Department:
+    column:
+      id: string
+      name: string
+    constraint:
+      primaryKey: [id]
+
+  Employee:
+    column:
+      id: string
+      name: string
+      department: string
+    constraint:
+      primaryKey: [id]
+      foreignKey:
+        fkDept:
+          localColumn: dept  # Should throw: non-existing column
+          reference: Department
+          remoteColumn: id

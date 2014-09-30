@@ -1,0 +1,11 @@
+%YAML 1.2
+---
+name: sample
+version: 1
+table:
+  Employee:
+    column:
+      id: string
+      name: string
+    constraint:
+      primaryKey: []  # Should throw: array cannot be empty

@@ -1,0 +1,68 @@
+%YAML 1.2
+---
+# The sample schema used to test code generation.
+name: db
+version: 1
+table:
+  Album:
+    column:
+      id: string
+      isLocal: boolean
+      createdByAction: boolean
+      timestamp: datetime
+      tacotownJspb: arraybuffer
+    constraint:
+      primaryKey: [ id ]
+    index:
+      idx_timestamp:
+        column: [ timestamp ]
+        order: desc
+      idx_localId:
+        column: [ isLocal, id ]
+
+  Photo:
+    column:
+      id: string
+      imageHash: string
+      isLocal: boolean
+      createdByAction: boolean
+      timestamp: datetime
+      accessTimestamp: datetime
+      albumId: string
+      isCoverPhoto: boolean
+      tacotownJspb: arraybuffer
+    index:
+      idx_timestamp:
+        column: [ timestamp ]
+        order: desc
+    constraint:
+      primaryKey: [ id ]
+      foreignKey:
+        fk_albumId:
+          localColumn: albumId
+          reference: Album
+          remoteColumn: id
+          cascade: true
+      nullable: [ tacotownJspb, accessTimestamp, imageHash ]
+
+  PhotoDetails:
+    column:
+      photoId: string
+      albumId: string
+      totalComments: integer
+    index:
+      idx_id:
+        column: [ albumId, photoId ]
+        order: desc
+    constraint:
+      foreignKey:
+        fk_photoId:
+          localColumn: photoId
+          reference: Photo
+          remoteColumn: id
+          cascade: true
+        fk_albumId:
+          localColumn: albumId
+          reference: Album
+          remoteColumn: id
+          cascade: true

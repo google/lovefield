@@ -1,0 +1,7 @@
+%YAML 1.2
+---
+name: sample
+version: 1
+table:
+  Employee:
+    # Should throw: required column is missing
