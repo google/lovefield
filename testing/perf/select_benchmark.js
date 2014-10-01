@@ -16,6 +16,7 @@
  */
 goog.provide('lf.testing.perf.SelectBenchmark');
 
+goog.require('goog.math');
 goog.require('lf.Order');
 goog.require('lf.fn');
 goog.require('lf.testing.hrSchema.MockDataGenerator');
@@ -67,6 +68,13 @@ lf.testing.perf.SelectBenchmark.EMPLOYEE_RESULT_COUNT_ =
 
 /** @private {number} */
 lf.testing.perf.SelectBenchmark.JOB_COUNT_ = 102;
+
+
+/**
+ * The precision to use when comparing floating point numbers.
+ * @private {number}
+ */
+lf.testing.perf.SelectBenchmark.EPSILON_ = Math.pow(10, -9);
 
 
 /**
@@ -470,8 +478,10 @@ lf.testing.perf.SelectBenchmark.prototype.verifyProjectMixedColumns =
         goog.isDefAndNotNull(obj.email) &&
         goog.isDefAndNotNull(obj.salary) &&
         goog.isDefAndNotNull(obj['avg_salary']) &&
-        obj.avgSalary ==
-            this.dataGenerator_.employeeGroundTruth['avg_salary'];
+        goog.math.nearlyEquals(
+            obj.avgSalary,
+            this.dataGenerator_.employeeGroundTruth['avg_salary'],
+            lf.testing.perf.SelectBenchmark.EPSILON_);
   }, this);
 
   return Promise.resolve(validated);
@@ -499,10 +509,14 @@ lf.testing.perf.SelectBenchmark.prototype.verifyProjectAggregateIndexed =
   }
 
   var validated =
-      results[0]['avg_salary'] ==
-          this.dataGenerator_.employeeGroundTruth.avgSalary &&
-      results[0]['stddev_salary'] ==
-          this.dataGenerator_.employeeGroundTruth.stddevSalary;
+      goog.math.nearlyEquals(
+          results[0]['avg_salary'],
+          this.dataGenerator_.employeeGroundTruth.avgSalary,
+          lf.testing.perf.SelectBenchmark.EPSILON_) &&
+      goog.math.nearlyEquals(
+          results[0]['stddev_salary'],
+          this.dataGenerator_.employeeGroundTruth.stddevSalary,
+          lf.testing.perf.SelectBenchmark.EPSILON_);
 
   return Promise.resolve(validated);
 };
