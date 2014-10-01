@@ -1,0 +1,80 @@
+%YAML 1.2
+---
+# A schema for a movie database department to be used for tests.
+name: mv
+version: 1
+table:
+  Movie:
+    column:
+      id: integer
+      title: string
+      year: integer
+      rating: string
+      company: string
+    constraint:
+      primaryKey: [ id ]
+
+  Actor:
+    column:
+      id: integer
+      lastName: string
+      firstName: string
+      sex: string
+      dateOfBirth: datetime
+      dateOfDeath: datetime
+    constraint:
+      primaryKey: [ id ]
+      nullable: [ dateOfDeath ]
+
+  Director:
+    column:
+      id: integer
+      lastName: string
+      firstName: string
+      dateOfBirth: datetime
+      dateOfDeath: datetime
+    constraint:
+      primaryKey: [ id ]
+      nullable: [ dateOfDeath ]
+
+  MovieGenre:
+    column:
+      movieId: integer
+      genre: string
+    constraint:
+      foreignKey:
+        fk_MovieId:
+          localColumn: movieId
+          reference: Movie
+          remoteColumn: id
+
+  MovieDirector:
+    column:
+      movieId: integer
+      directorId: integer
+    constraint:
+      foreignKey:
+        fk_MovieId:
+          localColumn: movieId
+          reference: Movie
+          remoteColumn: id
+        fk_DirectorId:
+          localColumn: directorId
+          reference: Director
+          remoteColumn: id
+
+  MovieActor:
+    column:
+      movieId: integer
+      actorId: integer
+      role: string
+    constraint:
+      foreignKey:
+        fk_MovieId:
+          localColumn: movieId
+          reference: Movie
+          remoteColumn: id
+        fk_ActorId:
+          localColumn: actorId
+          reference: Actor
+          remoteColumn: id
