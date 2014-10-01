@@ -153,7 +153,8 @@ function convertSchema(yaml) {
       var col = {};
       col.name = colName;
       col.type = yaml.table[tableName].column[colName];
-      col.nullable = table.constraint.hasOwnProperty('nullable') &&
+      col.nullable = table.hasOwnProperty('constraint') &&
+          table.constraint.hasOwnProperty('nullable') &&
           table.constraint.nullable.indexOf(col.name) != -1;
       columns.push(col);
     }
@@ -814,7 +815,7 @@ CodeGenerator.prototype.processRepeatTable_ = function(lines) {
     var pascal = this.toPascal_(name);
     var camel = this.toCamel_(name);
     var indices = this.getIndices_(table);
-    var primaryKey = this.getPrimaryKey_(table);
+    var constraint = this.getConstraint_(table);
     var colTypes = this.getColumnAsMembers_(table);
 
     for (var j = 0; j < lines.length; ++j) {
@@ -823,7 +824,7 @@ CodeGenerator.prototype.processRepeatTable_ = function(lines) {
       genLine = genLine.replace(/#tablecolumndbtypes/g, colTypes[0]);
       genLine = genLine.replace(/#tablecolumntypes/g, colTypes[1]);
       genLine = genLine.replace(/#tableindices/g, indices);
-      genLine = genLine.replace(/#tableprimarykey/g, primaryKey);
+      genLine = genLine.replace(/#tableconstraint/g, constraint);
       genLine = genLine.replace(/#table#pascal/g, pascal);
       genLine = genLine.replace(/#table#camel/g, camel);
       genLine = genLine.replace(/#tablename/g, name);
@@ -870,15 +871,53 @@ CodeGenerator.prototype.getPrimaryKey_ = function(table) {
   var results = [];
 
   if (table.constraint && table.constraint.primaryKey) {
-    var header = '  return new lf.schema.Index(\'' + table.name + '\', \'';
+    var header = 'new lf.schema.Index(\'' + table.name + '\', \'';
     var cols = table.constraint.primaryKey.join(', \'');
     var keyName = 'pk' + this.toPascal_(table.name);
-    results.push(header + keyName + '\', true, [\'' + cols + '\']);');
+    results.push(header + keyName + '\', true, [\'' + cols + '\'])');
   } else {
-    results.push('  return null;');
+    results.push('null');
   }
 
   return results.join(',\n');
+};
+
+
+/**
+ * @param {!Object} table
+ * @return {string}
+ * @private
+ */
+CodeGenerator.prototype.getConstraint_ = function(table) {
+  var results = [];
+
+  if (table.constraint) {
+    results.push('  var primaryKey = ' + this.getPrimaryKey_(table) + ';');
+
+    var nullable = '';
+    if (table.constraint.nullable) {
+      nullable = table.constraint.nullable.map(
+          function(columnName) {
+            return 'this.' + columnName;
+          }, this).join(', ');
+    }
+    results.push('  var nullable = [' + nullable + '];');
+
+    // TODO(user): Populate this field once foreign key indices are
+    // implemented.
+    results.push('  var foreignKeys = [];');
+
+    // TODO(user): Populate this field once indices for unique columns are
+    // implemented.
+    results.push('  var unique = [];');
+
+    results.push('  return new lf.schema.Constraint(\n' +
+        '      primaryKey, nullable, foreignKeys, unique);');
+  } else {
+    results.push('  return new lf.schema.Constraint(null, [], [], []);');
+  }
+
+  return results.join('\n');
 };
 
 

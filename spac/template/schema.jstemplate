@@ -11,6 +11,7 @@ goog.provide('#namespace.schema.Database');
 goog.require('lf.Row');
 goog.require('lf.Type');
 goog.require('lf.schema.BaseColumn');
+goog.require('lf.schema.Constraint');
 goog.require('lf.schema.Database');
 goog.require('lf.schema.Index');
 goog.require('lf.schema.Table');
@@ -106,8 +107,8 @@ goog.require('lf.schema.Table');
 
 
 /** @override */
-#namespace.schema.#table#pascal.prototype.getPrimaryKey = function() {
-#tableprimarykey
+#namespace.schema.#table#pascal.prototype.getConstraint = function() {
+#tableconstraint
 };
 
 

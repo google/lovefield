@@ -24,6 +24,7 @@ goog.require('lf.Type');
 goog.require('lf.backstore.IndexedDB');
 goog.require('lf.backstore.IndexedDBRawBackStore');
 goog.require('lf.schema.BaseColumn');
+goog.require('lf.schema.Constraint');
 goog.require('lf.schema.Database');
 goog.require('lf.schema.Table');
 
@@ -374,6 +375,6 @@ Table_.prototype.getIndices = function() {
 
 
 /** @override */
-Table_.prototype.getPrimaryKey = function() {
-  return null;
+Table_.prototype.getConstraint = function() {
+  return new lf.schema.Constraint(null, [], [], []);
 };

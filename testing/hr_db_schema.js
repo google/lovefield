@@ -39,6 +39,7 @@ goog.provide('hr.db.schema.Region');
 goog.require('lf.Row');
 goog.require('lf.Type');
 goog.require('lf.schema.BaseColumn');
+goog.require('lf.schema.Constraint');
 goog.require('lf.schema.Database');
 goog.require('lf.schema.Index');
 goog.require('lf.schema.Table');
@@ -223,8 +224,13 @@ hr.db.schema.Job.prototype.getIndices = function() {
 
 
 /** @override */
-hr.db.schema.Job.prototype.getPrimaryKey = function() {
-  return new lf.schema.Index('Job', 'pkJob', true, ['id']);
+hr.db.schema.Job.prototype.getConstraint = function() {
+  var primaryKey = new lf.schema.Index('Job', 'pkJob', true, ['id']);
+  var nullable = [];
+  var foreignKeys = [];
+  var unique = [];
+  return new lf.schema.Constraint(
+      primaryKey, nullable, foreignKeys, unique);
 };
 
 
@@ -449,8 +455,13 @@ hr.db.schema.JobHistory.prototype.getIndices = function() {
 
 
 /** @override */
-hr.db.schema.JobHistory.prototype.getPrimaryKey = function() {
-  return null;
+hr.db.schema.JobHistory.prototype.getConstraint = function() {
+  var primaryKey = null;
+  var nullable = [];
+  var foreignKeys = [];
+  var unique = [];
+  return new lf.schema.Constraint(
+      primaryKey, nullable, foreignKeys, unique);
 };
 
 
@@ -731,8 +742,13 @@ hr.db.schema.Employee.prototype.getIndices = function() {
 
 
 /** @override */
-hr.db.schema.Employee.prototype.getPrimaryKey = function() {
-  return new lf.schema.Index('Employee', 'pkEmployee', true, ['id']);
+hr.db.schema.Employee.prototype.getConstraint = function() {
+  var primaryKey = new lf.schema.Index('Employee', 'pkEmployee', true, ['id']);
+  var nullable = [this.hireDate];
+  var foreignKeys = [];
+  var unique = [];
+  return new lf.schema.Constraint(
+      primaryKey, nullable, foreignKeys, unique);
 };
 
 
@@ -1129,8 +1145,13 @@ hr.db.schema.Department.prototype.getIndices = function() {
 
 
 /** @override */
-hr.db.schema.Department.prototype.getPrimaryKey = function() {
-  return new lf.schema.Index('Department', 'pkDepartment', true, ['id']);
+hr.db.schema.Department.prototype.getConstraint = function() {
+  var primaryKey = new lf.schema.Index('Department', 'pkDepartment', true, ['id']);
+  var nullable = [];
+  var foreignKeys = [];
+  var unique = [];
+  return new lf.schema.Constraint(
+      primaryKey, nullable, foreignKeys, unique);
 };
 
 
@@ -1358,8 +1379,13 @@ hr.db.schema.Location.prototype.getIndices = function() {
 
 
 /** @override */
-hr.db.schema.Location.prototype.getPrimaryKey = function() {
-  return new lf.schema.Index('Location', 'pkLocation', true, ['id']);
+hr.db.schema.Location.prototype.getConstraint = function() {
+  var primaryKey = new lf.schema.Index('Location', 'pkLocation', true, ['id']);
+  var nullable = [];
+  var foreignKeys = [];
+  var unique = [];
+  return new lf.schema.Constraint(
+      primaryKey, nullable, foreignKeys, unique);
 };
 
 
@@ -1616,8 +1642,13 @@ hr.db.schema.Country.prototype.getIndices = function() {
 
 
 /** @override */
-hr.db.schema.Country.prototype.getPrimaryKey = function() {
-  return new lf.schema.Index('Country', 'pkCountry', true, ['id']);
+hr.db.schema.Country.prototype.getConstraint = function() {
+  var primaryKey = new lf.schema.Index('Country', 'pkCountry', true, ['id']);
+  var nullable = [];
+  var foreignKeys = [];
+  var unique = [];
+  return new lf.schema.Constraint(
+      primaryKey, nullable, foreignKeys, unique);
 };
 
 
@@ -1803,8 +1834,13 @@ hr.db.schema.Region.prototype.getIndices = function() {
 
 
 /** @override */
-hr.db.schema.Region.prototype.getPrimaryKey = function() {
-  return new lf.schema.Index('Region', 'pkRegion', true, ['id']);
+hr.db.schema.Region.prototype.getConstraint = function() {
+  var primaryKey = new lf.schema.Index('Region', 'pkRegion', true, ['id']);
+  var nullable = [];
+  var foreignKeys = [];
+  var unique = [];
+  return new lf.schema.Constraint(
+      primaryKey, nullable, foreignKeys, unique);
 };
 
 
@@ -1974,8 +2010,13 @@ hr.db.schema.Holiday.prototype.getIndices = function() {
 
 
 /** @override */
-hr.db.schema.Holiday.prototype.getPrimaryKey = function() {
-  return new lf.schema.Index('Holiday', 'pkHoliday', true, ['name']);
+hr.db.schema.Holiday.prototype.getConstraint = function() {
+  var primaryKey = new lf.schema.Index('Holiday', 'pkHoliday', true, ['name']);
+  var nullable = [];
+  var foreignKeys = [];
+  var unique = [];
+  return new lf.schema.Constraint(
+      primaryKey, nullable, foreignKeys, unique);
 };
 
 
@@ -2184,8 +2225,13 @@ hr.db.schema.DummyTable.prototype.getIndices = function() {
 
 
 /** @override */
-hr.db.schema.DummyTable.prototype.getPrimaryKey = function() {
-  return new lf.schema.Index('DummyTable', 'pkDummyTable', true, ['string']);
+hr.db.schema.DummyTable.prototype.getConstraint = function() {
+  var primaryKey = new lf.schema.Index('DummyTable', 'pkDummyTable', true, ['string']);
+  var nullable = [];
+  var foreignKeys = [];
+  var unique = [];
+  return new lf.schema.Constraint(
+      primaryKey, nullable, foreignKeys, unique);
 };
 
 

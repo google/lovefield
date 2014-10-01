@@ -22,6 +22,7 @@ goog.require('goog.string');
 goog.require('lf.Row');
 goog.require('lf.Type');
 goog.require('lf.schema.BaseColumn');
+goog.require('lf.schema.Constraint');
 goog.require('lf.schema.Database');
 goog.require('lf.schema.Index');
 goog.require('lf.schema.Table');
@@ -169,8 +170,10 @@ Table_.prototype.getIndices = function() {
 
 
 /** @override */
-Table_.prototype.getPrimaryKey = function() {
-  return new lf.schema.Index(this.tableName_, 'pkId', true, ['id']);
+Table_.prototype.getConstraint = function() {
+  return new lf.schema.Constraint(
+      new lf.schema.Index(this.tableName_, 'pkId', true, ['id']),
+      [], [], []);
 };
 
 
@@ -223,6 +226,6 @@ TableWithNoIndex_.prototype.getIndices = function() {
 
 
 /** @override */
-TableWithNoIndex_.prototype.getPrimaryKey = function() {
-  return null;
+TableWithNoIndex_.prototype.getConstraint = function() {
+  return new lf.schema.Constraint(null, [], [], []);
 };

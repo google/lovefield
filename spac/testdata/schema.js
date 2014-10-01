@@ -15,6 +15,7 @@ goog.provide('lovefield.db.schema.PhotoDetails');
 goog.require('lf.Row');
 goog.require('lf.Type');
 goog.require('lf.schema.BaseColumn');
+goog.require('lf.schema.Constraint');
 goog.require('lf.schema.Database');
 goog.require('lf.schema.Index');
 goog.require('lf.schema.Table');
@@ -146,8 +147,13 @@ lovefield.db.schema.Album.prototype.getIndices = function() {
 
 
 /** @override */
-lovefield.db.schema.Album.prototype.getPrimaryKey = function() {
-  return new lf.schema.Index('Album', 'pkAlbum', true, ['id']);
+lovefield.db.schema.Album.prototype.getConstraint = function() {
+  var primaryKey = new lf.schema.Index('Album', 'pkAlbum', true, ['id']);
+  var nullable = [];
+  var foreignKeys = [];
+  var unique = [];
+  return new lf.schema.Constraint(
+      primaryKey, nullable, foreignKeys, unique);
 };
 
 
@@ -418,8 +424,13 @@ lovefield.db.schema.Photo.prototype.getIndices = function() {
 
 
 /** @override */
-lovefield.db.schema.Photo.prototype.getPrimaryKey = function() {
-  return new lf.schema.Index('Photo', 'pkPhoto', true, ['id']);
+lovefield.db.schema.Photo.prototype.getConstraint = function() {
+  var primaryKey = new lf.schema.Index('Photo', 'pkPhoto', true, ['id']);
+  var nullable = [this.tacotownJspb, this.accessTimestamp, this.imageHash];
+  var foreignKeys = [];
+  var unique = [];
+  return new lf.schema.Constraint(
+      primaryKey, nullable, foreignKeys, unique);
 };
 
 
@@ -745,8 +756,13 @@ lovefield.db.schema.PhotoDetails.prototype.getIndices = function() {
 
 
 /** @override */
-lovefield.db.schema.PhotoDetails.prototype.getPrimaryKey = function() {
-  return null;
+lovefield.db.schema.PhotoDetails.prototype.getConstraint = function() {
+  var primaryKey = null;
+  var nullable = [];
+  var foreignKeys = [];
+  var unique = [];
+  return new lf.schema.Constraint(
+      primaryKey, nullable, foreignKeys, unique);
 };
 
 

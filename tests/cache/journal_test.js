@@ -59,7 +59,7 @@ function testJournal_NoWriteOperations() {
 
 function testJournal_InsertOrReplace() {
   var table = env.schema.getTables()[0];
-  var pkIndexSchema = table.getPrimaryKey();
+  var pkIndexSchema = table.getConstraint().getPrimaryKey();
   var pkIndex = env.indexStore.get(pkIndexSchema.getNormalizedName());
   var rowIdIndex = env.indexStore.getRowIdIndex(table.getName());
 
