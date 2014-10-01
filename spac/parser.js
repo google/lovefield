@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 /**
  * @fileoverview YAML schema parser which converts the schema into a JS
  * object for code generator.
@@ -87,6 +88,14 @@ var VALID_COLUMN_TYPE = [
   'datetime',
   'integer',
   'number',
+  'string'
+];
+
+
+/** @const {!Array.<string>} */
+var NULLABLE_COLUMN_TYPE = [
+  'arraybuffer',
+  'datetime',
   'string'
 ];
 
@@ -309,6 +318,15 @@ function checkConstraint(tableName, schemas, colNames, names) {
   var notNullable = [];
   var nullable = [];
   checkObject(tableName + '.constraint', CONSTRAINT_SCHEMA, schema);
+
+  // Identifying non-nullable columns.
+  var tableSchema = schemas[tableName];
+  for (var col in tableSchema.column) {
+    var columnType = tableSchema.column[col];
+    if (NULLABLE_COLUMN_TYPE.indexOf(columnType) == -1) {
+      notNullable = notNullable.concat(col);
+    }
+  }
 
   if (schema.hasOwnProperty('primaryKey')) {
     if (schema.primaryKey.length == 0) {
