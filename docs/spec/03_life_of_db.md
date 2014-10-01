@@ -31,7 +31,7 @@ Lovefield users shall be aware of this problem and plan accordingly. In Lovefiel
 
 ### 3.3 Database Upgrade
 
-Lovefield will open the database using the version specified in schema (see [Schema Definition](01_schema)). When the version mismatch, the database upgrade mechanism will be triggered.
+Lovefield will open the database using the version specified in schema (see [Schema Definition](01_schema.md)). When the version mismatch, the database upgrade mechanism will be triggered.
 
 The first step of database upgrade is to create new tables. Lovefield checks the tables that are not in database but in the schema, and create them accordingly. After this is done, Lovefield will call the user-provided upgrade function.
 

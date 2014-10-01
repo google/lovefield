@@ -14,9 +14,9 @@ table:  # Required, at least one table definition must exist
   <table2_definition>
   ...
 ```
-A schema contains a name to uniquely identify a database schema on the persistence store and will be forged onto generated code. The origin and schema name uniquely identifies a database, please see [Lovefield Initialization](03_life_of_db#3.1-Lovefield-Initialization) for detailed explanation.
+A schema contains a name to uniquely identify a database schema on the persistence store and will be forged onto generated code. The origin and schema name uniquely identifies a database, please see [Lovefield Initialization](03_life_of_db.md#31-lovefield-initialization) for detailed explanation.
 
-Database version must be an integer greater than 0. This version will be used by Lovefield to determine if a database needs upgrade. The developers are supposed to do data migration using [database upgrade](03_life_of_db#3.3-Database-Upgrade) mechanism described below.
+Database version must be an integer greater than 0. This version will be used by Lovefield to determine if a database needs upgrade. The developers are supposed to do data migration using [database upgrade](03_life_of_db.md#33-database-upgrade) mechanism described below.
 
 ### 1.1 Table Definition
 
