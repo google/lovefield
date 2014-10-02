@@ -479,8 +479,8 @@ lf.testing.perf.SelectBenchmark.prototype.verifyProjectMixedColumns =
         goog.isDefAndNotNull(obj.salary) &&
         goog.isDefAndNotNull(obj['avg_salary']) &&
         goog.math.nearlyEquals(
-            obj.avgSalary,
-            this.dataGenerator_.employeeGroundTruth['avg_salary'],
+            obj['avg_salary'],
+            this.dataGenerator_.employeeGroundTruth.avgSalary,
             lf.testing.perf.SelectBenchmark.EPSILON_);
   }, this);
 
