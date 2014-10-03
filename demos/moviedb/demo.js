@@ -16,29 +16,36 @@
  */
 
 
-/** @type {!movie.db.Database} */
+/** @type {?movie.db.Database} */
 var db = null;
 
 
-function main() {
-  var fail = function(e) { console.error('Error', e); };
+// When the page loads.
+$(function() {
+  $('#all_movies').hide();
+  $('#deceased').hide();
 
-  movie.db.getInstance(
+  main().then(function() {
+    $('#all_movies').show();
+    $('#deceased').show();
+
+    $('#all_movies').click(selectAllMovies);
+    $('#deceased').click(selectDeceasedActors);
+  });
+});
+
+
+function main() {
+  return movie.db.getInstance(
       /* opt_onUpgrade */ undefined,
       /* opt_volatile */ false).then(function(database) {
     db = database;
-    // Cheating the linter.
-    console['log']('Established DB connection.');
     return checkForExistingData();
   }).then(function(dataExist) {
     return dataExist ? Promise.resolve() :
         clearDb().then(function() { return addSampleData(); });
-  }).then(function() {
-    console['log']('Sample data loaded.');
-  }, fail);
+  });
 }
-
-main();
 
 
 /**
@@ -93,9 +100,21 @@ function insertData(filename, tableSchema) {
 
 
 /**
+ * @param {number} date Date in YYYYMMDD number format.
+ * @return {!Date}
+ */
+function convertDate(date) {
+  var year = Math.round(date / 10000);
+  var month = Math.round((date / 100) % 100 - 1);
+  var day = Math.round(date % 100);
+  return new Date(year, month, day);
+}
+
+
+/**
  * Inserts data in the database.
  * @param {string} filename The name of the file holding JSON data.
- * @param {!movie.db.schema.Actor|movie.db.schema.Director} tableSchema The
+ * @param {!movie.db.schema.Actor|!movie.db.schema.Director} tableSchema The
  *     schema of the table corresponding to the data.
  * @return {!IThenable}
  */
@@ -103,9 +122,9 @@ function insertPersonData(filename, tableSchema) {
   return getSampleData(filename).then(
       function(data) {
         var rows = data.map(function(obj) {
-          obj.dateOfBirth = new Date(obj.dateOfBirth);
+          obj.dateOfBirth = convertDate(obj.dateOfBirth);
           obj.dateOfDeath = !goog.isNull(obj.dateOfDeath) ?
-              new Date(obj.dateOfDeath) : null;
+              convertDate(obj.dateOfDeath) : null;
           return tableSchema.createRow(obj);
         });
         return db.insert().into(tableSchema).values(rows).exec();
@@ -119,9 +138,7 @@ function insertPersonData(filename, tableSchema) {
  * @return {!IThenable}
  */
 function getSampleData(filename) {
-  return new Promise(function(resolve, reject) {
-    $.getJSON('data/' + filename, function(data) { resolve(data); });
-  });
+  return /** @type {!IThenable} */ ($.getJSON('data/' + filename));
 }
 
 
@@ -155,7 +172,8 @@ function selectAllMovies() {
  */
 function selectDeceasedActors() {
   var actor = db.getSchema().getActor();
-  db.select(actor.first, actor.lastName, actor.dateOfBirth, actor.dateOfDeath).
+  db.select(
+      actor.firstName, actor.lastName, actor.dateOfBirth, actor.dateOfDeath).
       from(actor).
       where(actor.dateOfDeath.isNotNull()).
       exec().then(
@@ -169,7 +187,7 @@ function selectDeceasedActors() {
 
 /**
  * Displays the given results to the user.
- * @param {!Array.<!Object} results
+ * @param {!Array.<!Object>} results
  * @param {!Array.<string>} fields The fields to be displayed.
  */
 function displayResults(results, fields) {
@@ -198,10 +216,14 @@ function displayResults(results, fields) {
   results.forEach(function(obj) {
     var tableRow = $('<tr>');
     fields.forEach(function(field) {
-      tableRow.append($('<td>').html(obj[field]));
+      var data = obj[field].toString();
+      if (field.indexOf('date') == 0) {
+        data = data.replace(/ 00:00:00 GMT-\d+/, '');
+      }
+      tableRow.append($('<td>').html(data));
     });
     tableEl.append(tableRow);
   });
 
-  tableEl.dataTable();
+  tableEl.DataTable();
 }

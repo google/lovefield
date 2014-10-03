@@ -9,12 +9,13 @@ database class at http://oak.cs.ucla.edu/cs143/project/data/data.zip.
 bash ../../tools/bundle.sh \
   --schema moviedb_schema.yaml \
   --namespace movie.db \
-  --outputdir . \
+  --outputdir lib \
   --compiler <path/to/compiler.jar> \
   --library <path/to/closure-library>
 ```
 
-Start a local HTTPServer running the following command
+The command will create lib/movie_db_bundle.js. Now start a local HTTPServer by
+running the following command
 ```bash
 python -m SimpleHTTPServer 60000
 ```
