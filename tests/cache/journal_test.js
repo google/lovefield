@@ -17,6 +17,7 @@
 goog.setTestOnly();
 goog.require('goog.testing.AsyncTestCase');
 goog.require('goog.testing.jsunit');
+goog.require('lf.Exception');
 goog.require('lf.Row');
 goog.require('lf.cache.Journal');
 goog.require('lf.index.KeyRange');
@@ -57,6 +58,144 @@ function testJournal_NoWriteOperations() {
 }
 
 
+/**
+ * Tests the case where a new row is inserted into the journal.
+ */
+function testJournal_Insert_New() {
+  var table = env.schema.getTables()[0];
+  var pkIndexSchema = table.getConstraint().getPrimaryKey();
+  var pkIndex = env.indexStore.get(pkIndexSchema.getNormalizedName());
+  var rowIdIndex = env.indexStore.getRowIdIndex(table.getName());
+
+  var rowId = 1;
+  var primaryKey = '100';
+  var row = new lf.testing.MockSchema.Row(
+      rowId, {'id': primaryKey, 'name': 'DummyName'});
+
+  // First testing case where the row does not already exist.
+  assertEquals(0, env.cache.getCount());
+  assertFalse(pkIndex.containsKey(primaryKey));
+  assertFalse(rowIdIndex.containsKey(rowId));
+
+  var journal = new lf.cache.Journal([table]);
+  journal.insert(table, [row]);
+  journal.commit();
+
+  assertEquals(1, env.cache.getCount());
+  assertTrue(pkIndex.containsKey(primaryKey));
+  assertTrue(rowIdIndex.containsKey(rowId));
+}
+
+
+/**
+ * Tests the case where a row that has been inserted via a previous, already
+ * committed journal is inserted.
+ */
+function testJournal_Insert_ExistsCommitted() {
+  var table = env.schema.getTables()[0];
+
+  var rowId = 1;
+  var primaryKey = '100';
+  var row = new lf.testing.MockSchema.Row(
+      rowId, {'id': primaryKey, 'name': 'DummyName'});
+
+  // Inserting the row into the journal and committing.
+  var journal = new lf.cache.Journal([table]);
+  journal.insert(table, [row]);
+  journal.commit();
+
+  // Now re-inserting a row with the same primary key that already exists.
+  row = new lf.testing.MockSchema.Row(
+      rowId, {'id': primaryKey, 'name': 'OtherDummyName'});
+  journal = new lf.cache.Journal([table]);
+
+  assertThrowsException(
+      journal.insert.bind(journal, table, [row]),
+      lf.Exception.Type.CONSTRAINT);
+}
+
+
+/**
+ * Tests the case where a row that has been inserted previously within the same
+ * uncommitted journal is inserted.
+ */
+function testJournal_Insert_ExistsUncommitted() {
+  var table = env.schema.getTables()[0];
+  var pkIndexSchema = table.getConstraint().getPrimaryKey();
+  var pkIndex = env.indexStore.get(pkIndexSchema.getNormalizedName());
+
+  var rowId = 1;
+  var primaryKey = '100';
+  var row = new lf.testing.MockSchema.Row(
+      rowId, {'id': primaryKey, 'name': 'DummyName'});
+
+  // Inserting row without committing, which means that cache and indices have
+  // not been updated yet.
+  var journal = new lf.cache.Journal([table]);
+  journal.insert(table, [row]);
+  assertEquals(0, env.cache.getCount());
+  assertFalse(pkIndex.containsKey(primaryKey));
+
+  // Re-inserting the same row.
+  row = new lf.testing.MockSchema.Row(
+      rowId, {'id': primaryKey, 'name': 'OtherDummyName'});
+  assertThrowsException(
+      journal.insert.bind(journal, table, [row]),
+      lf.Exception.Type.CONSTRAINT);
+}
+
+
+/**
+ * Tests the case where a row that has been deleted previously within the same
+ * uncommitted journal is inserted.
+ */
+function testJournal_DeleteInsert_Uncommitted() {
+  var table = env.schema.getTables()[0];
+  var pkIndexSchema = table.getConstraint().getPrimaryKey();
+  var pkIndex = env.indexStore.get(pkIndexSchema.getNormalizedName());
+
+  var rowId = 1;
+  var primaryKey = '100';
+  var row = new lf.testing.MockSchema.Row(
+      rowId, {'id': primaryKey, 'name': 'DummyName'});
+
+  // First adding the row and committing.
+  var journal = new lf.cache.Journal([table]);
+  journal.insert(table, [row]);
+  journal.commit();
+
+  // Removing the row on a new journal.
+  journal = new lf.cache.Journal([table]);
+  journal.remove(table, [row.id()]);
+
+  // Inserting the row that was just removed within the same journal.
+  row = new lf.testing.MockSchema.Row(
+      rowId, {'id': primaryKey, 'name': 'OtherDummyName'});
+  journal.insert(table, [row]);
+  journal.commit();
+
+  assertEquals(1, env.cache.getCount());
+  assertTrue(pkIndex.containsKey(primaryKey));
+}
+
+
+/**
+ * Asserts that calling the given function throws the given exception.
+ * @param {!function()} fn The function to call.
+ * @param {string} exceptionName The expected name of the exception.
+ */
+function assertThrowsException(fn, exceptionName) {
+  var exceptionThrown = false;
+  try {
+    fn();
+  } catch (error) {
+    exceptionThrown = true;
+    assertEquals(exceptionName, error.name);
+  }
+  assertTrue(exceptionThrown);
+}
+
+
 function testJournal_InsertOrReplace() {
   var table = env.schema.getTables()[0];
   var pkIndexSchema = table.getConstraint().getPrimaryKey();
@@ -68,6 +207,7 @@ function testJournal_InsertOrReplace() {
   var row = new lf.testing.MockSchema.Row(
       rowId, {'id': primaryKey, 'name': 'DummyName'});
 
+  // First testing case where the row does not already exist.
   assertEquals(0, env.cache.getCount());
   assertFalse(pkIndex.containsKey(primaryKey));
   assertFalse(rowIdIndex.containsKey(rowId));
@@ -79,10 +219,23 @@ function testJournal_InsertOrReplace() {
   assertEquals(1, env.cache.getCount());
   assertTrue(pkIndex.containsKey(primaryKey));
   assertTrue(rowIdIndex.containsKey(rowId));
+
+  // Now testing case where the row is being replaced. There should be no
+  // exception thrown.
+  row = new lf.testing.MockSchema.Row(
+      rowId, {'id': primaryKey, 'name': 'OtherDummyName'});
+  journal = new lf.cache.Journal([table]);
+  journal.insertOrReplace(table, [row]);
+  journal.commit();
+
+  assertEquals(1, env.cache.getCount());
+  assertTrue(pkIndex.containsKey(primaryKey));
+  assertTrue(rowIdIndex.containsKey(rowId));
 }
 
 
 function testJournal_CacheMerge() {
+  // Selecting a table without any index (no primary key either).
   var table = env.schema.getTables()[2];
 
   assertArrayEquals([null, null], env.cache.get([1, 2]));
