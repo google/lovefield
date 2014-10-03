@@ -56,10 +56,10 @@ table:
 
 ### Compile
 
-Run tools/bundle.sh to create compiled bundle for your schema. This bundle will auto generate some JavaScript code and compile them with all needed library into a bundled JavaScript file.
+Run tools/bundle.sh to create compiled bundle for your schema. This bundle will auto generate some JavaScript code and compile them with all needed library into a bundled JavaScript file. Currently the script is tested on Ubuntu only.
 
 ```bash
-tools/bundle.sh --schema schema.yaml --namespace mydb
+bash -c tools/bundle.sh --schema schema.yaml --namespace mydb
 ```
 
 Just run the tools/bundle.sh will give you the usage. You need to tell it where the Closure compiler and library are, and you can also customize the output path.
