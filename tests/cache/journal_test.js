@@ -124,23 +124,20 @@ function testJournal_Insert_ExistsUncommitted() {
   var pkIndexSchema = table.getConstraint().getPrimaryKey();
   var pkIndex = env.indexStore.get(pkIndexSchema.getNormalizedName());
 
-  var rowId = 1;
   var primaryKey = '100';
-  var row = new lf.testing.MockSchema.Row(
-      rowId, {'id': primaryKey, 'name': 'DummyName'});
+  var row1 = table.createRow({'id': primaryKey, 'name': 'DummyName'});
 
   // Inserting row without committing, which means that cache and indices have
   // not been updated yet.
   var journal = new lf.cache.Journal([table]);
-  journal.insert(table, [row]);
+  journal.insert(table, [row1]);
   assertEquals(0, env.cache.getCount());
   assertFalse(pkIndex.containsKey(primaryKey));
 
-  // Re-inserting the same row.
-  row = new lf.testing.MockSchema.Row(
-      rowId, {'id': primaryKey, 'name': 'OtherDummyName'});
+  // Inserting a row with the same primary key.
+  var row2 = table.createRow({'id': primaryKey, 'name': 'OtherDummyName'});
   assertThrowsException(
-      journal.insert.bind(journal, table, [row]),
+      journal.insert.bind(journal, table, [row2]),
       lf.Exception.Type.CONSTRAINT);
 }
 
@@ -154,24 +151,22 @@ function testJournal_DeleteInsert_Uncommitted() {
   var pkIndexSchema = table.getConstraint().getPrimaryKey();
   var pkIndex = env.indexStore.get(pkIndexSchema.getNormalizedName());
 
-  var rowId = 1;
   var primaryKey = '100';
-  var row = new lf.testing.MockSchema.Row(
-      rowId, {'id': primaryKey, 'name': 'DummyName'});
+  var row1 = table.createRow({'id': primaryKey, 'name': 'DummyName'});
 
   // First adding the row and committing.
   var journal = new lf.cache.Journal([table]);
-  journal.insert(table, [row]);
+  journal.insert(table, [row1]);
   journal.commit();
 
   // Removing the row on a new journal.
   journal = new lf.cache.Journal([table]);
-  journal.remove(table, [row.id()]);
+  journal.remove(table, [row1.id()]);
 
-  // Inserting the row that was just removed within the same journal.
-  row = new lf.testing.MockSchema.Row(
-      rowId, {'id': primaryKey, 'name': 'OtherDummyName'});
-  journal.insert(table, [row]);
+  // Inserting a row that has the primary key that was just removed within the
+  // same journal.
+  var row2 = table.createRow({'id': primaryKey, 'name': 'DummyName'});
+  journal.insert(table, [row2]);
   journal.commit();
 
   assertEquals(1, env.cache.getCount());
@@ -202,35 +197,34 @@ function testJournal_InsertOrReplace() {
   var pkIndex = env.indexStore.get(pkIndexSchema.getNormalizedName());
   var rowIdIndex = env.indexStore.getRowIdIndex(table.getName());
 
-  var rowId = 1;
   var primaryKey = '100';
-  var row = new lf.testing.MockSchema.Row(
-      rowId, {'id': primaryKey, 'name': 'DummyName'});
+  var row1 = table.createRow({'id': primaryKey, 'name': 'DummyName'});
 
   // First testing case where the row does not already exist.
   assertEquals(0, env.cache.getCount());
   assertFalse(pkIndex.containsKey(primaryKey));
-  assertFalse(rowIdIndex.containsKey(rowId));
+  assertFalse(rowIdIndex.containsKey(row1.id()));
 
   var journal = new lf.cache.Journal([table]);
-  journal.insertOrReplace(table, [row]);
+  journal.insertOrReplace(table, [row1]);
   journal.commit();
 
   assertEquals(1, env.cache.getCount());
   assertTrue(pkIndex.containsKey(primaryKey));
-  assertTrue(rowIdIndex.containsKey(rowId));
+  assertTrue(rowIdIndex.containsKey(row1.id()));
 
   // Now testing case where the row is being replaced. There should be no
   // exception thrown.
-  row = new lf.testing.MockSchema.Row(
-      rowId, {'id': primaryKey, 'name': 'OtherDummyName'});
+  var row2 = table.createRow({'id': primaryKey, 'name': 'OtherDummyName'});
   journal = new lf.cache.Journal([table]);
-  journal.insertOrReplace(table, [row]);
+  journal.insertOrReplace(table, [row2]);
   journal.commit();
 
   assertEquals(1, env.cache.getCount());
   assertTrue(pkIndex.containsKey(primaryKey));
-  assertTrue(rowIdIndex.containsKey(rowId));
+  // Expecting the previous row ID to have been preserved since a row with
+  // the same primaryKey was already existing.
+  assertTrue(rowIdIndex.containsKey(row1.id()));
 }
 
 
