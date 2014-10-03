@@ -284,24 +284,33 @@ function checkForeignKey(tableName, schemas, schema, colNames, names, keyed) {
 
 /**
  * @param {string} tableName
- * @param {!Array.<string>} schema
+ * @param {!Object} schema
  * @param {!Array.<string>} colNames
- * @param {!Array.<string>} notNullable
+ * @param {!Array.<string>} notNullable Already declared not nullable columns
+ *     (e.g. Primary Keys, Unique).
  * @return {!Array.<string>} Nullable columns
  */
 function checkNullable(tableName, schema, colNames, notNullable) {
-  schema.forEach(function(col) {
+  var canBeNull = [];
+  for (var col in schema.column) {
+    if (NULLABLE_COLUMN_TYPE.indexOf(schema.column[col]) != -1) {
+      canBeNull.push(col);
+    }
+  }
+
+  var nullable = schema.constraint.nullable;
+  nullable.forEach(function(col) {
     var colName = tableName + '.' + col;
     if (colNames.indexOf(col) == -1) {
       throw new Error(colName + ' does not exist and thus cannot be nullable');
     }
 
-    if (notNullable.indexOf(col) != -1) {
+    if (canBeNull.indexOf(col) == -1 || notNullable.indexOf(col) != -1) {
       throw new Error(colName + ' cannot be nullable');
     }
   });
 
-  return schema;
+  return nullable;
 }
 
 
@@ -318,15 +327,6 @@ function checkConstraint(tableName, schemas, colNames, names) {
   var notNullable = [];
   var nullable = [];
   checkObject(tableName + '.constraint', CONSTRAINT_SCHEMA, schema);
-
-  // Identifying non-nullable columns.
-  var tableSchema = schemas[tableName];
-  for (var col in tableSchema.column) {
-    var columnType = tableSchema.column[col];
-    if (NULLABLE_COLUMN_TYPE.indexOf(columnType) == -1) {
-      notNullable = notNullable.concat(col);
-    }
-  }
 
   if (schema.hasOwnProperty('primaryKey')) {
     if (schema.primaryKey.length == 0) {
@@ -349,7 +349,8 @@ function checkConstraint(tableName, schemas, colNames, names) {
   }
 
   if (schema.hasOwnProperty('nullable')) {
-    nullable = checkNullable(tableName, schema.nullable, colNames, notNullable);
+    nullable = checkNullable(
+        tableName, schemas[tableName], colNames, notNullable);
   }
 
   return nullable;

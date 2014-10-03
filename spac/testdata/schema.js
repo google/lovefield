@@ -1,15 +1,23 @@
 goog.provide('lovefield.db.row.Album');
 goog.provide('lovefield.db.row.AlbumDbType');
 goog.provide('lovefield.db.row.AlbumType');
+goog.provide('lovefield.db.row.Curator');
+goog.provide('lovefield.db.row.CuratorDbType');
+goog.provide('lovefield.db.row.CuratorType');
 goog.provide('lovefield.db.row.Photo');
+goog.provide('lovefield.db.row.PhotoCurator');
+goog.provide('lovefield.db.row.PhotoCuratorDbType');
+goog.provide('lovefield.db.row.PhotoCuratorType');
 goog.provide('lovefield.db.row.PhotoDbType');
 goog.provide('lovefield.db.row.PhotoDetails');
 goog.provide('lovefield.db.row.PhotoDetailsDbType');
 goog.provide('lovefield.db.row.PhotoDetailsType');
 goog.provide('lovefield.db.row.PhotoType');
 goog.provide('lovefield.db.schema.Album');
+goog.provide('lovefield.db.schema.Curator');
 goog.provide('lovefield.db.schema.Database');
 goog.provide('lovefield.db.schema.Photo');
+goog.provide('lovefield.db.schema.PhotoCurator');
 goog.provide('lovefield.db.schema.PhotoDetails');
 
 goog.require('lf.Row');
@@ -36,6 +44,12 @@ lovefield.db.schema.Database = function() {
   /** @private {!lovefield.db.schema.PhotoDetails} */
   this.photoDetails_ = new lovefield.db.schema.PhotoDetails();
 
+  /** @private {!lovefield.db.schema.Curator} */
+  this.curator_ = new lovefield.db.schema.Curator();
+
+  /** @private {!lovefield.db.schema.PhotoCurator} */
+  this.photoCurator_ = new lovefield.db.schema.PhotoCurator();
+
 };
 
 
@@ -56,7 +70,9 @@ lovefield.db.schema.Database.prototype.getTables = function() {
   return [
     this.album_,
     this.photo_,
-    this.photoDetails_
+    this.photoDetails_,
+    this.curator_,
+    this.photoCurator_
   ];
 };
 
@@ -76,6 +92,18 @@ lovefield.db.schema.Database.prototype.getPhoto = function() {
 /** @return {!lovefield.db.schema.PhotoDetails} */
 lovefield.db.schema.Database.prototype.getPhotoDetails = function() {
   return this.photoDetails_;
+};
+
+
+/** @return {!lovefield.db.schema.Curator} */
+lovefield.db.schema.Database.prototype.getCurator = function() {
+  return this.curator_;
+};
+
+
+/** @return {!lovefield.db.schema.PhotoCurator} */
+lovefield.db.schema.Database.prototype.getPhotoCurator = function() {
+  return this.photoCurator_;
 };
 
 
@@ -894,5 +922,343 @@ lovefield.db.row.PhotoDetails.prototype.getTotalComments = function() {
 */
 lovefield.db.row.PhotoDetails.prototype.setTotalComments = function(value) {
   this.payload().totalComments = value;
+  return this;
+};
+
+
+
+/**
+ * @implements {lf.schema.Table.<!lovefield.db.row.CuratorType,
+ *     !lovefield.db.row.CuratorDbType>}
+ * @constructor
+ */
+lovefield.db.schema.Curator = function() {
+  /** @type {!lf.schema.BaseColumn.<number>} */
+  this.id = new lf.schema.BaseColumn(
+      this, 'id', true, lf.Type.INTEGER);
+
+  /** @type {!lf.schema.BaseColumn.<string>} */
+  this.name = new lf.schema.BaseColumn(
+      this, 'name', false, lf.Type.STRING);
+
+};
+
+
+/** @override */
+lovefield.db.schema.Curator.prototype.getName = function() {
+  return 'Curator';
+};
+
+
+/** @override */
+lovefield.db.schema.Curator.prototype.createRow = function(opt_value) {
+  return new lovefield.db.row.Curator(lf.Row.getNextId(), opt_value);
+};
+
+
+/** @override */
+lovefield.db.schema.Curator.prototype.deserializeRow = function(dbRecord) {
+  var rowId = dbRecord['id'];
+  var data = dbRecord['value'];
+  var payload = new lovefield.db.row.CuratorType();
+  payload.id = data.id;
+  payload.name = data.name;
+  return new lovefield.db.row.Curator(rowId, payload);
+};
+
+
+/** @override */
+lovefield.db.schema.Curator.prototype.getIndices = function() {
+  return [
+    new lf.schema.Index('Curator', 'pkCurator', true, ['id'])
+  ];
+};
+
+
+/** @override */
+lovefield.db.schema.Curator.prototype.getConstraint = function() {
+  var primaryKey = new lf.schema.Index('Curator', 'pkCurator', true, ['id']);
+  var nullable = [];
+  var foreignKeys = [];
+  var unique = [];
+  return new lf.schema.Constraint(
+      primaryKey, nullable, foreignKeys, unique);
+};
+
+
+
+/**
+ * @export
+ * @constructor
+ * @struct
+ * @final
+ */
+lovefield.db.row.CuratorType = function() {
+  /** @export @type {number} */
+  this.id;
+  /** @export @type {string} */
+  this.name;
+};
+
+
+
+/**
+ * @export
+ * @constructor
+ * @struct
+ * @final
+ */
+lovefield.db.row.CuratorDbType = function() {
+  /** @export @type {number} */
+  this.id;
+  /** @export @type {string} */
+  this.name;
+};
+
+
+
+/**
+ * Constructs a new Curator row.
+ * @constructor
+ * @extends {lf.Row.<!lovefield.db.row.CuratorType,
+ *     !lovefield.db.row.CuratorDbType>}
+ *
+ * @param {number} rowId The row ID.
+ * @param {!lovefield.db.row.CuratorType=} opt_payload
+ */
+lovefield.db.row.Curator = function(rowId, opt_payload) {
+  lovefield.db.row.Curator.base(this, 'constructor', rowId, opt_payload);
+};
+goog.inherits(lovefield.db.row.Curator, lf.Row);
+
+
+/** @override */
+lovefield.db.row.Curator.prototype.defaultPayload = function() {
+  var payload = new lovefield.db.row.CuratorType();
+  payload.id = 0;
+  payload.name = '';
+  return payload;
+};
+
+
+/** @override */
+lovefield.db.row.Curator.prototype.toDbPayload = function() {
+  var payload = new lovefield.db.row.CuratorDbType();
+  payload.id = this.payload().id;
+  payload.name = this.payload().name;
+  return payload;
+};
+
+
+/** @override */
+lovefield.db.row.Curator.prototype.keyOfIndex = function(indexName) {
+  switch (indexName) {
+    case 'Curator.pkCurator':
+      return this.payload().id;
+    case '##row_id##':
+      return this.id();
+    default:
+      break;
+  }
+  return null;
+};
+
+
+/** @return {number} */
+lovefield.db.row.Curator.prototype.getId = function() {
+  return this.payload().id;
+};
+
+
+/**
+ * @param {number} value
+ * @return {!lovefield.db.row.Curator}
+*/
+lovefield.db.row.Curator.prototype.setId = function(value) {
+  this.payload().id = value;
+  return this;
+};
+
+
+/** @return {string} */
+lovefield.db.row.Curator.prototype.getName = function() {
+  return this.payload().name;
+};
+
+
+/**
+ * @param {string} value
+ * @return {!lovefield.db.row.Curator}
+*/
+lovefield.db.row.Curator.prototype.setName = function(value) {
+  this.payload().name = value;
+  return this;
+};
+
+
+
+/**
+ * @implements {lf.schema.Table.<!lovefield.db.row.PhotoCuratorType,
+ *     !lovefield.db.row.PhotoCuratorDbType>}
+ * @constructor
+ */
+lovefield.db.schema.PhotoCurator = function() {
+  /** @type {!lf.schema.BaseColumn.<string>} */
+  this.photoId = new lf.schema.BaseColumn(
+      this, 'photoId', false, lf.Type.STRING);
+
+  /** @type {!lf.schema.BaseColumn.<number>} */
+  this.curator = new lf.schema.BaseColumn(
+      this, 'curator', false, lf.Type.INTEGER);
+
+};
+
+
+/** @override */
+lovefield.db.schema.PhotoCurator.prototype.getName = function() {
+  return 'PhotoCurator';
+};
+
+
+/** @override */
+lovefield.db.schema.PhotoCurator.prototype.createRow = function(opt_value) {
+  return new lovefield.db.row.PhotoCurator(lf.Row.getNextId(), opt_value);
+};
+
+
+/** @override */
+lovefield.db.schema.PhotoCurator.prototype.deserializeRow = function(dbRecord) {
+  var rowId = dbRecord['id'];
+  var data = dbRecord['value'];
+  var payload = new lovefield.db.row.PhotoCuratorType();
+  payload.photoId = data.photoId;
+  payload.curator = data.curator;
+  return new lovefield.db.row.PhotoCurator(rowId, payload);
+};
+
+
+/** @override */
+lovefield.db.schema.PhotoCurator.prototype.getIndices = function() {
+  return [
+
+  ];
+};
+
+
+/** @override */
+lovefield.db.schema.PhotoCurator.prototype.getConstraint = function() {
+  var primaryKey = null;
+  var nullable = [];
+  var foreignKeys = [];
+  var unique = [];
+  return new lf.schema.Constraint(
+      primaryKey, nullable, foreignKeys, unique);
+};
+
+
+
+/**
+ * @export
+ * @constructor
+ * @struct
+ * @final
+ */
+lovefield.db.row.PhotoCuratorType = function() {
+  /** @export @type {string} */
+  this.photoId;
+  /** @export @type {number} */
+  this.curator;
+};
+
+
+
+/**
+ * @export
+ * @constructor
+ * @struct
+ * @final
+ */
+lovefield.db.row.PhotoCuratorDbType = function() {
+  /** @export @type {string} */
+  this.photoId;
+  /** @export @type {number} */
+  this.curator;
+};
+
+
+
+/**
+ * Constructs a new PhotoCurator row.
+ * @constructor
+ * @extends {lf.Row.<!lovefield.db.row.PhotoCuratorType,
+ *     !lovefield.db.row.PhotoCuratorDbType>}
+ *
+ * @param {number} rowId The row ID.
+ * @param {!lovefield.db.row.PhotoCuratorType=} opt_payload
+ */
+lovefield.db.row.PhotoCurator = function(rowId, opt_payload) {
+  lovefield.db.row.PhotoCurator.base(this, 'constructor', rowId, opt_payload);
+};
+goog.inherits(lovefield.db.row.PhotoCurator, lf.Row);
+
+
+/** @override */
+lovefield.db.row.PhotoCurator.prototype.defaultPayload = function() {
+  var payload = new lovefield.db.row.PhotoCuratorType();
+  payload.photoId = '';
+  payload.curator = 0;
+  return payload;
+};
+
+
+/** @override */
+lovefield.db.row.PhotoCurator.prototype.toDbPayload = function() {
+  var payload = new lovefield.db.row.PhotoCuratorDbType();
+  payload.photoId = this.payload().photoId;
+  payload.curator = this.payload().curator;
+  return payload;
+};
+
+
+/** @override */
+lovefield.db.row.PhotoCurator.prototype.keyOfIndex = function(indexName) {
+  switch (indexName) {
+    case '##row_id##':
+      return this.id();
+    default:
+      break;
+  }
+  return null;
+};
+
+
+/** @return {string} */
+lovefield.db.row.PhotoCurator.prototype.getPhotoId = function() {
+  return this.payload().photoId;
+};
+
+
+/**
+ * @param {string} value
+ * @return {!lovefield.db.row.PhotoCurator}
+*/
+lovefield.db.row.PhotoCurator.prototype.setPhotoId = function(value) {
+  this.payload().photoId = value;
+  return this;
+};
+
+
+/** @return {number} */
+lovefield.db.row.PhotoCurator.prototype.getCurator = function() {
+  return this.payload().curator;
+};
+
+
+/**
+ * @param {number} value
+ * @return {!lovefield.db.row.PhotoCurator}
+*/
+lovefield.db.row.PhotoCurator.prototype.setCurator = function(value) {
+  this.payload().curator = value;
   return this;
 };

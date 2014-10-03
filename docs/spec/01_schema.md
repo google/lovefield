@@ -55,7 +55,7 @@ Columns are identified by column names, and column names must be unique within t
 * `datetime` (pseudo, will convert to timestamp integer internally, but nullable)
 * `integer` (32-bit integer, default to 0)
 * `number` (default to 0)
-* `string` (default to null)
+* `string` (default to empty string, but nullable)
 
 Lovefield does not support composite data type. Integer is called out from number because of its wide usage. Boolean, integer, and number fields are not nullable. Lovefield does not allow undefined in any of the field value.
 

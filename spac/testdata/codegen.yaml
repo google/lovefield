@@ -66,3 +66,27 @@ table:
           reference: Album
           remoteColumn: id
           cascade: true
+
+  Curator:
+    column:
+      id: integer
+      name: string
+    constraint:
+      primaryKey: [ id ]
+
+  PhotoCurator:
+    column:
+      photoId: string
+      curator: integer
+    constraint:
+      foreignKey:
+        fk_photoId:
+          localColumn: photoId
+          reference: Photo
+          remoteColumn: id
+          cascade: true
+        fk_curator:
+          localColumn: curator
+          reference: Curator
+          remoteColumn: id
+          cascade: true
