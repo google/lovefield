@@ -161,7 +161,7 @@ function testJournal_DeleteInsert_Uncommitted() {
 
   // Removing the row on a new journal.
   journal = new lf.cache.Journal([table]);
-  journal.remove(table, [row1.id()]);
+  journal.remove(table, [row1]);
 
   // Inserting a row that has the primary key that was just removed within the
   // same journal.
@@ -253,7 +253,7 @@ function testJournal_CacheMerge() {
   var row4 = new lf.Row(4, payload2);
   journal.insert(table, [row3]);
   journal.update(table, [row4]);
-  journal.remove(table, [1]);
+  journal.remove(table, [row]);
   journal.commit();
 
   assertEquals(2, env.cache.getCount());
@@ -297,7 +297,7 @@ function testJournal_IndexUpdate() {
   journal.insert(table, [row1, row2, row3]);
   assertArrayEquals([row1, row2, row3], journal.getTableRows(tableName));
 
-  journal.remove(table, [2]);
+  journal.remove(table, [row2]);
   assertArrayEquals([row1, row3], journal.getTableRows(tableName));
 
   journal.update(table, [row4]);
