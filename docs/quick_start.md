@@ -2,7 +2,7 @@
 
 ## Prerequisites
 
-You need to install the following programs for the [Compile](#Compile) step mentioned later in this guide.
+You need to install the following programs for the [Compile](#compile) step mentioned later in this guide.
 
 ### [node.js](http://nodejs.org)
 
@@ -68,7 +68,7 @@ Just run the tools/bundle.sh will give you the usage. You need to tell it where 
 ### Use in code
 
 ```html
-<script src=”mysrc/mydb_bundle.js”></script>
+<script src="mysrc/mydb_bundle.js"></script>
 <script>
 mydb.getInstance().then(
   function(db) {
@@ -77,7 +77,7 @@ mydb.getInstance().then(
     var query = db.select().
         from(card).
         where(
-          card.id.eq(‘12345’));
+          card.id.eq('12345'));
     return query.exec();
   }).then(function(results) {
   });
