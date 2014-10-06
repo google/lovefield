@@ -15,6 +15,7 @@
  * limitations under the License.
  */
 goog.setTestOnly();
+goog.require('goog.Promise');
 goog.require('goog.testing.AsyncTestCase');
 goog.require('goog.testing.jsunit');
 goog.require('hr.db');
@@ -216,6 +217,38 @@ function testTransaction_Write() {
     }
     asyncTestCase.continueTesting();
   });
+}
+
+
+/**
+ * Tests that SELECT queries are queued after overlapping write transaction
+ * finished.
+ */
+function testTransaction_Read() {
+  asyncTestCase.waitForAsync('testTransaction_Read');
+  assertEquals(0, cache.getCount());
+
+  rows = [];
+  for (var i = 0; i < ROW_COUNT; ++i) {
+    var job = lf.testing.hrSchemaSampleData.generateSampleJobData();
+    job.setId('jobId' + i.toString());
+    rows.push(job);
+  }
+
+  var newTitle = 'Quantum Physicist';
+  var insert = db.insert().into(j).values(rows);
+  var update = db.update(j).set(j.title, newTitle);
+  var select = db.select().from(j);
+  var tx = db.createTransaction(lf.TransactionType.READ_WRITE);
+  goog.Promise.all([tx.exec([insert, update]), select.exec()]).then(
+      function(results) {
+        var rows = results[1];
+        assertEquals(ROW_COUNT, rows.length);
+        for (var i = 0; i < rows.length; ++i) {
+          assertEquals(newTitle, rows[i]['title']);
+        }
+        asyncTestCase.continueTesting();
+      });
 }
 
 
