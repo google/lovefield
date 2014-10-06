@@ -22,8 +22,8 @@ To acquire the latest compiler and library, you need to have git installed, and 
 
 <pre>
 cd closure
-git5 clone https://github.com/google/closure-library.git
-git5 clone https://github.com/google/closure-compiler.git
+git clone https://github.com/google/closure-library.git
+git clone https://github.com/google/closure-compiler.git
 cd closure-compiler
 ant jar
 </pre>
