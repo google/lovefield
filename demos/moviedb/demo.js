@@ -68,13 +68,10 @@ function clearDb() {
  */
 function addSampleData() {
   return Promise.all([
-    insertPersonData('actor1.json', db.getSchema().getActor()),
-    insertPersonData('actor2.json', db.getSchema().getActor()),
-    insertPersonData('actor3.json', db.getSchema().getActor()),
+    insertPersonData('actor.json', db.getSchema().getActor()),
     insertPersonData('director.json', db.getSchema().getDirector()),
     insertData('movie.json', db.getSchema().getMovie()),
-    insertData('movieactor1.json', db.getSchema().getMovieActor()),
-    insertData('movieactor2.json', db.getSchema().getMovieActor()),
+    insertData('movieactor.json', db.getSchema().getMovieActor()),
     insertData('moviedirector.json', db.getSchema().getMovieDirector()),
     insertData('moviegenre.json', db.getSchema().getMovieGenre())
   ]);
@@ -100,18 +97,6 @@ function insertData(filename, tableSchema) {
 
 
 /**
- * @param {number} date Date in YYYYMMDD number format.
- * @return {!Date}
- */
-function convertDate(date) {
-  var year = Math.round(date / 10000);
-  var month = Math.round((date / 100) % 100 - 1);
-  var day = Math.round(date % 100);
-  return new Date(year, month, day);
-}
-
-
-/**
  * Inserts data in the database.
  * @param {string} filename The name of the file holding JSON data.
  * @param {!movie.db.schema.Actor|!movie.db.schema.Director} tableSchema The
@@ -122,9 +107,9 @@ function insertPersonData(filename, tableSchema) {
   return getSampleData(filename).then(
       function(data) {
         var rows = data.map(function(obj) {
-          obj.dateOfBirth = convertDate(obj.dateOfBirth);
+          obj.dateOfBirth = new Date(obj.dateOfBirth);
           obj.dateOfDeath = !goog.isNull(obj.dateOfDeath) ?
-              convertDate(obj.dateOfDeath) : null;
+              new Date(obj.dateOfDeath) : null;
           return tableSchema.createRow(obj);
         });
         return db.insert().into(tableSchema).values(rows).exec();
