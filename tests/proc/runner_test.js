@@ -19,6 +19,7 @@ goog.require('goog.Promise');
 goog.require('goog.testing.AsyncTestCase');
 goog.require('goog.testing.jsunit');
 goog.require('hr.db');
+goog.require('lf.Exception');
 goog.require('lf.Global');
 goog.require('lf.TransactionType');
 goog.require('lf.cache.Journal');
@@ -247,6 +248,30 @@ function testTransaction_Read() {
         for (var i = 0; i < rows.length; ++i) {
           assertEquals(newTitle, rows[i]['title']);
         }
+        asyncTestCase.continueTesting();
+      });
+}
+
+
+/**
+ * Testing that when a transaction fails to execute a rejected promise is
+ * returned.
+ */
+function testTransaction_Failure() {
+  asyncTestCase.waitForAsync('testTransaction_Failure');
+  assertEquals(0, cache.getCount());
+
+  var job = lf.testing.hrSchemaSampleData.generateSampleJobData();
+  // Creating two queries to be executed within the same transaction. The second
+  // query will fail because of a primary key constraint violation.
+  var insert = db.insert().into(j).values([job]);
+  var insertAgain = db.insert().into(j).values([job]);
+
+  var tx = db.createTransaction(lf.TransactionType.READ_WRITE);
+  tx.exec([insert, insertAgain]).then(
+      fail,
+      function(e) {
+        assertEquals(lf.Exception.Type.CONSTRAINT, e.name);
         asyncTestCase.continueTesting();
       });
 }
