@@ -29,7 +29,7 @@ var asyncTestCase = goog.testing.AsyncTestCase.createAndInstall('LfPerfTest');
 
 
 /** @type {number} */
-asyncTestCase.stepTimeout = 600 * 1000;  // 10 minutes
+asyncTestCase.stepTimeout = 30 * 60 * 1000;  // 30 minutes
 
 
 /** @const {number} */
