@@ -6,12 +6,12 @@ Sample data have kindly been provided by UCLA professor Junghoo "John" Cho's
 database class at http://oak.cs.ucla.edu/cs143/project/data/data.zip.
 
 ```bash
-bash ../../tools/bundle.sh \
+node ../../tools/bundle.js \
   --schema moviedb_schema.yaml \
   --namespace movie.db \
   --outputdir lib \
-  --compiler <path/to/compiler.jar> \
-  --library <path/to/closure-library>
+  --compiler <path of compiler.jar> \
+  --library <path of closure-library>
 ```
 
 The command will create lib/movie_db_bundle.js. Now start a local HTTPServer by

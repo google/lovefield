@@ -4,6 +4,11 @@
 
 You need to install the following programs for the [Compile](#compile) step mentioned later in this guide.
 
+### [Python](http://www.python.org) and [Java](http://www.java.com)
+
+For the toolchain included in Lovefield to work correctly, you need to have
+Python and Java installed and invocable from PATH.
+
 ### [node.js](http://nodejs.org)
 
 Besides using the installer from nodejs.org, you can also use [nvm](https://github.com/creationix/nvm) to install node.js.
@@ -56,13 +61,18 @@ table:
 
 ### Compile
 
-Run tools/bundle.sh to create compiled bundle for your schema. This bundle will auto generate some JavaScript code and compile them with all needed library into a bundled JavaScript file. Currently the script is tested on Ubuntu only.
+Use nodejs to execute tools/bundle.js to create compiled bundle for your schema. This bundle will auto generate some JavaScript code and compile them with all needed library into a bundled JavaScript file.
 
 ```bash
-bash -c tools/bundle.sh --schema schema.yaml --namespace mydb
+node tools/bundle.js \
+  --schema my_schema.yaml \
+  --namespace my.namespace \
+  --outputdir ~/mypath \
+  --compiler ~/src/closure-compiler/build/compiler.jar \
+  --library ~/src/closure-library
 ```
 
-Just run the tools/bundle.sh will give you the usage. You need to tell it where the Closure compiler and library are, and you can also customize the output path.
+`node tools/bundle.js` will give you the usage. You need to tell it where the Closure compiler and library are, and you can also customize the output path.
 
 
 ### Use in code
