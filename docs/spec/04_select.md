@@ -60,16 +60,16 @@ Sources are provided by the `from()` function of select query. The `from()` func
 <table>
   <tr>
     <td>
-```sql
+      <pre>
 -- Explicit inner join
 SELECT * FROM photo
   INNER JOIN album
     ON photo.albumId = album.id
   WHERE album.id = '1'
-```
+      </pre>
     </td>
     <td>
-```js
+      <pre>
 var p = db.getSchema().getPhoto();
 var a = db.getSchema().getAlbum();
 db.select().
@@ -77,20 +77,20 @@ db.select().
     innerJoin(a, p.albumId.eq(a.id)).
     where(a.id.eq('1')).
     exec();
-```
+      </pre>
     </td>
   </tr>
   <tr>
     <td>
-```sql
+      <pre>
 -- Implicit inner join
 SELECT * FROM photo p, album a
   WHERE p.albumId = a.id
     AND a.id = '1'
-```
+      </pre>
     </td>
     <td>
-```js
+      <pre>
 var p = db.getSchema().getPhoto();
 var a = db.getSchema().getAlbum();
 db.select().
@@ -99,28 +99,28 @@ db.select().
         p.albumId.eq(a.id),
         a.id.eq('1'))).
     exec();
-```
+      </pre>
     </td>
   </tr>
   <tr>
     <td>
-```sql
+      <pre>
 -- Left outer join
 SELECT p.id, a.id, a.name
   FROM photo p
   LEFT OUTER JOIN album a
     ON p.albumId = a.id
-```
+      </pre>
     </td>
     <td>
-```js
+      <pre>
 var p = db.getSchema().getPhoto();
 var a = db.getSchema().getAlbum();
 db.select(p.id, a.id, a.name).
     from(p).
     leftOuterJoin(a, p.albumId.eq(a.id)).
     exec();
-```
+      </pre>
     </td>
   </tr>
 </table>
