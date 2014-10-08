@@ -362,3 +362,64 @@ function testJournal_GetIndexRange() {
   rowIds = journal.getIndexRange(indexSchema, [keyRange1, keyRange2]);
   assertSameElements([row1.id(), row2.id()], rowIds);
 }
+
+
+/**
+ * Tests rolling back a journal.
+ */
+function testJournal_Rollback() {
+  var table = env.schema.getTables()[0];
+
+  var rowToInsert = table.createRow(
+      {'id': 'add', 'name': 'DummyName'});
+  var rowToModifyOld = table.createRow(
+      {'id': 'modify', 'name': 'DummyName'});
+  var rowToModifyNew = new lf.testing.MockSchema.Row(
+      rowToModifyOld.id(), {'id': 'modify', 'name': 'UpdatedDummyName'});
+  var rowToRemove = table.createRow(
+      {'id': 'delete', 'name': 'DummyName'});
+
+  var pkIndexSchema = table.getConstraint().getPrimaryKey();
+  var pkIndex = env.indexStore.get(pkIndexSchema.getNormalizedName());
+  var rowIdIndex = env.indexStore.getRowIdIndex(table.getName());
+
+
+  /**
+   * Asserts the initial state of the cache and indices.
+   */
+  var assertInitialState = function() {
+    assertEquals(2, env.cache.getCount());
+
+    assertTrue(pkIndex.containsKey(rowToModifyOld.payload()['id']));
+    assertTrue(pkIndex.containsKey(rowToRemove.payload()['id']));
+    assertFalse(pkIndex.containsKey(rowToInsert.payload()['id']));
+
+    assertTrue(rowIdIndex.containsKey(rowToModifyOld.id()));
+    assertTrue(rowIdIndex.containsKey(rowToRemove.id()));
+    assertFalse(rowIdIndex.containsKey(rowToInsert.id()));
+
+    var row = env.cache.get([rowToModifyOld.id()])[0];
+    assertEquals(
+        rowToModifyOld.payload()['name'],
+        row.payload()['name']);
+  };
+
+  // Setting up the cache and indices to be in the initial state.
+  var journal = new lf.cache.Journal([table]);
+  journal.insert(table, [rowToModifyOld]);
+  journal.insert(table, [rowToRemove]);
+  journal.commit();
+
+  assertInitialState();
+
+  // Modifying indices and cache.
+  journal = new lf.cache.Journal([table]);
+  journal.insert(table, [rowToInsert]);
+  journal.update(table, [rowToModifyNew]);
+  journal.remove(table, [rowToRemove]);
+
+  // Rolling back the journal and asserting that indices and cache are in the
+  // initial state again.
+  journal.rollback();
+  assertInitialState();
+}

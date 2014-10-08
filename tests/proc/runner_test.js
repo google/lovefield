@@ -255,15 +255,17 @@ function testTransaction_Read() {
 
 /**
  * Testing that when a transaction fails to execute a rejected promise is
- * returned.
+ * returned and that indices, cache and backstore are in the state prior to the
+ * transaction have been started.
  */
-function testTransaction_Failure() {
-  asyncTestCase.waitForAsync('testTransaction_Failure');
+function testTransaction_Rollback() {
+  asyncTestCase.waitForAsync('testTransaction_Rollback');
   assertEquals(0, cache.getCount());
 
   var job = lf.testing.hrSchemaSampleData.generateSampleJobData();
   // Creating two queries to be executed within the same transaction. The second
-  // query will fail because of a primary key constraint violation.
+  // query will fail because of a primary key constraint violation. Expecting
+  // the entire transaction to be rolled back as if it never happened.
   var insert = db.insert().into(j).values([job]);
   var insertAgain = db.insert().into(j).values([job]);
 
@@ -272,7 +274,12 @@ function testTransaction_Failure() {
       fail,
       function(e) {
         assertEquals(lf.Exception.Type.CONSTRAINT, e.name);
-        asyncTestCase.continueTesting();
+        assertEquals(0, cache.getCount());
+        selectAll().then(
+            function(results) {
+              assertEquals(0, results.length);
+              asyncTestCase.continueTesting();
+            });
       });
 }
 
