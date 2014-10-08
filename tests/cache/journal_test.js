@@ -127,12 +127,12 @@ function testJournal_Insert_ExistsUncommitted() {
   var primaryKey = '100';
   var row1 = table.createRow({'id': primaryKey, 'name': 'DummyName'});
 
-  // Inserting row without committing, which means that cache and indices have
-  // not been updated yet.
+  // Inserting row without committing. Indices and cache are updated immediately
+  // regardless of committing or not.
   var journal = new lf.cache.Journal([table]);
   journal.insert(table, [row1]);
-  assertEquals(0, env.cache.getCount());
-  assertFalse(pkIndex.containsKey(primaryKey));
+  assertEquals(1, env.cache.getCount());
+  assertTrue(pkIndex.containsKey(primaryKey));
 
   // Inserting a row with the same primary key.
   var row2 = table.createRow({'id': primaryKey, 'name': 'OtherDummyName'});
@@ -209,9 +209,9 @@ function testJournal_InsertOrReplace() {
   journal.insertOrReplace(table, [row1]);
   journal.commit();
 
-  assertEquals(1, env.cache.getCount());
   assertTrue(pkIndex.containsKey(primaryKey));
   assertTrue(rowIdIndex.containsKey(row1.id()));
+  assertEquals(1, env.cache.getCount());
 
   // Now testing case where the row is being replaced. There should be no
   // exception thrown.
@@ -243,11 +243,7 @@ function testJournal_CacheMerge() {
   assertObjectEquals(payload, results[1].payload());
   assertObjectEquals(payload, results[2].payload());
 
-
   var journal = new lf.cache.Journal([table]);
-  var snapshot = journal.getChangedRows(table.getName());
-  assertNull(snapshot.get(0, null));
-  assertNull(snapshot.get(3, null));
   var payload2 = {'id': 'nothing'};
   var row3 = new lf.Row(0, payload2);
   var row4 = new lf.Row(4, payload2);
@@ -344,11 +340,11 @@ function testJournal_GetIndexRange() {
   var row2 = new lf.testing.MockSchema.Row(
       2, {'id': 'dummyId2', 'name': 'cdc'});
   var row3 = new lf.testing.MockSchema.Row(
-      3, {'id': 'dummyId3', 'name': 'bbba'});
+      3, {'id': 'dummyId3', 'name': 'abb'});
 
   // Adding row3 in the index such that it is within the range [aaa,bbb].
+  journal.insert(table, [row3]);
   var index = env.indexStore.get(indexSchema.getNormalizedName());
-  index.set('abb', row3.id());
   var rowIds = index.getRange(keyRange1);
   assertSameElements([row3.id()], rowIds);
 
@@ -360,7 +356,9 @@ function testJournal_GetIndexRange() {
   // Inserting new rows within this journal, where row1 and row2 are within the
   // specified range, and modifying row3 such that it is not within range
   // anymore.
-  journal.insertOrReplace(table, [row1, row2, row3]);
+  var row3Updated = new lf.testing.MockSchema.Row(
+      3, {'id': 'dummyId3', 'name': 'bbba'});
+  journal.insertOrReplace(table, [row1, row2, row3Updated]);
   rowIds = journal.getIndexRange(indexSchema, [keyRange1, keyRange2]);
   assertSameElements([row1.id(), row2.id()], rowIds);
 }
