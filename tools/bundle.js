@@ -38,11 +38,12 @@ function usage() {
 
 // Command line options
 var knownOpts = {
-  'schema': [String],
+  'schema': pathMod,
   'namespace': [String],
-  'compiler': [String, null],
+  'compiler': pathMod,
   'library': [String, null],
-  'outputdir': [String, null]
+  'outputdir': pathMod,
+  'debug': [Boolean, null]
 };
 var args = noptMod(knownOpts);
 
@@ -57,31 +58,19 @@ var namespace = args.namespace;
 
 
 /** @type {string} */
-var schemaPath;
+var schemaPath = args.schema;
 
 
 /** @type {string} */
-var outputDir;
+var outputDir = args.outputdir || process.cwd();
 
 
 /** @type {string} */
-var compilerPath;
+var compilerPath = args.compiler || process.env['CLOSURE_COMPILER'];
 
 
 /** @type {string} */
-var closureDir;
-
-try {
-  schemaPath = pathMod.resolve(args.schema);
-  outputDir = pathMod.resolve(
-      pathMod.join(process.cwd(), args.outputdir || ''));
-  compilerPath = pathMod.resolve(args.compiler ||
-      process.env['CLOSURE_COMPILER']);
-  closureDir = pathMod.resolve(args.library || process.env['CLOSURE_LIBRARY']);
-} catch (e) {
-  // Swallow path resolve exceptions, non-resolved paths will be treated as
-  // empty path and checked in following logic (which displays usage).
-}
+var closureDir = args.library || process.env['CLOSURE_LIBRARY'];
 
 if (!(schemaPath && outputDir && compilerPath && closureDir)) {
   usage();
@@ -123,7 +112,7 @@ function runClosure() {
     closureBuilder,
     '--root=' + root,
     '--root=' + closureDir,
-    '--output_mode=compiled',
+    '--output_mode=' + (args.debug ? 'script' : 'compiled'),
     '--namespace=' + namespace,
     '--compiler_jar=' + compilerPath,
     '--compiler_flags="--language_in=ECMASCRIPT5_STRICT"'
