@@ -16,21 +16,20 @@
  */
 
 
+// The following two lines are here to make linter happy. They have no actual
+// effects.
+goog.require('lf.fn');
+goog.require('lf.op');
+
+
 /** @type {?movie.db.Database} */
 var db = null;
 
 
 // When the page loads.
 $(function() {
-  $('#all_movies').hide();
-  $('#deceased').hide();
-
   main().then(function() {
-    $('#all_movies').show();
-    $('#deceased').show();
-
-    $('#all_movies').click(selectAllMovies);
-    $('#deceased').click(selectDeceasedActors);
+    selectAllMovies();
   });
 });
 
@@ -42,23 +41,8 @@ function main() {
     db = database;
     return checkForExistingData();
   }).then(function(dataExist) {
-    return dataExist ? Promise.resolve() :
-        clearDb().then(function() { return addSampleData(); });
+    return dataExist ? Promise.resolve() : addSampleData();
   });
-}
-
-
-/**
- * Deletes the contents of all tables.
- * @return {!IThenable}
- */
-function clearDb() {
-  var tables = db.getSchema().getTables();
-  var deletePromises = tables.map(function(table) {
-    return db.delete().from(table).exec();
-  });
-
-  return Promise.all(deletePromises);
 }
 
 
@@ -147,10 +131,10 @@ function getSampleData(filename) {
  * sample data.
  */
 function checkForExistingData() {
-  var actor = db.getSchema().getActor();
-  return db.select().from(actor).where(actor.id.eq(1)).exec().then(
-      function(results) {
-        return results.length > 0;
+  var movie = db.getSchema().getMovie();
+  return db.select(lf.fn.count(movie.id)).from(movie).exec().then(
+      function(rows) {
+        return rows[0]['count_id'] > 0;
       });
 }
 
@@ -160,70 +144,113 @@ function checkForExistingData() {
  */
 function selectAllMovies() {
   var movie = db.getSchema().getMovie();
-  db.select(movie.title, movie.year, movie.rating).from(movie).exec().then(
+  db.select(movie.id, movie.title, movie.year).
+      from(movie).exec().then(
       function(results) {
-        displayResults(results, ['title', 'year', 'rating']);
+        $('#master').empty();
+        $('#master').append(createTable(results, ['id', 'title', 'year']));
+        var grid = $('#master').
+            children([0]).
+            addClass('display compact cell-border').
+            dataTable();
+        grid.$('tr').click(function() {
+          var id = grid.fnGetData(this)[0];
+          generateDetails(id);
+        });
       });
 }
 
 
 /**
- * Selects all actors who have died.
+ * Creates table.
+ * @param {!Array.<!Object>} rows
+ * @param {!Array.<string>} fields The fields to be displayed.
+ * @return {string} The inner HTML created.
  */
-function selectDeceasedActors() {
-  var actor = db.getSchema().getActor();
-  db.select(
-      actor.firstName, actor.lastName, actor.dateOfBirth, actor.dateOfDeath).
-      from(actor).
-      where(actor.dateOfDeath.isNotNull()).
-      exec().then(
-          function(results) {
-            displayResults(
-                results,
-                ['firstName', 'lastName', 'dateOfBirth', 'dateOfDeath']);
-          });
+function createTable(rows, fields) {
+  var content = '<table><thead><tr>';
+  fields.forEach(function(title) {
+    content += '<td>' + title + '</td>';
+  });
+  content += '</tr></thead><tbody>';
+  rows.forEach(function(row) {
+    content += '<tr>';
+    fields.forEach(function(field) {
+      content += '<td>' + row[field].toString() + '</td>';
+    });
+    content += '</tr>';
+  });
+
+  return content;
 }
 
 
 /**
- * Displays the given results to the user.
- * @param {!Array.<!Object>} results
- * @param {!Array.<string>} fields The fields to be displayed.
+ * Display details results for selected movie.
+ * @param {string} id
  */
-function displayResults(results, fields) {
-  // Populating header and footer.
-  var getTitleRow = function(containerEl, fields) {
-    var titleRow = $('<tr>');
-    fields.forEach(function(field) {
-      titleRow.append($('<th>').html(field));
-    });
-    containerEl.append(titleRow);
-    return containerEl;
-  };
+function generateDetails(id) {
+  var m = db.getSchema().getMovie();
+  var ma = db.getSchema().getMovieActor();
+  var md = db.getSchema().getMovieDirector();
+  var a = db.getSchema().getActor();
+  var d = db.getSchema().getDirector();
 
-  var tableEl = $('#results');
-
-  // Clearing previous results.
-  if ($.fn.DataTable.isDataTable('#results')) {
-    tableEl.DataTable().destroy();
-    tableEl.empty();
-  }
-
-  tableEl.append(getTitleRow($('<thead>'), fields));
-  tableEl.append(getTitleRow($('<tfoot>'), fields));
-
-  // Populating data rows.
-  results.forEach(function(obj) {
-    var tableRow = $('<tr>');
-    fields.forEach(function(field) {
-      var data = obj[field].toString();
-      if (field.indexOf('date') == 0) {
-        data = data.replace(/ 00:00:00 GMT-\d+/, '');
-      }
-      tableRow.append($('<td>').html(data));
-    });
-    tableEl.append(tableRow);
+  var details = {};
+  var promises = [];
+  promises.push(
+      db.select().
+          from(m).
+          where(m.id.eq(id)).
+          exec().
+          then(function(rows) {
+            details['title'] = rows[0]['title'];
+            details['year'] = rows[0]['year'];
+            details['rating'] = rows[0]['rating'];
+            details['company'] = rows[0]['company'];
+          }));
+  promises.push(
+      db.select().
+          from(ma).
+          where(ma.movieId.eq(id)).
+          innerJoin(a, a.id.eq(ma.actorId)).
+          exec().then(function(rows) {
+            details['actors'] = rows.map(function(row) {
+              return row['Actor']['firstName'] + ' ' + row['Actor']['lastName'];
+            }).join(', ');
+          }));
+  promises.push(
+      db.select().
+          from(md, d).
+          where(lf.op.and(md.movieId.eq(id), d.id.eq(md.directorId))).
+          exec().then(function(rows) {
+            details['directors'] = rows.map(function(row) {
+              return row['Director']['firstName'] + ' ' +
+                  row['Director']['lastName'];
+            }).join(', ');
+          }));
+  Promise.all(promises).then(function() {
+    displayDetails(details);
   });
+}
 
-  tableEl.DataTable();
+
+/**
+ * @param {!Object} details
+ */
+function displayDetails(details) {
+  var fields = ['title', 'year', 'rating', 'company', 'directors', 'actors'];
+  var titles = fields.map(function(item) {
+    return item.charAt(0).toUpperCase() + item.slice(1);
+  });
+  var content = '<table id="details_list"><tbody>';
+  fields.forEach(function(item, i) {
+    content += '<tr><td>' + titles[i] + '</td><td>' +
+        details[item] + '</td></tr>';
+  });
+  content += '</tbody></table>';
+  $('#slave').empty();
+  $('#slave').append('<h2>Movie Details</h2>');
+  $('#slave').append(content);
+  $('#details_list').addClass('display compact cell-border').dataTable();
 }
