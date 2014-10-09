@@ -938,7 +938,7 @@ CodeGenerator.prototype.getIndices_ = function(table) {
     }
 
     if (table.constraint.unique) {
-      for (var i = 0; i < table.constraint.unique; ++i) {
+      for (var i = 0; i < table.constraint.unique.length; ++i) {
         var unq = table.constraint.unique[i];
         var cols = unq.column.join(', \'');
         results.push(header + unq.name + '\', true, [\'' + cols + '\'])');

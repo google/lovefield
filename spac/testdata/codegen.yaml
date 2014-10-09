@@ -73,6 +73,9 @@ table:
       name: string
     constraint:
       primaryKey: [ id ]
+      unique:
+        uq_name:
+          column: [ name ]
 
   PhotoCurator:
     column:

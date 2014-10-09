@@ -939,7 +939,7 @@ lovefield.db.schema.Curator = function() {
 
   /** @type {!lf.schema.BaseColumn.<string>} */
   this.name = new lf.schema.BaseColumn(
-      this, 'name', false, lf.Type.STRING);
+      this, 'name', true, lf.Type.STRING);
 
 };
 
@@ -970,7 +970,8 @@ lovefield.db.schema.Curator.prototype.deserializeRow = function(dbRecord) {
 /** @override */
 lovefield.db.schema.Curator.prototype.getIndices = function() {
   return [
-    new lf.schema.Index('Curator', 'pkCurator', true, ['id'])
+    new lf.schema.Index('Curator', 'pkCurator', true, ['id']),
+    new lf.schema.Index('Curator', 'uq_name', true, ['name'])
   ];
 };
 
