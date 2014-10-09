@@ -170,6 +170,133 @@ function testJournal_Insert_PrimaryKeyViolation3() {
 
 
 /**
+ * Tests that update() succeeds if there is no primary key violation.
+ */
+function testJournal_Update_NoPrimaryKeyViolation() {
+  var table = env.schema.getTables()[0];
+  var pkIndexSchema = table.getConstraint().getPrimaryKey();
+  var pkIndex = env.indexStore.get(pkIndexSchema.getNormalizedName());
+
+  var row = table.createRow({'id': 'pk1', 'name': 'DummyName'});
+  var journal = new lf.cache.Journal([table]);
+  journal.insert(table, [row]);
+  journal.commit();
+  assertEquals(1, env.cache.getCount());
+  assertTrue(pkIndex.containsKey(row.payload()['id']));
+
+  // Attempting to update a column that is not the primary key.
+  var rowUpdated1 = new lf.testing.MockSchema.Row(
+      row.id(), {'id': row.payload()['id'], 'name': 'OtherDummyName'});
+
+  journal = new lf.cache.Journal([table]);
+  journal.update(table, [rowUpdated1]);
+  journal.commit();
+
+  // Attempting to update the primary key column.
+  var rowUpdated2 = new lf.testing.MockSchema.Row(
+      row.id(), {'id': 'otherPk', 'name': 'OtherDummyName'});
+  journal = new lf.cache.Journal([table]);
+  journal.update(table, [rowUpdated2]);
+  journal.commit();
+
+  assertFalse(pkIndex.containsKey(row.payload()['id']));
+  assertTrue(pkIndex.containsKey(rowUpdated2.payload()['id']));
+}
+
+
+/**
+ * Tests the case where a row is updated to have a primary key that already
+ * exists from a previously committed journal.
+ */
+function testJournal_Update_PrimaryKeyViolation1() {
+  var table = env.schema.getTables()[0];
+  var pkIndexSchema = table.getConstraint().getPrimaryKey();
+  var pkIndex = env.indexStore.get(pkIndexSchema.getNormalizedName());
+
+  var row1 = table.createRow({'id': 'pk1', 'name': 'DummyName'});
+  var row2 = table.createRow({'id': 'pk2', 'name': 'DummyName'});
+
+  var journal = new lf.cache.Journal([table]);
+  journal.insert(table, [row1, row2]);
+  journal.commit();
+  assertEquals(2, env.cache.getCount());
+  assertTrue(pkIndex.containsKey(row1.payload()['id']));
+  assertTrue(pkIndex.containsKey(row2.payload()['id']));
+
+  // Attempting to update row2 to have the same primary key as row1.
+  var row2Updated = new lf.testing.MockSchema.Row(
+      row2.id(), {'id': row1.payload()['id'], 'name': 'OtherDummyName'});
+
+  journal = new lf.cache.Journal([table]);
+  assertThrowsException(
+      journal.update.bind(journal, table, [row2Updated]),
+      lf.Exception.Type.CONSTRAINT);
+}
+
+
+/**
+ * Tests the case where a row is updated to have a primary key that already
+ * exists from a row that has been added within the same journal.
+ */
+function testJournal_Update_PrimaryKeyViolation2() {
+  var table = env.schema.getTables()[0];
+  var pkIndexSchema = table.getConstraint().getPrimaryKey();
+  var pkIndex = env.indexStore.get(pkIndexSchema.getNormalizedName());
+
+  var row1 = table.createRow({'id': 'pk1', 'name': 'DummyName'});
+  var row2 = table.createRow({'id': 'pk2', 'name': 'DummyName'});
+
+  var journal = new lf.cache.Journal([table]);
+  journal.insert(table, [row1, row2]);
+  assertEquals(2, env.cache.getCount());
+  assertTrue(pkIndex.containsKey(row1.payload()['id']));
+  assertTrue(pkIndex.containsKey(row2.payload()['id']));
+
+  // Attempting to update row2 to have the same primary key as row1.
+  var row2Updated = new lf.testing.MockSchema.Row(
+      row2.id(), {'id': row1.payload()['id'], 'name': 'OtherDummyName'});
+  assertThrowsException(
+      journal.update.bind(journal, table, [row2Updated]),
+      lf.Exception.Type.CONSTRAINT);
+}
+
+
+/**
+ * Tests the case where multiple rows are updated to have the same primary key
+ * and that primary key does not already exist.
+ */
+function testJournal_Update_PrimaryKeyViolation3() {
+  var table = env.schema.getTables()[0];
+  var pkIndexSchema = table.getConstraint().getPrimaryKey();
+  var pkIndex = env.indexStore.get(pkIndexSchema.getNormalizedName());
+
+  var rows = [];
+  for (var i = 0; i < 3; i++) {
+    rows.push(table.createRow(
+        {'id': 'pk' + i.toString(), 'name': 'DummyName'}));
+  }
+
+  var journal = new lf.cache.Journal([table]);
+  journal.insert(table, rows);
+  journal.commit();
+  assertEquals(rows.length, env.cache.getCount());
+  rows.forEach(function(row) {
+    assertTrue(pkIndex.containsKey(row.payload()['id']));
+  });
+
+  var rowsUpdated = rows.map(function(row) {
+    return new lf.testing.MockSchema.Row(
+        row.id(), {'id': 'somePk', 'name': 'DummyName'});
+  });
+
+  journal = new lf.cache.Journal([table]);
+  assertThrowsException(
+      journal.update.bind(journal, table, rowsUpdated),
+      lf.Exception.Type.CONSTRAINT);
+}
+
+
+/**
  * Tests the case where a row that has been deleted previously within the same
  * uncommitted journal is inserted.
  */
