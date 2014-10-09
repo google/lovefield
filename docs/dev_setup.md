@@ -1,16 +1,16 @@
 # Dev Setup for Lovefield
 
-The following assumes that Ubuntu is used. Windows and Mac instructions will be added in the (relatively distant) future.
-
 ## Closure
 
 Closure compiler and closure library must be installed to develop Lovefield. See [Closure Tools](https://developers.google.com/closure/) for more information.
 
 ## node.js
 
-Lovefield's SPAC (Schema Parser and Code-generator) uses node.js to parse the user-provided schema and to generate code. The easy way to install node.js is `apt-get install nodejs`. However, we strongly discourage that, i.e. *DON'T DO IT*.
+Lovefield's SPAC (Schema Parser and Code-generator) uses node.js to parse the user-provided schema and to generate code.
 
-The recommended way of doing things:
+### Ubuntu
+
+The easy way to install node.js is `apt-get install nodejs`. However, we strongly discourage that, i.e. *DON'T DO IT*. The recommended way of doing things:
 
 1. Remove all existing node packages
 ```bash
@@ -34,15 +34,38 @@ nvm install v0.11
 wget -qO- https://npmjs.org/install.sh | sh
 ```
 
-5. Install dependencies
+### Mac
+
+1. Install [Homebrew](http://brew.sh) if you have not done so.
+
+2. Install nvm: `brew install nvm`
+
+3. Follow Ubuntu step 3 and 4.
+
+### Windows
+
+1. Install [nvmw](https://github.com/hakobera/nvmw). You also need to download a working nodejs from http://nodejs.org/dist and place it under nvmw directory. For example, download http://nodejs.org/dist/v0.10.32/x64/*.exe and place them under `%HOMEDRIVE%%HOMEPATH%\.nvmw\v0.10.32`.
+
+2. Download latest npm zip from http://nodejs.org/dist/npm and extract them to  `%HOMEDRIVE%%HOMEPATH%\.nvmw\<your node version>`.
+
+### Common for all platforms
+
+Install dependencies
 ```bash
-npm install -g glob js-yaml nopts
+npm install -g glob js-yaml nopt http-server
 ```
 
 For daily uses, use nvm to select from different node.js versions, so that you can easily reproduce bugs that might plague only a specific version of node.js:
 
+#### Linux / Mac
 ```bash
-nvm use v0.11  # use node.js 0.11
+nvm use 0.11  # use node.js 0.11.*, pick the latest one
+node
+```
+
+#### Windows
+```
+nvmw use 0.11.14  :: nvmw needs exact version
 node
 ```
 
