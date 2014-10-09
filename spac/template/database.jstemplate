@@ -11,6 +11,10 @@ goog.require('lf.Database');
 goog.require('lf.Exception');
 goog.require('lf.base');
 goog.require('lf.base.BackStoreType');
+/** @suppress {extraRequire} */
+goog.require('lf.fn');
+/** @suppress {extraRequire} */
+goog.require('lf.op');
 goog.require('lf.query.DeleteBuilder');
 goog.require('lf.query.InsertBuilder');
 goog.require('lf.query.SelectBuilder');
