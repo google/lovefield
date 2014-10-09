@@ -91,7 +91,7 @@ function testJournal_Insert_New() {
  * Tests the case where a row that has been inserted via a previous, already
  * committed journal is inserted.
  */
-function testJournal_Insert_ExistsCommitted() {
+function testJournal_Insert_PrimaryKeyViolation1() {
   var table = env.schema.getTables()[0];
 
   var rowId = 1;
@@ -119,7 +119,7 @@ function testJournal_Insert_ExistsCommitted() {
  * Tests the case where a row that has been inserted previously within the same
  * uncommitted journal is inserted.
  */
-function testJournal_Insert_ExistsUncommitted() {
+function testJournal_Insert_PrimaryKeyViolation2() {
   var table = env.schema.getTables()[0];
   var pkIndexSchema = table.getConstraint().getPrimaryKey();
   var pkIndex = env.indexStore.get(pkIndexSchema.getNormalizedName());
@@ -139,6 +139,33 @@ function testJournal_Insert_ExistsUncommitted() {
   assertThrowsException(
       journal.insert.bind(journal, table, [row2]),
       lf.Exception.Type.CONSTRAINT);
+}
+
+
+/**
+ * Tests the case where multiple rows are inserted, which have the same primary
+ * key. An exception should be thrown even though the primary key does not
+ * already exist prior this insertion.
+ */
+function testJournal_Insert_PrimaryKeyViolation3() {
+  var table = env.schema.getTables()[0];
+  var pkIndexSchema = table.getConstraint().getPrimaryKey();
+  var pkIndex = env.indexStore.get(pkIndexSchema.getNormalizedName());
+
+  var rows = [];
+  for (var i = 0; i < 3; i++) {
+    rows.push(table.createRow({'id': 'somePk', 'name': 'DummyName'}));
+  }
+
+  var journal = new lf.cache.Journal([table]);
+  assertThrowsException(
+      journal.insert.bind(journal, table, rows),
+      lf.Exception.Type.CONSTRAINT);
+
+  assertEquals(0, env.cache.getCount());
+  rows.forEach(function(row) {
+    assertFalse(pkIndex.containsKey(row.payload()['id']));
+  });
 }
 
 
