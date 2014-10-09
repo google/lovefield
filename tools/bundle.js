@@ -105,6 +105,7 @@ function runClosure() {
   });
 
   var root = pathMod.join(pathMod.resolve(__dirname), '../lib');
+  var outputFile = pathMod.join(outputDir, namespacePrefix + '_bundle.js');
   var closureBuilder =
       pathMod.join(closureDir, 'closure/bin/build/closurebuilder.py');
   var command = [
@@ -112,17 +113,20 @@ function runClosure() {
     closureBuilder,
     '--root=' + root,
     '--root=' + closureDir,
+    '--root=' + outputDir,
     '--output_mode=' + (args.debug ? 'script' : 'compiled'),
     '--namespace=' + namespace,
     '--compiler_jar=' + compilerPath,
-    '--compiler_flags="--language_in=ECMASCRIPT5_STRICT"'
+    '--compiler_flags="--language_in=ECMASCRIPT5_STRICT"',
+    '--output_file=' + outputFile
   ];
-  command = command.concat(generatedFiles);
-  var outputFile = pathMod.join(outputDir, namespacePrefix + '_bundle.js');
   exec(
-      command.join(' ') + ' >' + outputFile,
+      command.join(' '),
       { encoding: 'utf8' },
       function(error, stdout, stderr) {
+        if (error != null) {
+          throw error;
+        }
         generatedFiles.forEach(function(file) {
           fsMod.unlinkSync(file);
         });
