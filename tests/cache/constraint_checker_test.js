@@ -294,7 +294,7 @@ function testCheckUniqueKeysUpdate_NonPrimaryKey() {
  * @param {!function()} fn The function to call.
  * @param {string} exceptionName The expected name of the exception.
  *
- * TODO(user): Put this method in a shared location, it is being used by other
+ * TODO(dpapad): Put this method in a shared location, it is being used by other
  * tests too.
  */
 function assertThrowsException(fn, exceptionName) {

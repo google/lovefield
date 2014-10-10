@@ -208,7 +208,7 @@ function testCRUD() {
  * manner.
  */
 function testOverlappingScope_MultipleInserts() {
-  // TODO(user): add a new test case to test failure case.
+  // TODO(arthurhsu): add a new test case to test failure case.
   asyncTestCase.waitForAsync('testOverlappingScope_MultipleInserts');
   var rowCount = 3;
   var rows = generateSampleRowsWithSamePrimaryKey(3);

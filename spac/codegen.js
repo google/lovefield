@@ -903,7 +903,7 @@ CodeGenerator.prototype.getConstraint_ = function(table) {
     }
     results.push('  var nullable = [' + nullable + '];');
 
-    // TODO(user): Populate this field once foreign key indices are
+    // TODO(dpapad): Populate this field once foreign key indices are
     // implemented.
     results.push('  var foreignKeys = [];');
 

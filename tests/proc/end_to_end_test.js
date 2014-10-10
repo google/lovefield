@@ -160,7 +160,7 @@ function testUpdate_Predicate() {
         return selectAll();
       }).then(
       function(results) {
-        // TODO(user): Update
+        // TODO(dpapad): Update
         /*var updatedRow = goog.array.find(results, function(row) {
           return row.payload()[a.id.getName()] == '1';
         });

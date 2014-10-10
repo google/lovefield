@@ -143,7 +143,7 @@ lf.testing.hrSchema.MockDataGenerator.prototype.extractJobGroundTruth_ =
  */
 lf.testing.hrSchema.MockDataGenerator.prototype.extractEmployeeGroundTruth_ =
     function() {
-  // TODO(user): Calculate ground truth data, and migrate select_benchmark.js
+  // TODO(dpapad): Calculate ground truth data, and migrate select_benchmark.js
   // to use this generator.
   var salary = function(employee) { return employee.getSalary(); };
 
