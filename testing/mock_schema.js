@@ -48,6 +48,9 @@ lf.testing.MockSchema = function() {
   this.tableD_ = new Table_('tableD');
 
   /** @private {!lf.schema.Table} */
+  this.tableE_ = new TableWithUnique_('tableE');
+
+  /** @private {!lf.schema.Table} */
   this.tablePlusOne_ = new Table_('tablePlusOne');
 
   /** @type {string} */
@@ -60,7 +63,10 @@ lf.testing.MockSchema = function() {
 
 /** @override */
 lf.testing.MockSchema.prototype.getTables = function() {
-  var tables = [this.tableA_, this.tableB_, this.tableC_, this.tableD_];
+  var tables = [
+    this.tableA_, this.tableB_, this.tableC_,
+    this.tableD_, this.tableE_
+  ];
   if (this.version > 1) {
     tables.push(this.tablePlusOne_);
   }
@@ -104,6 +110,8 @@ lf.testing.MockSchema.Row.prototype.keyOfIndex = function(indexName) {
     return this.payload()['name'];
   } else if (goog.string.endsWith(indexName, 'idxBoth')) {
     return this.payload()['id'] + '_' + this.payload()['name'];
+  } else if (goog.string.endsWith(indexName, 'uq_email')) {
+    return this.payload()['email'];
   }
   return null;
 };
@@ -228,4 +236,60 @@ TableWithNoIndex_.prototype.getIndices = function() {
 /** @override */
 TableWithNoIndex_.prototype.getConstraint = function() {
   return new lf.schema.Constraint(null, [], [], []);
+};
+
+
+
+/**
+ * Dummy table implementation with a uniqueness constraint to be used in tests.
+ * @implements {lf.schema.Table}
+ * @constructor
+ * @private
+ *
+ * @param {string} tableName The name of this table.
+ */
+var TableWithUnique_ = function(tableName) {
+  /** @private {string} */
+  this.tableName_ = tableName;
+
+  /** @type {!lf.schema.Column.<string>} */
+  this.id = new lf.schema.BaseColumn(this, 'id', true, lf.Type.STRING);
+
+  /** @type {!lf.schema.Column.<string>} */
+  this.email = new lf.schema.BaseColumn(this, 'email', true, lf.Type.STRING);
+};
+
+
+/** @override */
+TableWithUnique_.prototype.getName = function() {
+  return this.tableName_;
+};
+
+
+/** @override */
+TableWithUnique_.prototype.createRow = function(payload) {
+  return new lf.testing.MockSchema.Row(lf.Row.getNextId(), payload);
+};
+
+
+/** @override */
+TableWithUnique_.prototype.deserializeRow = function(dbPayload) {
+  return lf.Row.deserialize(dbPayload);
+};
+
+
+/** @override */
+TableWithUnique_.prototype.getIndices = function() {
+  return [
+    new lf.schema.Index(this.tableName_, 'pkId', true, ['id']),
+    new lf.schema.Index(this.tableName_, 'uq_email', true, ['email'])
+  ];
+};
+
+
+/** @override */
+TableWithUnique_.prototype.getConstraint = function() {
+  return new lf.schema.Constraint(
+      new lf.schema.Index(this.tableName_, 'pkId', true, ['id']), [], [],
+      [new lf.schema.Index(this.tableName_, 'uq_email', true, ['email'])]);
 };

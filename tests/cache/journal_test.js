@@ -168,6 +168,26 @@ function testInsert_PrimaryKeyViolation3() {
 
 
 /**
+ * Tests the case where a unique key violation occurs because a row with the
+ * same unique key already exists via a previous committed journal.
+ */
+function testInsert_UniqueKeyViolation() {
+  var table = env.schema.getTables()[4];
+
+  var journal = new lf.cache.Journal([table]);
+  var row1 = table.createRow({'id': 'pk1', 'email': 'emailAddress1'});
+  journal.insert(table, [row1]);
+  journal.commit();
+
+  journal = new lf.cache.Journal([table]);
+  var row2 = table.createRow({'id': 'pk2', 'email': 'emailAddress1'});
+  assertThrowsException(
+      journal.insert.bind(journal, table, [row2]),
+      lf.Exception.Type.CONSTRAINT);
+}
+
+
+/**
  * Tests that update() succeeds if there is no primary key violation.
  */
 function testUpdate_NoPrimaryKeyViolation() {

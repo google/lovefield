@@ -48,10 +48,10 @@ function setUp() {
 
 
 /**
- * Tests that checkPrimaryKeyExistence() throws an exception if and only if a
- * row with the same primary key already exists.
+ * Tests that checkUniqueKeysInsert() throws an exception if a primary key
+ * violation occurs.
  */
-function testCheckPrimaryKeyExistence() {
+function testCheckUniqueKeysInsert_PrimaryKey() {
   var table = env.schema.getTables()[0];
   var pkIndexSchema = table.getConstraint().getPrimaryKey();
   var pkIndex = env.indexStore.get(pkIndexSchema.getNormalizedName());
@@ -60,7 +60,7 @@ function testCheckPrimaryKeyExistence() {
   var row = table.createRow({'id': primaryKey, 'name': 'DummyName'});
 
   var checkerFn = function() {
-    checker.checkPrimaryKeyExistence(table, [row]);
+    checker.checkUniqueKeysInsert(table, [row]);
   };
 
   // pkIndex is empty, no exception should be thrown.
@@ -73,7 +73,38 @@ function testCheckPrimaryKeyExistence() {
 
   var row2 = table.createRow({'id': 'otherPrimaryKey', 'name': 'DummyName'});
   assertNotThrows(function() {
-    checker.checkPrimaryKeyExistence(table, [row2]);
+    checker.checkUniqueKeysInsert(table, [row2]);
+  });
+}
+
+
+/**
+ * Tests that checkUniqueKeysInsert() throws an exception if a unique key
+ * violation exists, other than the primary key field.
+ */
+function testCheckUniqueKeysInsert_NonPrimaryKey() {
+  var table = env.schema.getTables()[4];
+  var uniqueIndexSchema = table.getConstraint().getUnique()[0];
+  var uniqueIndex = env.indexStore.get(uniqueIndexSchema.getNormalizedName());
+
+  var uniqueKey = 'emailAddress';
+  var row = table.createRow({'id': 'pk1', 'email': uniqueKey});
+
+  var checkerFn = function() {
+    checker.checkUniqueKeysInsert(table, [row]);
+  };
+
+  // uniqueIndex is empty, no exception should be thrown.
+  assertFalse(uniqueIndex.containsKey(uniqueKey));
+  assertNotThrows(checkerFn);
+
+  uniqueIndex.add(uniqueKey, row.id());
+  assertTrue(uniqueIndex.containsKey(uniqueKey));
+  assertThrowsException(checkerFn, lf.Exception.Type.CONSTRAINT);
+
+  var row2 = table.createRow({'id': 'pk2', 'email': 'otherEmailAddress'});
+  assertNotThrows(function() {
+    checker.checkUniqueKeysInsert(table, [row2]);
   });
 }
 
@@ -104,7 +135,7 @@ function testFindExistingRowIdInPkIndex() {
 }
 
 
-function testCheckPrimaryKeysUnique() {
+function testCheckUniqueKeysUnique_PrimaryKey() {
   var table = env.schema.getTables()[0];
 
   // Creating 3 rows, two of which have the same primary key.
@@ -114,7 +145,7 @@ function testCheckPrimaryKeysUnique() {
 
   assertThrowsException(
       function() {
-        checker.checkPrimaryKeysUnique(table, [row1, row2, row3]);
+        checker.checkUniqueKeysUnique(table, [row1, row2, row3]);
       }, lf.Exception.Type.CONSTRAINT);
 
   // Creating 3 rows, which have different primary keys.
@@ -124,12 +155,37 @@ function testCheckPrimaryKeysUnique() {
 
   assertNotThrows(
       function() {
-        checker.checkPrimaryKeysUnique(table, [row4, row5, row6]);
+        checker.checkUniqueKeysUnique(table, [row4, row5, row6]);
       });
 }
 
 
-function testCheckPrimaryKeysUpdate() {
+function testCheckUniqueKeysUnique_NonPrimaryKey() {
+  var table = env.schema.getTables()[4];
+
+  // Creating 3 rows, two of which have the 'email' key.
+  var row1 = table.createRow({'id': 'pk1', 'email': 'dummyEmail1'});
+  var row2 = table.createRow({'id': 'pk2', 'email': 'dummyEmail2'});
+  var row3 = table.createRow({'id': 'pk3', 'email': 'dummyEmail2'});
+
+  assertThrowsException(
+      function() {
+        checker.checkUniqueKeysUnique(table, [row1, row2, row3]);
+      }, lf.Exception.Type.CONSTRAINT);
+
+  // Creating 3 rows, which have different 'email' keys.
+  var row4 = table.createRow({'id': 'pk4', 'email': 'email1'});
+  var row5 = table.createRow({'id': 'pk5', 'email': 'email2'});
+  var row6 = table.createRow({'id': 'pk6', 'email': 'email3'});
+
+  assertNotThrows(
+      function() {
+        checker.checkUniqueKeysUnique(table, [row4, row5, row6]);
+      });
+}
+
+
+function testCheckUniqueKeysUpdate_PrimaryKey() {
   var table = env.schema.getTables()[0];
   var pkIndexSchema = table.getConstraint().getPrimaryKey();
   var pkIndex = env.indexStore.get(pkIndexSchema.getNormalizedName());
@@ -148,7 +204,7 @@ function testCheckPrimaryKeysUpdate() {
       rows[0].id(), {'id': rows[2].payload()['id'], 'name': 'OtherDummyName'});
   assertThrowsException(
       function() {
-        checker.checkPrimaryKeyUpdate(table, [row0Updated]);
+        checker.checkUniqueKeysUpdate(table, [row0Updated]);
       }, lf.Exception.Type.CONSTRAINT);
 
   // Attempting to update a multiple rows to all have the same primary key.
@@ -160,22 +216,75 @@ function testCheckPrimaryKeysUpdate() {
       rows[1].id(), {'id': 'otherPk', 'name': 'OtherDummyName'});
   assertThrowsException(
       function() {
-        checker.checkPrimaryKeyUpdate(table, [row0Updated, row1Updated]);
+        checker.checkUniqueKeysUpdate(table, [row0Updated, row1Updated]);
       }, lf.Exception.Type.CONSTRAINT);
 
   // Attempting to update a row without affecting its primary key.
   var row2Updated = new lf.testing.MockSchema.Row(
       rows[2].id(), {'id': rows[2].payload()['id'], 'name': 'OtherDummyName'});
   assertNotThrows(function() {
-    checker.checkPrimaryKeyUpdate(table, [row2Updated]);
+    checker.checkUniqueKeysUpdate(table, [row2Updated]);
   });
 
-  // Attempting to update a single row without by assigning a new unused primary
-  // key.
+  // Attempting to update a single row by assigning a new unused primary key.
   row2Updated = new lf.testing.MockSchema.Row(
       rows[2].id(), {'id': 'newUnusedPk', 'name': 'OtherDummyName'});
   assertNotThrows(function() {
-    checker.checkPrimaryKeyUpdate(table, [row2Updated]);
+    checker.checkUniqueKeysUpdate(table, [row2Updated]);
+  });
+}
+
+
+function testCheckUniqueKeysUpdate_NonPrimaryKey() {
+  var table = env.schema.getTables()[4];
+  var indexSchema = table.getConstraint().getUnique()[0];
+  var index = env.indexStore.get(indexSchema.getNormalizedName());
+
+  // Adding three rows with unique 'email' keys to the index.
+  var rows = [1, 2, 3].map(function(primaryKey) {
+    return table.createRow({
+      'id': primaryKey.toString(),
+      'email': 'email' + primaryKey.toString()
+    });
+  });
+  rows.forEach(function(row) {
+    index.add(row.payload()['email'], row.id());
+  });
+
+  // Attempting to update a single row to have the same 'email' key as an other
+  // row.
+  var row0Updated = new lf.testing.MockSchema.Row(
+      rows[0].id(), {
+        'id': rows[0].payload()['id'],
+        'email': rows[2].payload()['email']
+      });
+  assertThrowsException(
+      function() {
+        checker.checkUniqueKeysUpdate(table, [row0Updated]);
+      }, lf.Exception.Type.CONSTRAINT);
+
+  // Attempting to update a multiple rows to all have the same 'email' key.
+  // Should throw an exception, even though the new 'email' key is not occupied
+  // currently.
+  row0Updated = new lf.testing.MockSchema.Row(
+      rows[0].id(),
+      {'id': rows[0].payload()['id'], 'email': 'otherDummyEmail'});
+  var row1Updated = new lf.testing.MockSchema.Row(
+      rows[1].id(),
+      {'id': rows[1].payload()['id'], 'email': 'otherDummyEmail'});
+  assertThrowsException(
+      function() {
+        checker.checkUniqueKeysUpdate(table, [row0Updated, row1Updated]);
+      }, lf.Exception.Type.CONSTRAINT);
+
+  // Attempting to update a single row by assigning a new unused 'email' key.
+  var row2Updated = new lf.testing.MockSchema.Row(
+      rows[2].id(), {
+        'id': rows[2].payload()['id'],
+        'email': 'unusedEmail'
+      });
+  assertNotThrows(function() {
+    checker.checkUniqueKeysUpdate(table, [row2Updated]);
   });
 }
 
