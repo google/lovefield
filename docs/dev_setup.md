@@ -1,5 +1,13 @@
 # Dev Setup for Lovefield
 
+## Python, Java, Git
+
+You will need to have Python, Java, and git in a working state. Windows users please consider install [depot_tools](http://www.chromium.org/developers/how-tos/install-depot-tools) directly.
+
+Lovefield will move away from Python, however, the Closure library it depends on has not cut the dependencies on Python yet, and thus you need a working Python.
+
+All these programs must be searchable from your PATH.
+
 ## Closure
 
 Closure compiler and closure library must be installed to develop Lovefield. See [Closure Tools](https://developers.google.com/closure/) for more information.
@@ -54,7 +62,7 @@ wget -qO- https://npmjs.org/install.sh | sh
 
 Install dependencies
 ```bash
-npm install -g glob js-yaml nopt http-server temporary rimraf
+npm install -g glob js-yaml nopt http-server temporary rimraf mkdirp
 ```
 
 For daily uses, use nvm to select from different node.js versions, so that you can easily reproduce bugs that might plague only a specific version of node.js:
