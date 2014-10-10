@@ -81,6 +81,7 @@ table:
     column:
       photoId: string
       curator: integer
+      topic: string
     constraint:
       foreignKey:
         fk_photoId:
@@ -93,3 +94,6 @@ table:
           reference: Curator
           remoteColumn: id
           cascade: true
+      unique:
+        uq_topic:
+          column: [ topic ]

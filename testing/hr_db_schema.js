@@ -228,7 +228,8 @@ hr.db.schema.Job.prototype.getConstraint = function() {
   var primaryKey = new lf.schema.Index('Job', 'pkJob', true, ['id']);
   var nullable = [];
   var foreignKeys = [];
-  var unique = [];
+  var unique = [
+  ];
   return new lf.schema.Constraint(
       primaryKey, nullable, foreignKeys, unique);
 };
@@ -459,7 +460,8 @@ hr.db.schema.JobHistory.prototype.getConstraint = function() {
   var primaryKey = null;
   var nullable = [];
   var foreignKeys = [];
-  var unique = [];
+  var unique = [
+  ];
   return new lf.schema.Constraint(
       primaryKey, nullable, foreignKeys, unique);
 };
@@ -746,7 +748,8 @@ hr.db.schema.Employee.prototype.getConstraint = function() {
   var primaryKey = new lf.schema.Index('Employee', 'pkEmployee', true, ['id']);
   var nullable = [this.hireDate];
   var foreignKeys = [];
-  var unique = [];
+  var unique = [
+  ];
   return new lf.schema.Constraint(
       primaryKey, nullable, foreignKeys, unique);
 };
@@ -1149,7 +1152,8 @@ hr.db.schema.Department.prototype.getConstraint = function() {
   var primaryKey = new lf.schema.Index('Department', 'pkDepartment', true, ['id']);
   var nullable = [];
   var foreignKeys = [];
-  var unique = [];
+  var unique = [
+  ];
   return new lf.schema.Constraint(
       primaryKey, nullable, foreignKeys, unique);
 };
@@ -1383,7 +1387,8 @@ hr.db.schema.Location.prototype.getConstraint = function() {
   var primaryKey = new lf.schema.Index('Location', 'pkLocation', true, ['id']);
   var nullable = [];
   var foreignKeys = [];
-  var unique = [];
+  var unique = [
+  ];
   return new lf.schema.Constraint(
       primaryKey, nullable, foreignKeys, unique);
 };
@@ -1646,7 +1651,8 @@ hr.db.schema.Country.prototype.getConstraint = function() {
   var primaryKey = new lf.schema.Index('Country', 'pkCountry', true, ['id']);
   var nullable = [];
   var foreignKeys = [];
-  var unique = [];
+  var unique = [
+  ];
   return new lf.schema.Constraint(
       primaryKey, nullable, foreignKeys, unique);
 };
@@ -1838,7 +1844,8 @@ hr.db.schema.Region.prototype.getConstraint = function() {
   var primaryKey = new lf.schema.Index('Region', 'pkRegion', true, ['id']);
   var nullable = [];
   var foreignKeys = [];
-  var unique = [];
+  var unique = [
+  ];
   return new lf.schema.Constraint(
       primaryKey, nullable, foreignKeys, unique);
 };
@@ -2014,7 +2021,8 @@ hr.db.schema.Holiday.prototype.getConstraint = function() {
   var primaryKey = new lf.schema.Index('Holiday', 'pkHoliday', true, ['name']);
   var nullable = [];
   var foreignKeys = [];
-  var unique = [];
+  var unique = [
+  ];
   return new lf.schema.Constraint(
       primaryKey, nullable, foreignKeys, unique);
 };
@@ -2229,7 +2237,8 @@ hr.db.schema.DummyTable.prototype.getConstraint = function() {
   var primaryKey = new lf.schema.Index('DummyTable', 'pkDummyTable', true, ['string']);
   var nullable = [];
   var foreignKeys = [];
-  var unique = [];
+  var unique = [
+  ];
   return new lf.schema.Constraint(
       primaryKey, nullable, foreignKeys, unique);
 };

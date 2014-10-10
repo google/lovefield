@@ -639,7 +639,7 @@ CodeGenerator.prototype.genKeyOfIndex_ = function(table, prefix) {
     }
 
     if (table.constraint.unique) {
-      for (var i = 0; i < table.constraint.unique; ++i) {
+      for (var i = 0; i < table.constraint.unique.length; ++i) {
         var unq = table.constraint.unique[i];
         genCase(unq.name);
         body.push(this.genKeyFromColumns_(table, unq.column));
@@ -867,7 +867,7 @@ CodeGenerator.prototype.processRepeatTable_ = function(lines) {
  * @return {string}
  * @private
  */
-CodeGenerator.prototype.getPrimaryKey_ = function(table) {
+CodeGenerator.prototype.getPrimaryKeyIndex_ = function(table) {
   var results = [];
 
   if (table.constraint && table.constraint.primaryKey) {
@@ -892,7 +892,7 @@ CodeGenerator.prototype.getConstraint_ = function(table) {
   var results = [];
 
   if (table.constraint) {
-    results.push('  var primaryKey = ' + this.getPrimaryKey_(table) + ';');
+    results.push('  var primaryKey = ' + this.getPrimaryKeyIndex_(table) + ';');
 
     var nullable = '';
     if (table.constraint.nullable) {
@@ -907,9 +907,14 @@ CodeGenerator.prototype.getConstraint_ = function(table) {
     // implemented.
     results.push('  var foreignKeys = [];');
 
-    // TODO(user): Populate this field once indices for unique columns are
-    // implemented.
-    results.push('  var unique = [];');
+    results.push('  var unique = [');
+    if (table.constraint.unique) {
+      var uniqueIndices = this.getUniqueIndices_(table);
+      uniqueIndices.forEach(function(uniqueIndex) {
+        results.push('    ' + uniqueIndex);
+      });
+    }
+    results.push('  ];');
 
     results.push('  return new lf.schema.Constraint(\n' +
         '      primaryKey, nullable, foreignKeys, unique);');
@@ -923,30 +928,47 @@ CodeGenerator.prototype.getConstraint_ = function(table) {
 
 /**
  * @param {!Object} table
+ * @return {!Array.<string>}
+ * @private
+ */
+CodeGenerator.prototype.getUniqueIndices_ = function(table) {
+  var uniqueIndices = [];
+
+  for (var i = 0; i < table.constraint.unique.length; ++i) {
+    var uniqueConstraint = table.constraint.unique[i];
+    var cols = uniqueConstraint.column.join(', \'');
+    var uniqueIndex = 'new lf.schema.Index(\'' + table.name + '\', \'' +
+        uniqueConstraint.name + '\', true, [\'' + cols + '\'])';
+    uniqueIndices.push(uniqueIndex);
+  }
+
+  return uniqueIndices;
+};
+
+
+/**
+ * @param {!Object} table
  * @return {string}
  * @private
  */
 CodeGenerator.prototype.getIndices_ = function(table) {
   var results = [];
-  var header = '    new lf.schema.Index(\'' + table.name + '\', \'';
 
   if (table.constraint) {
     if (table.constraint.primaryKey) {
-      var cols = table.constraint.primaryKey.join(', \'');
-      var keyName = 'pk' + this.toPascal_(table.name);
-      results.push(header + keyName + '\', true, [\'' + cols + '\'])');
+      results.push('    ' + this.getPrimaryKeyIndex_(table));
     }
 
     if (table.constraint.unique) {
-      for (var i = 0; i < table.constraint.unique.length; ++i) {
-        var unq = table.constraint.unique[i];
-        var cols = unq.column.join(', \'');
-        results.push(header + unq.name + '\', true, [\'' + cols + '\'])');
-      }
+      var uniqueIndices = this.getUniqueIndices_(table);
+      uniqueIndices.forEach(function(uniqueIndex) {
+        results.push('    ' + uniqueIndex);
+      });
     }
   }
 
   if (table.index) {
+    var header = '    new lf.schema.Index(\'' + table.name + '\', \'';
     for (var i = 0; i < table.index.length; ++i) {
       var index = table.index[i];
       var col = [];

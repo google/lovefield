@@ -179,7 +179,8 @@ lovefield.db.schema.Album.prototype.getConstraint = function() {
   var primaryKey = new lf.schema.Index('Album', 'pkAlbum', true, ['id']);
   var nullable = [];
   var foreignKeys = [];
-  var unique = [];
+  var unique = [
+  ];
   return new lf.schema.Constraint(
       primaryKey, nullable, foreignKeys, unique);
 };
@@ -456,7 +457,8 @@ lovefield.db.schema.Photo.prototype.getConstraint = function() {
   var primaryKey = new lf.schema.Index('Photo', 'pkPhoto', true, ['id']);
   var nullable = [this.tacotownJspb, this.accessTimestamp, this.imageHash];
   var foreignKeys = [];
-  var unique = [];
+  var unique = [
+  ];
   return new lf.schema.Constraint(
       primaryKey, nullable, foreignKeys, unique);
 };
@@ -788,7 +790,8 @@ lovefield.db.schema.PhotoDetails.prototype.getConstraint = function() {
   var primaryKey = null;
   var nullable = [];
   var foreignKeys = [];
-  var unique = [];
+  var unique = [
+  ];
   return new lf.schema.Constraint(
       primaryKey, nullable, foreignKeys, unique);
 };
@@ -981,7 +984,9 @@ lovefield.db.schema.Curator.prototype.getConstraint = function() {
   var primaryKey = new lf.schema.Index('Curator', 'pkCurator', true, ['id']);
   var nullable = [];
   var foreignKeys = [];
-  var unique = [];
+  var unique = [
+    new lf.schema.Index('Curator', 'uq_name', true, ['name'])
+  ];
   return new lf.schema.Constraint(
       primaryKey, nullable, foreignKeys, unique);
 };
@@ -1056,6 +1061,8 @@ lovefield.db.row.Curator.prototype.keyOfIndex = function(indexName) {
   switch (indexName) {
     case 'Curator.pkCurator':
       return this.payload().id;
+    case 'Curator.uq_name':
+      return this.payload().name;
     case '##row_id##':
       return this.id();
     default:
@@ -1112,6 +1119,10 @@ lovefield.db.schema.PhotoCurator = function() {
   this.curator = new lf.schema.BaseColumn(
       this, 'curator', false, lf.Type.INTEGER);
 
+  /** @type {!lf.schema.BaseColumn.<string>} */
+  this.topic = new lf.schema.BaseColumn(
+      this, 'topic', true, lf.Type.STRING);
+
 };
 
 
@@ -1134,6 +1145,7 @@ lovefield.db.schema.PhotoCurator.prototype.deserializeRow = function(dbRecord) {
   var payload = new lovefield.db.row.PhotoCuratorType();
   payload.photoId = data.photoId;
   payload.curator = data.curator;
+  payload.topic = data.topic;
   return new lovefield.db.row.PhotoCurator(rowId, payload);
 };
 
@@ -1141,7 +1153,7 @@ lovefield.db.schema.PhotoCurator.prototype.deserializeRow = function(dbRecord) {
 /** @override */
 lovefield.db.schema.PhotoCurator.prototype.getIndices = function() {
   return [
-
+    new lf.schema.Index('PhotoCurator', 'uq_topic', true, ['topic'])
   ];
 };
 
@@ -1151,7 +1163,9 @@ lovefield.db.schema.PhotoCurator.prototype.getConstraint = function() {
   var primaryKey = null;
   var nullable = [];
   var foreignKeys = [];
-  var unique = [];
+  var unique = [
+    new lf.schema.Index('PhotoCurator', 'uq_topic', true, ['topic'])
+  ];
   return new lf.schema.Constraint(
       primaryKey, nullable, foreignKeys, unique);
 };
@@ -1169,6 +1183,8 @@ lovefield.db.row.PhotoCuratorType = function() {
   this.photoId;
   /** @export @type {number} */
   this.curator;
+  /** @export @type {string} */
+  this.topic;
 };
 
 
@@ -1184,6 +1200,8 @@ lovefield.db.row.PhotoCuratorDbType = function() {
   this.photoId;
   /** @export @type {number} */
   this.curator;
+  /** @export @type {string} */
+  this.topic;
 };
 
 
@@ -1208,6 +1226,7 @@ lovefield.db.row.PhotoCurator.prototype.defaultPayload = function() {
   var payload = new lovefield.db.row.PhotoCuratorType();
   payload.photoId = '';
   payload.curator = 0;
+  payload.topic = '';
   return payload;
 };
 
@@ -1217,6 +1236,7 @@ lovefield.db.row.PhotoCurator.prototype.toDbPayload = function() {
   var payload = new lovefield.db.row.PhotoCuratorDbType();
   payload.photoId = this.payload().photoId;
   payload.curator = this.payload().curator;
+  payload.topic = this.payload().topic;
   return payload;
 };
 
@@ -1224,6 +1244,8 @@ lovefield.db.row.PhotoCurator.prototype.toDbPayload = function() {
 /** @override */
 lovefield.db.row.PhotoCurator.prototype.keyOfIndex = function(indexName) {
   switch (indexName) {
+    case 'PhotoCurator.uq_topic':
+      return this.payload().topic;
     case '##row_id##':
       return this.id();
     default:
@@ -1261,5 +1283,21 @@ lovefield.db.row.PhotoCurator.prototype.getCurator = function() {
 */
 lovefield.db.row.PhotoCurator.prototype.setCurator = function(value) {
   this.payload().curator = value;
+  return this;
+};
+
+
+/** @return {string} */
+lovefield.db.row.PhotoCurator.prototype.getTopic = function() {
+  return this.payload().topic;
+};
+
+
+/**
+ * @param {string} value
+ * @return {!lovefield.db.row.PhotoCurator}
+*/
+lovefield.db.row.PhotoCurator.prototype.setTopic = function(value) {
+  this.payload().topic = value;
   return this;
 };
