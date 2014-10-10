@@ -44,15 +44,17 @@ wget -qO- https://npmjs.org/install.sh | sh
 
 ### Windows
 
-1. Install [nvmw](https://github.com/hakobera/nvmw). You also need to download a working nodejs from http://nodejs.org/dist and place it under nvmw directory. For example, download http://nodejs.org/dist/v0.10.32/x64/*.exe and place them under `%HOMEDRIVE%%HOMEPATH%\.nvmw\v0.10.32`.
+1. Install [nvmw](https://github.com/hakobera/nvmw).
 
-2. Download latest npm zip from http://nodejs.org/dist/npm and extract them to  `%HOMEDRIVE%%HOMEPATH%\.nvmw\<your node version>`.
+2. Install nodejs via nvmw. nvmw requires full version for its command-line, i.e. 0.10.32 instead of just giving 0.10.
+
+3. Check if your npm can find packages. If not, you will need to set the NODE_PATH environment variable yourself, or by modifying nvmw.bat.
 
 ### Common for all platforms
 
 Install dependencies
 ```bash
-npm install -g glob js-yaml nopt http-server
+npm install -g glob js-yaml nopt http-server temporary rimraf
 ```
 
 For daily uses, use nvm to select from different node.js versions, so that you can easily reproduce bugs that might plague only a specific version of node.js:
@@ -71,7 +73,7 @@ node
 
 ## Gollum
 
-Gollum is the tool that GitHub used to host the Wiki. It can be installed locally for editing and previewing documents.
+Gollum is the tool that GitHub used to host the Wiki. It can be installed locally for editing and previewing documents. However, GitHub had some modifications for its Gollum (esp links) and thus the Gollum preview is not guaranteed to be the same as what will be displayed on GitHub.
 
 ### Install Gollum
 
