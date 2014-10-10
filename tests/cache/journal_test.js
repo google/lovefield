@@ -26,7 +26,8 @@ goog.require('lf.testing.MockSchema');
 
 
 /** @type {!goog.testing.AsyncTestCase} */
-var asyncTestCase = goog.testing.AsyncTestCase.createAndInstall('Journal');
+var asyncTestCase = goog.testing.AsyncTestCase.createAndInstall(
+    'JournalTest');
 
 
 /** @type {!lf.testing.MockEnv} */
