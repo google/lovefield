@@ -207,10 +207,10 @@ lf.testing.perf.SelectBenchmark.prototype.querySingleRowIndexed =
 lf.testing.perf.SelectBenchmark.prototype.verifySingleRowIndexed =
     function(results) {
   if (results.length != 1) {
-    return Promise.resolve(false);
+    return goog.Promise.resolve(false);
   }
 
-  return Promise.resolve(
+  return goog.Promise.resolve(
       results[0].id == this.queryData_.employeeId);
 };
 
@@ -233,14 +233,14 @@ lf.testing.perf.SelectBenchmark.prototype.querySingleRowNonIndexed =
 lf.testing.perf.SelectBenchmark.prototype.verifySingleRowNonIndexed =
     function(results) {
   if (results.length < 1) {
-    return Promise.resolve(false);
+    return goog.Promise.resolve(false);
   }
 
   var validated = results.every(function(obj) {
     return obj.email == this.queryData_.employeeEmail;
   }, this);
 
-  return Promise.resolve(validated);
+  return goog.Promise.resolve(validated);
 };
 
 
@@ -263,7 +263,7 @@ lf.testing.perf.SelectBenchmark.prototype.verifyMultiRowIndexedSpacedOut =
     function(results) {
   // Multiple employees can have the same salary.
   if (results.length < this.queryData_.employeeSalariesSpacedOut.length) {
-    return Promise.resolve(false);
+    return goog.Promise.resolve(false);
   }
 
   var salariesSet = new goog.structs.Set(
@@ -272,7 +272,7 @@ lf.testing.perf.SelectBenchmark.prototype.verifyMultiRowIndexedSpacedOut =
     return !salariesSet.contains(obj.salary);
   }, this);
 
-  return Promise.resolve(!errorsExist);
+  return goog.Promise.resolve(!errorsExist);
 };
 
 
@@ -304,14 +304,14 @@ lf.testing.perf.SelectBenchmark.prototype.verifyMultiRowIndexedRange =
   }, this);
 
   if (results.length != employeeIdSet.getCount()) {
-    return Promise.resolve(false);
+    return goog.Promise.resolve(false);
   }
 
   var validated = results.every(function(obj) {
     return employeeIdSet.contains(obj.id);
   }, this);
 
-  return Promise.resolve(validated);
+  return goog.Promise.resolve(validated);
 };
 
 
@@ -333,7 +333,7 @@ lf.testing.perf.SelectBenchmark.prototype.queryMultiRowNonIndexedSpacedOut =
 lf.testing.perf.SelectBenchmark.prototype.verifyMultiRowNonIndexedSpacedOut =
     function(results) {
   if (results.length < this.queryData_.employeeHireDatesSpacedOut.length) {
-    return Promise.resolve(false);
+    return goog.Promise.resolve(false);
   }
 
   var datestamps = this.queryData_.employeeHireDatesSpacedOut.map(
@@ -346,7 +346,7 @@ lf.testing.perf.SelectBenchmark.prototype.verifyMultiRowNonIndexedSpacedOut =
     return !datestampsSet.contains(obj.hireDate.getTime());
   }, this);
 
-  return Promise.resolve(!errorsExist);
+  return goog.Promise.resolve(!errorsExist);
 };
 
 
@@ -380,14 +380,14 @@ lf.testing.perf.SelectBenchmark.prototype.verifyMultiRowNonIndexedRange =
   }, this);
 
   if (results.length != employeeHireDateSet.getCount()) {
-    return Promise.resolve(false);
+    return goog.Promise.resolve(false);
   }
 
   var validated = results.every(function(obj) {
     return employeeHireDateSet.contains(obj.hireDate);
   }, this);
 
-  return Promise.resolve(validated);
+  return goog.Promise.resolve(validated);
 };
 
 
@@ -409,16 +409,16 @@ lf.testing.perf.SelectBenchmark.prototype.queryOrderByIndexed =
 lf.testing.perf.SelectBenchmark.prototype.verifyOrderByIndexed =
     function(results) {
   if (results.length != this.dataGenerator_.sampleEmployees.length) {
-    return Promise.resolve(false);
+    return goog.Promise.resolve(false);
   }
 
   for (var i = 1; i < results.length; i++) {
     if (results[i].salary > results[i - 1].salary) {
-      return Promise.resolve(false);
+      return goog.Promise.resolve(false);
     }
   }
 
-  return Promise.resolve(true);
+  return goog.Promise.resolve(true);
 };
 
 
@@ -440,16 +440,16 @@ lf.testing.perf.SelectBenchmark.prototype.queryOrderByNonIndexed =
 lf.testing.perf.SelectBenchmark.prototype.verifyOrderByNonIndexed =
     function(results) {
   if (results.length != this.dataGenerator_.sampleEmployees.length) {
-    return Promise.resolve(false);
+    return goog.Promise.resolve(false);
   }
 
   for (var i = 1; i < results.length; i++) {
     if (results[i].commissionPercent > results[i - 1].commissionPercent) {
-      return Promise.resolve(false);
+      return goog.Promise.resolve(false);
     }
   }
 
-  return Promise.resolve(true);
+  return goog.Promise.resolve(true);
 };
 
 
@@ -470,7 +470,7 @@ lf.testing.perf.SelectBenchmark.prototype.queryProjectMixedColumns =
 lf.testing.perf.SelectBenchmark.prototype.verifyProjectMixedColumns =
     function(results) {
   if (results.length != this.dataGenerator_.sampleEmployees.length) {
-    return Promise.resolve(false);
+    return goog.Promise.resolve(false);
   }
 
   var validated = results.every(function(obj) {
@@ -484,7 +484,7 @@ lf.testing.perf.SelectBenchmark.prototype.verifyProjectMixedColumns =
             lf.testing.perf.SelectBenchmark.EPSILON_);
   }, this);
 
-  return Promise.resolve(validated);
+  return goog.Promise.resolve(validated);
 };
 
 
@@ -505,7 +505,7 @@ lf.testing.perf.SelectBenchmark.prototype.queryProjectAggregateIndexed =
 lf.testing.perf.SelectBenchmark.prototype.verifyProjectAggregateIndexed =
     function(results) {
   if (results.length != 1) {
-    return Promise.resolve(false);
+    return goog.Promise.resolve(false);
   }
 
   var validated =
@@ -518,7 +518,7 @@ lf.testing.perf.SelectBenchmark.prototype.verifyProjectAggregateIndexed =
           this.dataGenerator_.employeeGroundTruth.stddevSalary,
           lf.testing.perf.SelectBenchmark.EPSILON_);
 
-  return Promise.resolve(validated);
+  return goog.Promise.resolve(validated);
 };
 
 
@@ -539,7 +539,7 @@ lf.testing.perf.SelectBenchmark.prototype.queryProjectAggregateNonIndexed =
 lf.testing.perf.SelectBenchmark.prototype.verifyProjectAggregateNonIndexed =
     function(results) {
   if (results.length != 1) {
-    return Promise.resolve(false);
+    return goog.Promise.resolve(false);
   }
 
   var validated =
@@ -548,5 +548,5 @@ lf.testing.perf.SelectBenchmark.prototype.verifyProjectAggregateNonIndexed =
       results[0]['max_hireDate'] ==
           this.dataGenerator_.employeeGroundTruth.maxHireDate;
 
-  return Promise.resolve(validated);
+  return goog.Promise.resolve(validated);
 };
