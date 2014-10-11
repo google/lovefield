@@ -404,6 +404,53 @@ function testInsertOrReplace() {
 }
 
 
+function testInsertOrReplace_UniqueKeyViolation() {
+  var table = env.schema.getTables()[4];
+
+  var row1 = table.createRow({'id': 'pk1', 'email': 'emailAddress1'});
+  var row2 = table.createRow({'id': 'pk2', 'email': 'emailAddress2'});
+
+  var journal = new lf.cache.Journal([table]);
+  journal.insertOrReplace(table, [row1, row2]);
+  journal.commit();
+
+  // Attempting to insert a new row that has the same 'email' field as an
+  // existing row.
+  var row3 = table.createRow({'id': 'pk3', 'email': row1.payload()['email']});
+  journal = new lf.cache.Journal([table]);
+  assertThrowsException(
+      journal.insertOrReplace.bind(journal, table, [row3]),
+      lf.Exception.Type.CONSTRAINT);
+
+  // Attempting to insert two new rows, that have the same 'email' field with
+  // each other, and also it is not occupied by any existing row.
+  var row4 = table.createRow({'id': 'pk4', 'email': 'otherEmailAddress'});
+  var row5 = table.createRow({'id': 'pk5', 'email': 'otherEmailAddress'});
+  assertThrowsException(
+      journal.insertOrReplace.bind(journal, table, [row4, row5]),
+      lf.Exception.Type.CONSTRAINT);
+
+  // Attempting to update existing row1 to have the same 'email' as existing
+  // row2.
+  var row1Updated = new lf.testing.MockSchema.Row(
+      row1.id(), {
+        'id': row1.payload()['id'],
+        'email': row2.payload()['email']
+      });
+  assertThrowsException(
+      journal.insertOrReplace.bind(journal, table, [row1Updated]),
+      lf.Exception.Type.CONSTRAINT);
+
+  // Finally attempting to update existing row1 to have a new unused 'email'
+  // field.
+  var row2Updated = new lf.testing.MockSchema.Row(
+      row2.id(), {'id': row2.payload()['id'], 'email': 'unusedEmailAddress'});
+  assertNotThrows(function() {
+    journal.insertOrReplace(table, [row2Updated]);
+  });
+}
+
+
 function testCacheMerge() {
   // Selecting a table without any user-defined index (no primary key either).
   var table = env.schema.getTables()[2];
