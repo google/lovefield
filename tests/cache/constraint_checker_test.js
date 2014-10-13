@@ -289,6 +289,30 @@ function testCheckUniqueKeysUpdate_NonPrimaryKey() {
 }
 
 
+function testCheckNotNullable() {
+  var table = env.schema.getTables()[4];
+
+  // Attempting to insert rows that violate the constraint.
+  var invalidRows = [1, 2, 3].map(function(primaryKey) {
+    return table.createRow({'id': primaryKey.toString(), 'email': null});
+  });
+
+  assertThrowsException(
+      function() {
+        checker.checkNotNullable(table, invalidRows);
+      }, lf.Exception.Type.CONSTRAINT);
+
+  // Attempting to insert rows that don't violate the constraint.
+  var validRows = [1, 2, 3].map(function(primaryKey) {
+    return table.createRow(
+        {'id': primaryKey.toString(), 'email': 'emailAddress'});
+  });
+  assertNotThrows(function() {
+    checker.checkNotNullable(table, validRows);
+  });
+}
+
+
 /**
  * Asserts that calling the given function throws the given exception.
  * @param {!function()} fn The function to call.

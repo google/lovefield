@@ -188,6 +188,79 @@ function testInsert_UniqueKeyViolation() {
 
 
 /**
+ * Tests that not-nullable constraint checks are happening within
+ * Journal#insert.
+ */
+function testInsert_NotNullableKeyViolation() {
+  var table = env.schema.getTables()[4];
+  assertEquals(0, env.cache.getCount());
+
+  var journal = new lf.cache.Journal([table]);
+  var row1 = table.createRow({'id': 'pk1', 'email': null});
+  assertThrowsException(
+      journal.insert.bind(journal, table, [row1]),
+      lf.Exception.Type.CONSTRAINT);
+  assertEquals(0, env.cache.getCount());
+}
+
+
+/**
+ * Tests that not-nullable constraint checks are happening within
+ * Journal#insertOrReplace.
+ */
+function testInsertOrReplace_NotNullableKeyViolation() {
+  var table = env.schema.getTables()[4];
+  assertEquals(0, env.cache.getCount());
+
+  // Attempting to insert a new invalid row.
+  var journal = new lf.cache.Journal([table]);
+  var row1 = table.createRow({'id': 'pk1', 'email': null});
+  assertThrowsException(
+      journal.insertOrReplace.bind(journal, table, [row1]),
+      lf.Exception.Type.CONSTRAINT);
+  assertEquals(0, env.cache.getCount());
+
+  // Attempting to insert a new valid row.
+  var row2 = table.createRow({'id': 'pk2', 'email': 'emailAddress'});
+  journal.insertOrReplace(table, [row2]);
+  assertEquals(1, env.cache.getCount());
+
+  // Attempting to replace existing row with an invalid one.
+  var row2Updated = table.createRow({'id': 'pk2', 'email': null});
+  assertThrowsException(
+      journal.insertOrReplace.bind(journal, table, [row2Updated]),
+      lf.Exception.Type.CONSTRAINT);
+}
+
+
+/**
+ * Tests that not-nullable constraint checks are happening within
+ * Journal#update.
+ */
+function testUpdate_NotNullableKeyViolation() {
+  var table = env.schema.getTables()[4];
+  assertEquals(0, env.cache.getCount());
+
+  var row = table.createRow({'id': 'pk1', 'email': 'emailAddress'});
+  var journal = new lf.cache.Journal([table]);
+  journal.insert(table, [row]);
+  assertEquals(1, env.cache.getCount());
+
+  var rowUpdatedInvalid = new lf.testing.MockSchema.Row(
+      row.id(), {'id': 'pk1', 'email': null});
+  assertThrowsException(
+      journal.update.bind(journal, table, [rowUpdatedInvalid]),
+      lf.Exception.Type.CONSTRAINT);
+
+  var rowUpdatedValid = new lf.testing.MockSchema.Row(
+      row.id(), {'id': 'pk1', 'email': 'otherEmailAddress'});
+  assertNotThrows(function() {
+    journal.update(table, [rowUpdatedValid]);
+  });
+}
+
+
+/**
  * Tests that update() succeeds if there is no primary key violation.
  */
 function testUpdate_NoPrimaryKeyViolation() {
