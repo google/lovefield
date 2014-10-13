@@ -177,12 +177,18 @@ lovefield.db.schema.Album.prototype.getIndices = function() {
 /** @override */
 lovefield.db.schema.Album.prototype.getConstraint = function() {
   var primaryKey = new lf.schema.Index('Album', 'pkAlbum', true, ['id']);
-  var nullable = [];
+  var notNullable = [
+    this.id,
+    this.isLocal,
+    this.createdByAction,
+    this.timestamp,
+    this.tacotownJspb
+  ];
   var foreignKeys = [];
   var unique = [
   ];
   return new lf.schema.Constraint(
-      primaryKey, nullable, foreignKeys, unique);
+      primaryKey, notNullable, foreignKeys, unique);
 };
 
 
@@ -455,12 +461,19 @@ lovefield.db.schema.Photo.prototype.getIndices = function() {
 /** @override */
 lovefield.db.schema.Photo.prototype.getConstraint = function() {
   var primaryKey = new lf.schema.Index('Photo', 'pkPhoto', true, ['id']);
-  var nullable = [this.tacotownJspb, this.accessTimestamp, this.imageHash];
+  var notNullable = [
+    this.id,
+    this.isLocal,
+    this.createdByAction,
+    this.timestamp,
+    this.albumId,
+    this.isCoverPhoto
+  ];
   var foreignKeys = [];
   var unique = [
   ];
   return new lf.schema.Constraint(
-      primaryKey, nullable, foreignKeys, unique);
+      primaryKey, notNullable, foreignKeys, unique);
 };
 
 
@@ -788,12 +801,16 @@ lovefield.db.schema.PhotoDetails.prototype.getIndices = function() {
 /** @override */
 lovefield.db.schema.PhotoDetails.prototype.getConstraint = function() {
   var primaryKey = null;
-  var nullable = [];
+  var notNullable = [
+    this.photoId,
+    this.albumId,
+    this.totalComments
+  ];
   var foreignKeys = [];
   var unique = [
   ];
   return new lf.schema.Constraint(
-      primaryKey, nullable, foreignKeys, unique);
+      primaryKey, notNullable, foreignKeys, unique);
 };
 
 
@@ -982,13 +999,16 @@ lovefield.db.schema.Curator.prototype.getIndices = function() {
 /** @override */
 lovefield.db.schema.Curator.prototype.getConstraint = function() {
   var primaryKey = new lf.schema.Index('Curator', 'pkCurator', true, ['id']);
-  var nullable = [];
+  var notNullable = [
+    this.id,
+    this.name
+  ];
   var foreignKeys = [];
   var unique = [
     new lf.schema.Index('Curator', 'uq_name', true, ['name'])
   ];
   return new lf.schema.Constraint(
-      primaryKey, nullable, foreignKeys, unique);
+      primaryKey, notNullable, foreignKeys, unique);
 };
 
 
@@ -1161,13 +1181,17 @@ lovefield.db.schema.PhotoCurator.prototype.getIndices = function() {
 /** @override */
 lovefield.db.schema.PhotoCurator.prototype.getConstraint = function() {
   var primaryKey = null;
-  var nullable = [];
+  var notNullable = [
+    this.photoId,
+    this.curator,
+    this.topic
+  ];
   var foreignKeys = [];
   var unique = [
     new lf.schema.Index('PhotoCurator', 'uq_topic', true, ['topic'])
   ];
   return new lf.schema.Constraint(
-      primaryKey, nullable, foreignKeys, unique);
+      primaryKey, notNullable, foreignKeys, unique);
 };
 
 

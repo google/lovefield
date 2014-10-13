@@ -181,7 +181,8 @@ Table_.prototype.getIndices = function() {
 Table_.prototype.getConstraint = function() {
   return new lf.schema.Constraint(
       new lf.schema.Index(this.tableName_, 'pkId', true, ['id']),
-      [], [], []);
+      [this.id, this.name] /* notNullable */,
+      [], []);
 };
 
 
@@ -235,7 +236,8 @@ TableWithNoIndex_.prototype.getIndices = function() {
 
 /** @override */
 TableWithNoIndex_.prototype.getConstraint = function() {
-  return new lf.schema.Constraint(null, [], [], []);
+  return new lf.schema.Constraint(
+      null, [this.id, this.name] /* notNullable */, [], []);
 };
 
 
@@ -290,6 +292,7 @@ TableWithUnique_.prototype.getIndices = function() {
 /** @override */
 TableWithUnique_.prototype.getConstraint = function() {
   return new lf.schema.Constraint(
-      new lf.schema.Index(this.tableName_, 'pkId', true, ['id']), [], [],
+      new lf.schema.Index(this.tableName_, 'pkId', true, ['id']),
+      [this.id, this.email] /* notNullable */, [],
       [new lf.schema.Index(this.tableName_, 'uq_email', true, ['email'])]);
 };

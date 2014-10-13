@@ -891,17 +891,20 @@ CodeGenerator.prototype.getPrimaryKeyIndex_ = function(table) {
 CodeGenerator.prototype.getConstraint_ = function(table) {
   var results = [];
 
+  var getNotNullable = (function() {
+    var notNullable = [];
+    table.column.forEach(function(column) {
+      if (!table.constraint || !table.constraint.nullable ||
+          table.constraint.nullable.indexOf(column.name) == -1) {
+        notNullable.push('    this.' + column.name);
+      }
+    }, this);
+    return '  var notNullable = [\n' + notNullable.join(',\n') + '\n  ];';
+  }).bind(this);
+
   if (table.constraint) {
     results.push('  var primaryKey = ' + this.getPrimaryKeyIndex_(table) + ';');
-
-    var nullable = '';
-    if (table.constraint.nullable) {
-      nullable = table.constraint.nullable.map(
-          function(columnName) {
-            return 'this.' + columnName;
-          }, this).join(', ');
-    }
-    results.push('  var nullable = [' + nullable + '];');
+    results.push(getNotNullable());
 
     // TODO(dpapad): Populate this field once foreign key indices are
     // implemented.
@@ -917,9 +920,11 @@ CodeGenerator.prototype.getConstraint_ = function(table) {
     results.push('  ];');
 
     results.push('  return new lf.schema.Constraint(\n' +
-        '      primaryKey, nullable, foreignKeys, unique);');
+        '      primaryKey, notNullable, foreignKeys, unique);');
   } else {
-    results.push('  return new lf.schema.Constraint(null, [], [], []);');
+    results.push(getNotNullable());
+    results.push('  return new lf.schema.Constraint(' +
+        'null, notNullable, [], []);');
   }
 
   return results.join('\n');
