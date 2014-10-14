@@ -170,6 +170,9 @@ hr.db.schema.Database.prototype.getDummyTable = function() {
  * @constructor
  */
 hr.db.schema.Job = function() {
+  /** @private {!Array.<!lf.schema.Index>} */
+  this.indices_;
+
   /** @type {!lf.schema.BaseColumn.<string>} */
   this.id = new lf.schema.BaseColumn(
       this, 'id', true, lf.Type.STRING);
@@ -216,10 +219,13 @@ hr.db.schema.Job.prototype.deserializeRow = function(dbRecord) {
 
 /** @override */
 hr.db.schema.Job.prototype.getIndices = function() {
-  return [
-    new lf.schema.Index('Job', 'pkJob', true, ['id']),
-    new lf.schema.Index('Job', 'idx_maxSalary', false, ['maxSalary'])
-  ];
+  if (!this.indices_) {
+    this.indices_ = [
+      new lf.schema.Index('Job', 'pkJob', true, ['id']),
+      new lf.schema.Index('Job', 'idx_maxSalary', false, ['maxSalary'])
+    ];
+  }
+  return this.indices_;
 };
 
 
@@ -403,6 +409,9 @@ hr.db.row.Job.prototype.setMaxSalary = function(value) {
  * @constructor
  */
 hr.db.schema.JobHistory = function() {
+  /** @private {!Array.<!lf.schema.Index>} */
+  this.indices_;
+
   /** @type {!lf.schema.BaseColumn.<string>} */
   this.employeeId = new lf.schema.BaseColumn(
       this, 'employeeId', false, lf.Type.STRING);
@@ -454,9 +463,12 @@ hr.db.schema.JobHistory.prototype.deserializeRow = function(dbRecord) {
 
 /** @override */
 hr.db.schema.JobHistory.prototype.getIndices = function() {
-  return [
+  if (!this.indices_) {
+    this.indices_ = [
 
-  ];
+    ];
+  }
+  return this.indices_;
 };
 
 
@@ -659,6 +671,9 @@ hr.db.row.JobHistory.prototype.setDepartmentId = function(value) {
  * @constructor
  */
 hr.db.schema.Employee = function() {
+  /** @private {!Array.<!lf.schema.Index>} */
+  this.indices_;
+
   /** @type {!lf.schema.BaseColumn.<string>} */
   this.id = new lf.schema.BaseColumn(
       this, 'id', true, lf.Type.STRING);
@@ -747,10 +762,13 @@ hr.db.schema.Employee.prototype.deserializeRow = function(dbRecord) {
 
 /** @override */
 hr.db.schema.Employee.prototype.getIndices = function() {
-  return [
-    new lf.schema.Index('Employee', 'pkEmployee', true, ['id']),
-    new lf.schema.Index('Employee', 'idx_salary', false, ['salary'])
-  ];
+  if (!this.indices_) {
+    this.indices_ = [
+      new lf.schema.Index('Employee', 'pkEmployee', true, ['id']),
+      new lf.schema.Index('Employee', 'idx_salary', false, ['salary'])
+    ];
+  }
+  return this.indices_;
 };
 
 
@@ -1118,6 +1136,9 @@ hr.db.row.Employee.prototype.setPhoto = function(value) {
  * @constructor
  */
 hr.db.schema.Department = function() {
+  /** @private {!Array.<!lf.schema.Index>} */
+  this.indices_;
+
   /** @type {!lf.schema.BaseColumn.<string>} */
   this.id = new lf.schema.BaseColumn(
       this, 'id', true, lf.Type.STRING);
@@ -1164,9 +1185,12 @@ hr.db.schema.Department.prototype.deserializeRow = function(dbRecord) {
 
 /** @override */
 hr.db.schema.Department.prototype.getIndices = function() {
-  return [
-    new lf.schema.Index('Department', 'pkDepartment', true, ['id'])
-  ];
+  if (!this.indices_) {
+    this.indices_ = [
+      new lf.schema.Index('Department', 'pkDepartment', true, ['id'])
+    ];
+  }
+  return this.indices_;
 };
 
 
@@ -1348,6 +1372,9 @@ hr.db.row.Department.prototype.setLocationId = function(value) {
  * @constructor
  */
 hr.db.schema.Location = function() {
+  /** @private {!Array.<!lf.schema.Index>} */
+  this.indices_;
+
   /** @type {!lf.schema.BaseColumn.<string>} */
   this.id = new lf.schema.BaseColumn(
       this, 'id', true, lf.Type.STRING);
@@ -1404,9 +1431,12 @@ hr.db.schema.Location.prototype.deserializeRow = function(dbRecord) {
 
 /** @override */
 hr.db.schema.Location.prototype.getIndices = function() {
-  return [
-    new lf.schema.Index('Location', 'pkLocation', true, ['id'])
-  ];
+  if (!this.indices_) {
+    this.indices_ = [
+      new lf.schema.Index('Location', 'pkLocation', true, ['id'])
+    ];
+  }
+  return this.indices_;
 };
 
 
@@ -1634,6 +1664,9 @@ hr.db.row.Location.prototype.setCountryId = function(value) {
  * @constructor
  */
 hr.db.schema.Country = function() {
+  /** @private {!Array.<!lf.schema.Index>} */
+  this.indices_;
+
   /** @type {!lf.schema.BaseColumn.<string>} */
   this.id = new lf.schema.BaseColumn(
       this, 'id', true, lf.Type.STRING);
@@ -1675,9 +1708,12 @@ hr.db.schema.Country.prototype.deserializeRow = function(dbRecord) {
 
 /** @override */
 hr.db.schema.Country.prototype.getIndices = function() {
-  return [
-    new lf.schema.Index('Country', 'pkCountry', true, ['id'])
-  ];
+  if (!this.indices_) {
+    this.indices_ = [
+      new lf.schema.Index('Country', 'pkCountry', true, ['id'])
+    ];
+  }
+  return this.indices_;
 };
 
 
@@ -1836,6 +1872,9 @@ hr.db.row.Country.prototype.setRegionId = function(value) {
  * @constructor
  */
 hr.db.schema.Region = function() {
+  /** @private {!Array.<!lf.schema.Index>} */
+  this.indices_;
+
   /** @type {!lf.schema.BaseColumn.<string>} */
   this.id = new lf.schema.BaseColumn(
       this, 'id', true, lf.Type.STRING);
@@ -1872,9 +1911,12 @@ hr.db.schema.Region.prototype.deserializeRow = function(dbRecord) {
 
 /** @override */
 hr.db.schema.Region.prototype.getIndices = function() {
-  return [
-    new lf.schema.Index('Region', 'pkRegion', true, ['id'])
-  ];
+  if (!this.indices_) {
+    this.indices_ = [
+      new lf.schema.Index('Region', 'pkRegion', true, ['id'])
+    ];
+  }
+  return this.indices_;
 };
 
 
@@ -2010,6 +2052,9 @@ hr.db.row.Region.prototype.setName = function(value) {
  * @constructor
  */
 hr.db.schema.Holiday = function() {
+  /** @private {!Array.<!lf.schema.Index>} */
+  this.indices_;
+
   /** @type {!lf.schema.BaseColumn.<string>} */
   this.name = new lf.schema.BaseColumn(
       this, 'name', true, lf.Type.STRING);
@@ -2051,10 +2096,13 @@ hr.db.schema.Holiday.prototype.deserializeRow = function(dbRecord) {
 
 /** @override */
 hr.db.schema.Holiday.prototype.getIndices = function() {
-  return [
-    new lf.schema.Index('Holiday', 'pkHoliday', true, ['name']),
-    new lf.schema.Index('Holiday', 'idx_begin', false, ['begin'])
-  ];
+  if (!this.indices_) {
+    this.indices_ = [
+      new lf.schema.Index('Holiday', 'pkHoliday', true, ['name']),
+      new lf.schema.Index('Holiday', 'idx_begin', false, ['begin'])
+    ];
+  }
+  return this.indices_;
 };
 
 
@@ -2215,6 +2263,9 @@ hr.db.row.Holiday.prototype.setEnd = function(value) {
  * @constructor
  */
 hr.db.schema.DummyTable = function() {
+  /** @private {!Array.<!lf.schema.Index>} */
+  this.indices_;
+
   /** @type {!lf.schema.BaseColumn.<!ArrayBuffer>} */
   this.arraybuffer = new lf.schema.BaseColumn(
       this, 'arraybuffer', false, lf.Type.ARRAY_BUFFER);
@@ -2272,9 +2323,12 @@ hr.db.schema.DummyTable.prototype.deserializeRow = function(dbRecord) {
 
 /** @override */
 hr.db.schema.DummyTable.prototype.getIndices = function() {
-  return [
-    new lf.schema.Index('DummyTable', 'pkDummyTable', true, ['string'])
-  ];
+  if (!this.indices_) {
+    this.indices_ = [
+      new lf.schema.Index('DummyTable', 'pkDummyTable', true, ['string'])
+    ];
+  }
+  return this.indices_;
 };
 
 

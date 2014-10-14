@@ -67,6 +67,9 @@ goog.require('lf.schema.Table');
  * @constructor
  */
 #namespace.schema.#table#pascal = function() {
+  /** @private {!Array.<!lf.schema.Index>} */
+  this.indices_;
+
   /// #repeatcolumn
   /** @type {!lf.schema.BaseColumn.<#columnjstype>} */
   this.#column#camel = new lf.schema.BaseColumn(
@@ -100,9 +103,12 @@ goog.require('lf.schema.Table');
 
 /** @override */
 #namespace.schema.#table#pascal.prototype.getIndices = function() {
-  return [
+  if (!this.indices_) {
+    this.indices_ = [
 #tableindices
-  ];
+    ];
+  }
+  return this.indices_;
 };
 
 

@@ -45,7 +45,7 @@ table:
           cascade: true
       nullable: [ tacotownJspb, accessTimestamp, imageHash ]
 
-  PhotoDetails:
+  Details:
     column:
       photoId: string
       albumId: string

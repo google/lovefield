@@ -4,21 +4,21 @@ goog.provide('lovefield.db.row.AlbumType');
 goog.provide('lovefield.db.row.Curator');
 goog.provide('lovefield.db.row.CuratorDbType');
 goog.provide('lovefield.db.row.CuratorType');
+goog.provide('lovefield.db.row.Details');
+goog.provide('lovefield.db.row.DetailsDbType');
+goog.provide('lovefield.db.row.DetailsType');
 goog.provide('lovefield.db.row.Photo');
 goog.provide('lovefield.db.row.PhotoCurator');
 goog.provide('lovefield.db.row.PhotoCuratorDbType');
 goog.provide('lovefield.db.row.PhotoCuratorType');
 goog.provide('lovefield.db.row.PhotoDbType');
-goog.provide('lovefield.db.row.PhotoDetails');
-goog.provide('lovefield.db.row.PhotoDetailsDbType');
-goog.provide('lovefield.db.row.PhotoDetailsType');
 goog.provide('lovefield.db.row.PhotoType');
 goog.provide('lovefield.db.schema.Album');
 goog.provide('lovefield.db.schema.Curator');
 goog.provide('lovefield.db.schema.Database');
+goog.provide('lovefield.db.schema.Details');
 goog.provide('lovefield.db.schema.Photo');
 goog.provide('lovefield.db.schema.PhotoCurator');
-goog.provide('lovefield.db.schema.PhotoDetails');
 
 goog.require('lf.Row');
 goog.require('lf.Type');
@@ -41,8 +41,8 @@ lovefield.db.schema.Database = function() {
   /** @private {!lovefield.db.schema.Photo} */
   this.photo_ = new lovefield.db.schema.Photo();
 
-  /** @private {!lovefield.db.schema.PhotoDetails} */
-  this.photoDetails_ = new lovefield.db.schema.PhotoDetails();
+  /** @private {!lovefield.db.schema.Details} */
+  this.details_ = new lovefield.db.schema.Details();
 
   /** @private {!lovefield.db.schema.Curator} */
   this.curator_ = new lovefield.db.schema.Curator();
@@ -70,7 +70,7 @@ lovefield.db.schema.Database.prototype.getTables = function() {
   return [
     this.album_,
     this.photo_,
-    this.photoDetails_,
+    this.details_,
     this.curator_,
     this.photoCurator_
   ];
@@ -89,9 +89,9 @@ lovefield.db.schema.Database.prototype.getPhoto = function() {
 };
 
 
-/** @return {!lovefield.db.schema.PhotoDetails} */
-lovefield.db.schema.Database.prototype.getPhotoDetails = function() {
-  return this.photoDetails_;
+/** @return {!lovefield.db.schema.Details} */
+lovefield.db.schema.Database.prototype.getDetails = function() {
+  return this.details_;
 };
 
 
@@ -114,6 +114,9 @@ lovefield.db.schema.Database.prototype.getPhotoCurator = function() {
  * @constructor
  */
 lovefield.db.schema.Album = function() {
+  /** @private {!Array.<!lf.schema.Index>} */
+  this.indices_;
+
   /** @type {!lf.schema.BaseColumn.<string>} */
   this.id = new lf.schema.BaseColumn(
       this, 'id', true, lf.Type.STRING);
@@ -166,11 +169,14 @@ lovefield.db.schema.Album.prototype.deserializeRow = function(dbRecord) {
 
 /** @override */
 lovefield.db.schema.Album.prototype.getIndices = function() {
-  return [
-    new lf.schema.Index('Album', 'pkAlbum', true, ['id']),
-    new lf.schema.Index('Album', 'idx_timestamp', false, ['timestamp']),
-    new lf.schema.Index('Album', 'idx_localId', false, ['isLocal', 'id'])
-  ];
+  if (!this.indices_) {
+    this.indices_ = [
+      new lf.schema.Index('Album', 'pkAlbum', true, ['id']),
+      new lf.schema.Index('Album', 'idx_timestamp', false, ['timestamp']),
+      new lf.schema.Index('Album', 'idx_localId', false, ['isLocal', 'id'])
+    ];
+  }
+  return this.indices_;
 };
 
 
@@ -379,6 +385,9 @@ lovefield.db.row.Album.prototype.setTacotownJspb = function(value) {
  * @constructor
  */
 lovefield.db.schema.Photo = function() {
+  /** @private {!Array.<!lf.schema.Index>} */
+  this.indices_;
+
   /** @type {!lf.schema.BaseColumn.<string>} */
   this.id = new lf.schema.BaseColumn(
       this, 'id', true, lf.Type.STRING);
@@ -451,10 +460,13 @@ lovefield.db.schema.Photo.prototype.deserializeRow = function(dbRecord) {
 
 /** @override */
 lovefield.db.schema.Photo.prototype.getIndices = function() {
-  return [
-    new lf.schema.Index('Photo', 'pkPhoto', true, ['id']),
-    new lf.schema.Index('Photo', 'idx_timestamp', false, ['timestamp'])
-  ];
+  if (!this.indices_) {
+    this.indices_ = [
+      new lf.schema.Index('Photo', 'pkPhoto', true, ['id']),
+      new lf.schema.Index('Photo', 'idx_timestamp', false, ['timestamp'])
+    ];
+  }
+  return this.indices_;
 };
 
 
@@ -746,11 +758,14 @@ lovefield.db.row.Photo.prototype.setTacotownJspb = function(value) {
 
 
 /**
- * @implements {lf.schema.Table.<!lovefield.db.row.PhotoDetailsType,
- *     !lovefield.db.row.PhotoDetailsDbType>}
+ * @implements {lf.schema.Table.<!lovefield.db.row.DetailsType,
+ *     !lovefield.db.row.DetailsDbType>}
  * @constructor
  */
-lovefield.db.schema.PhotoDetails = function() {
+lovefield.db.schema.Details = function() {
+  /** @private {!Array.<!lf.schema.Index>} */
+  this.indices_;
+
   /** @type {!lf.schema.BaseColumn.<string>} */
   this.photoId = new lf.schema.BaseColumn(
       this, 'photoId', false, lf.Type.STRING);
@@ -767,39 +782,42 @@ lovefield.db.schema.PhotoDetails = function() {
 
 
 /** @override */
-lovefield.db.schema.PhotoDetails.prototype.getName = function() {
-  return 'PhotoDetails';
+lovefield.db.schema.Details.prototype.getName = function() {
+  return 'Details';
 };
 
 
 /** @override */
-lovefield.db.schema.PhotoDetails.prototype.createRow = function(opt_value) {
-  return new lovefield.db.row.PhotoDetails(lf.Row.getNextId(), opt_value);
+lovefield.db.schema.Details.prototype.createRow = function(opt_value) {
+  return new lovefield.db.row.Details(lf.Row.getNextId(), opt_value);
 };
 
 
 /** @override */
-lovefield.db.schema.PhotoDetails.prototype.deserializeRow = function(dbRecord) {
+lovefield.db.schema.Details.prototype.deserializeRow = function(dbRecord) {
   var rowId = dbRecord['id'];
   var data = dbRecord['value'];
-  var payload = new lovefield.db.row.PhotoDetailsType();
+  var payload = new lovefield.db.row.DetailsType();
   payload.photoId = data.photoId;
   payload.albumId = data.albumId;
   payload.totalComments = data.totalComments;
-  return new lovefield.db.row.PhotoDetails(rowId, payload);
+  return new lovefield.db.row.Details(rowId, payload);
 };
 
 
 /** @override */
-lovefield.db.schema.PhotoDetails.prototype.getIndices = function() {
-  return [
-    new lf.schema.Index('PhotoDetails', 'idx_id', false, ['albumId', 'photoId'])
-  ];
+lovefield.db.schema.Details.prototype.getIndices = function() {
+  if (!this.indices_) {
+    this.indices_ = [
+      new lf.schema.Index('Details', 'idx_id', false, ['albumId', 'photoId'])
+    ];
+  }
+  return this.indices_;
 };
 
 
 /** @override */
-lovefield.db.schema.PhotoDetails.prototype.getConstraint = function() {
+lovefield.db.schema.Details.prototype.getConstraint = function() {
   var primaryKey = null;
   var notNullable = [
     this.photoId,
@@ -821,7 +839,7 @@ lovefield.db.schema.PhotoDetails.prototype.getConstraint = function() {
  * @struct
  * @final
  */
-lovefield.db.row.PhotoDetailsType = function() {
+lovefield.db.row.DetailsType = function() {
   /** @export @type {string} */
   this.photoId;
   /** @export @type {string} */
@@ -838,7 +856,7 @@ lovefield.db.row.PhotoDetailsType = function() {
  * @struct
  * @final
  */
-lovefield.db.row.PhotoDetailsDbType = function() {
+lovefield.db.row.DetailsDbType = function() {
   /** @export @type {string} */
   this.photoId;
   /** @export @type {string} */
@@ -850,23 +868,23 @@ lovefield.db.row.PhotoDetailsDbType = function() {
 
 
 /**
- * Constructs a new PhotoDetails row.
+ * Constructs a new Details row.
  * @constructor
- * @extends {lf.Row.<!lovefield.db.row.PhotoDetailsType,
- *     !lovefield.db.row.PhotoDetailsDbType>}
+ * @extends {lf.Row.<!lovefield.db.row.DetailsType,
+ *     !lovefield.db.row.DetailsDbType>}
  *
  * @param {number} rowId The row ID.
- * @param {!lovefield.db.row.PhotoDetailsType=} opt_payload
+ * @param {!lovefield.db.row.DetailsType=} opt_payload
  */
-lovefield.db.row.PhotoDetails = function(rowId, opt_payload) {
-  lovefield.db.row.PhotoDetails.base(this, 'constructor', rowId, opt_payload);
+lovefield.db.row.Details = function(rowId, opt_payload) {
+  lovefield.db.row.Details.base(this, 'constructor', rowId, opt_payload);
 };
-goog.inherits(lovefield.db.row.PhotoDetails, lf.Row);
+goog.inherits(lovefield.db.row.Details, lf.Row);
 
 
 /** @override */
-lovefield.db.row.PhotoDetails.prototype.defaultPayload = function() {
-  var payload = new lovefield.db.row.PhotoDetailsType();
+lovefield.db.row.Details.prototype.defaultPayload = function() {
+  var payload = new lovefield.db.row.DetailsType();
   payload.photoId = '';
   payload.albumId = '';
   payload.totalComments = 0;
@@ -875,8 +893,8 @@ lovefield.db.row.PhotoDetails.prototype.defaultPayload = function() {
 
 
 /** @override */
-lovefield.db.row.PhotoDetails.prototype.toDbPayload = function() {
-  var payload = new lovefield.db.row.PhotoDetailsDbType();
+lovefield.db.row.Details.prototype.toDbPayload = function() {
+  var payload = new lovefield.db.row.DetailsDbType();
   payload.photoId = this.payload().photoId;
   payload.albumId = this.payload().albumId;
   payload.totalComments = this.payload().totalComments;
@@ -885,9 +903,9 @@ lovefield.db.row.PhotoDetails.prototype.toDbPayload = function() {
 
 
 /** @override */
-lovefield.db.row.PhotoDetails.prototype.keyOfIndex = function(indexName) {
+lovefield.db.row.Details.prototype.keyOfIndex = function(indexName) {
   switch (indexName) {
-    case 'PhotoDetails.idx_id':
+    case 'Details.idx_id':
       return this.payload().albumId + '_' + this.payload().photoId;
     case '##row_id##':
       return this.id();
@@ -899,48 +917,48 @@ lovefield.db.row.PhotoDetails.prototype.keyOfIndex = function(indexName) {
 
 
 /** @return {string} */
-lovefield.db.row.PhotoDetails.prototype.getPhotoId = function() {
+lovefield.db.row.Details.prototype.getPhotoId = function() {
   return this.payload().photoId;
 };
 
 
 /**
  * @param {string} value
- * @return {!lovefield.db.row.PhotoDetails}
+ * @return {!lovefield.db.row.Details}
 */
-lovefield.db.row.PhotoDetails.prototype.setPhotoId = function(value) {
+lovefield.db.row.Details.prototype.setPhotoId = function(value) {
   this.payload().photoId = value;
   return this;
 };
 
 
 /** @return {string} */
-lovefield.db.row.PhotoDetails.prototype.getAlbumId = function() {
+lovefield.db.row.Details.prototype.getAlbumId = function() {
   return this.payload().albumId;
 };
 
 
 /**
  * @param {string} value
- * @return {!lovefield.db.row.PhotoDetails}
+ * @return {!lovefield.db.row.Details}
 */
-lovefield.db.row.PhotoDetails.prototype.setAlbumId = function(value) {
+lovefield.db.row.Details.prototype.setAlbumId = function(value) {
   this.payload().albumId = value;
   return this;
 };
 
 
 /** @return {number} */
-lovefield.db.row.PhotoDetails.prototype.getTotalComments = function() {
+lovefield.db.row.Details.prototype.getTotalComments = function() {
   return this.payload().totalComments;
 };
 
 
 /**
  * @param {number} value
- * @return {!lovefield.db.row.PhotoDetails}
+ * @return {!lovefield.db.row.Details}
 */
-lovefield.db.row.PhotoDetails.prototype.setTotalComments = function(value) {
+lovefield.db.row.Details.prototype.setTotalComments = function(value) {
   this.payload().totalComments = value;
   return this;
 };
@@ -953,6 +971,9 @@ lovefield.db.row.PhotoDetails.prototype.setTotalComments = function(value) {
  * @constructor
  */
 lovefield.db.schema.Curator = function() {
+  /** @private {!Array.<!lf.schema.Index>} */
+  this.indices_;
+
   /** @type {!lf.schema.BaseColumn.<number>} */
   this.id = new lf.schema.BaseColumn(
       this, 'id', true, lf.Type.INTEGER);
@@ -989,10 +1010,13 @@ lovefield.db.schema.Curator.prototype.deserializeRow = function(dbRecord) {
 
 /** @override */
 lovefield.db.schema.Curator.prototype.getIndices = function() {
-  return [
-    new lf.schema.Index('Curator', 'pkCurator', true, ['id']),
-    new lf.schema.Index('Curator', 'uq_name', true, ['name'])
-  ];
+  if (!this.indices_) {
+    this.indices_ = [
+      new lf.schema.Index('Curator', 'pkCurator', true, ['id']),
+      new lf.schema.Index('Curator', 'uq_name', true, ['name'])
+    ];
+  }
+  return this.indices_;
 };
 
 
@@ -1131,6 +1155,9 @@ lovefield.db.row.Curator.prototype.setName = function(value) {
  * @constructor
  */
 lovefield.db.schema.PhotoCurator = function() {
+  /** @private {!Array.<!lf.schema.Index>} */
+  this.indices_;
+
   /** @type {!lf.schema.BaseColumn.<string>} */
   this.photoId = new lf.schema.BaseColumn(
       this, 'photoId', false, lf.Type.STRING);
@@ -1172,9 +1199,12 @@ lovefield.db.schema.PhotoCurator.prototype.deserializeRow = function(dbRecord) {
 
 /** @override */
 lovefield.db.schema.PhotoCurator.prototype.getIndices = function() {
-  return [
-    new lf.schema.Index('PhotoCurator', 'uq_topic', true, ['topic'])
-  ];
+  if (!this.indices_) {
+    this.indices_ = [
+      new lf.schema.Index('PhotoCurator', 'uq_topic', true, ['topic'])
+    ];
+  }
+  return this.indices_;
 };
 
 
