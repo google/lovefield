@@ -184,3 +184,27 @@ function testGetReversed_Modify() {
             modification[1].payload()['name']);
       });
 }
+
+
+function testGetAsModifications() {
+  var diff = new lf.cache.TableDiff();
+
+  var row1 = new lf.testing.MockSchema.Row(
+      1, {'id': 'pk1', 'name': 'DummyName'});
+  var row2 = new lf.testing.MockSchema.Row(
+      2, {'id': 'pk2', 'name': 'DummyName'});
+  var row3Before = new lf.testing.MockSchema.Row(
+      3, {'id': 'pk3', 'name': 'DummyName'});
+  var row3After = new lf.testing.MockSchema.Row(
+      3, {'id': 'pk3', 'name': 'OtherDummyName'});
+
+  diff.add(row1);
+  diff.modify([row3Before, row3After]);
+  diff.delete(row2);
+
+  var modifications = diff.getAsModifications();
+  assertEquals(3, modifications.length);
+  assertArrayEquals([null, row1], modifications[0]);
+  assertArrayEquals([row3Before, row3After], modifications[1]);
+  assertArrayEquals([row2, null], modifications[2]);
+}
