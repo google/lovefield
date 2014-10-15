@@ -39,6 +39,9 @@ lf.testing.hrSchema.EmployeeDataGenerator = function(schema) {
    * @private {!goog.structs.Set.<number>}
    */
   this.assignedSalaries_ = new goog.structs.Set();
+
+  /** @private {number} */
+  this.maxJobIndex_ = lf.testing.hrSchema.samples.JOB_TITLES.length;
 };
 
 
@@ -76,6 +79,18 @@ lf.testing.hrSchema.EmployeeDataGenerator.prototype.generateRaw_ =
   }
 
   return employees;
+};
+
+
+/**
+ * Sets the max index in JOB_TITLES that will be used for all generated
+ * employees.
+ * @param {number} maxJobIndex
+ */
+lf.testing.hrSchema.EmployeeDataGenerator.prototype.setMaxJobId =
+    function(maxJobIndex) {
+  this.maxJobIndex_ = Math.min(
+      maxJobIndex, lf.testing.hrSchema.samples.JOB_TITLES.length);
 };
 
 
@@ -119,8 +134,7 @@ lf.testing.hrSchema.EmployeeDataGenerator.prototype.genLastName_ = function() {
  * @private
  */
 lf.testing.hrSchema.EmployeeDataGenerator.prototype.genJobId_ = function() {
-  var maxIndex = lf.testing.hrSchema.samples.JOB_TITLES.length;
-  var index = Math.floor(Math.random() * maxIndex);
+  var index = Math.floor(Math.random() * this.maxJobIndex_);
   return 'jobId' + index;
 };
 

@@ -92,6 +92,7 @@ lf.testing.hrSchema.MockDataGenerator.prototype.generate = function(
     jobCount, employeeCount) {
   var employeeGenerator =
       new lf.testing.hrSchema.EmployeeDataGenerator(this.schema_);
+  employeeGenerator.setMaxJobId(jobCount);
   this.sampleEmployees = employeeGenerator.generate(employeeCount);
 
   var jobGenerator =
