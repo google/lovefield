@@ -148,7 +148,7 @@ function testGetTransformed_AggregatedColumnsOnly() {
  */
 function testGetTransformed_MixedColumns() {
   var columns = [j.title, j.maxSalary, lf.fn.avg(j.maxSalary)];
-  checkTransformationWithoutJoin(columns, sampleJobs.length);
+  checkTransformationWithoutJoin(columns, 1);
 }
 
 
@@ -190,7 +190,7 @@ function testGetTransformed_MixedColumns_Join() {
     j.title, j.maxSalary, lf.fn.min(j.maxSalary),
     e.email, e.hireDate, lf.fn.min(e.hireDate)
   ];
-  checkTransformationWithJoin(columns, sampleEmployees.length);
+  checkTransformationWithJoin(columns, 1);
 }
 
 
@@ -203,6 +203,31 @@ function testGetTransformed_DistinctOnly_Join() {
 function testGetTransformed_NestedAggregations_Join() {
   var columns = [lf.fn.count(lf.fn.distinct(j.maxSalary))];
   checkTransformationWithJoin(columns, 1);
+}
+
+
+function testGetTransformed_Many() {
+  // Creating multiple relations where each relation holds two employees that
+  // have the same "jobId" field.
+  var relations = [];
+  for (var i = 0; i < sampleEmployees.length; i += 2) {
+    var relation = lf.proc.Relation.fromRows(
+        [sampleEmployees[i], sampleEmployees[i + 1]],
+        [e.getName()]);
+    relations.push(relation);
+  }
+
+  var columns = [
+    e.jobId,
+    lf.fn.min(e.salary),
+    lf.fn.max(e.salary),
+    lf.fn.avg(e.salary)
+  ];
+
+  var transformedRelation = lf.proc.RelationTransformer.transformMany(
+      relations, columns);
+  assertEquals(relations.length, transformedRelation.entries.length);
+  assertColumnsPopulated(columns, transformedRelation);
 }
 
 

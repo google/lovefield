@@ -340,6 +340,38 @@ function testSelect_OrderBy_Multiple() {
 }
 
 
+function testSelect_GroupBy() {
+  asyncTestCase.waitForAsync('testSelect_GroupBy');
+
+  var queryBuilder = /** @type {!lf.query.SelectBuilder} */ (
+      db.select(e.jobId, lf.fn.avg(e.salary), lf.fn.count(e.id)).
+      from(e).
+      groupBy(e.jobId));
+
+  queryBuilder.exec().then(
+      function(results) {
+        var expectedResultCount = mockDataGenerator.employeeGroundTruth.
+            employeesPerJob.getKeys().length;
+        assertEquals(expectedResultCount, results.length);
+        results.forEach(function(obj) {
+          assertEquals(3, goog.object.getCount(obj));
+          assertTrue(goog.isDefAndNotNull(obj[e.jobId.getName()]));
+          assertTrue(goog.isDefAndNotNull(
+              obj[lf.fn.avg(e.salary).getName()]));
+
+          // Verifying that each group has the correct count of employees.
+          var employeesPerJobCount = obj[lf.fn.count(e.id).getName()];
+          var expectedEmployeesPerJobCount = mockDataGenerator.
+              employeeGroundTruth.employeesPerJob.get(
+                  obj[e.jobId.getName()]).length;
+          assertEquals(expectedEmployeesPerJobCount, employeesPerJobCount);
+        });
+
+        asyncTestCase.continueTesting();
+      }, fail);
+}
+
+
 /**
  * Tests the case where a MIN,MAX aggregators are used without being mixed up
  * with non-aggregated columns.
@@ -385,6 +417,28 @@ function testSelect_Count_Distinct() {
         assertEquals(
             mockDataGenerator.jobGroundTruth.countDistinctMaxSalary,
             results[0][aggregatedColumn.getName()]);
+
+        asyncTestCase.continueTesting();
+      }, fail);
+}
+
+
+/**
+ * Tests the case where a COUNT aggregator is used on an empty table.
+ */
+function testSelect_Count_Empty() {
+  asyncTestCase.waitForAsync('testSelect_Count_Empty');
+
+  var h = db.getSchema().getHoliday();
+  var aggregatedColumn = lf.fn.count(h.name);
+  var queryBuilder = /** @type {!lf.query.SelectBuilder} */ (
+      db.select(aggregatedColumn).from(h));
+
+  queryBuilder.exec().then(
+      function(results) {
+        assertEquals(1, results.length);
+        assertEquals(1, goog.object.getCount(results[0]));
+        assertEquals(0, results[0][aggregatedColumn.getName()]);
 
         asyncTestCase.continueTesting();
       }, fail);

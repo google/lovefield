@@ -89,7 +89,7 @@ function testSimpleTree() {
 
   // Generating a simple tree that has just one SelectNode corresponding to an
   // AND predicate.
-  var rootNodeBefore = new lf.proc.ProjectStep([]);
+  var rootNodeBefore = new lf.proc.ProjectStep([], null);
   var predicate = e.id.gt('100');
   var selectNode = new lf.proc.SelectStep(predicate);
   rootNodeBefore.addChild(selectNode);
@@ -227,7 +227,7 @@ function constructTree2() {
   selectNode4.addChild(tableAccessNode2);
 
   // Constructing the overall tree.
-  var rootNode = new lf.proc.ProjectStep([]);
+  var rootNode = new lf.proc.ProjectStep([], null);
   var orderByNode3 = new lf.proc.OrderByStep(
       [{column: e.salary, order: lf.Order.ASC}]);
   var joinNode = new lf.proc.JoinStep(j.id.eq(e.jobId));
