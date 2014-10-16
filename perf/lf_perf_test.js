@@ -210,9 +210,10 @@ function test4Select() {
         selectBenchmark.queryOrderByNonIndexed.bind(selectBenchmark),
         selectBenchmark.verifyOrderByNonIndexed.bind(selectBenchmark));
     benchmarkRunner.schedule(
-        'SelectProjectMixedColumns',
-        selectBenchmark.queryProjectMixedColumns.bind(selectBenchmark),
-        selectBenchmark.verifyProjectMixedColumns.bind(selectBenchmark));
+        'SelectProjectNonAggregatedColumns',
+        selectBenchmark.queryProjectNonAggregatedColumns.bind(selectBenchmark),
+        selectBenchmark.verifyProjectNonAggregatedColumns.bind(
+            selectBenchmark));
     benchmarkRunner.schedule(
         'SelectProjectAggregateIndexed',
         selectBenchmark.queryProjectAggregateIndexed.bind(selectBenchmark),

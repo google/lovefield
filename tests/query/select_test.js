@@ -15,6 +15,7 @@
  * limitations under the License.
  */
 goog.setTestOnly();
+goog.require('goog.Promise');
 goog.require('goog.testing.AsyncTestCase');
 goog.require('goog.testing.jsunit');
 goog.require('hr.db');
@@ -53,6 +54,85 @@ function testExec_ThrowsMissingFrom() {
       function(e) {
         asyncTestCase.continueTesting();
       });
+}
+
+
+/**
+ * Tests that constructing a query fails if an invalid projection list is
+ * requested.
+ */
+function testExec_ThrowsInvalidProjectionList() {
+  asyncTestCase.waitForAsync('testExec_ThrowsInvalidProjectionList');
+
+  var e = db.getSchema().getEmployee();
+  var query = new lf.query.SelectBuilder([e.email, lf.fn.avg(e.salary)]);
+  query.from(e).exec().then(
+      fail,
+      function(e) {
+        assertEquals(e.name, lf.Exception.Type.SYNTAX);
+        asyncTestCase.continueTesting();
+      });
+}
+
+
+/**
+ * Tests that constructing a query involving Select#groupBy() fails if an
+ * invalid combination of projection and groupBy list is requested.
+ */
+function testExec_ThrowsInvalidProjectionList_GroupBy() {
+  asyncTestCase.waitForAsync('testExec_ThrowsInvalidProjectionList_GroupBy');
+
+  var e = db.getSchema().getEmployee();
+  var query = new lf.query.SelectBuilder([e.email, e.salary]);
+  query.from(e).groupBy(e.jobId).exec().then(
+      fail,
+      function(e) {
+        assertEquals(e.name, lf.Exception.Type.SYNTAX);
+        asyncTestCase.continueTesting();
+      });
+}
+
+
+/**
+ * Tests that constructing a query succeeds if a valid projection list is
+ * requested (and if no other violation occurs).
+ */
+function testExec_ValidProjectionList() {
+  asyncTestCase.waitForAsync('testExec_ValidProjectionList');
+  var e = db.getSchema().getEmployee();
+
+  // Constructing a query where all requested columns are aggregated.
+  var query1 = new lf.query.SelectBuilder(
+      [lf.fn.min(e.salary), lf.fn.avg(e.salary)]);
+  query1.from(e);
+
+  // Constructing a query where all requested columns are non-aggregated.
+  var query2 = new lf.query.SelectBuilder([e.salary, e.salary]);
+  query2.from(e);
+
+  goog.Promise.all([
+    query1.exec(),
+    query2.exec()
+  ]).then(
+      function(e) {
+        asyncTestCase.continueTesting();
+      }, fail);
+}
+
+
+/**
+ * Tests that constructing queries involving Select#groupBy() succeed if a
+ * valid combination of projection and groupBy list is requested.
+ */
+function testExec_ValidProjectionList_GroupBy() {
+  asyncTestCase.waitForAsync('testExec_ValidProjectionList_GroupBy');
+
+  var e = db.getSchema().getEmployee();
+  var query = new lf.query.SelectBuilder([e.jobId, lf.fn.avg(e.salary)]);
+  query.from(e).groupBy(e.jobId).exec().then(
+      function(e) {
+        asyncTestCase.continueTesting();
+      }, fail);
 }
 
 

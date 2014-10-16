@@ -341,34 +341,6 @@ function testSelect_OrderBy_Multiple() {
 
 
 /**
- * Tests the case where a MIN aggregator is used along with non-aggregated
- * columns.
- */
-function testSelect_Min_BothColumnsAndAggregators() {
-  asyncTestCase.waitForAsync('testSelect_Min_BothColumnsAndAggregators');
-
-  var aggregatedColumn = lf.fn.min(j.maxSalary);
-  var queryBuilder = /** @type {!lf.query.SelectBuilder} */ (
-      db.select(j.title, j.maxSalary, aggregatedColumn).from(j));
-
-  queryBuilder.exec().then(
-      function(results) {
-        assertEquals(sampleJobs.length, results.length);
-        results.forEach(function(result) {
-          assertEquals(3, goog.object.getCount(result));
-          assertTrue(goog.isDefAndNotNull(result.title));
-          assertTrue(goog.isDefAndNotNull(result.maxSalary));
-          assertEquals(
-              mockDataGenerator.jobGroundTruth.minMaxSalary,
-              result[aggregatedColumn.getName()]);
-        });
-
-        asyncTestCase.continueTesting();
-      }, fail);
-}
-
-
-/**
  * Tests the case where a MIN,MAX aggregators are used without being mixed up
  * with non-aggregated columns.
  */

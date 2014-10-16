@@ -454,10 +454,10 @@ lf.testing.perf.SelectBenchmark.prototype.verifyOrderByNonIndexed =
 
 
 /** @return {!IThenable} */
-lf.testing.perf.SelectBenchmark.prototype.queryProjectMixedColumns =
+lf.testing.perf.SelectBenchmark.prototype.queryProjectNonAggregatedColumns =
     function() {
   return this.db_.
-      select(this.e_.email, this.e_.salary, lf.fn.avg(this.e_.salary)).
+      select(this.e_.email, this.e_.salary).
       from(this.e_).
       exec();
 };
@@ -467,21 +467,16 @@ lf.testing.perf.SelectBenchmark.prototype.queryProjectMixedColumns =
  * @param {!Array.<!Object>} results
  * @return {!IThenable.<boolean>}
  */
-lf.testing.perf.SelectBenchmark.prototype.verifyProjectMixedColumns =
+lf.testing.perf.SelectBenchmark.prototype.verifyProjectNonAggregatedColumns =
     function(results) {
   if (results.length != this.dataGenerator_.sampleEmployees.length) {
     return goog.Promise.resolve(false);
   }
 
   var validated = results.every(function(obj) {
-    return goog.object.getCount(obj) == 3 &&
+    return goog.object.getCount(obj) == 2 &&
         goog.isDefAndNotNull(obj.email) &&
-        goog.isDefAndNotNull(obj.salary) &&
-        goog.isDefAndNotNull(obj['avg_salary']) &&
-        goog.math.nearlyEquals(
-            obj['avg_salary'],
-            this.dataGenerator_.employeeGroundTruth.avgSalary,
-            lf.testing.perf.SelectBenchmark.EPSILON_);
+        goog.isDefAndNotNull(obj.salary);
   }, this);
 
   return goog.Promise.resolve(validated);
