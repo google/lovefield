@@ -33,6 +33,7 @@ function usage() {
   log('             (Optional, default to $CLOSURE_COMPILER)');
   log('  --library Closure library path ');
   log('            (Optional, default to $CLOSURE_LIBRARY)');
+  log('  --debug <true|false> Generate debug bundle (i.e. non-scrambled)');
   process.exit(1);
 }
 
