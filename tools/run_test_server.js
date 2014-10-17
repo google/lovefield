@@ -153,15 +153,17 @@ function createTestFiles() {
     return '    <a href="' + file + '">' + file.slice(5) + '</a><br />';
   });
   var contents =
-      '<html>\n' +
-      '  <head>\n' +
-      '    <title>' + title + '</title>\n' +
-      '  </head>\n' +
-      '  <body>\n' +
-      '    <h1>' + title + '</h1>\n' +
-      links.join('\n') +
-      '\n  </body>\n' +
-      '</html>\n';
+      '<!DOCTYPE html>\r\n' +
+      '<html>\r\n' +
+      '  <head>\r\n' +
+      '    <meta charset="utf-8" />\r\n' +
+      '    <title>' + title + '</title>\r\n' +
+      '  </head>\r\n' +
+      '  <body>\r\n' +
+      '    <h1>' + title + '</h1>\r\n' +
+      links.join('\r\n') +
+      '\r\n  </body>\r\n' +
+      '</html>\r\n';
   fsMod.writeFileSync('index.html', contents);
   stdout.write('\nTest files generated. Starting server ...\n');
 }
@@ -176,20 +178,22 @@ function createTestFile(script) {
   var level = target.match(/\//g).length;
   var prefix = new Array(level).join('../') + '../';
   var contents =
-      '<html>\n' +
-      '  <head>\n' +
-      '    <title>' + pathMod.basename(target).slice(0, -5) + '</title>\n' +
-      '    <script src="' + prefix + 'closure/goog/base.js"></script>\n' +
-      '    <script src="' + prefix + 'deps.js"></script>\n' +
-      '  </head>\n' +
-      '  <body>\n' +
-      '    <script>\n' +
-      '      goog.require(\'goog.testing.jsunit\');\n' +
-      '      goog.require(\'goog.testing.AsyncTestCase\');\n' +
-      '    </script>\n' +
-      '    <script src="' + prefix + script + '"></script>\n' +
-      '  </body>\n' +
-      '</html>\n';
+      '<!DOCTYPE html>\r\n' +
+      '<html>\r\n' +
+      '  <head>\r\n' +
+      '    <meta charset="utf-8" />\r\n' +
+      '    <title>' + pathMod.basename(target).slice(0, -5) + '</title>\r\n' +
+      '    <script src="' + prefix + 'closure/goog/base.js"></script>\r\n' +
+      '    <script src="' + prefix + 'deps.js"></script>\r\n' +
+      '  </head>\r\n' +
+      '  <body>\r\n' +
+      '    <script>\r\n' +
+      '      goog.require(\'goog.testing.jsunit\');\r\n' +
+      '      goog.require(\'goog.testing.AsyncTestCase\');\r\n' +
+      '    </script>\r\n' +
+      '    <script src="' + prefix + script + '"></script>\r\n' +
+      '  </body>\r\n' +
+      '</html>\r\n';
   mkdir(pathMod.dirname(target));
   fsMod.writeFileSync(target, contents);
   return target;
