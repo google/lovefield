@@ -44,12 +44,20 @@ var e;
 var j;
 
 
+/** @type {!hr.db.schema.Department} */
+var d;
+
+
 /** @type {!Array.<!hr.db.row.Job>} */
 var sampleJobs;
 
 
 /** @type {!Array.<!hr.db.row.Employee>} */
 var sampleEmployees;
+
+
+/** @type {!Array.<!hr.db.row.Department>} */
+var sampleDepartments;
 
 
 /** @type {!lf.testing.hrSchema.MockDataGenerator} */
@@ -66,8 +74,9 @@ function setUp() {
       /* opt_onUpgrade */ undefined,
       /* opt_volatile */ true).then(function(database) {
     db = database;
-    j = db.getSchema().getJob();
+    d = db.getSchema().getDepartment();
     e = db.getSchema().getEmployee();
+    j = db.getSchema().getJob();
     return addSampleData();
   }).then(function() {
     asyncTestCase.continueTesting();
@@ -83,13 +92,18 @@ function addSampleData() {
   var schema = /** @type {!hr.db.schema.Database} */ (db.getSchema());
 
   mockDataGenerator = new lf.testing.hrSchema.MockDataGenerator(schema);
-  mockDataGenerator.generate(50, 300);
+  mockDataGenerator.generate(
+      /* jobCount */ 50,
+      /* employeeCount */ 300,
+      /* departmentCount */ 10);
   sampleEmployees = mockDataGenerator.sampleEmployees;
   sampleJobs = mockDataGenerator.sampleJobs;
+  sampleDepartments = mockDataGenerator.sampleDepartments;
 
   return goog.Promise.all([
     db.insert().into(j).values(sampleJobs).exec(),
-    db.insert().into(e).values(sampleEmployees).exec()
+    db.insert().into(e).values(sampleEmployees).exec(),
+    db.insert().into(d).values(sampleDepartments).exec()
   ]);
 }
 

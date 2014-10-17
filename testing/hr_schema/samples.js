@@ -441,3 +441,25 @@ lf.testing.hrSchema.samples.JOB_TITLES = [
   'Training Specialist',
   'Web Developer'
 ];
+
+
+/**
+ * @type {!Array.<string>}
+ * @const
+ */
+lf.testing.hrSchema.samples.DEPARTMENT_NAMES = [
+  'Marketing',
+  'Human Resources',
+  'Financial',
+  'Purchasing',
+  'Sales',
+  'IT',
+  'Inventory',
+  'Quality Asurance',
+  'Insurance',
+  'Licenses',
+  'Operational',
+  'Staff',
+  'Customer Service',
+  'Organizational'
+];

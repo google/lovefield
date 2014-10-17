@@ -19,6 +19,7 @@ goog.provide('lf.testing.hrSchema.MockDataGenerator');
 goog.require('goog.labs.structs.Multimap');
 goog.require('goog.math');
 goog.require('goog.structs.Set');
+goog.require('lf.testing.hrSchema.DepartmentDataGenerator');
 goog.require('lf.testing.hrSchema.EmployeeDataGenerator');
 goog.require('lf.testing.hrSchema.JobDataGenerator');
 
@@ -40,6 +41,9 @@ lf.testing.hrSchema.MockDataGenerator = function(schema) {
 
   /** @type {!Array.<!hr.db.row.Employee>} */
   this.sampleEmployees = [];
+
+  /** @type {!Array.<!hr.db.row.Department>} */
+  this.sampleDepartments = [];
 
   /** @type {!lf.testing.hrSchema.MockDataGenerator.JobGroundTruth} */
   this.jobGroundTruth;
@@ -87,17 +91,23 @@ lf.testing.hrSchema.MockDataGenerator.JobGroundTruth;
  * about the generated rows.
  * @param {number} jobCount The number of Job rows to generate.
  * @param {number} employeeCount The number of Employee rows to generate.
+ * @param {number} departmentCount The number of Department rows to generate.
  */
 lf.testing.hrSchema.MockDataGenerator.prototype.generate = function(
-    jobCount, employeeCount) {
+    jobCount, employeeCount, departmentCount) {
   var employeeGenerator =
       new lf.testing.hrSchema.EmployeeDataGenerator(this.schema_);
   employeeGenerator.setMaxJobId(jobCount);
+  employeeGenerator.setMaxDepartmentId(departmentCount);
   this.sampleEmployees = employeeGenerator.generate(employeeCount);
 
   var jobGenerator =
       new lf.testing.hrSchema.JobDataGenerator(this.schema_);
   this.sampleJobs = jobGenerator.generate(jobCount);
+
+  var departmentGenerator =
+      new lf.testing.hrSchema.DepartmentDataGenerator(this.schema_);
+  this.sampleDepartments = departmentGenerator.generate(departmentCount);
 
   this.jobGroundTruth = this.extractJobGroundTruth_();
   this.employeeGroundTruth = this.extractEmployeeGroundTruth_();

@@ -42,6 +42,10 @@ lf.testing.hrSchema.EmployeeDataGenerator = function(schema) {
 
   /** @private {number} */
   this.maxJobIndex_ = lf.testing.hrSchema.samples.JOB_TITLES.length;
+
+  /** @private {number} */
+  this.maxDepartmentIndex_ =
+      lf.testing.hrSchema.samples.DEPARTMENT_NAMES.length;
 };
 
 
@@ -73,7 +77,7 @@ lf.testing.hrSchema.EmployeeDataGenerator.prototype.generateRaw_ =
       salary: this.genSalary_(),
       commissionPercent: commissionPercent,
       managerId: 'managerId',
-      departmentId: 'departmentId',
+      departmentId: this.genDepartmentId_(),
       photo: this.genPhoto_()
     };
   }
@@ -91,6 +95,18 @@ lf.testing.hrSchema.EmployeeDataGenerator.prototype.setMaxJobId =
     function(maxJobIndex) {
   this.maxJobIndex_ = Math.min(
       maxJobIndex, lf.testing.hrSchema.samples.JOB_TITLES.length);
+};
+
+
+/**
+ * Sets the max index in DEPARTMENT_NAMES that will be used for all generated
+ * employees.
+ * @param {number} maxDepartmentIndex
+ */
+lf.testing.hrSchema.EmployeeDataGenerator.prototype.setMaxDepartmentId =
+    function(maxDepartmentIndex) {
+  this.maxDepartmentIndex_ = Math.min(
+      maxDepartmentIndex, lf.testing.hrSchema.samples.DEPARTMENT_NAMES.length);
 };
 
 
@@ -136,6 +152,17 @@ lf.testing.hrSchema.EmployeeDataGenerator.prototype.genLastName_ = function() {
 lf.testing.hrSchema.EmployeeDataGenerator.prototype.genJobId_ = function() {
   var index = Math.floor(Math.random() * this.maxJobIndex_);
   return 'jobId' + index;
+};
+
+
+/**
+ * @return {string}
+ * @private
+ */
+lf.testing.hrSchema.EmployeeDataGenerator.prototype.genDepartmentId_ =
+    function() {
+  var index = Math.floor(Math.random() * this.maxDepartmentIndex_);
+  return 'departmentId' + index;
 };
 
 

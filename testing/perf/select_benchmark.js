@@ -44,7 +44,8 @@ lf.testing.perf.SelectBenchmark = function(db) {
 
   this.dataGenerator_.generate(
       lf.testing.perf.SelectBenchmark.JOB_COUNT_,
-      lf.testing.perf.SelectBenchmark.EMPLOYEE_COUNT_);
+      lf.testing.perf.SelectBenchmark.EMPLOYEE_COUNT_,
+      0 /* departmentCount */);
 
   /** @private {!lf.testing.perf.SelectBenchmark.QueryData_} */
   this.queryData_ = this.generateQueryData_();
