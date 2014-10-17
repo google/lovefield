@@ -284,6 +284,16 @@ function testSwapNodeWithChild() {
 }
 
 
+function testGetLeafNodes() {
+  var nodes = createTestTree();
+  var leafNodes = lf.tree.getLeafNodes(nodes[0]);
+  var leafNodeKeys = leafNodes.map(function(node) {
+    return node.getKey();
+  });
+  assertArrayEquals([2, 3, 4, 8 , 9], leafNodeKeys);
+}
+
+
 /**
  * @param {!goog.structs.TreeNode} node The node to be stringified.
  * @return {string} A string representation of the node.

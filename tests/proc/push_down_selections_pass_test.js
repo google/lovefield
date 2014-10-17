@@ -48,11 +48,11 @@ function setUp() {
 
 
 /**
- * Tests a simple tree where 3 selections are pushed below a cross ploduct node.
- * Two of the selections are pushed on one branch and the other selections are
- * pushed on the other.
+ * Tests a simple tree where 3 ValuePredicate selections are pushed below a
+ * cross ploduct node. Two of the selections are pushed on one branch and the
+ * other selections are pushed on the other.
  */
-function testTree1() {
+function testTree_ValuePredicates1() {
   var e = schema.getEmployee();
   var j = schema.getJob();
 
@@ -96,11 +96,11 @@ function testTree1() {
 
 
 /**
- * Testing case where two select nodes exist, but they can't be pushed further
- * down. Ensuring that no endless recursion occurs (swapping the select nodes
- * with each other indefinitely).
+ * Testing case where two ValuePredicate select nodes exist, but they can't be
+ * pushed further down. Ensuring that no endless recursion occurs (swapping the
+ * select nodes with each other indefinitely).
  */
-function testTree2() {
+function testTree_ValuePredicates2() {
   var e = schema.getEmployee();
 
   var treeBefore =
@@ -130,7 +130,7 @@ function testTree2() {
  * Ensuring that the order of cross-product/join children is not changed during
  * re-writing.
  */
-function testTree3() {
+function testTree_ValuePredicates3() {
   var e = schema.getEmployee();
   var j = schema.getJob();
 
@@ -157,6 +157,53 @@ function testTree3() {
   crossProductNode.addChild(new lf.proc.TableAccessNode(e));
   crossProductNode.addChild(new lf.proc.TableAccessNode(j));
   var rootNodeBefore = orderByNode;
+  assertEquals(treeBefore, lf.tree.toString(rootNodeBefore));
+
+  var pass = new lf.proc.PushDownSelectionsPass();
+  var rootNodeAfter = pass.rewrite(rootNodeBefore);
+  assertEquals(treeAfter, lf.tree.toString(rootNodeAfter));
+}
+
+
+/**
+ * Tests a tree that involves a 3 table join. It ensures that the JoinPredicate
+ * nodes are pushed down until they become parents of the appropriate cross
+ * product node.
+ */
+function testTree_JoinPredicates() {
+  var d = schema.getDepartment();
+  var e = schema.getEmployee();
+  var j = schema.getJob();
+
+  var treeBefore =
+      'select(join_pred(Employee.jobId, Job.id))\n' +
+      '-select(join_pred(Employee.departmentId, Department.id))\n' +
+      '--cross_product\n' +
+      '---cross_product\n' +
+      '----table_access(Employee)\n' +
+      '----table_access(Job)\n' +
+      '---table_access(Department)\n';
+
+  var treeAfter =
+      'select(join_pred(Employee.departmentId, Department.id))\n' +
+      '-cross_product\n' +
+      '--select(join_pred(Employee.jobId, Job.id))\n' +
+      '---cross_product\n' +
+      '----table_access(Employee)\n' +
+      '----table_access(Job)\n' +
+      '--table_access(Department)\n';
+
+  var crossProductNode1 = new lf.proc.CrossProductNode();
+  crossProductNode1.addChild(new lf.proc.TableAccessNode(e));
+  crossProductNode1.addChild(new lf.proc.TableAccessNode(j));
+  var crossProductNode2 = new lf.proc.CrossProductNode();
+  crossProductNode2.addChild(crossProductNode1);
+  crossProductNode2.addChild(new lf.proc.TableAccessNode(d));
+
+  var selectNode = new lf.proc.SelectNode(e.departmentId.eq(d.id));
+  selectNode.addChild(crossProductNode2);
+  var rootNodeBefore = new lf.proc.SelectNode(e.jobId.eq(j.id));
+  rootNodeBefore.addChild(selectNode);
   assertEquals(treeBefore, lf.tree.toString(rootNodeBefore));
 
   var pass = new lf.proc.PushDownSelectionsPass();
