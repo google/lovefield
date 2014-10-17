@@ -587,3 +587,23 @@ function assertEmployeesForJob(jobId, actualEmployees) {
   });
   assertSameElements(expectedEmployeeIds, actualEmployeeIds);
 }
+
+
+function testSelect_InnerJoinOrderBy() {
+  asyncTestCase.waitForAsync('testJoinOrderBy');
+  var expected = sampleEmployees.map(function(row) {
+    return row.getLastName();
+  }).sort();
+
+  db.select(d.name, e.lastName, e.firstName).
+      from(d, e).
+      where(e.departmentId.eq(d.id)).
+      orderBy(e.lastName).
+      exec().then(function(results) {
+        var actual = results.map(function(row) {
+          return row['Employee']['lastName'];
+        });
+        assertArrayEquals(expected, actual);
+        asyncTestCase.continueTesting();
+      });
+}
