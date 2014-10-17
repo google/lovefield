@@ -47,7 +47,7 @@ function setUp() {
 function testExec_ThrowsMissingInto() {
   asyncTestCase.waitForAsync('testExec_ThrowsMissingInto');
   var query = new lf.query.InsertBuilder();
-  var job = lf.testing.hrSchemaSampleData.generateSampleJobData();
+  var job = lf.testing.hrSchemaSampleData.generateSampleJobData(db);
   query.values([job]);
   query.exec().then(
       fail,
@@ -80,7 +80,7 @@ function testExec_ThrowsNoPrimaryKey() {
   asyncTestCase.waitForAsync('testExec_ThrowsNoPrimaryKey');
 
   var jobHistoryRow = lf.testing.hrSchemaSampleData.
-      generateSampleJobHistoryData();
+      generateSampleJobHistoryData(db);
   var query = new lf.query.InsertBuilder(/* allowReplace */ true);
 
   query.
@@ -100,7 +100,7 @@ function testExec_ThrowsNoPrimaryKey() {
 function testValues_ThrowsAlreadyCalled() {
   var query = new lf.query.InsertBuilder();
 
-  var job = lf.testing.hrSchemaSampleData.generateSampleJobData();
+  var job = lf.testing.hrSchemaSampleData.generateSampleJobData(db);
   var buildQuery = function() {
     query.values([job]).values([job]);
   };

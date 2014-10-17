@@ -54,9 +54,9 @@ function setUp() {
 
 function testJoinPredicate_EvalRow_True() {
   var combinedRow = lf.Row.combineRows(
-      lf.testing.hrSchemaSampleData.generateSampleEmployeeData(),
+      lf.testing.hrSchemaSampleData.generateSampleEmployeeData(db),
       e.getName(),
-      lf.testing.hrSchemaSampleData.generateSampleJobData(),
+      lf.testing.hrSchemaSampleData.generateSampleJobData(db),
       j.getName());
 
   var joinPredicate1 = e.jobId.eq(j.id);
@@ -69,9 +69,9 @@ function testJoinPredicate_EvalRow_True() {
 
 function testJoinPredicate_EvalRow_False() {
   var combinedRow = lf.Row.combineRows(
-      lf.testing.hrSchemaSampleData.generateSampleEmployeeData(),
+      lf.testing.hrSchemaSampleData.generateSampleEmployeeData(db),
       e.getName(),
-      lf.testing.hrSchemaSampleData.generateSampleJobData(),
+      lf.testing.hrSchemaSampleData.generateSampleJobData(db),
       j.getName());
 
   var joinPredicate = e.firstName.eq(j.id);
@@ -85,9 +85,9 @@ function testJoinPredicate_EvalRow_False() {
  */
 function testJoinPredicate_EvalRelations() {
   var sampleEmployee =
-      lf.testing.hrSchemaSampleData.generateSampleEmployeeData();
+      lf.testing.hrSchemaSampleData.generateSampleEmployeeData(db);
   var sampleJob =
-      lf.testing.hrSchemaSampleData.generateSampleJobData();
+      lf.testing.hrSchemaSampleData.generateSampleJobData(db);
 
   var employeeRelation = lf.proc.Relation.fromRows(
       [sampleEmployee], [e.getName()]);
@@ -194,7 +194,7 @@ function getSampleRows() {
 
   var employees = new Array(employeeCount);
   for (var i = 0; i < employeeCount; i++) {
-    var employee = lf.testing.hrSchemaSampleData.generateSampleEmployeeData();
+    var employee = lf.testing.hrSchemaSampleData.generateSampleEmployeeData(db);
     employee.
         setId(i.toString()).
         setJobId(String(i % jobCount)).
@@ -204,7 +204,7 @@ function getSampleRows() {
 
   var jobs = new Array(jobCount);
   for (var i = 0; i < jobCount; i++) {
-    var job = lf.testing.hrSchemaSampleData.generateSampleJobData();
+    var job = lf.testing.hrSchemaSampleData.generateSampleJobData(db);
     job.
         setId(i.toString()).
         setMinSalary(salary);

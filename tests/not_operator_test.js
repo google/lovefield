@@ -77,7 +77,7 @@ function generateSampleEmployeeData(rowCount) {
   var employees = new Array(rowCount);
   for (var i = 0; i < rowCount; i++) {
     employees[i] =
-        lf.testing.hrSchemaSampleData.generateSampleEmployeeData();
+        lf.testing.hrSchemaSampleData.generateSampleEmployeeData(db);
     employees[i].
         setId('empId' + i.toString()).
         setSalary(100 * i);

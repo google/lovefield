@@ -71,10 +71,10 @@ function clearDb() {
  */
 function generateSampleEmployeeData() {
   var employeeRow1 =
-      lf.testing.hrSchemaSampleData.generateSampleEmployeeData();
+      lf.testing.hrSchemaSampleData.generateSampleEmployeeData(db);
   employeeRow1.setId('empId1');
   var employeeRow2 =
-      lf.testing.hrSchemaSampleData.generateSampleEmployeeData();
+      lf.testing.hrSchemaSampleData.generateSampleEmployeeData(db);
   employeeRow2.setId('empId2');
   employeeRow2.setHireDate(null);
 

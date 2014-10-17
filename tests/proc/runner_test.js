@@ -101,7 +101,7 @@ function tearDown() {
 function getSamplePlan() {
   rows = [];
   for (var i = 0; i < ROW_COUNT; ++i) {
-    var job = lf.testing.hrSchemaSampleData.generateSampleJobData();
+    var job = lf.testing.hrSchemaSampleData.generateSampleJobData(db);
     job.setId('jobId' + i.toString());
     rows.push(job);
   }
@@ -195,7 +195,7 @@ function testTransaction_Write() {
 
   rows = [];
   for (var i = 0; i < ROW_COUNT; ++i) {
-    var job = lf.testing.hrSchemaSampleData.generateSampleJobData();
+    var job = lf.testing.hrSchemaSampleData.generateSampleJobData(db);
     job.setId('jobId' + i.toString());
     rows.push(job);
   }
@@ -231,7 +231,7 @@ function testTransaction_Read() {
 
   rows = [];
   for (var i = 0; i < ROW_COUNT; ++i) {
-    var job = lf.testing.hrSchemaSampleData.generateSampleJobData();
+    var job = lf.testing.hrSchemaSampleData.generateSampleJobData(db);
     job.setId('jobId' + i.toString());
     rows.push(job);
   }
@@ -262,7 +262,7 @@ function testTransaction_Rollback() {
   asyncTestCase.waitForAsync('testTransaction_Rollback');
   assertEquals(0, cache.getCount());
 
-  var job = lf.testing.hrSchemaSampleData.generateSampleJobData();
+  var job = lf.testing.hrSchemaSampleData.generateSampleJobData(db);
   // Creating two queries to be executed within the same transaction. The second
   // query will fail because of a primary key constraint violation. Expecting
   // the entire transaction to be rolled back as if it never happened.

@@ -141,7 +141,7 @@ function checkSetComplement(
 function getSampleRows(rowCount) {
   var employees = new Array(rowCount);
   for (var i = 0; i < rowCount; i++) {
-    var employee = lf.testing.hrSchemaSampleData.generateSampleEmployeeData();
+    var employee = lf.testing.hrSchemaSampleData.generateSampleEmployeeData(db);
     employee.
         setId(i.toString()).
         setSalary(100 * i);

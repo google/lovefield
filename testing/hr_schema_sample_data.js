@@ -20,9 +20,10 @@ goog.provide('lf.testing.hrSchemaSampleData');
 
 /**
  * Generates a sample Employee record to be used for testing.
+ * @param {!hr.db.Database} db
  * @return {!hr.db.row.Employee}
  */
-lf.testing.hrSchemaSampleData.generateSampleEmployeeData = function() {
+lf.testing.hrSchemaSampleData.generateSampleEmployeeData = function(db) {
   var buffer = new ArrayBuffer(8);
   var view = new Uint8Array(buffer);
   for (var i = 0; i < 8; ++i) {
@@ -49,9 +50,10 @@ lf.testing.hrSchemaSampleData.generateSampleEmployeeData = function() {
 
 /**
  * Generates a sample Job record to be used for testing.
+ * @param {!hr.db.Database} db
  * @return {!hr.db.row.Job}
  */
-lf.testing.hrSchemaSampleData.generateSampleJobData = function() {
+lf.testing.hrSchemaSampleData.generateSampleJobData = function(db) {
   return db.getSchema().getJob().createRow({
     id: 'jobId',
     title: 'Software Engineer',
@@ -63,9 +65,10 @@ lf.testing.hrSchemaSampleData.generateSampleJobData = function() {
 
 /**
  * Generates a sample JobHistory record to be used for testing.
+ * @param {!hr.db.Database} db
  * @return {!hr.db.row.JobHistory}
  */
-lf.testing.hrSchemaSampleData.generateSampleJobHistoryData = function() {
+lf.testing.hrSchemaSampleData.generateSampleJobHistoryData = function(db) {
   return db.getSchema().getJobHistory().createRow({
     employeeId: 'employeeId',
     // 'Fri Feb 01 1985 14:15:00 GMT-0800 (PST)'

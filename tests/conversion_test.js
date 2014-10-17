@@ -69,7 +69,7 @@ function testConversions() {
   asyncTestCase.waitForAsync('testConversions');
 
   var employeeRow =
-      lf.testing.hrSchemaSampleData.generateSampleEmployeeData();
+      lf.testing.hrSchemaSampleData.generateSampleEmployeeData(db);
   var employee = db.getSchema().getEmployee();
 
   /**
