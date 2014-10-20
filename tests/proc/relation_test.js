@@ -171,3 +171,36 @@ function testUnion() {
   assertEquals(6, union.entries.length);
   assertTrue(union.isCompatible(relation1));
 }
+
+
+function testCombineEntries() {
+  var row1 = new lf.Row(-1, {'foo': 'FOO'});
+  var row2 = new lf.Row(-1, {'bar': 'BAR'});
+  var row3 = new lf.Row(-1, {'baz': 'BAZ'});
+
+  var entry1 = new lf.proc.RelationEntry(row1, false);
+  var entry2 = new lf.proc.RelationEntry(row2, false);
+  var entry3 = new lf.proc.RelationEntry(row3, false);
+
+  // First combining two unprefixed entries.
+  var combinedEntry12 = lf.proc.RelationEntry.combineEntries(
+      entry1, ['Table1'], entry2, ['Table2']);
+
+  assertEquals(2, goog.object.getCount(combinedEntry12.row.payload()));
+  var table1Payload = combinedEntry12.row.payload()['Table1'];
+  assertObjectEquals(row1.payload(), table1Payload);
+  var table2Payload = combinedEntry12.row.payload()['Table2'];
+  assertObjectEquals(row2.payload(), table2Payload);
+
+  // Now combining an unprefixed and a prefixed entry.
+  var combinedEntry123 = lf.proc.RelationEntry.combineEntries(
+      combinedEntry12, ['Table1', 'Table2'], entry3, ['Table3']);
+  assertEquals(3, goog.object.getCount(combinedEntry123.row.payload()));
+
+  table1Payload = combinedEntry123.row.payload()['Table1'];
+  assertObjectEquals(row1.payload(), table1Payload);
+  table2Payload = combinedEntry123.row.payload()['Table2'];
+  assertObjectEquals(row2.payload(), table2Payload);
+  var table3Payload = combinedEntry123.row.payload()['Table3'];
+  assertObjectEquals(row3.payload(), table3Payload);
+}

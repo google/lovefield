@@ -45,93 +45,46 @@ function setUp() {
 }
 
 
-function testEvalRow_Eq() {
+function testEval_Eq() {
   var table = schema.getTables()[0];
   var sampleRow = getSampleRows(1)[0];
+  var relation = lf.proc.Relation.fromRows(
+      [sampleRow], [table.getName()]);
 
-  var predicate = new lf.pred.ValuePredicate(
+  var predicate1 = new lf.pred.ValuePredicate(
       table.id, sampleRow.payload().id, lf.eval.Type.EQ);
-  assertTrue(predicate.evalRow(sampleRow));
+  var finalRelation1 = predicate1.eval(relation);
+  assertEquals(1, finalRelation1.entries.length);
 
-  predicate = new lf.pred.ValuePredicate(
+  var predicate2 = new lf.pred.ValuePredicate(
       table.id, 'otherId', lf.eval.Type.EQ);
-  assertFalse(predicate.evalRow(sampleRow));
+  var finalRelation2 = predicate2.eval(relation);
+  assertEquals(0, finalRelation2.entries.length);
 }
 
 
-function testEvalRow_Match() {
+function testEval_Match() {
   var table = schema.getTables()[0];
   var sampleRow = getSampleRows(1)[0];
+  var relation = lf.proc.Relation.fromRows(
+      [sampleRow], [table.getName()]);
 
   // Testing true case.
-  var predicate = new lf.pred.ValuePredicate(
+  var predicate1 = new lf.pred.ValuePredicate(
       table.name, /sampleName0/, lf.eval.Type.MATCH);
-  assertTrue(predicate.evalRow(sampleRow));
+  var finalRelation1 = predicate1.eval(relation);
+  assertEquals(1, finalRelation1.entries.length);
 
-  predicate = new lf.pred.ValuePredicate(
+  var predicate2 = new lf.pred.ValuePredicate(
       table.name, /\bsample[A-Za-z0-9]+\b/, lf.eval.Type.MATCH);
-  assertTrue(predicate.evalRow(sampleRow));
+  var finalRelation2 = predicate2.eval(relation);
+  assertEquals(1, finalRelation2.entries.length);
 
   // Testing false case.
-  predicate = new lf.pred.ValuePredicate(
+  var predicate3 = new lf.pred.ValuePredicate(
       table.name, /SAMPLENAME0/, lf.eval.Type.MATCH);
-  assertFalse(predicate.evalRow(sampleRow));
-}
-
-
-function testEvalRow_In() {
-  var table = schema.getTables()[0];
-  var sampleRow = getSampleRows(1)[0];
-
-  // Testing true case.
-  var predicate = new lf.pred.ValuePredicate(
-      table.name, ['otherSampleName', 'sampleName0'],
-      lf.eval.Type.IN);
-  assertTrue(predicate.evalRow(sampleRow));
-
-  predicate = new lf.pred.ValuePredicate(
-      table.name, ['sampleName0'],
-      lf.eval.Type.IN);
-  assertTrue(predicate.evalRow(sampleRow));
-
-  // Testing false case.
-  predicate = new lf.pred.ValuePredicate(
-      table.name, [], lf.eval.Type.IN);
-  assertFalse(predicate.evalRow(sampleRow));
-
-  predicate = new lf.pred.ValuePredicate(
-      table.name, ['otherSampleName'], lf.eval.Type.IN);
-  assertFalse(predicate.evalRow(sampleRow));
-}
-
-
-function testEvalRow_In_Reversed() {
-  var table = schema.getTables()[0];
-  var sampleRow = getSampleRows(1)[0];
-
-  // Testing false case.
-  var predicate = new lf.pred.ValuePredicate(
-      table.name, ['otherSampleName', 'sampleName0'],
-      lf.eval.Type.IN);
-  predicate.setComplement(true);
-  assertFalse(predicate.evalRow(sampleRow));
-
-  predicate = new lf.pred.ValuePredicate(
-      table.name, ['sampleName0'],
-      lf.eval.Type.IN);
-  predicate.setComplement(true);
-  assertFalse(predicate.evalRow(sampleRow));
-
-  // Testing true case.
-  predicate = new lf.pred.ValuePredicate(
-      table.name, [], lf.eval.Type.IN);
-  predicate.setComplement(true);
-  assertTrue(predicate.evalRow(sampleRow));
-
-  predicate = new lf.pred.ValuePredicate(
-      table.name, ['otherSampleName'], lf.eval.Type.IN);
-  predicate.setComplement(true);
-  assertTrue(predicate.evalRow(sampleRow));
+  var finalRelation3 = predicate3.eval(relation);
+  assertEquals(0, finalRelation3.entries.length);
 }
 
 

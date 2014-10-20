@@ -64,6 +64,21 @@ lf.testing.hrSchemaSampleData.generateSampleJobData = function(db) {
 
 
 /**
+ * Generates a sample Department record to be used for testing.
+ * @param {!hr.db.Database} db
+ * @return {!hr.db.row.Department}
+ */
+lf.testing.hrSchemaSampleData.generateSampleDepartmentData = function(db) {
+  return db.getSchema().getDepartment().createRow({
+    id: 'departmentId',
+    name: 'departmentName',
+    managerId: 'managerId',
+    locationId: 'locationId'
+  });
+};
+
+
+/**
  * Generates a sample JobHistory record to be used for testing.
  * @param {!hr.db.Database} db
  * @return {!hr.db.row.JobHistory}

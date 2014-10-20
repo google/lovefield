@@ -56,22 +56,3 @@ function testBinHexConversion() {
   assertEquals(expected, lf.Row.binToHex(buffer));
   assertEquals(expected, lf.Row.binToHex(lf.Row.hexToBin(expected)));
 }
-
-
-function testCombineRows() {
-  var leftValue = 'hello';
-  var leftPayload = {'value': leftValue};
-  var leftRow = lf.Row.create(leftPayload);
-  var leftPrefix = 'left';
-
-  var rightValue = 'world';
-  var rightPayload = {'value': rightValue};
-  var rightRow = lf.Row.create(rightPayload);
-  var rightPrefix = 'right';
-
-  var combinedRow = lf.Row.combineRows(
-      leftRow, leftPrefix, rightRow, rightPrefix);
-
-  assertEquals(leftValue, combinedRow.payload()[leftPrefix]['value']);
-  assertEquals(rightValue, combinedRow.payload()[rightPrefix]['value']);
-}
