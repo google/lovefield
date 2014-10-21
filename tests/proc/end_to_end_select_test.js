@@ -260,6 +260,40 @@ function testSelect_ImplicitJoin_ReverseOrder() {
 
 
 /**
+ * Tests the case of a SELECT query with a 3+ table join.
+ */
+function testSelect_MultiJoin() {
+  asyncTestCase.waitForAsync('testSelect_MultiJoin');
+
+  var queryBuilder = /** @type {!lf.query.SelectBuilder} */ (
+      db.select().
+      from(e, j, d).
+      where(lf.op.and(
+          e.jobId.eq(j.id),
+          e.departmentId.eq(d.id))));
+
+  queryBuilder.exec().then(
+      function(results) {
+        assertEquals(sampleEmployees.length, results.length);
+        results.forEach(function(obj) {
+          assertEquals(3, goog.object.getCount(obj));
+          assertTrue(goog.isDefAndNotNull(obj[e.getName()]));
+          assertTrue(goog.isDefAndNotNull(obj[j.getName()]));
+          assertTrue(goog.isDefAndNotNull(obj[d.getName()]));
+
+          var employeeJobId = obj[e.getName()][e.jobId.getName()];
+          var employeeDepartmentId = obj[e.getName()][e.departmentId.getName()];
+          var jobId = obj[j.getName()][j.id.getName()];
+          var departmentId = obj[d.getName()][d.id.getName()];
+          assertTrue(employeeJobId == jobId);
+          assertTrue(employeeDepartmentId == departmentId);
+        });
+        asyncTestCase.continueTesting();
+      }, fail);
+}
+
+
+/**
  * Tests that a SELECT query with an explicit join.
  */
 function testSelect_ExplicitJoin() {
