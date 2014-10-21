@@ -98,6 +98,27 @@ function testGetSetValue_SingleTable() {
 }
 
 
+function testSetField_WithAlias() {
+  var rows = new Array(10);
+  for (var i = 0; i < rows.length; i++) {
+    rows[i] = lf.Row.create();
+  }
+
+  var schema = new lf.testing.MockSchema();
+  var table = schema.getTables()[0];
+  var col = table.name.as('nickName');
+
+  var relation = lf.proc.Relation.fromRows(rows, [table.getName()]);
+  relation.entries.forEach(function(entry) {
+    assertTrue(goog.object.isEmpty(entry.row.payload()));
+
+    var field1 = 'HelloWorld';
+    entry.setField(col, field1);
+    assertEquals(field1, entry.row.payload()[col.getAlias()]);
+  });
+}
+
+
 /**
  * Asserts that the given column is populated with the given value.
  * @param {!lf.proc.RelationEntry} entry The entry to be checked.

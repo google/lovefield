@@ -183,6 +183,26 @@ function testSelect_Predicate() {
 }
 
 
+function testSelect_As() {
+  asyncTestCase.waitForAsync('testSelect_As');
+
+  var targetId = sampleJobs[3].getId();
+
+  var q1 = db.select(j.id.as('Foo')).from(j).where(j.id.eq(targetId));
+  var q2 = db.select(j.id).from(j).where(j.id.eq(targetId));
+
+  q1.exec().then(function(results) {
+    assertEquals(1, results.length);
+    assertEquals(targetId, results[0]['Foo']);
+    return q2.exec();
+  }).then(function(results) {
+    assertEquals(1, results.length);
+    assertEquals(targetId, results[0][j.id.getName()]);
+    asyncTestCase.continueTesting();
+  }, fail);
+}
+
+
 /**
  * Tests that a SELECT query with column filtering only returns the columns that
  * were requested.
@@ -192,7 +212,7 @@ function testSelect_ColumnFiltering() {
 
 
   var queryBuilder = /** @type {!lf.query.SelectBuilder} */ (
-      db.select(j.id, j.title).
+      db.select(j.id, j.title.as('Job Title')).
       from(j));
 
   queryBuilder.exec().then(
@@ -201,7 +221,7 @@ function testSelect_ColumnFiltering() {
         results.forEach(function(result) {
           assertEquals(2, goog.object.getCount(result));
           assertTrue(goog.isDefAndNotNull(result.id));
-          assertTrue(goog.isDefAndNotNull(result.title));
+          assertTrue(goog.isDefAndNotNull(result['Job Title']));
         });
 
         asyncTestCase.continueTesting();
@@ -428,7 +448,7 @@ function testSelect_AggregatorsOnly() {
   asyncTestCase.waitForAsync('testSelect_AggregatorsOnly');
 
   var aggregatedColumn1 = lf.fn.max(j.maxSalary);
-  var aggregatedColumn2 = lf.fn.min(j.maxSalary);
+  var aggregatedColumn2 = lf.fn.min(j.maxSalary).as('minS');
   var queryBuilder = /** @type {!lf.query.SelectBuilder} */ (
       db.select(aggregatedColumn1, aggregatedColumn2).from(j));
 
@@ -441,7 +461,7 @@ function testSelect_AggregatorsOnly() {
             results[0][aggregatedColumn1.getName()]);
         assertEquals(
             mockDataGenerator.jobGroundTruth.minMaxSalary,
-            results[0][aggregatedColumn2.getName()]);
+            results[0][aggregatedColumn2.getAlias()]);
 
         asyncTestCase.continueTesting();
       }, fail);
@@ -454,7 +474,7 @@ function testSelect_AggregatorsOnly() {
 function testSelect_Count_Distinct() {
   asyncTestCase.waitForAsync('testSelect_Count_Distinct');
 
-  var aggregatedColumn = lf.fn.count(lf.fn.distinct(j.maxSalary));
+  var aggregatedColumn = lf.fn.count(lf.fn.distinct(j.maxSalary)).as('NS');
   var queryBuilder = /** @type {!lf.query.SelectBuilder} */ (
       db.select(aggregatedColumn).from(j));
 
@@ -464,7 +484,7 @@ function testSelect_Count_Distinct() {
         assertEquals(1, goog.object.getCount(results[0]));
         assertEquals(
             mockDataGenerator.jobGroundTruth.countDistinctMaxSalary,
-            results[0][aggregatedColumn.getName()]);
+            results[0][aggregatedColumn.getAlias()]);
 
         asyncTestCase.continueTesting();
       }, fail);
@@ -629,13 +649,13 @@ function testSelect_InnerJoinOrderBy() {
     return row.getLastName();
   }).sort();
 
-  db.select(d.name, e.lastName, e.firstName).
+  db.select(d.name, e.lastName.as('elname'), e.firstName).
       from(d, e).
       where(e.departmentId.eq(d.id)).
       orderBy(e.lastName).
       exec().then(function(results) {
         var actual = results.map(function(row) {
-          return row['Employee']['lastName'];
+          return row['elname'];
         });
         assertArrayEquals(expected, actual);
         asyncTestCase.continueTesting();

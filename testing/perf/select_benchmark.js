@@ -506,11 +506,11 @@ lf.testing.perf.SelectBenchmark.prototype.verifyProjectAggregateIndexed =
 
   var validated =
       goog.math.nearlyEquals(
-          results[0]['avg_salary'],
+          results[0]['avg(salary)'],
           this.dataGenerator_.employeeGroundTruth.avgSalary,
           lf.testing.perf.SelectBenchmark.EPSILON_) &&
       goog.math.nearlyEquals(
-          results[0]['stddev_salary'],
+          results[0]['stddev(salary)'],
           this.dataGenerator_.employeeGroundTruth.stddevSalary,
           lf.testing.perf.SelectBenchmark.EPSILON_);
 
@@ -539,9 +539,9 @@ lf.testing.perf.SelectBenchmark.prototype.verifyProjectAggregateNonIndexed =
   }
 
   var validated =
-      results[0]['min_hireDate'] ==
+      results[0]['min(hireDate)'] ==
           this.dataGenerator_.employeeGroundTruth.minHireDate &&
-      results[0]['max_hireDate'] ==
+      results[0]['max(hireDate)'] ==
           this.dataGenerator_.employeeGroundTruth.maxHireDate;
 
   return goog.Promise.resolve(validated);
