@@ -36,4 +36,10 @@ function testCache() {
   cache.remove([4]);
   assertArrayEquals([null, null], cache.get([0, 4]));
   assertEquals(1, cache.getCount());
+
+  cache.set([row2]);
+  assertEquals(2, cache.getCount());
+  var range = cache.getRange(2, 4);
+  assertEquals(1, range.length);
+  assertObjectEquals(payload, range[0].payload());
 }
