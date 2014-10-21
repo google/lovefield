@@ -139,7 +139,7 @@ function checkForExistingData() {
   var movie = db.getSchema().getMovie();
   return db.select(lf.fn.count(movie.id)).from(movie).exec().then(
       function(rows) {
-        return rows[0]['count_id'] > 0;
+        return rows[0]['count(id)'] > 0;
       });
 }
 
