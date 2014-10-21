@@ -26,23 +26,24 @@ goog.require('lf.tree');
  *     the tree in pre-order traversal order.
  */
 function createTestTree() {
-  var nodes = new Array(10);
+  var nodes = new Array(11);
   for (var i = 0; i < nodes.length; i++) {
     nodes[i] = new goog.structs.TreeNode(i, null);
   }
 
   // Creating a tree that has the following structure.
-  //          n0
-  //         /  \
-  //        /    \
-  //       /      \
-  //      n1      n5
-  //    / | \       \
-  //  n2 n3 n4       n6
-  //                  \
-  //                   n7
-  //                  /  \
-  //                n8   n9
+  //            n0
+  //          / | \
+  //         /  |  \
+  //        /   |  n10
+  //       /    |
+  //      n1    n5
+  //    / | \   |
+  //  n2 n3 n4  n6
+  //            |
+  //            n7
+  //           /  \
+  //         n8   n9
 
   nodes[1].addChild(nodes[2]);
   nodes[1].addChild(nodes[3]);
@@ -56,6 +57,7 @@ function createTestTree() {
 
   nodes[0].addChild(nodes[1]);
   nodes[0].addChild(nodes[5]);
+  nodes[0].addChild(nodes[10]);
 
   return nodes;
 }
@@ -102,6 +104,7 @@ function testRemoveNode_Intermediate() {
       '---[7,null]\n' +
       '----[8,null]\n' +
       '----[9,null]\n' +
+      '-[10,null]\n' +
       '-[2,null]\n' +
       '-[3,null]\n' +
       '-[4,null]\n';
@@ -127,7 +130,8 @@ function testRemoveNode_Leaf() {
       '--[6,null]\n' +
       '---[7,null]\n' +
       '----[8,null]\n' +
-      '----[9,null]\n';
+      '----[9,null]\n' +
+      '-[10,null]\n';
 
   // Removing node n2.
   lf.tree.removeNode(nodes[2]);
@@ -147,11 +151,12 @@ function testInsertNodeAt() {
       '-[5,null]\n' +
       '--[6,null]\n' +
       '---[7,null]\n' +
-      '----[10,null]\n' +
+      '----[11,null]\n' +
       '-----[8,null]\n' +
-      '-----[9,null]\n';
+      '-----[9,null]\n' +
+      '-[10,null]\n';
 
-  var newNode = new goog.structs.TreeNode(10, null);
+  var newNode = new goog.structs.TreeNode(11, null);
   lf.tree.insertNodeAt(nodes[7], newNode);
   assertEquals(treeAfter, lf.tree.toString(nodes[0], stringFn));
 }
@@ -166,16 +171,17 @@ function testReplaceChainWithChain() {
       '--[2,null]\n' +
       '--[3,null]\n' +
       '--[4,null]\n' +
-      '-[10,null]\n' +
-      '--[11,null]\n' +
-      '---[12,null]\n' +
+      '-[11,null]\n' +
+      '--[12,null]\n' +
+      '---[13,null]\n' +
       '----[8,null]\n' +
-      '----[9,null]\n';
+      '----[9,null]\n' +
+      '-[10,null]\n';
 
-  var newHead = new goog.structs.TreeNode(10, null);
-  var intermediate = new goog.structs.TreeNode(11, null);
+  var newHead = new goog.structs.TreeNode(11, null);
+  var intermediate = new goog.structs.TreeNode(12, null);
   newHead.addChild(intermediate);
-  var newTail = new goog.structs.TreeNode(12, null);
+  var newTail = new goog.structs.TreeNode(13, null);
   intermediate.addChild(newTail);
 
   var head = nodes[5];
@@ -194,11 +200,12 @@ function testReplaceChainWithNode() {
       '--[2,null]\n' +
       '--[3,null]\n' +
       '--[4,null]\n' +
-      '-[10,null]\n' +
+      '-[11,null]\n' +
       '--[8,null]\n' +
-      '--[9,null]\n';
+      '--[9,null]\n' +
+      '-[10,null]\n';
 
-  var newNode = new goog.structs.TreeNode(10, null);
+  var newNode = new goog.structs.TreeNode(11, null);
   var head = nodes[5];
   var tail = nodes[7];
   lf.tree.replaceChainWithNode(head, tail, newNode);
@@ -218,15 +225,16 @@ function testReplaceNodeWithChain() {
       '-[5,null]\n' +
       '--[6,null]\n' +
       '---[7,null]\n' +
+      '----[11,null]\n' +
+      '-----[12,null]\n' +
+      '------[13,null]\n' +
       '----[9,null]\n' +
-      '----[10,null]\n' +
-      '-----[11,null]\n' +
-      '------[12,null]\n';
+      '-[10,null]\n';
 
-  var head = new goog.structs.TreeNode(10, null);
-  var other = new goog.structs.TreeNode(11, null);
+  var head = new goog.structs.TreeNode(11, null);
+  var other = new goog.structs.TreeNode(12, null);
   head.addChild(other);
-  var tail = new goog.structs.TreeNode(12, null);
+  var tail = new goog.structs.TreeNode(13, null);
   other.addChild(tail);
 
   lf.tree.replaceNodeWithChain(nodes[8], head, tail);
@@ -247,7 +255,8 @@ function testPushNodeBelowChild() {
       '--[7,null]\n' +
       '---[6,null]\n' +
       '----[8,null]\n' +
-      '---[9,null]\n';
+      '---[9,null]\n' +
+      '-[10,null]\n';
 
 
   var cloneFn = function(node) {
@@ -273,6 +282,7 @@ function testSwapNodeWithChild() {
       '--[2,null]\n' +
       '--[3,null]\n' +
       '--[4,null]\n' +
+      '-[10,null]\n' +
       '-[6,null]\n' +
       '--[5,null]\n' +
       '---[7,null]\n' +
@@ -290,7 +300,7 @@ function testGetLeafNodes() {
   var leafNodeKeys = leafNodes.map(function(node) {
     return node.getKey();
   });
-  assertArrayEquals([2, 3, 4, 8 , 9], leafNodeKeys);
+  assertArrayEquals([2, 3, 4, 8 , 9, 10], leafNodeKeys);
 }
 
 
