@@ -45,6 +45,20 @@ function setUp() {
 }
 
 
+function testCopy() {
+  var table = schema.getTables()[0];
+  var original = new lf.pred.ValuePredicate(
+      table.id, 'myId', lf.eval.Type.EQ);
+  var copy = original.copy();
+
+  assertTrue(copy instanceof lf.pred.ValuePredicate);
+  assertFalse(original == copy);
+  assertEquals(original.column, copy.column);
+  assertEquals(original.value, copy.value);
+  assertEquals(original.evaluatorType, copy.evaluatorType);
+}
+
+
 function testEval_Eq() {
   var table = schema.getTables()[0];
   var sampleRow = getSampleRows(1)[0];

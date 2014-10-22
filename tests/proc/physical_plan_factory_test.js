@@ -44,7 +44,7 @@ function setUp() {
   env.init().then(function() {
     physicalPlanFactory = new lf.proc.PhysicalPlanFactory();
     asyncTestCase.continueTesting();
-  });
+  }, fail);
 }
 
 

@@ -22,6 +22,8 @@ goog.require('lf.backstore.Memory');
 goog.require('lf.cache.DefaultCache');
 goog.require('lf.eval.Registry');
 goog.require('lf.index.MemoryIndexStore');
+goog.require('lf.proc.DefaultQueryEngine');
+goog.require('lf.proc.Runner');
 goog.require('lf.service');
 goog.require('lf.testing.MockSchema');
 
@@ -36,6 +38,12 @@ goog.require('lf.testing.MockSchema');
 lf.testing.MockEnv = function() {
   /** @type {!lf.testing.MockSchema} */
   this.schema = new lf.testing.MockSchema();
+
+  /** @type {!lf.proc.DefaultQueryEngine} */
+  this.queryEngine = new lf.proc.DefaultQueryEngine();
+
+  /** @type {!lf.proc.Runner} */
+  this.runner = new lf.proc.Runner();
 
   /** @type {!lf.backstore.Memory} */
   this.store = new lf.backstore.Memory(this.schema);
@@ -56,6 +64,8 @@ lf.testing.MockEnv.prototype.init = function() {
   var global = lf.Global.get();
   return this.store.init().then(goog.bind(function() {
     global.registerService(lf.service.BACK_STORE, this.store);
+    global.registerService(lf.service.QUERY_ENGINE, this.queryEngine);
+    global.registerService(lf.service.RUNNER, this.runner);
     global.registerService(lf.service.CACHE, this.cache);
     global.registerService(lf.service.INDEX_STORE, this.indexStore);
     global.registerService(lf.service.EVAL_REGISTRY, this.evalRegistry);

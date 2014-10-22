@@ -18,6 +18,7 @@ goog.setTestOnly();
 goog.require('goog.testing.AsyncTestCase');
 goog.require('goog.testing.jsunit');
 goog.require('hr.db');
+goog.require('lf.pred.JoinPredicate');
 goog.require('lf.proc.Relation');
 goog.require('lf.proc.RelationEntry');
 goog.require('lf.testing.hrSchemaSampleData');
@@ -54,6 +55,18 @@ function setUp() {
     j = db.getSchema().getJob();
     asyncTestCase.continueTesting();
   }, fail);
+}
+
+
+function testCopy() {
+  var original = e.jobId.eq(j.id);
+  var copy = original.copy();
+
+  assertTrue(copy instanceof lf.pred.JoinPredicate);
+  assertFalse(original == copy);
+  assertEquals(original.leftColumn, copy.leftColumn);
+  assertEquals(original.rightColumn, copy.rightColumn);
+  assertEquals(original.evaluatorType, copy.evaluatorType);
 }
 
 
