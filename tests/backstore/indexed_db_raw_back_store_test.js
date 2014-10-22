@@ -23,6 +23,7 @@ goog.require('lf.Row');
 goog.require('lf.Type');
 goog.require('lf.backstore.IndexedDB');
 goog.require('lf.backstore.IndexedDBRawBackStore');
+goog.require('lf.backstore.Page');
 goog.require('lf.schema.BaseColumn');
 goog.require('lf.schema.Constraint');
 goog.require('lf.schema.Database');
@@ -45,10 +46,13 @@ var CONTENTS = {'id': 'hello', 'name': 'world'};
 var CONTENTS2 = {'id': 'hello2', 'name': 'world2'};
 
 
+/** @const {number} */
+var MAGIC = Math.pow(2, lf.backstore.Page.BUNDLE_EXPONENT);
+
+
 function setUp() {
   schema = new Schema_();
 }
-
 
 function testConvert() {
   var date = new Date();
@@ -94,9 +98,11 @@ function testNewDBInstance() {
 /**
  * @param {!IDBDatabase} db
  * @param {string} tableName
- * @return {!IThenable.<!Array.<!lf.Row>>}
+ * @param {function({id: number, value: *}): !T} fn
+ * @template T
+ * @return {!IThenable.<!Array.<!T>>}
  */
-function dumpTable(db, tableName) {
+function dumpDB(db, tableName, fn) {
   return new goog.Promise(function(resolve, reject) {
     var results = [];
     var tx = db.transaction([tableName], 'readonly');
@@ -104,7 +110,7 @@ function dumpTable(db, tableName) {
     req.onsuccess = function(ev) {
       var cursor = req.result;
       if (cursor) {
-        results.push(lf.Row.deserialize(cursor.value));
+        results.push(fn(cursor.value));
         cursor.continue();
       } else {
         resolve(results);
@@ -112,6 +118,26 @@ function dumpTable(db, tableName) {
     };
     req.onerror = reject;
   });
+}
+
+
+/**
+ * @param {!IDBDatabase} db
+ * @param {string} tableName
+ * @return {!IThenable.<!Array.<!lf.Row>>}
+ */
+function dumpTable(db, tableName) {
+  return dumpDB(db, tableName, lf.Row.deserialize);
+}
+
+
+/**
+ * @param {!IDBDatabase} db
+ * @param {string} tableName
+ * @return {!IThenable.<!Array.<!lf.backstore.Page>>}
+ */
+function dumpTableBundled(db, tableName) {
+  return dumpDB(db, tableName, lf.backstore.Page.deserialize);
 }
 
 
@@ -128,25 +154,55 @@ function upgradeAddTableColumn(date, dbInterface) {
 }
 
 
+/**
+ * @param {!IDBDatabase} db
+ * @return {!IThenable}
+ */
+function prepareTxForTableA(db) {
+  var row = lf.Row.create(CONTENTS);
+  var row2 = lf.Row.create(CONTENTS2);
+  return new goog.Promise(function(resolve, reject) {
+    var tx = db.transaction(['tableA_'], 'readwrite');
+    var store = tx.objectStore('tableA_');
+    store.put(row.serialize());
+    store.put(row2.serialize());
+    tx.oncomplete = resolve;
+    tx.onabort = reject;
+  });
+}
+
+
+/**
+ * @param {!IDBDatabase} db
+ * @return {!IThenable}
+ */
+function prepareBundledTxForTableA(db) {
+  var row = new lf.Row(0, CONTENTS);
+  var row2 = new lf.Row(MAGIC, CONTENTS2);
+  var page = new lf.backstore.Page(0);
+  var page2 = new lf.backstore.Page(1);
+  page.setRows([row]);
+  page2.setRows([row2]);
+
+  return new goog.Promise(function(resolve, reject) {
+    var tx = db.transaction(['tableA_'], 'readwrite');
+    var store = tx.objectStore('tableA_');
+    store.put(page.serialize());
+    store.put(page2.serialize());
+    tx.oncomplete = resolve;
+    tx.onabort = reject;
+  });
+}
+
+
 function testAddTableColumn() {
   asyncTestCase.waitForAsync('testAddTableColumn');
 
   var db = new lf.backstore.IndexedDB(schema);
-  var row = lf.Row.create(CONTENTS);
-  var row2 = lf.Row.create(CONTENTS);
   var date = new Date();
 
   db.init().then(function(rawDb) {
-    // Use raw database here to bypass transactions and journal setup.
-    // Insert two rows into tableA_.
-    return new goog.Promise(function(resolve, reject) {
-      var tx = rawDb.transaction(['tableA_'], 'readwrite');
-      var store = tx.objectStore('tableA_');
-      store.put(row.serialize());
-      store.put(row2.serialize());
-      tx.oncomplete = resolve;
-      tx.onabort = reject;
-    });
+    return prepareTxForTableA(rawDb);
   }).then(function() {
     db.close();
     db = null;
@@ -159,6 +215,33 @@ function testAddTableColumn() {
     assertEquals(2, results.length);
     assertEquals(date.getTime(), results[0].payload()['dob']);
     assertEquals(date.getTime(), results[1].payload()['dob']);
+    asyncTestCase.continueTesting();
+  }, fail);
+}
+
+
+function testAddTableColumn_Bundled() {
+  asyncTestCase.waitForAsync('testAddTableColumn_Bundled');
+
+  var db = new lf.backstore.IndexedDB(schema, true);
+  var date = new Date();
+
+  db.init().then(function(rawDb) {
+    return prepareBundledTxForTableA(rawDb);
+  }).then(function() {
+    db.close();
+    db = null;
+    schema.version = 2;
+    db = new lf.backstore.IndexedDB(schema, true);
+    return db.init(goog.partial(upgradeAddTableColumn, date));
+  }).then(function(newDb) {
+    return dumpTableBundled(newDb, 'tableA_');
+  }).then(function(results) {
+    assertEquals(2, results.length);
+    var newRow = lf.Row.deserialize(results[0].getPayload()[0]);
+    var newRow2 = lf.Row.deserialize(results[1].getPayload()[MAGIC]);
+    assertEquals(date.getTime(), newRow.payload()['dob']);
+    assertEquals(date.getTime(), newRow2.payload()['dob']);
     asyncTestCase.continueTesting();
   }, fail);
 }
@@ -180,20 +263,8 @@ function testDropTableColumn() {
   asyncTestCase.waitForAsync('testDropTableColumn');
 
   var db = new lf.backstore.IndexedDB(schema);
-  var row = lf.Row.create(CONTENTS);
-  var row2 = lf.Row.create(CONTENTS);
-
   db.init().then(function(rawDb) {
-    // Use raw database here to bypass transactions and journal setup.
-    // Insert two rows into tableA_.
-    return new goog.Promise(function(resolve, reject) {
-      var tx = rawDb.transaction(['tableA_'], 'readwrite');
-      var store = tx.objectStore('tableA_');
-      store.put(row.serialize());
-      store.put(row2.serialize());
-      tx.oncomplete = resolve;
-      tx.onabort = reject;
-    });
+    return prepareTxForTableA(rawDb);
   }).then(function() {
     db.close();
     db = null;
@@ -206,6 +277,31 @@ function testDropTableColumn() {
     assertEquals(2, results.length);
     assertFalse(results[0].payload().hasOwnProperty('name'));
     assertFalse(results[1].payload().hasOwnProperty('name'));
+    asyncTestCase.continueTesting();
+  });
+}
+
+
+function testDropTableColumn_Bundled() {
+  asyncTestCase.waitForAsync('testDropTableColumn_Bundled');
+
+  var db = new lf.backstore.IndexedDB(schema, true);
+  db.init().then(function(rawDb) {
+    return prepareBundledTxForTableA(rawDb);
+  }).then(function() {
+    db.close();
+    db = null;
+    schema.version = 2;
+    db = new lf.backstore.IndexedDB(schema, true);
+    return db.init(upgradeDropTableColumn);
+  }).then(function(newDb) {
+    return dumpTableBundled(newDb, 'tableA_');
+  }).then(function(results) {
+    assertEquals(2, results.length);
+    var newRow = lf.Row.deserialize(results[0].getPayload()[0]);
+    var newRow2 = lf.Row.deserialize(results[1].getPayload()[MAGIC]);
+    assertFalse(newRow.hasOwnProperty('name'));
+    assertFalse(newRow2.hasOwnProperty('name'));
     asyncTestCase.continueTesting();
   });
 }
@@ -260,25 +356,31 @@ function testDump() {
   asyncTestCase.waitForAsync('testDump');
 
   var db = new lf.backstore.IndexedDB(schema);
-  var row = lf.Row.create(CONTENTS);
-  var row2 = lf.Row.create(CONTENTS2);
-
   db.init().then(function(rawDb) {
-    // Use raw database here to bypass transactions and journal setup.
-    // Insert two rows into tableA_.
-    return new goog.Promise(function(resolve, reject) {
-      var tx = rawDb.transaction(['tableA_'], 'readwrite');
-      var store = tx.objectStore('tableA_');
-      store.put(row.serialize());
-      store.put(row2.serialize());
-      tx.oncomplete = resolve;
-      tx.onabort = reject;
-    });
+    return prepareTxForTableA(rawDb);
   }, fail).then(function() {
     db.close();
     db = null;
     schema.version = 2;
     db = new lf.backstore.IndexedDB(schema);
+    return db.init(upgradeDumping);
+  }, fail).then(function() {
+    asyncTestCase.continueTesting();
+  }, fail);
+}
+
+
+function testDump_Bundled() {
+  asyncTestCase.waitForAsync('testDump_Bundled');
+
+  var db = new lf.backstore.IndexedDB(schema, true);
+  db.init().then(function(rawDb) {
+    return prepareBundledTxForTableA(rawDb);
+  }, fail).then(function() {
+    db.close();
+    db = null;
+    schema.version = 2;
+    db = new lf.backstore.IndexedDB(schema, true);
     return db.init(upgradeDumping);
   }, fail).then(function() {
     asyncTestCase.continueTesting();
