@@ -35,26 +35,11 @@ var asyncTestCase = goog.testing.AsyncTestCase.createAndInstall(
 var schema;
 
 
-/** @type {!hr.db.schema.Employee} */
-var e;
-
-
-/** @type {!hr.db.schema.Job} */
-var j;
-
-
-/** @type {!hr.db.schema.Department} */
-var d;
-
-
 function setUp() {
   asyncTestCase.waitForAsync('setUp');
   hr.db.getInstance(
       undefined, /* opt_volatile */ true).then(function(database) {
     schema = database.getSchema();
-    d = schema.getDepartment();
-    e = schema.getEmployee();
-    j = schema.getJob();
   }).then(function() {
     asyncTestCase.continueTesting();
   }, fail);
@@ -62,27 +47,40 @@ function setUp() {
 
 
 /**
- * Tests a simple tree, where only one AND predicate exists.
+ * Tests a complex tree, where a CrossProductNode with many children exists.
  */
-function testSimpleTree() {
+function testTree() {
+  var d = schema.getDepartment();
+  var e = schema.getEmployee();
+  var j = schema.getJob();
+
   var treeBefore =
       'select(combined_pred_and)\n' +
       '-cross_product\n' +
       '--table_access(Employee)\n' +
       '--table_access(Job)\n' +
+      '--table_access(Location)\n' +
+      '--table_access(JobHistory)\n' +
       '--table_access(Department)\n';
 
   var treeAfter =
       'select(combined_pred_and)\n' +
       '-cross_product\n' +
       '--cross_product\n' +
-      '---table_access(Employee)\n' +
-      '---table_access(Job)\n' +
+      '---cross_product\n' +
+      '----cross_product\n' +
+      '-----table_access(Employee)\n' +
+      '-----table_access(Job)\n' +
+      '----table_access(Location)\n' +
+      '---table_access(JobHistory)\n' +
       '--table_access(Department)\n';
 
   var crossProductNode = new lf.proc.CrossProductNode();
   crossProductNode.addChild(new lf.proc.TableAccessNode(e));
   crossProductNode.addChild(new lf.proc.TableAccessNode(j));
+  crossProductNode.addChild(new lf.proc.TableAccessNode(schema.getLocation()));
+  crossProductNode.addChild(
+      new lf.proc.TableAccessNode(schema.getJobHistory()));
   crossProductNode.addChild(new lf.proc.TableAccessNode(d));
 
   var rootNodeBefore = new lf.proc.SelectNode(
