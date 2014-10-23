@@ -56,7 +56,8 @@ hr.db.Database.prototype.init = function(
       lf.base.init(
           this.schema_,
           opt_backStoreType || lf.base.BackStoreType.INDEXED_DB,
-          opt_onUpgrade).then(goog.bind(function() {
+          opt_onUpgrade,
+          false).then(goog.bind(function() {
         this.initialized_ = true;
         return this;
       }, this)));

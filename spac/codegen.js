@@ -19,6 +19,7 @@
  * @fileoverview Code generator for given templates. The class reads the schema
  * and generates following variables:
  *
+ * #bundledmode: enableBundledMode pragma value, default to false
  * #column: array of columns of last used #table, must be used in #repeatcolumn
  * #columnprop: property of last used #column
  * #columnuniqueness: uniqueness of last used #column
@@ -68,8 +69,17 @@ var Constraint_;
 
 /**
  * @typedef {{
+ *   enableBundledMode: boolean
+ * }}
+ */
+var Pragma_;
+
+
+/**
+ * @typedef {{
  *   name: string,
  *   version: number,
+ *   pragma: Pragma_,
  *   table: !Array.<{
  *     name: string,
  *     column: !Array.<{
@@ -139,6 +149,7 @@ function convertSchema(yaml) {
   var schema = {};
   schema.name = yaml.name;
   schema.version = yaml.version;
+  schema.pragma = yaml.pragma;
   var tables = [];
   for (var tableName in yaml.table) {
     var table = {};
@@ -1132,6 +1143,9 @@ CodeGenerator.prototype.generate = function(fileName, template) {
   output = output.replace(/#dbversion/g, this.schema_.version.toString());
   output = output.replace(/#namespace/g, this.namespace_);
   output = output.replace(/#dbname/g, this.schema_.name);
+  var bundledMode = this.schema_.pragma ?
+      (this.schema_.pragma.enableBundledMode || false) : false;
+  output = output.replace(/#bundledmode/g, bundledMode.toString());
 
   return this.parse_(output.split('\n')).join('\n');
 };
