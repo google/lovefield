@@ -65,28 +65,47 @@ function createTestTree() {
 
 /**
  * Tests that lf.tree.map() is constructing a new tree with the exact same
- * structure as the original tree.
+ * structure as the original tree, for a simple tree.
  */
-function testMap() {
+function testMap1() {
+  var nodes = new Array(6);
+  for (var i = 0; i < nodes.length; i++) {
+    nodes[i] = new goog.structs.TreeNode(i, null);
+  }
+
+  nodes[2].addChild(nodes[3]);
+  nodes[1].addChild(nodes[2]);
+  nodes[1].addChild(nodes[4]);
+  nodes[0].addChild(nodes[1]);
+
+  var rootNode = nodes[0];
+
+  // Attempting to copy the tree.
+  var copy = lf.tree.map(rootNode, function(node) {
+    return new goog.structs.TreeNode(node.getKey(), null);
+  });
+
+  assertEquals(
+      lf.tree.toString(rootNode, stringFn),
+      lf.tree.toString(copy, stringFn));
+}
+
+
+/**
+ * Tests that lf.tree.map() is constructing a new tree with the exact same
+ * structure as the original tree, for a more complex tree.
+ */
+function testMap2() {
   var rootNode = createTestTree()[0];
 
-  // Creating a new tree where each new node has an key that is 10 units bigger
-  // than the original node's key. Setting the original node as a value such
-  // that the tree structures can be compared a few lines below.
-  var keyDelta = 10;
+  // Attempting to copy the tree.
   var copy = lf.tree.map(rootNode, function(node) {
-    return new goog.structs.TreeNode(node.getKey() + keyDelta, node);
+    return new goog.structs.TreeNode(node.getKey(), null);
   });
 
-  // Traversing the new tree and ensuring that it has the same structure as the
-  // original tree.
-  copy.traverse(function(node) {
-    assertEquals(node.getValue().getKey() + keyDelta, node.getKey());
-    if (!goog.isNull(node.getParent())) {
-      assertEquals(
-          node.getParent().getValue().getKey() + keyDelta,
-          node.getParent().getKey()); }
-  });
+  assertEquals(
+      lf.tree.toString(rootNode, stringFn),
+      lf.tree.toString(copy, stringFn));
 }
 
 
