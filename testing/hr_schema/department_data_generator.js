@@ -50,9 +50,9 @@ lf.testing.hrSchema.DepartmentDataGenerator.prototype.generateRaw_ =
       count <= this.names_.length,
       'count can be at most ' + this.names_.length);
 
-  var jobs = new Array(count);
+  var departments = new Array(count);
   for (var i = 0; i < count; i++) {
-    jobs[i] = {
+    departments[i] = {
       id: 'departmentId' + i.toString(),
       name: this.names_.shift(),
       managerId: 'managerId',
@@ -60,7 +60,7 @@ lf.testing.hrSchema.DepartmentDataGenerator.prototype.generateRaw_ =
     };
   }
 
-  return jobs;
+  return departments;
 };
 
 

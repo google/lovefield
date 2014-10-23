@@ -60,7 +60,8 @@ goog.require('lf.query.UpdateBuilder');
       lf.base.init(
           this.schema_,
           opt_backStoreType || lf.base.BackStoreType.INDEXED_DB,
-          opt_onUpgrade).then(goog.bind(function() {
+          opt_onUpgrade,
+          #bundledmode).then(goog.bind(function() {
         this.initialized_ = true;
         return this;
       }, this)));

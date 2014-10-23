@@ -37,6 +37,7 @@ var yaml = /** @type {YAML_} */ (require('js-yaml'));
 var DB_SCHEMA = {
   'name': 'string',
   'version': 'integer',
+  'pragma=': 'object',
   'table': 'object'
 };
 

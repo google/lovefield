@@ -18,8 +18,9 @@ goog.setTestOnly();
 goog.require('goog.testing.AsyncTestCase');
 goog.require('goog.testing.jsunit');
 goog.require('hr.db');
-goog.require('lf.Row');
+goog.require('lf.pred.JoinPredicate');
 goog.require('lf.proc.Relation');
+goog.require('lf.proc.RelationEntry');
 goog.require('lf.testing.hrSchemaSampleData');
 
 
@@ -40,11 +41,16 @@ var e;
 var j;
 
 
+/** @type {!hr.db.schema.Department} */
+var d;
+
+
 function setUp() {
   asyncTestCase.waitForAsync('setUp');
   hr.db.getInstance(
       undefined, /* opt_volatile */ true).then(function(database) {
     db = database;
+    d = db.getSchema().getDepartment();
     e = db.getSchema().getEmployee();
     j = db.getSchema().getJob();
     asyncTestCase.continueTesting();
@@ -52,30 +58,57 @@ function setUp() {
 }
 
 
-function testJoinPredicate_EvalRow_True() {
-  var combinedRow = lf.Row.combineRows(
-      lf.testing.hrSchemaSampleData.generateSampleEmployeeData(db),
-      e.getName(),
-      lf.testing.hrSchemaSampleData.generateSampleJobData(db),
-      j.getName());
+function testCopy() {
+  var original = e.jobId.eq(j.id);
+  var copy = original.copy();
 
-  var joinPredicate1 = e.jobId.eq(j.id);
-  assertTrue(joinPredicate1.evalRow(combinedRow));
-
-  var joinPredicate2 = j.id.eq(e.jobId);
-  assertTrue(joinPredicate2.evalRow(combinedRow));
+  assertTrue(copy instanceof lf.pred.JoinPredicate);
+  assertFalse(original == copy);
+  assertEquals(original.leftColumn, copy.leftColumn);
+  assertEquals(original.rightColumn, copy.rightColumn);
+  assertEquals(original.evaluatorType, copy.evaluatorType);
 }
 
 
-function testJoinPredicate_EvalRow_False() {
-  var combinedRow = lf.Row.combineRows(
+function testJoinPredicate_Eval_True() {
+  var leftEntry = new lf.proc.RelationEntry(
       lf.testing.hrSchemaSampleData.generateSampleEmployeeData(db),
-      e.getName(),
+      false);
+  var rightEntry = new lf.proc.RelationEntry(
       lf.testing.hrSchemaSampleData.generateSampleJobData(db),
-      j.getName());
+      false);
+  var combinedEntry = lf.proc.RelationEntry.combineEntries(
+      leftEntry, [e.getName()],
+      rightEntry, [j.getName()]);
+  var relation = new lf.proc.Relation(
+      [combinedEntry], [e.getName(), j.getName()]);
+
+  var joinPredicate1 = e.jobId.eq(j.id);
+  var resultRelation1 = joinPredicate1.eval(relation);
+  assertEquals(1, resultRelation1.entries.length);
+
+  var joinPredicate2 = j.id.eq(e.jobId);
+  var resultRelation2 = joinPredicate2.eval(relation);
+  assertEquals(1, resultRelation2.entries.length);
+}
+
+
+function testJoinPredicate_Eval_False() {
+  var leftEntry = new lf.proc.RelationEntry(
+      lf.testing.hrSchemaSampleData.generateSampleEmployeeData(db),
+      false);
+  var rightEntry = new lf.proc.RelationEntry(
+      lf.testing.hrSchemaSampleData.generateSampleJobData(db),
+      false);
+  var combinedEntry = lf.proc.RelationEntry.combineEntries(
+      leftEntry, [e.getName()],
+      rightEntry, [j.getName()]);
+  var relation = new lf.proc.Relation(
+      [combinedEntry], [e.getName(), j.getName()]);
 
   var joinPredicate = e.firstName.eq(j.id);
-  assertFalse(joinPredicate.evalRow(combinedRow));
+  var resultRelation = joinPredicate.eval(relation);
+  assertEquals(0, resultRelation.entries.length);
 }
 
 
@@ -101,16 +134,16 @@ function testJoinPredicate_EvalRelations() {
   assertEquals(1, result2.entries.length);
   assertEquals(
       sampleEmployee.payload().id,
-      result1.entries[0].row.payload()[e.getName()]['id']);
+      result1.entries[0].getField(e.id));
   assertEquals(
       sampleEmployee.payload().id,
-      result2.entries[0].row.payload()[e.getName()]['id']);
+      result2.entries[0].getField(e.id));
   assertEquals(
       sampleJob.payload().id,
-      result1.entries[0].row.payload()[j.getName()]['id']);
+      result1.entries[0].getField(j.id));
   assertEquals(
       sampleJob.payload().id,
-      result2.entries[0].row.payload()[j.getName()]['id']);
+      result2.entries[0].getField(j.id));
 }
 
 
@@ -129,6 +162,20 @@ function testJoinPredicate_EvalRelations_NestedLoopJoin() {
       lf.pred.JoinPredicate.prototype.evalRelationsNestedLoopJoin_);
   checkEvalRelations_NonUniqueKeys(
       lf.pred.JoinPredicate.prototype.evalRelationsNestedLoopJoin_);
+}
+
+
+/** @suppress {accessControls} */
+function testJoinPredicate_EvalRelations_NestedLoopJoin_MultiJoin() {
+  checkEvalRelations_MultiJoin(
+      lf.pred.JoinPredicate.prototype.evalRelationsNestedLoopJoin_);
+}
+
+
+/** @suppress {accessControls} */
+function testJoinPredicate_EvalRelations_HashJoin_MultiJoin() {
+  checkEvalRelations_MultiJoin(
+      lf.pred.JoinPredicate.prototype.evalRelationsHashJoin_);
 }
 
 
@@ -183,13 +230,52 @@ function checkEvalRelations_NonUniqueKeys(evalFn) {
 
 
 /**
- * Generates sample data to be used for tests. Specifically it generates 50
- * employees and 5 jobs, where each job contains 10 employees.
- * @return {{employees: !Array.<!lf.Row>, jobs: !Array.<!lf.Row>}}
+ * Checks that the given join implementation is correct, for the case where a 3
+ * table natural join is performed.
+ * @param {!function(!lf.proc.Relation, !lf.proc.Relation):!lf.proc.Relation}
+ *     evalFn The join implementation method. Should be either
+ *     evalRelationsNestedLoopJoin_ or evalRelationsHashJoin_.
+ */
+function checkEvalRelations_MultiJoin(evalFn) {
+  var sampleRows = getSampleRows();
+
+  var employeeRelation = lf.proc.Relation.fromRows(
+      sampleRows.employees, [e.getName()]);
+  var jobRelation = lf.proc.Relation.fromRows(
+      sampleRows.jobs, [j.getName()]);
+  var departmentRelation = lf.proc.Relation.fromRows(
+      sampleRows.departments, [d.getName()]);
+
+  var joinPredicate1 = e.jobId.eq(j.id);
+  var joinPredicate2 = e.departmentId.eq(d.id);
+
+  var resultEmployeeJob = evalFn.call(
+      joinPredicate1, employeeRelation, jobRelation);
+  var resultEmployeeJobDepartment = evalFn.call(
+      joinPredicate2, resultEmployeeJob, departmentRelation);
+  assertEquals(
+      sampleRows.employees.length,
+      resultEmployeeJobDepartment.entries.length);
+}
+
+
+/**
+ * Generates sample data to be used for tests. Specifically it generates
+ *  - 60 employees,
+ *  - 6 jobs,
+ *  - 3 departments
+ * Such that each job contains 10 employees and each department contains 20
+ * employees.
+ * @return {{
+ *   employees: !Array.<!lf.Row>,
+ *   jobs: !Array.<!lf.Row>,
+ *   departments: !Array.<!lf.Row>
+ * }}
  */
 function getSampleRows() {
-  var employeeCount = 50;
+  var employeeCount = 60;
   var jobCount = employeeCount / 10;
+  var departmentCount = employeeCount / 20;
   var salary = 100000;
 
   var employees = new Array(employeeCount);
@@ -198,6 +284,7 @@ function getSampleRows() {
     employee.
         setId(i.toString()).
         setJobId(String(i % jobCount)).
+        setDepartmentId('departmentId' + String(i % departmentCount)).
         setSalary(salary);
     employees[i] = employee;
   }
@@ -211,8 +298,17 @@ function getSampleRows() {
     jobs[i] = job;
   }
 
+  var departments = new Array(departmentCount);
+  for (var i = 0; i < departmentCount; i++) {
+    var department =
+        lf.testing.hrSchemaSampleData.generateSampleDepartmentData(db);
+    department.setId('departmentId' + i.toString());
+    departments[i] = department;
+  }
+
   return {
     employees: employees,
-    jobs: jobs
+    jobs: jobs,
+    departments: departments
   };
 }

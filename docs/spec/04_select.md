@@ -25,13 +25,13 @@ db.select().
 Filters are provided in the form of parameters of `select`. Absence of parameters implies select every column. In multi-table context, the returning rows will prefix table name for each column. The parameters must be schema column object, for example:
 
 ```js
-infoCard = db.getSchema.getInfoCard();
+var infoCard = db.getSchema.getInfoCard();
 var q1 = db.select(infoCard.id, infoCard.lang, infoCard.fileName);
 q1.exec().then(function(rows) {
   // No prefix, context involves only one table
   // console.log(rows[0]['id'], rows[0]['lang'], rows[0]['fileName']);
 });
-asset = db.getSchema.getAsset();
+var asset = db.getSchema.getAsset();
 var q2 = db.select().
     from(infoCard).
     innerJoin(asset, asset.id.eq(infoCard.id)).
@@ -200,3 +200,36 @@ db.select(customer.name, lf.fn.count(order.id)).
 ```
 
 Just like SQL, the search conditions in `where()` does not support aggregators. Lovefield does not support `HAVING`. The users can do two queries or simply filter out the selected results.
+
+
+### 4.6 Aliases
+
+Each selected column can have alias that will affect their representation in selected results. All aliased columns are flattened (i.e. no prefix). For example:
+
+```js
+var infoCard = db.getSchema.getInfoCard();
+var q1 = db.select(
+    infoCard.id,  // No alias
+    infoCard.lang.as('Language'),  // Aliased
+    infoCard.fileName.as('File Name'));
+q1.exec().then(function(rows) {
+  // No prefix, context involves only one table
+  // console.log(rows[0]['id'], rows[0]['Language'], rows[0]['File Name']);
+});
+
+var asset = db.getSchema.getAsset();
+var q3 = db.select(
+    infoCard.id.as('InfoCard Id'),
+    infoCard.itag,
+    asset.timestamp.as('Timestamp')).
+    from(infoCard).
+    innerJoin(asset, asset.id.eq(infoCard.id)).
+    where(asset.id.eq('1'));
+q3.exec().then(function(rows) {
+  // Prefixed columns, context involves two tables
+  console.log(
+      rows[0]['InfoCard Id'],  // Alias column is flattened.
+      rows[0]['InfoCard']['tag'],  // Non-aliased columns are still prefixed
+      rows[0]['Timestamp']);
+});
+```

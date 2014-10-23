@@ -21,6 +21,9 @@ goog.require('goog.testing.jsunit');
 goog.require('hr.db');
 goog.require('lf.Global');
 goog.require('lf.Order');
+goog.require('lf.eval.Type');
+goog.require('lf.pred.ValuePredicate');
+goog.require('lf.proc.CrossProductStep');
 goog.require('lf.proc.IndexRangeScanPass');
 goog.require('lf.proc.JoinStep');
 goog.require('lf.proc.OrderByStep');
@@ -44,6 +47,10 @@ var e;
 var j;
 
 
+/** @type {!hr.db.schema.Department} */
+var d;
+
+
 /** @type {!lf.index.IndexStore} */
 var indexStore;
 
@@ -60,6 +67,7 @@ function setUp() {
       undefined, true).then(function(database) {
     e = database.getSchema().getEmployee();
     j = database.getSchema().getJob();
+    d = database.getSchema().getDepartment();
     indexStore =  /** @type {!lf.index.IndexStore} */ (
         lf.Global.get().getService(lf.service.INDEX_STORE));
   }).then(function() {
@@ -164,6 +172,47 @@ function testTree2() {
 
   var pass = new lf.proc.IndexRangeScanPass();
   var rootNodeAfter = pass.rewrite(rootNodeBefore);
+  assertEquals(treeAfter, lf.tree.toString(rootNodeAfter));
+}
+
+
+/**
+ * Tests the case where a SelectStep node is paired with a TableAccessFullStep
+ * and the two are separated by a CrossProductStep. It ensures that other
+ * children of the CrossProductStep are not affected.
+ */
+function testTree3() {
+  var treeBefore =
+      'project()\n' +
+      '-select(value_pred(Job.id))\n' +
+      '--cross_product\n' +
+      '---table_access(Job)\n' +
+      '---table_access(Department)\n';
+
+  var treeAfter =
+      'project()\n' +
+      '-cross_product\n' +
+      '--table_access_by_row_id(Job)\n' +
+      '---index_range_scan(Job.pkJob, [100, 100])\n' +
+      '--table_access(Department)\n';
+
+  var crossProductStep = new lf.proc.CrossProductStep();
+  var tableAccessJob = new lf.proc.TableAccessFullStep(j);
+  var tableAccessDepartment = new lf.proc.TableAccessFullStep(d);
+  crossProductStep.addChild(tableAccessJob);
+  crossProductStep.addChild(tableAccessDepartment);
+
+  var selectStep = new lf.proc.SelectStep(new lf.pred.ValuePredicate(
+      j.id, '100', lf.eval.Type.EQ));
+  selectStep.addChild(crossProductStep);
+
+  var rootNodeBefore = new lf.proc.ProjectStep([], null);
+  rootNodeBefore.addChild(selectStep);
+  assertEquals(treeBefore, lf.tree.toString(rootNodeBefore));
+
+  var pass = new lf.proc.IndexRangeScanPass();
+  var rootNodeAfter = pass.rewrite(rootNodeBefore);
+
   assertEquals(treeAfter, lf.tree.toString(rootNodeAfter));
 }
 

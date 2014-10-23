@@ -21,6 +21,7 @@ goog.require('hr.db');
 goog.require('lf.op');
 goog.require('lf.proc.Relation');
 goog.require('lf.testing.hrSchemaSampleData');
+goog.require('lf.tree');
 
 
 /** @type {!goog.testing.AsyncTestCase} */
@@ -40,15 +41,84 @@ var e;
 var j;
 
 
+/** @type {!hr.db.schema.Department} */
+var d;
+
+
 function setUp() {
   asyncTestCase.waitForAsync('setUp');
   hr.db.getInstance(
       undefined, /* opt_volatile */ true).then(function(database) {
     db = database;
+    d = db.getSchema().getDepartment();
     e = db.getSchema().getEmployee();
     j = db.getSchema().getJob();
     asyncTestCase.continueTesting();
   }, fail);
+}
+
+
+/**
+ * Tests that copy() creates an identical tree where each node is a new
+ * instance.
+ */
+function testCopy_Simple() {
+  var expectedTree =
+      'combined_pred_and\n' +
+      '-value_pred(Employee.salary)\n' +
+      '-value_pred(Employee.salary)\n';
+
+  var original = /** @type {!lf.pred.PredicateNode} */ (
+      lf.op.and(e.salary.gte(200), e.salary.lte(600)));
+  var copy = original.copy();
+  assertTreesIdentical(expectedTree, original, copy);
+}
+
+
+/**
+ * Tests that copy() creates an identical tree where each node is a new
+ * instance for the case of a tree with nested CombinedPredicate instances.
+ */
+function testCopy_Nested() {
+  var expectedTree =
+      'combined_pred_and\n' +
+      '-value_pred(Employee.salary)\n' +
+      '-combined_pred_and\n' +
+      '--join_pred(Employee.jobId, Job.id)\n' +
+      '--join_pred(Employee.departmentId, Department.id)\n';
+
+  var original = /** @type {!lf.pred.PredicateNode} */ (lf.op.and(
+      e.salary.gte(200),
+      lf.op.and(
+          e.jobId.eq(j.id),
+          e.departmentId.eq(d.id))));
+  var copy = original.copy();
+  assertTreesIdentical(expectedTree, original, copy);
+}
+
+
+/**
+ * Asserts that the given trees have identical structure and that they do not
+ * hold any common object references.
+ * @param {string} expectedTree The expected string representation of the two
+ *     trees.
+ * @param {!goog.structs.TreeNode} original The root node of the original tree.
+ * @param {!goog.structs.TreeNode} copy The root node of the copied tree.
+ */
+function assertTreesIdentical(expectedTree, original, copy) {
+  assertEquals(expectedTree, lf.tree.toString(original));
+  assertEquals(expectedTree, lf.tree.toString(copy));
+
+  // Asserting that the copy tree holds new instances for each node.
+  var originalTraversedNodes = [];
+  original.traverse(function(node) {
+    originalTraversedNodes.push(node);
+  });
+
+  copy.traverse(function(node) {
+    var originalNode = originalTraversedNodes.shift();
+    assertFalse(originalNode == node);
+  });
 }
 
 

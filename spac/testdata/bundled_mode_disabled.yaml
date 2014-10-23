@@ -1,0 +1,11 @@
+%YAML 1.2
+---
+# The sample schema used to test code generation.
+name: pdb
+pragma:
+  enableBundledMode: false
+version: 1
+table:
+  Foo:
+    column:
+      bar: string

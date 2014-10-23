@@ -82,7 +82,8 @@ function tearDown() {
 }
 
 
-function testSCUD() {
+/** @return {!IThenable} */
+function runSCUDTest() {
   /** @const {!Object} */
   var CONTENTS = {'id': 'hello', 'name': 'world'};
   /** @const {!Object} */
@@ -93,8 +94,7 @@ function testSCUD() {
   var row2 = lf.Row.create(CONTENTS);
   var row3 = new lf.Row(row.id(), CONTENTS2);
 
-  db = new lf.backstore.IndexedDB(schema);
-  db.init().then(function() {
+  return db.init().then(function() {
     var tx = db.createTx(
         lf.TransactionType.READ_WRITE,
         new lf.cache.Journal([table]));
@@ -136,6 +136,9 @@ function testSCUD() {
     assertEquals(row2.id(), results[1].id());
     assertObjectEquals(CONTENTS, results[1].payload());
 
+    // Update cache, otherwise the bundled operation will fail.
+    cache.set([row2, row3]);
+
     var tx = db.createTx(
         lf.TransactionType.READ_WRITE,
         new lf.cache.Journal([table]));
@@ -165,20 +168,33 @@ function testSCUD() {
     return selectAll();
   }).then(function(results) {
     assertEquals(0, results.length);
+  });
+}
+
+function testSCUD() {
+  db = new lf.backstore.IndexedDB(schema);
+  runSCUDTest().then(function() {
     asyncTestCase.continueTesting();
   });
 
   asyncTestCase.waitForAsync('testSCUD');
 }
 
+function testSCUD_Bundled() {
+  schema.name = schema.name + '_bundled';
+  db = new lf.backstore.IndexedDB(schema, true);
+  runSCUDTest().then(function() {
+    asyncTestCase.continueTesting();
+  });
+
+  asyncTestCase.waitForAsync('testSCUD_Bundled');
+}
+
 
 /** @suppress {accessControls} */
 function testScanRowId() {
-  /**
-   * @param {number} index
-   * @return {!IThenable}
-   */
-  var insertIntoTable = function(index) {
+  /** @return {!IThenable} */
+  var insertIntoTable = function() {
     var CONTENTS = {'scan': 'rowid'};
     var rows = [];
     for (var i = 0; i < 10; ++i) {
@@ -198,12 +214,12 @@ function testScanRowId() {
 
   db = new lf.backstore.IndexedDB(schema);
   db.init().then(function() {
-    return insertIntoTable(1);
+    return insertIntoTable();
   }).then(function() {
     return db.scanRowId_();
   }).then(function(rowId) {
     assertEquals(lf.Row.getNextId() - 1, rowId);
-    return insertIntoTable(0);
+    return insertIntoTable();
   }).then(function() {
     return db.scanRowId_();
   }).then(function(rowId) {
@@ -212,6 +228,41 @@ function testScanRowId() {
   });
 
   asyncTestCase.waitForAsync('testScanRowId');
+}
+
+
+/** @suppress {accessControls} */
+function testScanRowId_BundledDB() {
+  /** @return {!IThenable} */
+  var insertIntoTable = function() {
+    var CONTENTS = {'scan': 'rowid'};
+    var rows = [];
+    for (var i = 0; i <= 2048; i += 256) {
+      rows.push(new lf.Row(i, CONTENTS));
+    }
+
+    var table = schema.getTables()[0];
+    var tx = db.createTx(
+        lf.TransactionType.READ_WRITE,
+        new lf.cache.Journal([table]));
+    var store = /** @type {!lf.backstore.ObjectStore} */ (
+        tx.getTable(table));
+
+    store.put(rows);
+    return tx.finished();
+  };
+
+  db = new lf.backstore.IndexedDB(schema, true);
+  db.init().then(function() {
+    return insertIntoTable();
+  }).then(function() {
+    return db.scanRowId_();
+  }).then(function(rowId) {
+    assertEquals(2048, rowId);
+    asyncTestCase.continueTesting();
+  });
+
+  asyncTestCase.waitForAsync('testScanRowId_BundledDB');
 }
 
 
