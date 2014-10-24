@@ -118,15 +118,15 @@ function testRemoveNode_Intermediate() {
 
   var treeAfter =
       '[0,null]\n' +
+      '-[2,null]\n' +
+      '-[3,null]\n' +
+      '-[4,null]\n' +
       '-[5,null]\n' +
       '--[6,null]\n' +
       '---[7,null]\n' +
       '----[8,null]\n' +
       '----[9,null]\n' +
-      '-[10,null]\n' +
-      '-[2,null]\n' +
-      '-[3,null]\n' +
-      '-[4,null]\n';
+      '-[10,null]\n';
 
   // Removing node n1.
   lf.tree.removeNode(nodes[1]);
@@ -301,12 +301,12 @@ function testSwapNodeWithChild() {
       '--[2,null]\n' +
       '--[3,null]\n' +
       '--[4,null]\n' +
-      '-[10,null]\n' +
       '-[6,null]\n' +
       '--[5,null]\n' +
       '---[7,null]\n' +
       '----[8,null]\n' +
-      '----[9,null]\n';
+      '----[9,null]\n' +
+      '-[10,null]\n';
   var newSubtreeRoot = lf.tree.swapNodeWithChild(nodes[5]);
   assertEquals(nodes[6], newSubtreeRoot);
   assertEquals(treeAfter, lf.tree.toString(nodes[0], stringFn));
