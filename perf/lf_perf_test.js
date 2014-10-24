@@ -234,3 +234,29 @@ function test4Select() {
     });
   });
 }
+
+
+function test5LoadingPopulatedDB() {
+  asyncTestCase.waitForAsync('test5LoadingPopulatedDB');
+  var rowCount = 20000;
+  var test = new lf.testing.perf.DefaultBenchmark();
+
+  var preRunSetup = function() {
+    return test.init().then(function() {
+      return test.close();
+    }).then(function() {
+      return test.init();
+    }).then(function() {
+      return test.generateTestData();
+    }).then(function() {
+      return test.insert(rowCount);
+    });
+  };
+
+  var benchmark = new lf.testing.Benchmark('Loading Populated DB', preRunSetup);
+  benchmark.schedule('Init populated DB', goog.bind(test.init, test));
+
+  benchmark.run(REPETITIONS).then(function() {
+    asyncTestCase.continueTesting();
+  }, fail);
+}
