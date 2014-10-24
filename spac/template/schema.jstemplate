@@ -93,11 +93,7 @@ goog.require('lf.schema.Table');
 
 /** @override */
 #namespace.schema.#table#pascal.prototype.deserializeRow = function(dbRecord) {
-  var rowId = dbRecord['id'];
-  var data = dbRecord['value'];
-  var payload = new #namespace.row.#table#pascalType();
-#deserializerow payload data
-  return new #namespace.row.#table#pascal(rowId, payload);
+#deserializerow #namespace.row.#table#pascal dbRecord
 };
 
 

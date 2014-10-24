@@ -154,7 +154,6 @@ lovefield.db.schema.Album.prototype.createRow = function(opt_value) {
 
 /** @override */
 lovefield.db.schema.Album.prototype.deserializeRow = function(dbRecord) {
-  var rowId = dbRecord['id'];
   var data = dbRecord['value'];
   var payload = new lovefield.db.row.AlbumType();
   payload.id = data.id;
@@ -163,7 +162,7 @@ lovefield.db.schema.Album.prototype.deserializeRow = function(dbRecord) {
   payload.timestamp = new Date(data.timestamp);
   payload.tacotownJspb = /** @type {!ArrayBuffer} */ (
       lf.Row.hexToBin(data.tacotownJspb));
-  return new lovefield.db.row.Album(rowId, payload);
+  return new lovefield.db.row.Album(dbRecord['id'], payload);
 };
 
 
@@ -441,7 +440,6 @@ lovefield.db.schema.Photo.prototype.createRow = function(opt_value) {
 
 /** @override */
 lovefield.db.schema.Photo.prototype.deserializeRow = function(dbRecord) {
-  var rowId = dbRecord['id'];
   var data = dbRecord['value'];
   var payload = new lovefield.db.row.PhotoType();
   payload.id = data.id;
@@ -454,7 +452,7 @@ lovefield.db.schema.Photo.prototype.deserializeRow = function(dbRecord) {
   payload.albumId = data.albumId;
   payload.isCoverPhoto = data.isCoverPhoto;
   payload.tacotownJspb = lf.Row.hexToBin(data.tacotownJspb);
-  return new lovefield.db.row.Photo(rowId, payload);
+  return new lovefield.db.row.Photo(dbRecord['id'], payload);
 };
 
 
@@ -795,13 +793,7 @@ lovefield.db.schema.Details.prototype.createRow = function(opt_value) {
 
 /** @override */
 lovefield.db.schema.Details.prototype.deserializeRow = function(dbRecord) {
-  var rowId = dbRecord['id'];
-  var data = dbRecord['value'];
-  var payload = new lovefield.db.row.DetailsType();
-  payload.photoId = data.photoId;
-  payload.albumId = data.albumId;
-  payload.totalComments = data.totalComments;
-  return new lovefield.db.row.Details(rowId, payload);
+  return new lovefield.db.row.Details(dbRecord['id'], dbRecord['value']);
 };
 
 
@@ -999,12 +991,7 @@ lovefield.db.schema.Curator.prototype.createRow = function(opt_value) {
 
 /** @override */
 lovefield.db.schema.Curator.prototype.deserializeRow = function(dbRecord) {
-  var rowId = dbRecord['id'];
-  var data = dbRecord['value'];
-  var payload = new lovefield.db.row.CuratorType();
-  payload.id = data.id;
-  payload.name = data.name;
-  return new lovefield.db.row.Curator(rowId, payload);
+  return new lovefield.db.row.Curator(dbRecord['id'], dbRecord['value']);
 };
 
 
@@ -1187,13 +1174,7 @@ lovefield.db.schema.PhotoCurator.prototype.createRow = function(opt_value) {
 
 /** @override */
 lovefield.db.schema.PhotoCurator.prototype.deserializeRow = function(dbRecord) {
-  var rowId = dbRecord['id'];
-  var data = dbRecord['value'];
-  var payload = new lovefield.db.row.PhotoCuratorType();
-  payload.photoId = data.photoId;
-  payload.curator = data.curator;
-  payload.topic = data.topic;
-  return new lovefield.db.row.PhotoCurator(rowId, payload);
+  return new lovefield.db.row.PhotoCurator(dbRecord['id'], dbRecord['value']);
 };
 
 

@@ -206,14 +206,7 @@ hr.db.schema.Job.prototype.createRow = function(opt_value) {
 
 /** @override */
 hr.db.schema.Job.prototype.deserializeRow = function(dbRecord) {
-  var rowId = dbRecord['id'];
-  var data = dbRecord['value'];
-  var payload = new hr.db.row.JobType();
-  payload.id = data.id;
-  payload.title = data.title;
-  payload.minSalary = data.minSalary;
-  payload.maxSalary = data.maxSalary;
-  return new hr.db.row.Job(rowId, payload);
+  return new hr.db.row.Job(dbRecord['id'], dbRecord['value']);
 };
 
 
@@ -449,7 +442,6 @@ hr.db.schema.JobHistory.prototype.createRow = function(opt_value) {
 
 /** @override */
 hr.db.schema.JobHistory.prototype.deserializeRow = function(dbRecord) {
-  var rowId = dbRecord['id'];
   var data = dbRecord['value'];
   var payload = new hr.db.row.JobHistoryType();
   payload.employeeId = data.employeeId;
@@ -457,7 +449,7 @@ hr.db.schema.JobHistory.prototype.deserializeRow = function(dbRecord) {
   payload.endDate = new Date(data.endDate);
   payload.jobId = data.jobId;
   payload.departmentId = data.departmentId;
-  return new hr.db.row.JobHistory(rowId, payload);
+  return new hr.db.row.JobHistory(dbRecord['id'], payload);
 };
 
 
@@ -739,7 +731,6 @@ hr.db.schema.Employee.prototype.createRow = function(opt_value) {
 
 /** @override */
 hr.db.schema.Employee.prototype.deserializeRow = function(dbRecord) {
-  var rowId = dbRecord['id'];
   var data = dbRecord['value'];
   var payload = new hr.db.row.EmployeeType();
   payload.id = data.id;
@@ -756,7 +747,7 @@ hr.db.schema.Employee.prototype.deserializeRow = function(dbRecord) {
   payload.departmentId = data.departmentId;
   payload.photo = /** @type {!ArrayBuffer} */ (
       lf.Row.hexToBin(data.photo));
-  return new hr.db.row.Employee(rowId, payload);
+  return new hr.db.row.Employee(dbRecord['id'], payload);
 };
 
 
@@ -1172,14 +1163,7 @@ hr.db.schema.Department.prototype.createRow = function(opt_value) {
 
 /** @override */
 hr.db.schema.Department.prototype.deserializeRow = function(dbRecord) {
-  var rowId = dbRecord['id'];
-  var data = dbRecord['value'];
-  var payload = new hr.db.row.DepartmentType();
-  payload.id = data.id;
-  payload.name = data.name;
-  payload.managerId = data.managerId;
-  payload.locationId = data.locationId;
-  return new hr.db.row.Department(rowId, payload);
+  return new hr.db.row.Department(dbRecord['id'], dbRecord['value']);
 };
 
 
@@ -1416,16 +1400,7 @@ hr.db.schema.Location.prototype.createRow = function(opt_value) {
 
 /** @override */
 hr.db.schema.Location.prototype.deserializeRow = function(dbRecord) {
-  var rowId = dbRecord['id'];
-  var data = dbRecord['value'];
-  var payload = new hr.db.row.LocationType();
-  payload.id = data.id;
-  payload.streetAddress = data.streetAddress;
-  payload.postalCode = data.postalCode;
-  payload.city = data.city;
-  payload.stateProvince = data.stateProvince;
-  payload.countryId = data.countryId;
-  return new hr.db.row.Location(rowId, payload);
+  return new hr.db.row.Location(dbRecord['id'], dbRecord['value']);
 };
 
 
@@ -1696,13 +1671,7 @@ hr.db.schema.Country.prototype.createRow = function(opt_value) {
 
 /** @override */
 hr.db.schema.Country.prototype.deserializeRow = function(dbRecord) {
-  var rowId = dbRecord['id'];
-  var data = dbRecord['value'];
-  var payload = new hr.db.row.CountryType();
-  payload.id = data.id;
-  payload.name = data.name;
-  payload.regionId = data.regionId;
-  return new hr.db.row.Country(rowId, payload);
+  return new hr.db.row.Country(dbRecord['id'], dbRecord['value']);
 };
 
 
@@ -1900,12 +1869,7 @@ hr.db.schema.Region.prototype.createRow = function(opt_value) {
 
 /** @override */
 hr.db.schema.Region.prototype.deserializeRow = function(dbRecord) {
-  var rowId = dbRecord['id'];
-  var data = dbRecord['value'];
-  var payload = new hr.db.row.RegionType();
-  payload.id = data.id;
-  payload.name = data.name;
-  return new hr.db.row.Region(rowId, payload);
+  return new hr.db.row.Region(dbRecord['id'], dbRecord['value']);
 };
 
 
@@ -2084,13 +2048,12 @@ hr.db.schema.Holiday.prototype.createRow = function(opt_value) {
 
 /** @override */
 hr.db.schema.Holiday.prototype.deserializeRow = function(dbRecord) {
-  var rowId = dbRecord['id'];
   var data = dbRecord['value'];
   var payload = new hr.db.row.HolidayType();
   payload.name = data.name;
   payload.begin = new Date(data.begin);
   payload.end = new Date(data.end);
-  return new hr.db.row.Holiday(rowId, payload);
+  return new hr.db.row.Holiday(dbRecord['id'], payload);
 };
 
 
@@ -2307,7 +2270,6 @@ hr.db.schema.DummyTable.prototype.createRow = function(opt_value) {
 
 /** @override */
 hr.db.schema.DummyTable.prototype.deserializeRow = function(dbRecord) {
-  var rowId = dbRecord['id'];
   var data = dbRecord['value'];
   var payload = new hr.db.row.DummyTableType();
   payload.arraybuffer = /** @type {!ArrayBuffer} */ (
@@ -2317,7 +2279,7 @@ hr.db.schema.DummyTable.prototype.deserializeRow = function(dbRecord) {
   payload.integer = data.integer;
   payload.number = data.number;
   payload.string = data.string;
-  return new hr.db.row.DummyTable(rowId, payload);
+  return new hr.db.row.DummyTable(dbRecord['id'], payload);
 };
 
 

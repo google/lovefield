@@ -677,18 +677,38 @@ CodeGenerator.prototype.genKeyOfIndex_ = function(table, prefix) {
 
 
 /**
+ * Generates deserializeRow() function. It generates
+ *
+ *   return new target(record['id'], record['value']);
+ *
+ * if there is no special conversion needed, or
+ *
+ *   var payload = new targetType();
+ *   var data = record['value'];
+ *   payload.col1 = data.col1;
+ *   ...
+ *   return payload;
+ *
+ * if special conversion is required.
+ *
  * @param {Object} table
  * @param {string} target
- * @param {string} source
- * @return {?string}
+ * @param {string} record
+ * @return {string}
  * @private
  */
-CodeGenerator.prototype.genDeserializeRow_ = function(table, target, source) {
-  var body = [];
+CodeGenerator.prototype.genDeserializeRow_ = function(table, target, record) {
+  var source = record + '[\'value\']';
+  var body = [
+    '  var data = ' + source + ';',
+    '  var payload = new ' + target + 'Type();'
+  ];
   var columns = table.column;
+  var hasConversion = false;
+
   for (var i = 0; i < columns.length; ++i) {
     var col = columns[i];
-    var prefix = '  ' + target + '.' + col.name + ' = ';
+    var prefix = '  payload.' + col.name + ' = ';
     switch (col.type) {
       case 'arraybuffer':
         if (!col.nullable) {
@@ -697,29 +717,37 @@ CodeGenerator.prototype.genDeserializeRow_ = function(table, target, source) {
           // non-null.
           body.push(prefix +
               '/** @type {!ArrayBuffer} */ (\n' +
-              '      lf.Row.hexToBin(' + source + '.' + col.name + '));');
+              '      lf.Row.hexToBin(data.' + col.name + '));');
         } else {
           body.push(
-              prefix + 'lf.Row.hexToBin(' + source + '.' + col.name + ');');
+              prefix + 'lf.Row.hexToBin(data.' + col.name + ');');
         }
+        hasConversion = true;
         break;
 
       case 'datetime':
-        var temp = source + '.' + col.name;
+        var temp = 'data.' + col.name;
         if (col.nullable) {
           body.push(prefix + 'goog.isNull(' + temp + ') ?\n' +
               '      null : new Date(' + temp + ');');
         } else {
           body.push(prefix + 'new Date(' + temp + ');');
         }
+        hasConversion = true;
         break;
 
       default:
-        body.push(prefix + source + '.' + col.name + ';');
+        body.push(prefix + 'data.' + col.name + ';');
         break;
     }
   }
 
+  var commonNew = '  return new ' + target + '(' + record + '[\'id\'], ';
+  if (hasConversion) {
+    body.push(commonNew + 'payload);');
+  } else {
+    body = [commonNew + source + ');'];
+  }
   return body.join('\n');
 };
 
