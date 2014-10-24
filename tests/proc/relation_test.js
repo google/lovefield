@@ -195,9 +195,9 @@ function testUnion() {
 
 
 function testCombineEntries() {
-  var row1 = new lf.Row(-1, {'foo': 'FOO'});
-  var row2 = new lf.Row(-1, {'bar': 'BAR'});
-  var row3 = new lf.Row(-1, {'baz': 'BAZ'});
+  var row1 = new lf.Row(lf.Row.DUMMY_ID, {'foo': 'FOO'});
+  var row2 = new lf.Row(lf.Row.DUMMY_ID, {'bar': 'BAR'});
+  var row3 = new lf.Row(lf.Row.DUMMY_ID, {'baz': 'BAZ'});
 
   var entry1 = new lf.proc.RelationEntry(row1, false);
   var entry2 = new lf.proc.RelationEntry(row2, false);
