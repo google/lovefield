@@ -171,8 +171,7 @@ lovefield.db.schema.Album.prototype.getIndices = function() {
   if (!this.indices_) {
     this.indices_ = [
       new lf.schema.Index('Album', 'pkAlbum', true, ['id']),
-      new lf.schema.Index('Album', 'idx_timestamp', false, ['timestamp']),
-      new lf.schema.Index('Album', 'idx_localId', false, ['isLocal', 'id'])
+      new lf.schema.Index('Album', 'idx_timestamp', false, ['timestamp'])
     ];
   }
   return this.indices_;
@@ -286,8 +285,6 @@ lovefield.db.row.Album.prototype.keyOfIndex = function(indexName) {
       return this.payload().id;
     case 'Album.idx_timestamp':
       return this.payload().timestamp.getTime();
-    case 'Album.idx_localId':
-      return this.payload().isLocal.toString() + '_' + this.payload().id;
     case '##row_id##':
       return this.id();
     default:
@@ -801,7 +798,7 @@ lovefield.db.schema.Details.prototype.deserializeRow = function(dbRecord) {
 lovefield.db.schema.Details.prototype.getIndices = function() {
   if (!this.indices_) {
     this.indices_ = [
-      new lf.schema.Index('Details', 'idx_id', false, ['albumId', 'photoId'])
+
     ];
   }
   return this.indices_;
@@ -897,8 +894,6 @@ lovefield.db.row.Details.prototype.toDbPayload = function() {
 /** @override */
 lovefield.db.row.Details.prototype.keyOfIndex = function(indexName) {
   switch (indexName) {
-    case 'Details.idx_id':
-      return this.payload().albumId + '_' + this.payload().photoId;
     case '##row_id##':
       return this.id();
     default:

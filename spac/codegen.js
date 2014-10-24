@@ -902,6 +902,17 @@ CodeGenerator.prototype.processRepeatTable_ = function(lines) {
 
 
 /**
+ * @param {!Array.<*>} columns
+ * @private
+ */
+CodeGenerator.prototype.checkMultiColumnIndex_ = function(columns) {
+  if (columns.length > 1) {
+    throw new Error('Lovefield does not fully support cross-column index yet');
+  }
+};
+
+
+/**
  * @param {!Object} table
  * @return {string}
  * @private
@@ -910,6 +921,10 @@ CodeGenerator.prototype.getPrimaryKeyIndex_ = function(table) {
   var results = [];
 
   if (table.constraint && table.constraint.primaryKey) {
+    // TODO(arthurhsu): remove this check.
+    //     https://github.com/google/lovefield/issues/15
+    this.checkMultiColumnIndex_(table.constraint.primaryKey);
+
     var header = 'new lf.schema.Index(\'' + table.name + '\', \'';
     var cols = table.constraint.primaryKey.join(', \'');
     var keyName = 'pk' + this.toPascal_(table.name);
@@ -980,6 +995,9 @@ CodeGenerator.prototype.getUniqueIndices_ = function(table) {
 
   for (var i = 0; i < table.constraint.unique.length; ++i) {
     var uniqueConstraint = table.constraint.unique[i];
+    // TODO(arthurhsu): remove this check.
+    this.checkMultiColumnIndex_(uniqueConstraint.column);
+
     var cols = uniqueConstraint.column.join(', \'');
     var uniqueIndex = 'new lf.schema.Index(\'' + table.name + '\', \'' +
         uniqueConstraint.name + '\', true, [\'' + cols + '\'])';
@@ -1017,6 +1035,9 @@ CodeGenerator.prototype.getIndices_ = function(table) {
       var index = table.index[i];
       var col = [];
       col = col.concat(index.column);
+      // TODO(arthurhsu): remove this check.
+      this.checkMultiColumnIndex_(col);
+
       var isUnique = index.unique ? true : false;
       results.push(header + index.name + '\', ' + isUnique.toString() +
           ', [\'' + col.join('\', \'') + '\'])');

@@ -17,8 +17,6 @@ table:
       idx_timestamp:
         column: [ timestamp ]
         order: desc
-      idx_localId:
-        column: [ isLocal, id ]
 
   Photo:
     column:
@@ -50,10 +48,6 @@ table:
       photoId: string
       albumId: string
       totalComments: integer
-    index:
-      idx_id:
-        column: [ albumId, photoId ]
-        order: desc
     constraint:
       foreignKey:
         fk_photoId:
