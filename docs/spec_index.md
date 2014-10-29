@@ -18,7 +18,7 @@
 
 [7. Execution Plan](spec/07_exec_plan.md)
 
-[8. Observers](spec/08_observer.md)
+[8. Data Binding](spec/08_data_binding.md)
 
 [9. Exceptions](spec/09_exception.md)
 
