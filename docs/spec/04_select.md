@@ -20,6 +20,15 @@ db.select().
     orderBy(infoCard.itag)  // ok, sort itag after sorting lang
 ```
 
+One important concept is to treat the returned results of select queries as read-only and do not modify it. Based on performance considerations, Lovefield does not actively clone/freeze the object retrieved from its internal cache. For this to work, the user is supposed to follow the rule of not altering results returned from select query. For example:
+
+```js
+db.select().from(orders).exec().then(function(rows) {
+  myCell.text = rows[0].amount.toString();  // OK, use it read-only.
+  rows[0].amount = 22;  // BAD IDEA, causing cache out of sync with DB.
+});
+```
+
 ### 4.1 Filters
 
 Filters are provided in the form of parameters of `select`. Absence of parameters implies select every column. In multi-table context, the returning rows will prefix table name for each column. The parameters must be schema column object, for example:
