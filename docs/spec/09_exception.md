@@ -9,7 +9,6 @@ Each of the exceptions defined in Lovefield is an lf.Exception. They can be used
 |`UnknownError`      |The operation failed for reasons unrelated to the database itself and not covered by any other errors. |
 |`BlockingError`     |Context is already in use and cannot be reused. For example, attempt to start observer twice. |
 |`ConstraintError`   |Write transaction violates constraints specified in schema.|
-|`ContextError`      |Context provided to an operation does not meet requirements, for example, `createObserver()` for a cross-table query.|
 |`DataError`         |Data provided to an operation does not meet requirements.|
 |`NotFoundError`     |Specified name not found in schema, this is only for database upgrade process.|
 |`QuotaExceededError`|The operation failed because there was not enough remaining storage space, or the storage quota was reached and the user declined to give more space to the database.|

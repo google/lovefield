@@ -102,4 +102,3 @@ The SPAC will automatically generate following:
 |`<namespace>.schema.Database`| Database Schema         |
 |`<namespace>.schema.<table>` | Schema of each table    |
 |`<namespace>.Transaction`    | Transaction class       |
-|`<namespace>.Observer`       | Observer class          |

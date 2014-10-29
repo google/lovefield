@@ -99,7 +99,6 @@ function runClosure() {
   var generatedFiles = [
     namespacePrefix + '_database.js',
     namespacePrefix + '_schema.js',
-    namespacePrefix + '_observer.js',
     namespacePrefix + '_transaction.js'
   ].map(function(fileName) {
     return pathMod.resolve(pathMod.join(outputDir, fileName));

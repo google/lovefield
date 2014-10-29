@@ -4,7 +4,6 @@ goog.provide('#namespace.Database');
 /// #sortend
 
 /// #sort
-goog.require('#namespace.Observer');
 goog.require('#namespace.Transaction');
 goog.require('#namespace.schema.Database');
 goog.require('lf.Database');
@@ -128,13 +127,6 @@ goog.require('lf.query.UpdateBuilder');
 #namespace.Database.prototype.createTransaction = function(opt_type) {
   this.checkInit_();
   return new #namespace.Transaction();
-};
-
-
-/** @override */
-#namespace.Database.prototype.createObserver = function(context) {
-  this.checkInit_();
-  return new #namespace.Observer();
 };
 
 

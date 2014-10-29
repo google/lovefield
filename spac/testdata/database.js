@@ -13,7 +13,6 @@ goog.require('lf.query.DeleteBuilder');
 goog.require('lf.query.InsertBuilder');
 goog.require('lf.query.SelectBuilder');
 goog.require('lf.query.UpdateBuilder');
-goog.require('lovefield.db.Observer');
 goog.require('lovefield.db.Transaction');
 goog.require('lovefield.db.schema.Database');
 
@@ -124,13 +123,6 @@ lovefield.db.Database.prototype.delete = function() {
 lovefield.db.Database.prototype.createTransaction = function(opt_type) {
   this.checkInit_();
   return new lovefield.db.Transaction();
-};
-
-
-/** @override */
-lovefield.db.Database.prototype.createObserver = function(context) {
-  this.checkInit_();
-  return new lovefield.db.Observer();
 };
 
 
