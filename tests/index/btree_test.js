@@ -47,8 +47,8 @@ function setUp() {
       'MIN_KEY_LEN_',
       5 >> 1);
   stub.replace(
-      goog.getObjectByName('lf.index.BTreeNode_'),
-      'nodeCount_',
+      goog.getObjectByName('lf.Row'),
+      'nextId_',
       0);
 }
 
@@ -78,11 +78,27 @@ function insertToTree(index) {
   return tree;
 }
 
+
+/**
+ * @param {!Array.<!lf.Row>} rows
+ * @return {!lf.index.BTree}
+ */
+function deserializeTree(rows) {
+  return lf.index.BTree.deserialize(rows, 'test', true);
+}
+
+
 function testEmptyTree() {
   // Creating empty tree shall have no problem.
   var tree = insertToTree(0);
   var expected = '0[]\n_{}_\n';
   assertEquals(expected, tree.toString());
+
+  // Serialize and deserialize should have no problem.
+  var rows = tree.serialize();
+  assertEquals(1, rows.length);
+  var tree2 = deserializeTree(rows);
+  assertEquals(expected, tree2.toString());
 }
 
 function testLeafNodeAsRoot() {
@@ -91,6 +107,12 @@ function testLeafNodeAsRoot() {
       '0[9|13|17|21]\n' +
       '_{9/13/17/21}_\n';
   assertEquals(expected, tree.toString());
+
+  // Serialize and deserialize should have no problem.
+  var rows = tree.serialize();
+  assertEquals(1, rows.length);
+  var tree2 = deserializeTree(rows);
+  assertEquals(expected, tree2.toString());
 }
 
 
@@ -137,6 +159,22 @@ function testSplit_Case1() {
       '0[3|5|9|11]  1[13|17]  3[21|25|27]\n' +
       '_{3/5/9/11}2  0{13/17}2  1{21/25/27}2\n';
   assertEquals(expected, tree.toString());
+
+  // Serialize and deserialize should have no problem.
+  // Note: Tree deserialization will create internal and root nodes on-the-fly
+  //       and therefore the node id will be different. Moreover, the internal
+  //       nodes can also be different since a rebalancing is done. That's the
+  //       reason to use expected2 in this case and following serialization
+  //       tests.
+  var expected2 =
+      '6[13|21]\n' +
+      '_{0|1|3}_\n' +
+      '0[3|5|9|11]  1[13|17]  3[21|25|27]\n' +
+      '_{3/5/9/11}6  0{13/17}6  1{21/25/27}6\n';
+  var rows = tree.serialize();
+  assertEquals(3, rows.length);
+  var tree2 = deserializeTree(rows);
+  assertEquals(expected2, tree2.toString());
 }
 
 
@@ -197,6 +235,21 @@ function testSplit_Case3() {
       '_{1/3}2  0{5/9/11}2  13{13/14/15/17}2  1{21/22/23/25}2' +
       '  3{27/29}12  5{31/38}12  7{45/47/49}12\n';
   assertEquals(expected, tree.toString());
+
+  // Serialize and deserialize should have no problem.
+  var expected2 =
+      '16[27]\n' +
+      '_{17|18}_\n' +
+      '17[5|13|21]  18[31|45]\n' +
+      '_{0|13|1|3}16  17{5|7|9}16\n' +
+      '0[1|3]  13[5|9|11]  1[13|14|15|17]  3[21|22|23|25]' +
+      '  5[27|29]  7[31|38]  9[45|47|49]\n' +
+      '_{1/3}17  0{5/9/11}17  13{13/14/15/17}17  1{21/22/23/25}17' +
+      '  3{27/29}18  5{31/38}18  7{45/47/49}18\n';
+  var rows = tree.serialize();
+  assertEquals(7, rows.length);
+  var tree2 = deserializeTree(rows);
+  assertEquals(expected2, tree2.toString());
 }
 
 
