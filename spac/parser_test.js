@@ -26,6 +26,24 @@ describe('YAML Parser Test', function() {
     expect(schema.version).toEqual(1);
   });
 
+  it('should parse bundled_mode.yaml without issue', function() {
+    var testFile = fs.readFileSync(testdata['bundled_mode.yaml']);
+    var schema = parse(testFile);
+    expect(schema.name).toEqual('pdb');
+  });
+
+  it('should parse bundled_mode_disabled.yaml without issue', function() {
+    var testFile = fs.readFileSync(testdata['bundled_mode_disabled.yaml']);
+    var schema = parse(testFile);
+    expect(schema.name).toEqual('pdb');
+  });
+
+  it('should parse persistent_index.yaml without issue', function() {
+    var testFile = fs.readFileSync(testdata['persistent_index.yaml']);
+    var schema = parse(testFile);
+    expect(schema.name).toEqual('idb');
+  });
+
   /** @param {string} file */
   var thrower = function(file) {
     var testFile = fs.readFileSync(testdata[file]);

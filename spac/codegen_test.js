@@ -47,7 +47,6 @@ function bundleModeChecker(fileName, expected) {
   return string.indexOf(expected.toString()) != -1;
 }
 
-
 describe('Generator Test', function() {
   var schema;
   var codegen;
@@ -87,5 +86,15 @@ describe('Generator Test', function() {
   it('should honor enableBundledMode', function() {
     expect(bundleModeChecker('bundled_mode.yaml', true));
     expect(bundleModeChecker('bundled_mode_disabled.yaml', false));
+  });
+
+  it('should handle index persistence correctly', function() {
+    schemaYaml = fs.readFileSync(testdata['persistent_index.yaml']);
+    schema = validate(schemaYaml);
+    codegen = new CodeGenerator('foo.db', schema);
+    var codeTemplate = fs.readFileSync(template['schema.jstemplate']);
+    var expected = fs.readFileSync(testdata['foo_schema.js']);
+    expect(expected.toString()).toEqual(
+        codegen.generate('schema.js', codeTemplate));
   });
 });

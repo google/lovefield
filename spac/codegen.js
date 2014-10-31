@@ -646,7 +646,8 @@ CodeGenerator.prototype.genKeyOfIndex_ = function(table, prefix) {
   if (table.constraint) {
     if (table.constraint.primaryKey) {
       genCase('pk' + this.toPascal_(table.name));
-      body.push(this.genKeyFromColumns_(table, table.constraint.primaryKey));
+      body.push(this.genKeyFromColumns_(table,
+          this.getPrimaryKeyCols_(table.constraint.primaryKey)));
     }
 
     if (table.constraint.unique) {
@@ -913,6 +914,23 @@ CodeGenerator.prototype.checkMultiColumnIndex_ = function(columns) {
 
 
 /**
+ * @param {!Object} schema primaryKey schema.
+ * @return {!Array.<string>} Primary Key columns.
+ * @private
+ */
+CodeGenerator.prototype.getPrimaryKeyCols_ = function(schema) {
+  if (schema.length) {
+    // Format 1: primaryKey: [ cols ]
+    return /** @type {!Array.<string>} */ (schema);
+  } else {
+    // Format 2: primaryKey:
+    //             column: [ cols ]
+    return schema.column;
+  }
+};
+
+
+/**
  * @param {!Object} table
  * @return {string}
  * @private
@@ -921,14 +939,18 @@ CodeGenerator.prototype.getPrimaryKeyIndex_ = function(table) {
   var results = [];
 
   if (table.constraint && table.constraint.primaryKey) {
+    var pkCols = this.getPrimaryKeyCols_(table.constraint.primaryKey);
+
     // TODO(arthurhsu): remove this check.
     //     https://github.com/google/lovefield/issues/15
-    this.checkMultiColumnIndex_(table.constraint.primaryKey);
+    this.checkMultiColumnIndex_(pkCols);
 
     var header = 'new lf.schema.Index(\'' + table.name + '\', \'';
-    var cols = table.constraint.primaryKey.join(', \'');
+    var cols = pkCols.join(', \'');
     var keyName = 'pk' + this.toPascal_(table.name);
-    results.push(header + keyName + '\', true, [\'' + cols + '\'])');
+    var persistent = table.constraint.primaryKey.persistent ? true : false;
+    results.push(header + keyName + '\', true, ' + persistent.toString() +
+        ', [\'' + cols + '\'])');
   } else {
     results.push('null');
   }
@@ -957,7 +979,7 @@ CodeGenerator.prototype.getConstraint_ = function(table) {
   }).bind(this);
 
   if (table.constraint) {
-    results.push('  var primaryKey = ' + this.getPrimaryKeyIndex_(table) + ';');
+    results.push('  var pk = ' + this.getPrimaryKeyIndex_(table) + ';');
     results.push(getNotNullable());
 
     // TODO(dpapad): Populate this field once foreign key indices are
@@ -973,8 +995,8 @@ CodeGenerator.prototype.getConstraint_ = function(table) {
     }
     results.push('  ];');
 
-    results.push('  return new lf.schema.Constraint(\n' +
-        '      primaryKey, notNullable, foreignKeys, unique);');
+    results.push('  return new lf.schema.Constraint(' +
+        'pk, notNullable, foreignKeys, unique);');
   } else {
     results.push(getNotNullable());
     results.push('  return new lf.schema.Constraint(' +
@@ -999,8 +1021,10 @@ CodeGenerator.prototype.getUniqueIndices_ = function(table) {
     this.checkMultiColumnIndex_(uniqueConstraint.column);
 
     var cols = uniqueConstraint.column.join(', \'');
+    var persistent = uniqueConstraint.persistent ? true : false;
     var uniqueIndex = 'new lf.schema.Index(\'' + table.name + '\', \'' +
-        uniqueConstraint.name + '\', true, [\'' + cols + '\'])';
+        uniqueConstraint.name + '\', true, ' + persistent.toString() +
+        ', [\'' + cols + '\'])';
     uniqueIndices.push(uniqueIndex);
   }
 
@@ -1039,8 +1063,9 @@ CodeGenerator.prototype.getIndices_ = function(table) {
       this.checkMultiColumnIndex_(col);
 
       var isUnique = index.unique ? true : false;
-      results.push(header + index.name + '\', ' + isUnique.toString() +
-          ', [\'' + col.join('\', \'') + '\'])');
+      var persistent = index.persistent ? true : false;
+      results.push(header + index.name + '\', ' + isUnique.toString() + ', ' +
+          persistent.toString() + ', [\'' + col.join('\', \'') + '\'])');
     }
   }
 

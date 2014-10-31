@@ -164,13 +164,14 @@ Table_.prototype.deserializeRow = function(dbPayload) {
 /** @override */
 Table_.prototype.getIndices = function() {
   var indices = [
-    new lf.schema.Index(this.tableName_, 'pkId', true, ['id']),
-    new lf.schema.Index(this.tableName_, 'idxName', false, ['name'])
+    new lf.schema.Index(this.tableName_, 'pkId', true, false, ['id']),
+    new lf.schema.Index(this.tableName_, 'idxName', false, false, ['name'])
   ];
 
   if (this.tableName_ == 'tableD') {
     indices.push(
-        new lf.schema.Index(this.tableName_, 'idxBoth', true, ['id', 'name']));
+        new lf.schema.Index(
+            this.tableName_, 'idxBoth', true, false, ['id', 'name']));
   }
 
   return indices;
@@ -180,7 +181,7 @@ Table_.prototype.getIndices = function() {
 /** @override */
 Table_.prototype.getConstraint = function() {
   return new lf.schema.Constraint(
-      new lf.schema.Index(this.tableName_, 'pkId', true, ['id']),
+      new lf.schema.Index(this.tableName_, 'pkId', true, false, ['id']),
       [this.id, this.name] /* notNullable */,
       [], []);
 };
@@ -283,8 +284,8 @@ TableWithUnique_.prototype.deserializeRow = function(dbPayload) {
 /** @override */
 TableWithUnique_.prototype.getIndices = function() {
   return [
-    new lf.schema.Index(this.tableName_, 'pkId', true, ['id']),
-    new lf.schema.Index(this.tableName_, 'uq_email', true, ['email'])
+    new lf.schema.Index(this.tableName_, 'pkId', true, false, ['id']),
+    new lf.schema.Index(this.tableName_, 'uq_email', true, false, ['email'])
   ];
 };
 
@@ -292,7 +293,8 @@ TableWithUnique_.prototype.getIndices = function() {
 /** @override */
 TableWithUnique_.prototype.getConstraint = function() {
   return new lf.schema.Constraint(
-      new lf.schema.Index(this.tableName_, 'pkId', true, ['id']),
+      new lf.schema.Index(this.tableName_, 'pkId', true, false, ['id']),
       [this.id, this.email] /* notNullable */, [],
-      [new lf.schema.Index(this.tableName_, 'uq_email', true, ['email'])]);
+      [new lf.schema.Index(
+          this.tableName_, 'uq_email', true, false, ['email'])]);
 };

@@ -41,6 +41,37 @@ Users who enabled bundled mode needs to keep the following facts in mind:
 * There is no support for converting non-bundled to bundled database, and vice versa. Manual conversion is possible but will not be easy.
 * Bundled database is harder to examine via developer tools. The pages serialize the payload as string before storing them. This is done so because of way greater performance in Chrome (tested on v39.0.2171.36) for large JSON objects.
 
+### Persistent Index
+
+Currently Lovefield implementation generates all indices on-the-fly during database loading. This is a naive design that needs to be polished. An experimental feature named persistent index is used to further polish it. Persistent indices can be specified in the schema:
+
+```yaml
+%YAML 1.2
+---
+name: mydb
+version: 1
+table:
+  Foo:
+    column:
+      id: string
+      name: string
+      bar: string
+    constraint:
+      primaryKey:
+        column: [ bar ]
+        persistent: true
+      unique:
+        uq_bar:
+          column: [ bar ]
+          persistent: true
+    index:
+      idx_Name:
+        column: [ name ]
+        persistent: true
+```
+
+Currently each individual index can specify whether to be persisted or not. The persist not only affects the index being stored permanently or not, but also the algorithm to use (B-Tree vs AA-Tree) and table delay loading behavior.
+
 ## Future Features
 
 ### Advanced Grouping
