@@ -40,8 +40,11 @@ lovefield.db.Transaction.prototype.exec = function(queryBuilders) {
 
   var runner = lf.Global.get().getService(lf.service.RUNNER);
   return runner.exec(plans).then(
-      goog.bind(function() {
+      goog.bind(function(results) {
         this.completed_ = true;
+        return results.map(function(relation) {
+          return relation.getPayloads();
+        });
       }, this),
       goog.bind(function(e) {
         this.completed_ = true;
