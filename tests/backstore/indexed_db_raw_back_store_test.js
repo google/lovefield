@@ -31,7 +31,7 @@ goog.require('lf.schema.Table');
 
 
 /** @type {!goog.testing.AsyncTestCase} */
-var asyncTestCase = goog.testing.AsyncTestCase.createAndInstall('IndexedDB');
+var asyncTestCase = goog.testing.AsyncTestCase.createAndInstall('IndexedDBRaw');
 
 
 /** @type {!lf.schema.Database} */
@@ -302,6 +302,70 @@ function testDropTableColumn_Bundled() {
     var newRow2 = lf.Row.deserialize(results[1].getPayload()[MAGIC]);
     assertFalse(newRow.hasOwnProperty('name'));
     assertFalse(newRow2.hasOwnProperty('name'));
+    asyncTestCase.continueTesting();
+  });
+}
+
+
+/**
+ * @param {!lf.raw.BackStore} dbInterface
+ * @return {!IThenable}
+ */
+function upgradeRenameTableColumn(dbInterface) {
+  // Cast for test coverage tool.
+  var db = /** @type {!lf.backstore.IndexedDBRawBackStore} */ (dbInterface);
+  assertEquals(1, db.getVersion());
+  return db.renameTableColumn('tableA_', 'name', 'username');
+}
+
+
+function testRenameTableColumn() {
+  asyncTestCase.waitForAsync('testRenameTableColumn');
+
+  var db = new lf.backstore.IndexedDB(schema);
+  db.init().then(function(rawDb) {
+    return prepareTxForTableA(rawDb);
+  }).then(function() {
+    db.close();
+    db = null;
+    schema.version = 2;
+    db = new lf.backstore.IndexedDB(schema);
+    return db.init(upgradeRenameTableColumn);
+  }).then(function(newDb) {
+    return dumpTable(newDb, 'tableA_');
+  }).then(function(results) {
+    assertEquals(2, results.length);
+    assertFalse(results[0].payload().hasOwnProperty('name'));
+    assertFalse(results[1].payload().hasOwnProperty('name'));
+    assertEquals('world', results[0].payload()['username']);
+    assertEquals('world2', results[1].payload()['username']);
+    asyncTestCase.continueTesting();
+  });
+}
+
+
+function testRenameTableColumn_Bundled() {
+  asyncTestCase.waitForAsync('testRenameTableColumn_Bundled');
+
+  var db = new lf.backstore.IndexedDB(schema, true);
+  db.init().then(function(rawDb) {
+    return prepareBundledTxForTableA(rawDb);
+  }).then(function() {
+    db.close();
+    db = null;
+    schema.version = 2;
+    db = new lf.backstore.IndexedDB(schema, true);
+    return db.init(upgradeRenameTableColumn);
+  }).then(function(newDb) {
+    return dumpTableBundled(newDb, 'tableA_');
+  }).then(function(results) {
+    assertEquals(2, results.length);
+    var newRow = lf.Row.deserialize(results[0].getPayload()[0]);
+    var newRow2 = lf.Row.deserialize(results[1].getPayload()[MAGIC]);
+    assertFalse(newRow.hasOwnProperty('name'));
+    assertFalse(newRow2.hasOwnProperty('name'));
+    assertEquals('world', newRow.payload()['username']);
+    assertEquals('world2', newRow2.payload()['username']);
     asyncTestCase.continueTesting();
   });
 }

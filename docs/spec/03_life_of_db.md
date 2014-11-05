@@ -6,6 +6,8 @@ Lovefield database is scoped per-origin, like IndexedDB, so (origin, schema name
 
 ### 3.1 Lovefield Initialization
 
+NOTE: This section will be modified in near future. Lovefield is working on a more component-friendly model that allows multiple DB instances in the same app, which will obsolete this section.
+
 The `getInstance()` method will implicitly invoke Lovefield initialization, which will load the known schema from persistent store. If Lovefield detected schema version mismatch, it will do the following:
 
 * If schema version is newer than the library, throw an exception.
@@ -37,11 +39,11 @@ The first step of database upgrade is to create new tables. Lovefield checks the
 
 User needs to provide the custom upgrade function as a parameter of `getInstance()` if the upgrade involves deleting or transforming table. The function will be given a raw database instance that is capable of doing table schema alternation. The function must return a promise. After the promise is resolved, a new database instance will be created and returned. If the promise is rejected, the `getInstance()` call will also be rejected.
 
-Users do not need to worry about new indices or altering indices, either. Query engine will detect index schema change and recreate all the indices.
+Users do not need to worry about new indices or altering indices, either. Query engine will detect index schema change and recreate all the indices when needed.
 
-For the case of deleting table, user is responsible to perform the deletion in upgrade function. Lovefield does not provide auto-drop due to data safety concerns.
+For the case of deleting table, user is responsible to perform the deletion in upgrade function. Lovefield does not provide auto-drop due to data safety concerns. IndexedDB does not provide a way of renaming table, therefore renaming a table will require recreating a table with exact contents and deleting the old table, which cannot be done safely within the upgrade transaction and user is supposed to do it manually outside of the onUpgrade function.
 
-For the case of altering table, if the transformation is adding a nullable/fixed value column, or deleting a column, user can use helper functions provided, otherwise user needs to do row-by-row transformation. User is responsible for making sure the transformed rows will fit in new schema and does not violate constraints. Failing to do so may cause exceptions to be thrown during query execution. Lovefield disallows altering column types directly.
+For the case of altering table, if the transformation is renaming column, adding a nullable/fixed value column, or deleting a column, user can use helper functions provided, otherwise user needs to do row-by-row transformation. For renaming, user is responsible for making sure the renamed column has exactly the same schema as old table, and the renamed column has exactly the same type as it was. For transformation case, user is responsible for making sure the transformed rows will fit in new schema and does not violate constraints. Failing to do so may cause exceptions to be thrown during query execution. Lovefield disallows altering column types directly.
 
 The following is a sample code snippet demonstrating database upgrades.
 
@@ -76,6 +78,9 @@ function onUpgrade(rawDb) {
   // Delete column metadata from Photo.
   var p2 = rawDb.dropTableColumn('Photo', 'metadata');
 
+  // Rename Photo.isLocal to Photo.local.
+  var p3 = rawDb.renameTableColumn('Photo', 'isLocal', 'local');
+
   // Transformations are not supported because of IndexedDB auto-
   // commmit: Firefox immediately committed the transaction when
   // Lovefield try to return a promise from scanning table. Users
@@ -83,10 +88,10 @@ function onUpgrade(rawDb) {
   // onUpgrade routine.
 
   // DUMP the whole DB into a JS object.
-  var p3 = rawDb.dump();
+  var p4 = rawDb.dump();
 
 
-  return Promise.all([p1, p2, p3]);
+  return Promise.all([p1, p2, p3, p4]);
 }
 ```
 
