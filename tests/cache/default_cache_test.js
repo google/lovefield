@@ -27,19 +27,23 @@ function testCache() {
   var payload = {'id': 'something'};
   var row = new lf.Row(1, payload);
   var row2 = new lf.Row(4, payload);
-  cache.set([row, row2]);
+  var row3 = new lf.Row(3, payload);
+  cache.set('Foo', [row, row2]);
   var result = cache.get([0, 1]);
   assertNull(result[0]);
   assertObjectEquals(payload, result[1].payload());
+  cache.set('Bar', [row3]);
 
-  assertEquals(2, cache.getCount());
-  cache.remove([4]);
+  assertEquals(3, cache.getCount());
+  cache.remove('Foo', [4]);
   assertArrayEquals([null, null], cache.get([0, 4]));
-  assertEquals(1, cache.getCount());
-
-  cache.set([row2]);
   assertEquals(2, cache.getCount());
-  var range = cache.getRange(2, 4);
+
+  cache.set('Foo', [row2]);
+  assertEquals(3, cache.getCount());
+  var range = cache.getRange('Foo', 2, 4);
   assertEquals(1, range.length);
   assertObjectEquals(payload, range[0].payload());
+  assertEquals(1, cache.getCount('Bar'));
+  assertEquals(2, cache.getCount('Foo'));
 }

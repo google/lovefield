@@ -137,7 +137,7 @@ function runSCUDTest() {
     assertObjectEquals(CONTENTS, results[1].payload());
 
     // Update cache, otherwise the bundled operation will fail.
-    cache.set([row2, row3]);
+    cache.set(table.getName(), [row2, row3]);
 
     var tx = db.createTx(
         lf.TransactionType.READ_WRITE,
@@ -188,6 +188,97 @@ function testSCUD_Bundled() {
   });
 
   asyncTestCase.waitForAsync('testSCUD_Bundled');
+}
+
+function testTwoTableInserts_Bundled() {
+  schema.name = schema.name + '_b2';
+  db = new lf.backstore.IndexedDB(schema, true);
+
+  /** @const {!Object} */
+  var CONTENTS = {'id': 'hello', 'name': 'world'};
+  /** @const {!Object} */
+  var CONTENTS2 = {'id': 'hello2', 'name': 'world2'};
+
+  var tableA = schema.getTables()[0];
+  var tableB = schema.getTables()[1];
+  var row = lf.Row.create(CONTENTS);
+  var row2 = lf.Row.create(CONTENTS);
+  var row3 = lf.Row.create(CONTENTS2);
+  var row4 = new lf.Row(row.id(), CONTENTS2);
+
+  asyncTestCase.waitForAsync('testTwoTableInserts_Bundled');
+  return db.init().then(function() {
+    var tx = db.createTx(
+        lf.TransactionType.READ_WRITE,
+        new lf.cache.Journal([tableA]));
+    var store = /** @type {!lf.backstore.ObjectStore} */ (
+        tx.getTable(tableA));
+
+    // insert row1 into table A
+    store.put([row]);
+    return tx.finished();
+  }).then(function() {
+    var tx = db.createTx(
+        lf.TransactionType.READ_WRITE,
+        new lf.cache.Journal([tableB]));
+    var store = /** @type {!lf.backstore.ObjectStore} */ (
+        tx.getTable(tableB));
+
+    // insert row2 into table B
+    store.put([row2]);
+    return tx.finished();
+  }).then(function() {
+    var tx = db.createTx(
+        lf.TransactionType.READ_ONLY,
+        new lf.cache.Journal([tableB]));
+    var store = /** @type {!lf.backstore.ObjectStore} */ (
+        tx.getTable(tableB));
+
+    // get row2 from table B
+    return store.get([row2.id()]);
+  }).then(function(results) {
+    assertEquals(1, results.length);
+    assertEquals(row2.id(), results[0].id());
+    assertObjectEquals(CONTENTS, results[0].payload());
+
+    var tx = db.createTx(
+        lf.TransactionType.READ_WRITE,
+        new lf.cache.Journal([tableA]));
+    var store = /** @type {!lf.backstore.ObjectStore} */ (
+        tx.getTable(tableA));
+
+    // update row1, insert row3 into table A
+    store.put([row4, row3]);
+    return tx.finished();
+  }).then(function() {
+    return selectAll();
+  }).then(function(results) {
+    assertEquals(2, results.length);
+    assertEquals(row4.id(), results[0].id());
+    assertObjectEquals(CONTENTS2, results[0].payload());
+    assertEquals(row3.id(), results[1].id());
+    assertObjectEquals(CONTENTS2, results[1].payload());
+
+    // Update cache, otherwise the bundled operation will fail.
+    cache.set(tableA.getName(), [row4, row3]);
+
+    var tx = db.createTx(
+        lf.TransactionType.READ_WRITE,
+        new lf.cache.Journal([tableA]));
+    var store = /** @type {!lf.backstore.ObjectStore} */ (
+        tx.getTable(tableA));
+
+    // remove row1
+    store.remove([row3.id()]);
+    return tx.finished();
+  }).then(function() {
+    return selectAll();
+  }).then(function(results) {
+    assertEquals(1, results.length);
+    assertEquals(row4.id(), results[0].id());
+    assertObjectEquals(CONTENTS2, results[0].payload());
+    asyncTestCase.continueTesting();
+  });
 }
 
 
