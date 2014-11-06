@@ -6,7 +6,7 @@ The design documents listed below are still working drafts and may change signif
 
 [0. Introduction](dd/00_intro.md)
 
-1. Database Schema
+[1. Database Schema](dd/01_schema.md)
 
 2. SPAC
 
