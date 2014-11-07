@@ -21,7 +21,6 @@
  *
  * #bundledmode: enableBundledMode pragma value, default to false
  * #column: array of columns of last used #table, must be used in #repeatcolumn
- * #columnprop: property of last used #column
  * #columnuniqueness: uniqueness of last used #column
  * #dbname: database name
  * #dbtablelist: database table list
@@ -31,8 +30,6 @@
  * #table: array of tables defined in schema, must be used in #repeattable
  * #tablecolumntypes: column as members with type annotation
  * #tablecolumndbtypes: column as members with type annotation
- * #tableindexedcolumns: array form of indexed columns prefixed with "this." of
- *     last used #table
  * #tablename: table name of last used #table
  *
  * The caller feeds in the content of a template in string form, and the
