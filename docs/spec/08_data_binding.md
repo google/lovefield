@@ -4,21 +4,19 @@
 
 ### 8.1 Observers
 
-Lovefield supports ES7 Object.observe() syntax for observing SELECT query results. For example:
+Lovefield supports data observation for SELECT quries, and the syntax is very
+similar to ES7 Array.observe(). For example:
 
 ```js
 var p = db.getSchema().getPhoto();
 var query = db.select().from(p).where(p.id.eq('1'));
-query.observe(function(changes) {
-  // Same as Array.observe() changes.
-  // Internally Lovefield will keep the reference to the same array that returns
-  // the result, and piggy backing on Array.observe for changes.
-});
-query.exec();  // This will trigger the function in observe.
+
+// Handler shares exactly same syntax as the handler for Array.observe.
+lf.query.observe(query, handler);
+
 query.exec().then(function(rows) {
-  // You can get the reference of observed rows, too.
-  // The rows are deep clones of cache contents, but you still need to treat
-  // them as read-only const references.
+  // The rows will be the same instance every time you call exec until
+  // lf.query.unobserve is called.
 });
 
 // The call below will trigger changes to the observed select. Internally
@@ -27,7 +25,7 @@ query.exec().then(function(rows) {
 db.update(p).set(p.title, 'New Title').where(p.id.eq('1')).exec();
 
 // Remember to release observer to avoid leaking.
-query.unobserve();
+lf.query.unobserve(query, handler);
 ```
 
 ### 8.2 Parameterized Query
@@ -49,7 +47,8 @@ q2.bind(['id3', 345, false]).exec();  // update without reconstructing query.
 q2.bind(['id4', 2222, true]).exec();
 ```
 
-It can also be combined with Observers to achieve common scenario of updating data in MVC environment, for example:
+It can also be combined with Observers to achieve common scenario of updating
+data in MVC environment, for example:
 
 ```js
 // populateChanges is a function that binds query results to UI display by
@@ -59,15 +58,16 @@ var order = db.getSchema().getOrder();
 var query = db.
     select().
     from(order).
-    where(order.date.between(lf.bind(0), lf.bind(1))).
-    observe(populateChanges);
+    where(order.date.between(lf.bind(0), lf.bind(1)));
+lf.query.observe(query, populateChanges);
 
 // Say we have two text boxes on screen, whose values are bound to an in-memory
 // object named dataRange. When the dataRange changes, we want to update the
 // query binding so that the query results are updated.
-dateRange.observe(function(changes) {
+var handler = function(changes) {
   // Update query binding and run query. Since the query results are already
   // bound to UI, the UI will reflect the new data.
   query.bind([changes.object.dateFrom, changes.object.dateTo]).exec();
-}
+};
+Object.observe(dataRange, handler);
 ```
