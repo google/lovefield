@@ -21,7 +21,9 @@ goog.require('goog.object');
 goog.require('goog.testing.AsyncTestCase');
 goog.require('goog.testing.jsunit');
 goog.require('hr.db');
+goog.require('lf.Exception');
 goog.require('lf.Order');
+goog.require('lf.bind');
 goog.require('lf.fn');
 goog.require('lf.op');
 goog.require('lf.testing.hrSchema.MockDataGenerator');
@@ -674,6 +676,51 @@ function testSelect_MultipleSelectInTx() {
     assertEquals(50, results[0][0]['jid']);
     assertEquals(10, results[1][0]['did']);
     assertEquals(0, results[3][0]['jid']);
+    asyncTestCase.continueTesting();
+  });
+}
+
+
+function testSelect_ParamBinding() {
+  asyncTestCase.waitForAsync('testSelect_ParamBinding');
+
+  var targetId = sampleJobs[3].getId();
+
+  var queryBuilder = /** @type {!lf.query.SelectBuilder} */ (
+      db.select().from(j).where(j.id.eq(lf.bind(1))));
+
+  queryBuilder.bind(['', '']).exec().then(function(results) {
+    assertEquals(0, results.length);
+    return queryBuilder.bind(['', targetId]).exec();
+  }, fail).then(function(results) {
+    assertEquals(1, results.length);
+    assertEquals(targetId, results[0].id);
+    return queryBuilder.exec();
+  }, fail).then(function(results) {
+    assertEquals(1, results.length);
+    assertEquals(targetId, results[0].id);
+    asyncTestCase.continueTesting();
+  }, fail);
+}
+
+
+function testSelect_ForgetParamBindingRejects() {
+  asyncTestCase.waitForAsync('testSelect_ParamBinding');
+
+  var q = db.select().from(j).where(j.id.eq(lf.bind(1)));
+  q.exec().then(fail, function(e) {
+    assertEquals(lf.Exception.Type.SYNTAX, e.name);
+    asyncTestCase.continueTesting();
+  });
+}
+
+
+function testSelect_InvalidParamBindingRejects() {
+  asyncTestCase.waitForAsync('testSelect_ParamBinding');
+
+  var q = db.select().from(j).where(j.id.eq(lf.bind(1)));
+  q.bind([0]).exec().then(fail, function(e) {
+    assertEquals(lf.Exception.Type.SYNTAX, e.name);
     asyncTestCase.continueTesting();
   });
 }

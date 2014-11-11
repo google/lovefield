@@ -17,6 +17,9 @@
 goog.setTestOnly();
 goog.require('goog.testing.AsyncTestCase');
 goog.require('goog.testing.jsunit');
+goog.require('lf.Binder');
+goog.require('lf.Exception');
+goog.require('lf.bind');
 goog.require('lf.eval.Type');
 goog.require('lf.pred.JoinPredicate');
 goog.require('lf.pred.ValuePredicate');
@@ -258,4 +261,55 @@ function getSampleRows(rowCount) {
   }
 
   return sampleRows;
+}
+
+
+function testUnboundPredicate() {
+  var table = schema.getTables()[0];
+  var sampleRow = getSampleRows(1)[0];
+  var relation = lf.proc.Relation.fromRows([sampleRow], [table.getName()]);
+
+  var binder = lf.bind(1);
+  var p = new lf.pred.ValuePredicate(table.id, binder, lf.eval.Type.EQ, 1);
+
+  // Predicate shall be unbound.
+  assertTrue(p.value instanceof lf.Binder);
+
+  // Tests binding.
+  p.bind([9999, sampleRow.payload().id]);
+  assertEquals(sampleRow.payload().id, p.value);
+  assertFalse(p.value instanceof lf.Binder);
+  var result = p.eval(relation);
+  assertEquals(1, result.entries.length);
+
+  // Tests binding to an invalid array throws error.
+  try {
+    p.bind([8888]);
+  } catch (e) {
+    assertEquals(lf.Exception.Type.SYNTAX, e.name);
+  }
+}
+
+
+function testCopy_UnboundPredicate() {
+  var table = schema.getTables()[0];
+  var sampleRow = getSampleRows(1)[0];
+
+  var binder = lf.bind(1);
+  var p = new lf.pred.ValuePredicate(table.id, binder, lf.eval.Type.EQ, 1);
+  var p2 = p.copy();
+
+  // Both predicates shall be unbound.
+  assertTrue(p.value instanceof lf.Binder);
+  assertTrue(p2.value instanceof lf.Binder);
+
+  // Copying a bounded predicate shall still make it bounded.
+  p.bind([9999, sampleRow.payload().id]);
+  var p3 = p.copy();
+  assertEquals(sampleRow.payload().id, p3.value);
+
+  // The clone should also be able to bind to a new array.
+  var sampleRow2 = getSampleRows(2)[1];
+  p3.bind([9999, sampleRow2.payload().id]);
+  assertEquals(sampleRow2.payload().id, p3.value);
 }

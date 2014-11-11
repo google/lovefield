@@ -20,6 +20,7 @@ goog.require('goog.testing.AsyncTestCase');
 goog.require('goog.testing.jsunit');
 goog.require('hr.db');
 goog.require('lf.Exception');
+goog.require('lf.bind');
 goog.require('lf.fn');
 goog.require('lf.query.SelectBuilder');
 
@@ -133,6 +134,22 @@ function testExec_ValidProjectionList_GroupBy() {
       function(e) {
         asyncTestCase.continueTesting();
       }, fail);
+}
+
+
+/**
+ * Tests that unbound parameterized search condition will throw.
+ */
+function testExec_UnboundPredicateThrows() {
+  asyncTestCase.waitForAsync('testsExec_UnboundPredicateThrows');
+
+  var emp = db.getSchema().getEmployee();
+  var query = new lf.query.SelectBuilder([emp.jobId]);
+  query.from(emp).where(emp.jobId.eq(lf.bind(0))).exec().then(fail,
+      function(e) {
+        assertEquals(lf.Exception.Type.SYNTAX, e.name);
+        asyncTestCase.continueTesting();
+      });
 }
 
 
