@@ -21,8 +21,10 @@ goog.require('goog.object');
 goog.require('goog.testing.AsyncTestCase');
 goog.require('goog.testing.jsunit');
 goog.require('hr.db');
+goog.require('lf.Exception');
 goog.require('lf.Global');
 goog.require('lf.TransactionType');
+goog.require('lf.bind');
 goog.require('lf.cache.Journal');
 goog.require('lf.service');
 goog.require('lf.testing.hrSchema.JobDataGenerator');
@@ -192,6 +194,38 @@ function testDelete_Predicate() {
 
         asyncTestCase.continueTesting();
       }, fail);
+}
+
+
+function testDelete_UnboundPredicate() {
+  asyncTestCase.waitForAsync('testDelete_UnboundPredicate');
+
+  var jobId = 'jobId' + Math.floor(sampleJobs.length / 2).toString();
+  var queryBuilder = /** @type {!lf.query.DeleteBuilder} */ (
+      db.delete().from(j).where(j.id.eq(lf.bind(1))));
+
+  queryBuilder.bind(['', jobId]).exec().then(
+      function() {
+        return selectAll();
+      }).then(
+      function(results) {
+        assertEquals(sampleJobs.length - 1, results.length);
+
+        asyncTestCase.continueTesting();
+      }, fail);
+}
+
+
+function testDelete_UnboundPredicateReject() {
+  asyncTestCase.waitForAsync('testDelete_UnboundPredicate');
+
+  var queryBuilder = /** @type {!lf.query.DeleteBuilder} */ (
+      db.delete().from(j).where(j.id.eq(lf.bind(1))));
+
+  queryBuilder.exec().then(fail, function(e) {
+    assertEquals(lf.Exception.Type.SYNTAX, e.name);
+    asyncTestCase.continueTesting();
+  });
 }
 
 
