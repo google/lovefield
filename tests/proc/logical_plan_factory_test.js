@@ -52,9 +52,10 @@ function setUp() {
 /**
  * Tests that the generated logical query plan for a simple DELETE query is as
  * expected and also that the query object itself is not mutated as part of
- * generating a plan. This is essential such that calling QueryBuilder#explain()
- * does not have any side effects which would prevent a subsequent call to
- * QueryBuilder#exec() from operating on the same query object.
+ * generating a plan. This is essential such that calling
+ * DefaultBuilder#explain() does not have any side effects which would prevent
+ * a subsequent call to DefaultBuilder#exec() from operating on the same query
+ * object.
  */
 function testCreate_DeletePlan() {
   var table = env.schema.getTables()[0];
