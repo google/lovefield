@@ -17,33 +17,16 @@ table:
   ...
 ```
 
-In bundled mode, Lovefield will store rows differently. Internally Lovefield assigns a unique row id to each logical row. In bundled mode, Lovefield will bundle multiple (up to 512) logical rows into one physical row in IndexedDB.
+Bundled mode is created to workaround IndexedDB spec inefficiencies. For more
+details, see [design doc](../dd/03_backstore.md).
 
-Per [current IndexedDB spec](http://www.w3.org/TR/2013/CR-IndexedDB-20130704/), the only way to load all rows from an IndexedDB table is
-
-```js
-var req = objectStore.openCursor();
-req.onsuccess = function() {
-  if (cursor) {
-    // get one row by using cursor.value
-    cursor.continue();
-  } else {
-    // finished
-  }
-};
-```
-
-This code snippet involes N calls of cursor.continue and N eventing of onsuccess, which is very expensive when N is big. WebKit needs 57us for firing an event on an HP Z620, and the wall clock time for loading 100K rows just for firing N onsuccess events will be 5.7 seconds, not to mention the callback processing time. Lovefield provides this bundled mode to accelerate initial bootstrapping speed by bundling logical rows together. There can be other performance-related consequences for this approach and thus this feature is marked as experimental.
-
-Users who enabled bundled mode needs to keep the following facts in mind:
-
-* Bundled mode is designed mainly for data tables with 50K+ rows. Smaller database may experience slower performance by enabling bundle mode. User is supposed to benchmark and determine if bundled mode is feasible.
-* There is no support for converting non-bundled to bundled database, and vice versa. Manual conversion is possible but will not be easy.
-* Bundled database is harder to examine via developer tools. The pages serialize the payload as string before storing them. This is done so because of way greater performance in Chrome (tested on v39.0.2171.36) for large JSON objects.
 
 ### Persistent Index
 
-Currently Lovefield implementation generates all indices on-the-fly during database loading. This is a naive design that needs to be polished. An experimental feature named persistent index is used to further polish it. Persistent indices can be specified in the schema:
+Currently Lovefield implementation generates all indices on-the-fly during
+initialization process. This is a naive design that needs to be polished. An
+experimental feature named persistent index is used to further polish it.
+Persistent indices can be specified in the schema:
 
 ```yaml
 %YAML 1.2
@@ -70,7 +53,11 @@ table:
         persistent: true
 ```
 
-Currently each individual index can specify whether to be persisted or not. The persist not only affects the index being stored permanently or not, but also the algorithm to use (B-Tree vs AA-Tree) and table delay loading behavior.
+Each individual index can specify whether to be persisted or not. The
+`persistent` attribute not only affects the index being stored permanently
+but also the algorithm to use (B-Tree vs AA-Tree) and table delay loading
+behavior.
+
 
 ## Future Features
 
@@ -80,7 +67,8 @@ Support for group by multi columns, ROLLUP, and CUBE equivalent.
 
 ### Multi-Connection
 
-Allow multiple browser process to connect to same database and all the in-memory snapshots are in-sync. (This may require W3C spec support.)
+Allow multiple browser process to connect to same database and all the in-memory
+snapshots are in-sync. (This may require W3C spec support.)
 
 ## References
 

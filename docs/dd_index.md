@@ -10,7 +10,7 @@ The design documents listed below are still working drafts and may change signif
 
 [2. SPAC](dd/02_spac.md)
 
-3. Backstore
+[3. Backstore and Upgrade](dd/03_backstore.md)
 
 4. Prefetcher and Cache
 
