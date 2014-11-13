@@ -20,11 +20,16 @@ storage solution and rule out things that does not fit.
 
   * Local Storage: only 5MB, not really a good idea
   * Cookie Jars: seriously?
-  * HTML5 File API: FileSystem and FileWriter API are not cross-platform, and
-they are not going to be any time soon.
+  * HTML5 File API: FileSystem and FileWriter API are not cross-platform. In
+    fact, they are [discontinued](http://www.w3.org/TR/file-writer-api) and
+    [discontinued](http://www.w3.org/TR/file-system-api/).
   * IndexedDB: Everybody supports it or will support it
 
 So the choice is obvious: IndexedDB it is.
+
+### Good Parts of IndexedDB
+By using IndexedDB, we have free atomic writes and rollback. As a result, there
+is no need to implement [ARIES algorithm](http://en.wikipedia.org/wiki/Algorithms_for_Recovery_and_Isolation_Exploiting_Semantics).
 
 ### Constraints of IndexedDB
 Using IndexedDB as the data store creates following constraints:
@@ -65,12 +70,13 @@ development priority.
 Lovefield consists following components:
 
 * Schema Parser and Code-generator (SPAC, `spac/`)
-* Schema (`schema/`)
-* Caching support (`cache/`)
+* Schema (`lib/schema/`)
+* Caching support (`lib/cache/`)
 * Query engine
-    * Query builder (`query/`)
-    * Query runner (`proc/`)
-* Back store management (`backstore/`)
-* Indices (`index/`)
+    * Query builder (`lib/query/`)
+    * Relation, query plan generator/optimizer/runner (`lib/proc/`)
+    * Predicates (`lib/pred/`)
+* Back store management (`lib/backstore/`)
+* Indices (`lib/index/`)
 
 These components will be detailed in following chapters.
