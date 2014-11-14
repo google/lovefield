@@ -47,8 +47,18 @@ q2.bind(['id3', 345, false]).exec();  // update without reconstructing query.
 q2.bind(['id4', 2222, true]).exec();
 ```
 
-It can also be combined with Observers to achieve common scenario of updating
-data in MVC environment, for example:
+For performance resaons, the `bind()` function unfortunately does not provide
+type checking. Users are responsible for making sure the bound values are of
+their correct type.
+
+The bind index is 0-based. The `bind()` call does not care if the array is
+bigger than actually needed. The user just needs to make sure the specified
+index has data of the correct type.
+
+#### Integration with Observers
+
+Parameterized query combined with Observers can be used to handle a common
+scenario of updating data in MVC environment, for example:
 
 ```js
 // populateChanges is a function that binds query results to UI display by
@@ -71,3 +81,21 @@ var handler = function(changes) {
 };
 Object.observe(dataRange, handler);
 ```
+
+#### Supported queries
+
+Currently parameterized queries can only exist in search conditions
+(i.e. `where()`) of `select()`/`update()`/`delete()`, and the `set()` clauses
+for `update()` query. For example:
+
+```js
+db.select().from(order).where(order.date.eq(lf.bind(0)));
+db.update(order).
+    set(order.date, lf.bind(1)).
+    where(order.id.eq(lf.bind(0)));
+db.delete().from(order).where(order.id.eq(lf.bind(1)));
+```
+
+The `insert()` query does not support parameterized query. It makes little sense
+to bind `values()` since users has to call `createRow()` before calling
+`values()` anyway.
