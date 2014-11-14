@@ -151,26 +151,58 @@ function testUpdate_All() {
 function testUpdate_Predicate() {
   asyncTestCase.waitForAsync('testUpdate_Predicate');
 
+  var jobId = sampleJobs[0].getId();
+
   var queryBuilder = /** @type {!lf.query.UpdateBuilder} */ (
       db.update(j).
-          where(j.id.eq('jobId10')).
+          where(j.id.eq(jobId)).
           set(j.minSalary, 10000).
           set(j.maxSalary, 20000));
 
-  queryBuilder.exec().then(
-      function() {
-        return selectAll();
-      }).then(
-      function(results) {
-        // TODO(dpapad): Update
-        /*var updatedRow = goog.array.find(results, function(row) {
-          return row.payload()[a.id.getName()] == '1';
-        });
-        assertTrue(updatedRow.payload()[a.createdByAction.getName()]);
-        assertFalse(updatedRow.payload()[a.isLocal.getName()]);*/
+  queryBuilder.exec().then(function() {
+    return selectAll();
+  }).then(function(results) {
+    var verified = false;
+    for (var i = 0; i < results.length; ++i) {
+      var row = results[i];
+      if (row.getId() == jobId) {
+        assertEquals(10000, row.getMinSalary());
+        assertEquals(20000, row.getMaxSalary());
+        verified = true;
+        break;
+      }
+    }
+    assertTrue(verified);
+    asyncTestCase.continueTesting();
+  }, fail);
+}
 
-        asyncTestCase.continueTesting();
-      }, fail);
+
+function testUpdate_UnboundPredicate() {
+  asyncTestCase.waitForAsync('testUpdate_Predicate');
+
+  var queryBuilder = /** @type {!lf.query.UpdateBuilder} */ (
+      db.update(j).
+          set(j.minSalary, lf.bind(1)).
+          set(j.maxSalary, 20000).
+          where(j.id.eq(lf.bind(0))));
+
+  var jobId = sampleJobs[0].getId();
+  queryBuilder.bind([jobId, 10000]).exec().then(function() {
+    return selectAll();
+  }).then(function() {
+    return db.select().from(j).where(j.id.eq(jobId)).exec();
+  }).then(function(results) {
+    assertEquals(10000, results[0][j.minSalary.getName()]);
+    assertEquals(20000, results[0][j.maxSalary.getName()]);
+    return queryBuilder.bind([jobId, 15000]).exec();
+  }).then(function() {
+    return db.select().from(j).where(j.id.eq(jobId)).exec();
+  }).then(function(results) {
+    assertEquals(15000, results[0][j.minSalary.getName()]);
+    assertEquals(20000, results[0][j.maxSalary.getName()]);
+    asyncTestCase.continueTesting();
+  }, fail);
 }
 
 

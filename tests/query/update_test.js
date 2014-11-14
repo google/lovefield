@@ -18,6 +18,7 @@ goog.setTestOnly();
 goog.require('goog.testing.AsyncTestCase');
 goog.require('goog.testing.jsunit');
 goog.require('hr.db');
+goog.require('lf.bind');
 goog.require('lf.query.UpdateBuilder');
 
 
@@ -69,4 +70,19 @@ function testWhere_ThrowsAlreadyCalled() {
   };
 
   assertThrows(buildQuery);
+}
+
+
+function testSet_ThrowsMissingBinding() {
+  asyncTestCase.waitForAsync('testExec_ThrowsMissingBinding');
+  var employeeTable = db.getSchema().getEmployee();
+  var query = new lf.query.UpdateBuilder(employeeTable);
+  query.set(employeeTable.minSalary, lf.bind(0));
+  query.set(employeeTable.maxSalary, 20000);
+  query.where(employeeTable.jobId.eq('dummyJobId'));
+  query.exec().then(
+      fail,
+      function(e) {
+        asyncTestCase.continueTesting();
+      });
 }
