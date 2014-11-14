@@ -4,6 +4,7 @@ goog.require('goog.Promise');
 goog.require('lf.Exception');
 goog.require('lf.Global');
 goog.require('lf.Transaction');
+goog.require('lf.proc.QueryTask');
 goog.require('lf.service');
 
 
@@ -26,7 +27,8 @@ lovefield.db.Transaction.prototype.exec = function(queryBuilders) {
         'Transaction already commited/failed');
   }
 
-  var queryEngine = lf.Global.get().getService(lf.service.QUERY_ENGINE);
+  var queryEngine = /** @type {!lf.proc.QueryEngine} */ (
+      lf.Global.get().getService(lf.service.QUERY_ENGINE));
   var plans = [];
   try {
     queryBuilders.forEach(function(queryBuilder) {
@@ -38,8 +40,10 @@ lovefield.db.Transaction.prototype.exec = function(queryBuilders) {
     return goog.Promise.reject(e);
   }
 
-  var runner = lf.Global.get().getService(lf.service.RUNNER);
-  return runner.exec(plans).then(
+  var runner = /** @type {!lf.proc.Runner} */ (
+      lf.Global.get().getService(lf.service.RUNNER));
+  var queryTask = new lf.proc.QueryTask(plans);
+  return runner.scheduleTask(queryTask).then(
       goog.bind(function(results) {
         this.completed_ = true;
         return results.map(function(relation) {
