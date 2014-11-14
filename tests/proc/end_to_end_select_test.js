@@ -715,12 +715,14 @@ function testSelect_ForgetParamBindingRejects() {
 }
 
 
-function testSelect_InvalidParamBindingRejects() {
-  asyncTestCase.waitForAsync('testSelect_ParamBinding');
-
+function testSelect_InvalidParamBindingThrows() {
   var q = db.select().from(j).where(j.id.eq(lf.bind(1)));
-  q.bind([0]).exec().then(fail, function(e) {
+  var thrown = false;
+  try {
+    q.bind([0]);
+  } catch (e) {
+    thrown = true;
     assertEquals(lf.Exception.Type.SYNTAX, e.name);
-    asyncTestCase.continueTesting();
-  });
+  }
+  assertTrue(thrown);
 }
