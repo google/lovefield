@@ -111,7 +111,7 @@ function testExec() {
   asyncTestCase.waitForAsync('testExec');
 
   var selectQuery = /** @type {!lf.query.SelectBuilder} */ (
-      db.select().from(j)).getQuery();
+      db.select().from(j));
 
   var observerCallback = function(changes) {
     // Expecting one "change" record for each insertion.
@@ -127,7 +127,7 @@ function testExec() {
   insertSampleJobs().then(function() {
     // Start observing.
     lf.query.observe(selectQuery, observerCallback);
-    var observerTask = new lf.proc.ObserverTask([selectQuery]);
+    var observerTask = new lf.proc.ObserverTask([selectQuery.getQuery()]);
     return observerTask.exec();
   }, fail);
 }

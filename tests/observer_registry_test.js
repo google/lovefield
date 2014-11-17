@@ -62,15 +62,14 @@ function testAddObserver() {
 
   asyncTestCase.waitForAsync('testObserve');
 
-  var q = /** @type {!lf.query.SelectContext} */ (
-      new lf.query.SelectBuilder([]).getQuery());
+  var q = new lf.query.SelectBuilder([]);
 
   var callback = function() {
     asyncTestCase.continueTesting();
   };
 
   registry.addObserver(q, callback);
-  var observableResults = registry.getResultsForQuery(q);
+  var observableResults = registry.getResultsForQuery(q.getQuery());
   assertNotNull(observableResults);
   observableResults.push('hello');
 }
@@ -82,19 +81,18 @@ function testRemoveObserver() {
   }
 
   var tables = schema.getTables();
-  var queryBuilder = new lf.query.SelectBuilder([]);
-  queryBuilder.from(tables[0]);
-  var q = /** @type {!lf.query.SelectContext} */ (
-      queryBuilder.getQuery());
+  var q = new lf.query.SelectBuilder([]);
+  q.from(tables[0]);
+  var query = q.getQuery();
 
   var callback = function() {};
   registry.addObserver(q, callback);
-  var observableResults = registry.getResultsForQuery(q);
+  var observableResults = registry.getResultsForQuery(query);
   assertNotNull(observableResults);
-  assertArrayEquals([q], registry.getQueriesForTables([tables[0]]));
+  assertArrayEquals([query], registry.getQueriesForTables([tables[0]]));
 
   registry.removeObserver(q, callback);
-  observableResults = registry.getResultsForQuery(q);
+  observableResults = registry.getResultsForQuery(query);
   assertNull(observableResults);
   assertArrayEquals([], registry.getQueriesForTables([tables[0]]));
 }
@@ -107,20 +105,12 @@ function testGetQueriesForTable() {
 
   var tables = schema.getTables();
 
-  var queryBuilder1 = new lf.query.SelectBuilder([]);
-  queryBuilder1.from(tables[0]);
-  var q1 = /** @type {!lf.query.SelectContext} */ (
-      queryBuilder1.getQuery());
-
-  var queryBuilder2 = new lf.query.SelectBuilder([]);
-  queryBuilder2.from(tables[0], tables[1]);
-  var q2 = /** @type {!lf.query.SelectContext} */ (
-      queryBuilder2.getQuery());
-
-  var queryBuilder3 = new lf.query.SelectBuilder([]);
-  queryBuilder3.from(tables[1]);
-  var q3 = /** @type {!lf.query.SelectContext} */ (
-      queryBuilder3.getQuery());
+  var q1 = new lf.query.SelectBuilder([]);
+  q1.from(tables[0]);
+  var q2 = new lf.query.SelectBuilder([]);
+  q2.from(tables[0], tables[1]);
+  var q3 = new lf.query.SelectBuilder([]);
+  q3.from(tables[1]);
 
   var callback = function() {};
 
@@ -129,9 +119,9 @@ function testGetQueriesForTable() {
   registry.addObserver(q3, callback);
 
   var queries = registry.getQueriesForTables([tables[0]]);
-  assertArrayEquals([q1, q2], queries);
+  assertArrayEquals([q1.getQuery(), q2.getQuery()], queries);
   queries = registry.getQueriesForTables([tables[1]]);
-  assertArrayEquals([q2, q3], queries);
+  assertArrayEquals([q2.getQuery(), q3.getQuery()], queries);
   queries = registry.getQueriesForTables([tables[0], tables[1]]);
-  assertArrayEquals([q1, q2, q3], queries);
+  assertArrayEquals([q1.getQuery(), q2.getQuery(), q3.getQuery()], queries);
 }
