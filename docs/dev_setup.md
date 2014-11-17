@@ -28,24 +28,24 @@ user-provided schema and to generate code.
 The easy way to install node.js is `apt-get install nodejs`. However, it is
 strongly discouraged, i.e. *DON'T DO IT*. The recommended way of doing things:
 
-1. Remove all existing node packages
+1.Remove all existing node packages
 ```bash
 sudo apt-get remove nodejs
 ```
 
-2. Install nvm under your home dir so that nothing requires sudo
+2.Install nvm under your home dir so that nothing requires sudo
 ```bash
 cd
 wget -qO- https://raw.github.com/creationix/nvm/master/install.sh | sh
 source .profile
 ```
 
-3. Install nodejs
+3.Install nodejs
 ```bash
 nvm install v0.11
 ```
 
-4. Install npm, make sure npm is installed in nvm node_module directory
+4.Install npm, make sure npm is installed in nvm node_module directory
 ```bash
 wget -qO- https://npmjs.org/install.sh | sh
 ```
