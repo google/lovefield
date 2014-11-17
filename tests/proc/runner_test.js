@@ -123,3 +123,40 @@ function testTask_Failure() {
         asyncTestCase.continueTesting();
       });
 }
+
+
+/**
+ * Tests that prioritized tasks are placed in the front of the queue.
+ */
+function testScheduleTask_Prioritize() {
+  asyncTestCase.waitForAsync('testScheduleTask_Prioritize');
+
+  var resolver = goog.Promise.withResolver();
+  var executionOrder = [];
+
+  var task1 = new lf.testing.MockTask(
+      lf.TransactionType.READ_WRITE,
+      new goog.structs.Set([j]),
+      function() { return resolver.promise; });
+  var task2 = new lf.testing.MockTask(
+      lf.TransactionType.READ_WRITE,
+      new goog.structs.Set([j]),
+      function() { executionOrder.push('task2'); });
+  var task3 = new lf.testing.MockTask(
+      lf.TransactionType.READ_WRITE,
+      new goog.structs.Set([j]),
+      function() { executionOrder.push('task3'); });
+
+  var p1 = runner.scheduleTask(task1);
+  var p2 = runner.scheduleTask(task2);
+  var p3 = runner.scheduleTask(task3, true /* opt_prioritize */);
+
+  goog.Promise.all([p1, p2, p3]).then(
+      function(results) {
+        // Ensuring that the prioritized task3 executed before task2.
+        assertArrayEquals(['task3', 'task2'], executionOrder);
+        asyncTestCase.continueTesting();
+      });
+
+  resolver.resolve();
+}
