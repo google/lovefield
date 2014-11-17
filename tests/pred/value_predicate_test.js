@@ -270,7 +270,7 @@ function testUnboundPredicate() {
   var relation = lf.proc.Relation.fromRows([sampleRow], [table.getName()]);
 
   var binder = lf.bind(1);
-  var p = new lf.pred.ValuePredicate(table.id, binder, lf.eval.Type.EQ, 1);
+  var p = new lf.pred.ValuePredicate(table.id, binder, lf.eval.Type.EQ);
 
   // Predicate shall be unbound.
   assertTrue(p.value instanceof lf.Binder);
@@ -291,12 +291,29 @@ function testUnboundPredicate() {
 }
 
 
+function testUnboundPredicate_Array() {
+  var table = schema.getTables()[0];
+  var sampleRows = getSampleRows(3);
+  var ids = sampleRows.map(function(row) {
+    return row.payload().id;
+  });
+  var relation = lf.proc.Relation.fromRows(sampleRows, [table.getName()]);
+
+  var binder = [lf.bind(0), lf.bind(1), lf.bind(2)];
+  var p = new lf.pred.ValuePredicate(table.id, binder, lf.eval.Type.IN);
+
+  // Tests binding.
+  p.bind(ids);
+  assertEquals(3, p.eval(relation).entries.length);
+}
+
+
 function testCopy_UnboundPredicate() {
   var table = schema.getTables()[0];
   var sampleRow = getSampleRows(1)[0];
 
   var binder = lf.bind(1);
-  var p = new lf.pred.ValuePredicate(table.id, binder, lf.eval.Type.EQ, 1);
+  var p = new lf.pred.ValuePredicate(table.id, binder, lf.eval.Type.EQ);
   var p2 = p.copy();
 
   // Both predicates shall be unbound.
@@ -313,3 +330,23 @@ function testCopy_UnboundPredicate() {
   p3.bind([9999, sampleRow2.payload().id]);
   assertEquals(sampleRow2.payload().id, p3.value);
 }
+
+
+function testCopy_UnboundPredicate_Array() {
+  var table = schema.getTables()[0];
+  var sampleRows = getSampleRows(6);
+  var ids = sampleRows.map(function(row) {
+    return row.payload().id;
+  });
+
+  var binder = [lf.bind(0), lf.bind(1), lf.bind(2)];
+  var p = new lf.pred.ValuePredicate(table.id, binder, lf.eval.Type.IN);
+  p.bind(ids);
+  var p2 = p.copy();
+  assertArrayEquals(ids.slice(0, 3), p2.value);
+
+  // Tests binding.
+  p2.bind(ids.slice(3));
+  assertArrayEquals(ids.slice(3), p2.value);
+}
+

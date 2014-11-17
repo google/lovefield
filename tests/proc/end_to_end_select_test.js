@@ -725,4 +725,14 @@ function testSelect_InvalidParamBindingThrows() {
     assertEquals(lf.Exception.Type.SYNTAX, e.name);
   }
   assertTrue(thrown);
+
+  thrown = false;
+  q = db.select().from(j).where(j.id.between(lf.bind(0), lf.bind(1)));
+  try {
+    q.bind([0]);
+  } catch (e) {
+    thrown = true;
+    assertEquals(lf.Exception.Type.SYNTAX, e.name);
+  }
+  assertTrue(thrown);
 }
