@@ -12,11 +12,11 @@ The design documents listed below are still working drafts and may change signif
 
 [3. Backstore and Upgrade](dd/03_backstore.md)
 
-4. Prefetcher and Cache
+[4. Cache and Prefetcher](dd/04_cache.md)
 
 5. Query Builder
 
-6. Runner and Transaction Management
+6. Transaction Management
 
 7. Indices
 
