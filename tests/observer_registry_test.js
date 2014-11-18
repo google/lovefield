@@ -19,6 +19,7 @@ goog.setTestOnly();
 goog.require('goog.testing.AsyncTestCase');
 goog.require('goog.testing.jsunit');
 goog.require('goog.userAgent.product');
+goog.require('lf.proc.Relation');
 goog.require('lf.query.SelectBuilder');
 goog.require('lf.testing.MockEnv');
 
@@ -62,16 +63,17 @@ function testAddObserver() {
 
   asyncTestCase.waitForAsync('testObserve');
 
-  var q = new lf.query.SelectBuilder([]);
+  var builder = new lf.query.SelectBuilder([]);
 
   var callback = function() {
     asyncTestCase.continueTesting();
   };
 
-  registry.addObserver(q, callback);
-  var observableResults = registry.getResultsForQuery(q.getQuery());
-  assertNotNull(observableResults);
-  observableResults.push('hello');
+  registry.addObserver(builder, callback);
+  var table = schema.getTables()[0];
+  var row = table.createRow({ 'id': 'dummyId', 'value': 'dummyValue'});
+  var newResults = lf.proc.Relation.fromRows([row], [table.getName()]);
+  assertTrue(registry.updateResultsForQuery(builder.getQuery(), newResults));
 }
 
 
@@ -80,21 +82,16 @@ function testRemoveObserver() {
     return;
   }
 
-  var tables = schema.getTables();
-  var q = new lf.query.SelectBuilder([]);
-  q.from(tables[0]);
-  var query = q.getQuery();
+  var table = schema.getTables()[0];
+  var builder = new lf.query.SelectBuilder([]);
+  builder.from(table);
 
-  var callback = function() {};
-  registry.addObserver(q, callback);
-  var observableResults = registry.getResultsForQuery(query);
-  assertNotNull(observableResults);
-  assertArrayEquals([query], registry.getQueriesForTables([tables[0]]));
-
-  registry.removeObserver(q, callback);
-  observableResults = registry.getResultsForQuery(query);
-  assertNull(observableResults);
-  assertArrayEquals([], registry.getQueriesForTables([tables[0]]));
+  var callback = function() { fail(new Error('Observer not removed')); };
+  registry.addObserver(builder, callback);
+  registry.removeObserver(builder, callback);
+  var row = table.createRow({ 'id': 'dummyId', 'value': 'dummyValue'});
+  var newResults = lf.proc.Relation.fromRows([row], [table.getName()]);
+  assertFalse(registry.updateResultsForQuery(builder.getQuery(), newResults));
 }
 
 
@@ -105,23 +102,25 @@ function testGetQueriesForTable() {
 
   var tables = schema.getTables();
 
-  var q1 = new lf.query.SelectBuilder([]);
-  q1.from(tables[0]);
-  var q2 = new lf.query.SelectBuilder([]);
-  q2.from(tables[0], tables[1]);
-  var q3 = new lf.query.SelectBuilder([]);
-  q3.from(tables[1]);
+  var builder1 = new lf.query.SelectBuilder([]);
+  builder1.from(tables[0]);
+  var builder2 = new lf.query.SelectBuilder([]);
+  builder2.from(tables[0], tables[1]);
+  var builder3 = new lf.query.SelectBuilder([]);
+  builder3.from(tables[1]);
 
   var callback = function() {};
 
-  registry.addObserver(q1, callback);
-  registry.addObserver(q2, callback);
-  registry.addObserver(q3, callback);
+  registry.addObserver(builder1, callback);
+  registry.addObserver(builder2, callback);
+  registry.addObserver(builder3, callback);
 
   var queries = registry.getQueriesForTables([tables[0]]);
-  assertArrayEquals([q1.getQuery(), q2.getQuery()], queries);
+  assertArrayEquals([builder1.getQuery(), builder2.getQuery()], queries);
   queries = registry.getQueriesForTables([tables[1]]);
-  assertArrayEquals([q2.getQuery(), q3.getQuery()], queries);
+  assertArrayEquals([builder2.getQuery(), builder3.getQuery()], queries);
   queries = registry.getQueriesForTables([tables[0], tables[1]]);
-  assertArrayEquals([q1.getQuery(), q2.getQuery(), q3.getQuery()], queries);
+  assertArrayEquals(
+      [builder1.getQuery(), builder2.getQuery(), builder3.getQuery()],
+      queries);
 }

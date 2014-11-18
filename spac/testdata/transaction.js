@@ -29,11 +29,14 @@ lovefield.db.Transaction.prototype.exec = function(queryBuilders) {
 
   var queryEngine = /** @type {!lf.proc.QueryEngine} */ (
       lf.Global.get().getService(lf.service.QUERY_ENGINE));
+  var queries = [];
   var plans = [];
   try {
     queryBuilders.forEach(function(queryBuilder) {
       queryBuilder.assertExecPreconditions();
-      plans.push(queryEngine.getPlan(queryBuilder.getQuery()));
+      var query = queryBuilder.getQuery();
+      queries.push(query);
+      plans.push(queryEngine.getPlan(query));
     }, this);
   } catch (e) {
     this.completed_ = true;
@@ -42,7 +45,7 @@ lovefield.db.Transaction.prototype.exec = function(queryBuilders) {
 
   var runner = /** @type {!lf.proc.Runner} */ (
       lf.Global.get().getService(lf.service.RUNNER));
-  var queryTask = new lf.proc.QueryTask(plans);
+  var queryTask = new lf.proc.QueryTask(queries, plans);
   return runner.scheduleTask(queryTask).then(
       goog.bind(function(results) {
         this.completed_ = true;

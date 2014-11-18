@@ -18,12 +18,15 @@ goog.setTestOnly();
 goog.require('goog.Promise');
 goog.require('goog.testing.AsyncTestCase');
 goog.require('goog.testing.jsunit');
+goog.require('goog.userAgent.product');
 goog.require('hr.db');
 goog.require('lf.Exception');
 goog.require('lf.Global');
 goog.require('lf.TransactionType');
+goog.require('lf.bind');
 goog.require('lf.cache.Journal');
 goog.require('lf.proc.QueryTask');
+goog.require('lf.query');
 goog.require('lf.service');
 goog.require('lf.testing.hrSchemaSampleData');
 
@@ -58,7 +61,7 @@ var j;
 
 
 /** @const {number} */
-var ROW_COUNT = 3;
+var ROW_COUNT = 5;
 
 
 function setUp() {
@@ -85,18 +88,17 @@ function tearDown() {
 
 /**
  * Creates a physical plan that inserts ROW_COUNT rows into the Album table.
- * @return {!lf.proc.PhysicalQueryPlan}
+ * @return {!lf.query.InsertContext}
  */
-function getSamplePlan() {
+function getSampleQuery() {
   rows = [];
   for (var i = 0; i < ROW_COUNT; ++i) {
     var job = lf.testing.hrSchemaSampleData.generateSampleJobData(db);
     job.setId('jobId' + i.toString());
     rows.push(job);
   }
-  var query = /** @type {!lf.query.InsertBuilder} */ (
+  return /** @type {!lf.query.InsertBuilder} */ (
       db.insert().into(j).values(rows)).query;
-  return queryEngine.getPlan(query);
 }
 
 
@@ -108,7 +110,9 @@ function testSinglePlan_Insert() {
   asyncTestCase.waitForAsync('testSinglePlan_Insert');
   assertEquals(0, cache.getCount());
 
-  var queryTask = new lf.proc.QueryTask([getSamplePlan()]);
+  var query = getSampleQuery();
+  var queryTask = new lf.proc.QueryTask(
+      [query], [queryEngine.getPlan(query)]);
   queryTask.exec().then(function() {
     return selectAll();
   }).then(function(results) {
@@ -131,13 +135,15 @@ function testSinglePlan_Update() {
   assertEquals(0, cache.getCount());
 
   var newTitle = 'Quantum Physicist';
-  var queryTask = new lf.proc.QueryTask([getSamplePlan()]);
+  var query = getSampleQuery();
+  var queryTask = new lf.proc.QueryTask(
+      [query], [queryEngine.getPlan(query)]);
   queryTask.exec().then(function() {
     assertEquals(ROW_COUNT, cache.getCount());
     var query = /** @type {!lf.query.UpdateBuilder} */ (
         db.update(j).set(j.title, newTitle)).query;
     var updateQueryTask = new lf.proc.QueryTask(
-        [queryEngine.getPlan(query)]);
+        [query], [queryEngine.getPlan(query)]);
     return updateQueryTask.exec();
   }).then(function() {
     return selectAll();
@@ -161,13 +167,15 @@ function testSinglePlan_Delete() {
   asyncTestCase.waitForAsync('testSinglePlan_Delete');
   assertEquals(0, cache.getCount());
 
-  var queryTask = new lf.proc.QueryTask([getSamplePlan()]);
+  var query = getSampleQuery();
+  var queryTask = new lf.proc.QueryTask(
+      [query], [queryEngine.getPlan(query)]);
   queryTask.exec().then(function() {
     assertEquals(ROW_COUNT, cache.getCount());
     var query = /** @type {!lf.query.DeleteBuilder} */ (
         db.delete().from(j)).query;
     var deleteQueryTask = new lf.proc.QueryTask(
-        [queryEngine.getPlan(query)]);
+        [query], [queryEngine.getPlan(query)]);
     return deleteQueryTask.exec();
   }).then(function() {
     return selectAll();
@@ -204,11 +212,13 @@ function testMultiPlan() {
   var removeQuery = /** @type {!lf.query.DeleteBuilder} */ (
       db.delete().from(j).where(j.id.eq(deletedId))).getQuery();
 
-  var queryTask = new lf.proc.QueryTask([
-    queryEngine.getPlan(insertQuery),
-    queryEngine.getPlan(updateQuery),
-    queryEngine.getPlan(removeQuery)
-  ]);
+  var queryTask = new lf.proc.QueryTask(
+      [insertQuery, updateQuery, removeQuery],
+      [
+        queryEngine.getPlan(insertQuery),
+        queryEngine.getPlan(updateQuery),
+        queryEngine.getPlan(removeQuery)
+      ]);
 
   queryTask.exec().then(function() {
     assertEquals(ROW_COUNT - 1, cache.getCount());
@@ -243,10 +253,12 @@ function testMultiPlan_Rollback() {
   var insertAgainQuery = /** @type {!lf.query.InsertBuilder} */ (
       db.insert().into(j).values([job])).getQuery();
 
-  var queryTask = new lf.proc.QueryTask([
-    queryEngine.getPlan(insertQuery),
-    queryEngine.getPlan(insertAgainQuery)
-  ]);
+  var queryTask = new lf.proc.QueryTask(
+      [insertQuery, insertAgainQuery],
+      [
+        queryEngine.getPlan(insertQuery),
+        queryEngine.getPlan(insertAgainQuery)
+      ]);
   queryTask.exec().then(
       fail,
       function(e) {
@@ -258,6 +270,53 @@ function testMultiPlan_Rollback() {
               asyncTestCase.continueTesting();
             });
       });
+}
+
+
+/**
+ * Tests that when a parametrized query finishes execution, observers are
+ * notified.
+ */
+function testSinglePlan_ParametrizedQuery() {
+  // TODO: Array.observe currently exists only in Chrome. Polyfiling mechanism
+  // not ready yet, see b/18331726. Remove this once fixed.
+  if (!goog.userAgent.product.CHROME) {
+    return;
+  }
+
+  asyncTestCase.waitForAsync('testSinglePlan_ParametrizedQuery');
+
+  var selectQueryBuilder = /** @type {!lf.query.SelectBuilder} */ (
+      db.select().from(j).where(j.id.between(lf.bind(0), lf.bind(1))));
+
+  var observerCallback = function(changes) {
+    // Expecting one "change" record for each of rows with IDs jobId2, jobId3,
+    // jobId4.
+    assertEquals(3, changes.length);
+    changes.forEach(function(change) {
+      assertEquals(1, change['addedCount']);
+    });
+
+    lf.query.unobserve(selectQueryBuilder, observerCallback);
+    asyncTestCase.continueTesting();
+  };
+
+  var insertQuery = getSampleQuery();
+  var insertQueryTask = new lf.proc.QueryTask(
+      [insertQuery], [queryEngine.getPlan(insertQuery)]);
+
+  insertQueryTask.exec().then(function() {
+    // Start observing.
+    lf.query.observe(selectQueryBuilder, observerCallback);
+
+    // Bind parameters to some values.
+    selectQueryBuilder.bind(['jobId2', 'jobId4']);
+
+    var selectQuery = selectQueryBuilder.getQuery();
+    var selectQueryTask = new lf.proc.QueryTask(
+        [selectQuery], [queryEngine.getPlan(selectQuery)]);
+    return selectQueryTask.exec();
+  }, fail);
 }
 
 
