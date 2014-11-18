@@ -4,7 +4,7 @@ goog.require('goog.Promise');
 goog.require('lf.Exception');
 goog.require('lf.Global');
 goog.require('lf.Transaction');
-goog.require('lf.proc.QueryTask');
+goog.require('lf.proc.UserQueryTask');
 goog.require('lf.service');
 
 
@@ -27,16 +27,12 @@ goog.require('lf.service');
         'Transaction already commited/failed');
   }
 
-  var queryEngine = /** @type {!lf.proc.QueryEngine} */ (
-      lf.Global.get().getService(lf.service.QUERY_ENGINE));
   var queries = [];
-  var plans = [];
   try {
     queryBuilders.forEach(function(queryBuilder) {
       queryBuilder.assertExecPreconditions();
       var query = queryBuilder.getQuery();
       queries.push(query);
-      plans.push(queryEngine.getPlan(query));
     }, this);
   } catch (e) {
     this.completed_ = true;
@@ -45,7 +41,7 @@ goog.require('lf.service');
 
   var runner = /** @type {!lf.proc.Runner} */ (
       lf.Global.get().getService(lf.service.RUNNER));
-  var queryTask = new lf.proc.QueryTask(queries, plans);
+  var queryTask = new lf.proc.UserQueryTask(queries);
   return runner.scheduleTask(queryTask).then(
       goog.bind(function(results) {
         this.completed_ = true;

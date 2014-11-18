@@ -25,7 +25,7 @@ goog.require('lf.Global');
 goog.require('lf.TransactionType');
 goog.require('lf.bind');
 goog.require('lf.cache.Journal');
-goog.require('lf.proc.QueryTask');
+goog.require('lf.proc.UserQueryTask');
 goog.require('lf.query');
 goog.require('lf.service');
 goog.require('lf.testing.hrSchemaSampleData');
@@ -33,7 +33,7 @@ goog.require('lf.testing.hrSchemaSampleData');
 
 /** @type {!goog.testing.AsyncTestCase} */
 var asyncTestCase = goog.testing.AsyncTestCase.createAndInstall(
-    'QueryTaskTest');
+    'UserQueryTaskTest');
 
 
 /** @type {!hr.db.Database} */
@@ -46,10 +46,6 @@ var backStore;
 
 /** @type {!lf.cache.Cache} */
 var cache;
-
-
-/** @type {!lf.proc.QueryEngine} */
-var queryEngine;
 
 
 /** @type {!Array.<!lf.Row>} */
@@ -70,7 +66,6 @@ function setUp() {
     db = database;
     backStore = lf.Global.get().getService(lf.service.BACK_STORE);
     cache = lf.Global.get().getService(lf.service.CACHE);
-    queryEngine = lf.Global.get().getService(lf.service.QUERY_ENGINE);
     j = db.getSchema().getJob();
   }).then(function() {
     asyncTestCase.continueTesting();
@@ -110,9 +105,7 @@ function testSinglePlan_Insert() {
   asyncTestCase.waitForAsync('testSinglePlan_Insert');
   assertEquals(0, cache.getCount());
 
-  var query = getSampleQuery();
-  var queryTask = new lf.proc.QueryTask(
-      [query], [queryEngine.getPlan(query)]);
+  var queryTask = new lf.proc.UserQueryTask([getSampleQuery()]);
   queryTask.exec().then(function() {
     return selectAll();
   }).then(function(results) {
@@ -135,15 +128,12 @@ function testSinglePlan_Update() {
   assertEquals(0, cache.getCount());
 
   var newTitle = 'Quantum Physicist';
-  var query = getSampleQuery();
-  var queryTask = new lf.proc.QueryTask(
-      [query], [queryEngine.getPlan(query)]);
+  var queryTask = new lf.proc.UserQueryTask([getSampleQuery()]);
   queryTask.exec().then(function() {
     assertEquals(ROW_COUNT, cache.getCount());
     var query = /** @type {!lf.query.UpdateBuilder} */ (
         db.update(j).set(j.title, newTitle)).query;
-    var updateQueryTask = new lf.proc.QueryTask(
-        [query], [queryEngine.getPlan(query)]);
+    var updateQueryTask = new lf.proc.UserQueryTask([query]);
     return updateQueryTask.exec();
   }).then(function() {
     return selectAll();
@@ -167,15 +157,12 @@ function testSinglePlan_Delete() {
   asyncTestCase.waitForAsync('testSinglePlan_Delete');
   assertEquals(0, cache.getCount());
 
-  var query = getSampleQuery();
-  var queryTask = new lf.proc.QueryTask(
-      [query], [queryEngine.getPlan(query)]);
+  var queryTask = new lf.proc.UserQueryTask([getSampleQuery()]);
   queryTask.exec().then(function() {
     assertEquals(ROW_COUNT, cache.getCount());
     var query = /** @type {!lf.query.DeleteBuilder} */ (
         db.delete().from(j)).query;
-    var deleteQueryTask = new lf.proc.QueryTask(
-        [query], [queryEngine.getPlan(query)]);
+    var deleteQueryTask = new lf.proc.UserQueryTask([query]);
     return deleteQueryTask.exec();
   }).then(function() {
     return selectAll();
@@ -188,8 +175,8 @@ function testSinglePlan_Delete() {
 
 
 /**
- * Tests that a QueryTask that includes multiple queries updates both database
- * and cache.
+ * Tests that a UserQueryTask that includes multiple queries updates both
+ * database and cache.
  */
 function testMultiPlan() {
   asyncTestCase.waitForAsync('testMultiPlan');
@@ -212,13 +199,8 @@ function testMultiPlan() {
   var removeQuery = /** @type {!lf.query.DeleteBuilder} */ (
       db.delete().from(j).where(j.id.eq(deletedId))).getQuery();
 
-  var queryTask = new lf.proc.QueryTask(
-      [insertQuery, updateQuery, removeQuery],
-      [
-        queryEngine.getPlan(insertQuery),
-        queryEngine.getPlan(updateQuery),
-        queryEngine.getPlan(removeQuery)
-      ]);
+  var queryTask = new lf.proc.UserQueryTask(
+      [insertQuery, updateQuery, removeQuery]);
 
   queryTask.exec().then(function() {
     assertEquals(ROW_COUNT - 1, cache.getCount());
@@ -236,7 +218,7 @@ function testMultiPlan() {
 
 
 /**
- * Testing that when a QueryTask fails to execute a rejected promise is
+ * Testing that when a UserQueryTask fails to execute a rejected promise is
  * returned and that indices, cache and backstore are in the state prior to the
  * task have been started.
  */
@@ -253,12 +235,8 @@ function testMultiPlan_Rollback() {
   var insertAgainQuery = /** @type {!lf.query.InsertBuilder} */ (
       db.insert().into(j).values([job])).getQuery();
 
-  var queryTask = new lf.proc.QueryTask(
-      [insertQuery, insertAgainQuery],
-      [
-        queryEngine.getPlan(insertQuery),
-        queryEngine.getPlan(insertAgainQuery)
-      ]);
+  var queryTask = new lf.proc.UserQueryTask(
+      [insertQuery, insertAgainQuery]);
   queryTask.exec().then(
       fail,
       function(e) {
@@ -301,9 +279,7 @@ function testSinglePlan_ParametrizedQuery() {
     asyncTestCase.continueTesting();
   };
 
-  var insertQuery = getSampleQuery();
-  var insertQueryTask = new lf.proc.QueryTask(
-      [insertQuery], [queryEngine.getPlan(insertQuery)]);
+  var insertQueryTask = new lf.proc.UserQueryTask([getSampleQuery()]);
 
   insertQueryTask.exec().then(function() {
     // Start observing.
@@ -312,9 +288,8 @@ function testSinglePlan_ParametrizedQuery() {
     // Bind parameters to some values.
     selectQueryBuilder.bind(['jobId2', 'jobId4']);
 
-    var selectQuery = selectQueryBuilder.getQuery();
-    var selectQueryTask = new lf.proc.QueryTask(
-        [selectQuery], [queryEngine.getPlan(selectQuery)]);
+    var selectQueryTask = new lf.proc.UserQueryTask(
+        [selectQueryBuilder.getQuery()]);
     return selectQueryTask.exec();
   }, fail);
 }

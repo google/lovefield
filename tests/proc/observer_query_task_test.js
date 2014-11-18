@@ -20,36 +20,18 @@ goog.require('goog.testing.AsyncTestCase');
 goog.require('goog.testing.jsunit');
 goog.require('goog.userAgent.product');
 goog.require('hr.db');
-goog.require('lf.Global');
-goog.require('lf.proc.ObserverTask');
+goog.require('lf.proc.ObserverQueryTask');
 goog.require('lf.query');
-goog.require('lf.service');
 goog.require('lf.testing.hrSchemaSampleData');
 
 
 /** @type {!goog.testing.AsyncTestCase} */
 var asyncTestCase = goog.testing.AsyncTestCase.createAndInstall(
-    'QueryTaskTest');
+    'ObserverTaskTest');
 
 
 /** @type {!hr.db.Database} */
 var db;
-
-
-/** @type {!lf.BackStore} */
-var backStore;
-
-
-/** @type {!lf.cache.Cache} */
-var cache;
-
-
-/** @type {!lf.proc.QueryEngine} */
-var queryEngine;
-
-
-/** @type {!Array.<!lf.Row>} */
-var rows;
 
 
 /** @type {!hr.db.schema.Job} */
@@ -64,9 +46,6 @@ function setUp() {
   asyncTestCase.waitForAsync('setUp');
   hr.db.getInstance(undefined, true).then(function(database) {
     db = database;
-    backStore = lf.Global.get().getService(lf.service.BACK_STORE);
-    cache = lf.Global.get().getService(lf.service.CACHE);
-    queryEngine = lf.Global.get().getService(lf.service.QUERY_ENGINE);
     j = db.getSchema().getJob();
   }).then(function() {
     asyncTestCase.continueTesting();
@@ -87,7 +66,7 @@ function tearDown() {
  * @return {!IThenable}
  */
 function insertSampleJobs() {
-  rows = [];
+  var rows = [];
   for (var i = 0; i < ROW_COUNT; ++i) {
     var job = lf.testing.hrSchemaSampleData.generateSampleJobData(db);
     job.setId('jobId' + i.toString());
@@ -127,7 +106,7 @@ function testExec() {
   insertSampleJobs().then(function() {
     // Start observing.
     lf.query.observe(selectQuery, observerCallback);
-    var observerTask = new lf.proc.ObserverTask([selectQuery.getQuery()]);
+    var observerTask = new lf.proc.ObserverQueryTask([selectQuery.getQuery()]);
     return observerTask.exec();
   }, fail);
 }
