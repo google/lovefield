@@ -26,8 +26,13 @@ goog.require('lf.op');
 var db = null;
 
 
+/** @type {number} */
+var startTime;
+
+
 // When the page loads.
 $(function() {
+  startTime = Date.now();
   main().then(function() {
     selectAllMovies();
   });
@@ -134,7 +139,7 @@ function checkForExistingData() {
   var movie = db.getSchema().getMovie();
   return db.select(lf.fn.count(movie.id)).from(movie).exec().then(
       function(rows) {
-        return rows[0]['count_id'] > 0;
+        return rows[0]['count(id)'] > 0;
       });
 }
 
@@ -147,6 +152,8 @@ function selectAllMovies() {
   db.select(movie.id, movie.title, movie.year).
       from(movie).exec().then(
       function(results) {
+        var elapsed = Date.now() - startTime;
+        $('#load_time').text(elapsed.toString() + 'ms');
         $('#master').empty();
         $('#master').append(createTable(results, ['id', 'title', 'year']));
         var grid = $('#master').
@@ -155,6 +162,7 @@ function selectAllMovies() {
             dataTable();
         grid.$('tr').click(function() {
           var id = grid.fnGetData(this)[0];
+          startTime = Date.now();
           generateDetails(id);
         });
       });
@@ -214,20 +222,23 @@ function generateDetails(id) {
           from(ma).
           where(ma.movieId.eq(id)).
           innerJoin(a, a.id.eq(ma.actorId)).
+          orderBy(a.lastName).
           exec().then(function(rows) {
             details['actors'] = rows.map(function(row) {
-              return row['Actor']['firstName'] + ' ' + row['Actor']['lastName'];
-            }).join(', ');
+              return row['Actor']['lastName'] + ', ' +
+                  row['Actor']['firstName'];
+            }).join('<br/>');
           }));
   promises.push(
       db.select().
           from(md, d).
           where(lf.op.and(md.movieId.eq(id), d.id.eq(md.directorId))).
+          orderBy(d.lastName).
           exec().then(function(rows) {
             details['directors'] = rows.map(function(row) {
-              return row['Director']['firstName'] + ' ' +
-                  row['Director']['lastName'];
-            }).join(', ');
+              return row['Director']['lastName'] + ', ' +
+                  row['Director']['firstName'];
+            }).join('<br/>');
           }));
   Promise.all(promises).then(function() {
     displayDetails(details);
@@ -239,6 +250,7 @@ function generateDetails(id) {
  * @param {!Object} details
  */
 function displayDetails(details) {
+  var elapsed = Date.now() - startTime;
   var fields = ['title', 'year', 'rating', 'company', 'directors', 'actors'];
   var titles = fields.map(function(item) {
     return item.charAt(0).toUpperCase() + item.slice(1);
@@ -251,6 +263,7 @@ function displayDetails(details) {
   content += '</tbody></table>';
   $('#slave').empty();
   $('#slave').append('<h2>Movie Details</h2>');
+  $('#slave').append('<p>Query time: ' + elapsed.toString() + ' ms</p>');
   $('#slave').append(content);
   $('#details_list').addClass('display compact cell-border').dataTable();
 }
