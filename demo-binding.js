@@ -20,10 +20,9 @@
 // effects.
 goog.require('lf.bind');
 goog.require('lf.fn');
-goog.require('lf.query');
 
 
-/** @type {?movie.db.Database} */
+/** @type {?lf.Database} */
 var db = null;
 
 
@@ -86,7 +85,7 @@ function setUpBinding() {
       from(movie).
       where(movie.year.between(lf.bind(0), lf.bind(1)));
 
-  lf.query.observe(query, function(changes) {
+  db.observe(query, function(changes) {
     model.count = changes[0].object[0]['num'];
   });
 

@@ -22,7 +22,7 @@ goog.require('lf.fn');
 goog.require('lf.op');
 
 
-/** @type {?movie.db.Database} */
+/** @type {?lf.Database} */
 var db = null;
 
 
