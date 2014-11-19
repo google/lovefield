@@ -70,10 +70,14 @@ goog.require('lf.schema.Table');
   /** @private {!Array.<!lf.schema.Index>} */
   this.indices_;
 
+  /** @private {!Array.<!lf.schema.Column>} */
+  this.columns_ = [];
+
   /// #repeatcolumn
   /** @type {!lf.schema.BaseColumn.<#columnjstype>} */
   this.#column#camel = new lf.schema.BaseColumn(
       this, '#column#camel', #columnuniqueness, #columnenumtype);
+  this.columns_.push(this.#column#camel);
 
   /// #repeatcolumnend
 };
@@ -105,6 +109,12 @@ goog.require('lf.schema.Table');
     ];
   }
   return this.indices_;
+};
+
+
+/** @override */
+#namespace.schema.#table#pascal.prototype.getColumns = function() {
+  return this.columns_;
 };
 
 

@@ -535,6 +535,12 @@ Table_.prototype.deserializeRow = function(dbPayload) {
 
 
 /** @override */
+Table_.prototype.getColumns = function() {
+  return [this.id, this.name];
+};
+
+
+/** @override */
 Table_.prototype.getIndices = function() {
   return [];
 };

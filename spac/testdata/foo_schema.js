@@ -61,17 +61,23 @@ foo.db.schema.Foo = function() {
   /** @private {!Array.<!lf.schema.Index>} */
   this.indices_;
 
+  /** @private {!Array.<!lf.schema.Column>} */
+  this.columns_ = [];
+
   /** @type {!lf.schema.BaseColumn.<string>} */
   this.id = new lf.schema.BaseColumn(
       this, 'id', false, lf.Type.STRING);
+  this.columns_.push(this.id);
 
   /** @type {!lf.schema.BaseColumn.<string>} */
   this.name = new lf.schema.BaseColumn(
       this, 'name', false, lf.Type.STRING);
+  this.columns_.push(this.name);
 
   /** @type {!lf.schema.BaseColumn.<string>} */
   this.bar = new lf.schema.BaseColumn(
       this, 'bar', true, lf.Type.STRING);
+  this.columns_.push(this.bar);
 
 };
 
@@ -104,6 +110,12 @@ foo.db.schema.Foo.prototype.getIndices = function() {
     ];
   }
   return this.indices_;
+};
+
+
+/** @override */
+foo.db.schema.Foo.prototype.getColumns = function() {
+  return this.columns_;
 };
 
 

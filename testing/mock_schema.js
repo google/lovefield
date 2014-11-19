@@ -162,6 +162,12 @@ Table_.prototype.deserializeRow = function(dbPayload) {
 
 
 /** @override */
+Table_.prototype.getColumns = function() {
+  return [this.id, this.name];
+};
+
+
+/** @override */
 Table_.prototype.getIndices = function() {
   var indices = [
     new lf.schema.Index(this.tableName_, 'pkId', true, false, ['id']),
@@ -230,6 +236,12 @@ TableWithNoIndex_.prototype.deserializeRow = function(dbPayload) {
 
 
 /** @override */
+TableWithNoIndex_.prototype.getColumns = function() {
+  return [this.id, this.name];
+};
+
+
+/** @override */
 TableWithNoIndex_.prototype.getIndices = function() {
   return [];
 };
@@ -278,6 +290,12 @@ TableWithUnique_.prototype.createRow = function(payload) {
 /** @override */
 TableWithUnique_.prototype.deserializeRow = function(dbPayload) {
   return lf.Row.deserialize(dbPayload);
+};
+
+
+/** @override */
+TableWithUnique_.prototype.getColumns = function() {
+  return [this.id, this.email];
 };
 
 

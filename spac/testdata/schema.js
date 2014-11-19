@@ -117,25 +117,33 @@ lovefield.db.schema.Album = function() {
   /** @private {!Array.<!lf.schema.Index>} */
   this.indices_;
 
+  /** @private {!Array.<!lf.schema.Column>} */
+  this.columns_ = [];
+
   /** @type {!lf.schema.BaseColumn.<string>} */
   this.id = new lf.schema.BaseColumn(
       this, 'id', true, lf.Type.STRING);
+  this.columns_.push(this.id);
 
   /** @type {!lf.schema.BaseColumn.<boolean>} */
   this.isLocal = new lf.schema.BaseColumn(
       this, 'isLocal', false, lf.Type.BOOLEAN);
+  this.columns_.push(this.isLocal);
 
   /** @type {!lf.schema.BaseColumn.<boolean>} */
   this.createdByAction = new lf.schema.BaseColumn(
       this, 'createdByAction', false, lf.Type.BOOLEAN);
+  this.columns_.push(this.createdByAction);
 
   /** @type {!lf.schema.BaseColumn.<!Date>} */
   this.timestamp = new lf.schema.BaseColumn(
       this, 'timestamp', false, lf.Type.DATE_TIME);
+  this.columns_.push(this.timestamp);
 
   /** @type {!lf.schema.BaseColumn.<!ArrayBuffer>} */
   this.tacotownJspb = new lf.schema.BaseColumn(
       this, 'tacotownJspb', false, lf.Type.ARRAY_BUFFER);
+  this.columns_.push(this.tacotownJspb);
 
 };
 
@@ -175,6 +183,12 @@ lovefield.db.schema.Album.prototype.getIndices = function() {
     ];
   }
   return this.indices_;
+};
+
+
+/** @override */
+lovefield.db.schema.Album.prototype.getColumns = function() {
+  return this.columns_;
 };
 
 
@@ -383,41 +397,53 @@ lovefield.db.schema.Photo = function() {
   /** @private {!Array.<!lf.schema.Index>} */
   this.indices_;
 
+  /** @private {!Array.<!lf.schema.Column>} */
+  this.columns_ = [];
+
   /** @type {!lf.schema.BaseColumn.<string>} */
   this.id = new lf.schema.BaseColumn(
       this, 'id', true, lf.Type.STRING);
+  this.columns_.push(this.id);
 
   /** @type {!lf.schema.BaseColumn.<string>} */
   this.imageHash = new lf.schema.BaseColumn(
       this, 'imageHash', false, lf.Type.STRING);
+  this.columns_.push(this.imageHash);
 
   /** @type {!lf.schema.BaseColumn.<boolean>} */
   this.isLocal = new lf.schema.BaseColumn(
       this, 'isLocal', false, lf.Type.BOOLEAN);
+  this.columns_.push(this.isLocal);
 
   /** @type {!lf.schema.BaseColumn.<boolean>} */
   this.createdByAction = new lf.schema.BaseColumn(
       this, 'createdByAction', false, lf.Type.BOOLEAN);
+  this.columns_.push(this.createdByAction);
 
   /** @type {!lf.schema.BaseColumn.<!Date>} */
   this.timestamp = new lf.schema.BaseColumn(
       this, 'timestamp', false, lf.Type.DATE_TIME);
+  this.columns_.push(this.timestamp);
 
   /** @type {!lf.schema.BaseColumn.<!Date>} */
   this.accessTimestamp = new lf.schema.BaseColumn(
       this, 'accessTimestamp', false, lf.Type.DATE_TIME);
+  this.columns_.push(this.accessTimestamp);
 
   /** @type {!lf.schema.BaseColumn.<string>} */
   this.albumId = new lf.schema.BaseColumn(
       this, 'albumId', false, lf.Type.STRING);
+  this.columns_.push(this.albumId);
 
   /** @type {!lf.schema.BaseColumn.<boolean>} */
   this.isCoverPhoto = new lf.schema.BaseColumn(
       this, 'isCoverPhoto', false, lf.Type.BOOLEAN);
+  this.columns_.push(this.isCoverPhoto);
 
   /** @type {!lf.schema.BaseColumn.<!ArrayBuffer>} */
   this.tacotownJspb = new lf.schema.BaseColumn(
       this, 'tacotownJspb', false, lf.Type.ARRAY_BUFFER);
+  this.columns_.push(this.tacotownJspb);
 
 };
 
@@ -461,6 +487,12 @@ lovefield.db.schema.Photo.prototype.getIndices = function() {
     ];
   }
   return this.indices_;
+};
+
+
+/** @override */
+lovefield.db.schema.Photo.prototype.getColumns = function() {
+  return this.columns_;
 };
 
 
@@ -759,17 +791,23 @@ lovefield.db.schema.Details = function() {
   /** @private {!Array.<!lf.schema.Index>} */
   this.indices_;
 
+  /** @private {!Array.<!lf.schema.Column>} */
+  this.columns_ = [];
+
   /** @type {!lf.schema.BaseColumn.<string>} */
   this.photoId = new lf.schema.BaseColumn(
       this, 'photoId', false, lf.Type.STRING);
+  this.columns_.push(this.photoId);
 
   /** @type {!lf.schema.BaseColumn.<string>} */
   this.albumId = new lf.schema.BaseColumn(
       this, 'albumId', false, lf.Type.STRING);
+  this.columns_.push(this.albumId);
 
   /** @type {!lf.schema.BaseColumn.<number>} */
   this.totalComments = new lf.schema.BaseColumn(
       this, 'totalComments', false, lf.Type.INTEGER);
+  this.columns_.push(this.totalComments);
 
 };
 
@@ -800,6 +838,12 @@ lovefield.db.schema.Details.prototype.getIndices = function() {
     ];
   }
   return this.indices_;
+};
+
+
+/** @override */
+lovefield.db.schema.Details.prototype.getColumns = function() {
+  return this.columns_;
 };
 
 
@@ -958,13 +1002,18 @@ lovefield.db.schema.Curator = function() {
   /** @private {!Array.<!lf.schema.Index>} */
   this.indices_;
 
+  /** @private {!Array.<!lf.schema.Column>} */
+  this.columns_ = [];
+
   /** @type {!lf.schema.BaseColumn.<number>} */
   this.id = new lf.schema.BaseColumn(
       this, 'id', true, lf.Type.INTEGER);
+  this.columns_.push(this.id);
 
   /** @type {!lf.schema.BaseColumn.<string>} */
   this.name = new lf.schema.BaseColumn(
       this, 'name', true, lf.Type.STRING);
+  this.columns_.push(this.name);
 
 };
 
@@ -996,6 +1045,12 @@ lovefield.db.schema.Curator.prototype.getIndices = function() {
     ];
   }
   return this.indices_;
+};
+
+
+/** @override */
+lovefield.db.schema.Curator.prototype.getColumns = function() {
+  return this.columns_;
 };
 
 
@@ -1136,17 +1191,23 @@ lovefield.db.schema.PhotoCurator = function() {
   /** @private {!Array.<!lf.schema.Index>} */
   this.indices_;
 
+  /** @private {!Array.<!lf.schema.Column>} */
+  this.columns_ = [];
+
   /** @type {!lf.schema.BaseColumn.<string>} */
   this.photoId = new lf.schema.BaseColumn(
       this, 'photoId', false, lf.Type.STRING);
+  this.columns_.push(this.photoId);
 
   /** @type {!lf.schema.BaseColumn.<number>} */
   this.curator = new lf.schema.BaseColumn(
       this, 'curator', false, lf.Type.INTEGER);
+  this.columns_.push(this.curator);
 
   /** @type {!lf.schema.BaseColumn.<string>} */
   this.topic = new lf.schema.BaseColumn(
       this, 'topic', true, lf.Type.STRING);
+  this.columns_.push(this.topic);
 
 };
 
@@ -1177,6 +1238,12 @@ lovefield.db.schema.PhotoCurator.prototype.getIndices = function() {
     ];
   }
   return this.indices_;
+};
+
+
+/** @override */
+lovefield.db.schema.PhotoCurator.prototype.getColumns = function() {
+  return this.columns_;
 };
 
 
