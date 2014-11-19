@@ -18,6 +18,8 @@ The design documents listed below are still working drafts and may change signif
 
 [6. Transaction Management](dd/06_tx.md)
 
-7. Indices
+[7. Indices](dd/07_indices.md)
 
 8. Data Binding
+
+9. Constraint Enforcement
