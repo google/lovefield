@@ -14,7 +14,7 @@ The design documents listed below are still working drafts and may change signif
 
 [4. Cache and Prefetcher](dd/04_cache.md)
 
-5. Query Builder
+[5. Query Engine](dd/05_query_engine.md)
 
 6. Transaction Management
 
