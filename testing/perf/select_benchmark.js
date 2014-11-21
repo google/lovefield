@@ -19,7 +19,6 @@ goog.provide('lf.testing.perf.SelectBenchmark');
 goog.require('goog.math');
 goog.require('lf.Order');
 goog.require('lf.fn');
-goog.require('lf.testing.hrSchema.MockDataGenerator');
 
 
 
@@ -28,8 +27,9 @@ goog.require('lf.testing.hrSchema.MockDataGenerator');
  * @constructor
  *
  * @param {!hr.db.Database} db
+ * @param {!lf.testing.hrSchema.MockDataGenerator} dataGenerator
  */
-lf.testing.perf.SelectBenchmark = function(db) {
+lf.testing.perf.SelectBenchmark = function(db, dataGenerator) {
   this.db_ = db;
 
   /** @private {!hr.db.schema.Employee} */
@@ -39,36 +39,20 @@ lf.testing.perf.SelectBenchmark = function(db) {
   this.j_ = this.db_.getSchema().getJob();
 
   /** @private {!lf.testing.hrSchema.MockDataGenerator} */
-  this.dataGenerator_ = new lf.testing.hrSchema.MockDataGenerator(
-      /** @type {!hr.db.schema.Database} */ (this.db_.getSchema()));
+  this.dataGenerator_ = dataGenerator;
 
-  this.dataGenerator_.generate(
-      lf.testing.perf.SelectBenchmark.JOB_COUNT_,
-      lf.testing.perf.SelectBenchmark.EMPLOYEE_COUNT_,
-      0 /* departmentCount */);
+  /**
+   * The number of expected results for all "range" and "spaced out" queries.
+   * This is necessary so that even though the data is randomly generated, the
+   * query returns the same amount of results each time, such that timings are
+   * comparable across runs.
+   * @private {number}
+   */
+  this.employeeResultCount_ = this.dataGenerator_.sampleEmployees.length / 10;
 
   /** @private {!lf.testing.perf.SelectBenchmark.QueryData_} */
   this.queryData_ = this.generateQueryData_();
 };
-
-
-/** @private {number} */
-lf.testing.perf.SelectBenchmark.EMPLOYEE_COUNT_ = 30000;
-
-
-/**
- * The number of expected results for all "range" and "spaced out" queries. This
- * is necessary so that even though the data is randomly generated, the query
- * returns the same amount of results each time, such that timings are
- * comparable across runs.
- * @private {number}
- */
-lf.testing.perf.SelectBenchmark.EMPLOYEE_RESULT_COUNT_ =
-    Math.floor(lf.testing.perf.SelectBenchmark.EMPLOYEE_COUNT_ / 10);
-
-
-/** @private {number} */
-lf.testing.perf.SelectBenchmark.JOB_COUNT_ = 102;
 
 
 /**
@@ -116,8 +100,8 @@ lf.testing.perf.SelectBenchmark.prototype.generateQueryData_ = function() {
   queryData.employeeSalariesSpacedOut = [];
   queryData.employeeHireDatesSpacedOut = [];
   var step = Math.floor(
-      lf.testing.perf.SelectBenchmark.EMPLOYEE_COUNT_ /
-      lf.testing.perf.SelectBenchmark.EMPLOYEE_RESULT_COUNT_);
+      this.dataGenerator_.sampleEmployees.length /
+      this.employeeResultCount_);
   for (var i = 0; i < sampleEmployees.length; i += step) {
     queryData.employeeSalariesSpacedOut.push(
         sampleEmployees[i].getSalary());
@@ -131,8 +115,7 @@ lf.testing.perf.SelectBenchmark.prototype.generateQueryData_ = function() {
   });
   var employee1Index = Math.floor(
       Math.random() * (sampleEmployees.length / 2));
-  var employee2Index = employee1Index +
-      lf.testing.perf.SelectBenchmark.EMPLOYEE_RESULT_COUNT_ - 1;
+  var employee2Index = employee1Index + this.employeeResultCount_ - 1;
   // Selecting hireDateStart and hireDateEnd such that the amount of results
   // falling within the range is EMPLOYEE_RESULT_COUNT_.
   queryData.employeeHireDateStart =
@@ -146,8 +129,7 @@ lf.testing.perf.SelectBenchmark.prototype.generateQueryData_ = function() {
   });
   employee1Index = Math.floor(
       Math.random() * (sampleEmployees.length / 2));
-  employee2Index = employee1Index +
-      lf.testing.perf.SelectBenchmark.EMPLOYEE_RESULT_COUNT_ - 1;
+  employee2Index = employee1Index + this.employeeResultCount_ - 1;
   // Selecting employeeSalaryStart and employeeSalaryEnd such that the amount of
   // results falling within the range is EMPLOYEE_RESULT_COUNT_.
   queryData.employeeSalaryStart =

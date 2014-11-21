@@ -16,10 +16,12 @@
  */
 goog.setTestOnly();
 goog.require('goog.Promise');
+goog.require('goog.net.XhrIo');
 goog.require('goog.testing.AsyncTestCase');
 goog.require('goog.testing.jsunit');
 goog.require('hr.db');
 goog.require('lf.testing.Benchmark');
+goog.require('lf.testing.hrSchema.MockDataGenerator');
 goog.require('lf.testing.perf.DefaultBenchmark');
 goog.require('lf.testing.perf.SelectBenchmark');
 
@@ -171,7 +173,11 @@ function test4Select() {
     return hr.db.getInstance();
   }).then(function(database) {
     db = database;
-    selectBenchmark = new lf.testing.perf.SelectBenchmark(db);
+    return loadSampleDatafromJson('test4_mock_data_30k.json');
+  }).then(function(sampleData) {
+    var dataGenerator = lf.testing.hrSchema.MockDataGenerator.
+        fromExportData(db.getSchema(), sampleData);
+    selectBenchmark = new lf.testing.perf.SelectBenchmark(db, dataGenerator);
     return selectBenchmark.insertSampleData();
   }).then(function() {
     var benchmarkRunner = new lf.testing.Benchmark('SelectBenchmark');
@@ -259,4 +265,20 @@ function test5LoadingPopulatedDB() {
   benchmark.run(REPETITIONS).then(function() {
     asyncTestCase.continueTesting();
   }, fail);
+}
+
+
+/**
+ * Reads the sample data from a JSON file.
+ * @param {string} filename The name of the JSON file holding the data. Has to
+ *     reside in the same folder as this test.
+ * @return {!IThenable}
+ */
+function loadSampleDatafromJson(filename) {
+  return new goog.Promise(function(resolve, reject) {
+    goog.net.XhrIo.send(filename, function(e) {
+      var xhr = e.target;
+      resolve(JSON.parse(xhr.getResponseText()));
+    });
+  });
 }
