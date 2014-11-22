@@ -18,7 +18,9 @@ goog.setTestOnly();
 goog.provide('lf.testing.perf.DefaultBenchmark');
 
 goog.require('goog.Promise');
+goog.require('goog.net.XhrIo');
 goog.require('hr.db');
+goog.require('lf.Row');
 goog.require('lf.testing.hrSchema.EmployeeDataGenerator');
 
 
@@ -76,6 +78,29 @@ lf.testing.perf.DefaultBenchmark.prototype.generateTestData = function() {
     this.data_[i].setSalary(30000 + i);
   }
   return goog.Promise.resolve();
+};
+
+
+/**
+ * @param {string} filename The filename of the JSON file holding the raw data.
+ * @return {!IThenable}
+ */
+lf.testing.perf.DefaultBenchmark.prototype.loadTestData = function(filename) {
+  var employeeSchema = this.e_;
+
+  return new goog.Promise(goog.bind(function(resolve, reject) {
+    goog.net.XhrIo.send(filename, goog.bind(function(e) {
+      var xhr = e.target;
+      var rawData = JSON.parse(xhr.getResponseText());
+      this.data_ = rawData.map(function(obj) {
+        return employeeSchema.deserializeRow({
+          'id': lf.Row.getNextId(),
+          'value': obj
+        });
+      });
+      resolve();
+    }, this));
+  }, this));
 };
 
 

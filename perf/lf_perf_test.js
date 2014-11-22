@@ -84,8 +84,10 @@ function test2FullTableOps() {
       goog.bind(test2.init, test2),
       goog.bind(test2.validateEmpty, test2), true);
   benchmark.schedule(
-      'Generate test data',
-      goog.bind(test2.generateTestData, test2), undefined, true);
+      'Load test data',
+      goog.bind(
+          test2.loadTestData, test2,
+          'default_benchmark_mock_data_50k.json'), undefined, true);
   for (var i = 10000; i <= 50000; i += 10000) {
     benchmark.schedule(
         'Insert ' + i,
@@ -124,8 +126,10 @@ function test3PKTableOps() {
       goog.bind(test3.init, test3),
       goog.bind(test3.validateEmpty, test3), true);
   benchmark.schedule(
-      'Generate test data',
-      goog.bind(test3.generateTestData, test3), undefined, true);
+      'Load test data',
+      goog.bind(
+          test3.loadTestData, test3,
+          'default_benchmark_mock_data_50k.json'), undefined, true);
   for (var i = 1; i <= 10000; i *= 10) {
     // Each repetition needs to insert 30000 rows.
     benchmark.schedule(
@@ -253,7 +257,7 @@ function test5LoadingPopulatedDB() {
     }).then(function() {
       return test.init();
     }).then(function() {
-      return test.generateTestData();
+      return test.loadTestData('default_benchmark_mock_data_50k.json');
     }).then(function() {
       return test.insert(rowCount);
     });
