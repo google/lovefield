@@ -69,13 +69,6 @@ describe('Generator Test', function() {
         codegen.generate('db.js', codeTemplate));
   });
 
-  it('should generate transaction.js', function() {
-    var codeTemplate = fs.readFileSync(template['transaction.jstemplate']);
-    var expected = fs.readFileSync(testdata['transaction.js']);
-    expect(expected.toString()).toEqual(
-        codegen.generate('transaction.js', codeTemplate));
-  });
-
   it('should generate schema.js', function() {
     var codeTemplate = fs.readFileSync(template['schema.jstemplate']);
     var expected = fs.readFileSync(testdata['schema.js']);

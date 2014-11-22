@@ -4,7 +4,6 @@ goog.provide('#namespace.Database');
 /// #sortend
 
 /// #sort
-goog.require('#namespace.Transaction');
 goog.require('#namespace.schema.Database');
 goog.require('lf.Database');
 goog.require('lf.Exception');
@@ -14,6 +13,7 @@ goog.require('lf.base.BackStoreType');
 goog.require('lf.fn');
 /** @suppress {extraRequire} */
 goog.require('lf.op');
+goog.require('lf.proc.Transaction');
 /** @suppress {extraRequire} */
 goog.require('lf.query');
 goog.require('lf.query.DeleteBuilder');
@@ -128,7 +128,7 @@ goog.require('lf.query.UpdateBuilder');
 /** @override */
 #namespace.Database.prototype.createTransaction = function(opt_type) {
   this.checkInit_();
-  return new #namespace.Transaction();
+  return new lf.proc.Transaction();
 };
 
 
