@@ -10,7 +10,7 @@ https://www.sqlite.org/lang.html).
 
 | SQLite             | Lovefield                                              |
 |--------------------|--------------------------------------------------------|
-|`EXPLAN`            |`explain`, but the information provided is not as rich. |
+|`EXPLAIN`           |`explain`, but the information provided is not as rich. |
 |Aggregate Functions |Supports everything except `group_concat`.              |
 |Simple Functions    |See [SQL Simple Functions](#sql-simple-functions).      |
 |`ANALYZE`           |*Not implemented.*                                      |
@@ -59,7 +59,7 @@ operators to achieve most functionalities provided by SQL expressions.
 | SQLite operators   | Lovefield                                              |
 |--------------------|--------------------------------------------------------|
 |`||`                |Piggy back on JavaScript to concatenate strings.        |
-|`* / % + -`         |Piggy back on JavaScript for arithematic operations.    |
+|`* / % + -`         |Piggy back on JavaScript for arithmetic operations.     |
 |`<`                 |`<column>.lt`                                           |
 |`<=`                |`<column>.lte`                                          |
 |`>`                 |`<column>.gt`                                           |

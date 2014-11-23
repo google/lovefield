@@ -775,7 +775,7 @@ CodeGenerator.columnTypeToJsType_ = function(columnType, isNullable) {
 
 
 /**
- * Converts a column type to a string representing an lf.Type enumaration.
+ * Converts a column type to a string representing an lf.Type enumeration.
  * @param {string} columnType The type to be converted. Must be a value that
  *     exists in VALID_COLUMN_TYPE.
  * @return {string}
