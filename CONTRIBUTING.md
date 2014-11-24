@@ -21,6 +21,14 @@ frustration later on.
 All submissions, including submissions by project members, require review. We
 use Github pull requests for this purpose.
 
+Oftentimes, the pull request will not be directly merged, but patched to the
+internal Google codebase to verify that unit and integration tests will pass
+before submitting (and optionally make changes to the patch to match style, fix
+text, or to make the code or comments clearer). In this case, the issue
+associated with the pull request will be closed when the patch pushed to the
+repository via the MOE (Make Open Easy) system,
+https://code.google.com/p/moe-java/.
+
 ### The small print
 Contributions made by corporations are covered by a different agreement than
 the one above, the Software Grant and Corporate Contributor License Agreement.
