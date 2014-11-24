@@ -9,13 +9,13 @@ goog.require('lf.base.BackStoreType');
 goog.require('lf.fn');
 /** @suppress {extraRequire} */
 goog.require('lf.op');
-goog.require('lf.proc.Transaction');
 /** @suppress {extraRequire} */
 goog.require('lf.query');
 goog.require('lf.query.DeleteBuilder');
 goog.require('lf.query.InsertBuilder');
 goog.require('lf.query.SelectBuilder');
 goog.require('lf.query.UpdateBuilder');
+goog.require('lovefield.db.Transaction');
 goog.require('lovefield.db.schema.Database');
 
 
@@ -124,7 +124,7 @@ lovefield.db.Database.prototype.delete = function() {
 /** @override */
 lovefield.db.Database.prototype.createTransaction = function(opt_type) {
   this.checkInit_();
-  return new lf.proc.Transaction();
+  return new lovefield.db.Transaction();
 };
 
 
