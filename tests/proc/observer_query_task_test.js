@@ -30,7 +30,7 @@ var asyncTestCase = goog.testing.AsyncTestCase.createAndInstall(
     'ObserverTaskTest');
 
 
-/** @type {!hr.db.Database} */
+/** @type {!lf.Database} */
 var db;
 
 

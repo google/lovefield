@@ -29,7 +29,7 @@ var asyncTestCase = goog.testing.AsyncTestCase.createAndInstall(
     'CombinedPredicate');
 
 
-/** @type {!hr.db.Database} */
+/** @type {!lf.Database} */
 var db;
 
 

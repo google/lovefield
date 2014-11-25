@@ -36,7 +36,7 @@ var asyncTestCase = goog.testing.AsyncTestCase.createAndInstall(
     'UserQueryTaskTest');
 
 
-/** @type {!hr.db.Database} */
+/** @type {!lf.Database} */
 var db;
 
 

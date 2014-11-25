@@ -39,7 +39,7 @@ var asyncTestCase = goog.testing.AsyncTestCase.createAndInstall(
 asyncTestCase.stepTimeout = 5 * 1000;  // 5 seconds
 
 
-/** @private {!hr.db.Database} */
+/** @private {!lf.Database} */
 var db;
 
 

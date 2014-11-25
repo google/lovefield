@@ -32,7 +32,7 @@ var asyncTestCase =
     goog.testing.AsyncTestCase.createAndInstall('ConversionTest');
 
 
-/** @type {!hr.db.Database} */
+/** @type {!lf.Database} */
 var db;
 
 

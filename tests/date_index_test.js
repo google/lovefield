@@ -26,7 +26,7 @@ var asyncTestCase =
     goog.testing.AsyncTestCase.createAndInstall('DateIndexTest');
 
 
-/** @type {!hr.db.Database} */
+/** @type {!lf.Database} */
 var db;
 
 

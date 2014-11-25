@@ -71,7 +71,7 @@ function setUp() {
 
 /**
  * Generates sample job data.
- * @param {!hr.db.Database} db The db connection.
+ * @param {!lf.Database} db The db connection.
  */
 function generateSampleJobData(db) {
   var schema = /** @type {!hr.db.schema.Database} */ (db.getSchema());

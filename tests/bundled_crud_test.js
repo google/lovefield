@@ -31,7 +31,7 @@ var asyncTestCase =
     goog.testing.AsyncTestCase.createAndInstall('CRUDTestBundled');
 
 
-/** @type {!hr.bdb.Database} */
+/** @type {!lf.Database} */
 var db;
 
 

@@ -25,7 +25,7 @@ goog.require('lf.query.DeleteBuilder');
 var asyncTestCase = goog.testing.AsyncTestCase.createAndInstall('Delete');
 
 
-/** @type {!hr.db.Database} */
+/** @type {!lf.Database} */
 var db;
 
 

@@ -32,7 +32,7 @@ goog.require('lf.testing.hrSchema.EmployeeDataGenerator');
  * @final
  */
 lf.testing.perf.DefaultBenchmark = function() {
-  /** @private {!hr.db.Database} */
+  /** @private {!lf.Database} */
   this.db_;
 
   /** @private {!hr.db.schema.Employee} */

@@ -29,7 +29,7 @@ goog.require('lf.query.SelectBuilder');
 var asyncTestCase = goog.testing.AsyncTestCase.createAndInstall('Select');
 
 
-/** @type {!hr.db.Database} */
+/** @type {!lf.Database} */
 var db;
 
 

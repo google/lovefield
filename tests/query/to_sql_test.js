@@ -26,7 +26,7 @@ goog.require('lf.testing.hrSchemaSampleData');
 var asyncTestCase = goog.testing.AsyncTestCase.createAndInstall('toSql');
 
 
-/** @type {!hr.db.Database} */
+/** @type {!lf.Database} */
 var db;
 
 

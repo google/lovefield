@@ -30,7 +30,7 @@ goog.require('lf.service');
 var asyncTestCase = goog.testing.AsyncTestCase.createAndInstall('CRUDTest');
 
 
-/** @type {!hr.db.Database} */
+/** @type {!lf.Database} */
 var db;
 
 

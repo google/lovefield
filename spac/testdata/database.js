@@ -1,135 +1,37 @@
 goog.provide('lovefield.db');
-goog.provide('lovefield.db.Database');
 
-goog.require('lf.Database');
-goog.require('lf.Exception');
-goog.require('lf.base');
+goog.require('lf.Global');
 goog.require('lf.base.BackStoreType');
 /** @suppress {extraRequire} */
 goog.require('lf.fn');
 /** @suppress {extraRequire} */
 goog.require('lf.op');
-goog.require('lf.proc.Transaction');
+goog.require('lf.proc.Database');
 /** @suppress {extraRequire} */
 goog.require('lf.query');
-goog.require('lf.query.DeleteBuilder');
-goog.require('lf.query.InsertBuilder');
-goog.require('lf.query.SelectBuilder');
-goog.require('lf.query.UpdateBuilder');
+goog.require('lf.service');
 goog.require('lovefield.db.schema.Database');
+
+
+/** @return {!lf.schema.Database} */
+lovefield.db.getSchema = function() {
+  var global = lf.Global.get();
+  if (!global.isRegistered(lf.service.SCHEMA)) {
+    var schema = new lovefield.db.schema.Database();
+    global.registerService(lf.service.SCHEMA, schema);
+  }
+  return global.getService(lf.service.SCHEMA);
+};
 
 
 /**
  * @param {!function(!lf.raw.BackStore):!IThenable=} opt_onUpgrade
  * @param {boolean=} opt_volatile Default to false
- * @return {!IThenable.<!lovefield.db.Database>}
+ * @return {!IThenable.<!lf.proc.Database>}
  */
 lovefield.db.getInstance = function(opt_onUpgrade, opt_volatile) {
-  var db = new lovefield.db.Database();
+  var db = new lf.proc.Database(lovefield.db.getSchema());
   return db.init(
       opt_onUpgrade,
       opt_volatile ? lf.base.BackStoreType.MEMORY : undefined);
-};
-
-
-
-/**
- * @implements {lf.Database}
- * @constructor
- */
-lovefield.db.Database = function() {
-  /** @private {!lf.schema.Database} */
-  this.schema_ = new lovefield.db.schema.Database();
-
-  /** @private {boolean} */
-  this.initialized_ = false;
-};
-
-
-/**
- * @param {!function(!lf.raw.BackStore):!IThenable=} opt_onUpgrade
- * @param {lf.base.BackStoreType=} opt_backStoreType
- * @return {!IThenable.<!lovefield.db.Database>}
- */
-lovefield.db.Database.prototype.init = function(
-    opt_onUpgrade, opt_backStoreType) {
-  return /** @type  {!IThenable.<!lovefield.db.Database>} */ (
-      lf.base.init(
-          this.schema_,
-          opt_backStoreType || lf.base.BackStoreType.INDEXED_DB,
-          opt_onUpgrade,
-          false).then(goog.bind(function() {
-        this.initialized_ = true;
-        return this;
-      }, this)));
-};
-
-
-/** @override */
-lovefield.db.Database.prototype.getSchema = function() {
-  return this.schema_;
-};
-
-
-/** @private */
-lovefield.db.Database.prototype.checkInit_ = function() {
-  if (!this.initialized_) {
-    throw new lf.Exception(lf.Exception.Type.UNINITIALIZED,
-        'Database is not initialized');
-  }
-};
-
-
-/**
- * @param {...lf.schema.Column} var_args
- * @override
- */
-lovefield.db.Database.prototype.select = function(var_args) {
-  this.checkInit_();
-  var columns =
-      arguments.length == 1 && !goog.isDefAndNotNull(arguments[0]) ?
-      [] : Array.prototype.slice.call(arguments);
-  return new lf.query.SelectBuilder(columns);
-};
-
-
-/** @override */
-lovefield.db.Database.prototype.insert = function() {
-  this.checkInit_();
-  return new lf.query.InsertBuilder();
-};
-
-
-/** @override */
-lovefield.db.Database.prototype.insertOrReplace = function() {
-  this.checkInit_();
-  return new lf.query.InsertBuilder(/* allowReplace */ true);
-};
-
-
-/** @override */
-lovefield.db.Database.prototype.update = function(table) {
-  this.checkInit_();
-  return new lf.query.UpdateBuilder(table);
-};
-
-
-/** @override */
-lovefield.db.Database.prototype.delete = function() {
-  this.checkInit_();
-  return new lf.query.DeleteBuilder();
-};
-
-
-/** @override */
-lovefield.db.Database.prototype.createTransaction = function(opt_type) {
-  this.checkInit_();
-  return new lf.proc.Transaction();
-};
-
-
-/** @override */
-lovefield.db.Database.prototype.close = function() {
-  lf.base.closeDatabase(this.schema_);
-  this.initialized_ = false;
 };

@@ -26,7 +26,7 @@ goog.require('lf.fn');
  * Benchmark for various types of SELECT queries.
  * @constructor
  *
- * @param {!hr.db.Database} db
+ * @param {!lf.Database} db
  * @param {!lf.testing.hrSchema.MockDataGenerator} dataGenerator
  */
 lf.testing.perf.SelectBenchmark = function(db, dataGenerator) {

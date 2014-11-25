@@ -34,7 +34,7 @@ var asyncTestCase = goog.testing.AsyncTestCase.createAndInstall(
     'EndToEndSelectTest');
 
 
-/** @private {!hr.db.Database} */
+/** @private {!lf.Database} */
 var db;
 
 

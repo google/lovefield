@@ -27,7 +27,7 @@ var asyncTestCase =
     goog.testing.AsyncTestCase.createAndInstall('NullPredicateTest');
 
 
-/** @type {!hr.db.Database} */
+/** @type {!lf.Database} */
 var db;
 
 

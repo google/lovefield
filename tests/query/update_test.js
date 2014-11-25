@@ -26,7 +26,7 @@ goog.require('lf.query.UpdateBuilder');
 var asyncTestCase = goog.testing.AsyncTestCase.createAndInstall('Update');
 
 
-/** @type {!hr.db.Database} */
+/** @type {!lf.Database} */
 var db;
 
 

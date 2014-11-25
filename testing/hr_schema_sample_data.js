@@ -20,7 +20,7 @@ goog.provide('lf.testing.hrSchemaSampleData');
 
 /**
  * Generates a sample Employee record to be used for testing.
- * @param {!hr.db.Database} db
+ * @param {!lf.Database} db
  * @return {!hr.db.row.Employee}
  */
 lf.testing.hrSchemaSampleData.generateSampleEmployeeData = function(db) {
@@ -50,7 +50,7 @@ lf.testing.hrSchemaSampleData.generateSampleEmployeeData = function(db) {
 
 /**
  * Generates a sample Job record to be used for testing.
- * @param {!hr.db.Database} db
+ * @param {!lf.Database} db
  * @return {!hr.db.row.Job}
  */
 lf.testing.hrSchemaSampleData.generateSampleJobData = function(db) {
@@ -65,7 +65,7 @@ lf.testing.hrSchemaSampleData.generateSampleJobData = function(db) {
 
 /**
  * Generates a sample Department record to be used for testing.
- * @param {!hr.db.Database} db
+ * @param {!lf.Database} db
  * @return {!hr.db.row.Department}
  */
 lf.testing.hrSchemaSampleData.generateSampleDepartmentData = function(db) {
@@ -80,7 +80,7 @@ lf.testing.hrSchemaSampleData.generateSampleDepartmentData = function(db) {
 
 /**
  * Generates a sample JobHistory record to be used for testing.
- * @param {!hr.db.Database} db
+ * @param {!lf.Database} db
  * @return {!hr.db.row.JobHistory}
  */
 lf.testing.hrSchemaSampleData.generateSampleJobHistoryData = function(db) {

@@ -28,7 +28,7 @@ var asyncTestCase =
     goog.testing.AsyncTestCase.createAndInstall('NotOperatorTest');
 
 
-/** @type {!hr.db.Database} */
+/** @type {!lf.Database} */
 var db;
 
 

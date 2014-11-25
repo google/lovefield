@@ -29,7 +29,7 @@ goog.require('lf.testing.MockTask');
 var asyncTestCase = goog.testing.AsyncTestCase.createAndInstall('RunnerTest');
 
 
-/** @type {!hr.db.Database} */
+/** @type {!lf.Database} */
 var db;
 
 
