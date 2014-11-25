@@ -115,6 +115,7 @@ function testSetField_WithAlias() {
     var field1 = 'HelloWorld';
     entry.setField(col, field1);
     assertEquals(field1, entry.row.payload()[col.getAlias()]);
+    assertEquals(field1, entry.getField(col));
   });
 }
 
