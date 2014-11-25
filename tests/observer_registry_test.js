@@ -42,7 +42,6 @@ function setUp() {
 
   var env = new lf.testing.MockEnv();
   env.init().then(function() {
-    // TODO(dpapad): Get the registry here.
     registry = env.observerRegistry;
     schema = env.schema;
     asyncTestCase.continueTesting();
@@ -63,14 +62,15 @@ function testAddObserver() {
 
   asyncTestCase.waitForAsync('testObserve');
 
+  var table = schema.getTables()[0];
   var builder = new lf.query.SelectBuilder([]);
+  builder.from(table);
 
   var callback = function() {
     asyncTestCase.continueTesting();
   };
 
   registry.addObserver(builder, callback);
-  var table = schema.getTables()[0];
   var row = table.createRow({ 'id': 'dummyId', 'value': 'dummyValue'});
   var newResults = lf.proc.Relation.fromRows([row], [table.getName()]);
   assertTrue(registry.updateResultsForQuery(builder.getQuery(), newResults));
