@@ -59,7 +59,7 @@ lf.testing.MockEnv = function() {
   this.evalRegistry = new lf.eval.Registry();
 
   /** @type {!lf.ObserverRegistry} */
-  this.observerRegistry = new lf.ObserverRegistry();
+  this.observerRegistry;
 };
 
 
@@ -73,6 +73,8 @@ lf.testing.MockEnv.prototype.init = function() {
     global.registerService(lf.service.CACHE, this.cache);
     global.registerService(lf.service.INDEX_STORE, this.indexStore);
     global.registerService(lf.service.EVAL_REGISTRY, this.evalRegistry);
+
+    this.observerRegistry = new lf.ObserverRegistry(global);
     global.registerService(lf.service.OBSERVER_REGISTRY, this.observerRegistry);
     return this.indexStore.init(this.schema);
   }, this));

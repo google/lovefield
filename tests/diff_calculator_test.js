@@ -20,6 +20,7 @@ goog.require('goog.testing.AsyncTestCase');
 goog.require('goog.testing.jsunit');
 goog.require('goog.userAgent.product');
 goog.require('lf.DiffCalculator');
+goog.require('lf.Global');
 goog.require('lf.proc.Relation');
 goog.require('lf.query.SelectBuilder');
 goog.require('lf.testing.MockEnv');
@@ -171,7 +172,8 @@ function performMutations(rowsPerVersion, query, callback) {
   var currentVersion = -1;
   var observable = [];
   var oldResults = lf.proc.Relation.createEmpty();
-  var diffCalculator = new lf.DiffCalculator(query, observable);
+  var diffCalculator = new lf.DiffCalculator(
+      lf.Global.get(), query, observable);
 
   /**
    * Updates the observed results to the next version, which should trigger the
