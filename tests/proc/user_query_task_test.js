@@ -105,7 +105,8 @@ function testSinglePlan_Insert() {
   asyncTestCase.waitForAsync('testSinglePlan_Insert');
   assertEquals(0, cache.getCount());
 
-  var queryTask = new lf.proc.UserQueryTask([getSampleQuery()]);
+  var queryTask = new lf.proc.UserQueryTask(
+      lf.Global.get(), [getSampleQuery()]);
   queryTask.exec().then(function() {
     return selectAll();
   }).then(function(results) {
@@ -128,12 +129,14 @@ function testSinglePlan_Update() {
   assertEquals(0, cache.getCount());
 
   var newTitle = 'Quantum Physicist';
-  var queryTask = new lf.proc.UserQueryTask([getSampleQuery()]);
+  var queryTask = new lf.proc.UserQueryTask(
+      lf.Global.get(), [getSampleQuery()]);
   queryTask.exec().then(function() {
     assertEquals(ROW_COUNT, cache.getCount());
     var query = /** @type {!lf.query.UpdateBuilder} */ (
         db.update(j).set(j.title, newTitle)).query;
-    var updateQueryTask = new lf.proc.UserQueryTask([query]);
+    var updateQueryTask = new lf.proc.UserQueryTask(
+        lf.Global.get(), [query]);
     return updateQueryTask.exec();
   }).then(function() {
     return selectAll();
@@ -157,12 +160,14 @@ function testSinglePlan_Delete() {
   asyncTestCase.waitForAsync('testSinglePlan_Delete');
   assertEquals(0, cache.getCount());
 
-  var queryTask = new lf.proc.UserQueryTask([getSampleQuery()]);
+  var queryTask = new lf.proc.UserQueryTask(
+      lf.Global.get(), [getSampleQuery()]);
   queryTask.exec().then(function() {
     assertEquals(ROW_COUNT, cache.getCount());
     var query = /** @type {!lf.query.DeleteBuilder} */ (
         db.delete().from(j)).query;
-    var deleteQueryTask = new lf.proc.UserQueryTask([query]);
+    var deleteQueryTask = new lf.proc.UserQueryTask(
+        lf.Global.get(), [query]);
     return deleteQueryTask.exec();
   }).then(function() {
     return selectAll();
@@ -200,7 +205,7 @@ function testMultiPlan() {
       db.delete().from(j).where(j.id.eq(deletedId))).getQuery();
 
   var queryTask = new lf.proc.UserQueryTask(
-      [insertQuery, updateQuery, removeQuery]);
+      lf.Global.get(), [insertQuery, updateQuery, removeQuery]);
 
   queryTask.exec().then(function() {
     assertEquals(ROW_COUNT - 1, cache.getCount());
@@ -236,7 +241,7 @@ function testMultiPlan_Rollback() {
       db.insert().into(j).values([job])).getQuery();
 
   var queryTask = new lf.proc.UserQueryTask(
-      [insertQuery, insertAgainQuery]);
+      lf.Global.get(), [insertQuery, insertAgainQuery]);
   queryTask.exec().then(
       fail,
       function(e) {
@@ -279,7 +284,8 @@ function testSinglePlan_ParametrizedQuery() {
     asyncTestCase.continueTesting();
   };
 
-  var insertQueryTask = new lf.proc.UserQueryTask([getSampleQuery()]);
+  var insertQueryTask = new lf.proc.UserQueryTask(
+      lf.Global.get(), [getSampleQuery()]);
 
   insertQueryTask.exec().then(function() {
     // Start observing.
@@ -289,7 +295,7 @@ function testSinglePlan_ParametrizedQuery() {
     selectQueryBuilder.bind(['jobId2', 'jobId4']);
 
     var selectQueryTask = new lf.proc.UserQueryTask(
-        [selectQueryBuilder.getQuery()]);
+        lf.Global.get(), [selectQueryBuilder.getQuery()]);
     return selectQueryTask.exec();
   }, fail);
 }

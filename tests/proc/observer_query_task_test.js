@@ -20,6 +20,7 @@ goog.require('goog.testing.AsyncTestCase');
 goog.require('goog.testing.jsunit');
 goog.require('goog.userAgent.product');
 goog.require('hr.db');
+goog.require('lf.Global');
 goog.require('lf.proc.ObserverQueryTask');
 goog.require('lf.query');
 goog.require('lf.testing.hrSchemaSampleData');
@@ -106,7 +107,8 @@ function testExec() {
   insertSampleJobs().then(function() {
     // Start observing.
     lf.query.observe(selectQuery, observerCallback);
-    var observerTask = new lf.proc.ObserverQueryTask([selectQuery.getQuery()]);
+    var observerTask = new lf.proc.ObserverQueryTask(
+        lf.Global.get(), [selectQuery.getQuery()]);
     return observerTask.exec();
   }, fail);
 }
