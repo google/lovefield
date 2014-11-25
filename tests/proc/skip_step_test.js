@@ -17,6 +17,7 @@
 goog.setTestOnly();
 goog.require('goog.testing.AsyncTestCase');
 goog.require('goog.testing.jsunit');
+goog.require('lf.Global');
 goog.require('lf.Row');
 goog.require('lf.cache.Journal');
 goog.require('lf.proc.Relation');
@@ -70,7 +71,7 @@ function checkExec(sampleDataCount, skip) {
   var step = new lf.proc.SkipStep(skip);
   step.addChild(childStep);
 
-  var journal = new lf.cache.Journal([]);
+  var journal = new lf.cache.Journal(lf.Global.get(), []);
   step.exec(journal).then(function(relation) {
     var expectedResults = Math.max(sampleDataCount - skip, 0);
     assertEquals(expectedResults, relation.entries.length);

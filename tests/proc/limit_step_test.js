@@ -17,6 +17,7 @@
 goog.setTestOnly();
 goog.require('goog.testing.AsyncTestCase');
 goog.require('goog.testing.jsunit');
+goog.require('lf.Global');
 goog.require('lf.Row');
 goog.require('lf.cache.Journal');
 goog.require('lf.proc.LimitStep');
@@ -70,7 +71,7 @@ function checkExec(sampleDataCount, limit) {
   var step = new lf.proc.LimitStep(limit);
   step.addChild(childStep);
 
-  var journal = new lf.cache.Journal([]);
+  var journal = new lf.cache.Journal(lf.Global.get(), []);
   step.exec(journal).then(function(relation) {
     assertEquals(
         Math.min(limit, sampleDataCount),

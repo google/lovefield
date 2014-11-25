@@ -17,6 +17,7 @@
 goog.setTestOnly();
 goog.require('goog.testing.AsyncTestCase');
 goog.require('goog.testing.jsunit');
+goog.require('lf.Global');
 goog.require('lf.cache.Journal');
 goog.require('lf.proc.CrossProductStep');
 goog.require('lf.proc.Relation');
@@ -80,7 +81,7 @@ function testCrossProduct() {
   step.addChild(leftChild);
   step.addChild(rightChild);
 
-  var journal = new lf.cache.Journal([]);
+  var journal = new lf.cache.Journal(lf.Global.get(), []);
   step.exec(journal).then(function(relation) {
     assertEquals(leftRowCount * rightRowCount, relation.entries.length);
     relation.entries.forEach(function(entry) {
@@ -148,7 +149,7 @@ function testCrossProduct_PreviousJoins() {
   crossProductStep123.addChild(crossProductStep12);
   crossProductStep123.addChild(relation3Step);
 
-  var journal = new lf.cache.Journal([]);
+  var journal = new lf.cache.Journal(lf.Global.get(), []);
   crossProductStep123.exec(journal).then(function(result) {
     // Expecting the final result to be a cross product of all 3 tables.
     assertEquals(

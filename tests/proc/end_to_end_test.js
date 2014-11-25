@@ -291,7 +291,7 @@ function testDelete_All() {
 function selectAll() {
   var tx = backStore.createTx(
       lf.TransactionType.READ_ONLY,
-      new lf.cache.Journal([j]));
+      new lf.cache.Journal(lf.Global.get(), [j]));
   var table = tx.getTable(j);
   return table.get([]);
 }

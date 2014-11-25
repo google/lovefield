@@ -67,7 +67,7 @@ function tearDown() {
       function(table) {
         var tx = db.createTx(
             lf.TransactionType.READ_WRITE,
-            new lf.cache.Journal([table]));
+            new lf.cache.Journal(lf.Global.get(), [table]));
         var store = /** @type {!lf.backstore.ObjectStore} */ (
             tx.getTable(table));
 
@@ -97,7 +97,7 @@ function runSCUDTest() {
   return db.init().then(function() {
     var tx = db.createTx(
         lf.TransactionType.READ_WRITE,
-        new lf.cache.Journal([table]));
+        new lf.cache.Journal(lf.Global.get(), [table]));
     var store = /** @type {!lf.backstore.ObjectStore} */ (
         tx.getTable(table));
 
@@ -107,7 +107,7 @@ function runSCUDTest() {
   }).then(function() {
     var tx = db.createTx(
         lf.TransactionType.READ_ONLY,
-        new lf.cache.Journal([table]));
+        new lf.cache.Journal(lf.Global.get(), [table]));
     var store = /** @type {!lf.backstore.ObjectStore} */ (
         tx.getTable(table));
 
@@ -120,7 +120,7 @@ function runSCUDTest() {
 
     var tx = db.createTx(
         lf.TransactionType.READ_WRITE,
-        new lf.cache.Journal([table]));
+        new lf.cache.Journal(lf.Global.get(), [table]));
     var store = /** @type {!lf.backstore.ObjectStore} */ (
         tx.getTable(table));
 
@@ -141,7 +141,7 @@ function runSCUDTest() {
 
     var tx = db.createTx(
         lf.TransactionType.READ_WRITE,
-        new lf.cache.Journal([table]));
+        new lf.cache.Journal(lf.Global.get(), [table]));
     var store = /** @type {!lf.backstore.ObjectStore} */ (
         tx.getTable(table));
 
@@ -157,7 +157,7 @@ function runSCUDTest() {
 
     var tx = db.createTx(
         lf.TransactionType.READ_WRITE,
-        new lf.cache.Journal([table]));
+        new lf.cache.Journal(lf.Global.get(), [table]));
     var store = /** @type {!lf.backstore.ObjectStore} */ (
         tx.getTable(table));
 
@@ -210,7 +210,7 @@ function testTwoTableInserts_Bundled() {
   return db.init().then(function() {
     var tx = db.createTx(
         lf.TransactionType.READ_WRITE,
-        new lf.cache.Journal([tableA]));
+        new lf.cache.Journal(lf.Global.get(), [tableA]));
     var store = /** @type {!lf.backstore.ObjectStore} */ (
         tx.getTable(tableA));
 
@@ -220,7 +220,7 @@ function testTwoTableInserts_Bundled() {
   }).then(function() {
     var tx = db.createTx(
         lf.TransactionType.READ_WRITE,
-        new lf.cache.Journal([tableB]));
+        new lf.cache.Journal(lf.Global.get(), [tableB]));
     var store = /** @type {!lf.backstore.ObjectStore} */ (
         tx.getTable(tableB));
 
@@ -230,7 +230,7 @@ function testTwoTableInserts_Bundled() {
   }).then(function() {
     var tx = db.createTx(
         lf.TransactionType.READ_ONLY,
-        new lf.cache.Journal([tableB]));
+        new lf.cache.Journal(lf.Global.get(), [tableB]));
     var store = /** @type {!lf.backstore.ObjectStore} */ (
         tx.getTable(tableB));
 
@@ -243,7 +243,7 @@ function testTwoTableInserts_Bundled() {
 
     var tx = db.createTx(
         lf.TransactionType.READ_WRITE,
-        new lf.cache.Journal([tableA]));
+        new lf.cache.Journal(lf.Global.get(), [tableA]));
     var store = /** @type {!lf.backstore.ObjectStore} */ (
         tx.getTable(tableA));
 
@@ -264,7 +264,7 @@ function testTwoTableInserts_Bundled() {
 
     var tx = db.createTx(
         lf.TransactionType.READ_WRITE,
-        new lf.cache.Journal([tableA]));
+        new lf.cache.Journal(lf.Global.get(), [tableA]));
     var store = /** @type {!lf.backstore.ObjectStore} */ (
         tx.getTable(tableA));
 
@@ -295,7 +295,7 @@ function testScanRowId() {
     var table = schema.getTables()[0];
     var tx = db.createTx(
         lf.TransactionType.READ_WRITE,
-        new lf.cache.Journal([table]));
+        new lf.cache.Journal(lf.Global.get(), [table]));
     var store = /** @type {!lf.backstore.ObjectStore} */ (
         tx.getTable(table));
 
@@ -335,7 +335,7 @@ function testScanRowId_BundledDB() {
     var table = schema.getTables()[0];
     var tx = db.createTx(
         lf.TransactionType.READ_WRITE,
-        new lf.cache.Journal([table]));
+        new lf.cache.Journal(lf.Global.get(), [table]));
     var store = /** @type {!lf.backstore.ObjectStore} */ (
         tx.getTable(table));
 
@@ -365,7 +365,7 @@ function selectAll() {
   var tableSchema = schema.getTables()[0];
   var tx = db.createTx(
       lf.TransactionType.READ_ONLY,
-      new lf.cache.Journal([tableSchema]));
+      new lf.cache.Journal(lf.Global.get(), [tableSchema]));
   var table = tx.getTable(tableSchema);
   return table.get([]);
 }
@@ -388,7 +388,7 @@ function testUpgrade() {
     assertEquals('tablePlusOne', table.getName());
     var tx = db.createTx(
         lf.TransactionType.READ_WRITE,
-        new lf.cache.Journal([table]));
+        new lf.cache.Journal(lf.Global.get(), [table]));
     var store = /** @type {!lf.backstore.ObjectStore} */ (
         tx.getTable(table));
     assertNotNull(store);

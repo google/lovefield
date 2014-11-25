@@ -323,6 +323,6 @@ function generateSampleRowsWithSamePrimaryKey(count) {
 function selectAll() {
   var tx = backStore.createTx(
       lf.TransactionType.READ_ONLY,
-      new lf.cache.Journal([r]));
+      new lf.cache.Journal(lf.Global.get(), [r]));
   return tx.getTable(r).get([]);
 }

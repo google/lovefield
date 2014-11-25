@@ -17,6 +17,7 @@
 goog.setTestOnly();
 goog.require('goog.testing.AsyncTestCase');
 goog.require('goog.testing.jsunit');
+goog.require('lf.Global');
 goog.require('lf.TransactionType');
 goog.require('lf.cache.Journal');
 goog.require('lf.index.KeyRange');
@@ -75,7 +76,7 @@ function testTableAccessByRowId() {
   step.addChild(new lf.testing.proc.DummyStep(
       lf.proc.Relation.fromRows(rows, [table.getName()])));
 
-  var journal = new lf.cache.Journal([table]);
+  var journal = new lf.cache.Journal(lf.Global.get(), [table]);
   step.exec(journal).then(
       function(result) {
         assertEquals(rows.length, result.entries.length);
@@ -99,7 +100,7 @@ function testTableAccessByRowId_Empty() {
   // Creating a "dummy" child step that will not return any row IDs.
   step.addChild(new lf.testing.proc.DummyStep(lf.proc.Relation.createEmpty()));
 
-  var journal = new lf.cache.Journal([table]);
+  var journal = new lf.cache.Journal(lf.Global.get(), [table]);
   step.exec(journal).then(
       function(relation) {
         assertEquals(0, relation.entries.length);
@@ -116,7 +117,7 @@ function testIndexRangeScan() {
   var keyRange = new lf.index.KeyRange(5, 8, false, false);
   var step = new lf.proc.IndexRangeScanStep(index, [keyRange]);
 
-  var journal = new lf.cache.Journal([table]);
+  var journal = new lf.cache.Journal(lf.Global.get(), [table]);
   step.exec(journal).then(
       function(relation) {
         assertEquals(keyRange.to - keyRange.from + 1, relation.entries.length);
@@ -142,7 +143,7 @@ function addSampleData() {
   var table = schema.getTables()[0];
   var tx = backStore.createTx(
       lf.TransactionType.READ_WRITE,
-      new lf.cache.Journal([table]));
+      new lf.cache.Journal(lf.Global.get(), [table]));
   var store = tx.getTable(table);
   store.put(rows);
 

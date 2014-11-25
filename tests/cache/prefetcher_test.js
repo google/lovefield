@@ -17,6 +17,7 @@
 goog.setTestOnly();
 goog.require('goog.testing.AsyncTestCase');
 goog.require('goog.testing.jsunit');
+goog.require('lf.Global');
 goog.require('lf.cache.Prefetcher');
 goog.require('lf.testing.MockEnv');
 goog.require('lf.testing.MockSchema');
@@ -55,7 +56,7 @@ function testPrefetcher() {
   table.put(rows).then(function() {
     assertEquals(0, env.cache.getCount());
     assertArrayEquals([], indices[0].get(1001));
-    var prefetcher = new lf.cache.Prefetcher();
+    var prefetcher = new lf.cache.Prefetcher(lf.Global.get());
     return prefetcher.init(env.schema);
   }, fail).then(function() {
     assertEquals(10, env.cache.getCount());

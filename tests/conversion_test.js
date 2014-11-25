@@ -95,7 +95,7 @@ function testConversions() {
     var tableSchema = db.getSchema().getEmployee();
     var tx = backStore.createTx(
         lf.TransactionType.READ_ONLY,
-        new lf.cache.Journal([tableSchema]));
+        new lf.cache.Journal(lf.Global.get(), [tableSchema]));
     var store = /** @type {!lf.backstore.ObjectStore} */ (
         tx.getTable(tableSchema));
     return store.get([]);

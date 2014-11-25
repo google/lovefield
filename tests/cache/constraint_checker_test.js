@@ -18,6 +18,7 @@ goog.setTestOnly();
 goog.require('goog.testing.AsyncTestCase');
 goog.require('goog.testing.jsunit');
 goog.require('lf.Exception');
+goog.require('lf.Global');
 goog.require('lf.cache.ConstraintChecker');
 goog.require('lf.testing.MockEnv');
 
@@ -39,7 +40,7 @@ function setUp() {
   asyncTestCase.waitForAsync('setUp');
   env = new lf.testing.MockEnv();
   env.init().then(function() {
-    checker = new lf.cache.ConstraintChecker();
+    checker = new lf.cache.ConstraintChecker(lf.Global.get());
     asyncTestCase.continueTesting();
   });
 

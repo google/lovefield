@@ -308,6 +308,6 @@ function testSinglePlan_ParametrizedQuery() {
 function selectAll() {
   var tx = backStore.createTx(
       lf.TransactionType.READ_ONLY,
-      new lf.cache.Journal([j]));
+      new lf.cache.Journal(lf.Global.get(), [j]));
   return tx.getTable(j).get([]);
 }
