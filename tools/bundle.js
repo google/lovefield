@@ -98,8 +98,7 @@ function runClosure() {
   var namespacePrefix = namespace.replace('.', '_');
   var generatedFiles = [
     namespacePrefix + '_database.js',
-    namespacePrefix + '_schema.js',
-    namespacePrefix + '_transaction.js'
+    namespacePrefix + '_schema.js'
   ].map(function(fileName) {
     return pathMod.resolve(pathMod.join(outputDir, fileName));
   });
