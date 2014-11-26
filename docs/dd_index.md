@@ -20,6 +20,6 @@ The design documents listed below are still working drafts and may change signif
 
 [7. Indices](dd/07_indices.md)
 
-8. Data Binding
+[8. Data Binding](dd/08_data_binding.md)
 
-9. Constraint Enforcement
+[9. Constraint Enforcement](dd/09_constraint.md)
