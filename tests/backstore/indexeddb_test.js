@@ -172,7 +172,7 @@ function runSCUDTest() {
 }
 
 function testSCUD() {
-  db = new lf.backstore.IndexedDB(schema);
+  db = new lf.backstore.IndexedDB(lf.Global.get(), schema);
   runSCUDTest().then(function() {
     asyncTestCase.continueTesting();
   });
@@ -182,7 +182,7 @@ function testSCUD() {
 
 function testSCUD_Bundled() {
   schema.name = schema.name + '_bundled';
-  db = new lf.backstore.IndexedDB(schema, true);
+  db = new lf.backstore.IndexedDB(lf.Global.get(), schema, true);
   runSCUDTest().then(function() {
     asyncTestCase.continueTesting();
   });
@@ -192,7 +192,7 @@ function testSCUD_Bundled() {
 
 function testTwoTableInserts_Bundled() {
   schema.name = schema.name + '_b2';
-  db = new lf.backstore.IndexedDB(schema, true);
+  db = new lf.backstore.IndexedDB(lf.Global.get(), schema, true);
 
   /** @const {!Object} */
   var CONTENTS = {'id': 'hello', 'name': 'world'};
@@ -303,7 +303,7 @@ function testScanRowId() {
     return tx.finished();
   };
 
-  db = new lf.backstore.IndexedDB(schema);
+  db = new lf.backstore.IndexedDB(lf.Global.get(), schema);
   db.init().then(function() {
     return insertIntoTable();
   }).then(function() {
@@ -343,7 +343,7 @@ function testScanRowId_BundledDB() {
     return tx.finished();
   };
 
-  db = new lf.backstore.IndexedDB(schema, true);
+  db = new lf.backstore.IndexedDB(lf.Global.get(), schema, true);
   db.init().then(function() {
     return insertIntoTable();
   }).then(function() {
@@ -375,13 +375,13 @@ function testUpgrade() {
   var name = schema.name + goog.now();
   schema.name = name;
 
-  db = new lf.backstore.IndexedDB(schema);
+  db = new lf.backstore.IndexedDB(lf.Global.get(), schema);
   db.init().then(function() {
     db.close();
     setUp();  // reset the environment
     schema.version = 2;
     schema.name = name;
-    db = new lf.backstore.IndexedDB(schema);
+    db = new lf.backstore.IndexedDB(lf.Global.get(), schema);
     return db.init();
   }).then(function() {
     var table = schema.getTables().slice(-1)[0];
