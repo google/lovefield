@@ -106,7 +106,7 @@ function testSimpleTree() {
   selectNode.addChild(tableAccessNode);
   assertEquals(treeBefore, lf.tree.toString(rootNodeBefore));
 
-  var pass = new lf.proc.IndexRangeScanPass();
+  var pass = new lf.proc.IndexRangeScanPass(lf.Global.get());
   var rootNodeAfter = pass.rewrite(rootNodeBefore);
   assertEquals(treeAfter, lf.tree.toString(rootNodeAfter));
 }
@@ -129,7 +129,7 @@ function testTree1() {
   var rootNodeBefore = constructTree1();
   assertEquals(treeBefore, lf.tree.toString(rootNodeBefore));
 
-  var pass = new lf.proc.IndexRangeScanPass();
+  var pass = new lf.proc.IndexRangeScanPass(lf.Global.get());
   var rootNodeAfter = pass.rewrite(rootNodeBefore);
   assertEquals(treeAfter, lf.tree.toString(rootNodeAfter));
 }
@@ -170,7 +170,7 @@ function testTree2() {
   var rootNodeBefore = constructTree2();
   assertEquals(treeBefore, lf.tree.toString(rootNodeBefore));
 
-  var pass = new lf.proc.IndexRangeScanPass();
+  var pass = new lf.proc.IndexRangeScanPass(lf.Global.get());
   var rootNodeAfter = pass.rewrite(rootNodeBefore);
   assertEquals(treeAfter, lf.tree.toString(rootNodeAfter));
 }
@@ -210,7 +210,7 @@ function testTree3() {
   rootNodeBefore.addChild(selectStep);
   assertEquals(treeBefore, lf.tree.toString(rootNodeBefore));
 
-  var pass = new lf.proc.IndexRangeScanPass();
+  var pass = new lf.proc.IndexRangeScanPass(lf.Global.get());
   var rootNodeAfter = pass.rewrite(rootNodeBefore);
 
   assertEquals(treeAfter, lf.tree.toString(rootNodeAfter));

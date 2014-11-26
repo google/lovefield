@@ -41,7 +41,7 @@ lf.testing.MockEnv = function() {
   this.schema = new lf.testing.MockSchema();
 
   /** @type {!lf.proc.DefaultQueryEngine} */
-  this.queryEngine = new lf.proc.DefaultQueryEngine();
+  this.queryEngine;
 
   /** @type {!lf.proc.Runner} */
   this.runner = new lf.proc.Runner();
@@ -68,7 +68,10 @@ lf.testing.MockEnv.prototype.init = function() {
   var global = lf.Global.get();
   return this.store.init().then(goog.bind(function() {
     global.registerService(lf.service.BACK_STORE, this.store);
+
+    this.queryEngine = new lf.proc.DefaultQueryEngine(global);
     global.registerService(lf.service.QUERY_ENGINE, this.queryEngine);
+
     global.registerService(lf.service.RUNNER, this.runner);
     global.registerService(lf.service.CACHE, this.cache);
     global.registerService(lf.service.INDEX_STORE, this.indexStore);

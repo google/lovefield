@@ -17,6 +17,7 @@
 goog.setTestOnly();
 goog.require('goog.testing.AsyncTestCase');
 goog.require('goog.testing.jsunit');
+goog.require('lf.Global');
 goog.require('lf.proc.DeleteNode');
 goog.require('lf.proc.PhysicalPlanFactory');
 goog.require('lf.proc.SelectNode');
@@ -42,7 +43,7 @@ function setUp() {
   asyncTestCase.waitForAsync('setUp');
   env = new lf.testing.MockEnv();
   env.init().then(function() {
-    physicalPlanFactory = new lf.proc.PhysicalPlanFactory();
+    physicalPlanFactory = new lf.proc.PhysicalPlanFactory(lf.Global.get());
     asyncTestCase.continueTesting();
   }, fail);
 }
