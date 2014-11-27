@@ -17,6 +17,7 @@
 goog.setTestOnly();
 goog.require('goog.testing.AsyncTestCase');
 goog.require('goog.testing.jsunit');
+goog.require('lf.Global');
 goog.require('lf.op');
 goog.require('lf.proc.LogicalPlanFactory');
 goog.require('lf.query.DeleteBuilder');
@@ -60,7 +61,7 @@ function setUp() {
 function testCreate_DeletePlan() {
   var table = env.schema.getTables()[0];
 
-  var queryBuilder = new lf.query.DeleteBuilder();
+  var queryBuilder = new lf.query.DeleteBuilder(lf.Global.get());
   queryBuilder.
       from(table).
       where(lf.op.and(table.id.eq('id'), table.name.eq('name')));
@@ -93,7 +94,7 @@ function testCreate_DeletePlan() {
 function testCreate_SelectPlan() {
   var table = env.schema.getTables()[0];
 
-  var queryBuilder = new lf.query.SelectBuilder([]);
+  var queryBuilder = new lf.query.SelectBuilder(lf.Global.get(), []);
   queryBuilder.
       from(table).
       where(lf.op.and(table.id.eq('id'), table.name.eq('name')));
@@ -126,7 +127,7 @@ function testCreate_SelectPlan() {
 function testCreate_UpdatePlan() {
   var table = env.schema.getTables()[0];
 
-  var queryBuilder = new lf.query.UpdateBuilder(table);
+  var queryBuilder = new lf.query.UpdateBuilder(lf.Global.get(), table);
   queryBuilder.
       set(table.name, 'NewName').
       where(lf.op.and(table.id.eq('id'), table.name.eq('name')));

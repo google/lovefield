@@ -26889,7 +26889,6 @@ lf.query.toSql = function(builder) {
 goog.provide('lf.query.BaseBuilder');
 
 goog.require('goog.Promise');
-goog.require('lf.Global');
 goog.require('lf.pred.ValuePredicate');
 goog.require('lf.proc.UserQueryTask');
 goog.require('lf.query.Builder');
@@ -26904,16 +26903,21 @@ goog.require('lf.tree');
  * @constructor
  * @implements {lf.query.Builder}
  * @struct
+ *
+ * @param {!lf.Global} global
  */
-lf.query.BaseBuilder = function() {
+lf.query.BaseBuilder = function(global) {
+  /** @private {!lf.Global} */
+  this.global_ = global;
+
   /** @private {!lf.proc.QueryEngine} */
-  this.queryEngine_ = lf.Global.get().getService(lf.service.QUERY_ENGINE);
+  this.queryEngine_ = global.getService(lf.service.QUERY_ENGINE);
+
+  /** @private {!lf.proc.Runner} */
+  this.runner_ = global.getService(lf.service.RUNNER);
 
   /** @type {!Context} */
   this.query;
-
-  /** @private {!lf.proc.Runner} */
-  this.runner_ = lf.Global.get().getService(lf.service.RUNNER);
 };
 
 
@@ -26926,7 +26930,7 @@ lf.query.BaseBuilder.prototype.exec = function() {
   }
 
   return new goog.Promise(function(resolve, reject) {
-    var queryTask = new lf.proc.UserQueryTask(lf.Global.get(), [this.query]);
+    var queryTask = new lf.proc.UserQueryTask(this.global_, [this.query]);
     this.runner_.scheduleTask(queryTask).then(
         function(results) {
           resolve(results[0].getPayloads());
@@ -27051,9 +27055,11 @@ goog.require('lf.query.DeleteContext');
  * @constructor
  * @extends {lf.query.BaseBuilder.<!lf.query.DeleteContext>}
  * @implements {lf.query.Delete}
+ *
+ * @param {!lf.Global} global
  */
-lf.query.DeleteBuilder = function() {
-  lf.query.DeleteBuilder.base(this, 'constructor');
+lf.query.DeleteBuilder = function(global) {
+  lf.query.DeleteBuilder.base(this, 'constructor', global);
 
   this.query = new lf.query.DeleteContext();
 };
@@ -27152,11 +27158,12 @@ goog.require('lf.query.InsertContext');
  * @struct
  * @constructor
  *
+ * @param {!lf.Global} global
  * @param {boolean=} opt_allowReplace Whether the generated query should allow
  *    replacing an existing record.
  */
-lf.query.InsertBuilder = function(opt_allowReplace) {
-  lf.query.InsertBuilder.base(this, 'constructor');
+lf.query.InsertBuilder = function(global, opt_allowReplace) {
+  lf.query.InsertBuilder.base(this, 'constructor', global);
 
   this.query = new lf.query.InsertContext();
   this.query.allowReplace = opt_allowReplace || false;
@@ -27617,10 +27624,11 @@ goog.require('lf.query.SelectContext');
  * @implements {lf.query.Select}
  * @struct
  *
+ * @param {!lf.Global} global
  * @param {!Array.<!lf.schema.Column>} columns
  */
-lf.query.SelectBuilder = function(columns) {
-  lf.query.SelectBuilder.base(this, 'constructor');
+lf.query.SelectBuilder = function(global, columns) {
+  lf.query.SelectBuilder.base(this, 'constructor', global);
 
   this.query = new lf.query.SelectContext();
   this.query.columns = columns;
@@ -27986,10 +27994,11 @@ goog.require('lf.query.UpdateContext');
  * @implements {lf.query.Update}
  * @struct
  *
+ * @param {!lf.Global} global
  * @param {!lf.schema.Table} table
  */
-lf.query.UpdateBuilder = function(table) {
-  lf.query.UpdateBuilder.base(this, 'constructor');
+lf.query.UpdateBuilder = function(global, table) {
+  lf.query.UpdateBuilder.base(this, 'constructor', global);
 
   this.query = new lf.query.UpdateContext();
   this.query.table = table;
@@ -31129,35 +31138,35 @@ lf.proc.Database.prototype.select = function(var_args) {
   var columns =
       arguments.length == 1 && !goog.isDefAndNotNull(arguments[0]) ?
       [] : Array.prototype.slice.call(arguments);
-  return new lf.query.SelectBuilder(columns);
+  return new lf.query.SelectBuilder(lf.Global.get(), columns);
 };
 
 
 /** @override */
 lf.proc.Database.prototype.insert = function() {
   this.checkInit_();
-  return new lf.query.InsertBuilder();
+  return new lf.query.InsertBuilder(lf.Global.get());
 };
 
 
 /** @override */
 lf.proc.Database.prototype.insertOrReplace = function() {
   this.checkInit_();
-  return new lf.query.InsertBuilder(/* allowReplace */ true);
+  return new lf.query.InsertBuilder(lf.Global.get(), /* allowReplace */ true);
 };
 
 
 /** @override */
 lf.proc.Database.prototype.update = function(table) {
   this.checkInit_();
-  return new lf.query.UpdateBuilder(table);
+  return new lf.query.UpdateBuilder(lf.Global.get(), table);
 };
 
 
 /** @override */
 lf.proc.Database.prototype.delete = function() {
   this.checkInit_();
-  return new lf.query.DeleteBuilder();
+  return new lf.query.DeleteBuilder(lf.Global.get());
 };
 
 

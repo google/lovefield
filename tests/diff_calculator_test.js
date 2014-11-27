@@ -20,6 +20,7 @@ goog.require('goog.testing.AsyncTestCase');
 goog.require('goog.testing.jsunit');
 goog.require('goog.userAgent.product');
 goog.require('lf.DiffCalculator');
+goog.require('lf.Global');
 goog.require('lf.proc.Relation');
 goog.require('lf.query.SelectBuilder');
 goog.require('lf.testing.MockEnv');
@@ -66,7 +67,8 @@ function generateSamlpeRows() {
  */
 function testDiffCalculation_ExplicitColumns() {
   var table = schema.getTables()[0];
-  var builder = new lf.query.SelectBuilder([table.id, table.name]);
+  var builder = new lf.query.SelectBuilder(
+      lf.Global.get(), [table.id, table.name]);
   builder.from(table);
   var query = builder.getQuery();
   checkDiffCalculation(query, 'ExplicitColumns');
@@ -78,7 +80,7 @@ function testDiffCalculation_ExplicitColumns() {
  */
 function testDiffCalculation_ImplicitColumns() {
   var table = schema.getTables()[0];
-  var builder = new lf.query.SelectBuilder([]);
+  var builder = new lf.query.SelectBuilder(lf.Global.get(), []);
   builder.from(table);
   var query = builder.getQuery();
   checkDiffCalculation(query, 'ImplicitColumns');

@@ -18,6 +18,7 @@ goog.setTestOnly();
 goog.require('goog.testing.AsyncTestCase');
 goog.require('goog.testing.jsunit');
 goog.require('hr.db');
+goog.require('lf.Global');
 goog.require('lf.query.InsertBuilder');
 goog.require('lf.testing.hrSchemaSampleData');
 
@@ -42,7 +43,7 @@ function setUp() {
 
 
 function testInsertToSql() {
-  var query = new lf.query.InsertBuilder();
+  var query = new lf.query.InsertBuilder(lf.Global.get());
   var job = lf.testing.hrSchemaSampleData.generateSampleJobData(db);
   query.into(db.getSchema().getJob());
   query.values([job]);
@@ -51,7 +52,7 @@ function testInsertToSql() {
       '\'jobId\', \'Software Engineer\', 100000, 500000);',
       query.toSql());
 
-  var query2 = new lf.query.InsertBuilder(true);
+  var query2 = new lf.query.InsertBuilder(lf.Global.get(), true);
   query2.into(db.getSchema().getJob());
   query2.values([job]);
   assertEquals(

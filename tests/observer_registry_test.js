@@ -19,6 +19,7 @@ goog.setTestOnly();
 goog.require('goog.testing.AsyncTestCase');
 goog.require('goog.testing.jsunit');
 goog.require('goog.userAgent.product');
+goog.require('lf.Global');
 goog.require('lf.proc.Relation');
 goog.require('lf.query.SelectBuilder');
 goog.require('lf.testing.MockEnv');
@@ -63,7 +64,7 @@ function testAddObserver() {
   asyncTestCase.waitForAsync('testObserve');
 
   var table = schema.getTables()[0];
-  var builder = new lf.query.SelectBuilder([]);
+  var builder = new lf.query.SelectBuilder(lf.Global.get(), []);
   builder.from(table);
 
   var callback = function() {
@@ -83,7 +84,7 @@ function testRemoveObserver() {
   }
 
   var table = schema.getTables()[0];
-  var builder = new lf.query.SelectBuilder([]);
+  var builder = new lf.query.SelectBuilder(lf.Global.get(), []);
   builder.from(table);
 
   var callback = function() { fail(new Error('Observer not removed')); };
@@ -102,11 +103,11 @@ function testGetQueriesForTable() {
 
   var tables = schema.getTables();
 
-  var builder1 = new lf.query.SelectBuilder([]);
+  var builder1 = new lf.query.SelectBuilder(lf.Global.get(), []);
   builder1.from(tables[0]);
-  var builder2 = new lf.query.SelectBuilder([]);
+  var builder2 = new lf.query.SelectBuilder(lf.Global.get(), []);
   builder2.from(tables[0], tables[1]);
-  var builder3 = new lf.query.SelectBuilder([]);
+  var builder3 = new lf.query.SelectBuilder(lf.Global.get(), []);
   builder3.from(tables[1]);
 
   var callback = function() {};
