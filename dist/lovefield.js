@@ -16882,7 +16882,6 @@ goog.forwardDeclare('lf.BackStore');
 goog.forwardDeclare('lf.ObserverRegistry');
 goog.forwardDeclare('lf.cache.Cache');
 goog.forwardDeclare('lf.index.IndexStore');
-goog.forwardDeclare('lf.eval.Registry');
 goog.forwardDeclare('lf.proc.QueryEngine');
 goog.forwardDeclare('lf.proc.Runner');
 goog.forwardDeclare('lf.schema.Database');
@@ -16925,10 +16924,6 @@ lf.service.QUERY_ENGINE = new lf.service.ServiceId('engine');
 
 /** @const {!lf.service.ServiceId.<!lf.proc.Runner>} */
 lf.service.RUNNER = new lf.service.ServiceId('runner');
-
-
-/** @const {!lf.service.ServiceId.<!lf.eval.Registry>} */
-lf.service.EVAL_REGISTRY = new lf.service.ServiceId('evalregistry');
 
 
 /** @const {!lf.service.ServiceId.<!lf.ObserverRegistry>} */
@@ -24075,6 +24070,7 @@ lf.eval.Registry = function() {
       lf.Type.STRING,
       lf.eval.buildStringEvaluatorMap_());
 };
+goog.addSingletonGetter(lf.eval.Registry);
 
 
 /**
@@ -24245,102 +24241,14 @@ lf.eval.buildBooleanEvaluatorMap_ = function() {
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-goog.provide('lf.Global');
-
-goog.require('goog.structs.Map');
-goog.require('lf.Exception');
-
-
-
-/**
- * Global context for Lovefield services.
- * @constructor @struct
- */
-lf.Global = function() {
-  /** @private {!goog.structs.Map.<string, !Object>} */
-  this.services_ = new goog.structs.Map();
-};
-
-
-/** @private {?lf.Global} */
-lf.Global.instance_;
-
-
-/** @return {!lf.Global} */
-lf.Global.get = function() {
-  if (!lf.Global.instance_) {
-    lf.Global.instance_ = new lf.Global();
-  }
-  return lf.Global.instance_;
-};
-
-
-/** Resets the global instance, useful for testing. */
-lf.Global.reset = function() {
-  lf.Global.instance_ = null;
-};
-
-
-/**
- * @template T
- * @param {!lf.service.ServiceId.<T>} serviceId
- * @param {!T} service
- * @return {!T} The registered service for chaining.
- */
-lf.Global.prototype.registerService = function(serviceId, service) {
-  this.services_.set(serviceId.toString(), service);
-  return service;
-};
-
-
-/**
- * @template T
- * @param {!lf.service.ServiceId.<T>} serviceId
- * @return {!T} The registered service or throws if not registered yet.
- * @throws {!lf.Exception}
- */
-lf.Global.prototype.getService = function(serviceId) {
-  var service = this.services_.get(serviceId.toString(), null);
-  if (service == null) {
-    throw new lf.Exception(lf.Exception.Type.NOT_FOUND, serviceId.toString());
-  }
-  return service;
-};
-
-
-/**
- * @param {!lf.service.ServiceId} serviceId
- * @return {boolean} Whether the service is registered or not.
- */
-lf.Global.prototype.isRegistered = function(serviceId) {
-  return this.services_.containsKey(serviceId.toString());
-};
-
-/**
- * @license
- * Copyright 2014 Google Inc. All Rights Reserved.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
 goog.provide('lf.pred.JoinPredicate');
 
 goog.require('goog.labs.structs.Multimap');
-goog.require('lf.Global');
+goog.require('lf.eval.Registry');
 goog.require('lf.eval.Type');
 goog.require('lf.pred.PredicateNode');
 goog.require('lf.proc.Relation');
 goog.require('lf.proc.RelationEntry');
-goog.require('lf.service');
 
 
 
@@ -24366,7 +24274,7 @@ lf.pred.JoinPredicate = function(leftColumn, rightColumn, evaluatorType) {
   this.evaluatorType = evaluatorType;
 
   var registry = /** @type {!lf.eval.Registry} */ (
-      lf.Global.get().getService(lf.service.EVAL_REGISTRY));
+      lf.eval.Registry.getInstance());
 
   /** @private {!function(!T, !T):boolean} */
   this.evaluatorFn_ = registry.getEvaluator(
@@ -24660,12 +24568,11 @@ goog.require('goog.asserts');
 goog.require('goog.structs.Set');
 goog.require('lf.Binder');
 goog.require('lf.Exception');
-goog.require('lf.Global');
+goog.require('lf.eval.Registry');
 goog.require('lf.eval.Type');
 goog.require('lf.index.KeyRange');
 goog.require('lf.pred.PredicateNode');
 goog.require('lf.proc.Relation');
-goog.require('lf.service');
 
 
 
@@ -24691,7 +24598,7 @@ lf.pred.ValuePredicate = function(column, value, evaluatorType) {
   this.evaluatorType = evaluatorType;
 
   var registry = /** @type {!lf.eval.Registry} */ (
-      lf.Global.get().getService(lf.service.EVAL_REGISTRY));
+      lf.eval.Registry.getInstance());
 
   /** @private {!function(!T, !T):boolean} */
   this.evaluatorFn_ = registry.getEvaluator(
@@ -25732,6 +25639,93 @@ lf.proc.CrossProductStep.crossProduct_ = function(
 
   var srcTables = leftRelation.getTables().concat(rightRelation.getTables());
   return new lf.proc.Relation(combinedEntries, srcTables);
+};
+
+/**
+ * @license
+ * Copyright 2014 Google Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+goog.provide('lf.Global');
+
+goog.require('goog.structs.Map');
+goog.require('lf.Exception');
+
+
+
+/**
+ * Global context for Lovefield services.
+ * @constructor @struct
+ */
+lf.Global = function() {
+  /** @private {!goog.structs.Map.<string, !Object>} */
+  this.services_ = new goog.structs.Map();
+};
+
+
+/** @private {?lf.Global} */
+lf.Global.instance_;
+
+
+/** @return {!lf.Global} */
+lf.Global.get = function() {
+  if (!lf.Global.instance_) {
+    lf.Global.instance_ = new lf.Global();
+  }
+  return lf.Global.instance_;
+};
+
+
+/** Resets the global instance, useful for testing. */
+lf.Global.reset = function() {
+  lf.Global.instance_ = null;
+};
+
+
+/**
+ * @template T
+ * @param {!lf.service.ServiceId.<T>} serviceId
+ * @param {!T} service
+ * @return {!T} The registered service for chaining.
+ */
+lf.Global.prototype.registerService = function(serviceId, service) {
+  this.services_.set(serviceId.toString(), service);
+  return service;
+};
+
+
+/**
+ * @template T
+ * @param {!lf.service.ServiceId.<T>} serviceId
+ * @return {!T} The registered service or throws if not registered yet.
+ * @throws {!lf.Exception}
+ */
+lf.Global.prototype.getService = function(serviceId) {
+  var service = this.services_.get(serviceId.toString(), null);
+  if (service == null) {
+    throw new lf.Exception(lf.Exception.Type.NOT_FOUND, serviceId.toString());
+  }
+  return service;
+};
+
+
+/**
+ * @param {!lf.service.ServiceId} serviceId
+ * @return {boolean} Whether the service is registered or not.
+ */
+lf.Global.prototype.isRegistered = function(serviceId) {
+  return this.services_.containsKey(serviceId.toString());
 };
 
 /**
@@ -30470,8 +30464,8 @@ lf.proc.Runner.prototype.onTaskError_ = function(task, error) {
 goog.provide('lf.DiffCalculator');
 
 goog.require('goog.math');
+goog.require('lf.eval.Registry');
 goog.require('lf.eval.Type');
-goog.require('lf.service');
 
 
 
@@ -30480,14 +30474,13 @@ goog.require('lf.service');
  * between old and new results for a given query.
  * @constructor
  *
- * @param {!lf.Global} global
  * @param {!lf.query.SelectContext} query
  * @param {!Array<?>} observableResults The array holding the last results. This
  *     is the array that is directly being observed by observers.
  */
-lf.DiffCalculator = function(global, query, observableResults) {
+lf.DiffCalculator = function(query, observableResults) {
   /** @private {!lf.eval.Registry} */
-  this.evalRegistry_ = global.getService(lf.service.EVAL_REGISTRY);
+  this.evalRegistry_ = lf.eval.Registry.getInstance();
 
   /** @private {!lf.query.SelectContext} */
   this.query_ = query;
@@ -30632,13 +30625,8 @@ goog.forwardDeclare('lf.query.SelectBuilder');
  * A class responsible for keeping track of all observers as well as all arrays
  * that are being observed.
  * @constructor
- *
- * @param {!lf.Global} global
  */
-lf.ObserverRegistry = function(global) {
-  /** @private {!lf.Global} */
-  this.global_ = global;
-
+lf.ObserverRegistry = function() {
   /**
    * A map where each entry represents an observed query.
    * @private {!goog.structs.Map.<string, !lf.ObserverRegistry.Entry_>}
@@ -30669,7 +30657,7 @@ lf.ObserverRegistry.prototype.addObserver = function(builder, callback) {
 
   var entry = this.entries_.get(queryId, null);
   if (goog.isNull(entry)) {
-    entry = new lf.ObserverRegistry.Entry_(this.global_, query);
+    entry = new lf.ObserverRegistry.Entry_(query);
     this.entries_.set(queryId, entry);
   }
   entry.addObserver(callback);
@@ -30754,10 +30742,9 @@ lf.ObserverRegistry.prototype.updateResultsForQuery = function(query, results) {
  * @constructor
  * @private
  *
- * @param {!lf.Global} global
  * @param {!lf.query.SelectContext} query
  */
-lf.ObserverRegistry.Entry_ = function(global, query) {
+lf.ObserverRegistry.Entry_ = function(query) {
   /** @private {!lf.query.SelectContext} */
   this.query_ = query;
 
@@ -30774,7 +30761,7 @@ lf.ObserverRegistry.Entry_ = function(global, query) {
   this.lastResultVersion_ = -1;
 
   /** @private {!lf.DiffCalculator} */
-  this.diffCalculator_ = new lf.DiffCalculator(global, query, this.observable_);
+  this.diffCalculator_ = new lf.DiffCalculator(query, this.observable_);
 };
 
 
@@ -30851,7 +30838,6 @@ goog.require('lf.backstore.IndexedDB');
 goog.require('lf.backstore.Memory');
 goog.require('lf.cache.DefaultCache');
 goog.require('lf.cache.Prefetcher');
-goog.require('lf.eval.Registry');
 goog.require('lf.index.MemoryIndexStore');
 goog.require('lf.proc.DefaultQueryEngine');
 goog.require('lf.proc.Runner');
@@ -30896,9 +30882,7 @@ lf.base.init = function(schema, backStoreType, opt_onUpgrade, opt_bundledMode) {
     global.registerService(lf.service.RUNNER, runner);
     var indexStore = new lf.index.MemoryIndexStore();
     global.registerService(lf.service.INDEX_STORE, indexStore);
-    var evalRegistry = new lf.eval.Registry();
-    global.registerService(lf.service.EVAL_REGISTRY, evalRegistry);
-    var observerRegistry = new lf.ObserverRegistry(global);
+    var observerRegistry = new lf.ObserverRegistry();
     global.registerService(lf.service.OBSERVER_REGISTRY, observerRegistry);
     return indexStore.init(schema);
 
