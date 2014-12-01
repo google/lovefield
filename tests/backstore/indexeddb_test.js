@@ -18,6 +18,7 @@ goog.setTestOnly();
 goog.require('goog.Promise');
 goog.require('goog.testing.AsyncTestCase');
 goog.require('goog.testing.jsunit');
+goog.require('goog.userAgent.product');
 goog.require('lf.Global');
 goog.require('lf.Row');
 goog.require('lf.TransactionType');
@@ -50,6 +51,10 @@ var db;
 
 
 function setUp() {
+  if (goog.userAgent.product.SAFARI) {
+    return;
+  }
+
   cache = new lf.cache.DefaultCache();
   schema = new lf.testing.MockSchema();
   indexStore = new lf.index.MemoryIndexStore();
@@ -60,6 +65,10 @@ function setUp() {
 
 
 function tearDown() {
+  if (goog.userAgent.product.SAFARI) {
+    return;
+  }
+
   asyncTestCase.waitForAsync('tearDown');
 
   // Clearing all tables.
@@ -172,6 +181,10 @@ function runSCUDTest() {
 }
 
 function testSCUD() {
+  if (goog.userAgent.product.SAFARI) {
+    return;
+  }
+
   db = new lf.backstore.IndexedDB(lf.Global.get(), schema);
   runSCUDTest().then(function() {
     asyncTestCase.continueTesting();
@@ -181,6 +194,10 @@ function testSCUD() {
 }
 
 function testSCUD_Bundled() {
+  if (goog.userAgent.product.SAFARI) {
+    return;
+  }
+
   schema.name = schema.name + '_bundled';
   db = new lf.backstore.IndexedDB(lf.Global.get(), schema, true);
   runSCUDTest().then(function() {
@@ -191,6 +208,10 @@ function testSCUD_Bundled() {
 }
 
 function testTwoTableInserts_Bundled() {
+  if (goog.userAgent.product.SAFARI) {
+    return;
+  }
+
   schema.name = schema.name + '_b2';
   db = new lf.backstore.IndexedDB(lf.Global.get(), schema, true);
 
@@ -284,6 +305,10 @@ function testTwoTableInserts_Bundled() {
 
 /** @suppress {accessControls} */
 function testScanRowId() {
+  if (goog.userAgent.product.SAFARI) {
+    return;
+  }
+
   /** @return {!IThenable} */
   var insertIntoTable = function() {
     var CONTENTS = {'scan': 'rowid'};
@@ -324,6 +349,10 @@ function testScanRowId() {
 
 /** @suppress {accessControls} */
 function testScanRowId_BundledDB() {
+  if (goog.userAgent.product.SAFARI) {
+    return;
+  }
+
   /** @return {!IThenable} */
   var insertIntoTable = function() {
     var CONTENTS = {'scan': 'rowid'};
@@ -371,6 +400,10 @@ function selectAll() {
 }
 
 function testUpgrade() {
+  if (goog.userAgent.product.SAFARI) {
+    return;
+  }
+
   // Randomize schema name to ensure upgrade test works.
   var name = schema.name + goog.now();
   schema.name = name;

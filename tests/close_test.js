@@ -17,6 +17,7 @@
 goog.setTestOnly();
 goog.require('goog.testing.AsyncTestCase');
 goog.require('goog.testing.jsunit');
+goog.require('goog.userAgent.product');
 goog.require('hr.db');
 
 
@@ -25,12 +26,16 @@ var asyncTestCase = goog.testing.AsyncTestCase.createAndInstall('CloseTest');
 
 
 function testClose() {
+  if (goog.userAgent.product.SAFARI) {
+    return;
+  }
+
   asyncTestCase.waitForAsync('testClose');
   hr.db.getInstance().then(function(database) {
     // Test that all queries after closing are throwing.
     database.close();
     var thrower = function() {
-      var query = database.select().from(database.getSchema().getEmployee());
+      database.select().from(database.getSchema().getEmployee());
     };
     assertThrows(thrower);
 

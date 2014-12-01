@@ -33,7 +33,7 @@ var db;
 
 function setUp() {
   asyncTestCase.waitForAsync('setUp');
-  hr.db.getInstance().then(
+  hr.db.getInstance(undefined, true).then(
       function(database) {
         db = database;
 

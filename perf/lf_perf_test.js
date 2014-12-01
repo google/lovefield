@@ -19,6 +19,7 @@ goog.require('goog.Promise');
 goog.require('goog.net.XhrIo');
 goog.require('goog.testing.AsyncTestCase');
 goog.require('goog.testing.jsunit');
+goog.require('goog.userAgent.product');
 goog.require('hr.db');
 goog.require('lf.testing.Benchmark');
 goog.require('lf.testing.hrSchema.MockDataGenerator');
@@ -56,6 +57,10 @@ function benchmarkSetUp() {
 }
 
 function test1LoadingEmptyDB() {
+  if (goog.userAgent.product.SAFARI) {
+    return;
+  }
+
   var test1 = new lf.testing.perf.DefaultBenchmark();
   var benchmark = new lf.testing.Benchmark(
       'Loading Empty DB',
@@ -73,6 +78,10 @@ function test1LoadingEmptyDB() {
 }
 
 function test2FullTableOps() {
+  if (goog.userAgent.product.SAFARI) {
+    return;
+  }
+
   var test2 = new lf.testing.perf.DefaultBenchmark();
   var benchmark = new lf.testing.Benchmark(
       'Full table SCUD',
@@ -114,6 +123,10 @@ function test2FullTableOps() {
 
 
 function test3PKTableOps() {
+  if (goog.userAgent.product.SAFARI) {
+    return;
+  }
+
   var test3 = new lf.testing.perf.DefaultBenchmark();
   var benchmark = new lf.testing.Benchmark(
       'PK-based SCUD',
@@ -169,6 +182,10 @@ function test3PKTableOps() {
 
 
 function test4Select() {
+  if (goog.userAgent.product.SAFARI) {
+    return;
+  }
+
   asyncTestCase.waitForAsync('test4_Select');
 
   var db = null;
@@ -247,6 +264,10 @@ function test4Select() {
 
 
 function test5LoadingPopulatedDB() {
+  if (goog.userAgent.product.SAFARI) {
+    return;
+  }
+
   asyncTestCase.waitForAsync('test5LoadingPopulatedDB');
   var rowCount = 20000;
   var test = new lf.testing.perf.DefaultBenchmark();

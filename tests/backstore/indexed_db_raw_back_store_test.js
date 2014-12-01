@@ -19,6 +19,7 @@ goog.require('goog.Promise');
 goog.require('goog.testing.AsyncTestCase');
 goog.require('goog.testing.jsunit');
 goog.require('goog.testing.recordFunction');
+goog.require('goog.userAgent.product');
 goog.require('lf.Global');
 goog.require('lf.Row');
 goog.require('lf.Type');
@@ -54,6 +55,10 @@ var MAGIC = Math.pow(2, lf.backstore.Page.BUNDLE_EXPONENT);
 
 
 function setUp() {
+  if (goog.userAgent.product.SAFARI) {
+    return;
+  }
+
   schema = new Schema_();
 
   var global = lf.Global.get();
@@ -62,6 +67,10 @@ function setUp() {
 }
 
 function testConvert() {
+  if (goog.userAgent.product.SAFARI) {
+    return;
+  }
+
   var date = new Date();
   var buffer = new ArrayBuffer(8);
   var view = new Uint8Array(buffer);
@@ -83,6 +92,10 @@ function testConvert() {
 // Tests that onUpgrade function is still called with version 0 for a new DB
 // instance.
 function testNewDBInstance() {
+  if (goog.userAgent.product.SAFARI) {
+    return;
+  }
+
   asyncTestCase.waitForAsync('testNewDBInstance');
 
   /**
@@ -203,6 +216,10 @@ function prepareBundledTxForTableA(db) {
 
 
 function testAddTableColumn() {
+  if (goog.userAgent.product.SAFARI) {
+    return;
+  }
+
   asyncTestCase.waitForAsync('testAddTableColumn');
 
   var db = new lf.backstore.IndexedDB(lf.Global.get(), schema);
@@ -228,6 +245,10 @@ function testAddTableColumn() {
 
 
 function testAddTableColumn_Bundled() {
+  if (goog.userAgent.product.SAFARI) {
+    return;
+  }
+
   asyncTestCase.waitForAsync('testAddTableColumn_Bundled');
 
   var db = new lf.backstore.IndexedDB(lf.Global.get(), schema, true);
@@ -267,6 +288,10 @@ function upgradeDropTableColumn(dbInterface) {
 
 
 function testDropTableColumn() {
+  if (goog.userAgent.product.SAFARI) {
+    return;
+  }
+
   asyncTestCase.waitForAsync('testDropTableColumn');
 
   var db = new lf.backstore.IndexedDB(lf.Global.get(), schema);
@@ -290,6 +315,10 @@ function testDropTableColumn() {
 
 
 function testDropTableColumn_Bundled() {
+  if (goog.userAgent.product.SAFARI) {
+    return;
+  }
+
   asyncTestCase.waitForAsync('testDropTableColumn_Bundled');
 
   var db = new lf.backstore.IndexedDB(lf.Global.get(), schema, true);
@@ -327,6 +356,10 @@ function upgradeRenameTableColumn(dbInterface) {
 
 
 function testRenameTableColumn() {
+  if (goog.userAgent.product.SAFARI) {
+    return;
+  }
+
   asyncTestCase.waitForAsync('testRenameTableColumn');
 
   var db = new lf.backstore.IndexedDB(lf.Global.get(), schema);
@@ -352,6 +385,10 @@ function testRenameTableColumn() {
 
 
 function testRenameTableColumn_Bundled() {
+  if (goog.userAgent.product.SAFARI) {
+    return;
+  }
+
   asyncTestCase.waitForAsync('testRenameTableColumn_Bundled');
 
   var db = new lf.backstore.IndexedDB(lf.Global.get(), schema, true);
@@ -391,6 +428,10 @@ function upgradeDropTable(dbInterface) {
 
 
 function testDropTable() {
+  if (goog.userAgent.product.SAFARI) {
+    return;
+  }
+
   asyncTestCase.waitForAsync('testDropTable');
 
   var db = new lf.backstore.IndexedDB(lf.Global.get(), schema);
@@ -424,6 +465,10 @@ function upgradeDumping(dbInterface) {
 
 
 function testDump() {
+  if (goog.userAgent.product.SAFARI) {
+    return;
+  }
+
   asyncTestCase.waitForAsync('testDump');
 
   var db = new lf.backstore.IndexedDB(lf.Global.get(), schema);
@@ -442,6 +487,10 @@ function testDump() {
 
 
 function testDump_Bundled() {
+  if (goog.userAgent.product.SAFARI) {
+    return;
+  }
+
   asyncTestCase.waitForAsync('testDump_Bundled');
 
   var db = new lf.backstore.IndexedDB(lf.Global.get(), schema, true);

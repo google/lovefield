@@ -18,6 +18,7 @@ goog.setTestOnly();
 goog.require('goog.Promise');
 goog.require('goog.testing.AsyncTestCase');
 goog.require('goog.testing.jsunit');
+goog.require('goog.userAgent.product');
 goog.require('hr.db');
 goog.require('lf.Exception');
 goog.require('lf.Global');
@@ -44,7 +45,8 @@ var r;
 
 function setUp() {
   asyncTestCase.waitForAsync('setUp');
-  hr.db.getInstance().then(
+  var volatile = goog.userAgent.product.SAFARI;
+  hr.db.getInstance(undefined, volatile).then(
       function(database) {
         db = database;
         backStore = lf.Global.get().getService(lf.service.BACK_STORE);

@@ -18,6 +18,7 @@ goog.setTestOnly();
 goog.require('goog.Promise');
 goog.require('goog.testing.AsyncTestCase');
 goog.require('goog.testing.jsunit');
+goog.require('goog.userAgent.product');
 goog.require('hr.bdb');
 goog.require('lf.Exception');
 goog.require('lf.Global');
@@ -44,6 +45,10 @@ var r;
 
 
 function setUp() {
+  if (goog.userAgent.product.SAFARI) {
+    return;
+  }
+
   asyncTestCase.waitForAsync('setUp');
   hr.bdb.getInstance().then(
       function(database) {
@@ -78,6 +83,10 @@ function clearDb() {
  * Smoke test for the most basic DB operations, Create, Read, Update, Delete.
  */
 function testCRUD() {
+  if (goog.userAgent.product.SAFARI) {
+    return;
+  }
+
   asyncTestCase.waitForAsync('testCRUD');
 
   var regionRows = generateSampleRows();
@@ -209,6 +218,10 @@ function testCRUD() {
  * manner.
  */
 function testOverlappingScope_MultipleInserts() {
+  if (goog.userAgent.product.SAFARI) {
+    return;
+  }
+
   // TODO(arthurhsu): add a new test case to test failure case.
   asyncTestCase.waitForAsync('testOverlappingScope_MultipleInserts');
   var rowCount = 3;
@@ -250,6 +263,10 @@ function testOverlappingScope_MultipleInserts() {
  * Smoke test for transactions.
  */
 function testTransaction() {
+  if (goog.userAgent.product.SAFARI) {
+    return;
+  }
+
   var rows = generateSampleRows();
   var r = db.getSchema().getRegion();
   var tx = db.createTransaction(lf.TransactionType.READ_WRITE);
