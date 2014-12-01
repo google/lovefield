@@ -22,7 +22,6 @@ goog.require('goog.userAgent.product');
 goog.require('hr.db');
 goog.require('lf.Global');
 goog.require('lf.proc.ObserverQueryTask');
-goog.require('lf.query');
 goog.require('lf.testing.hrSchemaSampleData');
 
 
@@ -100,13 +99,13 @@ function testExec() {
       assertEquals(1, change['addedCount']);
     });
 
-    lf.query.unobserve(selectQuery, observerCallback);
+    db.unobserve(selectQuery, observerCallback);
     asyncTestCase.continueTesting();
   };
 
   insertSampleJobs().then(function() {
     // Start observing.
-    lf.query.observe(selectQuery, observerCallback);
+    db.observe(selectQuery, observerCallback);
     var observerTask = new lf.proc.ObserverQueryTask(
         lf.Global.get(), [selectQuery.getQuery()]);
     return observerTask.exec();

@@ -12,12 +12,10 @@ var p = db.getSchema().getPhoto();
 var query = db.select().from(p).where(p.id.eq('1'));
 
 // Handler shares exactly same syntax as the handler for Array.observe.
-lf.query.observe(query, handler);
-
-query.exec().then(function(rows) {
-  // The rows will be the same instance every time you call exec until
-  // lf.query.unobserve is called.
-});
+var handler = function(changes) {
+  // Will be called every time there is a change until db.unobserve is called.
+};
+db.observe(query, handler);
 
 // The call below will trigger changes to the observed select. Internally
 // Lovefield will run the query again if the scope overlaps, therefore please
@@ -25,7 +23,7 @@ query.exec().then(function(rows) {
 db.update(p).set(p.title, 'New Title').where(p.id.eq('1')).exec();
 
 // Remember to release observer to avoid leaking.
-lf.query.unobserve(query, handler);
+db.unobserve(query, handler);
 ```
 
 ### 8.2 Parameterized Query
@@ -69,7 +67,7 @@ var query = db.
     select().
     from(order).
     where(order.date.between(lf.bind(0), lf.bind(1)));
-lf.query.observe(query, populateChanges);
+db.observe(query, populateChanges);
 
 // Say we have two text boxes on screen, whose values are bound to an in-memory
 // object named dataRange. When the dataRange changes, we want to update the

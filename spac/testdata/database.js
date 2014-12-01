@@ -7,8 +7,6 @@ goog.require('lf.fn');
 /** @suppress {extraRequire} */
 goog.require('lf.op');
 goog.require('lf.proc.Database');
-/** @suppress {extraRequire} */
-goog.require('lf.query');
 goog.require('lf.service');
 goog.require('lovefield.db.schema.Database');
 

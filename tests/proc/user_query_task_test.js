@@ -26,7 +26,6 @@ goog.require('lf.TransactionType');
 goog.require('lf.bind');
 goog.require('lf.cache.Journal');
 goog.require('lf.proc.UserQueryTask');
-goog.require('lf.query');
 goog.require('lf.service');
 goog.require('lf.testing.hrSchemaSampleData');
 
@@ -280,7 +279,7 @@ function testSinglePlan_ParametrizedQuery() {
       assertEquals(1, change['addedCount']);
     });
 
-    lf.query.unobserve(selectQueryBuilder, observerCallback);
+    db.unobserve(selectQueryBuilder, observerCallback);
     asyncTestCase.continueTesting();
   };
 
@@ -289,7 +288,7 @@ function testSinglePlan_ParametrizedQuery() {
 
   insertQueryTask.exec().then(function() {
     // Start observing.
-    lf.query.observe(selectQueryBuilder, observerCallback);
+    db.observe(selectQueryBuilder, observerCallback);
 
     // Bind parameters to some values.
     selectQueryBuilder.bind(['jobId2', 'jobId4']);

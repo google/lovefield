@@ -3532,8 +3532,8 @@ goog.addDependency('testing/style/layoutasserts.js', ['goog.testing.style.layout
 goog.addDependency('testing/style/layoutasserts_test.js', ['goog.testing.style.layoutassertsTest'], ['goog.dom', 'goog.style', 'goog.testing.jsunit', 'goog.testing.style.layoutasserts'], false);
 goog.addDependency('testing/style/style.js', ['goog.testing.style'], ['goog.dom', 'goog.math.Rect', 'goog.style'], false);
 goog.addDependency('testing/style/style_test.js', ['goog.testing.styleTest'], ['goog.dom', 'goog.style', 'goog.testing.jsunit', 'goog.testing.style'], false);
-goog.addDependency('testing/testcase.js', ['goog.testing.TestCase', 'goog.testing.TestCase.Error', 'goog.testing.TestCase.Order', 'goog.testing.TestCase.Result', 'goog.testing.TestCase.Test'], ['goog.object', 'goog.testing.asserts', 'goog.testing.stacktrace'], false);
-goog.addDependency('testing/testcase_test.js', ['goog.testing.TestCaseTest'], ['goog.testing.TestCase', 'goog.testing.jsunit'], false);
+goog.addDependency('testing/testcase.js', ['goog.testing.TestCase', 'goog.testing.TestCase.Error', 'goog.testing.TestCase.Order', 'goog.testing.TestCase.Result', 'goog.testing.TestCase.Test'], ['goog.Promise', 'goog.Thenable', 'goog.object', 'goog.testing.asserts', 'goog.testing.stacktrace'], false);
+goog.addDependency('testing/testcase_test.js', ['goog.testing.TestCaseTest'], ['goog.Promise', 'goog.testing.TestCase', 'goog.testing.jsunit'], false);
 goog.addDependency('testing/testqueue.js', ['goog.testing.TestQueue'], [], false);
 goog.addDependency('testing/testrunner.js', ['goog.testing.TestRunner'], ['goog.testing.TestCase'], false);
 goog.addDependency('testing/ui/rendererasserts.js', ['goog.testing.ui.rendererasserts'], ['goog.testing.asserts'], false);
@@ -25657,132 +25657,14 @@ lf.proc.CrossProductStep.crossProduct_ = function(
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-goog.provide('lf.Global');
-
-goog.require('goog.structs.Map');
-goog.require('lf.Exception');
-
-
-
-/**
- * Global context for Lovefield services.
- * @constructor @struct
- */
-lf.Global = function() {
-  /** @private {!goog.structs.Map.<string, !Object>} */
-  this.services_ = new goog.structs.Map();
-};
-
-
-/** @private {?lf.Global} */
-lf.Global.instance_;
-
-
-/** @return {!lf.Global} */
-lf.Global.get = function() {
-  if (!lf.Global.instance_) {
-    lf.Global.instance_ = new lf.Global();
-  }
-  return lf.Global.instance_;
-};
-
-
-/** Resets the global instance, useful for testing. */
-lf.Global.reset = function() {
-  lf.Global.instance_ = null;
-};
-
-
-/**
- * @template T
- * @param {!lf.service.ServiceId.<T>} serviceId
- * @param {!T} service
- * @return {!T} The registered service for chaining.
- */
-lf.Global.prototype.registerService = function(serviceId, service) {
-  this.services_.set(serviceId.toString(), service);
-  return service;
-};
-
-
-/**
- * @template T
- * @param {!lf.service.ServiceId.<T>} serviceId
- * @return {!T} The registered service or throws if not registered yet.
- * @throws {!lf.Exception}
- */
-lf.Global.prototype.getService = function(serviceId) {
-  var service = this.services_.get(serviceId.toString(), null);
-  if (service == null) {
-    throw new lf.Exception(lf.Exception.Type.NOT_FOUND, serviceId.toString());
-  }
-  return service;
-};
-
-
-/**
- * @param {!lf.service.ServiceId} serviceId
- * @return {boolean} Whether the service is registered or not.
- */
-lf.Global.prototype.isRegistered = function(serviceId) {
-  return this.services_.containsKey(serviceId.toString());
-};
-
-/**
- * @license
- * Copyright 2014 Google Inc. All Rights Reserved.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-goog.provide('lf.query');
 goog.provide('lf.query.Builder');
 goog.provide('lf.query.Delete');
 goog.provide('lf.query.Insert');
 goog.provide('lf.query.Select');
 goog.provide('lf.query.Update');
 
-goog.require('lf.Global');
-goog.require('lf.service');
-
 goog.forwardDeclare('lf.Order');
 goog.forwardDeclare('lf.Type');
-
-
-/**
- * Registers an observer for the given query.
- * @param {!lf.query.Select} query The query to be observed.
- * @param {!Function} callback The callback to be called whenever the results of
- *     the given query are modified.
- * @export
- */
-lf.query.observe = function(query, callback) {
-  var observerRegistry = lf.Global.get().getService(
-      lf.service.OBSERVER_REGISTRY);
-  observerRegistry.addObserver(query, callback);
-};
-
-
-/**
- * Unregisters an observer for the given query.
- * @param {!lf.query.Select} query The query to be unobserved.
- * @param {!Function} callback The callback to be unregistered.
- * @export
- */
-lf.query.unobserve = function(query, callback) {
-  var observerRegistry = lf.Global.get().getService(
-      lf.service.OBSERVER_REGISTRY);
-  observerRegistry.removeObserver(query, callback);
-};
 
 
 
@@ -30470,6 +30352,93 @@ lf.proc.Runner.prototype.onTaskError_ = function(task, error) {
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+goog.provide('lf.Global');
+
+goog.require('goog.structs.Map');
+goog.require('lf.Exception');
+
+
+
+/**
+ * Global context for Lovefield services.
+ * @constructor @struct
+ */
+lf.Global = function() {
+  /** @private {!goog.structs.Map.<string, !Object>} */
+  this.services_ = new goog.structs.Map();
+};
+
+
+/** @private {?lf.Global} */
+lf.Global.instance_;
+
+
+/** @return {!lf.Global} */
+lf.Global.get = function() {
+  if (!lf.Global.instance_) {
+    lf.Global.instance_ = new lf.Global();
+  }
+  return lf.Global.instance_;
+};
+
+
+/** Resets the global instance, useful for testing. */
+lf.Global.reset = function() {
+  lf.Global.instance_ = null;
+};
+
+
+/**
+ * @template T
+ * @param {!lf.service.ServiceId.<T>} serviceId
+ * @param {!T} service
+ * @return {!T} The registered service for chaining.
+ */
+lf.Global.prototype.registerService = function(serviceId, service) {
+  this.services_.set(serviceId.toString(), service);
+  return service;
+};
+
+
+/**
+ * @template T
+ * @param {!lf.service.ServiceId.<T>} serviceId
+ * @return {!T} The registered service or throws if not registered yet.
+ * @throws {!lf.Exception}
+ */
+lf.Global.prototype.getService = function(serviceId) {
+  var service = this.services_.get(serviceId.toString(), null);
+  if (service == null) {
+    throw new lf.Exception(lf.Exception.Type.NOT_FOUND, serviceId.toString());
+  }
+  return service;
+};
+
+
+/**
+ * @param {!lf.service.ServiceId} serviceId
+ * @return {boolean} Whether the service is registered or not.
+ */
+lf.Global.prototype.isRegistered = function(serviceId) {
+  return this.services_.containsKey(serviceId.toString());
+};
+
+/**
+ * @license
+ * Copyright 2014 Google Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 goog.provide('lf.DiffCalculator');
 
 goog.require('goog.math');
@@ -30974,6 +30943,23 @@ lf.Database.prototype.delete;
 
 
 /**
+ * Registers an observer for the given query.
+ * @param {!lf.query.Select} query The query to be observed.
+ * @param {!Function} callback The callback to be called whenever the results of
+ *     the given query are modified.
+ */
+lf.Database.prototype.observe;
+
+
+/**
+ * Unregisters an observer for the given query.
+ * @param {!lf.query.Select} query The query to be unobserved.
+ * @param {!Function} callback The callback to be unregistered.
+ */
+lf.Database.prototype.unobserve;
+
+
+/**
  * @param {lf.TransactionType=} opt_type
  * @return {!lf.Transaction}
  */
@@ -31077,6 +31063,7 @@ goog.require('lf.query.DeleteBuilder');
 goog.require('lf.query.InsertBuilder');
 goog.require('lf.query.SelectBuilder');
 goog.require('lf.query.UpdateBuilder');
+goog.require('lf.service');
 
 
 
@@ -31167,6 +31154,22 @@ lf.proc.Database.prototype.update = function(table) {
 lf.proc.Database.prototype.delete = function() {
   this.checkInit_();
   return new lf.query.DeleteBuilder(lf.Global.get());
+};
+
+
+/** @override */
+lf.proc.Database.prototype.observe = function(query, callback) {
+  var observerRegistry = lf.Global.get().getService(
+      lf.service.OBSERVER_REGISTRY);
+  observerRegistry.addObserver(query, callback);
+};
+
+
+/** @override */
+lf.proc.Database.prototype.unobserve = function(query, callback) {
+  var observerRegistry = lf.Global.get().getService(
+      lf.service.OBSERVER_REGISTRY);
+  observerRegistry.removeObserver(query, callback);
 };
 
 
