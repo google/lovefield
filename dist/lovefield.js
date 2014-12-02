@@ -229,6 +229,13 @@ goog.define('goog.STRICT_MODE_COMPATIBLE', false);
 
 
 /**
+ * @define {boolean} Whether code that calls {@link goog.setTestOnly} should
+ *     be disallowed in the compilation unit.
+ */
+goog.define('goog.DISALLOW_TEST_ONLY_CODE', COMPILED && !goog.DEBUG);
+
+
+/**
  * Creates object stubs for a namespace.  The presence of one or more
  * goog.provide() calls indicate that the file defines the given
  * objects/namespaces.  Provided objects must not be null or undefined.
@@ -431,7 +438,7 @@ goog.module.declareLegacyNamespace = function() {
  *     raised when used in production code.
  */
 goog.setTestOnly = function(opt_message) {
-  if (COMPILED && !goog.DEBUG) {
+  if (goog.DISALLOW_TEST_ONLY_CODE) {
     opt_message = opt_message || '';
     throw Error('Importing test-only code into non-debug environment' +
                 (opt_message ? ': ' + opt_message : '.'));
@@ -2160,7 +2167,12 @@ goog.inherits = function(childCtor, parentCtor) {
    * @return {*} The return value of the superclass method/constructor.
    */
   childCtor.base = function(me, methodName, var_args) {
-    var args = Array.prototype.slice.call(arguments, 2);
+    // Copying using loop to avoid deop due to passing arguments object to
+    // function. This is faster in many JS engines as of late 2014.
+    var args = new Array(arguments.length - 2);
+    for (var i = 2; i < arguments.length; i++) {
+      args[i - 2] = arguments[i];
+    }
     return parentCtor.prototype[methodName].apply(me, args);
   };
 };
@@ -2201,12 +2213,22 @@ goog.base = function(me, opt_methodName, var_args) {
   }
 
   if (caller.superClass_) {
+    // Copying using loop to avoid deop due to passing arguments object to
+    // function. This is faster in many JS engines as of late 2014.
+    var ctorArgs = new Array(arguments.length - 1);
+    for (var i = 1; i < arguments.length; i++) {
+      ctorArgs[i - 1] = arguments[i];
+    }
     // This is a constructor. Call the superclass constructor.
-    return caller.superClass_.constructor.apply(
-        me, Array.prototype.slice.call(arguments, 1));
+    return caller.superClass_.constructor.apply(me, ctorArgs);
   }
 
-  var args = Array.prototype.slice.call(arguments, 2);
+  // Copying using loop to avoid deop due to passing arguments object to
+  // function. This is faster in many JS engines as of late 2014.
+  var args = new Array(arguments.length - 2);
+  for (var i = 2; i < arguments.length; i++) {
+    args[i - 2] = arguments[i];
+  }
   var foundCaller = false;
   for (var ctor = me.constructor;
        ctor; ctor = ctor.superClass_ && ctor.superClass_.constructor) {
@@ -2918,7 +2940,7 @@ goog.addDependency('history/history.js', ['goog.History', 'goog.History.Event', 
 goog.addDependency('history/history_test.js', ['goog.HistoryTest'], ['goog.History', 'goog.dispose', 'goog.dom', 'goog.testing.jsunit', 'goog.userAgent'], false);
 goog.addDependency('history/html5history.js', ['goog.history.Html5History', 'goog.history.Html5History.TokenTransformer'], ['goog.asserts', 'goog.events', 'goog.events.EventTarget', 'goog.events.EventType', 'goog.history.Event'], false);
 goog.addDependency('history/html5history_test.js', ['goog.history.Html5HistoryTest'], ['goog.history.Html5History', 'goog.testing.MockControl', 'goog.testing.jsunit', 'goog.testing.mockmatchers'], false);
-goog.addDependency('html/flash.js', ['goog.html.flash'], ['goog.html.SafeHtml'], false);
+goog.addDependency('html/flash.js', ['goog.html.flash'], ['goog.asserts', 'goog.html.SafeHtml'], false);
 goog.addDependency('html/flash_test.js', ['goog.html.flashTest'], ['goog.html.SafeHtml', 'goog.html.TrustedResourceUrl', 'goog.html.flash', 'goog.string.Const', 'goog.testing.jsunit'], false);
 goog.addDependency('html/legacyconversions.js', ['goog.html.legacyconversions'], ['goog.html.SafeHtml', 'goog.html.SafeUrl', 'goog.html.TrustedResourceUrl'], false);
 goog.addDependency('html/legacyconversions_test.js', ['goog.html.legacyconversionsTest'], ['goog.html.SafeHtml', 'goog.html.SafeUrl', 'goog.html.TrustedResourceUrl', 'goog.html.legacyconversions', 'goog.testing.PropertyReplacer', 'goog.testing.jsunit'], false);
@@ -2932,6 +2954,8 @@ goog.addDependency('html/safestylesheet.js', ['goog.html.SafeStyleSheet'], ['goo
 goog.addDependency('html/safestylesheet_test.js', ['goog.html.safeStyleSheetTest'], ['goog.html.SafeStyleSheet', 'goog.string', 'goog.string.Const', 'goog.testing.jsunit'], false);
 goog.addDependency('html/safeurl.js', ['goog.html.SafeUrl'], ['goog.asserts', 'goog.i18n.bidi.Dir', 'goog.i18n.bidi.DirectionalString', 'goog.string.Const', 'goog.string.TypedString'], false);
 goog.addDependency('html/safeurl_test.js', ['goog.html.safeUrlTest'], ['goog.html.SafeUrl', 'goog.i18n.bidi.Dir', 'goog.string.Const', 'goog.testing.jsunit'], false);
+goog.addDependency('html/silverlight.js', ['goog.html.silverlight'], ['goog.html.SafeHtml', 'goog.html.TrustedResourceUrl', 'goog.html.flash', 'goog.string.Const'], false);
+goog.addDependency('html/silverlight_test.js', ['goog.html.silverlightTest'], ['goog.html.SafeHtml', 'goog.html.TrustedResourceUrl', 'goog.html.silverlight', 'goog.string.Const', 'goog.testing.jsunit'], false);
 goog.addDependency('html/testing.js', ['goog.html.testing'], ['goog.html.SafeHtml', 'goog.html.SafeScript', 'goog.html.SafeStyle', 'goog.html.SafeStyleSheet', 'goog.html.SafeUrl', 'goog.html.TrustedResourceUrl'], false);
 goog.addDependency('html/trustedresourceurl.js', ['goog.html.TrustedResourceUrl'], ['goog.asserts', 'goog.i18n.bidi.Dir', 'goog.i18n.bidi.DirectionalString', 'goog.string.Const', 'goog.string.TypedString'], false);
 goog.addDependency('html/trustedresourceurl_test.js', ['goog.html.trustedResourceUrlTest'], ['goog.html.TrustedResourceUrl', 'goog.i18n.bidi.Dir', 'goog.string.Const', 'goog.testing.jsunit'], false);
@@ -3649,7 +3673,7 @@ goog.addDependency('ui/editor/abstractdialog_test.js', ['goog.ui.editor.Abstract
 goog.addDependency('ui/editor/bubble.js', ['goog.ui.editor.Bubble'], ['goog.asserts', 'goog.dom', 'goog.dom.TagName', 'goog.dom.ViewportSizeMonitor', 'goog.dom.classlist', 'goog.editor.style', 'goog.events.EventHandler', 'goog.events.EventTarget', 'goog.events.EventType', 'goog.functions', 'goog.log', 'goog.math.Box', 'goog.object', 'goog.positioning', 'goog.positioning.Corner', 'goog.positioning.Overflow', 'goog.positioning.OverflowStatus', 'goog.string', 'goog.style', 'goog.ui.Component', 'goog.ui.PopupBase', 'goog.userAgent'], false);
 goog.addDependency('ui/editor/bubble_test.js', ['goog.ui.editor.BubbleTest'], ['goog.dom', 'goog.dom.TagName', 'goog.events', 'goog.events.EventType', 'goog.positioning.Corner', 'goog.positioning.OverflowStatus', 'goog.string', 'goog.style', 'goog.testing.editor.TestHelper', 'goog.testing.events', 'goog.testing.jsunit', 'goog.ui.Component', 'goog.ui.editor.Bubble'], false);
 goog.addDependency('ui/editor/defaulttoolbar.js', ['goog.ui.editor.ButtonDescriptor', 'goog.ui.editor.DefaultToolbar'], ['goog.asserts', 'goog.dom', 'goog.dom.TagName', 'goog.dom.classlist', 'goog.editor.Command', 'goog.style', 'goog.ui.editor.ToolbarFactory', 'goog.ui.editor.messages', 'goog.userAgent'], false);
-goog.addDependency('ui/editor/linkdialog.js', ['goog.ui.editor.LinkDialog', 'goog.ui.editor.LinkDialog.BeforeTestLinkEvent', 'goog.ui.editor.LinkDialog.EventType', 'goog.ui.editor.LinkDialog.OkEvent'], ['goog.dom', 'goog.dom.TagName', 'goog.dom.safe', 'goog.editor.BrowserFeature', 'goog.editor.Link', 'goog.editor.focus', 'goog.editor.node', 'goog.events.Event', 'goog.events.EventHandler', 'goog.events.EventType', 'goog.events.InputHandler', 'goog.html.SafeHtml', 'goog.string', 'goog.string.Unicode', 'goog.style', 'goog.ui.Button', 'goog.ui.Component', 'goog.ui.LinkButtonRenderer', 'goog.ui.editor.AbstractDialog', 'goog.ui.editor.TabPane', 'goog.ui.editor.messages', 'goog.userAgent', 'goog.window'], false);
+goog.addDependency('ui/editor/linkdialog.js', ['goog.ui.editor.LinkDialog', 'goog.ui.editor.LinkDialog.BeforeTestLinkEvent', 'goog.ui.editor.LinkDialog.EventType', 'goog.ui.editor.LinkDialog.OkEvent'], ['goog.a11y.aria', 'goog.a11y.aria.State', 'goog.dom', 'goog.dom.TagName', 'goog.dom.safe', 'goog.editor.BrowserFeature', 'goog.editor.Link', 'goog.editor.focus', 'goog.editor.node', 'goog.events.Event', 'goog.events.EventHandler', 'goog.events.EventType', 'goog.events.InputHandler', 'goog.html.SafeHtml', 'goog.string', 'goog.string.Unicode', 'goog.style', 'goog.ui.Button', 'goog.ui.Component', 'goog.ui.LinkButtonRenderer', 'goog.ui.editor.AbstractDialog', 'goog.ui.editor.TabPane', 'goog.ui.editor.messages', 'goog.userAgent', 'goog.window'], false);
 goog.addDependency('ui/editor/linkdialog_test.js', ['goog.ui.editor.LinkDialogTest'], ['goog.dom', 'goog.dom.DomHelper', 'goog.dom.TagName', 'goog.editor.BrowserFeature', 'goog.editor.Link', 'goog.events', 'goog.events.Event', 'goog.events.EventHandler', 'goog.events.InputHandler', 'goog.style', 'goog.testing.MockControl', 'goog.testing.PropertyReplacer', 'goog.testing.dom', 'goog.testing.events', 'goog.testing.jsunit', 'goog.testing.mockmatchers', 'goog.testing.mockmatchers.ArgumentMatcher', 'goog.ui.editor.AbstractDialog', 'goog.ui.editor.LinkDialog', 'goog.ui.editor.messages', 'goog.userAgent'], false);
 goog.addDependency('ui/editor/messages.js', ['goog.ui.editor.messages'], ['goog.html.uncheckedconversions', 'goog.string.Const'], false);
 goog.addDependency('ui/editor/tabpane.js', ['goog.ui.editor.TabPane'], ['goog.asserts', 'goog.dom.TagName', 'goog.dom.classlist', 'goog.events.EventHandler', 'goog.events.EventType', 'goog.style', 'goog.ui.Component', 'goog.ui.Control', 'goog.ui.Tab', 'goog.ui.TabBar'], false);
@@ -3869,7 +3893,7 @@ goog.addDependency('useragent/product_isversion.js', ['goog.userAgent.product.is
 goog.addDependency('useragent/product_test.js', ['goog.userAgent.productTest'], ['goog.array', 'goog.labs.userAgent.util', 'goog.testing.MockUserAgent', 'goog.testing.PropertyReplacer', 'goog.testing.jsunit', 'goog.userAgent', 'goog.userAgent.product', 'goog.userAgent.product.isVersion', 'goog.userAgentTestUtil'], false);
 goog.addDependency('useragent/useragent.js', ['goog.userAgent'], ['goog.labs.userAgent.browser', 'goog.labs.userAgent.engine', 'goog.labs.userAgent.platform', 'goog.labs.userAgent.util', 'goog.string'], false);
 goog.addDependency('useragent/useragent_quirks_test.js', ['goog.userAgentQuirksTest'], ['goog.testing.jsunit', 'goog.userAgent'], false);
-goog.addDependency('useragent/useragent_test.js', ['goog.userAgentTest'], ['goog.array', 'goog.labs.userAgent.testAgents', 'goog.labs.userAgent.util', 'goog.testing.PropertyReplacer', 'goog.testing.jsunit', 'goog.userAgent', 'goog.userAgentTestUtil'], false);
+goog.addDependency('useragent/useragent_test.js', ['goog.userAgentTest'], ['goog.array', 'goog.labs.userAgent.platform', 'goog.labs.userAgent.testAgents', 'goog.labs.userAgent.util', 'goog.testing.PropertyReplacer', 'goog.testing.jsunit', 'goog.userAgent', 'goog.userAgentTestUtil'], false);
 goog.addDependency('useragent/useragenttestutil.js', ['goog.userAgentTestUtil', 'goog.userAgentTestUtil.UserAgents'], ['goog.labs.userAgent.browser', 'goog.labs.userAgent.engine', 'goog.labs.userAgent.platform', 'goog.userAgent', 'goog.userAgent.keyboard', 'goog.userAgent.platform', 'goog.userAgent.product', 'goog.userAgent.product.isVersion'], false);
 goog.addDependency('vec/float32array.js', ['goog.vec.Float32Array'], [], false);
 goog.addDependency('vec/float64array.js', ['goog.vec.Float64Array'], [], false);

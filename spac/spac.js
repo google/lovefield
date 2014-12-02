@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 /**
  * @fileoverview Loader of SPAC (Schema Parser And Code-generator) that is
  * supposed to run via node.js.
@@ -34,7 +35,8 @@ var knownOpts = {
   'schema': [String],
   'namespace': [String],
   'outputdir': [String],
-  'templatedir': [String, null]
+  'templatedir': [String, null],
+  'nocombine': [Boolean, false]
 };
 var args = noptMod(knownOpts);
 
@@ -47,6 +49,7 @@ if (!args.hasOwnProperty('schema') ||
   log('  --namespace Namespace of generated code');
   log('  --outputdir Output directory');
   log('  --templatedir Optional, directory containing templates');
+  log('  --nocombine Optional, do not combine generated files, default: false');
   process.exit(1);
 }
 
@@ -72,9 +75,21 @@ var schema = parseAndValidate(fsMod.readFileSync(schemaPath));
 
 var codegen = new CodeGen(namespace, schema);
 for (var j = 0; j < templates.length; ++j) {
-  var baseName = pathMod.basename(templates[j]).replace(/\.jstemplate/, '.js');
-  baseName = namespace.replace(/\./g, '_') + '_' + baseName;
-  var outputFile = pathMod.join(outputDir, baseName);
+  var templateName =
+      pathMod.basename(templates[j]).replace(/\.jstemplate/, '.js');
+  var baseName = namespace.replace(/\./g, '_');
   var codeTemplate = fsMod.readFileSync(templates[j]);
-  fsMod.writeFileSync(outputFile, codegen.generate(baseName, codeTemplate));
+  var generated = codegen.generate(baseName, codeTemplate);
+
+  if (!args.nocombine) {
+    var destFile = pathMod.join(outputDir, baseName + '_' + 'gen.js');
+    if (j == 0) {
+      fsMod.writeFileSync(destFile, generated);
+    } else {
+      fsMod.appendFileSync(destFile, generated);
+    }
+  } else {
+    var outputFile = pathMod.join(outputDir, baseName + '_' + templateName);
+    fsMod.writeFileSync(outputFile, generated);
+  }
 }
