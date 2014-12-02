@@ -18,7 +18,6 @@ goog.setTestOnly();
 goog.require('goog.testing.AsyncTestCase');
 goog.require('goog.testing.jsunit');
 goog.require('hr.db');
-goog.require('lf.Global');
 goog.require('lf.query.DeleteBuilder');
 
 
@@ -46,7 +45,7 @@ function setUp() {
  */
 function testExec_ThrowsMissingFrom() {
   asyncTestCase.waitForAsync('testExec_ThrowsMissingFrom');
-  var query = new lf.query.DeleteBuilder(lf.Global.get());
+  var query = new lf.query.DeleteBuilder(hr.db.getGlobal());
   var employeeTable = db.getSchema().getEmployee();
   query.where(employeeTable.jobId.eq('dummyJobId'));
   query.exec().then(
@@ -61,7 +60,7 @@ function testExec_ThrowsMissingFrom() {
  * Tests that Delete#from() fails if from() has already been called.
  */
 function testFrom_ThrowsAlreadyCalled() {
-  var query = new lf.query.DeleteBuilder(lf.Global.get());
+  var query = new lf.query.DeleteBuilder(hr.db.getGlobal());
 
   var buildQuery = function() {
     var e = db.getSchema().getEmployee();
@@ -76,7 +75,7 @@ function testFrom_ThrowsAlreadyCalled() {
  * Tests that Delete#where() fails if where() has already been called.
  */
 function testWhere_ThrowsAlreadyCalled() {
-  var query = new lf.query.DeleteBuilder(lf.Global.get());
+  var query = new lf.query.DeleteBuilder(hr.db.getGlobal());
 
   var buildQuery = function() {
     var employeeTable = db.getSchema().getEmployee();

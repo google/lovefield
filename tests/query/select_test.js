@@ -20,7 +20,6 @@ goog.require('goog.testing.AsyncTestCase');
 goog.require('goog.testing.jsunit');
 goog.require('hr.db');
 goog.require('lf.Exception');
-goog.require('lf.Global');
 goog.require('lf.bind');
 goog.require('lf.fn');
 goog.require('lf.query.SelectBuilder');
@@ -50,7 +49,7 @@ function setUp() {
  */
 function testExec_ThrowsMissingFrom() {
   asyncTestCase.waitForAsync('testExec_ThrowsMissingFrom');
-  var query = new lf.query.SelectBuilder(lf.Global.get(), []);
+  var query = new lf.query.SelectBuilder(hr.db.getGlobal(), []);
   query.exec().then(
       fail,
       function(e) {
@@ -68,7 +67,7 @@ function testExec_ThrowsInvalidProjectionList() {
 
   var e = db.getSchema().getEmployee();
   var query = new lf.query.SelectBuilder(
-      lf.Global.get(), [e.email, lf.fn.avg(e.salary)]);
+      hr.db.getGlobal(), [e.email, lf.fn.avg(e.salary)]);
   query.from(e).exec().then(
       fail,
       function(e) {
@@ -86,7 +85,8 @@ function testExec_ThrowsInvalidProjectionList_GroupBy() {
   asyncTestCase.waitForAsync('testExec_ThrowsInvalidProjectionList_GroupBy');
 
   var e = db.getSchema().getEmployee();
-  var query = new lf.query.SelectBuilder(lf.Global.get(), [e.email, e.salary]);
+  var query = new lf.query.SelectBuilder(
+      hr.db.getGlobal(), [e.email, e.salary]);
   query.from(e).groupBy(e.jobId).exec().then(
       fail,
       function(e) {
@@ -106,12 +106,12 @@ function testExec_ValidProjectionList() {
 
   // Constructing a query where all requested columns are aggregated.
   var query1 = new lf.query.SelectBuilder(
-      lf.Global.get(), [lf.fn.min(e.salary), lf.fn.avg(e.salary)]);
+      hr.db.getGlobal(), [lf.fn.min(e.salary), lf.fn.avg(e.salary)]);
   query1.from(e);
 
   // Constructing a query where all requested columns are non-aggregated.
   var query2 = new lf.query.SelectBuilder(
-      lf.Global.get(), [e.salary, e.salary]);
+      hr.db.getGlobal(), [e.salary, e.salary]);
   query2.from(e);
 
   goog.Promise.all([
@@ -133,7 +133,7 @@ function testExec_ValidProjectionList_GroupBy() {
 
   var e = db.getSchema().getEmployee();
   var query = new lf.query.SelectBuilder(
-      lf.Global.get(), [e.jobId, lf.fn.avg(e.salary)]);
+      hr.db.getGlobal(), [e.jobId, lf.fn.avg(e.salary)]);
   query.from(e).groupBy(e.jobId).exec().then(
       function(e) {
         asyncTestCase.continueTesting();
@@ -148,7 +148,7 @@ function testExec_UnboundPredicateThrows() {
   asyncTestCase.waitForAsync('testsExec_UnboundPredicateThrows');
 
   var emp = db.getSchema().getEmployee();
-  var query = new lf.query.SelectBuilder(lf.Global.get(), [emp.jobId]);
+  var query = new lf.query.SelectBuilder(hr.db.getGlobal(), [emp.jobId]);
   query.from(emp).where(emp.jobId.eq(lf.bind(0))).exec().then(fail,
       function(e) {
         assertEquals(lf.Exception.Type.SYNTAX, e.name);
@@ -161,7 +161,7 @@ function testExec_UnboundPredicateThrows() {
  * Tests that Select#from() fails if from() has already been called.
  */
 function testFrom_ThrowsAlreadyCalled() {
-  var query = new lf.query.SelectBuilder(lf.Global.get(), []);
+  var query = new lf.query.SelectBuilder(hr.db.getGlobal(), []);
 
   var buildQuery = function() {
     var jobTable = db.getSchema().getJob();
@@ -177,7 +177,7 @@ function testFrom_ThrowsAlreadyCalled() {
  * Tests that Select#where() fails if where() has already been called.
  */
 function testWhere_ThrowsAlreadyCalled() {
-  var query = new lf.query.SelectBuilder(lf.Global.get(), []);
+  var query = new lf.query.SelectBuilder(hr.db.getGlobal(), []);
 
   var buildQuery = function() {
     var employeeTable = db.getSchema().getEmployee();
@@ -193,7 +193,7 @@ function testWhere_ThrowsAlreadyCalled() {
  * Tests that Select#innerJoin() fails if innerJoin() has already been called.
  */
 function testInnerJoin_ThrowsAlreadyCalled() {
-  var query = new lf.query.SelectBuilder(lf.Global.get(), []);
+  var query = new lf.query.SelectBuilder(hr.db.getGlobal(), []);
 
   var buildQuery = function() {
     var jobTable = db.getSchema().getJob();
@@ -210,7 +210,7 @@ function testInnerJoin_ThrowsAlreadyCalled() {
  * Tests that Select#groupBy() fails if groupBy() has already been called.
  */
 function testGroupBy_ThrowsAlreadyCalled() {
-  var query = new lf.query.SelectBuilder(lf.Global.get(), []);
+  var query = new lf.query.SelectBuilder(hr.db.getGlobal(), []);
 
   var buildQuery = function() {
     var employeeTable = db.getSchema().getEmployee();
@@ -225,7 +225,7 @@ function testGroupBy_ThrowsAlreadyCalled() {
  * Tests that Select#limit() fails if limit() has already been called.
  */
 function testLimit_ThrowsAlreadyCalled() {
-  var query = new lf.query.SelectBuilder(lf.Global.get(), []);
+  var query = new lf.query.SelectBuilder(hr.db.getGlobal(), []);
 
   var buildQuery = function() {
     var employeeTable = db.getSchema().getEmployee();
@@ -241,7 +241,7 @@ function testLimit_ThrowsAlreadyCalled() {
  * passed.
  */
 function testLimit_ThrowsInvalidParameter() {
-  var query = new lf.query.SelectBuilder(lf.Global.get(), []);
+  var query = new lf.query.SelectBuilder(hr.db.getGlobal(), []);
   var employeeTable = db.getSchema().getEmployee();
 
   var buildQuery1 = function() {
@@ -261,7 +261,7 @@ function testLimit_ThrowsInvalidParameter() {
  * Tests that Select#skip() fails if skip() has already been called.
  */
 function testSkip_ThrowsAlreadyCalled() {
-  var query = new lf.query.SelectBuilder(lf.Global.get(), []);
+  var query = new lf.query.SelectBuilder(hr.db.getGlobal(), []);
 
   var buildQuery = function() {
     var employeeTable = db.getSchema().getEmployee();
@@ -277,7 +277,7 @@ function testSkip_ThrowsAlreadyCalled() {
  * passed.
  */
 function testSkip_ThrowsInvalidParameter() {
-  var query = new lf.query.SelectBuilder(lf.Global.get(), []);
+  var query = new lf.query.SelectBuilder(hr.db.getGlobal(), []);
   var employeeTable = db.getSchema().getEmployee();
 
   var buildQuery1 = function() {
@@ -297,7 +297,7 @@ function testProject_ThrowsInvalidColumns() {
   var job = db.getSchema().getJob();
 
   var buildQuery1 = function() {
-    var query = new lf.query.SelectBuilder(lf.Global.get(), [
+    var query = new lf.query.SelectBuilder(hr.db.getGlobal(), [
       lf.fn.distinct(job.maxSalary),
       lf.fn.avg(job.maxSalary)
     ]);
@@ -306,7 +306,7 @@ function testProject_ThrowsInvalidColumns() {
   assertThrowsSyntaxError(buildQuery1);
 
   var buildQuery2 = function() {
-    var query = new lf.query.SelectBuilder(lf.Global.get(), [
+    var query = new lf.query.SelectBuilder(hr.db.getGlobal(), [
       job.title,
       lf.fn.distinct(job.maxSalary)
     ]);
@@ -429,7 +429,7 @@ function checkAggregators(invalidAggregators, validAggregators, table) {
   invalidAggregators.forEach(function(aggregator) {
     var buildQuery = function() {
       return new lf.query.SelectBuilder(
-          lf.Global.get(), [aggregator]).from(table);
+          hr.db.getGlobal(), [aggregator]).from(table);
     };
     assertThrowsSyntaxError(buildQuery);
   });
@@ -437,7 +437,7 @@ function checkAggregators(invalidAggregators, validAggregators, table) {
   validAggregators.forEach(function(aggregator) {
     var buildQuery = function() {
       return new lf.query.SelectBuilder(
-          lf.Global.get(), [aggregator]).from(table);
+          hr.db.getGlobal(), [aggregator]).from(table);
     };
     assertNotThrows(buildQuery);
   });

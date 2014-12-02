@@ -19,7 +19,6 @@ goog.require('goog.testing.AsyncTestCase');
 goog.require('goog.testing.PropertyReplacer');
 goog.require('goog.testing.jsunit');
 goog.require('hr.db');
-goog.require('lf.Global');
 goog.require('lf.Order');
 goog.require('lf.eval.Type');
 goog.require('lf.pred.ValuePredicate');
@@ -69,7 +68,7 @@ function setUp() {
     j = database.getSchema().getJob();
     d = database.getSchema().getDepartment();
     indexStore =  /** @type {!lf.index.IndexStore} */ (
-        lf.Global.get().getService(lf.service.INDEX_STORE));
+        hr.db.getGlobal().getService(lf.service.INDEX_STORE));
   }).then(function() {
     asyncTestCase.continueTesting();
   }, fail);
@@ -106,7 +105,7 @@ function testSimpleTree() {
   selectNode.addChild(tableAccessNode);
   assertEquals(treeBefore, lf.tree.toString(rootNodeBefore));
 
-  var pass = new lf.proc.IndexRangeScanPass(lf.Global.get());
+  var pass = new lf.proc.IndexRangeScanPass(hr.db.getGlobal());
   var rootNodeAfter = pass.rewrite(rootNodeBefore);
   assertEquals(treeAfter, lf.tree.toString(rootNodeAfter));
 }
@@ -129,7 +128,7 @@ function testTree1() {
   var rootNodeBefore = constructTree1();
   assertEquals(treeBefore, lf.tree.toString(rootNodeBefore));
 
-  var pass = new lf.proc.IndexRangeScanPass(lf.Global.get());
+  var pass = new lf.proc.IndexRangeScanPass(hr.db.getGlobal());
   var rootNodeAfter = pass.rewrite(rootNodeBefore);
   assertEquals(treeAfter, lf.tree.toString(rootNodeAfter));
 }
@@ -170,7 +169,7 @@ function testTree2() {
   var rootNodeBefore = constructTree2();
   assertEquals(treeBefore, lf.tree.toString(rootNodeBefore));
 
-  var pass = new lf.proc.IndexRangeScanPass(lf.Global.get());
+  var pass = new lf.proc.IndexRangeScanPass(hr.db.getGlobal());
   var rootNodeAfter = pass.rewrite(rootNodeBefore);
   assertEquals(treeAfter, lf.tree.toString(rootNodeAfter));
 }
@@ -210,7 +209,7 @@ function testTree3() {
   rootNodeBefore.addChild(selectStep);
   assertEquals(treeBefore, lf.tree.toString(rootNodeBefore));
 
-  var pass = new lf.proc.IndexRangeScanPass(lf.Global.get());
+  var pass = new lf.proc.IndexRangeScanPass(hr.db.getGlobal());
   var rootNodeAfter = pass.rewrite(rootNodeBefore);
 
   assertEquals(treeAfter, lf.tree.toString(rootNodeAfter));

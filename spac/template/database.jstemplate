@@ -12,12 +12,33 @@ goog.require('lf.fn');
 goog.require('lf.op');
 goog.require('lf.proc.Database');
 goog.require('lf.service');
+goog.require('lf.service.ServiceId');
 /// #sortend
+
+
+/**
+ * @return {!lf.Global} The Global instance that refers to #namespace.
+ */
+#namespace.getGlobal = function() {
+  var namespacedGlobalId = new lf.service.ServiceId('ns_#dbname');
+  var global = lf.Global.get();
+
+  var namespacedGlobal = null;
+  if (!global.isRegistered(namespacedGlobalId)) {
+    namespacedGlobal = new lf.Global();
+    global.registerService(namespacedGlobalId, namespacedGlobal);
+  } else {
+    namespacedGlobal = global.getService(namespacedGlobalId);
+  }
+
+  return namespacedGlobal;
+};
 
 
 /** @return {!lf.schema.Database} */
 #namespace.getSchema = function() {
-  var global = lf.Global.get();
+  var global = #namespace.getGlobal();
+
   if (!global.isRegistered(lf.service.SCHEMA)) {
     var schema = new #namespace.schema.Database();
     global.registerService(lf.service.SCHEMA, schema);
@@ -33,7 +54,7 @@ goog.require('lf.service');
  */
 #namespace.getInstance = function(opt_onUpgrade, opt_volatile) {
   #namespace.getSchema();
-  var db = new lf.proc.Database(lf.Global.get());
+  var db = new lf.proc.Database(#namespace.getGlobal());
   return db.init(
       opt_onUpgrade,
       opt_volatile ? lf.base.BackStoreType.MEMORY : undefined);

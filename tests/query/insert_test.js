@@ -18,7 +18,6 @@ goog.setTestOnly();
 goog.require('goog.testing.AsyncTestCase');
 goog.require('goog.testing.jsunit');
 goog.require('hr.db');
-goog.require('lf.Global');
 goog.require('lf.query.InsertBuilder');
 goog.require('lf.testing.hrSchemaSampleData');
 
@@ -47,7 +46,7 @@ function setUp() {
  */
 function testExec_ThrowsMissingInto() {
   asyncTestCase.waitForAsync('testExec_ThrowsMissingInto');
-  var query = new lf.query.InsertBuilder(lf.Global.get());
+  var query = new lf.query.InsertBuilder(hr.db.getGlobal());
   var job = lf.testing.hrSchemaSampleData.generateSampleJobData(db);
   query.values([job]);
   query.exec().then(
@@ -63,7 +62,7 @@ function testExec_ThrowsMissingInto() {
  */
 function testExec_ThrowsMissingValues() {
   asyncTestCase.waitForAsync('testExec_ThrowsMissingValues');
-  var query = new lf.query.InsertBuilder(lf.Global.get());
+  var query = new lf.query.InsertBuilder(hr.db.getGlobal());
   query.into(db.getSchema().getJob());
   query.exec().then(
       fail,
@@ -83,7 +82,7 @@ function testExec_ThrowsNoPrimaryKey() {
   var jobHistoryRow = lf.testing.hrSchemaSampleData.
       generateSampleJobHistoryData(db);
   var query = new lf.query.InsertBuilder(
-      lf.Global.get(), /* allowReplace */ true);
+      hr.db.getGlobal(), /* allowReplace */ true);
 
   query.
       into(db.getSchema().getJobHistory()).
@@ -100,7 +99,7 @@ function testExec_ThrowsNoPrimaryKey() {
  * Tests that Insert#values() fails if values() has already been called.
  */
 function testValues_ThrowsAlreadyCalled() {
-  var query = new lf.query.InsertBuilder(lf.Global.get());
+  var query = new lf.query.InsertBuilder(hr.db.getGlobal());
 
   var job = lf.testing.hrSchemaSampleData.generateSampleJobData(db);
   var buildQuery = function() {
@@ -115,7 +114,7 @@ function testValues_ThrowsAlreadyCalled() {
  * Tests that Insert#into() fails if into() has already been called.
  */
 function testInto_ThrowsAlreadyCalled() {
-  var query = new lf.query.InsertBuilder(lf.Global.get());
+  var query = new lf.query.InsertBuilder(hr.db.getGlobal());
 
   var buildQuery = function() {
     var jobTable = db.getSchema().getJob();

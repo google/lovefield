@@ -21,7 +21,6 @@ goog.require('goog.testing.jsunit');
 goog.require('goog.userAgent.product');
 goog.require('hr.db');
 goog.require('lf.Exception');
-goog.require('lf.Global');
 goog.require('lf.TransactionType');
 goog.require('lf.cache.Journal');
 goog.require('lf.service');
@@ -49,7 +48,7 @@ function setUp() {
   hr.db.getInstance(undefined, volatile).then(
       function(database) {
         db = database;
-        backStore = lf.Global.get().getService(lf.service.BACK_STORE);
+        backStore = hr.db.getGlobal().getService(lf.service.BACK_STORE);
         r = db.getSchema().getRegion();
 
         // Delete any left-overs from previous tests.
@@ -325,6 +324,6 @@ function generateSampleRowsWithSamePrimaryKey(count) {
 function selectAll() {
   var tx = backStore.createTx(
       lf.TransactionType.READ_ONLY,
-      new lf.cache.Journal(lf.Global.get(), [r]));
+      new lf.cache.Journal(hr.db.getGlobal(), [r]));
   return tx.getTable(r).get([]);
 }

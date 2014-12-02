@@ -22,7 +22,6 @@ goog.require('goog.testing.AsyncTestCase');
 goog.require('goog.testing.jsunit');
 goog.require('hr.db');
 goog.require('lf.Exception');
-goog.require('lf.Global');
 goog.require('lf.TransactionType');
 goog.require('lf.bind');
 goog.require('lf.cache.Journal');
@@ -71,7 +70,7 @@ function setUp() {
     db = database;
     j = db.getSchema().getJob();
     e = db.getSchema().getEmployee();
-    backStore = lf.Global.get().getService(lf.service.BACK_STORE);
+    backStore = hr.db.getGlobal().getService(lf.service.BACK_STORE);
     return addSampleData();
   }).then(function() {
     asyncTestCase.continueTesting();
@@ -291,7 +290,7 @@ function testDelete_All() {
 function selectAll() {
   var tx = backStore.createTx(
       lf.TransactionType.READ_ONLY,
-      new lf.cache.Journal(lf.Global.get(), [j]));
+      new lf.cache.Journal(hr.db.getGlobal(), [j]));
   var table = tx.getTable(j);
   return table.get([]);
 }

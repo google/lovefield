@@ -20,7 +20,6 @@ goog.require('goog.testing.AsyncTestCase');
 goog.require('goog.testing.jsunit');
 goog.require('goog.userAgent.product');
 goog.require('hr.db');
-goog.require('lf.Global');
 goog.require('lf.Row');
 goog.require('lf.TransactionType');
 goog.require('lf.cache.Journal');
@@ -93,11 +92,11 @@ function testConversions() {
    */
   var selectWithoutCacheFn = function() {
     var backStore = /** @type {!lf.BackStore} */ (
-        lf.Global.get().getService(lf.service.BACK_STORE));
+        hr.db.getGlobal().getService(lf.service.BACK_STORE));
     var tableSchema = db.getSchema().getEmployee();
     var tx = backStore.createTx(
         lf.TransactionType.READ_ONLY,
-        new lf.cache.Journal(lf.Global.get(), [tableSchema]));
+        new lf.cache.Journal(hr.db.getGlobal(), [tableSchema]));
     var store = /** @type {!lf.backstore.ObjectStore} */ (
         tx.getTable(tableSchema));
     return store.get([]);

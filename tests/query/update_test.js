@@ -18,7 +18,6 @@ goog.setTestOnly();
 goog.require('goog.testing.AsyncTestCase');
 goog.require('goog.testing.jsunit');
 goog.require('hr.db');
-goog.require('lf.Global');
 goog.require('lf.bind');
 goog.require('lf.query.UpdateBuilder');
 
@@ -48,7 +47,7 @@ function setUp() {
 function testExec_ThrowsMissingSet() {
   asyncTestCase.waitForAsync('testExec_ThrowsMissingSet');
   var employeeTable = db.getSchema().getEmployee();
-  var query = new lf.query.UpdateBuilder(lf.Global.get(), employeeTable);
+  var query = new lf.query.UpdateBuilder(hr.db.getGlobal(), employeeTable);
   query.where(employeeTable.jobId.eq('dummyJobId'));
   query.exec().then(
       fail,
@@ -63,7 +62,7 @@ function testExec_ThrowsMissingSet() {
  */
 function testWhere_ThrowsAlreadyCalled() {
   var employeeTable = db.getSchema().getEmployee();
-  var query = new lf.query.UpdateBuilder(lf.Global.get(), employeeTable);
+  var query = new lf.query.UpdateBuilder(hr.db.getGlobal(), employeeTable);
 
   var buildQuery = function() {
     var predicate = employeeTable.jobId.eq('dummyJobId');
@@ -77,7 +76,7 @@ function testWhere_ThrowsAlreadyCalled() {
 function testSet_ThrowsMissingBinding() {
   asyncTestCase.waitForAsync('testExec_ThrowsMissingBinding');
   var employeeTable = db.getSchema().getEmployee();
-  var query = new lf.query.UpdateBuilder(lf.Global.get(), employeeTable);
+  var query = new lf.query.UpdateBuilder(hr.db.getGlobal(), employeeTable);
   query.set(employeeTable.minSalary, lf.bind(0));
   query.set(employeeTable.maxSalary, 20000);
   query.where(employeeTable.jobId.eq('dummyJobId'));

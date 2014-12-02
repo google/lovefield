@@ -19,7 +19,6 @@ goog.require('goog.Promise');
 goog.require('goog.testing.AsyncTestCase');
 goog.require('goog.testing.jsunit');
 goog.require('hr.db');
-goog.require('lf.Global');
 goog.require('lf.TransactionType');
 goog.require('lf.service');
 goog.require('lf.testing.MockTask');
@@ -45,7 +44,7 @@ function setUp() {
   asyncTestCase.waitForAsync('setUp');
   hr.db.getInstance(undefined, true).then(function(database) {
     db = database;
-    runner = lf.Global.get().getService(lf.service.RUNNER);
+    runner = hr.db.getGlobal().getService(lf.service.RUNNER);
     j = db.getSchema().getJob();
   }).then(function() {
     asyncTestCase.continueTesting();
