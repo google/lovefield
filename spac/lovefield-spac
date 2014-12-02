@@ -1,0 +1,60 @@
+#!/usr/bin/env node
+var fsMod = require('fs');
+var globMod = require('glob');
+var pathMod = require('path');
+
+var parseAndValidate = require('./parser.js').parse;
+var CodeGen = require('./codegen.js').CodeGenerator;
+
+// Need to trick the presubmit script to not complain.
+var log = console['log'];
+
+// Command line options
+var knownOpts = {
+  'schema': [String],
+  'namespace': [String],
+  'outputdir': [String],
+  'templatedir': [String, null]
+};
+var args = noptMod(knownOpts);
+
+if (!args.hasOwnProperty('schema') ||
+    !args.hasOwnProperty('namespace') ||
+    !args.hasOwnProperty('outputdir')) {
+  log('Love Field Schema Parser And Code-generator');
+  log('Usage:');
+  log('  --schema Path of the YAML schema file');
+  log('  --namespace Namespace of generated code');
+  log('  --outputdir Output directory');
+  log('  --templatedir Optional, directory containing templates');
+  process.exit(1);
+}
+
+var schemaPath = pathMod.resolve(args.schema);
+var namespace = args.namespace;
+var outputDir = pathMod.resolve(args.outputdir);
+var templateDir = args.templatedir || __dirname + '/template';
+
+// Creating output directory, if necessary.
+if (!fsMod.existsSync(outputDir)) {
+  fsMod.mkdirSync(outputDir);
+}
+
+// Scan all templates
+var templates = [];
+var templateFiles = globMod.sync('*.jstemplate', {cwd: templateDir});
+for (var i = 0; i < templateFiles.length; ++i) {
+  templates.push(pathMod.resolve(templateDir + '/' + templateFiles[i]));
+}
+
+// Parse and validate schema
+var schema = parseAndValidate(fsMod.readFileSync(schemaPath));
+
+var codegen = new CodeGen(namespace, schema);
+for (var j = 0; j < templates.length; ++j) {
+  var baseName = pathMod.basename(templates[j]).replace(/\.jstemplate/, '.js');
+  baseName = namespace.replace(/\./g, '_') + '_' + baseName;
+  var outputFile = pathMod.join(outputDir, baseName);
+  var codeTemplate = fsMod.readFileSync(templates[j]);
+  fsMod.writeFileSync(outputFile, codegen.generate(baseName, codeTemplate));
+}

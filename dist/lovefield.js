@@ -19,7 +19,6 @@
  * global <code>CLOSURE_NO_DEPS</code> is set to true.  This allows projects to
  * include their own deps file(s) from different locations.
  *
- * @author pupius@google.com (Dan Pupius)
  * @author arv@google.com (Erik Arvidsson)
  *
  * @provideGoog
@@ -452,12 +451,6 @@ goog.setTestOnly = function(opt_message) {
  * into the JavaScript binary. If it is required elsewhere, it will be type
  * checked as normal.
  *
- * MOE:begin_intracomment_strip
- * See the detailed proposal at http://b/11534958
- * Design doc at http://go/forwarddeclare
- * Also see apps framework's forward_declarations builddef:
- * http://go/forwarddeclarations
- * MOE:end_intracomment_strip
  *
  * @param {string} name The namespace to forward declare in the form of
  *     "goog.package.part".
@@ -567,15 +560,6 @@ goog.addDependency = function(relPath, provides, requires, opt_isModule) {
 };
 
 
-// MOE:begin_strip
-/**
- * Whether goog.require should throw an exception if it fails.
- * @type {boolean}
- */
-goog.useStrictRequires = false;
-
-
-// MOE:end_strip
 
 
 // NOTE(nnaze): The debug DOM loader was included in base.js as an original way
@@ -658,20 +642,7 @@ goog.require = function(name) {
     var errorMessage = 'goog.require could not find: ' + name;
     goog.logToConsole_(errorMessage);
 
-    // MOE:begin_strip
-
-    // NOTE(nicksantos): We could always throw an error, but this would break
-    // legacy users that depended on this failing silently. Instead, the
-    // compiler should warn us when there are invalid goog.require calls.
-    // For now, we simply give clients a way to turn strict mode on.
-    if (goog.useStrictRequires) {
-      throw Error(errorMessage);
-    }
-
-    return null;
-
-    // In external Closure, always error.
-    // MOE:end_strip_and_replace throw Error(errorMessage);
+    throw Error(errorMessage);
   }
 };
 
@@ -1901,7 +1872,7 @@ goog.globalEval = function(script) {
       var scriptElt = doc.createElement('script');
       scriptElt.type = 'text/javascript';
       scriptElt.defer = false;
-      // Note(pupius): can't use .innerHTML since "t('<test>')" will fail and
+      // Note(user): can't use .innerHTML since "t('<test>')" will fail and
       // .text doesn't work in Safari 2.  Therefore we append a text node.
       scriptElt.appendChild(doc.createTextNode(script));
       doc.body.appendChild(scriptElt);
@@ -2266,9 +2237,6 @@ goog.base = function(me, opt_methodName, var_args) {
  * applied.  In uncompiled code the function is simply run since the aliases as
  * written are valid JavaScript.
  *
- * MOE:begin_intracomment_strip
- * See the goog.scope document at http://go/goog.scope
- * MOE:end_intracomment_strip
  *
  * @param {function()} fn Function to call.  This function can contain aliases
  *     to namespaces (e.g. "var dom = goog.dom") or classes
@@ -2294,123 +2262,6 @@ if (!COMPILED) {
 }
 
 
-// MOE:begin_strip
-
-// The section between this token and the end token below will be stripped
-// automatically by the open source release scripts.  Please leave in place.
-
-//==============================================================================
-// Extending Function
-//==============================================================================
-
-
-/**
- * @define {boolean} Whether to extend Function.prototype.
- *     Use --define='goog.MODIFY_FUNCTION_PROTOTYPES=false' to change.
- */
-goog.define('goog.MODIFY_FUNCTION_PROTOTYPES', true);
-
-if (goog.MODIFY_FUNCTION_PROTOTYPES) {
-  /**
-   * An alias to the {@link goog.bind()} global function. Deprecated: use
-   * goog.bind instead.
-   *
-   * Usage:
-   * var g = f.bind(obj, arg1, arg2);
-   * g(arg3, arg4);
-   *
-   * @param {Object|undefined} selfObj Specifies the object to which this should
-   *     point when the function is run. If the value is null or undefined, it
-   *     will default to the global object.
-   * @param {...*} var_args Additional arguments that are partially applied to
-   *     fn.
-   * @return {!Function} A partially-applied form of the Function on which
-   *     bind() was invoked as a method.
-   * @suppress {duplicate}
-   */
-  Function.prototype.bind =
-      Function.prototype.bind || function(selfObj, var_args) {
-    if (arguments.length > 1) {
-      var args = Array.prototype.slice.call(arguments, 1);
-      args.unshift(this, selfObj);
-      return goog.bind.apply(null, args);
-    } else {
-      return goog.bind(this, selfObj);
-    }
-  };
-
-
-  /**
-   * An alias to the {@link goog.partial()} static function.
-   *
-   * Usage:
-   * var g = f.partial(arg1, arg2);
-   * g(arg3, arg4);
-   *
-   * @param {...*} var_args Additional arguments that are partially applied to
-   *     fn.
-   * @return {!Function} A partially-applied form of the function partial() was
-   *     invoked as a method of.
-   * @deprecated Use the static function goog.partial instead.
-   */
-  Function.prototype.partial = function(var_args) {
-    var args = Array.prototype.slice.call(arguments);
-    args.unshift(this, null);
-    return goog.bind.apply(null, args);
-  };
-
-
-  /**
-   * Inherit the prototype methods from one constructor into another.
-   * @param {Function} parentCtor Parent class.
-   * @see goog.inherits
-   * @deprecated Use the static function goog.inherits instead.
-   */
-  Function.prototype.inherits = function(parentCtor) {
-    goog.inherits(this, parentCtor);
-  };
-
-
-  /**
-   * Mixes in an object's properties and methods into the callee's prototype.
-   * Basically mixin based inheritance, thus providing an alternative method for
-   * adding properties and methods to a class' prototype.
-   *
-   * <pre>
-   * function X() {}
-   * X.mixin({
-   *   one: 1,
-   *   two: 2,
-   *   three: 3,
-   *   doit: function() { return this.one + this.two + this.three; }
-   * });
-   *
-   * function Y() {}
-   * Y.mixin(X.prototype);
-   * Y.prototype.four = 15;
-   * Y.prototype.doit2 = function() { return this.doit() + this.four; }
-   *
-   * // or
-   *
-   * function Y() {}
-   * Y.inherits(X);
-   * Y.mixin({
-   *   one: 10,
-   *   four: 15,
-   *   doit2: function() { return this.doit() + this.four; }
-   * });
-   * </pre>
-   *
-   * @param {Object} source from which to copy properties.
-   * @see goog.mixin
-   * @deprecated Use the static function goog.object.extend instead.
-   */
-  Function.prototype.mixin = function(source) {
-    goog.mixin(this.prototype, source);
-  };
-}
-
-// MOE:end_strip
 
 //==============================================================================
 // goog.defineClass implementation
@@ -4067,7 +3918,6 @@ goog.addDependency('window/window_test.js', ['goog.windowTest'], ['goog.dom', 'g
  * You should never need to throw goog.debug.Error(msg) directly, Error(msg) is
  * sufficient.
  *
- * @author pupius@google.com (Daniel Pupius)
  */
 
 goog.provide('goog.debug.Error');
@@ -4167,7 +4017,6 @@ goog.dom.NodeType = {
 
 /**
  * @fileoverview Utilities for string manipulation.
- * @author pupius@google.com (Daniel Pupius)
  * @author arv@google.com (Erik Arvidsson)
  */
 
@@ -4328,7 +4177,7 @@ goog.string.isEmptyString = function(str) {
 /**
  * Checks if a string is empty or contains only whitespaces.
  *
- * TODO(kenobi): Deprecate this when clients have been switched over to
+ * TODO(user): Deprecate this when clients have been switched over to
  * goog.string.isEmptyOrWhitespace.
  *
  * @param {string} str The string to check.
@@ -4353,7 +4202,7 @@ goog.string.isEmptyOrWhitespaceSafe = function(str) {
 /**
  * Checks if a string is null, undefined, empty or contains only whitespaces.
  *
- * TODO(kenobi): Deprecate this when clients have been switched over to
+ * TODO(user): Deprecate this when clients have been switched over to
  * goog.string.isEmptyOrWhitespaceSafe.
  *
  * @param {*} str The string to check.
@@ -4671,7 +4520,7 @@ goog.string.newLineToBr = function(str, opt_xml) {
  * With goog.string.DETECT_DOUBLE_ESCAPING, this function escapes also the
  * lowercase letter "e".
  *
- * NOTE(pupius):
+ * NOTE(user):
  * HtmlEscape is often called during the generation of large blocks of HTML.
  * Using statics for the regular expressions and strings is an optimization
  * that can more than half the amount of time IE spends in this function for
@@ -5751,7 +5600,6 @@ goog.string.editDistance = function(a, b) {
  * The compiler will leave in foo() (because its return value is used),
  * but it will remove bar() because it assumes it does not have side-effects.
  *
- * @author pallosp@google.com (Peter Pallos)
  * @author agrieve@google.com (Andrew Grieve)
  */
 
@@ -6102,9 +5950,7 @@ goog.asserts.getType_ = function(value) {
 /**
  * @fileoverview Utilities for manipulating arrays.
  *
- * @author pupius@google.com (Daniel Pupius)
  * @author arv@google.com (Erik Arvidsson)
- * @author pallosp@google.com (Peter Pallos)
  */
 
 
@@ -8114,7 +7960,6 @@ goog.functions.cacheReturnValue = function(fn) {
 
 /**
  * @fileoverview Additional mathematical functions.
- * @author pupius@google.com (Daniel Pupius)
  */
 
 goog.provide('goog.math');
@@ -8206,7 +8051,7 @@ goog.math.nearlyEquals = function(a, b, opt_tolerance) {
 };
 
 
-// TODO(jrajeshwar): Rename to normalizeAngle, retaining old name as deprecated
+// TODO(user): Rename to normalizeAngle, retaining old name as deprecated
 // alias.
 /**
  * Normalizes an angle to be in range [0-360). Angles outside this range will
@@ -9718,7 +9563,7 @@ goog.iter.slice = function(iterable, start, opt_end) {
  * @private
  * @template VALUE
  */
-// TODO(dlindquist): Consider moving this into goog.array as a public function.
+// TODO(user): Consider moving this into goog.array as a public function.
 goog.iter.hasDuplicates_ = function(arr) {
   var deduped = [];
   goog.array.removeDuplicates(arr, deduped);
@@ -9857,9 +9702,7 @@ goog.iter.combinationsWithReplacement = function(iterable, length) {
 
 /**
  * @fileoverview Utilities for manipulating objects/maps/hashes.
- * @author pupius@google.com (Daniel Pupius)
  * @author arv@google.com (Erik Arvidsson)
- * @author pallosp@google.com (Peter Pallos)
  */
 
 goog.provide('goog.object');
@@ -10523,39 +10366,12 @@ goog.object.isImmutableView = function(obj) {
  * @fileoverview Datastructure: Hash Map.
  *
  * @author arv@google.com (Erik Arvidsson)
- * @author jonp@google.com (Jon Perlow) Optimized for IE6
  *
  * This file contains an implementation of a Map structure. It implements a lot
  * of the methods used in goog.structs so those functions work on hashes. This
  * is best suited for complex key types. For simple keys such as numbers and
  * strings, and where special names like __proto__ are not a concern, consider
  * using the lighter-weight utilities in goog.object.
- * MOE:begin_intracomment_strip
- *
- * NOTE(flan): Internally, key types are NOT actually cast to
- * strings. Some people actually rely on this behavior even though it
- * is incorrect. For more information, see http://b/5622311.
- *
- * NOTE(flan): Erik Corry (erikcorry) from the V8 team went over this
- * class with me to help look for simplifications and
- * optimizations. In the end, he didn't come up with very much. Erik
- * explained that "for (k in o)" is not optimized in Crankshaft
- * because it needs to look up properties in the whole prototype
- * chain. It also needs to return the keys in order. Thus keeping an
- * array of keys is actually much more efficient.
- *
- * Likewise, one option to iterate safely with "for (k in o)" is to
- * prefix the keys with some character, like ':'. This can create a
- * lot of strings that didn't exist before. In Closure Labs,
- * goog.labs.structs.Map uses extra arrays to store non-safe keys and
- * values.
- *
- * Thus, there are not a lot of reasonable simplifications that can be
- * done here without impacting performance.
- *
- * TODO(chrishenry): Create some performance benchmarks for common
- * operations.
- * MOE:end_intracomment_strip
  */
 
 
@@ -11366,7 +11182,6 @@ goog.structs.every = function(col, f, opt_obj) {
  * @fileoverview Datastructure: Set.
  *
  * @author arv@google.com (Erik Arvidsson)
- * @author pallosp@google.com (Peter Pallos)
  *
  * This class implements a set data structure. Adding and removing is O(1). It
  * supports both object and primitive values. Be careful because you can add
@@ -11607,7 +11422,7 @@ goog.structs.Set.prototype.isSubsetOf = function(col) {
   if (this.getCount() > colCount) {
     return false;
   }
-  // TODO(pallosp) Find the minimal collection size where the conversion makes
+  // TODO(user) Find the minimal collection size where the conversion makes
   // the contains() method faster.
   if (!(col instanceof goog.structs.Set) && colCount > 5) {
     // Convert to a goog.structs.Set so that goog.structs.contains runs in
@@ -11647,15 +11462,6 @@ goog.structs.Set.prototype.__iterator__ = function(opt_keys) {
  * @fileoverview Utilities used by goog.labs.userAgent tools. These functions
  * should not be used outside of goog.labs.userAgent.*.
  *
- * MOE:begin_intracomment_strip
- * @visibility {//javascript/abc/libs/objects3d:__subpackages__}
- * @visibility {//javascript/closure/bin/sizetests:__pkg__}
- * @visibility {//javascript/closure/dom:__subpackages__}
- * @visibility {//javascript/closure/style:__pkg__}
- * @visibility {//javascript/closure/testing:__pkg__}
- * @visibility {//javascript/closure/useragent:__subpackages__}
- * @visibility {//testing/puppet/modules:__pkg__}
- * MOE:end_intracomment_strip
  *
  * @author nnaze@google.com (Nathan Naze)
  */
@@ -11808,7 +11614,6 @@ goog.labs.userAgent.util.extractVersionTuples = function(userAgent) {
  * sub-namespaces in goog.labs.userAgent, goog.labs.userAgent.platform,
  * goog.labs.userAgent.device respectively.)
  *
- * @author vbhasin@google.com (Vipul Bhasin)
  * @author martone@google.com (Andy Martone)
  */
 
@@ -12119,7 +11924,6 @@ goog.labs.userAgent.browser.getIEVersion_ = function(userAgent) {
  * For more information on browser brand, platform, or device see the other
  * sub-namespaces in goog.labs.userAgent (browser, platform, and device).
  *
- * @author vbhasin@google.com (Vipul Bhasin)
  */
 
 goog.provide('goog.labs.userAgent.engine');
@@ -12252,7 +12056,6 @@ goog.labs.userAgent.engine.getVersionForKey_ = function(tuples, key) {
  * other sub-namespaces in goog.labs.userAgent (browser, engine, and device
  * respectively).
  *
- * @author vbhasin@google.com (Vipul Bhasin)
  */
 
 goog.provide('goog.labs.userAgent.platform');
@@ -12412,7 +12215,6 @@ goog.labs.userAgent.platform.isVersionOrHigher = function(version) {
  * @see <a href="http://www.useragentstring.com/">User agent strings</a>
  * For information on the browser brand (such as Safari versus Chrome), see
  * goog.userAgent.product.
- * @author pupius@google.com (Daniel Pupius)
  * @author arv@google.com (Erik Arvidsson)
  * @see ../demos/useragent.html
  */
@@ -12800,7 +12602,7 @@ goog.userAgent.determineVersion_ = function() {
  * @private
  */
 goog.userAgent.getDocumentMode_ = function() {
-  // NOTE(pupius): goog.userAgent may be used in context where there is no DOM.
+  // NOTE(user): goog.userAgent may be used in context where there is no DOM.
   var doc = goog.global['document'];
   return doc ? doc['documentMode'] : undefined;
 };
@@ -12931,7 +12733,6 @@ goog.userAgent.DOCUMENT_MODE = (function() {
 /**
  * @fileoverview Logging and debugging utilities.
  *
- * @author pupius@google.com (Daniel Pupius)
  * @see ../demos/debug.html
  */
 
@@ -13525,7 +13326,6 @@ goog.debug.fnNameResolver_;
  * dependencies this file has on other closure classes as any dependency it
  * takes won't be able to use the logging infrastructure.
  *
- * @author jonp@google.com (Jon Perlow)
  */
 
 goog.provide('goog.debug.LogRecord');
@@ -13947,7 +13747,6 @@ goog.debug.LogBuffer.prototype.forEachRecord = function(func) {
  * this file has on other closure classes as any dependency it takes won't be
  * able to use the logging infrastructure.
  *
- * @author jonp@google.com (Jon Perlow)
  * @see ../demos/debug.html
  */
 
@@ -14301,7 +14100,7 @@ goog.debug.Logger.logToProfilers = function(msg) {
       // Logs a message to Firebug, Web Inspector, SpeedTracer, etc.
       goog.global['console']['timeStamp'](msg);
     } else if (goog.global['console']['markTimeline']) {
-      // TODO(mkwst): markTimeline is deprecated. Drop this else clause entirely
+      // TODO(user): markTimeline is deprecated. Drop this else clause entirely
       // after Chrome M14 hits stable.
       goog.global['console']['markTimeline'](msg);
     }
@@ -15191,7 +14990,6 @@ goog.debug.entryPointRegistry.unmonitorAllIfPossible = function(monitor) {
  * as possible after the current JS execution stops and yields to the event
  * loop.
  *
- * @author malteubl@google.com (Malte Ubl)
  */
 
 goog.provide('goog.async.nextTick');
@@ -22749,7 +22547,6 @@ lf.pred.Operator = {
 /**
  * @fileoverview Generic immutable node object to be used in collections.
  *
- * @author ssaviano@google.com (Steven Saviano)
  */
 
 
@@ -22825,7 +22622,6 @@ goog.structs.Node.prototype.clone = function() {
  * @fileoverview Generic tree node data structure with arbitrary number of child
  * nodes.
  *
- * @author pallosp@google.com (Peter Pallos)
  */
 
 goog.provide('goog.structs.TreeNode');
