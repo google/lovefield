@@ -1,8 +1,11 @@
 #!/usr/bin/env node
 
+
+
 var fsMod = require('fs');
 var globMod = require('glob');
 var pathMod = require('path');
+var noptMod =  (require('nopt'));
 
 var parseAndValidate = require('./parser.js').parse;
 var CodeGen = require('./codegen.js').CodeGenerator;

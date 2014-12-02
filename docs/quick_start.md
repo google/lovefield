@@ -2,46 +2,32 @@
 
 ## Prerequisites
 
-You need to install the following programs for the [Compile](#compile) step mentioned later in this guide.
-
-### [Python](http://www.python.org) and [Java](http://www.java.com)
-
-For the toolchain included in Lovefield to work correctly, you need to have
-Python and Java installed and invocable from PATH.
-
 ### [node.js](http://nodejs.org)
 
-Besides using the installer from nodejs.org, you can also use [nvm](https://github.com/creationix/nvm) to install node.js.
+Besides using the installer from nodejs.org, you can also use
+[nvm](https://github.com/creationix/nvm) to install node.js.
 
-You also need to install several modules, and we strongly recommend using [npm](https://www.npmjs.org) for that task. The following modules are required:
+### Install SPAC
 
-1. [glob](https://www.npmjs.org/package/glob)
-2. [js-yaml](https://www.npmjs.org/package/js-yaml)
-3. [nopt](https://www.npmjs.org/package/nopt)
+SPAC is the Lovefield Schema Parser and Code-generator, which is used to
+generate code from your DB schema. To install SPAC, you need to use `npm`:
 
-### Closure compiler and library
+```bash
+cd spac/
+npm install -g
+```
 
-Latest Closure compiler and library are required for using Lovefield. Don't worry, your code does not need to depend on the Closure library. They are just used to generate the bundle JS to be included in your code.
-
-To acquire the latest compiler and library, you need to have git installed, and perform the following commands
-
-<pre>
-cd closure
-git clone https://github.com/google/closure-library.git
-git clone https://github.com/google/closure-compiler.git
-cd closure-compiler
-ant jar
-</pre>
-
-We did not download the latest JAR because we need to refer to the externs files in repo.
+SPAC is not registered in NPM package list yet because it is tightly coupled
+with the source code. Due to the high code velocity of Lovefield, it is
+suggested to pull down Lovefield source and do npm install from there.
 
 ## How to Use Lovefield
 
 There are three steps to use Lovefield in your code:
 
 1. Define schema
-2. Generate a bundled JavaScript file to be used in your code
-4. Include the bundled file and start use it
+2. Generate JavaScript files from the schema
+3. Use the generated code
 
 ### Define schema
 
@@ -59,28 +45,38 @@ table:
       name: string
 ```
 
-### Compile
+### Code Generation
 
-Use nodejs to execute tools/bundle.js to create compiled bundle for your schema. This bundle will auto generate some JavaScript code and compile them with all needed library into a bundled JavaScript file.
+Use `lovefield-spac` to generate code for your schema.
 
 ```bash
-node tools/bundle.js \
+lovefield-spac \
   --schema my_schema.yaml \
   --namespace my.namespace \
-  --outputdir ~/mypath \
-  --compiler ~/src/closure-compiler/build/compiler.jar \
-  --library ~/src/closure-library
+  --outputdir mypath
 ```
 
-`node tools/bundle.js` will give you the usage. You need to tell it where the Closure compiler and library are, and you can also customize the output path.
+Running `lovefield-spac` without any arguments will give you the usage. The
+`namespace` here is a namespace for all generated code to be placed in.
+Lovefield has a philosophy of not polluting the global namespace so it will
+place all generated code under the namespace you designated.
+
+By default `lovefield-spac` will generate one single file
+`<escaped_namespace>_gen.js`. You'll need to include this file into your code
+after including `dist/lovefield_min.js`.
 
 
 ### Use in code
 
+For Closure Library users, please read the [special instructions]
+(quick_start.md#special_instructions). If you don't use Closure Library, you can
+do the following:
+
 ```html
-<script src="mysrc/mydb_bundle.js"></script>
+<script src="mypath/lovefield.min.js"></script>
+<script src="mypath/my_namespace_gen.js"></script>
 <script>
-mydb.getInstance().then(
+my.namespace.getInstance().then(
   function(db) {
     var card =
       db.getSchema().getCard();
@@ -93,3 +89,16 @@ mydb.getInstance().then(
   });
 </script>
 ```
+
+The file `lovefield.min.js` can be found at `dist/`. You can also use the debug
+version, `lovefield.js`, for debugging purposes.
+
+## Special Instructions
+
+The special instructions are for Closure library users or the developers of
+Lovefield library. For convenience, the Lovefield distribution includes all the
+Closure library dependencies used. As a result, Closure library users need to
+compile Lovefield with their code instead of using the dist file directly.
+
+If you work for Google and would like to use Lovefield inside Google, please
+`go/lovefield` for more details.

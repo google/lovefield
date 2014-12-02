@@ -31023,6 +31023,7 @@ lf.proc.Database = function(global) {
  * @param {!function(!lf.raw.BackStore):!IThenable=} opt_onUpgrade
  * @param {lf.base.BackStoreType=} opt_backStoreType
  * @return {!IThenable.<!lf.proc.Database>}
+ * @export
  */
 lf.proc.Database.prototype.init = function(
     opt_onUpgrade, opt_backStoreType) {
@@ -31042,7 +31043,7 @@ lf.proc.Database.prototype.init = function(
 };
 
 
-/** @override */
+/** @override @export */
 lf.proc.Database.prototype.getSchema = function() {
   return this.schema_;
 };
@@ -31057,10 +31058,7 @@ lf.proc.Database.prototype.checkInit_ = function() {
 };
 
 
-/**
- * @param {...lf.schema.Column} var_args
- * @override
- */
+/** @override @export */
 lf.proc.Database.prototype.select = function(var_args) {
   this.checkInit_();
   var columns =
@@ -31070,35 +31068,35 @@ lf.proc.Database.prototype.select = function(var_args) {
 };
 
 
-/** @override */
+/** @override @export */
 lf.proc.Database.prototype.insert = function() {
   this.checkInit_();
   return new lf.query.InsertBuilder(this.global_);
 };
 
 
-/** @override */
+/** @override @export */
 lf.proc.Database.prototype.insertOrReplace = function() {
   this.checkInit_();
   return new lf.query.InsertBuilder(this.global_, /* allowReplace */ true);
 };
 
 
-/** @override */
+/** @override @export */
 lf.proc.Database.prototype.update = function(table) {
   this.checkInit_();
   return new lf.query.UpdateBuilder(this.global_, table);
 };
 
 
-/** @override */
+/** @override @export */
 lf.proc.Database.prototype.delete = function() {
   this.checkInit_();
   return new lf.query.DeleteBuilder(this.global_);
 };
 
 
-/** @override */
+/** @override @export */
 lf.proc.Database.prototype.observe = function(query, callback) {
   var observerRegistry = this.global_.getService(
       lf.service.OBSERVER_REGISTRY);
@@ -31106,7 +31104,7 @@ lf.proc.Database.prototype.observe = function(query, callback) {
 };
 
 
-/** @override */
+/** @override @export */
 lf.proc.Database.prototype.unobserve = function(query, callback) {
   var observerRegistry = this.global_.getService(
       lf.service.OBSERVER_REGISTRY);
@@ -31114,14 +31112,14 @@ lf.proc.Database.prototype.unobserve = function(query, callback) {
 };
 
 
-/** @override */
+/** @override @export */
 lf.proc.Database.prototype.createTransaction = function(opt_type) {
   this.checkInit_();
   return new lf.proc.Transaction(this.global_);
 };
 
 
-/** @override */
+/** @override @export */
 lf.proc.Database.prototype.close = function() {
   lf.base.closeDatabase(this.global_);
   this.global_.clear();
@@ -31486,6 +31484,7 @@ lf.Global.get = function() {
 /**
  * Clears the Global instance by removing all references to all singleton
  * services.
+ * @export
  */
 lf.Global.prototype.clear = function() {
   this.services_.clear();
@@ -31497,6 +31496,7 @@ lf.Global.prototype.clear = function() {
  * @param {!lf.service.ServiceId.<T>} serviceId
  * @param {!T} service
  * @return {!T} The registered service for chaining.
+ * @export
  */
 lf.Global.prototype.registerService = function(serviceId, service) {
   this.services_.set(serviceId.toString(), service);
@@ -31509,6 +31509,7 @@ lf.Global.prototype.registerService = function(serviceId, service) {
  * @param {!lf.service.ServiceId.<T>} serviceId
  * @return {!T} The registered service or throws if not registered yet.
  * @throws {!lf.Exception}
+ * @export
  */
 lf.Global.prototype.getService = function(serviceId) {
   var service = this.services_.get(serviceId.toString(), null);
@@ -31522,6 +31523,7 @@ lf.Global.prototype.getService = function(serviceId) {
 /**
  * @param {!lf.service.ServiceId} serviceId
  * @return {boolean} Whether the service is registered or not.
+ * @export
  */
 lf.Global.prototype.isRegistered = function(serviceId) {
   return this.services_.containsKey(serviceId.toString());

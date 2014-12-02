@@ -6,19 +6,24 @@ Sample data have kindly been provided by UCLA professor Junghoo "John" Cho's
 database class at http://oak.cs.ucla.edu/cs143/project/data/data.zip.
 
 ```bash
-node ../../tools/bundle.js \
+lovefield-spac \
   --schema moviedb_schema.yaml \
   --namespace movie.db \
-  --outputdir lib \
-  --compiler <path of compiler.jar> \
-  --library <path of closure-library>
+  --outputdir lib
 ```
 
-The command will create lib/movie_db_bundle.js. Now start a local HTTPServer by
-running the following command
+The command will create `lib/database.js` and `lib/schema.js`. Let's copy the
+Lovefield dist file to `lib/`, too:
+
+```bash
+cp ../../dist/lovefield.min.js lib
+```
+
+Now start a local HTTPServer by running the following command
+
 ```bash
 python -m SimpleHTTPServer 60000
 ```
 
-See the demo by visiting
-http://localhost:60000/demo.html
+See the demos by visiting
+http://localhost:60000/
