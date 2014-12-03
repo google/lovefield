@@ -10,4 +10,4 @@ Please visit our [public forum](https://groups.google.com/forum/#!forum/lovefiel
 
 [Developer Setup](docs/dev_setup.md)
 
-[Design Documents](docs/dd_index.md) Under construction
+[Design Documents](docs/dd_index.md)

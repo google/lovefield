@@ -38,7 +38,7 @@ query engine which is responsible for coming up with an execution plan (query
 execution plan). The selected plan is finally passed to the query executor
 which executes it and produces the result.
 
-![Figure1](images/life_of_a_query.png)
+![Figure1](images/life_of_a_query.png)<br>
 Figure 1: Life of a query overview.
 
 The focus of this design document lies on the Query Engine itself, which is
@@ -51,7 +51,7 @@ composed of the following sub-components.
 
 The relation of those subcomponents is depicted in the following diagram.
 
-![Figure2](images/query_engine_diagram.png)
+![Figure2](images/query_engine_diagram.png)<br>
 Figure 2: Query engine subcomponents.
 
   In the following sections each component will be analyzed in detail. In doing
@@ -77,15 +77,16 @@ algebra tree. The conversion is draft, which means that the resulting logical
 plan is not optimized. The following diagram shows the draft logical plan for
 the example query.
 
-![Figure3](images/draft_logical_plan.png)
+![Figure3](images/draft_logical_plan.png)<br>
 Figure 3: Example draft plan.
 
 where
 
-* σc(R) denotes a selection operation on relation R based on the condition c.
-* π(R)(a1, a2 …. aN) denotes a projection operation on relation R using all
-attributes in set {ai}.
-* R1 ⨯ R2 denotes the cross product operation.
+* σ<sub>c</sub>(R) denotes a selection operation on relation R based on the
+condition c.
+* π(R)(a<sub>1</sub>, a<sub>2</sub> …. a<sub>N</sub>) denotes a projection
+operation on relation R using all attributes in set {a<sub>i</sub>}.
+* R<sub>1</sub> ⨯ R<sub>2</sub> denotes the cross product operation.
 
 ### Why optimization is important?
   Evaluating a query execution plan from a performance perspective is
@@ -147,7 +148,7 @@ performed, each one responsible for a different type of transformation.
 pass on its own does not achieve any performance gains but it  is necessary
 such that follow-up optimizations passes can be applied.
 
-![Figure4](images/and_predicate_pass.png)
+![Figure4](images/and_predicate_pass.png)<br>
 Figure 4: AndPredicatePass transformation.
 
   In Figure 4 an example of this pass is shown. The composite AND condition on
@@ -164,7 +165,7 @@ which results in less memory needed to hold the results.
 result
 set which allows them to be executed faster.
 
-![Figure5](images/push_down_selections_pass.png)
+![Figure5](images/push_down_selections_pass.png)<br>
 Figure 5: PushDownSelectionsPass transformation.
 
 Note that the selection condition C might not apply to both relations a and b.
@@ -176,7 +177,7 @@ the tree as two separate nodes, a selection node on a foreign key followed by a
 cross product node (the two nodes don't have to be directly connected for the
 optimization pass to apply).
 
-![Figure6](images/implicit_joins_pass.png)
+![Figure6](images/implicit_joins_pass.png)<br>
 Figure 6: ImplicitJoinsPass transformation.
 
 where the ⨝ symbol denotes a join operation on a the given condition.
@@ -193,15 +194,15 @@ been applied, which managed to push down only the selection node that refers to
 the employee relation. The other selection node refers to both relations and
 therefore could not be pushed below the cross product node.
 
-![Figure7a](images/example_after_pass1.png)
+![Figure7a](images/example_after_pass1.png)<br>
 Figure 7a: Logical query plan optimization example after AndPredicatePass
 transformation has been applied.
 
-![Figure7b](images/example_after_pass2.png)
+![Figure7b](images/example_after_pass2.png)<br>
 Figure 7b:Logical query plan optimization example after PushDownSelectionsPass
 transformation has been applied.
 
-![Figure7c](images/example_after_pass3.png)
+![Figure7c](images/example_after_pass3.png)<br>
 Figure 7c: Logical query plan optimization example after ImplicitJoinsPass
 transformation has been applied.
 
@@ -232,7 +233,7 @@ physical plan. Similarly to the logical plan case, optimization is handled by a
 different component. In the following diagram the physical query plan generated
 from  the logical plan of Figure 7(c) is displayed.
 
-![Figure8](images/draft_physical_plan.png)
+![Figure8](images/draft_physical_plan.png)<br>
 Figure 8: Draft physical query plan.
 
   By reading the physical query plan from bottom to top order we see that
@@ -275,23 +276,23 @@ physical blocks in the underlying filesystem.
 store, since indices are already loaded into memory they are much faster to
 access.
 
-![Figure9](images/index_range_scan_pass.png)
+![Figure9](images/index_range_scan_pass.png)<br>
 Figure 9: IndexRangeScanPass transformation.
 
   In Figure 9, there are two selection nodes on top of a full table access
-node. If any indices exist for the attributes involved in c1 and/or c2, then
-the full table access can be avoided by using one of those indices. The most
-selective index will be used in the case of more than one available indices. An
-index_range_scan step will return the rowI IDs of the rows that satisfy a given
-condition. Then the table_access_by_row_id step will only bring those rows into
-memory instead of the entire table.
+node. If any indices exist for the attributes involved in c<sub>1</sub> and/or
+c<sub>2</sub>, then the full table access can be avoided by using one of those
+indices. The most selective index will be used in the case of more than one
+available indices. An index_range_scan step will return the row IDs of the
+rows that satisfy a given condition. Then the table_access_by_row_id step will
+only bring those rows into memory instead of the entire table.
 
 ### Physical query plan optimization example
   The optimization process described earlier can be applied to the example
 logical plan displayed in Figure 7c. After optimization the final physical
 query plan looks as follows.
 
-![Figure10](images/optimized_physical_plan.png)
+![Figure10](images/optimized_physical_plan.png)<br>
 Figure 10: Optimized physical query plan.
 
 ## Future work
