@@ -40,23 +40,20 @@ table:
       name: string
       bar: string
     constraint:
-      primaryKey:
-        column: [ bar ]
-        persistent: true
+      primaryKey: [ bar ]
       unique:
         uq_bar:
           column: [ bar ]
-          persistent: true
     index:
       idx_Name:
         column: [ name ]
-        persistent: true
+    pragma:
+      persistentIndex: true
 ```
 
-Each individual index can specify whether to be persisted or not. The
-`persistent` attribute not only affects the index being stored permanently
-but also the algorithm to use (B-Tree vs AA-Tree) and table delay loading
-behavior.
+Persistent index is specified at table level. This attribute not only affects
+the indices being stored permanently but also the algorithm to use (B-Tree vs
+AA-Tree) and table delay loading behavior.
 
 
 ## Future Features

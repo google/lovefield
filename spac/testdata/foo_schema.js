@@ -66,12 +66,12 @@ foo.db.schema.Foo = function() {
 
   /** @type {!lf.schema.BaseColumn.<string>} */
   this.id = new lf.schema.BaseColumn(
-      this, 'id', false, lf.Type.STRING);
+      this, 'id', true, lf.Type.STRING);
   this.columns_.push(this.id);
 
   /** @type {!lf.schema.BaseColumn.<string>} */
   this.name = new lf.schema.BaseColumn(
-      this, 'name', false, lf.Type.STRING);
+      this, 'name', true, lf.Type.STRING);
   this.columns_.push(this.name);
 
   /** @type {!lf.schema.BaseColumn.<string>} */
@@ -104,9 +104,9 @@ foo.db.schema.Foo.prototype.deserializeRow = function(dbRecord) {
 foo.db.schema.Foo.prototype.getIndices = function() {
   if (!this.indices_) {
     this.indices_ = [
-      new lf.schema.Index('Foo', 'pkFoo', true, true, ['id']),
-      new lf.schema.Index('Foo', 'uq_bar', true, true, ['bar']),
-      new lf.schema.Index('Foo', 'idx_Name', false, true, ['name'])
+      new lf.schema.Index('Foo', 'pkFoo', true, ['id']),
+      new lf.schema.Index('Foo', 'uq_bar', true, ['bar']),
+      new lf.schema.Index('Foo', 'idx_Name', true, ['name'])
     ];
   }
   return this.indices_;
@@ -121,7 +121,7 @@ foo.db.schema.Foo.prototype.getColumns = function() {
 
 /** @override */
 foo.db.schema.Foo.prototype.getConstraint = function() {
-  var pk = new lf.schema.Index('Foo', 'pkFoo', true, true, ['id']);
+  var pk = new lf.schema.Index('Foo', 'pkFoo', true, ['id']);
   var notNullable = [
     this.id,
     this.name,
@@ -129,9 +129,15 @@ foo.db.schema.Foo.prototype.getConstraint = function() {
   ];
   var foreignKeys = [];
   var unique = [
-    new lf.schema.Index('Foo', 'uq_bar', true, true, ['bar'])
+    new lf.schema.Index('Foo', 'uq_bar', true, ['bar'])
   ];
   return new lf.schema.Constraint(pk, notNullable, foreignKeys, unique);
+};
+
+
+/** @override */
+foo.db.schema.Foo.prototype.persistentIndex = function() {
+  return true;
 };
 
 

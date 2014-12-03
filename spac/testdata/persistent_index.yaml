@@ -12,14 +12,13 @@ table:
       name: string
       bar: string
     constraint:
-      primaryKey:
-        column: [ id ]
-        persistent: true
+      primaryKey: [ id ]
       unique:
         uq_bar:
           column: [ bar ]
-          persistent: true
     index:
       idx_Name:
         column: [ name ]
-        persistent: true
+        unique: true
+    pragma:
+      persistentIndex: true

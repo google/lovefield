@@ -606,3 +606,9 @@ Table_.prototype.getIndices = function() {
 Table_.prototype.getConstraint = function() {
   return new lf.schema.Constraint(null, [], [], []);
 };
+
+
+/** @override */
+Table_.prototype.persistentIndex = function() {
+  return false;
+};

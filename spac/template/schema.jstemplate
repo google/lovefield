@@ -124,6 +124,12 @@ goog.require('lf.schema.Table');
 };
 
 
+/** @override */
+#namespace.schema.#table#pascal.prototype.persistentIndex = function() {
+  return #tablepersistentindex;
+};
+
+
 
 /**
  * @export

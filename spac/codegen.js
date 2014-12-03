@@ -31,6 +31,7 @@
  * #tablecolumntypes: column as members with type annotation
  * #tablecolumndbtypes: column as members with type annotation
  * #tablename: table name of last used #table
+ * #tablepersistentindex: table pragma persistIndex
  *
  * The caller feeds in the content of a template in string form, and the
  * generator will replace the variables in the template and return the results
@@ -90,7 +91,10 @@ var Pragma_;
  *       column: !Array.<string>,
  *       order: ?string,
  *       unique: ?boolean
- *     }>
+ *     }>,
+ *     pragma: {
+ *       persistentIndex: ?boolean
+ *     }
  *   }>
  * }}
  * @private
@@ -151,6 +155,13 @@ function convertSchema(yaml) {
   for (var tableName in yaml.table) {
     var table = {};
     table.name = tableName;
+
+    // Handle pragma value.
+    if (yaml.table[tableName].hasOwnProperty('pragma')) {
+      table.pragma = yaml.table[tableName].pragma;
+    } else {
+      table.pragma = {};
+    }
 
     if (yaml.table[tableName].hasOwnProperty('constraint')) {
       table.constraint = convertConstraint(yaml.table[tableName].constraint);
@@ -386,7 +397,7 @@ CodeGenerator.prototype.parse_ = function(lines) {
                 this.processRepeatColumn_(pool));
         pool = [];
       } else {
-        throw new Error('Code generator out of state');
+        this.error('Code generator out of state');
       }
     } else {  // old state is NONE
       // NONE -> NONE: nothing needs to be done, just push to final buffer.
@@ -858,6 +869,8 @@ CodeGenerator.prototype.processRepeatTable_ = function(lines) {
     for (var j = 0; j < lines.length; ++j) {
       var genLine = lines[j];
       // Regex replacing must start from the longest pattern.
+      genLine = genLine.replace(/#tablepersistentindex/g,
+          table.pragma.persistentIndex ? 'true' : 'false');
       genLine = genLine.replace(/#tablecolumndbtypes/g, colTypes[0]);
       genLine = genLine.replace(/#tablecolumntypes/g, colTypes[1]);
       genLine = genLine.replace(/#tableindices/g, indices);
@@ -905,7 +918,7 @@ CodeGenerator.prototype.processRepeatTable_ = function(lines) {
  */
 CodeGenerator.prototype.checkMultiColumnIndex_ = function(columns) {
   if (columns.length > 1) {
-    throw new Error('Lovefield does not fully support cross-column index yet');
+    this.error('Lovefield does not fully support cross-column index yet');
   }
 };
 
@@ -945,9 +958,7 @@ CodeGenerator.prototype.getPrimaryKeyIndex_ = function(table) {
     var header = 'new lf.schema.Index(\'' + table.name + '\', \'';
     var cols = pkCols.join(', \'');
     var keyName = 'pk' + this.toPascal_(table.name);
-    var persistent = table.constraint.primaryKey.persistent ? true : false;
-    results.push(header + keyName + '\', true, ' + persistent.toString() +
-        ', [\'' + cols + '\'])');
+    results.push(header + keyName + '\', true, [\'' + cols + '\'])');
   } else {
     results.push('null');
   }
@@ -1018,10 +1029,8 @@ CodeGenerator.prototype.getUniqueIndices_ = function(table) {
     this.checkMultiColumnIndex_(uniqueConstraint.column);
 
     var cols = uniqueConstraint.column.join(', \'');
-    var persistent = uniqueConstraint.persistent ? true : false;
     var uniqueIndex = 'new lf.schema.Index(\'' + table.name + '\', \'' +
-        uniqueConstraint.name + '\', true, ' + persistent.toString() +
-        ', [\'' + cols + '\'])';
+        uniqueConstraint.name + '\', true, [\'' + cols + '\'])';
     uniqueIndices.push(uniqueIndex);
   }
 
@@ -1060,9 +1069,13 @@ CodeGenerator.prototype.getIndices_ = function(table) {
       this.checkMultiColumnIndex_(col);
 
       var isUnique = index.unique ? true : false;
-      var persistent = index.persistent ? true : false;
-      results.push(header + index.name + '\', ' + isUnique.toString() + ', ' +
-          persistent.toString() + ', [\'' + col.join('\', \'') + '\'])');
+      var persistent = table.pragma.persistentIndex ? true : false;
+      if (persistent && !isUnique) {
+        this.error('Persisting non-unique index is not implemented: ' +
+            table.name);
+      }
+      results.push(header + index.name + '\', ' + isUnique.toString() +
+          ', [\'' + col.join('\', \'') + '\'])');
     }
   }
 

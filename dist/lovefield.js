@@ -2667,8 +2667,8 @@ goog.addDependency('dom/controlrange.js', ['goog.dom.ControlRange', 'goog.dom.Co
 goog.addDependency('dom/controlrange_test.js', ['goog.dom.ControlRangeTest'], ['goog.dom', 'goog.dom.ControlRange', 'goog.dom.RangeType', 'goog.dom.TagName', 'goog.dom.TextRange', 'goog.testing.dom', 'goog.testing.jsunit', 'goog.userAgent'], false);
 goog.addDependency('dom/dataset.js', ['goog.dom.dataset'], ['goog.string'], false);
 goog.addDependency('dom/dataset_test.js', ['goog.dom.datasetTest'], ['goog.dom', 'goog.dom.dataset', 'goog.testing.jsunit'], false);
-goog.addDependency('dom/dom.js', ['goog.dom', 'goog.dom.Appendable', 'goog.dom.DomHelper'], ['goog.array', 'goog.asserts', 'goog.dom.BrowserFeature', 'goog.dom.NodeType', 'goog.dom.TagName', 'goog.math.Coordinate', 'goog.math.Size', 'goog.object', 'goog.string', 'goog.userAgent'], false);
-goog.addDependency('dom/dom_test.js', ['goog.dom.dom_test'], ['goog.dom', 'goog.dom.BrowserFeature', 'goog.dom.DomHelper', 'goog.dom.NodeType', 'goog.dom.TagName', 'goog.functions', 'goog.object', 'goog.string.Unicode', 'goog.testing.PropertyReplacer', 'goog.testing.asserts', 'goog.userAgent', 'goog.userAgent.product', 'goog.userAgent.product.isVersion'], false);
+goog.addDependency('dom/dom.js', ['goog.dom', 'goog.dom.Appendable', 'goog.dom.DomHelper'], ['goog.array', 'goog.asserts', 'goog.dom.BrowserFeature', 'goog.dom.NodeType', 'goog.dom.TagName', 'goog.dom.safe', 'goog.html.SafeHtml', 'goog.math.Coordinate', 'goog.math.Size', 'goog.object', 'goog.string', 'goog.userAgent'], false);
+goog.addDependency('dom/dom_test.js', ['goog.dom.dom_test'], ['goog.dom', 'goog.dom.BrowserFeature', 'goog.dom.DomHelper', 'goog.dom.NodeType', 'goog.dom.TagName', 'goog.functions', 'goog.html.testing', 'goog.object', 'goog.string.Unicode', 'goog.testing.PropertyReplacer', 'goog.testing.asserts', 'goog.userAgent', 'goog.userAgent.product', 'goog.userAgent.product.isVersion'], false);
 goog.addDependency('dom/fontsizemonitor.js', ['goog.dom.FontSizeMonitor', 'goog.dom.FontSizeMonitor.EventType'], ['goog.dom', 'goog.events', 'goog.events.EventTarget', 'goog.events.EventType', 'goog.userAgent'], false);
 goog.addDependency('dom/fontsizemonitor_test.js', ['goog.dom.FontSizeMonitorTest'], ['goog.dom', 'goog.dom.FontSizeMonitor', 'goog.events', 'goog.events.Event', 'goog.testing.PropertyReplacer', 'goog.testing.events', 'goog.testing.jsunit', 'goog.userAgent'], false);
 goog.addDependency('dom/forms.js', ['goog.dom.forms'], ['goog.structs.Map'], false);
@@ -13424,6 +13424,14 @@ goog.debug.LogRecord.prototype.exception_ = null;
 
 
 /**
+ * Exception text associated with the record
+ * @type {?string}
+ * @private
+ */
+goog.debug.LogRecord.prototype.exceptionText_ = null;
+
+
+/**
  * @define {boolean} Whether to enable log sequence numbers.
  */
 goog.define('goog.debug.LogRecord.ENABLE_SEQUENCE_NUMBERS', true);
@@ -13460,6 +13468,7 @@ goog.debug.LogRecord.prototype.reset = function(level, msg, loggerName,
   this.msg_ = msg;
   this.loggerName_ = loggerName;
   delete this.exception_;
+  delete this.exceptionText_;
 };
 
 
@@ -13490,6 +13499,26 @@ goog.debug.LogRecord.prototype.getException = function() {
  */
 goog.debug.LogRecord.prototype.setException = function(exception) {
   this.exception_ = exception;
+};
+
+
+/**
+ * Get the exception text that is part of the log record.
+ *
+ * @return {?string} Exception text.
+ */
+goog.debug.LogRecord.prototype.getExceptionText = function() {
+  return this.exceptionText_;
+};
+
+
+/**
+ * Set the exception text that is part of the log record.
+ *
+ * @param {string} text The exception text.
+ */
+goog.debug.LogRecord.prototype.setExceptionText = function(text) {
+  this.exceptionText_ = text;
 };
 
 
@@ -14269,7 +14298,8 @@ goog.debug.Logger.prototype.log = function(level, msg, opt_exception) {
       msg = msg();
     }
 
-    this.doLogRecord_(this.getLogRecord(level, msg, opt_exception));
+    this.doLogRecord_(this.getLogRecord(
+        level, msg, opt_exception, goog.debug.Logger.prototype.log));
   }
 };
 
@@ -14280,11 +14310,13 @@ goog.debug.Logger.prototype.log = function(level, msg, opt_exception) {
  * @param {string} msg The string message.
  * @param {Error|Object=} opt_exception An exception associated with the
  *     message.
+ * @param {Function=} opt_fnStackContext A function to use as the base
+ *     of the stack trace used in the log record.
  * @return {!goog.debug.LogRecord} A log record.
  * @suppress {es5Strict}
  */
 goog.debug.Logger.prototype.getLogRecord = function(
-    level, msg, opt_exception) {
+    level, msg, opt_exception, opt_fnStackContext) {
   if (goog.debug.LogBuffer.isBufferingEnabled()) {
     var logRecord =
         goog.debug.LogBuffer.getInstance().addRecord(level, msg, this.name_);
@@ -14292,7 +14324,16 @@ goog.debug.Logger.prototype.getLogRecord = function(
     logRecord = new goog.debug.LogRecord(level, String(msg), this.name_);
   }
   if (opt_exception) {
+    var context;
+    if (goog.STRICT_MODE_COMPATIBLE) {
+      context = opt_fnStackContext || goog.debug.Logger.prototype.getLogRecord;
+    } else {
+      context = opt_fnStackContext || arguments.callee.caller;
+    }
+
     logRecord.setException(opt_exception);
+    logRecord.setExceptionText(
+        goog.debug.exposeException(opt_exception, context));
   }
   return logRecord;
 };
@@ -27178,11 +27219,10 @@ lf.schema.Database.prototype.getTables;
  * @param {string} tableName
  * @param {string} name
  * @param {boolean} isUnique
- * @param {boolean} persistent
  * @param {!Array.<string>} columnNames
  * @constructor @struct
  */
-lf.schema.Index = function(tableName, name, isUnique, persistent, columnNames) {
+lf.schema.Index = function(tableName, name, isUnique, columnNames) {
   /** @type {string} */
   this.tableName = tableName;
 
@@ -27191,9 +27231,6 @@ lf.schema.Index = function(tableName, name, isUnique, persistent, columnNames) {
 
   /** @type {boolean} */
   this.isUnique = isUnique;
-
-  /** @type {boolean} */
-  this.persistent = persistent;
 
   /** @type {!Array.<string>} */
   this.columnNames = columnNames;
@@ -27244,6 +27281,10 @@ lf.schema.Table.prototype.getColumns;
 
 /** @return {!lf.schema.Constraint} */
 lf.schema.Table.prototype.getConstraint;
+
+
+/** @return {boolean} */
+lf.schema.Table.prototype.persistentIndex;
 
 /**
  * @license

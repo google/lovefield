@@ -170,14 +170,13 @@ Table_.prototype.getColumns = function() {
 /** @override */
 Table_.prototype.getIndices = function() {
   var indices = [
-    new lf.schema.Index(this.tableName_, 'pkId', true, false, ['id']),
-    new lf.schema.Index(this.tableName_, 'idxName', false, false, ['name'])
+    new lf.schema.Index(this.tableName_, 'pkId', true, ['id']),
+    new lf.schema.Index(this.tableName_, 'idxName', false, ['name'])
   ];
 
   if (this.tableName_ == 'tableD') {
     indices.push(
-        new lf.schema.Index(
-            this.tableName_, 'idxBoth', true, false, ['id', 'name']));
+        new lf.schema.Index(this.tableName_, 'idxBoth', true, ['id', 'name']));
   }
 
   return indices;
@@ -187,9 +186,15 @@ Table_.prototype.getIndices = function() {
 /** @override */
 Table_.prototype.getConstraint = function() {
   return new lf.schema.Constraint(
-      new lf.schema.Index(this.tableName_, 'pkId', true, false, ['id']),
+      new lf.schema.Index(this.tableName_, 'pkId', true, ['id']),
       [this.id, this.name] /* notNullable */,
       [], []);
+};
+
+
+/** @override */
+Table_.prototype.persistentIndex = function() {
+  return false;
 };
 
 
@@ -254,6 +259,12 @@ TableWithNoIndex_.prototype.getConstraint = function() {
 };
 
 
+/** @override */
+TableWithNoIndex_.prototype.persistentIndex = function() {
+  return false;
+};
+
+
 
 /**
  * Dummy table implementation with a uniqueness constraint to be used in tests.
@@ -302,8 +313,8 @@ TableWithUnique_.prototype.getColumns = function() {
 /** @override */
 TableWithUnique_.prototype.getIndices = function() {
   return [
-    new lf.schema.Index(this.tableName_, 'pkId', true, false, ['id']),
-    new lf.schema.Index(this.tableName_, 'uq_email', true, false, ['email'])
+    new lf.schema.Index(this.tableName_, 'pkId', true, ['id']),
+    new lf.schema.Index(this.tableName_, 'uq_email', true, ['email'])
   ];
 };
 
@@ -311,8 +322,13 @@ TableWithUnique_.prototype.getIndices = function() {
 /** @override */
 TableWithUnique_.prototype.getConstraint = function() {
   return new lf.schema.Constraint(
-      new lf.schema.Index(this.tableName_, 'pkId', true, false, ['id']),
+      new lf.schema.Index(this.tableName_, 'pkId', true, ['id']),
       [this.id, this.email] /* notNullable */, [],
-      [new lf.schema.Index(
-          this.tableName_, 'uq_email', true, false, ['email'])]);
+      [new lf.schema.Index(this.tableName_, 'uq_email', true, ['email'])]);
+};
+
+
+/** @override */
+TableWithUnique_.prototype.persistentIndex = function() {
+  return false;
 };

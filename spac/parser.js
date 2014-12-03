@@ -46,13 +46,14 @@ var DB_SCHEMA = {
 var TABLE_SCHEMA = {
   'column': 'object',
   'constraint=': 'object',
-  'index=': 'object'
+  'index=': 'object',
+  'pragma=': 'object'
 };
 
 
 /** @const {!Object} */
 var CONSTRAINT_SCHEMA = {
-  'primaryKey=': 'array|object',
+  'primaryKey=': 'array',
   'unique=': 'object',
   'nullable=': 'array',
   'foreignKey=': 'object'
@@ -60,16 +61,8 @@ var CONSTRAINT_SCHEMA = {
 
 
 /** @const {!Object} */
-var PRIMARY_KEY_SCHEMA = {
-  'column': 'array',
-  'persistent=': 'boolean'
-};
-
-
-/** @const {!Object} */
 var UNIQUE_SCHEMA = {
-  'column': 'array',
-  'persistent=': 'boolean'
+  'column': 'array'
 };
 
 
@@ -86,8 +79,7 @@ var FOREIGN_KEY_SCHEMA = {
 var INDEX_SCHEMA = {
   'column': 'array',
   'order=': 'string',
-  'unique=': 'boolean',
-  'persistent=': 'boolean'
+  'unique=': 'boolean'
 };
 
 
@@ -168,12 +160,6 @@ function checkObject(name, rule, data) {
           }
           break;
 
-        case 'array|object':
-          if (!data[key].length && !(data[key] != null)) {
-            throw new Error(fieldName + ' syntax error');
-          }
-          break;
-
         default:
           throw new Error('Rule syntax error');
       }
@@ -185,24 +171,8 @@ function checkObject(name, rule, data) {
 
 
 /**
- * @param {!Object} schema primaryKey schema.
- * @return {!Array.<string>} Primary Key columns.
- */
-function getPrimaryKeyCols(schema) {
-  if (schema.length) {
-    // Format 1: primaryKey: [ cols ]
-    return /** @type {!Array.<string>} */ (schema);
-  } else {
-    // Format 2: primaryKey:
-    //             column: [ cols ]
-    return schema.column;
-  }
-}
-
-
-/**
  * @param {string} tableName
- * @param {!Array.<string>|!Object} schema
+ * @param {!Array.<string>} schema
  * @param {!Array.<string>} colNames Column names in this table.
  * @param {!Array.<string>} names Names of unique identifiers in table, this
  *     function will insert entries into it as side effect.
@@ -215,12 +185,7 @@ function checkPrimaryKey(tableName, schema, colNames, names) {
     throw new Error('Primary key name conflicts with column name: ' + keyName);
   }
 
-  if (!schema.length) {
-    // Format 2
-    checkObject(keyName, PRIMARY_KEY_SCHEMA, schema);
-  }
-
-  var notNullable = getPrimaryKeyCols(schema).map(function(key) {
+  var notNullable = schema.map(function(key) {
     if (colNames.indexOf(key) == -1) {
       throw new Error('Primary key ' + key + ' of ' + tableName +
           ' is not its column');
@@ -366,7 +331,7 @@ function checkConstraint(tableName, schemas, colNames, names) {
   checkObject(tableName + '.constraint', CONSTRAINT_SCHEMA, schema);
 
   if (schema.hasOwnProperty('primaryKey')) {
-    if (getPrimaryKeyCols(schema.primaryKey).length == 0) {
+    if (schema.primaryKey.length == 0) {
       throw new Error('Empty primaryKey for ' + tableName);
     }
     notNullable = notNullable.concat(
@@ -407,7 +372,7 @@ function checkIndices(tableName, schema, colNames, names, nullable) {
   if (schema.hasOwnProperty('constraint')) {
     var constraint = schema.constraint;
     if (constraint.hasOwnProperty('primaryKey')) {
-      indexedCol.push(getPrimaryKeyCols(constraint.primaryKey).join('#'));
+      indexedCol.push(constraint.primaryKey.join('#'));
     }
     if (constraint.hasOwnProperty('unique')) {
       for (var item in constraint.unique) {
