@@ -28,7 +28,8 @@ lovefield.db.getSchema = function() {
  * @return {!IThenable.<!lf.proc.Database>}
  */
 lovefield.db.getInstance = function(opt_onUpgrade, opt_volatile) {
-  var db = new lf.proc.Database(lovefield.db.getSchema());
+  lovefield.db.getSchema();
+  var db = new lf.proc.Database(lf.Global.get());
   return db.init(
       opt_onUpgrade,
       opt_volatile ? lf.base.BackStoreType.MEMORY : undefined);

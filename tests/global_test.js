@@ -21,20 +21,29 @@ goog.require('lf.service');
 goog.require('lf.service.ServiceId');
 
 
-/** @type {!lf.service.ServiceId} */
-var serviceId;
+/** @type {!lf.Global} */
+var global;
 
 
-/** @type {!Object} */
-var service = {};
+function setUpPage() {
+  global = lf.Global.get();
+}
 
 
-function testGlobal() {
-  var global = lf.Global.get();
+function tearDown() {
+  global.clear();
+}
+
+
+function testGlobalGet() {
   var global2 = lf.Global.get();
   assertEquals(global, global2);
+}
 
-  serviceId = new lf.service.ServiceId('whatever');
+
+function testGetService() {
+  var serviceId = new lf.service.ServiceId('whatever');
+  var service = {};
   global.registerService(serviceId, service);
   var serviceFromGlobal = global.getService(serviceId);
   assertEquals(service, serviceFromGlobal);
@@ -46,12 +55,12 @@ function testGlobal() {
   assertThrows(thrower);
 }
 
-function testGlobal_Reset() {
-  var global = lf.Global.get();
-  var serviceFromGlobal = global.getService(serviceId);
-  assertEquals(service, serviceFromGlobal);
 
-  lf.Global.reset();
-  var global3 = lf.Global.get();
-  assertFalse(global == global3);
+function testClear() {
+  var serviceId = new lf.service.ServiceId('whatever');
+  var service = {};
+  global.registerService(serviceId, service);
+
+  global.clear();
+  assertFalse(global.isRegistered(serviceId));
 }
