@@ -13424,14 +13424,6 @@ goog.debug.LogRecord.prototype.exception_ = null;
 
 
 /**
- * Exception text associated with the record
- * @type {?string}
- * @private
- */
-goog.debug.LogRecord.prototype.exceptionText_ = null;
-
-
-/**
  * @define {boolean} Whether to enable log sequence numbers.
  */
 goog.define('goog.debug.LogRecord.ENABLE_SEQUENCE_NUMBERS', true);
@@ -13468,7 +13460,6 @@ goog.debug.LogRecord.prototype.reset = function(level, msg, loggerName,
   this.msg_ = msg;
   this.loggerName_ = loggerName;
   delete this.exception_;
-  delete this.exceptionText_;
 };
 
 
@@ -13499,26 +13490,6 @@ goog.debug.LogRecord.prototype.getException = function() {
  */
 goog.debug.LogRecord.prototype.setException = function(exception) {
   this.exception_ = exception;
-};
-
-
-/**
- * Get the exception text that is part of the log record.
- *
- * @return {?string} Exception text.
- */
-goog.debug.LogRecord.prototype.getExceptionText = function() {
-  return this.exceptionText_;
-};
-
-
-/**
- * Set the exception text that is part of the log record.
- *
- * @param {string} text The exception text.
- */
-goog.debug.LogRecord.prototype.setExceptionText = function(text) {
-  this.exceptionText_ = text;
 };
 
 
@@ -14298,8 +14269,7 @@ goog.debug.Logger.prototype.log = function(level, msg, opt_exception) {
       msg = msg();
     }
 
-    this.doLogRecord_(this.getLogRecord(
-        level, msg, opt_exception, goog.debug.Logger.prototype.log));
+    this.doLogRecord_(this.getLogRecord(level, msg, opt_exception));
   }
 };
 
@@ -14310,13 +14280,11 @@ goog.debug.Logger.prototype.log = function(level, msg, opt_exception) {
  * @param {string} msg The string message.
  * @param {Error|Object=} opt_exception An exception associated with the
  *     message.
- * @param {Function=} opt_fnStackContext A function to use as the base
- *     of the stack trace used in the log record.
  * @return {!goog.debug.LogRecord} A log record.
  * @suppress {es5Strict}
  */
 goog.debug.Logger.prototype.getLogRecord = function(
-    level, msg, opt_exception, opt_fnStackContext) {
+    level, msg, opt_exception) {
   if (goog.debug.LogBuffer.isBufferingEnabled()) {
     var logRecord =
         goog.debug.LogBuffer.getInstance().addRecord(level, msg, this.name_);
@@ -14324,16 +14292,7 @@ goog.debug.Logger.prototype.getLogRecord = function(
     logRecord = new goog.debug.LogRecord(level, String(msg), this.name_);
   }
   if (opt_exception) {
-    var context;
-    if (goog.STRICT_MODE_COMPATIBLE) {
-      context = opt_fnStackContext || goog.debug.Logger.prototype.getLogRecord;
-    } else {
-      context = opt_fnStackContext || arguments.callee.caller;
-    }
-
     logRecord.setException(opt_exception);
-    logRecord.setExceptionText(
-        goog.debug.exposeException(opt_exception, context));
   }
   return logRecord;
 };
