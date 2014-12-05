@@ -3,7 +3,6 @@
 
 
 var fsMod = require('fs');
-var globMod = require('glob');
 var pathMod = require('path');
 var noptMod =  (require('nopt'));
 
@@ -47,11 +46,11 @@ if (!fsMod.existsSync(outputDir)) {
 }
 
 // Scan all templates
-var templates = [];
-var templateFiles = globMod.sync('*.jstemplate', {cwd: templateDir});
-for (var i = 0; i < templateFiles.length; ++i) {
-  templates.push(pathMod.resolve(templateDir + '/' + templateFiles[i]));
-}
+var configPath = pathMod.resolve(templateDir + '/templates.json');
+var config = JSON.parse(fsMod.readFileSync(configPath));
+var templates = config.templates.map(function(templateName) {
+  return pathMod.resolve(templateDir + '/' + templateName);
+});
 
 // Parse and validate schema
 var schema = parseAndValidate(fsMod.readFileSync(schemaPath));

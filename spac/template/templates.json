@@ -1,0 +1,6 @@
+{
+  "templates": [
+    "schema.jstemplate",
+    "database.jstemplate"
+  ]
+}
