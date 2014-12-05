@@ -21,13 +21,6 @@ var path = require('path');
 var validate = userRequire('parser').parse;
 var CodeGenerator = userRequire('codegen').CodeGenerator;
 
-var template = {};
-var templateFiles = glob.sync('*', {cwd: __dirname + '/../../../template'});
-for (var i = 0; i < templateFiles.length; ++i) {
-  template[path.basename(templateFiles[i])] =
-      path.resolve(__dirname + '/../../../template/' + templateFiles[i]);
-}
-
 
 /**
  * @param {string} fileName
