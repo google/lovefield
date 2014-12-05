@@ -675,7 +675,8 @@ CodeGenerator.prototype.genKeyOfIndex_ = function(table, prefix) {
     }
   }
 
-  body.push('    case \'##row_id##\':');
+  // '#' is the name of the special RowId index.
+  genCase('#');
   body.push('      return this.id();');
   body.push('    default:');
   body.push('      break;');

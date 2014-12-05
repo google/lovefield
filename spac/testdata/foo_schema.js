@@ -220,7 +220,7 @@ foo.db.row.Foo.prototype.keyOfIndex = function(indexName) {
       return this.payload().bar;
     case 'Foo.idx_Name':
       return this.payload().name;
-    case '##row_id##':
+    case 'Foo.#':
       return this.id();
     default:
       break;

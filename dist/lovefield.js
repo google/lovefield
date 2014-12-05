@@ -3606,8 +3606,8 @@ goog.addDependency('ui/attachablemenu.js', ['goog.ui.AttachableMenu'], ['goog.a1
 goog.addDependency('ui/bidiinput.js', ['goog.ui.BidiInput'], ['goog.dom', 'goog.events', 'goog.events.InputHandler', 'goog.i18n.bidi', 'goog.i18n.bidi.Dir', 'goog.ui.Component'], false);
 goog.addDependency('ui/bidiinput_test.js', ['goog.ui.BidiInputTest'], ['goog.dom', 'goog.testing.jsunit', 'goog.ui.BidiInput'], false);
 goog.addDependency('ui/bubble.js', ['goog.ui.Bubble'], ['goog.Timer', 'goog.events', 'goog.events.EventType', 'goog.math.Box', 'goog.positioning', 'goog.positioning.AbsolutePosition', 'goog.positioning.AnchoredPosition', 'goog.positioning.Corner', 'goog.positioning.CornerBit', 'goog.style', 'goog.ui.Component', 'goog.ui.Popup'], false);
-goog.addDependency('ui/button.js', ['goog.ui.Button', 'goog.ui.Button.Side'], ['goog.events.EventType', 'goog.events.KeyCodes', 'goog.events.KeyHandler', 'goog.ui.ButtonRenderer', 'goog.ui.ButtonSide', 'goog.ui.Component', 'goog.ui.Control', 'goog.ui.NativeButtonRenderer', 'goog.ui.registry'], false);
-goog.addDependency('ui/button_test.js', ['goog.ui.ButtonTest'], ['goog.dom', 'goog.dom.classlist', 'goog.events', 'goog.events.Event', 'goog.events.EventType', 'goog.events.KeyCodes', 'goog.events.KeyHandler', 'goog.testing.events', 'goog.testing.jsunit', 'goog.ui.Button', 'goog.ui.ButtonRenderer', 'goog.ui.ButtonSide', 'goog.ui.Component', 'goog.ui.NativeButtonRenderer'], false);
+goog.addDependency('ui/button.js', ['goog.ui.Button', 'goog.ui.Button.Side'], ['goog.events.KeyCodes', 'goog.ui.ButtonRenderer', 'goog.ui.ButtonSide', 'goog.ui.Control', 'goog.ui.NativeButtonRenderer', 'goog.ui.registry'], false);
+goog.addDependency('ui/button_test.js', ['goog.ui.ButtonTest'], ['goog.dom', 'goog.dom.classlist', 'goog.events', 'goog.events.Event', 'goog.events.EventType', 'goog.events.KeyCodes', 'goog.events.KeyHandler', 'goog.testing.events', 'goog.testing.events.EventObserver', 'goog.testing.jsunit', 'goog.testing.recordFunction', 'goog.ui.Button', 'goog.ui.ButtonRenderer', 'goog.ui.ButtonSide', 'goog.ui.Component', 'goog.ui.Container', 'goog.ui.NativeButtonRenderer'], false);
 goog.addDependency('ui/buttonrenderer.js', ['goog.ui.ButtonRenderer'], ['goog.a11y.aria', 'goog.a11y.aria.Role', 'goog.a11y.aria.State', 'goog.asserts', 'goog.ui.ButtonSide', 'goog.ui.Component', 'goog.ui.ControlRenderer'], false);
 goog.addDependency('ui/buttonrenderer_test.js', ['goog.ui.ButtonRendererTest'], ['goog.a11y.aria', 'goog.a11y.aria.Role', 'goog.a11y.aria.State', 'goog.dom', 'goog.dom.classlist', 'goog.testing.ExpectedFailures', 'goog.testing.jsunit', 'goog.testing.ui.rendererasserts', 'goog.ui.Button', 'goog.ui.ButtonRenderer', 'goog.ui.ButtonSide', 'goog.ui.Component'], false);
 goog.addDependency('ui/buttonside.js', ['goog.ui.ButtonSide'], [], false);
@@ -3749,7 +3749,7 @@ goog.addDependency('ui/menubar.js', ['goog.ui.menuBar'], ['goog.ui.Container', '
 goog.addDependency('ui/menubardecorator.js', ['goog.ui.menuBarDecorator'], ['goog.ui.MenuBarRenderer', 'goog.ui.menuBar', 'goog.ui.registry'], false);
 goog.addDependency('ui/menubarrenderer.js', ['goog.ui.MenuBarRenderer'], ['goog.a11y.aria.Role', 'goog.ui.Container', 'goog.ui.ContainerRenderer'], false);
 goog.addDependency('ui/menubase.js', ['goog.ui.MenuBase'], ['goog.events.EventHandler', 'goog.events.EventType', 'goog.events.KeyHandler', 'goog.ui.Popup'], false);
-goog.addDependency('ui/menubutton.js', ['goog.ui.MenuButton'], ['goog.Timer', 'goog.a11y.aria', 'goog.a11y.aria.State', 'goog.asserts', 'goog.dom', 'goog.events.EventType', 'goog.events.KeyCodes', 'goog.events.KeyHandler', 'goog.math.Box', 'goog.math.Rect', 'goog.positioning', 'goog.positioning.Corner', 'goog.positioning.MenuAnchoredPosition', 'goog.positioning.Overflow', 'goog.style', 'goog.ui.Button', 'goog.ui.Component', 'goog.ui.IdGenerator', 'goog.ui.Menu', 'goog.ui.MenuButtonRenderer', 'goog.ui.MenuItem', 'goog.ui.MenuRenderer', 'goog.ui.registry', 'goog.userAgent', 'goog.userAgent.product'], false);
+goog.addDependency('ui/menubutton.js', ['goog.ui.MenuButton'], ['goog.Timer', 'goog.a11y.aria', 'goog.a11y.aria.State', 'goog.asserts', 'goog.dom', 'goog.events.EventType', 'goog.events.KeyCodes', 'goog.math.Box', 'goog.math.Rect', 'goog.positioning', 'goog.positioning.Corner', 'goog.positioning.MenuAnchoredPosition', 'goog.positioning.Overflow', 'goog.style', 'goog.ui.Button', 'goog.ui.Component', 'goog.ui.IdGenerator', 'goog.ui.Menu', 'goog.ui.MenuButtonRenderer', 'goog.ui.MenuItem', 'goog.ui.MenuRenderer', 'goog.ui.registry', 'goog.userAgent', 'goog.userAgent.product'], false);
 goog.addDependency('ui/menubutton_test.js', ['goog.ui.MenuButtonTest'], ['goog.Timer', 'goog.a11y.aria', 'goog.a11y.aria.State', 'goog.dom', 'goog.events', 'goog.events.Event', 'goog.events.EventType', 'goog.events.KeyCodes', 'goog.events.KeyHandler', 'goog.positioning', 'goog.positioning.Corner', 'goog.positioning.MenuAnchoredPosition', 'goog.positioning.Overflow', 'goog.style', 'goog.testing.ExpectedFailures', 'goog.testing.PropertyReplacer', 'goog.testing.events', 'goog.testing.jsunit', 'goog.testing.recordFunction', 'goog.ui.Component', 'goog.ui.Menu', 'goog.ui.MenuButton', 'goog.ui.MenuItem', 'goog.ui.SubMenu', 'goog.userAgent', 'goog.userAgent.product', 'goog.userAgent.product.isVersion'], false);
 goog.addDependency('ui/menubuttonrenderer.js', ['goog.ui.MenuButtonRenderer'], ['goog.dom', 'goog.style', 'goog.ui.CustomButtonRenderer', 'goog.ui.INLINE_BLOCK_CLASSNAME', 'goog.ui.Menu', 'goog.ui.MenuRenderer'], false);
 goog.addDependency('ui/menubuttonrenderer_test.js', ['goog.ui.MenuButtonRendererTest'], ['goog.a11y.aria', 'goog.a11y.aria.State', 'goog.dom', 'goog.dom.classlist', 'goog.testing.jsunit', 'goog.testing.ui.rendererasserts', 'goog.ui.MenuButton', 'goog.ui.MenuButtonRenderer', 'goog.userAgent'], false);
@@ -17547,7 +17547,7 @@ lf.Row.prototype.serialize = function() {
  * @return {?lf.index.Index.Key} The key corresponding to the index.
  */
 lf.Row.prototype.keyOfIndex = function(indexName) {
-  if (indexName == '##row_id##') {
+  if (indexName.substr(-1) == '#') {
     return /** @type {!lf.index.Index.Key} */ (this.id_);
   }
 
@@ -21671,8 +21671,13 @@ goog.require('lf.index.KeyRange');
  * @constructor
  * @struct
  * @final
+ *
+ * @param {string} name
  */
-lf.index.RowId = function() {
+lf.index.RowId = function(name) {
+  /** @private {string} */
+  this.name_ = name;
+
   /** @private {!goog.structs.Set.<!lf.index.Index.Key>} */
   this.rows_ = new goog.structs.Set();
 };
@@ -21680,9 +21685,7 @@ lf.index.RowId = function() {
 
 /** @override */
 lf.index.RowId.prototype.getName = function() {
-  // TODO(dpapad): This needs to be prefixed by the name of the parent table
-  // (normalized). Otherwise naming collisions exist when it is persisted.
-  return '##row_id##';
+  return this.name_;
 };
 
 
@@ -21753,11 +21756,12 @@ lf.index.RowId.prototype.serialize = function() {
 
 /**
  * Creates a RowId index from a serialized form.
+ * @param {string} name The normalized name of this index.
  * @param {!Array.<!lf.Row>} rows
  * @return {!lf.index.RowId}
  */
-lf.index.RowId.deserialize = function(rows) {
-  var index = new lf.index.RowId();
+lf.index.RowId.deserialize = function(name, rows) {
+  var index = new lf.index.RowId(name);
   var rowIds = rows[0].payload();
   rowIds.forEach(function(rowId) {
     index.add(rowId, rowId);
@@ -21848,7 +21852,7 @@ lf.index.MemoryIndexStore.prototype.getRowIdIndex = function(tableName) {
   var indexName = tableName + '.#';
   var index = this.store_.get(indexName, null);
   if (goog.isNull(index)) {
-    index = new lf.index.RowId();
+    index = new lf.index.RowId(indexName);
     this.store_.set(indexName, index);
   }
   return index;

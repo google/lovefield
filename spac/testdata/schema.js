@@ -304,7 +304,7 @@ lovefield.db.row.Album.prototype.keyOfIndex = function(indexName) {
       return this.payload().id;
     case 'Album.idx_timestamp':
       return this.payload().timestamp.getTime();
-    case '##row_id##':
+    case 'Album.#':
       return this.id();
     default:
       break;
@@ -640,7 +640,7 @@ lovefield.db.row.Photo.prototype.keyOfIndex = function(indexName) {
       return this.payload().id;
     case 'Photo.idx_timestamp':
       return this.payload().timestamp.getTime();
-    case '##row_id##':
+    case 'Photo.#':
       return this.id();
     default:
       break;
@@ -953,7 +953,7 @@ lovefield.db.row.Details.prototype.toDbPayload = function() {
 /** @override */
 lovefield.db.row.Details.prototype.keyOfIndex = function(indexName) {
   switch (indexName) {
-    case '##row_id##':
+    case 'Details.#':
       return this.id();
     default:
       break;
@@ -1164,7 +1164,7 @@ lovefield.db.row.Curator.prototype.keyOfIndex = function(indexName) {
       return this.payload().id;
     case 'Curator.uq_name':
       return this.payload().name;
-    case '##row_id##':
+    case 'Curator.#':
       return this.id();
     default:
       break;
@@ -1368,7 +1368,7 @@ lovefield.db.row.PhotoCurator.prototype.keyOfIndex = function(indexName) {
   switch (indexName) {
     case 'PhotoCurator.uq_topic':
       return this.payload().topic;
-    case '##row_id##':
+    case 'PhotoCurator.#':
       return this.id();
     default:
       break;

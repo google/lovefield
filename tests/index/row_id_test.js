@@ -26,7 +26,7 @@ goog.require('lf.index.RowId');
  * @return {!lf.index.Index}
  */
 function getSampleIndex() {
-  var index = new lf.index.RowId();
+  var index = new lf.index.RowId('dummyName');
 
   var rows = [];
   for (var i = 0; i < 10; ++i) {
@@ -81,6 +81,6 @@ function testSerialize() {
   var index = getSampleIndex();
   var serialized = index.serialize();
   assertEquals(1, serialized.length);
-  var deserialized = lf.index.RowId.deserialize(serialized);
+  var deserialized = lf.index.RowId.deserialize('dummyName', serialized);
   checkGetRange(deserialized);
 }

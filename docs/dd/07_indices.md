@@ -59,7 +59,8 @@ scenarios such as sparse contents.
 
 ### Row ID Index
 This index type is a simple set. It is used for row id look up. Since the row
-ids are unique, a set shall suffice.
+ids are unique, a set shall suffice. The normalized name of the Row ID index is
+always in the form `TableName.#`.
 
 
 ## Future Works

@@ -102,7 +102,7 @@ goog.inherits(lf.testing.MockSchema.Row, lf.Row);
 
 /** @override */
 lf.testing.MockSchema.Row.prototype.keyOfIndex = function(indexName) {
-  if (indexName == '##row_id##') {
+  if (indexName.substr(-1) == '#') {
     return /** @type {lf.index.Index.Key} */ (this.id());
   } else if (goog.string.endsWith(indexName, 'pkId')) {
     return this.payload()['id'];
