@@ -60,22 +60,6 @@ function testConstruction() {
 }
 
 
-function testCreateTable() {
-  var tableNames = [];
-  for (var i = 0; i < 10; i++) {
-    tableNames.push('myTable' + i.toString());
-  }
-
-  tableNames.forEach(function(tableName) {
-    store.createTable(tableName);
-  });
-
-  tableNames.forEach(function(tableName) {
-    assertNotNull(store.getTableInternal(tableName));
-  });
-}
-
-
 function testGetTable_NonExisting() {
   assertThrows(
       goog.bind(store.getTableInternal, store, 'nonExistingTableName'));

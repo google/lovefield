@@ -3606,8 +3606,8 @@ goog.addDependency('ui/attachablemenu.js', ['goog.ui.AttachableMenu'], ['goog.a1
 goog.addDependency('ui/bidiinput.js', ['goog.ui.BidiInput'], ['goog.dom', 'goog.events', 'goog.events.InputHandler', 'goog.i18n.bidi', 'goog.i18n.bidi.Dir', 'goog.ui.Component'], false);
 goog.addDependency('ui/bidiinput_test.js', ['goog.ui.BidiInputTest'], ['goog.dom', 'goog.testing.jsunit', 'goog.ui.BidiInput'], false);
 goog.addDependency('ui/bubble.js', ['goog.ui.Bubble'], ['goog.Timer', 'goog.events', 'goog.events.EventType', 'goog.math.Box', 'goog.positioning', 'goog.positioning.AbsolutePosition', 'goog.positioning.AnchoredPosition', 'goog.positioning.Corner', 'goog.positioning.CornerBit', 'goog.style', 'goog.ui.Component', 'goog.ui.Popup'], false);
-goog.addDependency('ui/button.js', ['goog.ui.Button', 'goog.ui.Button.Side'], ['goog.events.KeyCodes', 'goog.ui.ButtonRenderer', 'goog.ui.ButtonSide', 'goog.ui.Control', 'goog.ui.NativeButtonRenderer', 'goog.ui.registry'], false);
-goog.addDependency('ui/button_test.js', ['goog.ui.ButtonTest'], ['goog.dom', 'goog.dom.classlist', 'goog.events', 'goog.events.Event', 'goog.events.EventType', 'goog.events.KeyCodes', 'goog.events.KeyHandler', 'goog.testing.events', 'goog.testing.events.EventObserver', 'goog.testing.jsunit', 'goog.testing.recordFunction', 'goog.ui.Button', 'goog.ui.ButtonRenderer', 'goog.ui.ButtonSide', 'goog.ui.Component', 'goog.ui.Container', 'goog.ui.NativeButtonRenderer'], false);
+goog.addDependency('ui/button.js', ['goog.ui.Button', 'goog.ui.Button.Side'], ['goog.events.EventType', 'goog.events.KeyCodes', 'goog.events.KeyHandler', 'goog.ui.ButtonRenderer', 'goog.ui.ButtonSide', 'goog.ui.Component', 'goog.ui.Control', 'goog.ui.NativeButtonRenderer', 'goog.ui.registry'], false);
+goog.addDependency('ui/button_test.js', ['goog.ui.ButtonTest'], ['goog.dom', 'goog.dom.classlist', 'goog.events', 'goog.events.Event', 'goog.events.EventType', 'goog.events.KeyCodes', 'goog.events.KeyHandler', 'goog.testing.events', 'goog.testing.jsunit', 'goog.ui.Button', 'goog.ui.ButtonRenderer', 'goog.ui.ButtonSide', 'goog.ui.Component', 'goog.ui.NativeButtonRenderer'], false);
 goog.addDependency('ui/buttonrenderer.js', ['goog.ui.ButtonRenderer'], ['goog.a11y.aria', 'goog.a11y.aria.Role', 'goog.a11y.aria.State', 'goog.asserts', 'goog.ui.ButtonSide', 'goog.ui.Component', 'goog.ui.ControlRenderer'], false);
 goog.addDependency('ui/buttonrenderer_test.js', ['goog.ui.ButtonRendererTest'], ['goog.a11y.aria', 'goog.a11y.aria.Role', 'goog.a11y.aria.State', 'goog.dom', 'goog.dom.classlist', 'goog.testing.ExpectedFailures', 'goog.testing.jsunit', 'goog.testing.ui.rendererasserts', 'goog.ui.Button', 'goog.ui.ButtonRenderer', 'goog.ui.ButtonSide', 'goog.ui.Component'], false);
 goog.addDependency('ui/buttonside.js', ['goog.ui.ButtonSide'], [], false);
@@ -3749,7 +3749,7 @@ goog.addDependency('ui/menubar.js', ['goog.ui.menuBar'], ['goog.ui.Container', '
 goog.addDependency('ui/menubardecorator.js', ['goog.ui.menuBarDecorator'], ['goog.ui.MenuBarRenderer', 'goog.ui.menuBar', 'goog.ui.registry'], false);
 goog.addDependency('ui/menubarrenderer.js', ['goog.ui.MenuBarRenderer'], ['goog.a11y.aria.Role', 'goog.ui.Container', 'goog.ui.ContainerRenderer'], false);
 goog.addDependency('ui/menubase.js', ['goog.ui.MenuBase'], ['goog.events.EventHandler', 'goog.events.EventType', 'goog.events.KeyHandler', 'goog.ui.Popup'], false);
-goog.addDependency('ui/menubutton.js', ['goog.ui.MenuButton'], ['goog.Timer', 'goog.a11y.aria', 'goog.a11y.aria.State', 'goog.asserts', 'goog.dom', 'goog.events.EventType', 'goog.events.KeyCodes', 'goog.math.Box', 'goog.math.Rect', 'goog.positioning', 'goog.positioning.Corner', 'goog.positioning.MenuAnchoredPosition', 'goog.positioning.Overflow', 'goog.style', 'goog.ui.Button', 'goog.ui.Component', 'goog.ui.IdGenerator', 'goog.ui.Menu', 'goog.ui.MenuButtonRenderer', 'goog.ui.MenuItem', 'goog.ui.MenuRenderer', 'goog.ui.registry', 'goog.userAgent', 'goog.userAgent.product'], false);
+goog.addDependency('ui/menubutton.js', ['goog.ui.MenuButton'], ['goog.Timer', 'goog.a11y.aria', 'goog.a11y.aria.State', 'goog.asserts', 'goog.dom', 'goog.events.EventType', 'goog.events.KeyCodes', 'goog.events.KeyHandler', 'goog.math.Box', 'goog.math.Rect', 'goog.positioning', 'goog.positioning.Corner', 'goog.positioning.MenuAnchoredPosition', 'goog.positioning.Overflow', 'goog.style', 'goog.ui.Button', 'goog.ui.Component', 'goog.ui.IdGenerator', 'goog.ui.Menu', 'goog.ui.MenuButtonRenderer', 'goog.ui.MenuItem', 'goog.ui.MenuRenderer', 'goog.ui.registry', 'goog.userAgent', 'goog.userAgent.product'], false);
 goog.addDependency('ui/menubutton_test.js', ['goog.ui.MenuButtonTest'], ['goog.Timer', 'goog.a11y.aria', 'goog.a11y.aria.State', 'goog.dom', 'goog.events', 'goog.events.Event', 'goog.events.EventType', 'goog.events.KeyCodes', 'goog.events.KeyHandler', 'goog.positioning', 'goog.positioning.Corner', 'goog.positioning.MenuAnchoredPosition', 'goog.positioning.Overflow', 'goog.style', 'goog.testing.ExpectedFailures', 'goog.testing.PropertyReplacer', 'goog.testing.events', 'goog.testing.jsunit', 'goog.testing.recordFunction', 'goog.ui.Component', 'goog.ui.Menu', 'goog.ui.MenuButton', 'goog.ui.MenuItem', 'goog.ui.SubMenu', 'goog.userAgent', 'goog.userAgent.product', 'goog.userAgent.product.isVersion'], false);
 goog.addDependency('ui/menubuttonrenderer.js', ['goog.ui.MenuButtonRenderer'], ['goog.dom', 'goog.style', 'goog.ui.CustomButtonRenderer', 'goog.ui.INLINE_BLOCK_CLASSNAME', 'goog.ui.Menu', 'goog.ui.MenuRenderer'], false);
 goog.addDependency('ui/menubuttonrenderer_test.js', ['goog.ui.MenuButtonRendererTest'], ['goog.a11y.aria', 'goog.a11y.aria.State', 'goog.dom', 'goog.dom.classlist', 'goog.testing.jsunit', 'goog.testing.ui.rendererasserts', 'goog.ui.MenuButton', 'goog.ui.MenuButtonRenderer', 'goog.userAgent'], false);
@@ -18434,13 +18434,32 @@ lf.backstore.IndexedDB.prototype.onUpgradeNeeded_ = function(onUpgrade, ev) {
  * @private
  */
 lf.backstore.IndexedDB.prototype.createTables_ = function(db) {
-  var schemaTables = this.schema_.getTables().map(function(table) {
-    return table.getName();
-  });
-  for (var i = 0; i < schemaTables.length; ++i) {
-    if (!db.objectStoreNames.contains(schemaTables[i])) {
-      db.createObjectStore(schemaTables[i], {keyPath: 'id'});
-    }
+  this.schema_.getTables().forEach(
+      goog.partial(this.createObjectStoresForTable_, db),
+      this);
+};
+
+
+/**
+ * Creates all backing store tables for the given user-defined table.
+ * @param {!IDBDatabase} db
+ * @param {!lf.schema.Table} tableSchema The table schema.
+ * @private
+ */
+lf.backstore.IndexedDB.prototype.createObjectStoresForTable_ = function(
+    db, tableSchema) {
+  if (!db.objectStoreNames.contains(tableSchema.getName())) {
+    db.createObjectStore(tableSchema.getName(), {keyPath: 'id'});
+  }
+
+  if (tableSchema.persistentIndex()) {
+    var tableIndices = tableSchema.getIndices();
+    tableIndices.forEach(function(indexSchema) {
+      var indexName = indexSchema.getNormalizedName();
+      if (!db.objectStoreNames.contains(indexName)) {
+        db.createObjectStore(indexName, {keyPath: 'id'});
+      }
+    }, this);
   }
 };
 
@@ -18754,12 +18773,7 @@ lf.backstore.Memory = function(schema) {
 
 /** @override */
 lf.backstore.Memory.prototype.init = function(opt_onUpgrade) {
-  this.schema_.getTables().forEach(
-      /** @this {lf.backstore.Memory} */
-      function(table) {
-        this.createTable(table.getName());
-      }, this);
-
+  this.schema_.getTables().forEach(this.initTable_, this);
   return goog.Promise.resolve();
 };
 
@@ -18793,10 +18807,33 @@ lf.backstore.Memory.prototype.createTx = function(
  * Creates a new empty table in the database. It is a no-op if a table with the
  * given name already exists.
  * @param {string} tableName The name of the new table.
+ * @private
  */
-lf.backstore.Memory.prototype.createTable = function(tableName) {
+lf.backstore.Memory.prototype.createTable_ = function(tableName) {
   if (!this.tables_.containsKey(tableName)) {
     this.tables_.set(tableName, new lf.backstore.MemoryTable());
+  }
+};
+
+
+/**
+ * Creates all backing store tables for the given user-defined table.
+ * @param {!lf.schema.Table} tableSchema The table schema.
+ * @private
+ */
+lf.backstore.Memory.prototype.initTable_ = function(tableSchema) {
+  this.createTable_(tableSchema.getName());
+
+  if (tableSchema.persistentIndex()) {
+    var tableIndices = tableSchema.getIndices();
+    tableIndices.forEach(
+        /**
+         * @param {!lf.schema.Index} indexSchema
+         * @this {lf.backstore.Memory}
+         */
+        function(indexSchema) {
+          this.createTable_(indexSchema.getNormalizedName());
+        }, this);
   }
 };
 
