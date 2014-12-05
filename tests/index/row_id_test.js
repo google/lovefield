@@ -21,36 +21,66 @@ goog.require('lf.index.KeyRange');
 goog.require('lf.index.RowId');
 
 
-function testRowId() {
-  var map = new lf.index.RowId();
+/**
+ * Creates a new Index pre-populated with dummy data to be used for tests.
+ * @return {!lf.index.Index}
+ */
+function getSampleIndex() {
+  var index = new lf.index.RowId();
 
   var rows = [];
   for (var i = 0; i < 10; ++i) {
     rows.push(new lf.Row(i, {id: i * 100}));
-    map.set(i, rows[i]);
+    index.set(i, rows[i]);
   }
 
-  assertEquals(10, map.getRange().length);
+  return index;
+}
 
-  // Test getRange
-  var result = map.getRange();
+
+/**
+ * Performs a series of getRange() tests on the given index.
+ * @param {!lf.index.Index} index
+ */
+function checkGetRange(index) {
+  assertEquals(10, index.getRange().length);
+
+  var result = index.getRange();
   assertEquals(10, result.length);
-  result = map.getRange(lf.index.KeyRange.lowerBound(1));
+  result = index.getRange(lf.index.KeyRange.lowerBound(1));
   assertEquals(9, result.length);
   assertEquals(1, result[0]);
-  result = map.getRange(new lf.index.KeyRange(1, 1, false, false));
+  result = index.getRange(new lf.index.KeyRange(1, 1, false, false));
   assertEquals(1, result.length);
   assertEquals(1, result[0]);
-  result = map.getRange(new lf.index.KeyRange(1, 2, false, false));
+  result = index.getRange(new lf.index.KeyRange(1, 2, false, false));
   assertEquals(2, result.length);
   assertEquals(1, result[0]);
   assertEquals(2, result[1]);
+}
 
-  // Test getRange after remove
-  map.remove(2, 2);
-  assertArrayEquals([], map.get(2));
-  assertArrayEquals([], map.getRange(lf.index.KeyRange.only(2)));
 
-  // Test cost
-  assertEquals(9, map.cost(new lf.index.KeyRange(1, 3, false, false)));
+function testConstruction() {
+  checkGetRange(getSampleIndex());
+}
+
+
+function testRemove() {
+  var index = getSampleIndex();
+  index.remove(2, 2);
+  assertArrayEquals([], index.get(2));
+  assertArrayEquals([], index.getRange(lf.index.KeyRange.only(2)));
+  assertEquals(9, index.cost(new lf.index.KeyRange(1, 3, false, false)));
+}
+
+
+/**
+ * Tests that serializing and deserializing produces the original index.
+ */
+function testSerialize() {
+  var index = getSampleIndex();
+  var serialized = index.serialize();
+  assertEquals(1, serialized.length);
+  var deserialized = lf.index.RowId.deserialize(serialized);
+  checkGetRange(deserialized);
 }

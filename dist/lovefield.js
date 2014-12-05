@@ -13424,14 +13424,6 @@ goog.debug.LogRecord.prototype.exception_ = null;
 
 
 /**
- * Exception text associated with the record
- * @type {?string}
- * @private
- */
-goog.debug.LogRecord.prototype.exceptionText_ = null;
-
-
-/**
  * @define {boolean} Whether to enable log sequence numbers.
  */
 goog.define('goog.debug.LogRecord.ENABLE_SEQUENCE_NUMBERS', true);
@@ -13468,7 +13460,6 @@ goog.debug.LogRecord.prototype.reset = function(level, msg, loggerName,
   this.msg_ = msg;
   this.loggerName_ = loggerName;
   delete this.exception_;
-  delete this.exceptionText_;
 };
 
 
@@ -13499,26 +13490,6 @@ goog.debug.LogRecord.prototype.getException = function() {
  */
 goog.debug.LogRecord.prototype.setException = function(exception) {
   this.exception_ = exception;
-};
-
-
-/**
- * Get the exception text that is part of the log record.
- *
- * @return {?string} Exception text.
- */
-goog.debug.LogRecord.prototype.getExceptionText = function() {
-  return this.exceptionText_;
-};
-
-
-/**
- * Set the exception text that is part of the log record.
- *
- * @param {string} text The exception text.
- */
-goog.debug.LogRecord.prototype.setExceptionText = function(text) {
-  this.exceptionText_ = text;
 };
 
 
@@ -14298,8 +14269,7 @@ goog.debug.Logger.prototype.log = function(level, msg, opt_exception) {
       msg = msg();
     }
 
-    this.doLogRecord_(this.getLogRecord(
-        level, msg, opt_exception, goog.debug.Logger.prototype.log));
+    this.doLogRecord_(this.getLogRecord(level, msg, opt_exception));
   }
 };
 
@@ -14310,13 +14280,11 @@ goog.debug.Logger.prototype.log = function(level, msg, opt_exception) {
  * @param {string} msg The string message.
  * @param {Error|Object=} opt_exception An exception associated with the
  *     message.
- * @param {Function=} opt_fnStackContext A function to use as the base
- *     of the stack trace used in the log record.
  * @return {!goog.debug.LogRecord} A log record.
  * @suppress {es5Strict}
  */
 goog.debug.Logger.prototype.getLogRecord = function(
-    level, msg, opt_exception, opt_fnStackContext) {
+    level, msg, opt_exception) {
   if (goog.debug.LogBuffer.isBufferingEnabled()) {
     var logRecord =
         goog.debug.LogBuffer.getInstance().addRecord(level, msg, this.name_);
@@ -14324,16 +14292,7 @@ goog.debug.Logger.prototype.getLogRecord = function(
     logRecord = new goog.debug.LogRecord(level, String(msg), this.name_);
   }
   if (opt_exception) {
-    var context;
-    if (goog.STRICT_MODE_COMPATIBLE) {
-      context = opt_fnStackContext || goog.debug.Logger.prototype.getLogRecord;
-    } else {
-      context = opt_fnStackContext || arguments.callee.caller;
-    }
-
     logRecord.setException(opt_exception);
-    logRecord.setExceptionText(
-        goog.debug.exposeException(opt_exception, context));
   }
   return logRecord;
 };
@@ -19874,6 +19833,7 @@ lf.cache.Prefetcher.prototype.fetch_ = function(table) {
  */
 goog.provide('lf.index.Index');
 
+goog.forwardDeclare('lf.Row');
 goog.forwardDeclare('lf.index.KeyRange');
 
 
@@ -19960,6 +19920,13 @@ lf.index.Index.prototype.clear;
  * @return {boolean}
  */
 lf.index.Index.prototype.containsKey;
+
+
+/**
+ * Serializes this index such that it can be persisted.
+ * @return {!Array.<!lf.Row>}
+ */
+lf.index.Index.prototype.serialize;
 
 /**
  * @license
@@ -20144,6 +20111,7 @@ lf.index.KeyRange.all = function() {
  */
 goog.provide('lf.index.AATree');
 
+goog.require('goog.asserts');
 goog.require('lf.Exception');
 goog.require('lf.index.Index');
 goog.require('lf.index.KeyRange');
@@ -20466,6 +20434,13 @@ lf.index.AATree.prototype.containsKey = function(key) {
 };
 
 
+/** @override */
+lf.index.AATree.prototype.serialize = function() {
+  goog.asserts.fail('AATree index serialization is not supported.');
+  return [];
+};
+
+
 /**
  * @param {!lf.index.AANode_} node
  * @param {!Array.<!Array.<string>>} buffer
@@ -20643,7 +20618,7 @@ lf.index.BTree.prototype.isUniqueKeyOnly = function() {
 /**
  * Converts the tree leaves into serializable rows that can be written into
  * persistent stores. Each leaf node is one row.
- * @return {!Array.<!lf.Row>}
+ * @override
  */
 lf.index.BTree.prototype.serialize = function() {
   var start = this.root_.getLeftMostNode();
@@ -21551,6 +21526,7 @@ lf.index.IndexStore.prototype.getRowIdIndex;
  */
 goog.provide('lf.index.Map');
 
+goog.require('goog.asserts');
 goog.require('goog.structs.Map');
 goog.require('goog.structs.Set');
 goog.require('lf.index.Index');
@@ -21655,6 +21631,13 @@ lf.index.Map.prototype.containsKey = function(key) {
   return this.map_.containsKey(key);
 };
 
+
+/** @override */
+lf.index.Map.prototype.serialize = function() {
+  goog.asserts.fail('Map index serialization is not supported.');
+  return [];
+};
+
 /**
  * @license
  * Copyright 2014 Google Inc. All Rights Reserved.
@@ -21675,6 +21658,7 @@ goog.provide('lf.index.RowId');
 
 goog.require('goog.structs.Set');
 goog.require('lf.Exception');
+goog.require('lf.Row');
 goog.require('lf.index.Index');
 goog.require('lf.index.KeyRange');
 
@@ -21696,6 +21680,8 @@ lf.index.RowId = function() {
 
 /** @override */
 lf.index.RowId.prototype.getName = function() {
+  // TODO(dpapad): This needs to be prefixed by the name of the parent table
+  // (normalized). Otherwise naming collisions exist when it is persisted.
   return '##row_id##';
 };
 
@@ -21756,6 +21742,27 @@ lf.index.RowId.prototype.clear = function() {
 /** @override */
 lf.index.RowId.prototype.containsKey = function(key) {
   return this.rows_.contains(key);
+};
+
+
+/** @override */
+lf.index.RowId.prototype.serialize = function() {
+  return [lf.Row.create(this.rows_.getValues())];
+};
+
+
+/**
+ * Creates a RowId index from a serialized form.
+ * @param {!Array.<!lf.Row>} rows
+ * @return {!lf.index.RowId}
+ */
+lf.index.RowId.deserialize = function(rows) {
+  var index = new lf.index.RowId();
+  var rowIds = rows[0].payload();
+  rowIds.forEach(function(rowId) {
+    index.add(rowId, rowId);
+  });
+  return index;
 };
 
 /**
