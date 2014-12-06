@@ -66,13 +66,18 @@ var SEQUENCE = [
 
 /**
  * @param {number} index
+ * @param {boolean=} opt_duplicate
  * @return {!lf.index.BTree} The tree generated
  */
-function insertToTree(index) {
-  var tree = new lf.index.BTree('test', true);
+function insertToTree(index, opt_duplicate) {
+  var unique = !opt_duplicate;
+  var tree = new lf.index.BTree('test', unique);
   var i = 0;
   while (i < index) {
     tree.add(SEQUENCE[i], SEQUENCE[i]);
+    if (opt_duplicate) {
+      tree.add(SEQUENCE[i], SEQUENCE[i] * 1000);
+    }
     i++;
   }
   return tree;
@@ -817,6 +822,22 @@ function testDelete_All2() {
   assertEquals('13[]\n_{}_\n', tree.toString());
 }
 
+function testDelete_None() {
+  var tree = insertToTree(23);
+  tree.remove(18);
+  var expected =
+      '11[13|27]\n' +
+      '_{2|20|12}_\n' +
+      '2[5|10]  20[15|21]  12[31|45]\n' +
+      '_{0|13|15}11  2{1|17|3}11  20{5|7|9}11\n' +
+      '0[1|3]  13[5|9]  15[10|11|12]  1[13|14]  17[15|16|17]  3[21|22|23|25]' +
+      '  5[27|29]  7[31|38]  9[45|47|49]\n' +
+      '_{1/3}2  0{5/9}2  13{10/11/12}2' +
+      '  15{13/14}20  1{15/16/17}20  17{21/22/23/25}20' +
+      '  3{27/29}12  5{31/38}12  7{45/47/49}12\n';
+  assertEquals(expected, tree.toString());
+}
+
 function testSingleRow_NumericalKey() {
   var test = new lf.testing.index.TestSingleRowNumericalKey(function() {
     return new lf.index.BTree('test', true);
@@ -902,6 +923,119 @@ function testRandomNumbers() {
   }
 
   assertArrayEquals([], tree.getRange());
+}
+
+function testDuplicateKeys_LeafNodeAsRoot() {
+  var tree = insertToTree(4, true);
+  var expected =
+      '0[9|13|17|21]\n' +
+      '_{9,9000/13,13000/17,17000/21,21000}_\n';
+  assertEquals(expected, tree.toString());
+
+  // Serialize and deserialize should have no problem.
+  var rows = tree.serialize();
+  assertEquals(1, rows.length);
+  var tree2 = deserializeTree(rows);
+  assertEquals(expected, tree2.toString());
+}
+
+function testDuplicateKeys_DeleteNone() {
+  var tree = insertToTree(23, true);
+  tree.remove(18);
+  var expected =
+      '11[13|27]\n' +
+      '_{2|20|12}_\n' +
+      '2[5|10]  20[15|21]  12[31|45]\n' +
+      '_{0|13|15}11  2{1|17|3}11  20{5|7|9}11\n' +
+      '0[1|3]  13[5|9]  15[10|11|12]  1[13|14]  17[15|16|17]  3[21|22|23|25]' +
+      '  5[27|29]  7[31|38]  9[45|47|49]\n' +
+      '_{1,1000/3,3000}2  0{5,5000/9,9000}2  13{10,10000/11,11000/12,12000}2' +
+      '  15{13,13000/14,14000}20  1{15,15000/16,16000/17,17000}20  ' +
+      '17{21,21000/22,22000/23,23000/25,25000}20' +
+      '  3{27,27000/29,29000}12  5{31,31000/38,38000}12  ' +
+      '7{45,45000/47,47000/49,49000}12\n';
+  assertEquals(expected, tree.toString());
+}
+
+function testDuplicateKeys_ContainsKey() {
+  var tree = insertToTree(23, true);
+  for (var i = 0; i < 23; i++) {
+    var key = SEQUENCE[i];
+    assertTrue(tree.containsKey(key));
+  }
+  assertFalse(tree.containsKey(0));
+  assertFalse(tree.containsKey(18));
+  assertFalse(tree.containsKey(50));
+}
+
+function testDuplicateKeys_Get() {
+  var tree = insertToTree(23, true);
+  for (var i = 0; i < 23; i++) {
+    var key = SEQUENCE[i];
+    assertArrayEquals([key, key * 1000], tree.get(key));
+  }
+  assertArrayEquals([], tree.get(0));
+  assertArrayEquals([], tree.get(18));
+  assertArrayEquals([], tree.get(50));
+}
+
+function testDuplicateKeys_DeleteSimple() {
+  var tree = insertToTree(9, true);
+  tree.remove(13, 13);
+  var expected =
+      '2[13|21]\n' +
+      '_{0|1|3}_\n' +
+      '0[3|5|9|11]  1[13|17]  3[21|25|27]\n' +
+      '_{3,3000/5,5000/9,9000/11,11000}2  0{13000/17,17000}2  ' +
+      '1{21,21000/25,25000/27,27000}2\n';
+  assertEquals(expected, tree.toString());
+  assertArrayEquals([13000], tree.get(13));
+  assertArrayEquals([13000], tree.getRange(lf.index.KeyRange.only(13)));
+}
+
+function testDuplicateKeys_DeleteAll() {
+  var tree = insertToTree(23, true);
+  for (var i = 0; i < 23; ++i) {
+    tree.remove(SEQUENCE[i], SEQUENCE[i]);
+    tree.remove(SEQUENCE[i], SEQUENCE[i] * 1000);
+  }
+  assertEquals('17[]\n_{}_\n', tree.toString());
+}
+
+function testDuplicateKeys_DeleteAll2() {
+  var tree = insertToTree(23, true);
+  for (var i = 22; i >= 0; --i) {
+    tree.remove(SEQUENCE[i], SEQUENCE[i]);
+    tree.remove(SEQUENCE[i], SEQUENCE[i] * 1000);
+  }
+  assertEquals('13[]\n_{}_\n', tree.toString());
+}
+
+function testDuplicateKeys_SmokeTest() {
+  var tree = insertToTree(23, true);
+  for (var i = 0; i < SEQUENCE.length; ++i) {
+    assertEquals(2, tree.cost(lf.index.KeyRange.only(SEQUENCE[i])));
+    assertArrayEquals(
+        [SEQUENCE[i], SEQUENCE[i] * 1000],
+        tree.get(SEQUENCE[i]));
+    assertArrayEquals(
+        [SEQUENCE[i], SEQUENCE[i] * 1000],
+        tree.getRange(lf.index.KeyRange.only(SEQUENCE[i])));
+  }
+  assertEquals(2 * SEQUENCE.length, tree.cost(lf.index.KeyRange.all()));
+
+  for (var i = 0; i < SEQUENCE.length; ++i) {
+    tree.remove(SEQUENCE[i], SEQUENCE[i]);
+    assertEquals(1, tree.cost(lf.index.KeyRange.only(SEQUENCE[i])));
+    assertArrayEquals([SEQUENCE[i] * 1000], tree.get(SEQUENCE[i]));
+    assertArrayEquals(
+        [SEQUENCE[i] * 1000],
+        tree.getRange(lf.index.KeyRange.only(SEQUENCE[i])));
+  }
+  assertEquals(SEQUENCE.length, tree.cost(lf.index.KeyRange.all()));
+
+  tree.clear();
+  assertEquals(0, tree.cost(lf.index.KeyRange.all()));
 }
 
 function manualTestBenchmark() {
