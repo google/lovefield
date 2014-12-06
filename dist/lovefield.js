@@ -17378,63 +17378,6 @@ lf.backstore.BundledObjectStore.prototype.pipe = function(stream) {
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-goog.provide('lf.BackStore');
-
-goog.forwardDeclare('lf.Stream');
-goog.forwardDeclare('lf.TransactionType');
-goog.forwardDeclare('lf.backstore.Tx');
-goog.forwardDeclare('lf.cache.Journal');
-goog.forwardDeclare('lf.raw.BackStore');
-
-
-
-/**
- * Interface for all backing stores to implement (Indexed DB, filesystem,
- * memory etc).
- * @interface
- */
-lf.BackStore = function() {};
-
-
-/**
- * Initialize the database and setting up row id.
- * @param {function(!lf.raw.BackStore):!IThenable=} opt_onUpgrade
- * @return {!IThenable} A promise firing after this backing store has been
- *     initialized.
- */
-lf.BackStore.prototype.init;
-
-
-/**
- * Creates backstore native transaction that is tied to a given journal.
- * @param {!lf.TransactionType} type
- * @param {!lf.cache.Journal} journal
- * @return {!lf.backstore.Tx}
- */
-lf.BackStore.prototype.createTx;
-
-
-/**
- * Closes the database. This is just best-effort.
- */
-lf.BackStore.prototype.close;
-
-/**
- * @license
- * Copyright 2014 Google Inc. All Rights Reserved.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
 goog.provide('lf.Row');
 
 goog.forwardDeclare('lf.index.Index.Key');
@@ -17617,6 +17560,124 @@ lf.Row.hexToBin = function(hex) {
   }
   return buffer;
 };
+
+/**
+ * @license
+ * Copyright 2014 Google Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+goog.provide('lf.index.IndexMetadata');
+goog.provide('lf.index.IndexMetadataRow');
+
+goog.require('lf.Row');
+
+
+
+/**
+ * @constructor
+ * @final
+ *
+ * @param {!lf.index.IndexMetadata.Type} type
+ */
+lf.index.IndexMetadata = function(type) {
+  /** @type {!lf.index.IndexMetadata.Type} */
+  this.type = type;
+};
+
+
+/**
+ * The type of the serialized index. Useful for knowing how to deserialize
+ * it.
+ * @enum {string}
+ */
+lf.index.IndexMetadata.Type = {
+  ROW_ID: 'rowid',
+  BTREE: 'btree'
+};
+
+
+
+/**
+ * Metadata about a persisted index. It is stored as the first row in each index
+ * backing store.
+ * @constructor
+ * @final
+ * @extends {lf.Row<!lf.index.IndexMetadata, !lf.index.IndexMetadata>}
+ *
+ * @param {!lf.index.IndexMetadata} payload
+ */
+lf.index.IndexMetadataRow = function(payload) {
+  lf.index.IndexMetadataRow.base(this, 'constructor', 0, payload);
+};
+goog.inherits(lf.index.IndexMetadataRow, lf.Row);
+
+/**
+ * @license
+ * Copyright 2014 Google Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+goog.provide('lf.BackStore');
+
+goog.forwardDeclare('lf.Stream');
+goog.forwardDeclare('lf.TransactionType');
+goog.forwardDeclare('lf.backstore.Tx');
+goog.forwardDeclare('lf.cache.Journal');
+goog.forwardDeclare('lf.raw.BackStore');
+
+
+
+/**
+ * Interface for all backing stores to implement (Indexed DB, filesystem,
+ * memory etc).
+ * @interface
+ */
+lf.BackStore = function() {};
+
+
+/**
+ * Initialize the database and setting up row id.
+ * @param {function(!lf.raw.BackStore):!IThenable=} opt_onUpgrade
+ * @return {!IThenable} A promise firing after this backing store has been
+ *     initialized.
+ */
+lf.BackStore.prototype.init;
+
+
+/**
+ * Creates backstore native transaction that is tied to a given journal.
+ * @param {!lf.TransactionType} type
+ * @param {!lf.cache.Journal} journal
+ * @return {!lf.backstore.Tx}
+ */
+lf.BackStore.prototype.createTx;
+
+
+/**
+ * Closes the database. This is just best-effort.
+ */
+lf.BackStore.prototype.close;
 
 /**
  * @license
@@ -18298,6 +18359,8 @@ goog.require('lf.TransactionType');
 goog.require('lf.backstore.IndexedDBRawBackStore');
 goog.require('lf.backstore.IndexedDBTx');
 goog.require('lf.backstore.Page');
+goog.require('lf.index.IndexMetadata');
+goog.require('lf.index.IndexMetadataRow');
 
 goog.forwardDeclare('goog.debug.Logger');
 
@@ -18423,7 +18486,7 @@ lf.backstore.IndexedDB.prototype.onUpgradeNeeded_ = function(onUpgrade, ev) {
   var tx = ev.target.transaction;
   var rawDb = new lf.backstore.IndexedDBRawBackStore(
       ev.oldVersion, db, tx, this.bundleMode_);
-  this.createTables_(db);
+  this.createTables_(db, tx);
   return onUpgrade(rawDb);
 };
 
@@ -18431,11 +18494,13 @@ lf.backstore.IndexedDB.prototype.onUpgradeNeeded_ = function(onUpgrade, ev) {
 /**
  * Creates tables if they had not existed on the database.
  * @param {!IDBDatabase} db
+ * @param {!IDBTransaction} tx The IndexedDB upgrade transaction from
+ *     IDBOpenDBRequest.
  * @private
  */
-lf.backstore.IndexedDB.prototype.createTables_ = function(db) {
+lf.backstore.IndexedDB.prototype.createTables_ = function(db, tx) {
   this.schema_.getTables().forEach(
-      goog.partial(this.createObjectStoresForTable_, db),
+      goog.partial(this.createObjectStoresForTable_, db, tx),
       this);
 };
 
@@ -18443,11 +18508,13 @@ lf.backstore.IndexedDB.prototype.createTables_ = function(db) {
 /**
  * Creates all backing store tables for the given user-defined table.
  * @param {!IDBDatabase} db
+ * @param {!IDBTransaction} tx The IndexedDB upgrade transaction from
+ *     IDBOpenDBRequest.
  * @param {!lf.schema.Table} tableSchema The table schema.
  * @private
  */
 lf.backstore.IndexedDB.prototype.createObjectStoresForTable_ = function(
-    db, tableSchema) {
+    db, tx, tableSchema) {
   if (!db.objectStoreNames.contains(tableSchema.getName())) {
     db.createObjectStore(tableSchema.getName(), {keyPath: 'id'});
   }
@@ -18458,6 +18525,11 @@ lf.backstore.IndexedDB.prototype.createObjectStoresForTable_ = function(
       var indexName = indexSchema.getNormalizedName();
       if (!db.objectStoreNames.contains(indexName)) {
         db.createObjectStore(indexName, {keyPath: 'id'});
+        var store = tx.objectStore(indexName);
+        var indexMetadata = new lf.index.IndexMetadata(
+            lf.index.IndexMetadata.Type.BTREE);
+        var row = new lf.index.IndexMetadataRow(indexMetadata);
+        store.put(row.serialize());
       }
     }, this);
   }
@@ -18751,6 +18823,8 @@ goog.require('lf.BackStore');
 goog.require('lf.Exception');
 goog.require('lf.backstore.MemoryTable');
 goog.require('lf.backstore.MemoryTx');
+goog.require('lf.index.IndexMetadata');
+goog.require('lf.index.IndexMetadataRow');
 
 
 
@@ -18807,12 +18881,18 @@ lf.backstore.Memory.prototype.createTx = function(
  * Creates a new empty table in the database. It is a no-op if a table with the
  * given name already exists.
  * @param {string} tableName The name of the new table.
+ * @return {?lf.backstore.MemoryTable} The table that was created or null if the
+ *     table already existed.
  * @private
  */
 lf.backstore.Memory.prototype.createTable_ = function(tableName) {
   if (!this.tables_.containsKey(tableName)) {
-    this.tables_.set(tableName, new lf.backstore.MemoryTable());
+    var backstoreTable = new lf.backstore.MemoryTable();
+    this.tables_.set(tableName, backstoreTable);
+    return backstoreTable;
   }
+
+  return null;
 };
 
 
@@ -18832,7 +18912,14 @@ lf.backstore.Memory.prototype.initTable_ = function(tableSchema) {
          * @this {lf.backstore.Memory}
          */
         function(indexSchema) {
-          this.createTable_(indexSchema.getNormalizedName());
+          var backstoreTable = this.createTable_(
+              indexSchema.getNormalizedName());
+          if (!goog.isNull(backstoreTable)) {
+            var indexMetadata = new lf.index.IndexMetadata(
+                lf.index.IndexMetadata.Type.BTREE);
+            var row = new lf.index.IndexMetadataRow(indexMetadata);
+            backstoreTable.put([row]);
+          }
         }, this);
   }
 };
