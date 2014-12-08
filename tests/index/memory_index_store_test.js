@@ -16,11 +16,15 @@
  */
 goog.setTestOnly();
 
+goog.require('goog.functions');
 goog.require('goog.testing.AsyncTestCase');
+goog.require('goog.testing.PropertyReplacer');
 goog.require('goog.testing.jsunit');
 goog.require('lf.index.AATree');
+goog.require('lf.index.BTree');
 goog.require('lf.index.Map');
 goog.require('lf.index.MemoryIndexStore');
+goog.require('lf.index.RowId');
 goog.require('lf.testing.MockSchema');
 
 
@@ -29,25 +33,67 @@ var asyncTestCase = goog.testing.AsyncTestCase.createAndInstall(
     'MemoryIndexStore');
 
 
-function testMemoryIndexStore() {
-  var indexStore = new lf.index.MemoryIndexStore();
-  var schema = new lf.testing.MockSchema();
+/** @type {!goog.testing.PropertyReplacer} */
+var propertyReplacer;
 
+
+/** @type {!lf.index.IndexStore} */
+var indexStore;
+
+
+function setUp() {
+  propertyReplacer = new goog.testing.PropertyReplacer();
+  indexStore = new lf.index.MemoryIndexStore();
+}
+
+
+function tearDown() {
+  propertyReplacer.reset();
+}
+
+
+function testMemoryIndexStore() {
   asyncTestCase.waitForAsync('testMemoryIndexStore');
 
+  var schema = new lf.testing.MockSchema();
+  var tableA = schema.getTables()[0];
+  var tableB = schema.getTables()[1];
+  propertyReplacer.replace(tableB, 'persistentIndex', goog.functions.TRUE);
+
+  assertFalse(tableA.persistentIndex());
+  assertTrue(tableB.persistentIndex());
+
   indexStore.init(schema).then(function() {
-    var expected =
-        ['tableA.pkId', 'tableA.idxName', 'tableB.pkId', 'tableB.idxName'];
-    expected.forEach(function(name, i) {
-      var index = indexStore.get(name);
-      if (i % 2 == 0) {
-        assertTrue(index instanceof lf.index.AATree);
-      } else {
-        assertTrue(index instanceof lf.index.Map);
-      }
-    });
+    // Table A index names.
+    var tableAPkIndex = 'tableA.pkId';
+    var tableANameIndex = 'tableA.idxName';
+    var tableARowIdIndex = 'tableA.#';
+
+    // Table B index names.
+    var tableBPkIndex = 'tableB.pkId';
+    var tableBNameIndex = 'tableB.idxName';
+    var tableBRowIdIndex = 'tableB.#';
+
+    assertIndicesType([tableARowIdIndex, tableBRowIdIndex], lf.index.RowId);
+    assertIndicesType([tableAPkIndex], lf.index.AATree);
+    assertIndicesType([tableANameIndex], lf.index.Map);
+    assertIndicesType([tableBPkIndex, tableBNameIndex], lf.index.BTree);
 
     asyncTestCase.continueTesting();
+  }, fail);
+}
+
+
+/**
+ * Asserts that the indices corresponding to the given index names are of a
+ * specific type.
+ * @param {!Array<string>} indexNames
+ * @param {!Function} expectedType
+ */
+function assertIndicesType(indexNames, expectedType) {
+  indexNames.forEach(function(indexName) {
+    var index = indexStore.get(indexName);
+    assertTrue(index instanceof expectedType);
   });
 }
 
@@ -58,7 +104,6 @@ function testMemoryIndexStore() {
 function testGetTableIndices_NoIndices() {
   asyncTestCase.waitForAsync('testGetTableIndices');
 
-  var indexStore = new lf.index.MemoryIndexStore();
   var schema = new lf.testing.MockSchema();
 
   indexStore.init(schema).then(function() {

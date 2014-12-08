@@ -21983,6 +21983,7 @@ goog.provide('lf.index.MemoryIndexStore');
 goog.require('goog.Promise');
 goog.require('goog.structs.Map');
 goog.require('lf.index.AATree');
+goog.require('lf.index.BTree');
 goog.require('lf.index.IndexStore');
 goog.require('lf.index.Map');
 goog.require('lf.index.RowId');
@@ -22006,16 +22007,39 @@ lf.index.MemoryIndexStore.prototype.init = function(schema) {
 
   tables.forEach(function(table) {
     this.getRowIdIndex(table.getName());  // Setup default row id index.
-    table.getIndices().forEach(function(indexSchema) {
-      var indexName = indexSchema.getNormalizedName();
-      var index = indexSchema.isUnique ?
-          new lf.index.AATree(indexName) :
-          new lf.index.Map(indexName);
-      this.store_.set(indexSchema.getNormalizedName(), index);
-    }, this);
+    table.getIndices().forEach(
+        /**
+         * @param {!lf.schema.Index} indexSchema
+         * @this {lf.index.MemoryIndexStore}
+         */
+        function(indexSchema) {
+          this.store_.set(
+              indexSchema.getNormalizedName(),
+              lf.index.MemoryIndexStore.createIndex_(table, indexSchema));
+        }, this);
   }, this);
 
   return goog.Promise.resolve();
+};
+
+
+/**
+ * @param {!lf.schema.Table} tableSchema
+ * @param {!lf.schema.Index} indexSchema
+ * @return {!lf.index.Index}
+ * @private
+ */
+lf.index.MemoryIndexStore.createIndex_ = function(tableSchema, indexSchema) {
+  var indexName = indexSchema.getNormalizedName();
+
+  if (tableSchema.persistentIndex()) {
+    return new lf.index.BTree(
+        indexName, indexSchema.isUnique /* uniqueKeyOnly */);
+  } else {
+    return indexSchema.isUnique ?
+        new lf.index.AATree(indexName) :
+        new lf.index.Map(indexName);
+  }
 };
 
 
