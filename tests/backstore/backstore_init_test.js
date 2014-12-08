@@ -89,9 +89,7 @@ function testInit_IndexedDB() {
         assertUserTables(schema, createdTableNames);
         assertIndexTables(schema, createdTableNames);
 
-        var indexSchemas = getPersistedIndices(schema);
-        return checkAllIndexMetadataExist_IndexedDb(
-            indexedDb.db_, indexSchemas);
+        return checkAllIndexMetadataExist_IndexedDb(indexedDb.db_);
       }).then(
       function() {
         asyncTestCase.continueTesting();
@@ -115,8 +113,7 @@ function testInit_Memory() {
         assertUserTables(schema, createdTableNames);
         assertIndexTables(schema, createdTableNames);
 
-        var indexSchemas = getPersistedIndices(schema);
-        return checkAllIndexMetadataExist_MemoryDb(memoryDb, indexSchemas);
+        return checkAllIndexMetadataExist_MemoryDb(memoryDb);
       }).then(
       function() {
         asyncTestCase.continueTesting();
@@ -151,6 +148,11 @@ function assertIndexTables(schema, tableNames) {
           tableSchema.persistentIndex(),
           tableNames.contains(indexSchema.getNormalizedName()));
     });
+
+    // Checking whether backing store for RowId index was created.
+    assertEquals(
+        tableSchema.persistentIndex(),
+        tableNames.contains(tableSchema.getName() + '.#'));
   });
 }
 
@@ -158,15 +160,19 @@ function assertIndexTables(schema, tableNames) {
 /**
  * Checks that the given backing store is populated with the index metadata.
  * @param {!lf.Stream} objectStore
+ * @param {string} indexName
  * @return {!IThenable}
  */
-function checkIndexMetadataExist(objectStore) {
+function checkIndexMetadataExist(objectStore, indexName) {
+  var expectedIndexType = indexName.substr(-1) == '#' ?
+      lf.index.IndexMetadata.Type.ROW_ID :
+      lf.index.IndexMetadata.Type.BTREE;
+
   return objectStore.get([]).then(function(results) {
     assertEquals(1, results.length);
     var metadataRow = results[0];
     assertEquals(
-        lf.index.IndexMetadata.Type.BTREE,
-        metadataRow.payload().type);
+        expectedIndexType, metadataRow.payload().type);
   });
 }
 
@@ -175,20 +181,16 @@ function checkIndexMetadataExist(objectStore) {
  * Checks that index metadata have been persisted for all given indices, for the
  * case if an IndexedDB backing store.
  * @param {!IDBDatabase} db
- * @param {!Array<!lf.schema.Index>} indexSchemas
  * @return {!IThenable}
  */
-function checkAllIndexMetadataExist_IndexedDb(db, indexSchemas) {
-  var scope = indexSchemas.map(function(indexSchema) {
-    return indexSchema.getNormalizedName();
-  });
+function checkAllIndexMetadataExist_IndexedDb(db) {
+  var indexNames = getPersistedIndices(hr.db.getSchema());
 
-  var tx = db.transaction(scope, 'readonly');
-  var promises = indexSchemas.map(function(indexSchema) {
+  var tx = db.transaction(indexNames, 'readonly');
+  var promises = indexNames.map(function(indexName) {
     var objectStore = new lf.backstore.ObjectStore(
-        tx.objectStore(indexSchema.getNormalizedName()),
-        lf.Row.deserialize);
-    return checkIndexMetadataExist(objectStore);
+        tx.objectStore(indexName), lf.Row.deserialize);
+    return checkIndexMetadataExist(objectStore, indexName);
   });
 
   return goog.Promise.all(promises);
@@ -199,13 +201,14 @@ function checkAllIndexMetadataExist_IndexedDb(db, indexSchemas) {
  * Checks that index metadata have been persisted for all given indices, for the
  * case if an MemoryDb backing store.
  * @param {!lf.backstore.Memory} db
- * @param {!Array<!lf.schema.Index>} indexSchemas
  * @return {!IThenable}
  */
-function checkAllIndexMetadataExist_MemoryDb(db, indexSchemas) {
-  var promises = indexSchemas.map(function(indexSchema) {
-    var objectStore = db.getTableInternal(indexSchema.getNormalizedName());
-    return checkIndexMetadataExist(objectStore);
+function checkAllIndexMetadataExist_MemoryDb(db) {
+  var indexNames = getPersistedIndices(hr.db.getSchema());
+
+  var promises = indexNames.map(function(indexName) {
+    var objectStore = db.getTableInternal(indexName);
+    return checkIndexMetadataExist(objectStore, indexName);
   });
 
   return goog.Promise.all(promises);
@@ -213,21 +216,23 @@ function checkAllIndexMetadataExist_MemoryDb(db, indexSchemas) {
 
 
 /**
- * Finds the schemas of all indices that are persisted.
+ * Finds the names of all indices that are persisted.
  * @param {!lf.schema.Database} schema
- * @return {!Array<!lf.schema.Index>}
+ * @return {!Array<string>}
  */
 function getPersistedIndices(schema) {
-  var tableSchemas = schema.getTables().filter(
-      function(tableSchema) {
-        return tableSchema.persistentIndex();
+  var indexNames = [];
+
+  schema.getTables().forEach(function(tableSchema) {
+    if (tableSchema.persistentIndex()) {
+      tableSchema.getIndices().forEach(function(indexSchema) {
+        indexNames.push(indexSchema.getNormalizedName());
       });
-  var indexSchemas = [];
-  tableSchemas.forEach(function(tableSchema) {
-    tableSchema.getIndices().forEach(function(indexSchema) {
-      indexSchemas.push(indexSchema);
-    });
+
+      // Adding RowID index name to the returned array.
+      indexNames.push(tableSchema.getName() + '.#');
+    }
   });
 
-  return indexSchemas;
+  return indexNames;
 }

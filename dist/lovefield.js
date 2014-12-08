@@ -18522,17 +18522,45 @@ lf.backstore.IndexedDB.prototype.createObjectStoresForTable_ = function(
 
   if (tableSchema.persistentIndex()) {
     var tableIndices = tableSchema.getIndices();
-    tableIndices.forEach(function(indexSchema) {
-      var indexName = indexSchema.getNormalizedName();
-      if (!db.objectStoreNames.contains(indexName)) {
-        db.createObjectStore(indexName, {keyPath: 'id'});
-        var store = tx.objectStore(indexName);
-        var indexMetadata = new lf.index.IndexMetadata(
-            lf.index.IndexMetadata.Type.BTREE);
-        var row = new lf.index.IndexMetadataRow(indexMetadata);
-        store.put(row.serialize());
-      }
-    }, this);
+    tableIndices.forEach(
+        /**
+         * @param {!lf.schema.Index} indexSchema
+         * @this {lf.backstore.IndexedDB}
+         */
+        function(indexSchema) {
+          this.createIndexTable_(
+              db, tx,
+              indexSchema.getNormalizedName(),
+              lf.index.IndexMetadata.Type.BTREE);
+        }, this);
+
+    // Creating RowId index table.
+    this.createIndexTable_(
+        db, tx,
+        tableSchema.getName() + '.#',
+        lf.index.IndexMetadata.Type.ROW_ID);
+  }
+};
+
+
+/**
+ * Creates a backing store corresponding to a persisted index.
+ * @param {!IDBDatabase} db
+ * @param {!IDBTransaction} tx The IndexedDB upgrade transaction from
+ *     IDBOpenDBRequest.
+ * @param {string} indexName The normalized name of the index.
+ * @param {lf.index.IndexMetadata.Type} indexType The type of the persisted
+ *     index.
+ * @private
+ */
+lf.backstore.IndexedDB.prototype.createIndexTable_ = function(
+    db, tx, indexName, indexType) {
+  if (!db.objectStoreNames.contains(indexName)) {
+    db.createObjectStore(indexName, {keyPath: 'id'});
+    var store = tx.objectStore(indexName);
+    var indexMetadata = new lf.index.IndexMetadata(indexType);
+    var row = new lf.index.IndexMetadataRow(indexMetadata);
+    store.put(row.serialize());
   }
 };
 
@@ -18913,15 +18941,33 @@ lf.backstore.Memory.prototype.initTable_ = function(tableSchema) {
          * @this {lf.backstore.Memory}
          */
         function(indexSchema) {
-          var backstoreTable = this.createTable_(
-              indexSchema.getNormalizedName());
-          if (!goog.isNull(backstoreTable)) {
-            var indexMetadata = new lf.index.IndexMetadata(
-                lf.index.IndexMetadata.Type.BTREE);
-            var row = new lf.index.IndexMetadataRow(indexMetadata);
-            backstoreTable.put([row]);
-          }
+          this.createIndexTable_(
+              indexSchema.getNormalizedName(),
+              lf.index.IndexMetadata.Type.BTREE);
         }, this);
+
+    // Creating RowId index table.
+    this.createIndexTable_(
+        tableSchema.getName() + '.#',
+        lf.index.IndexMetadata.Type.ROW_ID);
+  }
+};
+
+
+/**
+ * Creates a backing store corresponding to a persisted index.
+ * @param {string} indexName The normalized name of the index.
+ * @param {lf.index.IndexMetadata.Type} indexType The type of the persisted
+ *     index.
+ * @private
+ */
+lf.backstore.Memory.prototype.createIndexTable_ = function(
+    indexName, indexType) {
+  var backstoreTable = this.createTable_(indexName);
+  if (!goog.isNull(backstoreTable)) {
+    var indexMetadata = new lf.index.IndexMetadata(indexType);
+    var row = new lf.index.IndexMetadataRow(indexMetadata);
+    backstoreTable.put([row]);
   }
 };
 
