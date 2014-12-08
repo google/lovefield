@@ -19,6 +19,5 @@ table:
     index:
       idx_Name:
         column: [ name ]
-        unique: true
     pragma:
       persistentIndex: true

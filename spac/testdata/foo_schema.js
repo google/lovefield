@@ -71,7 +71,7 @@ foo.db.schema.Foo = function() {
 
   /** @type {!lf.schema.BaseColumn.<string>} */
   this.name = new lf.schema.BaseColumn(
-      this, 'name', true, lf.Type.STRING);
+      this, 'name', false, lf.Type.STRING);
   this.columns_.push(this.name);
 
   /** @type {!lf.schema.BaseColumn.<string>} */
@@ -106,7 +106,7 @@ foo.db.schema.Foo.prototype.getIndices = function() {
     this.indices_ = [
       new lf.schema.Index('Foo', 'pkFoo', true, ['id']),
       new lf.schema.Index('Foo', 'uq_bar', true, ['bar']),
-      new lf.schema.Index('Foo', 'idx_Name', true, ['name'])
+      new lf.schema.Index('Foo', 'idx_Name', false, ['name'])
     ];
   }
   return this.indices_;

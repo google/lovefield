@@ -1070,11 +1070,6 @@ CodeGenerator.prototype.getIndices_ = function(table) {
       this.checkMultiColumnIndex_(col);
 
       var isUnique = index.unique ? true : false;
-      var persistent = table.pragma.persistentIndex ? true : false;
-      if (persistent && !isUnique) {
-        this.error('Persisting non-unique index is not implemented: ' +
-            table.name);
-      }
       results.push(header + index.name + '\', ' + isUnique.toString() +
           ', [\'' + col.join('\', \'') + '\'])');
     }
