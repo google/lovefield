@@ -906,12 +906,13 @@ function testRandomNumbers() {
   var ROW_COUNT = 10000;
   var set = new goog.structs.Set();
   while (set.getCount() < ROW_COUNT) {
-    set.add(Math.random() * ROW_COUNT);
+    set.add(Math.floor(Math.random() * ROW_COUNT * 100));
   }
 
   var keys = set.getValues().sort(function(a, b) {
-    return (a > b) ? 1 : (a < b) ? -1 : 0;
+    return a - b;
   });
+
   var tree = new lf.index.BTree('test', true);
   for (var i = 0; i < ROW_COUNT; ++i) {
     tree.add(keys[i], keys[i]);
