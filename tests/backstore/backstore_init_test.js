@@ -152,7 +152,7 @@ function assertIndexTables(schema, tableNames) {
     // Checking whether backing store for RowId index was created.
     assertEquals(
         tableSchema.persistentIndex(),
-        tableNames.contains(tableSchema.getName() + '.#'));
+        tableNames.contains(tableSchema.getRowIdIndexName()));
   });
 }
 
@@ -230,7 +230,7 @@ function getPersistedIndices(schema) {
       });
 
       // Adding RowID index name to the returned array.
-      indexNames.push(tableSchema.getName() + '.#');
+      indexNames.push(tableSchema.getRowIdIndexName());
     }
   });
 

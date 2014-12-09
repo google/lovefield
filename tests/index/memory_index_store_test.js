@@ -107,10 +107,11 @@ function testGetTableIndices_NoIndices() {
   var schema = new lf.testing.MockSchema();
 
   indexStore.init(schema).then(function() {
-    var tableWithNoIndexName = 'tableC';
+    var tableWithNoIndexName = schema.getTables()[2];  // tableC_
     // There should be at least one row id index.
-    assertEquals(1, indexStore.getTableIndices(tableWithNoIndexName).length);
-    assertNotNull(indexStore.getRowIdIndex(tableWithNoIndexName));
+    assertEquals(1,
+        indexStore.getTableIndices(tableWithNoIndexName.getName()).length);
+    assertNotNull(indexStore.get(tableWithNoIndexName.getRowIdIndexName()));
     asyncTestCase.continueTesting();
   });
 }

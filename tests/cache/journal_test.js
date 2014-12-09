@@ -67,7 +67,7 @@ function testInsert_New() {
   var table = env.schema.getTables()[0];
   var pkIndexSchema = table.getConstraint().getPrimaryKey();
   var pkIndex = env.indexStore.get(pkIndexSchema.getNormalizedName());
-  var rowIdIndex = env.indexStore.getRowIdIndex(table.getName());
+  var rowIdIndex = env.indexStore.get(table.getRowIdIndexName());
 
   var primaryKey = '100';
   var row = table.createRow({'id': primaryKey, 'name': 'DummyName'});
@@ -93,7 +93,7 @@ function testInsert_New() {
  */
 function testInsert_PrimaryKeyViolation1() {
   var table = env.schema.getTables()[0];
-  var rowIdIndex = env.indexStore.getRowIdIndex(table.getName());
+  var rowIdIndex = env.indexStore.get(table.getRowIdIndexName());
 
   var primaryKey = '100';
   var row = table.createRow({'id': primaryKey, 'name': 'DummyName'});
@@ -174,7 +174,7 @@ function testInsert_PrimaryKeyViolation3() {
   journal.rollback();
 
   assertEquals(0, env.cache.getCount());
-  var rowIdIndex = env.indexStore.getRowIdIndex(table.getName());
+  var rowIdIndex = env.indexStore.get(table.getRowIdIndexName());
   rows.forEach(function(row) {
     assertFalse(pkIndex.containsKey(row.payload()['id']));
     assertFalse(rowIdIndex.containsKey(row.id()));
@@ -190,7 +190,7 @@ function testInsert_UniqueKeyViolation() {
   var table = env.schema.getTables()[4];
   var emailIndexSchema = table.getConstraint().getUnique()[0];
   var emailIndex = env.indexStore.get(emailIndexSchema.getNormalizedName());
-  var rowIdIndex = env.indexStore.getRowIdIndex(table.getName());
+  var rowIdIndex = env.indexStore.get(table.getRowIdIndexName());
 
   var journal = new lf.cache.Journal(lf.Global.get(), [table]);
   var row1 = table.createRow({'id': 'pk1', 'email': 'emailAddress1'});
@@ -301,7 +301,7 @@ function testUpdate_NoPrimaryKeyViolation() {
   var table = env.schema.getTables()[0];
   var pkIndexSchema = table.getConstraint().getPrimaryKey();
   var pkIndex = env.indexStore.get(pkIndexSchema.getNormalizedName());
-  var rowIdIndex = env.indexStore.getRowIdIndex(table.getName());
+  var rowIdIndex = env.indexStore.get(table.getRowIdIndexName());
 
   var row = table.createRow({'id': 'pk1', 'name': 'DummyName'});
   var journal = new lf.cache.Journal(lf.Global.get(), [table]);
@@ -434,7 +434,7 @@ function testDeleteInsert_Uncommitted() {
   var table = env.schema.getTables()[0];
   var pkIndexSchema = table.getConstraint().getPrimaryKey();
   var pkIndex = env.indexStore.get(pkIndexSchema.getNormalizedName());
-  var rowIdIndex = env.indexStore.getRowIdIndex(table.getName());
+  var rowIdIndex = env.indexStore.get(table.getRowIdIndexName());
 
   var primaryKey = '100';
   var row1 = table.createRow({'id': primaryKey, 'name': 'DummyName'});
@@ -481,7 +481,7 @@ function testInsertOrReplace() {
   var table = env.schema.getTables()[0];
   var pkIndexSchema = table.getConstraint().getPrimaryKey();
   var pkIndex = env.indexStore.get(pkIndexSchema.getNormalizedName());
-  var rowIdIndex = env.indexStore.getRowIdIndex(table.getName());
+  var rowIdIndex = env.indexStore.get(table.getRowIdIndexName());
 
   var primaryKey = '100';
   var row1 = table.createRow({'id': primaryKey, 'name': 'DummyName'});
@@ -582,7 +582,7 @@ function testInsertOrReplace_UniqueKeyViolation() {
 function testCacheMerge() {
   // Selecting a table without any user-defined index (no primary key either).
   var table = env.schema.getTables()[2];
-  var rowIdIndex = env.indexStore.getRowIdIndex(table.getName());
+  var rowIdIndex = env.indexStore.get(table.getRowIdIndexName());
   var payload = {'id': 'something'};
 
   assertEquals(0, env.cache.getCount());
@@ -622,7 +622,6 @@ function testIndexUpdate() {
   var table = env.schema.getTables()[3];
   var indices = table.getIndices();
   var journal = new lf.cache.Journal(lf.Global.get(), [table]);
-  var tableName = table.getName();
 
   var row1 = new lf.testing.MockSchema.Row(1, {'id': '1', 'name': '1'});
   var row2 = new lf.testing.MockSchema.Row(2, {'id': '2', 'name': '2'});
@@ -633,7 +632,7 @@ function testIndexUpdate() {
   var pkId = env.indexStore.get(indices[0].getNormalizedName());
   var idxName = env.indexStore.get(indices[1].getNormalizedName());
   var idxBoth = env.indexStore.get(indices[2].getNormalizedName());
-  var rowIdIndex = env.indexStore.getRowIdIndex(tableName);
+  var rowIdIndex = env.indexStore.get(table.getRowIdIndexName());
 
   assertFalse(rowIdIndex.containsKey(1));
   assertFalse(rowIdIndex.containsKey(2));
@@ -650,20 +649,20 @@ function testIndexUpdate() {
   assertFalse(idxBoth.containsKey('4_4'));
 
   journal.insert(table, [row1, row2, row3]);
-  assertArrayEquals([row1, row2, row3], journal.getTableRows(tableName));
+  assertArrayEquals([row1, row2, row3], journal.getTableRows(table));
 
   journal.remove(table, [row2]);
-  assertArrayEquals([row1, row3], journal.getTableRows(tableName));
+  assertArrayEquals([row1, row3], journal.getTableRows(table));
 
   journal.update(table, [row4]);
-  assertArrayEquals([row4, row3], journal.getTableRows(tableName));
-  assertArrayEquals([row4], journal.getTableRows(tableName, [1]));
-  assertArrayEquals([], journal.getTableRows(tableName, []));
-  assertArrayEquals([null], journal.getTableRows(tableName, [8]));
+  assertArrayEquals([row4, row3], journal.getTableRows(table));
+  assertArrayEquals([row4], journal.getTableRows(table, [1]));
+  assertArrayEquals([], journal.getTableRows(table, []));
+  assertArrayEquals([null], journal.getTableRows(table, [8]));
 
   journal.insertOrReplace(table, [row5]);
-  assertArrayEquals([row5, row3], journal.getTableRows(tableName));
-  assertArrayEquals([row5], journal.getTableRows(tableName, [1]));
+  assertArrayEquals([row5, row3], journal.getTableRows(table));
+  assertArrayEquals([row5], journal.getTableRows(table, [1]));
 
   journal.commit();
 
@@ -737,7 +736,7 @@ function testRollback() {
 
   var pkIndexSchema = table.getConstraint().getPrimaryKey();
   var pkIndex = env.indexStore.get(pkIndexSchema.getNormalizedName());
-  var rowIdIndex = env.indexStore.getRowIdIndex(table.getName());
+  var rowIdIndex = env.indexStore.get(table.getRowIdIndexName());
 
 
   /**
