@@ -551,28 +551,23 @@ Schema_.prototype.getVersion = function() {
 
 /**
  * Dummy table implementation to be used in tests.
- * @implements {lf.schema.Table}
+ * @extends {lf.schema.Table}
  * @constructor
  * @private
  *
  * @param {string} tableName The name of this table.
  */
 var Table_ = function(tableName) {
-  /** @private {string} */
-  this.tableName_ = tableName;
-
   /** @type {!lf.schema.Column.<string>} */
   this.id = new lf.schema.BaseColumn(this, 'id', false, lf.Type.STRING);
 
   /** @type {!lf.schema.Column.<string>} */
   this.name = new lf.schema.BaseColumn(this, 'name', false, lf.Type.STRING);
-};
 
-
-/** @override */
-Table_.prototype.getName = function() {
-  return this.tableName_;
+  Table_.base(this, 'constructor',
+      tableName, [this.id, this.name], [], false);
 };
+goog.inherits(Table_, lf.schema.Table);
 
 
 /** @override */
@@ -591,24 +586,6 @@ Table_.prototype.deserializeRow = function(dbPayload) {
 
 
 /** @override */
-Table_.prototype.getColumns = function() {
-  return [this.id, this.name];
-};
-
-
-/** @override */
-Table_.prototype.getIndices = function() {
-  return [];
-};
-
-
-/** @override */
 Table_.prototype.getConstraint = function() {
   return new lf.schema.Constraint(null, [], [], []);
-};
-
-
-/** @override */
-Table_.prototype.persistentIndex = function() {
-  return false;
 };

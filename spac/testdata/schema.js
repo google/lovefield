@@ -109,49 +109,47 @@ lovefield.db.schema.Database.prototype.getPhotoCurator = function() {
 
 
 /**
- * @implements {lf.schema.Table.<!lovefield.db.row.AlbumType,
+ * @extends {lf.schema.Table.<!lovefield.db.row.AlbumType,
  *     !lovefield.db.row.AlbumDbType>}
  * @constructor
  */
 lovefield.db.schema.Album = function() {
-  /** @private {!Array.<!lf.schema.Index>} */
-  this.indices_;
-
-  /** @private {!Array.<!lf.schema.Column>} */
-  this.columns_ = [];
+  var cols = [];
 
   /** @type {!lf.schema.BaseColumn.<string>} */
   this.id = new lf.schema.BaseColumn(
       this, 'id', true, lf.Type.STRING);
-  this.columns_.push(this.id);
+  cols.push(this.id);
 
   /** @type {!lf.schema.BaseColumn.<boolean>} */
   this.isLocal = new lf.schema.BaseColumn(
       this, 'isLocal', false, lf.Type.BOOLEAN);
-  this.columns_.push(this.isLocal);
+  cols.push(this.isLocal);
 
   /** @type {!lf.schema.BaseColumn.<boolean>} */
   this.createdByAction = new lf.schema.BaseColumn(
       this, 'createdByAction', false, lf.Type.BOOLEAN);
-  this.columns_.push(this.createdByAction);
+  cols.push(this.createdByAction);
 
   /** @type {!lf.schema.BaseColumn.<!Date>} */
   this.timestamp = new lf.schema.BaseColumn(
       this, 'timestamp', false, lf.Type.DATE_TIME);
-  this.columns_.push(this.timestamp);
+  cols.push(this.timestamp);
 
   /** @type {!lf.schema.BaseColumn.<!ArrayBuffer>} */
   this.tacotownJspb = new lf.schema.BaseColumn(
       this, 'tacotownJspb', false, lf.Type.ARRAY_BUFFER);
-  this.columns_.push(this.tacotownJspb);
+  cols.push(this.tacotownJspb);
 
+  var indices = [
+    new lf.schema.Index('Album', 'pkAlbum', true, ['id']),
+    new lf.schema.Index('Album', 'idx_timestamp', false, ['timestamp'])
+  ];
+
+  lovefield.db.schema.Album.base(
+      this, 'constructor', 'Album', cols, indices, false);
 };
-
-
-/** @override */
-lovefield.db.schema.Album.prototype.getName = function() {
-  return 'Album';
-};
+goog.inherits(lovefield.db.schema.Album, lf.schema.Table);
 
 
 /** @override */
@@ -175,24 +173,6 @@ lovefield.db.schema.Album.prototype.deserializeRow = function(dbRecord) {
 
 
 /** @override */
-lovefield.db.schema.Album.prototype.getIndices = function() {
-  if (!this.indices_) {
-    this.indices_ = [
-      new lf.schema.Index('Album', 'pkAlbum', true, ['id']),
-      new lf.schema.Index('Album', 'idx_timestamp', false, ['timestamp'])
-    ];
-  }
-  return this.indices_;
-};
-
-
-/** @override */
-lovefield.db.schema.Album.prototype.getColumns = function() {
-  return this.columns_;
-};
-
-
-/** @override */
 lovefield.db.schema.Album.prototype.getConstraint = function() {
   var pk = new lf.schema.Index('Album', 'pkAlbum', true, ['id']);
   var notNullable = [
@@ -206,12 +186,6 @@ lovefield.db.schema.Album.prototype.getConstraint = function() {
   var unique = [
   ];
   return new lf.schema.Constraint(pk, notNullable, foreignKeys, unique);
-};
-
-
-/** @override */
-lovefield.db.schema.Album.prototype.persistentIndex = function() {
-  return false;
 };
 
 
@@ -395,69 +369,67 @@ lovefield.db.row.Album.prototype.setTacotownJspb = function(value) {
 
 
 /**
- * @implements {lf.schema.Table.<!lovefield.db.row.PhotoType,
+ * @extends {lf.schema.Table.<!lovefield.db.row.PhotoType,
  *     !lovefield.db.row.PhotoDbType>}
  * @constructor
  */
 lovefield.db.schema.Photo = function() {
-  /** @private {!Array.<!lf.schema.Index>} */
-  this.indices_;
-
-  /** @private {!Array.<!lf.schema.Column>} */
-  this.columns_ = [];
+  var cols = [];
 
   /** @type {!lf.schema.BaseColumn.<string>} */
   this.id = new lf.schema.BaseColumn(
       this, 'id', true, lf.Type.STRING);
-  this.columns_.push(this.id);
+  cols.push(this.id);
 
   /** @type {!lf.schema.BaseColumn.<string>} */
   this.imageHash = new lf.schema.BaseColumn(
       this, 'imageHash', false, lf.Type.STRING);
-  this.columns_.push(this.imageHash);
+  cols.push(this.imageHash);
 
   /** @type {!lf.schema.BaseColumn.<boolean>} */
   this.isLocal = new lf.schema.BaseColumn(
       this, 'isLocal', false, lf.Type.BOOLEAN);
-  this.columns_.push(this.isLocal);
+  cols.push(this.isLocal);
 
   /** @type {!lf.schema.BaseColumn.<boolean>} */
   this.createdByAction = new lf.schema.BaseColumn(
       this, 'createdByAction', false, lf.Type.BOOLEAN);
-  this.columns_.push(this.createdByAction);
+  cols.push(this.createdByAction);
 
   /** @type {!lf.schema.BaseColumn.<!Date>} */
   this.timestamp = new lf.schema.BaseColumn(
       this, 'timestamp', false, lf.Type.DATE_TIME);
-  this.columns_.push(this.timestamp);
+  cols.push(this.timestamp);
 
   /** @type {!lf.schema.BaseColumn.<!Date>} */
   this.accessTimestamp = new lf.schema.BaseColumn(
       this, 'accessTimestamp', false, lf.Type.DATE_TIME);
-  this.columns_.push(this.accessTimestamp);
+  cols.push(this.accessTimestamp);
 
   /** @type {!lf.schema.BaseColumn.<string>} */
   this.albumId = new lf.schema.BaseColumn(
       this, 'albumId', false, lf.Type.STRING);
-  this.columns_.push(this.albumId);
+  cols.push(this.albumId);
 
   /** @type {!lf.schema.BaseColumn.<boolean>} */
   this.isCoverPhoto = new lf.schema.BaseColumn(
       this, 'isCoverPhoto', false, lf.Type.BOOLEAN);
-  this.columns_.push(this.isCoverPhoto);
+  cols.push(this.isCoverPhoto);
 
   /** @type {!lf.schema.BaseColumn.<!ArrayBuffer>} */
   this.tacotownJspb = new lf.schema.BaseColumn(
       this, 'tacotownJspb', false, lf.Type.ARRAY_BUFFER);
-  this.columns_.push(this.tacotownJspb);
+  cols.push(this.tacotownJspb);
 
+  var indices = [
+    new lf.schema.Index('Photo', 'pkPhoto', true, ['id']),
+    new lf.schema.Index('Photo', 'idx_timestamp', false, ['timestamp'])
+  ];
+
+  lovefield.db.schema.Photo.base(
+      this, 'constructor', 'Photo', cols, indices, false);
 };
-
-
-/** @override */
-lovefield.db.schema.Photo.prototype.getName = function() {
-  return 'Photo';
-};
+goog.inherits(lovefield.db.schema.Photo, lf.schema.Table);
 
 
 /** @override */
@@ -485,24 +457,6 @@ lovefield.db.schema.Photo.prototype.deserializeRow = function(dbRecord) {
 
 
 /** @override */
-lovefield.db.schema.Photo.prototype.getIndices = function() {
-  if (!this.indices_) {
-    this.indices_ = [
-      new lf.schema.Index('Photo', 'pkPhoto', true, ['id']),
-      new lf.schema.Index('Photo', 'idx_timestamp', false, ['timestamp'])
-    ];
-  }
-  return this.indices_;
-};
-
-
-/** @override */
-lovefield.db.schema.Photo.prototype.getColumns = function() {
-  return this.columns_;
-};
-
-
-/** @override */
 lovefield.db.schema.Photo.prototype.getConstraint = function() {
   var pk = new lf.schema.Index('Photo', 'pkPhoto', true, ['id']);
   var notNullable = [
@@ -517,12 +471,6 @@ lovefield.db.schema.Photo.prototype.getConstraint = function() {
   var unique = [
   ];
   return new lf.schema.Constraint(pk, notNullable, foreignKeys, unique);
-};
-
-
-/** @override */
-lovefield.db.schema.Photo.prototype.persistentIndex = function() {
-  return false;
 };
 
 
@@ -795,39 +743,36 @@ lovefield.db.row.Photo.prototype.setTacotownJspb = function(value) {
 
 
 /**
- * @implements {lf.schema.Table.<!lovefield.db.row.DetailsType,
+ * @extends {lf.schema.Table.<!lovefield.db.row.DetailsType,
  *     !lovefield.db.row.DetailsDbType>}
  * @constructor
  */
 lovefield.db.schema.Details = function() {
-  /** @private {!Array.<!lf.schema.Index>} */
-  this.indices_;
-
-  /** @private {!Array.<!lf.schema.Column>} */
-  this.columns_ = [];
+  var cols = [];
 
   /** @type {!lf.schema.BaseColumn.<string>} */
   this.photoId = new lf.schema.BaseColumn(
       this, 'photoId', false, lf.Type.STRING);
-  this.columns_.push(this.photoId);
+  cols.push(this.photoId);
 
   /** @type {!lf.schema.BaseColumn.<string>} */
   this.albumId = new lf.schema.BaseColumn(
       this, 'albumId', false, lf.Type.STRING);
-  this.columns_.push(this.albumId);
+  cols.push(this.albumId);
 
   /** @type {!lf.schema.BaseColumn.<number>} */
   this.totalComments = new lf.schema.BaseColumn(
       this, 'totalComments', false, lf.Type.INTEGER);
-  this.columns_.push(this.totalComments);
+  cols.push(this.totalComments);
 
+  var indices = [
+
+  ];
+
+  lovefield.db.schema.Details.base(
+      this, 'constructor', 'Details', cols, indices, false);
 };
-
-
-/** @override */
-lovefield.db.schema.Details.prototype.getName = function() {
-  return 'Details';
-};
+goog.inherits(lovefield.db.schema.Details, lf.schema.Table);
 
 
 /** @override */
@@ -843,23 +788,6 @@ lovefield.db.schema.Details.prototype.deserializeRow = function(dbRecord) {
 
 
 /** @override */
-lovefield.db.schema.Details.prototype.getIndices = function() {
-  if (!this.indices_) {
-    this.indices_ = [
-
-    ];
-  }
-  return this.indices_;
-};
-
-
-/** @override */
-lovefield.db.schema.Details.prototype.getColumns = function() {
-  return this.columns_;
-};
-
-
-/** @override */
 lovefield.db.schema.Details.prototype.getConstraint = function() {
   var pk = null;
   var notNullable = [
@@ -871,12 +799,6 @@ lovefield.db.schema.Details.prototype.getConstraint = function() {
   var unique = [
   ];
   return new lf.schema.Constraint(pk, notNullable, foreignKeys, unique);
-};
-
-
-/** @override */
-lovefield.db.schema.Details.prototype.persistentIndex = function() {
-  return false;
 };
 
 
@@ -1012,34 +934,32 @@ lovefield.db.row.Details.prototype.setTotalComments = function(value) {
 
 
 /**
- * @implements {lf.schema.Table.<!lovefield.db.row.CuratorType,
+ * @extends {lf.schema.Table.<!lovefield.db.row.CuratorType,
  *     !lovefield.db.row.CuratorDbType>}
  * @constructor
  */
 lovefield.db.schema.Curator = function() {
-  /** @private {!Array.<!lf.schema.Index>} */
-  this.indices_;
-
-  /** @private {!Array.<!lf.schema.Column>} */
-  this.columns_ = [];
+  var cols = [];
 
   /** @type {!lf.schema.BaseColumn.<number>} */
   this.id = new lf.schema.BaseColumn(
       this, 'id', true, lf.Type.INTEGER);
-  this.columns_.push(this.id);
+  cols.push(this.id);
 
   /** @type {!lf.schema.BaseColumn.<string>} */
   this.name = new lf.schema.BaseColumn(
       this, 'name', true, lf.Type.STRING);
-  this.columns_.push(this.name);
+  cols.push(this.name);
 
+  var indices = [
+    new lf.schema.Index('Curator', 'pkCurator', true, ['id']),
+    new lf.schema.Index('Curator', 'uq_name', true, ['name'])
+  ];
+
+  lovefield.db.schema.Curator.base(
+      this, 'constructor', 'Curator', cols, indices, false);
 };
-
-
-/** @override */
-lovefield.db.schema.Curator.prototype.getName = function() {
-  return 'Curator';
-};
+goog.inherits(lovefield.db.schema.Curator, lf.schema.Table);
 
 
 /** @override */
@@ -1055,24 +975,6 @@ lovefield.db.schema.Curator.prototype.deserializeRow = function(dbRecord) {
 
 
 /** @override */
-lovefield.db.schema.Curator.prototype.getIndices = function() {
-  if (!this.indices_) {
-    this.indices_ = [
-      new lf.schema.Index('Curator', 'pkCurator', true, ['id']),
-      new lf.schema.Index('Curator', 'uq_name', true, ['name'])
-    ];
-  }
-  return this.indices_;
-};
-
-
-/** @override */
-lovefield.db.schema.Curator.prototype.getColumns = function() {
-  return this.columns_;
-};
-
-
-/** @override */
 lovefield.db.schema.Curator.prototype.getConstraint = function() {
   var pk = new lf.schema.Index('Curator', 'pkCurator', true, ['id']);
   var notNullable = [
@@ -1084,12 +986,6 @@ lovefield.db.schema.Curator.prototype.getConstraint = function() {
     new lf.schema.Index('Curator', 'uq_name', true, ['name'])
   ];
   return new lf.schema.Constraint(pk, notNullable, foreignKeys, unique);
-};
-
-
-/** @override */
-lovefield.db.schema.Curator.prototype.persistentIndex = function() {
-  return false;
 };
 
 
@@ -1207,39 +1103,36 @@ lovefield.db.row.Curator.prototype.setName = function(value) {
 
 
 /**
- * @implements {lf.schema.Table.<!lovefield.db.row.PhotoCuratorType,
+ * @extends {lf.schema.Table.<!lovefield.db.row.PhotoCuratorType,
  *     !lovefield.db.row.PhotoCuratorDbType>}
  * @constructor
  */
 lovefield.db.schema.PhotoCurator = function() {
-  /** @private {!Array.<!lf.schema.Index>} */
-  this.indices_;
-
-  /** @private {!Array.<!lf.schema.Column>} */
-  this.columns_ = [];
+  var cols = [];
 
   /** @type {!lf.schema.BaseColumn.<string>} */
   this.photoId = new lf.schema.BaseColumn(
       this, 'photoId', false, lf.Type.STRING);
-  this.columns_.push(this.photoId);
+  cols.push(this.photoId);
 
   /** @type {!lf.schema.BaseColumn.<number>} */
   this.curator = new lf.schema.BaseColumn(
       this, 'curator', false, lf.Type.INTEGER);
-  this.columns_.push(this.curator);
+  cols.push(this.curator);
 
   /** @type {!lf.schema.BaseColumn.<string>} */
   this.topic = new lf.schema.BaseColumn(
       this, 'topic', true, lf.Type.STRING);
-  this.columns_.push(this.topic);
+  cols.push(this.topic);
 
+  var indices = [
+    new lf.schema.Index('PhotoCurator', 'uq_topic', true, ['topic'])
+  ];
+
+  lovefield.db.schema.PhotoCurator.base(
+      this, 'constructor', 'PhotoCurator', cols, indices, false);
 };
-
-
-/** @override */
-lovefield.db.schema.PhotoCurator.prototype.getName = function() {
-  return 'PhotoCurator';
-};
+goog.inherits(lovefield.db.schema.PhotoCurator, lf.schema.Table);
 
 
 /** @override */
@@ -1251,23 +1144,6 @@ lovefield.db.schema.PhotoCurator.prototype.createRow = function(opt_value) {
 /** @override */
 lovefield.db.schema.PhotoCurator.prototype.deserializeRow = function(dbRecord) {
   return new lovefield.db.row.PhotoCurator(dbRecord['id'], dbRecord['value']);
-};
-
-
-/** @override */
-lovefield.db.schema.PhotoCurator.prototype.getIndices = function() {
-  if (!this.indices_) {
-    this.indices_ = [
-      new lf.schema.Index('PhotoCurator', 'uq_topic', true, ['topic'])
-    ];
-  }
-  return this.indices_;
-};
-
-
-/** @override */
-lovefield.db.schema.PhotoCurator.prototype.getColumns = function() {
-  return this.columns_;
 };
 
 
@@ -1284,12 +1160,6 @@ lovefield.db.schema.PhotoCurator.prototype.getConstraint = function() {
     new lf.schema.Index('PhotoCurator', 'uq_topic', true, ['topic'])
   ];
   return new lf.schema.Constraint(pk, notNullable, foreignKeys, unique);
-};
-
-
-/** @override */
-lovefield.db.schema.PhotoCurator.prototype.persistentIndex = function() {
-  return false;
 };
 
 

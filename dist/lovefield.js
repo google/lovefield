@@ -27474,14 +27474,33 @@ lf.schema.Index.prototype.getNormalizedName = function() {
 
 /**
  * Models the return value of Database.getSchema().getTable().
+ * @param {string} name
+ * @param {!Array.<!lf.schema.Column>} cols
+ * @param {!Array.<!lf.schema.Index>} indices
+ * @param {boolean} persistentIndex
+ *
  * @template UserType, StoredType
- * @interface
+ * @constructor
  */
-lf.schema.Table = function() {};
+lf.schema.Table = function(name, cols, indices, persistentIndex) {
+  /** @private */
+  this.name_ = name;
+
+  /** @private {!Array.<!lf.schema.Index>} */
+  this.indices_ = indices;
+
+  /** @private {!Array.<!lf.schema.Column>} */
+  this.columns_ = cols;
+
+  /** @private {boolean} */
+  this.persistentIndex_ = persistentIndex;
+};
 
 
 /** @return {string} */
-lf.schema.Table.prototype.getName;
+lf.schema.Table.prototype.getName = function() {
+  return this.name_;
+};
 
 
 /**
@@ -27489,30 +27508,36 @@ lf.schema.Table.prototype.getName;
  * @return {!lf.Row.<UserType, StoredType>}
  * @throws {lf.Exception}
  */
-lf.schema.Table.prototype.createRow;
+lf.schema.Table.prototype.createRow = goog.abstractMethod;
 
 
 /**
  * @param {{id: number, value: *}} dbRecord
  * @return {!lf.Row.<UserType, StoredType>}
  */
-lf.schema.Table.prototype.deserializeRow;
+lf.schema.Table.prototype.deserializeRow = goog.abstractMethod;
 
 
 /** @return {!Array.<!lf.schema.Index>} */
-lf.schema.Table.prototype.getIndices;
+lf.schema.Table.prototype.getIndices = function() {
+  return this.indices_;
+};
 
 
 /** @return {!Array.<!lf.schema.Column>} */
-lf.schema.Table.prototype.getColumns;
+lf.schema.Table.prototype.getColumns = function() {
+  return this.columns_;
+};
 
 
 /** @return {!lf.schema.Constraint} */
-lf.schema.Table.prototype.getConstraint;
+lf.schema.Table.prototype.getConstraint = goog.abstractMethod;
 
 
 /** @return {boolean} */
-lf.schema.Table.prototype.persistentIndex;
+lf.schema.Table.prototype.persistentIndex = function() {
+  return this.persistentIndex_;
+};
 
 /**
  * @license

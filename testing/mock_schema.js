@@ -120,7 +120,7 @@ lf.testing.MockSchema.Row.prototype.keyOfIndex = function(indexName) {
 
 /**
  * Dummy table implementation to be used in tests.
- * @implements {lf.schema.Table}
+ * @extends {lf.schema.Table}
  * @constructor
  * @private
  *
@@ -135,13 +135,21 @@ var Table_ = function(tableName) {
 
   /** @type {!lf.schema.Column.<string>} */
   this.name = new lf.schema.BaseColumn(this, 'name', false, lf.Type.STRING);
-};
 
+  var indices = [
+    new lf.schema.Index(this.tableName_, 'pkId', true, ['id']),
+    new lf.schema.Index(this.tableName_, 'idxName', false, ['name'])
+  ];
 
-/** @override */
-Table_.prototype.getName = function() {
-  return this.tableName_;
+  if (tableName == 'tableD') {
+    indices.push(
+        new lf.schema.Index(this.tableName_, 'idxBoth', true, ['id', 'name']));
+  }
+
+  Table_.base(this, 'constructor',
+      tableName, [this.id, this.name], indices, false);
 };
+goog.inherits(Table_, lf.schema.Table);
 
 
 /** @override */
@@ -162,28 +170,6 @@ Table_.prototype.deserializeRow = function(dbPayload) {
 
 
 /** @override */
-Table_.prototype.getColumns = function() {
-  return [this.id, this.name];
-};
-
-
-/** @override */
-Table_.prototype.getIndices = function() {
-  var indices = [
-    new lf.schema.Index(this.tableName_, 'pkId', true, ['id']),
-    new lf.schema.Index(this.tableName_, 'idxName', false, ['name'])
-  ];
-
-  if (this.tableName_ == 'tableD') {
-    indices.push(
-        new lf.schema.Index(this.tableName_, 'idxBoth', true, ['id', 'name']));
-  }
-
-  return indices;
-};
-
-
-/** @override */
 Table_.prototype.getConstraint = function() {
   return new lf.schema.Constraint(
       new lf.schema.Index(this.tableName_, 'pkId', true, ['id']),
@@ -192,16 +178,10 @@ Table_.prototype.getConstraint = function() {
 };
 
 
-/** @override */
-Table_.prototype.persistentIndex = function() {
-  return false;
-};
-
-
 
 /**
  * Dummy table implementation to be used in tests.
- * @implements {lf.schema.Table}
+ * @extends {lf.schema.Table}
  * @constructor
  * @private
  *
@@ -216,13 +196,11 @@ var TableWithNoIndex_ = function(tableName) {
 
   /** @type {!lf.schema.Column.<string>} */
   this.name = new lf.schema.BaseColumn(this, 'name', false, lf.Type.STRING);
-};
 
-
-/** @override */
-TableWithNoIndex_.prototype.getName = function() {
-  return this.tableName_;
+  TableWithNoIndex_.base(this, 'constructor',
+      tableName, [this.id, this.name], [], false);
 };
+goog.inherits(TableWithNoIndex_, lf.schema.Table);
 
 
 /** @override */
@@ -241,34 +219,16 @@ TableWithNoIndex_.prototype.deserializeRow = function(dbPayload) {
 
 
 /** @override */
-TableWithNoIndex_.prototype.getColumns = function() {
-  return [this.id, this.name];
-};
-
-
-/** @override */
-TableWithNoIndex_.prototype.getIndices = function() {
-  return [];
-};
-
-
-/** @override */
 TableWithNoIndex_.prototype.getConstraint = function() {
   return new lf.schema.Constraint(
       null, [this.id, this.name] /* notNullable */, [], []);
 };
 
 
-/** @override */
-TableWithNoIndex_.prototype.persistentIndex = function() {
-  return false;
-};
-
-
 
 /**
  * Dummy table implementation with a uniqueness constraint to be used in tests.
- * @implements {lf.schema.Table}
+ * @extends {lf.schema.Table}
  * @constructor
  * @private
  *
@@ -283,13 +243,15 @@ var TableWithUnique_ = function(tableName) {
 
   /** @type {!lf.schema.Column.<string>} */
   this.email = new lf.schema.BaseColumn(this, 'email', true, lf.Type.STRING);
-};
 
-
-/** @override */
-TableWithUnique_.prototype.getName = function() {
-  return this.tableName_;
+  var indices = [
+    new lf.schema.Index(this.tableName_, 'pkId', true, ['id']),
+    new lf.schema.Index(this.tableName_, 'uq_email', true, ['email'])
+  ];
+  TableWithUnique_.base(this, 'constructor',
+      tableName, [this.id, this.email], indices, false);
 };
+goog.inherits(TableWithUnique_, lf.schema.Table);
 
 
 /** @override */
@@ -305,30 +267,9 @@ TableWithUnique_.prototype.deserializeRow = function(dbPayload) {
 
 
 /** @override */
-TableWithUnique_.prototype.getColumns = function() {
-  return [this.id, this.email];
-};
-
-
-/** @override */
-TableWithUnique_.prototype.getIndices = function() {
-  return [
-    new lf.schema.Index(this.tableName_, 'pkId', true, ['id']),
-    new lf.schema.Index(this.tableName_, 'uq_email', true, ['email'])
-  ];
-};
-
-
-/** @override */
 TableWithUnique_.prototype.getConstraint = function() {
   return new lf.schema.Constraint(
       new lf.schema.Index(this.tableName_, 'pkId', true, ['id']),
       [this.id, this.email] /* notNullable */, [],
       [new lf.schema.Index(this.tableName_, 'uq_email', true, ['email'])]);
-};
-
-
-/** @override */
-TableWithUnique_.prototype.persistentIndex = function() {
-  return false;
 };

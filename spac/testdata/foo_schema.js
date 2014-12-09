@@ -53,39 +53,38 @@ foo.db.schema.Database.prototype.getFoo = function() {
 
 
 /**
- * @implements {lf.schema.Table.<!foo.db.row.FooType,
+ * @extends {lf.schema.Table.<!foo.db.row.FooType,
  *     !foo.db.row.FooDbType>}
  * @constructor
  */
 foo.db.schema.Foo = function() {
-  /** @private {!Array.<!lf.schema.Index>} */
-  this.indices_;
-
-  /** @private {!Array.<!lf.schema.Column>} */
-  this.columns_ = [];
+  var cols = [];
 
   /** @type {!lf.schema.BaseColumn.<string>} */
   this.id = new lf.schema.BaseColumn(
       this, 'id', true, lf.Type.STRING);
-  this.columns_.push(this.id);
+  cols.push(this.id);
 
   /** @type {!lf.schema.BaseColumn.<string>} */
   this.name = new lf.schema.BaseColumn(
       this, 'name', false, lf.Type.STRING);
-  this.columns_.push(this.name);
+  cols.push(this.name);
 
   /** @type {!lf.schema.BaseColumn.<string>} */
   this.bar = new lf.schema.BaseColumn(
       this, 'bar', true, lf.Type.STRING);
-  this.columns_.push(this.bar);
+  cols.push(this.bar);
 
+  var indices = [
+    new lf.schema.Index('Foo', 'pkFoo', true, ['id']),
+    new lf.schema.Index('Foo', 'uq_bar', true, ['bar']),
+    new lf.schema.Index('Foo', 'idx_Name', false, ['name'])
+  ];
+
+  foo.db.schema.Foo.base(
+      this, 'constructor', 'Foo', cols, indices, true);
 };
-
-
-/** @override */
-foo.db.schema.Foo.prototype.getName = function() {
-  return 'Foo';
-};
+goog.inherits(foo.db.schema.Foo, lf.schema.Table);
 
 
 /** @override */
@@ -97,25 +96,6 @@ foo.db.schema.Foo.prototype.createRow = function(opt_value) {
 /** @override */
 foo.db.schema.Foo.prototype.deserializeRow = function(dbRecord) {
   return new foo.db.row.Foo(dbRecord['id'], dbRecord['value']);
-};
-
-
-/** @override */
-foo.db.schema.Foo.prototype.getIndices = function() {
-  if (!this.indices_) {
-    this.indices_ = [
-      new lf.schema.Index('Foo', 'pkFoo', true, ['id']),
-      new lf.schema.Index('Foo', 'uq_bar', true, ['bar']),
-      new lf.schema.Index('Foo', 'idx_Name', false, ['name'])
-    ];
-  }
-  return this.indices_;
-};
-
-
-/** @override */
-foo.db.schema.Foo.prototype.getColumns = function() {
-  return this.columns_;
 };
 
 
@@ -132,12 +112,6 @@ foo.db.schema.Foo.prototype.getConstraint = function() {
     new lf.schema.Index('Foo', 'uq_bar', true, ['bar'])
   ];
   return new lf.schema.Constraint(pk, notNullable, foreignKeys, unique);
-};
-
-
-/** @override */
-foo.db.schema.Foo.prototype.persistentIndex = function() {
-  return true;
 };
 
 

@@ -62,31 +62,28 @@ goog.require('lf.schema.Table');
 
 
 /**
- * @implements {lf.schema.Table.<!#namespace.row.#table#pascalType,
+ * @extends {lf.schema.Table.<!#namespace.row.#table#pascalType,
  *     !#namespace.row.#table#pascalDbType>}
  * @constructor
  */
 #namespace.schema.#table#pascal = function() {
-  /** @private {!Array.<!lf.schema.Index>} */
-  this.indices_;
-
-  /** @private {!Array.<!lf.schema.Column>} */
-  this.columns_ = [];
+  var cols = [];
 
   /// #repeatcolumn
   /** @type {!lf.schema.BaseColumn.<#columnjstype>} */
   this.#column#camel = new lf.schema.BaseColumn(
       this, '#column#camel', #columnuniqueness, #columnenumtype);
-  this.columns_.push(this.#column#camel);
+  cols.push(this.#column#camel);
 
   /// #repeatcolumnend
-};
+  var indices = [
+#tableindices
+  ];
 
-
-/** @override */
-#namespace.schema.#table#pascal.prototype.getName = function() {
-  return '#tablename';
+  #namespace.schema.#table#pascal.base(
+      this, 'constructor', '#tablename', cols, indices, #tablepersistentindex);
 };
+goog.inherits(#namespace.schema.#table#pascal, lf.schema.Table);
 
 
 /** @override */
@@ -102,31 +99,8 @@ goog.require('lf.schema.Table');
 
 
 /** @override */
-#namespace.schema.#table#pascal.prototype.getIndices = function() {
-  if (!this.indices_) {
-    this.indices_ = [
-#tableindices
-    ];
-  }
-  return this.indices_;
-};
-
-
-/** @override */
-#namespace.schema.#table#pascal.prototype.getColumns = function() {
-  return this.columns_;
-};
-
-
-/** @override */
 #namespace.schema.#table#pascal.prototype.getConstraint = function() {
 #tableconstraint
-};
-
-
-/** @override */
-#namespace.schema.#table#pascal.prototype.persistentIndex = function() {
-  return #tablepersistentindex;
 };
 
 

@@ -449,7 +449,7 @@ CodeGenerator.prototype.processSort_ = function(lines) {
 /**
  * @param {Object} table
  * @param {string} prefix
- * @return {?string}
+ * @return {string}
  * @private
  */
 CodeGenerator.prototype.genGetDefaultPayload_ = function(table, prefix) {
@@ -479,7 +479,7 @@ CodeGenerator.prototype.genGetDefaultPayload_ = function(table, prefix) {
 /**
  * @param {Object} table
  * @param {string} prefix
- * @return {?string}
+ * @return {string}
  * @private
  */
 CodeGenerator.prototype.genToDbPayload_ = function(table, prefix) {
@@ -1049,19 +1049,19 @@ CodeGenerator.prototype.getIndices_ = function(table) {
 
   if (table.constraint) {
     if (table.constraint.primaryKey) {
-      results.push('      ' + this.getPrimaryKeyIndex_(table));
+      results.push('    ' + this.getPrimaryKeyIndex_(table));
     }
 
     if (table.constraint.unique) {
       var uniqueIndices = this.getUniqueIndices_(table);
       uniqueIndices.forEach(function(uniqueIndex) {
-        results.push('      ' + uniqueIndex);
+        results.push('    ' + uniqueIndex);
       });
     }
   }
 
   if (table.index) {
-    var header = '      new lf.schema.Index(\'' + table.name + '\', \'';
+    var header = '    new lf.schema.Index(\'' + table.name + '\', \'';
     for (var i = 0; i < table.index.length; ++i) {
       var index = table.index[i];
       var col = [];
