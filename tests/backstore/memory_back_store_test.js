@@ -17,8 +17,13 @@
 goog.setTestOnly();
 goog.require('goog.testing.AsyncTestCase');
 goog.require('goog.testing.jsunit');
+goog.require('lf.Global');
 goog.require('lf.backstore.Memory');
+goog.require('lf.cache.DefaultCache');
+goog.require('lf.index.MemoryIndexStore');
+goog.require('lf.service');
 goog.require('lf.testing.MockSchema');
+goog.require('lf.testing.backstore.ScudTester');
 
 
 /** @type {!goog.testing.AsyncTestCase} */
@@ -27,7 +32,11 @@ var asyncTestCase = goog.testing.AsyncTestCase.createAndInstall(
 
 
 /** @type {!lf.backstore.Memory} */
-var store;
+var db;
+
+
+/** @type {!lf.cache.Cache} */
+var cache;
 
 
 /** @type {!lf.schema.Database} */
@@ -37,10 +46,18 @@ var schema;
 function setUp() {
   asyncTestCase.waitForAsync('setUp');
 
+  cache = new lf.cache.DefaultCache();
+  var indexStore = new lf.index.MemoryIndexStore();
   schema = new lf.testing.MockSchema();
-  store = new lf.backstore.Memory(schema);
 
-  store.init().then(function() {
+  var global = lf.Global.get();
+  global.registerService(lf.service.CACHE, cache);
+  global.registerService(lf.service.INDEX_STORE, indexStore);
+  global.registerService(lf.service.SCHEMA, schema);
+
+  db = new lf.backstore.Memory(schema);
+
+  db.init().then(function() {
     asyncTestCase.continueTesting();
   }, fail);
 }
@@ -55,12 +72,23 @@ function testConstruction() {
 
   schema.getTables().forEach(
       function(table) {
-        assertNotNull(store.getTableInternal(table.getName()));
+        assertNotNull(db.getTableInternal(table.getName()));
       });
 }
 
 
 function testGetTable_NonExisting() {
   assertThrows(
-      goog.bind(store.getTableInternal, store, 'nonExistingTableName'));
+      goog.bind(db.getTableInternal, db, 'nonExistingTableName'));
+}
+
+
+function testSCUD() {
+  var scudTester = new lf.testing.backstore.ScudTester(db, lf.Global.get());
+
+  scudTester.run().then(function() {
+    asyncTestCase.continueTesting();
+  });
+
+  asyncTestCase.waitForAsync('testSCUD');
 }

@@ -28,6 +28,7 @@ goog.require('lf.cache.Journal');
 goog.require('lf.index.MemoryIndexStore');
 goog.require('lf.service');
 goog.require('lf.testing.MockSchema');
+goog.require('lf.testing.backstore.ScudTester');
 
 
 /** @type {!goog.testing.AsyncTestCase} */
@@ -61,6 +62,7 @@ function setUp() {
   var global = lf.Global.get();
   global.registerService(lf.service.CACHE, cache);
   global.registerService(lf.service.INDEX_STORE, indexStore);
+  global.registerService(lf.service.SCHEMA, schema);
 }
 
 
@@ -91,107 +93,21 @@ function tearDown() {
 }
 
 
-/** @return {!IThenable} */
-function runSCUDTest() {
-  /** @const {!Object} */
-  var CONTENTS = {'id': 'hello', 'name': 'world'};
-  /** @const {!Object} */
-  var CONTENTS2 = {'id': 'hello2', 'name': 'world2'};
-
-  var table = schema.getTables()[0];
-  var row = lf.Row.create(CONTENTS);
-  var row2 = lf.Row.create(CONTENTS);
-  var row3 = new lf.Row(row.id(), CONTENTS2);
-
-  return db.init().then(function() {
-    var tx = db.createTx(
-        lf.TransactionType.READ_WRITE,
-        new lf.cache.Journal(lf.Global.get(), [table]));
-    var store = /** @type {!lf.backstore.ObjectStore} */ (
-        tx.getTable(table));
-
-    // insert row1
-    store.put([row]);
-    return tx.finished();
-  }).then(function() {
-    var tx = db.createTx(
-        lf.TransactionType.READ_ONLY,
-        new lf.cache.Journal(lf.Global.get(), [table]));
-    var store = /** @type {!lf.backstore.ObjectStore} */ (
-        tx.getTable(table));
-
-    // select row1
-    return store.get([row.id()]);
-  }).then(function(results) {
-    assertEquals(1, results.length);
-    assertEquals(row.id(), results[0].id());
-    assertObjectEquals(CONTENTS, results[0].payload());
-
-    var tx = db.createTx(
-        lf.TransactionType.READ_WRITE,
-        new lf.cache.Journal(lf.Global.get(), [table]));
-    var store = /** @type {!lf.backstore.ObjectStore} */ (
-        tx.getTable(table));
-
-    // insert row2, update row1
-    store.put([row2, row3]);
-    return tx.finished();
-  }).then(function() {
-    return selectAll();
-  }).then(function(results) {
-    assertEquals(2, results.length);
-    assertEquals(row3.id(), results[0].id());
-    assertObjectEquals(CONTENTS2, results[0].payload());
-    assertEquals(row2.id(), results[1].id());
-    assertObjectEquals(CONTENTS, results[1].payload());
-
-    // Update cache, otherwise the bundled operation will fail.
-    cache.set(table.getName(), [row2, row3]);
-
-    var tx = db.createTx(
-        lf.TransactionType.READ_WRITE,
-        new lf.cache.Journal(lf.Global.get(), [table]));
-    var store = /** @type {!lf.backstore.ObjectStore} */ (
-        tx.getTable(table));
-
-    // remove row1
-    store.remove([row.id()]);
-    return tx.finished();
-  }).then(function() {
-    return selectAll();
-  }).then(function(results) {
-    assertEquals(1, results.length);
-    assertEquals(row2.id(), results[0].id());
-    assertObjectEquals(CONTENTS, results[0].payload());
-
-    var tx = db.createTx(
-        lf.TransactionType.READ_WRITE,
-        new lf.cache.Journal(lf.Global.get(), [table]));
-    var store = /** @type {!lf.backstore.ObjectStore} */ (
-        tx.getTable(table));
-
-    // remove all
-    store.remove([]);
-    return tx.finished();
-  }).then(function() {
-    return selectAll();
-  }).then(function(results) {
-    assertEquals(0, results.length);
-  });
-}
-
 function testSCUD() {
   if (goog.userAgent.product.SAFARI) {
     return;
   }
 
   db = new lf.backstore.IndexedDB(lf.Global.get(), schema);
-  runSCUDTest().then(function() {
+  var scudTester = new lf.testing.backstore.ScudTester(db, lf.Global.get());
+
+  scudTester.run().then(function() {
     asyncTestCase.continueTesting();
   });
 
   asyncTestCase.waitForAsync('testSCUD');
 }
+
 
 function testSCUD_Bundled() {
   if (goog.userAgent.product.SAFARI) {
@@ -200,12 +116,15 @@ function testSCUD_Bundled() {
 
   schema.name = schema.name + '_bundled';
   db = new lf.backstore.IndexedDB(lf.Global.get(), schema, true);
-  runSCUDTest().then(function() {
+  var scudTester = new lf.testing.backstore.ScudTester(db, lf.Global.get());
+
+  scudTester.run().then(function() {
     asyncTestCase.continueTesting();
   });
 
   asyncTestCase.waitForAsync('testSCUD_Bundled');
 }
+
 
 function testTwoTableInserts_Bundled() {
   if (goog.userAgent.product.SAFARI) {
