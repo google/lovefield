@@ -77,17 +77,13 @@ function test1LoadingEmptyDB() {
   asyncTestCase.waitForAsync('test1LoadingEmptyDB');
 }
 
-function test2FullTableOps() {
-  if (goog.userAgent.product.SAFARI) {
-    return;
-  }
 
-  var test2 = new lf.testing.perf.DefaultBenchmark();
-  var benchmark = new lf.testing.Benchmark(
-      'Full table SCUD',
-      benchmarkSetUp,
-      goog.bind(test2.close, test2));
-
+/**
+ * @param {!lf.testing.perf.DefaultBenchmark} test2
+ * @param {!lf.testing.Benchmark} benchmark
+ * @return {!IThenable}
+ */
+function fullTableOps(test2, benchmark) {
   benchmark.schedule(
       'Init empty DB',
       goog.bind(test2.init, test2),
@@ -115,23 +111,46 @@ function test2FullTableOps() {
         goog.bind(test2.validateEmpty, test2));
   }
 
-  benchmark.run(REPETITIONS).then(function() {
+  return benchmark.run(REPETITIONS);
+}
+
+function test2FullTableOps() {
+  if (goog.userAgent.product.SAFARI) {
+    return;
+  }
+
+  var test2 = new lf.testing.perf.DefaultBenchmark();
+  var benchmark = new lf.testing.Benchmark(
+      'Full table SCUD',
+      benchmarkSetUp,
+      goog.bind(test2.close, test2));
+
+  fullTableOps(test2, benchmark).then(function() {
     asyncTestCase.continueTesting();
   }, fail);
   asyncTestCase.waitForAsync('test2FullTableOps');
 }
 
-
-function test3PKTableOps() {
-  if (goog.userAgent.product.SAFARI) {
-    return;
-  }
-
-  var test3 = new lf.testing.perf.DefaultBenchmark();
+function test2FullTableOps_Mem() {
+  var test2 = new lf.testing.perf.DefaultBenchmark(/* opt_volatile*/ true);
   var benchmark = new lf.testing.Benchmark(
-      'PK-based SCUD',
-      benchmarkSetUp,
-      goog.bind(test3.close, test3));
+      'Full table SCUD Mem',
+      goog.Promise.resolve,
+      goog.bind(test2.close, test2));
+
+  fullTableOps(test2, benchmark).then(function() {
+    asyncTestCase.continueTesting();
+  }, fail);
+  asyncTestCase.waitForAsync('test2FullTableOps_Mem');
+}
+
+
+/**
+ * @param {!lf.testing.perf.DefaultBenchmark} test3
+ * @param {!lf.testing.Benchmark} benchmark
+ * @return {!IThenable}
+ */
+function pkTableOps(test3, benchmark) {
   var rowCount = 30000;
 
   benchmark.schedule(
@@ -174,34 +193,61 @@ function test3PKTableOps() {
         goog.bind(test3.validateEmpty, test3), true);
   }
 
-  benchmark.run(REPETITIONS).then(function() {
+  return benchmark.run(REPETITIONS);
+}
+
+function test3PKTableOps() {
+  if (goog.userAgent.product.SAFARI) {
+    return;
+  }
+
+  var test3 = new lf.testing.perf.DefaultBenchmark();
+  var benchmark = new lf.testing.Benchmark(
+      'PK-based SCUD',
+      benchmarkSetUp,
+      goog.bind(test3.close, test3));
+
+  pkTableOps(test3, benchmark).then(function() {
     asyncTestCase.continueTesting();
   }, fail);
   asyncTestCase.waitForAsync('test3PKTableOps');
 }
 
+function test3PKTableOps_Mem() {
+  var test3 = new lf.testing.perf.DefaultBenchmark(/* opt_volatile */ true);
+  var benchmark = new lf.testing.Benchmark(
+      'PK-based SCUD Mem',
+      goog.Promise.resolve,
+      goog.bind(test3.close, test3));
 
-function test4Select() {
-  if (goog.userAgent.product.SAFARI) {
-    return;
-  }
+  pkTableOps(test3, benchmark).then(function() {
+    asyncTestCase.continueTesting();
+  }, fail);
+  asyncTestCase.waitForAsync('test3PKTableOps_Mem');
+}
 
-  asyncTestCase.waitForAsync('test4_Select');
 
-  var db = null;
-  var selectBenchmark = null;
-  benchmarkSetUp().then(function() {
-    return hr.db.getInstance();
-  }).then(function(database) {
-    db = database;
-    return loadSampleDatafromJson('test4_mock_data_30k.json');
-  }).then(function(sampleData) {
+/**
+ * @param {string} name
+ * @param {!lf.Database} db
+ * @return {!IThenable}
+ */
+function selectRunner(name, db) {
+  var selectBenchmark;
+  var tearDown;
+
+  var promise = loadSampleDatafromJson('test4_mock_data_30k.json');
+
+  return promise.then(function(sampleData) {
     var dataGenerator = lf.testing.hrSchema.MockDataGenerator.
-        fromExportData(db.getSchema(), sampleData);
+        fromExportData(
+            /** @type {!hr.db.schema.Database} */ (db.getSchema()), sampleData);
     selectBenchmark = new lf.testing.perf.SelectBenchmark(db, dataGenerator);
+    tearDown = goog.bind(selectBenchmark.tearDown, selectBenchmark.tearDown);
+
     return selectBenchmark.insertSampleData();
   }).then(function() {
-    var benchmarkRunner = new lf.testing.Benchmark('SelectBenchmark');
+    var benchmarkRunner = new lf.testing.Benchmark(name);
 
     benchmarkRunner.schedule(
         'SelectSingleRowIndexed',
@@ -251,17 +297,36 @@ function test4Select() {
         selectBenchmark.verifyProjectAggregateNonIndexed.bind(selectBenchmark));
 
     return benchmarkRunner.run(REPETITIONS);
+  }).then(tearDown, tearDown);
+}
+
+function test4Select() {
+  if (goog.userAgent.product.SAFARI) {
+    return;
+  }
+
+  asyncTestCase.waitForAsync('test4_Select');
+
+  benchmarkSetUp().then(function() {
+    return hr.db.getInstance();
+  }).then(function(database) {
+    return selectRunner('SelectBenchmark', database);
   }).then(function() {
-    return selectBenchmark.tearDown().then(function() {
-      asyncTestCase.continueTesting();
-    });
-  }, function(e) {
-    return selectBenchmark.tearDown().then(function() {
-      fail(e);
-    });
+    asyncTestCase.continueTesting();
   });
 }
 
+function test4Select_Mem() {
+  asyncTestCase.waitForAsync('test4_Select_Mem');
+
+  benchmarkSetUp().then(function() {
+    return hr.db.getInstance(undefined, true);
+  }).then(function(database) {
+    return selectRunner('SelectBenchmark Mem', database);
+  }).then(function() {
+    asyncTestCase.continueTesting();
+  });
+}
 
 function test5LoadingPopulatedDB() {
   if (goog.userAgent.product.SAFARI) {

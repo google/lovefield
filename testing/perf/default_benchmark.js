@@ -27,11 +27,13 @@ goog.require('lf.testing.hrSchema.EmployeeDataGenerator');
 
 /**
  * Class for testing perf regression and benchmark.
+ * @param {boolean=} opt_volatile Use memory DB, default to false.
+ *
  * @constructor
  * @struct
  * @final
  */
-lf.testing.perf.DefaultBenchmark = function() {
+lf.testing.perf.DefaultBenchmark = function(opt_volatile) {
   /** @private {!lf.Database} */
   this.db_;
 
@@ -40,15 +42,19 @@ lf.testing.perf.DefaultBenchmark = function() {
 
   /** @private {!Array.<!hr.db.row.Employee>} */
   this.data_;
+
+  /** @private {boolean} */
+  this.volatile_ = opt_volatile || false;
 };
 
 
 /** @return {!IThenable} */
 lf.testing.perf.DefaultBenchmark.prototype.init = function() {
-  return hr.db.getInstance().then(goog.bind(function(db) {
-    this.db_ = db;
-    this.e_ = db.getSchema().getEmployee();
-  }, this));
+  return hr.db.getInstance(undefined, this.volatile_).then(goog.bind(
+      function(db) {
+        this.db_ = db;
+        this.e_ = db.getSchema().getEmployee();
+      }, this));
 };
 
 
