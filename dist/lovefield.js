@@ -223,7 +223,8 @@ goog.define('goog.TRUSTED_SITE', true);
  *
  * This define can be used to trigger alternate implementations compatible with
  * running in EcmaScript Strict mode or warn about unavailable functionality.
- * See https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Functions_and_function_scope/Strict_mode
+ * @see https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Functions_and_function_scope/Strict_mode
+ *
  */
 goog.define('goog.STRICT_MODE_COMPATIBLE', false);
 
@@ -348,6 +349,7 @@ goog.module = function(name) {
  * indicate a hard dependency, instead it is used to indicate
  * an optional dependency or to access the exports of a module
  * that has already been loaded.
+ * @suppress {missingProvide}
  */
 goog.module.get = function(name) {
   return goog.module.getInternal_(name);
@@ -399,6 +401,7 @@ goog.isInModuleLoader_ = function() {
  * TODO(johnlenz): Make the test framework aware of goog.module so
  * that this isn't necessary. Alternately combine this with goog.setTestOnly
  * to minimize boiler plate.
+ * @suppress {missingProvide}
  */
 goog.module.declareTestMethods = function() {
   if (!goog.isInModuleLoader_()) {
@@ -413,6 +416,7 @@ goog.module.declareTestMethods = function() {
  * Provide the module's exports as a globally accessible object under the
  * module's declared name.  This is intended to ease migration to goog.module
  * for files that have existing usages.
+ * @suppress {missingProvide}
  */
 goog.module.declareLegacyNamespace = function() {
   if (!COMPILED && !goog.isInModuleLoader_()) {
@@ -1092,9 +1096,11 @@ if (goog.DEPENDENCIES_ENABLED) {
 
 
   /**
-   * @private @const {function(string):?}
+   * @param {string} source
+   * @return {!Object}
+   * @private
    */
-  goog.loadModuleFromSource_ = function() {
+  goog.loadModuleFromSource_ = function(source) {
     // NOTE: we avoid declaring parameters or local variables here to avoid
     // masking globals or leaking values into the module definition.
     'use strict';
@@ -2350,6 +2356,7 @@ goog.defineClass = function(superClass, def) {
  *     !Object|
  *     {constructor:!Function}|
  *     {constructor:!Function, statics:(Object|function(Function):void)}}
+ * @suppress {missingProvide}
  */
 goog.defineClass.ClassDescriptor;
 
