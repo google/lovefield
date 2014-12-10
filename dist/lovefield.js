@@ -21143,9 +21143,17 @@ lf.index.IndexMetadata.Type = {
  * @param {!lf.index.IndexMetadata} payload
  */
 lf.index.IndexMetadataRow = function(payload) {
-  lf.index.IndexMetadataRow.base(this, 'constructor', 0, payload);
+  lf.index.IndexMetadataRow.base(
+      this, 'constructor', lf.index.IndexMetadataRow.ROW_ID, payload);
 };
 goog.inherits(lf.index.IndexMetadataRow, lf.Row);
+
+
+/**
+ * The rowID to use for all IndexMetadataRow instances.
+ * @const {number}
+ */
+lf.index.IndexMetadataRow.ROW_ID = -1;
 
 /**
  * @license
@@ -25399,6 +25407,14 @@ lf.index.RowId = function(name) {
 };
 
 
+/**
+ * The Row ID to use when serializing this index to disk. Currently the entire
+ * index is serialized to a single lf.Row instance with rowId set to ROW_ID.
+ * @const {number}
+ */
+lf.index.RowId.ROW_ID = 0;
+
+
 /** @override */
 lf.index.RowId.prototype.getName = function() {
   return this.name_;
@@ -25466,7 +25482,7 @@ lf.index.RowId.prototype.containsKey = function(key) {
 
 /** @override */
 lf.index.RowId.prototype.serialize = function() {
-  return [lf.Row.create(this.rows_.getValues())];
+  return [new lf.Row(lf.index.RowId.ROW_ID, this.rows_.getValues())];
 };
 
 

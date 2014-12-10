@@ -79,8 +79,11 @@ function testRemove() {
  */
 function testSerialize() {
   var index = getSampleIndex();
+
   var serialized = index.serialize();
   assertEquals(1, serialized.length);
+  assertEquals(lf.index.RowId.ROW_ID, serialized[0].id());
+
   var deserialized = lf.index.RowId.deserialize('dummyName', serialized);
   checkGetRange(deserialized);
 }

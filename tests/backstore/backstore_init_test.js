@@ -27,6 +27,7 @@ goog.require('lf.backstore.IndexedDB');
 goog.require('lf.backstore.Memory');
 goog.require('lf.backstore.ObjectStore');
 goog.require('lf.index.IndexMetadata');
+goog.require('lf.index.IndexMetadataRow');
 
 
 /** @type {!goog.testing.AsyncTestCase} */
@@ -173,6 +174,8 @@ function checkIndexMetadataExist(objectStore, indexName) {
     var metadataRow = results[0];
     assertEquals(
         expectedIndexType, metadataRow.payload().type);
+    assertEquals(
+        lf.index.IndexMetadataRow.ROW_ID, metadataRow.id());
   });
 }
 
