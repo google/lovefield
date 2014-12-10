@@ -33821,13 +33821,13 @@ lf.proc.PhysicalPlanFactory = function(global) {
 lf.proc.PhysicalPlanFactory.prototype.create = function(
     logicalQueryPlanRoot) {
   if ((logicalQueryPlanRoot instanceof lf.proc.InsertOrReplaceNode) ||
-      (logicalQueryPlanRoot instanceof lf.proc.InsertNode) ||
-      (logicalQueryPlanRoot instanceof lf.proc.UpdateNode)) {
+      (logicalQueryPlanRoot instanceof lf.proc.InsertNode)) {
     return this.createPlan_(logicalQueryPlanRoot);
   }
 
   if ((logicalQueryPlanRoot instanceof lf.proc.DeleteNode) ||
-      (logicalQueryPlanRoot instanceof lf.proc.ProjectNode)) {
+      (logicalQueryPlanRoot instanceof lf.proc.ProjectNode) ||
+      (logicalQueryPlanRoot instanceof lf.proc.UpdateNode)) {
     return this.createPlan_(
         logicalQueryPlanRoot, [new lf.proc.IndexRangeScanPass(this.global_)]);
   }
