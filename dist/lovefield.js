@@ -25054,7 +25054,8 @@ lf.index.BTreeNode_.prototype.getRange = function(opt_keyRange) {
         return [];
       } else if (this.keys_[end] >= opt_keyRange.to) {
         end = this.searchKey_(opt_keyRange.to);
-        if (opt_keyRange.excludeUpper && this.keys_[end] == opt_keyRange.to) {
+        if ((opt_keyRange.excludeUpper && this.keys_[end] == opt_keyRange.to) ||
+            this.keys_[end] > opt_keyRange.to) {
           end--;
         }
       }

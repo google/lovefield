@@ -891,6 +891,10 @@ function testGetRange_Numeric() {
   assertEquals(10, results.length);
   assertEquals(-10, results[0]);
   assertEquals(-1, results[9]);
+
+  tree.remove(7);
+  results = tree.getRange(lf.index.KeyRange.only(7));
+  assertEquals(0, results.length);
 }
 
 function testUniqueConstraint() {
