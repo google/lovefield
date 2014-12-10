@@ -144,7 +144,7 @@ function addSampleData() {
   var tx = backStore.createTx(
       lf.TransactionType.READ_WRITE,
       new lf.cache.Journal(lf.Global.get(), [table]));
-  var store = tx.getTable(table);
+  var store = tx.getTable(table.getName(), table.deserializeRow);
   store.put(rows);
 
   // Updating journals, which will automatically update indices.

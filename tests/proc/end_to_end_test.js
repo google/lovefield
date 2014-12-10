@@ -291,6 +291,6 @@ function selectAll() {
   var tx = backStore.createTx(
       lf.TransactionType.READ_ONLY,
       new lf.cache.Journal(hr.db.getGlobal(), [j]));
-  var table = tx.getTable(j);
+  var table = tx.getTable(j.getName(), j.deserializeRow);
   return table.get([]);
 }

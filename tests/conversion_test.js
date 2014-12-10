@@ -98,7 +98,7 @@ function testConversions() {
         lf.TransactionType.READ_ONLY,
         new lf.cache.Journal(hr.db.getGlobal(), [tableSchema]));
     var store = /** @type {!lf.backstore.ObjectStore} */ (
-        tx.getTable(tableSchema));
+        tx.getTable(tableSchema.getName(), tableSchema.deserializeRow));
     return store.get([]);
   };
 

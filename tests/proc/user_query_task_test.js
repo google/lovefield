@@ -307,5 +307,5 @@ function selectAll() {
   var tx = backStore.createTx(
       lf.TransactionType.READ_ONLY,
       new lf.cache.Journal(hr.db.getGlobal(), [j]));
-  return tx.getTable(j).get([]);
+  return tx.getTable(j.getName(), j.deserializeRow).get([]);
 }

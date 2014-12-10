@@ -20170,8 +20170,10 @@ lf.backstore.Tx = function() {};
 
 
 /**
- * @param {!lf.schema.Table} table The schema of the table. Throws an exception
- *     if such a table does not exist.
+ * @param {string} tableName  The name of the requested table. Throws an
+ *     exception if such a table does not exist.
+ * @param {!function({id: number, value: *}): !lf.Row} deserializeFn The
+ *     function to call for deserializing DB records in this table.
  * @return {!lf.Stream}
  * @throws {lf.Exception}
  */
@@ -20306,7 +20308,8 @@ lf.backstore.BaseTx.prototype.mergeIntoBackstore_ = function() {
        */
       function(tableName) {
         var tableSchema = this.journal_.getScope().get(tableName);
-        var table = this.getTable(tableSchema);
+        var table = this.getTable(
+            tableSchema.getName(), tableSchema.deserializeRow);
         var tableDiff = diff.get(tableName);
         var toDeleteRowIds = tableDiff.getDeleted().getValues().map(
             function(row) {
@@ -21874,15 +21877,16 @@ lf.backstore.IndexedDBTx.prototype.getLogger = function() {
 
 
 /** @override */
-lf.backstore.IndexedDBTx.prototype.getTable = function(table) {
+lf.backstore.IndexedDBTx.prototype.getTable = function(
+    tableName, deserializeFn) {
   return this.bundleMode_ ?
       new lf.backstore.BundledObjectStore(
           this.global_,
-          this.tx_.objectStore(table.getName()),
-          table.deserializeRow) :
+          this.tx_.objectStore(tableName),
+          deserializeFn) :
       new lf.backstore.ObjectStore(
-          this.tx_.objectStore(table.getName()),
-          table.deserializeRow);
+          this.tx_.objectStore(tableName),
+          deserializeFn);
 };
 
 
@@ -22373,8 +22377,8 @@ lf.backstore.MemoryTx.prototype.getLogger = function() {
 
 
 /** @override */
-lf.backstore.MemoryTx.prototype.getTable = function(table) {
-  return this.store_.getTableInternal(table.getName());
+lf.backstore.MemoryTx.prototype.getTable = function(tableName, deserializeFn) {
+  return this.store_.getTableInternal(tableName);
 };
 
 
@@ -23535,7 +23539,7 @@ lf.cache.Prefetcher.prototype.fetch_ = function(table) {
   var journal = new lf.cache.Journal(this.global_, [table]);
   var tx = this.backStore_.createTx(
       lf.TransactionType.READ_ONLY, journal);
-  var store = tx.getTable(table);
+  var store = tx.getTable(table.getName(), table.deserializeRow);
   return store.get([]).then(goog.bind(function(results) {
     this.cache_.set(table.getName(), results);
 

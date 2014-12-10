@@ -340,5 +340,5 @@ function selectAll() {
   var tx = backStore.createTx(
       lf.TransactionType.READ_ONLY,
       new lf.cache.Journal(hr.bdb.getGlobal(), [r]));
-  return tx.getTable(r).get([]);
+  return tx.getTable(r.getName(), r.deserializeRow).get([]);
 }

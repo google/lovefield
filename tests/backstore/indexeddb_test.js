@@ -80,7 +80,7 @@ function tearDown() {
             lf.TransactionType.READ_WRITE,
             new lf.cache.Journal(lf.Global.get(), [table]));
         var store = /** @type {!lf.backstore.ObjectStore} */ (
-            tx.getTable(table));
+            tx.getTable(table.getName(), table.deserializeRow));
 
         store.remove([]);
         return tx.finished();
@@ -152,7 +152,7 @@ function testTwoTableInserts_Bundled() {
         lf.TransactionType.READ_WRITE,
         new lf.cache.Journal(lf.Global.get(), [tableA]));
     var store = /** @type {!lf.backstore.ObjectStore} */ (
-        tx.getTable(tableA));
+        tx.getTable(tableA.getName(), tableA.deserializeRow));
 
     // insert row1 into table A
     store.put([row]);
@@ -162,7 +162,7 @@ function testTwoTableInserts_Bundled() {
         lf.TransactionType.READ_WRITE,
         new lf.cache.Journal(lf.Global.get(), [tableB]));
     var store = /** @type {!lf.backstore.ObjectStore} */ (
-        tx.getTable(tableB));
+        tx.getTable(tableB.getName(), tableB.deserializeRow));
 
     // insert row2 into table B
     store.put([row2]);
@@ -172,7 +172,7 @@ function testTwoTableInserts_Bundled() {
         lf.TransactionType.READ_ONLY,
         new lf.cache.Journal(lf.Global.get(), [tableB]));
     var store = /** @type {!lf.backstore.ObjectStore} */ (
-        tx.getTable(tableB));
+        tx.getTable(tableB.getName(), tableB.deserializeRow));
 
     // get row2 from table B
     return store.get([row2.id()]);
@@ -185,7 +185,7 @@ function testTwoTableInserts_Bundled() {
         lf.TransactionType.READ_WRITE,
         new lf.cache.Journal(lf.Global.get(), [tableA]));
     var store = /** @type {!lf.backstore.ObjectStore} */ (
-        tx.getTable(tableA));
+        tx.getTable(tableA.getName(), tableA.deserializeRow));
 
     // update row1, insert row3 into table A
     store.put([row4, row3]);
@@ -206,7 +206,7 @@ function testTwoTableInserts_Bundled() {
         lf.TransactionType.READ_WRITE,
         new lf.cache.Journal(lf.Global.get(), [tableA]));
     var store = /** @type {!lf.backstore.ObjectStore} */ (
-        tx.getTable(tableA));
+        tx.getTable(tableA.getName(), tableA.deserializeRow));
 
     // remove row1
     store.remove([row3.id()]);
@@ -241,7 +241,7 @@ function testScanRowId() {
         lf.TransactionType.READ_WRITE,
         new lf.cache.Journal(lf.Global.get(), [table]));
     var store = /** @type {!lf.backstore.ObjectStore} */ (
-        tx.getTable(table));
+        tx.getTable(table.getName(), table.deserializeRow));
 
     store.put(rows);
     return tx.finished();
@@ -285,7 +285,7 @@ function testScanRowId_BundledDB() {
         lf.TransactionType.READ_WRITE,
         new lf.cache.Journal(lf.Global.get(), [table]));
     var store = /** @type {!lf.backstore.ObjectStore} */ (
-        tx.getTable(table));
+        tx.getTable(table.getName(), table.deserializeRow));
 
     store.put(rows);
     return tx.finished();
@@ -314,7 +314,7 @@ function selectAll() {
   var tx = db.createTx(
       lf.TransactionType.READ_ONLY,
       new lf.cache.Journal(lf.Global.get(), [tableSchema]));
-  var table = tx.getTable(tableSchema);
+  var table = tx.getTable(tableSchema.getName(), tableSchema.deserializeRow);
   return table.get([]);
 }
 
@@ -342,7 +342,7 @@ function testUpgrade() {
         lf.TransactionType.READ_WRITE,
         new lf.cache.Journal(lf.Global.get(), [table]));
     var store = /** @type {!lf.backstore.ObjectStore} */ (
-        tx.getTable(table));
+        tx.getTable(table.getName(), table.deserializeRow));
     assertNotNull(store);
     asyncTestCase.continueTesting();
   });
