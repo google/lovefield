@@ -20,9 +20,7 @@ goog.require('goog.functions');
 goog.require('goog.testing.AsyncTestCase');
 goog.require('goog.testing.PropertyReplacer');
 goog.require('goog.testing.jsunit');
-goog.require('lf.index.AATree');
 goog.require('lf.index.BTree');
-goog.require('lf.index.Map');
 goog.require('lf.index.MemoryIndexStore');
 goog.require('lf.index.RowId');
 goog.require('lf.testing.MockSchema');
@@ -75,8 +73,8 @@ function testMemoryIndexStore() {
     var tableBRowIdIndex = 'tableB.#';
 
     assertIndicesType([tableARowIdIndex, tableBRowIdIndex], lf.index.RowId);
-    assertIndicesType([tableAPkIndex], lf.index.AATree);
-    assertIndicesType([tableANameIndex], lf.index.Map);
+    assertIndicesType([tableAPkIndex], lf.index.BTree);
+    assertIndicesType([tableANameIndex], lf.index.BTree);
     assertIndicesType([tableBPkIndex, tableBNameIndex], lf.index.BTree);
 
     asyncTestCase.continueTesting();
