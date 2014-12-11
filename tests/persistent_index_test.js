@@ -17,6 +17,7 @@
 goog.setTestOnly();
 goog.require('goog.Promise');
 goog.require('goog.testing.AsyncTestCase');
+goog.require('goog.testing.PropertyReplacer');
 goog.require('goog.testing.jsunit');
 goog.require('hr.db');
 goog.require('lf.Row');
@@ -31,6 +32,10 @@ goog.require('lf.service');
 /** @type {!goog.testing.AsyncTestCase} */
 var asyncTestCase = goog.testing.AsyncTestCase.createAndInstall(
     'PersistentIndexTest');
+
+
+/** @type {!goog.testing.PropertyReplacer} */
+var propertyReplacer;
 
 
 /** @type {!lf.Database} */
@@ -49,8 +54,29 @@ var backStore;
 var sampleRows;
 
 
+function setUpPage() {
+  propertyReplacer = new goog.testing.PropertyReplacer();
+}
+
+
+function instrumentBTree() {
+  var maxCount = 4;
+  propertyReplacer.replace(
+      goog.getObjectByName('lf.index.BTreeNode_'),
+      'MAX_COUNT_', maxCount);
+  propertyReplacer.replace(
+      goog.getObjectByName('lf.index.BTreeNode_'),
+      'MAX_KEY_LEN_', maxCount - 1);
+  propertyReplacer.replace(
+      goog.getObjectByName('lf.index.BTreeNode_'),
+      'MIN_KEY_LEN_', maxCount >> 1);
+}
+
+
 function setUp() {
   asyncTestCase.waitForAsync('setUp');
+
+  instrumentBTree();
 
   hr.db.getInstance(undefined, true).then(
       function(database) {
@@ -61,6 +87,11 @@ function setUp() {
 
         asyncTestCase.continueTesting();
       }, fail);
+}
+
+
+function tearDown() {
+  propertyReplacer.reset();
 }
 
 
@@ -147,6 +178,20 @@ function testPersistedIndices() {
         exec();
   };
 
+
+  /**
+   * Deletes all remaining rows.
+   * @return {!IThenable}
+   */
+  var deleteAllFn = function() {
+    sampleRows.length = 0;
+
+    return db.
+        delete().
+        from(table).
+        exec();
+  };
+
   insertFn().then(
       function() {
         return assertAllIndicesPopulated(sampleRows);
@@ -165,6 +210,12 @@ function testPersistedIndices() {
       }).then(
       function() {
         return deleteFn();
+      }).then(
+      function() {
+        return assertAllIndicesPopulated(sampleRows);
+      }).then(
+      function() {
+        return deleteAllFn();
       }).then(
       function() {
         return assertAllIndicesPopulated(sampleRows);
@@ -250,9 +301,9 @@ function assertAllIndicesPopulated(rows) {
  *     index data).
  */
 function assertIndexContents(indexSchema, serializedRows, dataRows) {
-  // Expecting two serialized rows for each index. The 1st row holds the
-  // index's metadata. The 2nd row holds the actual index contents.
-  assertEquals(2, serializedRows.length);
+  // Expecting at least two serialized rows for each index. The 1st row holds
+  // the index's metadata. Remaining rows hold the actual index contents.
+  assertTrue(serializedRows.length >= 2);
   var indexMetadataRow = serializedRows[0];
 
   assertEquals(

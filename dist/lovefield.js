@@ -20316,6 +20316,86 @@ lf.Row.hexToBin = function(hex) {
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+goog.provide('lf.index.IndexMetadata');
+goog.provide('lf.index.IndexMetadataRow');
+
+goog.require('lf.Row');
+
+
+
+/**
+ * @constructor
+ * @final
+ *
+ * @param {!lf.index.IndexMetadata.Type} type
+ */
+lf.index.IndexMetadata = function(type) {
+  /** @type {!lf.index.IndexMetadata.Type} */
+  this.type = type;
+};
+
+
+/**
+ * The type of the serialized index. Useful for knowing how to deserialize
+ * it.
+ * @enum {string}
+ */
+lf.index.IndexMetadata.Type = {
+  ROW_ID: 'rowid',
+  BTREE: 'btree'
+};
+
+
+
+/**
+ * Metadata about a persisted index. It is stored as the first row in each index
+ * backing store.
+ * @constructor
+ * @final
+ * @extends {lf.Row<!lf.index.IndexMetadata, !lf.index.IndexMetadata>}
+ *
+ * @param {!lf.index.IndexMetadata} payload
+ */
+lf.index.IndexMetadataRow = function(payload) {
+  lf.index.IndexMetadataRow.base(
+      this, 'constructor', lf.index.IndexMetadataRow.ROW_ID, payload);
+};
+goog.inherits(lf.index.IndexMetadataRow, lf.Row);
+
+
+/**
+ * The rowID to use for all IndexMetadataRow instances.
+ * @const {number}
+ */
+lf.index.IndexMetadataRow.ROW_ID = -1;
+
+
+/**
+ * Creates an IndexMetadataRow instance for the given index type.
+ * @param {!lf.index.IndexMetadata.Type} indexType
+ * @return {!lf.index.IndexMetadataRow}
+ */
+lf.index.IndexMetadataRow.forType = function(indexType) {
+  var indexMetadata = new lf.index.IndexMetadata(indexType);
+  return new lf.index.IndexMetadataRow(indexMetadata);
+};
+
+/**
+ * @license
+ * Copyright 2014 Google Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 goog.provide('lf.Transaction');
 goog.provide('lf.TransactionType');
 
@@ -20424,6 +20504,7 @@ goog.require('goog.log');
 goog.require('lf.Row');
 goog.require('lf.TransactionType');
 goog.require('lf.backstore.Tx');
+goog.require('lf.index.IndexMetadataRow');
 
 goog.forwardDeclare('lf.index.Index');
 
@@ -20560,10 +20641,20 @@ lf.backstore.BaseTx.prototype.mergeIndexChanges_ = function() {
        */
       function(index) {
         var indexTable = this.getTable(index.getName(), lf.Row.deserialize);
-        // TODO(dpapad): For the case of BTree each serialized row represents a
-        // leaf node in the tree, therefore need to also remove persisted rows
-        // that have been removed in the latest version of the index.
-        indexTable.put(index.serialize());
+        // Since there is no index diff implemented yet, the entire index needs
+        // to be overwritten on disk. The 1st row holds index metadata and needs
+        // to be preserved. Subsequent rows hold index contents and need to be
+        // overwritten.
+        var metadataRows = null;
+        indexTable.get([lf.index.IndexMetadataRow.ROW_ID]).then(
+            function(rows) {
+              metadataRows = rows;
+              return indexTable.remove([]);
+            }).then(
+            function() {
+              indexTable.put(metadataRows);
+              indexTable.put(index.serialize());
+            }, goog.bind(this.handleError_, this));
       }, this);
 };
 
@@ -21150,75 +21241,6 @@ lf.backstore.BundledObjectStore.prototype.pipe = function(stream) {
   throw new lf.Exception(lf.Exception.Type.SYNTAX,
       'BundledObjectStore should be the last in chain');
 };
-
-/**
- * @license
- * Copyright 2014 Google Inc. All Rights Reserved.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-goog.provide('lf.index.IndexMetadata');
-goog.provide('lf.index.IndexMetadataRow');
-
-goog.require('lf.Row');
-
-
-
-/**
- * @constructor
- * @final
- *
- * @param {!lf.index.IndexMetadata.Type} type
- */
-lf.index.IndexMetadata = function(type) {
-  /** @type {!lf.index.IndexMetadata.Type} */
-  this.type = type;
-};
-
-
-/**
- * The type of the serialized index. Useful for knowing how to deserialize
- * it.
- * @enum {string}
- */
-lf.index.IndexMetadata.Type = {
-  ROW_ID: 'rowid',
-  BTREE: 'btree'
-};
-
-
-
-/**
- * Metadata about a persisted index. It is stored as the first row in each index
- * backing store.
- * @constructor
- * @final
- * @extends {lf.Row<!lf.index.IndexMetadata, !lf.index.IndexMetadata>}
- *
- * @param {!lf.index.IndexMetadata} payload
- */
-lf.index.IndexMetadataRow = function(payload) {
-  lf.index.IndexMetadataRow.base(
-      this, 'constructor', lf.index.IndexMetadataRow.ROW_ID, payload);
-};
-goog.inherits(lf.index.IndexMetadataRow, lf.Row);
-
-
-/**
- * The rowID to use for all IndexMetadataRow instances.
- * @const {number}
- */
-lf.index.IndexMetadataRow.ROW_ID = -1;
 
 /**
  * @license
@@ -21824,7 +21846,7 @@ lf.backstore.ObjectStore.prototype.remove = function(ids) {
         // Remove all
         return this.performWriteOp_(goog.bind(function() {
           return this.store_.clear();
-        }, this));
+        }, this)).then(resolve, reject);
       }
 
       var promises = ids.map(function(id) {
@@ -22156,9 +22178,7 @@ lf.backstore.IndexedDB.prototype.createIndexTable_ = function(
   if (!db.objectStoreNames.contains(indexName)) {
     db.createObjectStore(indexName, {keyPath: 'id'});
     var store = tx.objectStore(indexName);
-    var indexMetadata = new lf.index.IndexMetadata(indexType);
-    var row = new lf.index.IndexMetadataRow(indexMetadata);
-    store.put(row.serialize());
+    store.put(lf.index.IndexMetadataRow.forType(indexType).serialize());
   }
 };
 
@@ -22575,9 +22595,7 @@ lf.backstore.Memory.prototype.createIndexTable_ = function(
     indexName, indexType) {
   var backstoreTable = this.createTable_(indexName);
   if (!goog.isNull(backstoreTable)) {
-    var indexMetadata = new lf.index.IndexMetadata(indexType);
-    var row = new lf.index.IndexMetadataRow(indexMetadata);
-    backstoreTable.put([row]);
+    backstoreTable.put([lf.index.IndexMetadataRow.forType(indexType)]);
   }
 };
 
