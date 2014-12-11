@@ -20117,6 +20117,205 @@ goog.Promise.Resolver_ = function(promise, resolve, reject) {
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+goog.provide('lf.Row');
+
+goog.forwardDeclare('lf.index.Index.Key');
+
+
+
+/**
+ * The base row class for all rows.
+ * All functions in this class must not begin with get* or set* because SPAC
+ * will auto-generate subclasses that have get/set methods for every column.
+ * @template UserType, StoredType
+ * @param {number} id The ID of this instance.
+ * @param {!UserType} payload
+ * @constructor
+ */
+lf.Row = function(id, payload) {
+  /** @private {number} */
+  this.id_ = id;
+
+  /** @private {!UserType} */
+  this.payload_ = payload || this.defaultPayload();
+};
+
+
+/**
+ * The ID to assign to the next row that will be created.
+ * Should be initialized to the appropriate value from the BackStore instance
+ * that is being used.
+ * @private {number}
+ */
+lf.Row.nextId_ = 0;
+
+
+/**
+ * An ID to be used when a row that does not correspond to a DB entry is
+ * created (for example the result of joining two rows).
+ * @const {number}
+ */
+lf.Row.DUMMY_ID = -1;
+
+
+/**
+ * @return {number} The next unique row ID to use for creating a new instance.
+ */
+lf.Row.getNextId = function() {
+  return lf.Row.nextId_++;
+};
+
+
+/**
+ * Sets the global row id. This is supposed to be called by BackStore instances
+ * during initialization only.
+ * @param {number} nextId The next id should be used. This is typically the max
+ *     rowId in database plus 1.
+ */
+lf.Row.setNextId = function(nextId) {
+  lf.Row.nextId_ = nextId;
+};
+
+
+/** @return {number} */
+lf.Row.prototype.id = function() {
+  return this.id_;
+};
+
+
+/**
+ * Sets the ID of this row instance.
+ * @param {number} id
+ */
+lf.Row.prototype.assignRowId = function(id) {
+  this.id_ = id;
+};
+
+
+/** @return {!UserType} */
+lf.Row.prototype.payload = function() {
+  return this.payload_;
+};
+
+
+/**
+ * Creates a default payload.
+ * @return {!UserType}
+ */
+lf.Row.prototype.defaultPayload = function() {
+  return /** @type {!UserType} */ ({});
+};
+
+
+/**
+ * Converts user payload to DB form. Subclasses should override this method. By
+ * default there is no conversion actually happening.
+ * @return {!StoredType}
+ */
+lf.Row.prototype.toDbPayload = function() {
+  return /** @type {!StoredType} */ (this.payload_);
+};
+
+
+/** @return {{id: number, value: *}} */
+lf.Row.prototype.serialize = function() {
+  return {'id': this.id_, 'value': this.toDbPayload()};
+};
+
+
+/**
+ * Returns the key value for a given index.
+ * @param {string} indexName Normalized name of the index.
+ * @return {?lf.index.Index.Key} The key corresponding to the index.
+ */
+lf.Row.prototype.keyOfIndex = function(indexName) {
+  if (indexName.substr(-1) == '#') {
+    return /** @type {!lf.index.Index.Key} */ (this.id_);
+  }
+
+  // Remaining indices keys are implemented by overriding keyOfIndex in
+  // subclasses.
+  return null;
+};
+
+
+/**
+ * Creates a new Row instance from DB data.
+ * @param {{id: number, value: *}} data
+ * @return {!lf.Row}
+ */
+lf.Row.deserialize = function(data) {
+  return new lf.Row(data['id'], data['value']);
+};
+
+
+/**
+ * Creates a new Row instance with an automatically assigned ID.
+ * @param {!Object=} opt_payload
+ * @return {!lf.Row}
+ */
+lf.Row.create = function(opt_payload) {
+  return new lf.Row(lf.Row.getNextId(), opt_payload || {});
+};
+
+
+/**
+ * ArrayBuffer to hex string.
+ * @param {?ArrayBuffer} buffer
+ * @return {string}
+ */
+lf.Row.binToHex = function(buffer) {
+  if (!goog.isDefAndNotNull(buffer)) {
+    return '';
+  }
+
+  var uint8Array = new Uint8Array(buffer);
+  var s = '';
+  for (var i = 0; i < uint8Array.length; ++i) {
+    var chr = uint8Array[i].toString(16);
+    s += chr.length < 2 ? '0' + chr : chr;
+  }
+  return s;
+};
+
+
+/**
+ * Hex string to ArrayBuffer.
+ * @param {string} hex
+ * @return {?ArrayBuffer}
+ */
+lf.Row.hexToBin = function(hex) {
+  if (hex == '') {
+    return null;
+  }
+
+  if (hex.length % 2 != 0) {
+    hex = '0' + hex;
+  }
+  var buffer = new ArrayBuffer(hex.length / 2);
+  var uint8Array = new Uint8Array(buffer);
+  for (var i = 0, j = 0; i < hex.length; i += 2) {
+    uint8Array[j++] = parseInt(hex.substr(i, 2), 16);
+  }
+  return buffer;
+};
+
+/**
+ * @license
+ * Copyright 2014 Google Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 goog.provide('lf.Transaction');
 goog.provide('lf.TransactionType');
 
@@ -20222,8 +20421,11 @@ goog.provide('lf.backstore.BaseTx');
 
 goog.require('goog.Promise');
 goog.require('goog.log');
+goog.require('lf.Row');
 goog.require('lf.TransactionType');
 goog.require('lf.backstore.Tx');
+
+goog.forwardDeclare('lf.index.Index');
 
 
 
@@ -20293,13 +20495,27 @@ lf.backstore.BaseTx.prototype.commit = function() {
 
 
 /**
- * Flushes the changes currently in this transaction's journal to the backing
+ * Flushes all changes currently in this transaction's journal to the backing
  * store.
  * @return {!IThenable} A promise firing after all changes have been
  *     successfully written to the backing store.
  * @private
  */
 lf.backstore.BaseTx.prototype.mergeIntoBackstore_ = function() {
+  this.mergeTableChanges_();
+  this.mergeIndexChanges_();
+
+  // When all DB operations have finished, this.whenFinished will fire.
+  return this.resolver.promise;
+};
+
+
+/**
+ * Flushes the changes currently in this transaction's journal that refer to
+ * user-defined tables to the backing store.
+ * @private
+ */
+lf.backstore.BaseTx.prototype.mergeTableChanges_ = function() {
   var diff = this.journal_.getDiff();
   diff.getKeys().forEach(
       /**
@@ -20327,9 +20543,28 @@ lf.backstore.BaseTx.prototype.mergeIntoBackstore_ = function() {
             }).concat(tableDiff.getAdded().getValues());
         table.put(toPut).thenCatch(this.handleError_, this);
       }, this);
+};
 
-  // When all DB operations have finished, this.whenFinished will fire.
-  return this.resolver.promise;
+
+/**
+ * Flushes the changes currently in this transaction's journal that refer to
+ * persisted indices to the backing store.
+ * @private
+ */
+lf.backstore.BaseTx.prototype.mergeIndexChanges_ = function() {
+  var indices = this.journal_.getIndexDiff();
+  indices.forEach(
+      /**
+       * @param {!lf.index.Index} index
+       * @this {lf.backstore.BaseTx}
+       */
+      function(index) {
+        var indexTable = this.getTable(index.getName(), lf.Row.deserialize);
+        // TODO(dpapad): For the case of BTree each serialized row represents a
+        // leaf node in the tree, therefore need to also remove persisted rows
+        // that have been removed in the latest version of the index.
+        indexTable.put(index.serialize());
+      }, this);
 };
 
 
@@ -20914,205 +21149,6 @@ lf.backstore.BundledObjectStore.prototype.remove = function(ids) {
 lf.backstore.BundledObjectStore.prototype.pipe = function(stream) {
   throw new lf.Exception(lf.Exception.Type.SYNTAX,
       'BundledObjectStore should be the last in chain');
-};
-
-/**
- * @license
- * Copyright 2014 Google Inc. All Rights Reserved.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-goog.provide('lf.Row');
-
-goog.forwardDeclare('lf.index.Index.Key');
-
-
-
-/**
- * The base row class for all rows.
- * All functions in this class must not begin with get* or set* because SPAC
- * will auto-generate subclasses that have get/set methods for every column.
- * @template UserType, StoredType
- * @param {number} id The ID of this instance.
- * @param {!UserType} payload
- * @constructor
- */
-lf.Row = function(id, payload) {
-  /** @private {number} */
-  this.id_ = id;
-
-  /** @private {!UserType} */
-  this.payload_ = payload || this.defaultPayload();
-};
-
-
-/**
- * The ID to assign to the next row that will be created.
- * Should be initialized to the appropriate value from the BackStore instance
- * that is being used.
- * @private {number}
- */
-lf.Row.nextId_ = 0;
-
-
-/**
- * An ID to be used when a row that does not correspond to a DB entry is
- * created (for example the result of joining two rows).
- * @const {number}
- */
-lf.Row.DUMMY_ID = -1;
-
-
-/**
- * @return {number} The next unique row ID to use for creating a new instance.
- */
-lf.Row.getNextId = function() {
-  return lf.Row.nextId_++;
-};
-
-
-/**
- * Sets the global row id. This is supposed to be called by BackStore instances
- * during initialization only.
- * @param {number} nextId The next id should be used. This is typically the max
- *     rowId in database plus 1.
- */
-lf.Row.setNextId = function(nextId) {
-  lf.Row.nextId_ = nextId;
-};
-
-
-/** @return {number} */
-lf.Row.prototype.id = function() {
-  return this.id_;
-};
-
-
-/**
- * Sets the ID of this row instance.
- * @param {number} id
- */
-lf.Row.prototype.assignRowId = function(id) {
-  this.id_ = id;
-};
-
-
-/** @return {!UserType} */
-lf.Row.prototype.payload = function() {
-  return this.payload_;
-};
-
-
-/**
- * Creates a default payload.
- * @return {!UserType}
- */
-lf.Row.prototype.defaultPayload = function() {
-  return /** @type {!UserType} */ ({});
-};
-
-
-/**
- * Converts user payload to DB form. Subclasses should override this method. By
- * default there is no conversion actually happening.
- * @return {!StoredType}
- */
-lf.Row.prototype.toDbPayload = function() {
-  return /** @type {!StoredType} */ (this.payload_);
-};
-
-
-/** @return {{id: number, value: *}} */
-lf.Row.prototype.serialize = function() {
-  return {'id': this.id_, 'value': this.toDbPayload()};
-};
-
-
-/**
- * Returns the key value for a given index.
- * @param {string} indexName Normalized name of the index.
- * @return {?lf.index.Index.Key} The key corresponding to the index.
- */
-lf.Row.prototype.keyOfIndex = function(indexName) {
-  if (indexName.substr(-1) == '#') {
-    return /** @type {!lf.index.Index.Key} */ (this.id_);
-  }
-
-  // Remaining indices keys are implemented by overriding keyOfIndex in
-  // subclasses.
-  return null;
-};
-
-
-/**
- * Creates a new Row instance from DB data.
- * @param {{id: number, value: *}} data
- * @return {!lf.Row}
- */
-lf.Row.deserialize = function(data) {
-  return new lf.Row(data['id'], data['value']);
-};
-
-
-/**
- * Creates a new Row instance with an automatically assigned ID.
- * @param {!Object=} opt_payload
- * @return {!lf.Row}
- */
-lf.Row.create = function(opt_payload) {
-  return new lf.Row(lf.Row.getNextId(), opt_payload || {});
-};
-
-
-/**
- * ArrayBuffer to hex string.
- * @param {?ArrayBuffer} buffer
- * @return {string}
- */
-lf.Row.binToHex = function(buffer) {
-  if (!goog.isDefAndNotNull(buffer)) {
-    return '';
-  }
-
-  var uint8Array = new Uint8Array(buffer);
-  var s = '';
-  for (var i = 0; i < uint8Array.length; ++i) {
-    var chr = uint8Array[i].toString(16);
-    s += chr.length < 2 ? '0' + chr : chr;
-  }
-  return s;
-};
-
-
-/**
- * Hex string to ArrayBuffer.
- * @param {string} hex
- * @return {?ArrayBuffer}
- */
-lf.Row.hexToBin = function(hex) {
-  if (hex == '') {
-    return null;
-  }
-
-  if (hex.length % 2 != 0) {
-    hex = '0' + hex;
-  }
-  var buffer = new ArrayBuffer(hex.length / 2);
-  var uint8Array = new Uint8Array(buffer);
-  for (var i = 0, j = 0; i < hex.length; i += 2) {
-    uint8Array[j++] = parseInt(hex.substr(i, 2), 16);
-  }
-  return buffer;
 };
 
 /**
@@ -22130,10 +22166,17 @@ lf.backstore.IndexedDB.prototype.createIndexTable_ = function(
 /** @override */
 lf.backstore.IndexedDB.prototype.createTx = function(
     type, journal) {
+  // Adding user-defined tables to the underlying tx's scope.
   var scope = journal.getScope().getValues().map(
       function(table) {
         return table.getName();
       });
+
+  // Adding any existing index tables to the underlying tx's scope.
+  journal.getIndexScope().forEach(function(indexTableName) {
+    scope.push(indexTableName);
+  });
+
   var nativeTx = this.db_.transaction(scope,
       type == lf.TransactionType.READ_ONLY ? 'readonly' : 'readwrite');
   return new lf.backstore.IndexedDBTx(
@@ -23158,10 +23201,72 @@ lf.cache.Journal.prototype.getDiff = function() {
 
 
 /**
+ * @return {!Array<!lf.index.Index>} The indices that were modified in this
+ *     within this journal.
+ * TODO(dpapad): Indices currently can't provide a diff, therefore the entire
+ * index is flushed into disk every time, even if only one leaf-node changed.
+ */
+lf.cache.Journal.prototype.getIndexDiff = function() {
+  var tableSchemas = this.tableDiffs_.getKeys().map(
+      function(tableName) {
+        return this.scope_.get(tableName);
+      }, this);
+
+  var indices = [];
+  tableSchemas.forEach(
+      /**
+       * @param {!lf.schema.Table} tableSchema
+       * @this {lf.cache.Journal}
+       */
+      function(tableSchema) {
+        if (tableSchema.persistentIndex()) {
+          var tableIndices = tableSchema.getIndices();
+          tableIndices.forEach(
+              /**
+               * @param {!lf.schema.Index} indexSchema
+               * @this {lf.cache.Journal}
+               */
+              function(indexSchema) {
+                indices.push(this.indexStore_.get(
+                    indexSchema.getNormalizedName()));
+              }, this);
+          indices.push(this.indexStore_.get(tableSchema.getName() + '.#'));
+        }
+      }, this);
+
+  return indices;
+};
+
+
+/**
  * @return {!goog.structs.Map.<string, !lf.schema.Table>}
  */
 lf.cache.Journal.prototype.getScope = function() {
   return this.scope_;
+};
+
+
+/**
+ * @return {!Array<string>} The names of all persisted index tables that can be
+ *     affected by this journal.
+ */
+lf.cache.Journal.prototype.getIndexScope = function() {
+  var indexScope = [];
+
+  var tables = this.scope_.getValues();
+  tables.forEach(function(tableSchema) {
+    if (tableSchema.persistentIndex()) {
+      var tableIndices = tableSchema.getIndices();
+      tableIndices.forEach(function(indexSchema) {
+        indexScope.push(indexSchema.getNormalizedName());
+      });
+
+      // Adding RowId backing store name to the scope.
+      indexScope.push(tableSchema.getName() + '.#');
+    }
+  });
+
+  return indexScope;
 };
 
 
@@ -29804,10 +29909,14 @@ lf.proc.UpdateStep.prototype.exec = function(journal) {
        */
       function(relation) {
         var rows = relation.entries.map(function(entry) {
+          // Need to clone the row here before modifying it, because it is a
+          // direct reference to the cache's contents.
+          var clone = this.table_.deserializeRow(entry.row.serialize());
+
           this.updates_.forEach(function(update) {
-            entry.row.payload()[update.column.getName()] = update.value;
+            clone.payload()[update.column.getName()] = update.value;
           }, this);
-          return entry.row;
+          return clone;
         }, this);
         journal.update(this.table_, rows);
         return goog.Promise.resolve(lf.proc.Relation.createEmpty());

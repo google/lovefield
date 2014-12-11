@@ -138,6 +138,8 @@ table:
     index:
       idx_begin:
         column: [ begin ]
+    pragma:
+      persistentIndex: true
 
   DummyTable:
     column:
