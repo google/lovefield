@@ -907,7 +907,7 @@ function testUniqueConstraint() {
 
 function testRandomNumbers() {
   stub.reset();
-  var ROW_COUNT = 10000;
+  var ROW_COUNT = 5000;
   var set = new goog.structs.Set();
   while (set.getCount() < ROW_COUNT) {
     set.add(Math.floor(Math.random() * ROW_COUNT * 100));
