@@ -116,6 +116,25 @@ function testGetTableIndices_NoIndices() {
 
 
 /**
+ * Tests that when searching for a table's indices, the table name is used as a
+ * prefix only.
+ */
+function testGetTableIndices_Prefix() {
+  var index1 = new lf.index.RowId('MovieActor.#');
+  var index2 = new lf.index.RowId('Actor.#');
+  var index3 = new lf.index.RowId('ActorMovie.#');
+
+  indexStore.set(index1);
+  indexStore.set(index2);
+  indexStore.set(index3);
+
+  var tableIndices = indexStore.getTableIndices('Actor');
+  assertEquals(1, tableIndices.length);
+  assertEquals(index2.getName(), tableIndices[0].getName());
+}
+
+
+/**
  * Tests that set() is correctly replacing any existing indices.
  */
 function testSet() {
