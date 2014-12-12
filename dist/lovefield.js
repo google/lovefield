@@ -237,12 +237,24 @@ goog.define('goog.DISALLOW_TEST_ONLY_CODE', COMPILED && !goog.DEBUG);
 
 
 /**
- * Creates object stubs for a namespace.  The presence of one or more
- * goog.provide() calls indicate that the file defines the given
- * objects/namespaces.  Provided objects must not be null or undefined.
- * Build tools also scan for provide/require statements
+ * Defines a namespace in Closure.
+ *
+ * A namespace may only be defined once in a codebase. It may be defined using
+ * goog.provide() or goog.module().
+ *
+ * The presence of one or more goog.provide() calls in a file indicates
+ * that the file defines the given objects/namespaces.
+ * Provided symbols must not be null or undefined.
+ *
+ * In addition, goog.provide() creates the object stubs for a namespace
+ * (for example, goog.provide("goog.foo.bar") will create the object
+ * goog.foo.bar if it does not already exist).
+ *
+ * Build tools also scan for provide/require/module statements
  * to discern dependencies, build dependency files (see deps.js), etc.
+ *
  * @see goog.require
+ * @see goog.module
  * @param {string} name Namespace provided by this file in the form
  *     "goog.package.part".
  */
@@ -294,22 +306,28 @@ goog.VALID_MODULE_RE_ = /^[a-zA-Z_$][a-zA-Z0-9._$]*$/;
 
 
 /**
- * goog.module serves two purposes:
- * - marks a file that must be loaded as a module
- * - reserves a namespace (it can not also be goog.provided)
- * and has three requirements:
+ * Defines a module in Closure.
+ *
+ * Marks that this file must be loaded as a module and claims the namespace.
+ *
+ * A namespace may only be defined once in a codebase. It may be defined using
+ * goog.provide() or goog.module().
+ *
+ * goog.module() has three requirements:
  * - goog.module may not be used in the same file as goog.provide.
  * - goog.module must be the first statement in the file.
  * - only one goog.module is allowed per file.
- * When a goog.module annotated file is loaded, it is loaded enclosed in
+ *
+ * When a goog.module annotated file is loaded, it is enclosed in
  * a strict function closure. This means that:
- * - any variable declared in a goog.module file are private to the file,
- * not global. Although the compiler is expected to inline the module.
+ * - any variables declared in a goog.module file are private to the file
+ * (not global), though the compiler is expected to inline the module.
  * - The code must obey all the rules of "strict" JavaScript.
  * - the file will be marked as "use strict"
  *
  * NOTE: unlike goog.provide, goog.module does not declare any symbols by
- * itself.
+ * itself. If declared symbols are desired, use
+ * goog.module.declareLegacyNamespace().
  *
  *
  * See the public goog.module proposal: http://goo.gl/Va1hin
@@ -3282,7 +3300,7 @@ goog.addDependency('net/xpc/crosspagechannel.js', ['goog.net.xpc.CrossPageChanne
 goog.addDependency('net/xpc/crosspagechannel_test.js', ['goog.net.xpc.CrossPageChannelTest'], ['goog.Disposable', 'goog.Uri', 'goog.async.Deferred', 'goog.dom', 'goog.log', 'goog.log.Level', 'goog.net.xpc', 'goog.net.xpc.CfgFields', 'goog.net.xpc.CrossPageChannel', 'goog.net.xpc.CrossPageChannelRole', 'goog.net.xpc.TransportTypes', 'goog.object', 'goog.testing.AsyncTestCase', 'goog.testing.PropertyReplacer', 'goog.testing.jsunit'], false);
 goog.addDependency('net/xpc/crosspagechannelrole.js', ['goog.net.xpc.CrossPageChannelRole'], [], false);
 goog.addDependency('net/xpc/directtransport.js', ['goog.net.xpc.DirectTransport'], ['goog.Timer', 'goog.async.Deferred', 'goog.events.EventHandler', 'goog.log', 'goog.net.xpc', 'goog.net.xpc.CfgFields', 'goog.net.xpc.CrossPageChannelRole', 'goog.net.xpc.Transport', 'goog.net.xpc.TransportTypes', 'goog.object'], false);
-goog.addDependency('net/xpc/directtransport_test.js', ['goog.net.xpc.DirectTransportTest'], ['goog.dom', 'goog.log', 'goog.log.Level', 'goog.net.xpc', 'goog.net.xpc.CfgFields', 'goog.net.xpc.CrossPageChannel', 'goog.net.xpc.CrossPageChannelRole', 'goog.net.xpc.TransportTypes', 'goog.testing.AsyncTestCase', 'goog.testing.jsunit'], false);
+goog.addDependency('net/xpc/directtransport_test.js', ['goog.net.xpc.DirectTransportTest'], ['goog.dom', 'goog.labs.userAgent.browser', 'goog.log', 'goog.log.Level', 'goog.net.xpc', 'goog.net.xpc.CfgFields', 'goog.net.xpc.CrossPageChannel', 'goog.net.xpc.CrossPageChannelRole', 'goog.net.xpc.TransportTypes', 'goog.testing.AsyncTestCase', 'goog.testing.jsunit'], false);
 goog.addDependency('net/xpc/frameelementmethodtransport.js', ['goog.net.xpc.FrameElementMethodTransport'], ['goog.log', 'goog.net.xpc', 'goog.net.xpc.CrossPageChannelRole', 'goog.net.xpc.Transport', 'goog.net.xpc.TransportTypes'], false);
 goog.addDependency('net/xpc/iframepollingtransport.js', ['goog.net.xpc.IframePollingTransport', 'goog.net.xpc.IframePollingTransport.Receiver', 'goog.net.xpc.IframePollingTransport.Sender'], ['goog.array', 'goog.dom', 'goog.log', 'goog.log.Level', 'goog.net.xpc', 'goog.net.xpc.CfgFields', 'goog.net.xpc.CrossPageChannelRole', 'goog.net.xpc.Transport', 'goog.net.xpc.TransportTypes', 'goog.userAgent'], false);
 goog.addDependency('net/xpc/iframepollingtransport_test.js', ['goog.net.xpc.IframePollingTransportTest'], ['goog.Timer', 'goog.dom', 'goog.dom.TagName', 'goog.functions', 'goog.net.xpc.CfgFields', 'goog.net.xpc.CrossPageChannel', 'goog.net.xpc.CrossPageChannelRole', 'goog.net.xpc.TransportTypes', 'goog.object', 'goog.testing.MockClock', 'goog.testing.jsunit', 'goog.testing.recordFunction'], false);
@@ -9503,16 +9521,17 @@ goog.require('goog.string.TypedString');
  *
  * Values of this type must be composable, i.e. for any two values
  * {@code style1} and {@code style2} of this type,
- * {@code style1.getSafeStyleString() + style2.getSafeStyleString()} must
- * itself be a value that satisfies the SafeStyle type constraint. This
- * requirement implies that for any value {@code style} of this type,
- * {@code style.getSafeStyleString()} must not end in a "property value" or
- * "property name" context. For example, a value of {@code background:url("}
- * or {@code font-} would not satisfy the SafeStyle contract. This is because
- * concatenating such strings with a second value that itself does not contain
- * unsafe CSS can result in an overall string that does. For example, if
- * {@code javascript:evil())"} is appended to {@code background:url("}, the
- * resulting string may result in the execution of a malicious script.
+ * {@code goog.html.SafeStyle.unwrap(style1) +
+ * goog.html.SafeStyle.unwrap(style2)} must itself be a value that satisfies
+ * the SafeStyle type constraint. This requirement implies that for any value
+ * {@code style} of this type, {@code goog.html.SafeStyle.unwrap(style)} must
+ * not end in a "property value" or "property name" context. For example,
+ * a value of {@code background:url("} or {@code font-} would not satisfy the
+ * SafeStyle contract. This is because concatenating such strings with a
+ * second value that itself does not contain unsafe CSS can result in an
+ * overall string that does. For example, if {@code javascript:evil())"} is
+ * appended to {@code background:url("}, the resulting string may result in
+ * the execution of a malicious script.
  *
  * TODO(mlourenco): Consider whether we should implement UTF-8 interchange
  * validity checks and blacklisting of newlines (including Unicode ones) and
@@ -23599,99 +23618,6 @@ lf.cache.Journal.prototype.checkScope_ = function(tableSchema) {
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-goog.provide('lf.cache.Prefetcher');
-
-goog.require('goog.Promise');
-goog.require('lf.TransactionType');
-goog.require('lf.cache.Journal');
-goog.require('lf.service');
-
-
-
-/**
- * Prefetcher fetches rows from database into cache and build indices.
- * @constructor
- * @struct
- * @final
- *
- * @param {!lf.Global} global
- */
-lf.cache.Prefetcher = function(global) {
-  /** @private {!lf.Global} */
-  this.global_ = global;
-
-  /** @private {!lf.BackStore} */
-  this.backStore_ = global.getService(lf.service.BACK_STORE);
-
-  /** @private {!lf.index.IndexStore} */
-  this.indexStore_ = global.getService(lf.service.INDEX_STORE);
-
-  /** @private {!lf.cache.Cache} */
-  this.cache_ = global.getService(lf.service.CACHE);
-};
-
-
-/**
- * Performs the prefetch.
- * @param {!lf.schema.Database} schema
- * @return {!IThenable}
- */
-lf.cache.Prefetcher.prototype.init = function(schema) {
-  // Sequentially load tables
-  var tables = schema.getTables();
-  var execSequentially = goog.bind(function() {
-    if (tables.length == 0) {
-      return goog.Promise.resolve();
-    }
-
-    var table = tables.shift();
-    return this.fetch_(table).then(execSequentially);
-  }, this);
-
-  return execSequentially();
-};
-
-
-/**
- * Fetches contents of a table into cache, and build the index.
- * @param {!lf.schema.Table} table
- * @return {!IThenable}
- * @private
- */
-lf.cache.Prefetcher.prototype.fetch_ = function(table) {
-  var journal = new lf.cache.Journal(this.global_, [table]);
-  var tx = this.backStore_.createTx(
-      lf.TransactionType.READ_ONLY, journal);
-  var store = tx.getTable(table.getName(), table.deserializeRow);
-  return store.get([]).then(goog.bind(function(results) {
-    this.cache_.set(table.getName(), results);
-
-    var indices = this.indexStore_.getTableIndices(table.getName());
-    results.forEach(function(row) {
-      indices.forEach(function(index, i) {
-        var key = row.keyOfIndex(index.getName());
-        index.set(key, row.id());
-      });
-    });
-  }, this));
-};
-
-/**
- * @license
- * Copyright 2014 Google Inc. All Rights Reserved.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
 goog.provide('lf.index.Index');
 
 goog.forwardDeclare('lf.Row');
@@ -23788,552 +23714,6 @@ lf.index.Index.prototype.containsKey;
  * @return {!Array.<!lf.Row>}
  */
 lf.index.Index.prototype.serialize;
-
-/**
- * @license
- * Copyright 2014 Google Inc. All Rights Reserved.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-goog.provide('lf.index.KeyRange');
-
-goog.forwardDeclare('lf.index.Index.Key');
-
-
-
-/**
- * An object specifying a key range to be used for querying various indices for
- * key ranges.
- * @constructor
- * @struct
- *
- * @param {?lf.index.Index.Key} from The lower bound of this range. Null means
- *     that there is no lower bound.
- * @param {?lf.index.Index.Key} to The upper bound of this range. Null means
- *     that there is no upper bound.
- * @param {boolean} excludeLower Whether the lower bound should be excluded.
- *     Ignored if no lower bound exists.
- * @param {boolean} excludeUpper Whether the upper bound should be excluded.
- *     Ignored if no upper bound exists.
- */
-lf.index.KeyRange = function(from, to, excludeLower, excludeUpper) {
-  /** @type {?lf.index.Index.Key} */
-  this.from = from;
-
-  /** @type {?lf.index.Index.Key} */
-  this.to = to;
-
-  /** @type {boolean} */
-  this.excludeLower = !goog.isNull(this.from) ? excludeLower : false;
-
-  /** @type {boolean} */
-  this.excludeUpper = !goog.isNull(this.to) ? excludeUpper : false;
-};
-
-
-/**
- * @return {!function(!lf.index.Index.Key):boolean} A comparator function that
- *     checks whether a key resides within the speficied key range.
- */
-lf.index.KeyRange.prototype.getComparator = function() {
-  var lowerBoundComparator = goog.isNull(this.from) ?
-      function() { return true; } :
-      this.excludeLower ?
-          goog.bind(function(key) { return key > this.from; }, this) :
-          goog.bind(function(key) { return key >= this.from; }, this);
-
-  var upperBoundComparator = goog.isNull(this.to) ?
-      function() { return true; } :
-      this.excludeUpper ?
-          goog.bind(function(key) { return key < this.to; }, this) :
-          goog.bind(function(key) { return key <= this.to; }, this);
-
-  return goog.bind(
-      function(key) {
-        return lowerBoundComparator(key) && upperBoundComparator(key);
-      }, this);
-};
-
-
-/**
- * A text representation of this key range, useful for tests.
- * Example: [a, b] means from a to b, with both a and be included in the range.
- * Example: (a, b] means from a to b, with a excluded, b included.
- * Example: (a, b) means from a to b, with both a and b excluded.
- * Example: [unbound, b) means anything less than b, with b not included.
- * Example: [a, unbound] means anything greater than a, with a included.
- * @override
- */
-lf.index.KeyRange.prototype.toString = function() {
-  return (this.excludeLower ? '(' : '[') +
-      (goog.isNull(this.from) ? 'unbound' : this.from) + ', ' +
-      (goog.isNull(this.to) ? 'unbound' : this.to) +
-      (this.excludeUpper ? ')' : ']');
-};
-
-
-/**
- * Finds the complement key range. Note that in some cases the complement is
- * composed of two disjoint key ranges. For example complementing [10, 20] would
- * result in [unbound, 10) and (20, unbound].
- * @return {!Array.<!lf.index.KeyRange>} The complement key ranges. An empty
- *     array will be returned in the case where the complement is empty.
- */
-lf.index.KeyRange.prototype.complement = function() {
-  // Complement of lf.index.KeyRange.all() is empty.
-  if (goog.isNull(this.from) && goog.isNull(this.to)) {
-    return [];
-  }
-
-  var keyRangeLow = null;
-  var keyRangeHigh = null;
-
-  if (!goog.isNull(this.from)) {
-    keyRangeLow = new lf.index.KeyRange(
-        null, this.from, false, !this.excludeLower);
-  }
-
-  if (!goog.isNull(this.to)) {
-    keyRangeHigh = new lf.index.KeyRange(
-        this.to, null, !this.excludeUpper, false);
-  }
-
-  return [keyRangeLow, keyRangeHigh].filter(function(keyRange) {
-    return !goog.isNull(keyRange);
-  });
-};
-
-
-/**
- * @param {!lf.index.Index.Key} key The upper bound.
- * @param {boolean=} opt_shouldExclude Whether the upper bound should be
- *     excluded. Defaults to false.
- * @return {!lf.index.KeyRange}
- */
-lf.index.KeyRange.upperBound = function(key, opt_shouldExclude) {
-  return new lf.index.KeyRange(null, key, false, opt_shouldExclude || false);
-};
-
-
-/**
- * @param {!lf.index.Index.Key} key The lower bound.
- * @param {boolean=} opt_shouldExclude Whether the lower bound should be
- *     excluded. Defaults to false.
- * @return {!lf.index.KeyRange}
- */
-lf.index.KeyRange.lowerBound = function(key, opt_shouldExclude) {
-  return new lf.index.KeyRange(key, null, opt_shouldExclude || false, false);
-};
-
-
-/**
- * Creates a range that includes a single key.
- * @param {!lf.index.Index.Key} key
- * @return {!lf.index.KeyRange}
- */
-lf.index.KeyRange.only = function(key) {
-  return new lf.index.KeyRange(key, key, false, false);
-};
-
-
-/**
- * Creates a range that includes all keys.
- * @return {!lf.index.KeyRange}
- */
-lf.index.KeyRange.all = function() {
-  return new lf.index.KeyRange(null, null, false, false);
-};
-
-/**
- * @license
- * Copyright 2014 Google Inc. All Rights Reserved.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-goog.provide('lf.index.AATree');
-
-goog.require('goog.asserts');
-goog.require('lf.Exception');
-goog.require('lf.index.Index');
-goog.require('lf.index.KeyRange');
-
-
-
-/**
- * Nodes for an AA tree. The default constructor constructs a null node. For
- * real nodes, please use lf.index.AANode_.create() to create.
- * @constructor @struct
- * @private
- */
-lf.index.AANode_ = function() {
-  /** @type {number} */
-  this.level = 0;
-
-  /** @type {!lf.index.AANode_} */
-  this.left = this;
-
-  /** @type {!lf.index.AANode_} */
-  this.right = this;
-
-  /** @type {!lf.index.Index.Key} */
-  this.key;
-
-  /** @type {number} */
-  this.value;
-};
-
-
-/**
- * @param {!lf.index.Index.Key} key
- * @param {number} value
- * @param {!lf.index.AANode_} nullNode
- * @return {!lf.index.AANode_}
- */
-lf.index.AANode_.create = function(key, value, nullNode) {
-  var node = new lf.index.AANode_();
-  node.level = 1;
-  node.left = nullNode;
-  node.right = nullNode;
-  node.key = key;
-  node.value = value;
-  return node;
-};
-
-
-
-/**
- * Arne Andersson Tree. The tree does not allow duplicate keys.
- * @see http://user.it.uu.se/~arnea/abs/simp.html
- * @param {string} name Name of this index.
- * @implements {lf.index.Index}
- * @constructor @struct
- */
-lf.index.AATree = function(name) {
-  /** @private {string} */
-  this.name_ = name;
-
-  /** @private {!lf.index.AANode_} */
-  this.nullNode_ = new lf.index.AANode_();
-
-  /** @private {?lf.index.AANode_} */
-  this.deleted_ = null;
-
-  /** @private {!lf.index.AANode_} */
-  this.root_ = this.nullNode_;
-};
-
-
-/** @override */
-lf.index.AATree.prototype.getName = function() {
-  return this.name_;
-};
-
-
-/**
- * @param {!lf.index.AANode_} node
- * @return {!lf.index.AANode_}
- * @private
- */
-lf.index.AATree.prototype.skew_ = function(node) {
-  if (node.level == node.left.level) {
-    // Rotate right
-    var left = node.left;
-    node.left = left.right;
-    left.right = node;
-    return left;
-  }
-  return node;
-};
-
-
-/**
- * @param {!lf.index.AANode_} node
- * @return {!lf.index.AANode_}
- * @private
- */
-lf.index.AATree.prototype.split_ = function(node) {
-  if (node.right.right.level == node.level) {
-    // Rotate left
-    var right = node.right;
-    node.right = right.left;
-    right.left = node;
-    right.level++;
-    return right;
-  }
-  return node;
-};
-
-
-/**
- * @param {!lf.index.AANode_} node Root node of the subtree to search for.
- * @param {!lf.index.Index.Key} key
- * @param {number} value
- * @return {!lf.index.AANode_} New root of the subtree.
- * @private
- */
-lf.index.AATree.prototype.insert_ = function(node, key, value) {
-  if (node == this.nullNode_) {
-    return lf.index.AANode_.create(key, value, this.nullNode_);
-  }
-
-  if (key < node.key) {
-    node.left = this.insert_(node.left, key, value);
-  } else if (key > node.key) {
-    node.right = this.insert_(node.right, key, value);
-  } else {
-    throw new lf.Exception(
-        lf.Exception.Type.CONSTRAINT,
-        'AA index does not support duplicate keys');
-  }
-
-  var ret = this.skew_(node);
-  ret = this.split_(ret);
-  return ret;
-};
-
-
-/** @override */
-lf.index.AATree.prototype.add = function(key, value) {
-  this.root_ = this.insert_(this.root_, key, value);
-};
-
-
-/** @override */
-lf.index.AATree.prototype.set = function(key, value) {
-  var node = this.search_(this.root_, key);
-  if (node == null) {
-    this.add(key, value);
-  } else {
-    node.value = value;
-  }
-};
-
-
-/**
- * @param {!lf.index.AANode_} node Root of the subtree to search for.
- * @param {!lf.index.Index.Key} key
- * @return {!lf.index.AANode_} New root of the subtree.
- * @private
- */
-lf.index.AATree.prototype.delete_ = function(node, key) {
-  if (node == this.nullNode_) {
-    return this.nullNode_;
-  }
-
-  if (key < node.key) {
-    node.left = this.delete_(node.left, key);
-  } else {
-    if (key == node.key) {
-      this.deleted_ = node;
-    }
-    node.right = this.delete_(node.right, key);
-  }
-
-  var ret = node;
-  if (this.deleted_ != null) {
-    this.deleted_.key = node.key;
-    this.deleted_.value = node.value;
-    this.deleted_ = null;
-    ret = ret.right;
-  } else if (ret.left.level < ret.level - 1 ||
-      ret.right.level < ret.level - 1) {
-    --ret.level;
-    if (ret.right.level > ret.level) {
-      ret.right.level = ret.level;
-    }
-    ret = this.skew_(node);
-    ret.right = this.skew_(ret.right);
-    ret.right.right = this.skew_(ret.right.right);
-    ret = this.split_(ret);
-    ret.right = this.split_(ret.right);
-  }
-  return ret;
-};
-
-
-/** @override */
-lf.index.AATree.prototype.remove = function(key, opt_rowId) {
-  this.root_ = this.delete_(this.root_, key);
-};
-
-
-/**
- * @param {!lf.index.AANode_} node
- * @param {!lf.index.Index.Key} key
- * @return {?lf.index.AANode_}
- * @private
- */
-lf.index.AATree.prototype.search_ = function(node, key) {
-  if (node == this.nullNode_) {
-    return null;
-  }
-
-  return (key == node.key) ? node :
-      (key < node.key) ? this.search_(node.left, key) :
-      this.search_(node.right, key);
-};
-
-
-/** @override */
-lf.index.AATree.prototype.get = function(key) {
-  var node = this.search_(this.root_, key);
-  return node == null ? [] : [node.value];
-};
-
-
-/** @override */
-lf.index.AATree.prototype.cost = function(opt_keyRange) {
-  // TODO(dpapad): Calculating the cost should be O(1), instead of searching the
-  // index itself.
-  return this.getRange(opt_keyRange).length;
-};
-
-
-/**
- * @return {!lf.index.AANode_} The left most node
- * @private
- */
-lf.index.AATree.prototype.findMin_ = function() {
-  var node = this.root_;
-  while (node.left != this.nullNode_) {
-    node = node.left;
-  }
-  return node;
-};
-
-
-/**
- * @return {!lf.index.AANode_} The left most node
- * @private
- */
-lf.index.AATree.prototype.findMax_ = function() {
-  var node = this.root_;
-  while (node.right != this.nullNode_) {
-    node = node.right;
-  }
-  return node;
-};
-
-
-/**
- * @param {!lf.index.AANode_} node
- * @param {!lf.index.KeyRange} keyRange
- * @param {!Array.<number>} results
- * @private
- */
-lf.index.AATree.prototype.traverse_ = function(node, keyRange, results) {
-  if (node == this.nullNode_) {
-    return;
-  }
-
-  if (node.key > keyRange.from) {
-    this.traverse_(node.left, keyRange, results);
-  }
-
-  if (keyRange.getComparator()(node.key)) {
-    results.push(node.value);
-  }
-
-  if (node.key < keyRange.to) {
-    this.traverse_(node.right, keyRange, results);
-  }
-};
-
-
-/** @override */
-lf.index.AATree.prototype.getRange = function(opt_keyRange) {
-  var keyRange = null;
-
-  if (!goog.isDefAndNotNull(opt_keyRange)) {
-    keyRange = new lf.index.KeyRange(
-        this.findMin_().key, this.findMax_().key, false, false);
-  } else {
-    keyRange = opt_keyRange;
-    if (goog.isNull(keyRange.from)) {
-      keyRange.from = this.findMin_().key;
-    }
-    if (goog.isNull(keyRange.to)) {
-      keyRange.to = this.findMax_().key;
-    }
-  }
-
-  var results = [];
-  this.traverse_(this.root_, keyRange, results);
-  return results;
-};
-
-
-/** @override */
-lf.index.AATree.prototype.clear = function() {
-  this.root_ = this.nullNode_;
-};
-
-
-/** @override */
-lf.index.AATree.prototype.containsKey = function(key) {
-  return this.search_(this.root_, key) != null;
-};
-
-
-/** @override */
-lf.index.AATree.prototype.serialize = function() {
-  goog.asserts.fail('AATree index serialization is not supported.');
-  return [];
-};
-
-
-/**
- * @param {!lf.index.AANode_} node
- * @param {!Array.<!Array.<string>>} buffer
- * @private
- */
-lf.index.AATree.prototype.dump_ = function(node, buffer) {
-  if (node == this.nullNode_) return;
-
-  var left = node.left == this.nullNode_ ? 0 : node.left.key;
-  var right = node.right == this.nullNode_ ? 0 : node.right.key;
-  var val = '[' + node.key + '-' + left + '/' + right + ']';
-  buffer[node.level - 1].push(val);
-
-  this.dump_(node.left, buffer);
-  this.dump_(node.right, buffer);
-};
-
-
-/** @override */
-lf.index.AATree.prototype.toString = function() {
-  var buffer = [];
-  for (var j = 0; j < this.root_.level; ++j) {
-    buffer.push([]);
-  }
-
-  this.dump_(this.root_, buffer);
-  var result = '';
-  for (var i = buffer.length - 1; i >= 0; --i) {
-    result = result + buffer[i].join('') + '\n';
-  }
-  return result;
-};
 
 /**
  * @license
@@ -25298,221 +24678,153 @@ lf.index.BTreeNode_.deserialize = function(rows, tree) {
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-goog.provide('lf.index');
+goog.provide('lf.index.KeyRange');
 
-
-/**
- * Java's String.hashCode method.
- *
- * for each character c in string
- *   hash = hash * 31 + c
- *
- * @param {string} value
- * @return {number}
- */
-lf.index.hashCode = function(value) {
-  var hash = 0;
-  for (var i = 0; i < value.length; ++i) {
-    hash = ((hash << 5) - hash) + value.charCodeAt(i);
-    hash = hash & hash;  // Convert to 32-bit integer.
-  }
-  return hash;
-};
-
-
-/**
- * Compute hash key for an array.
- * @param {!Array.<Object>} values
- * @return {string}
- */
-lf.index.hashArray = function(values) {
-  var keys = values.map(function(value) {
-    return goog.isDefAndNotNull(value) ?
-        lf.index.hashCode(value.toString()).toString(32) : '';
-  });
-
-  return keys.join('_');
-};
-
-/**
- * @license
- * Copyright 2014 Google Inc. All Rights Reserved.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-goog.provide('lf.index.IndexStore');
+goog.forwardDeclare('lf.index.Index.Key');
 
 
 
 /**
- * IndexStore is the common place for query engine to retrieve indices of a
- * table.
- * @interface
- */
-lf.index.IndexStore = function() {};
-
-
-/**
- * Initialize index store. This will create empty index instances.
- * @param {!lf.schema.Database} schema
- * @return {!IThenable}
- */
-lf.index.IndexStore.prototype.init;
-
-
-/**
- * Returns the index by full qualified name. Returns null if not found.
- * @param {string} name
- * @return {?lf.index.Index}
- */
-lf.index.IndexStore.prototype.get;
-
-
-/**
- * @param {string} tableName
- * @return {!Array.<!lf.index.Index>} The indices for a given table or an
- *     empty array if no indices exist.
- */
-lf.index.IndexStore.prototype.getTableIndices;
-
-/**
- * @license
- * Copyright 2014 Google Inc. All Rights Reserved.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-goog.provide('lf.index.Map');
-
-goog.require('goog.asserts');
-goog.require('goog.structs.Map');
-goog.require('goog.structs.Set');
-goog.require('lf.index.Index');
-goog.require('lf.index.KeyRange');
-
-
-
-/**
- * A key-value map index based on goog.structs.Map.
- * @param {string} name
- * @implements {lf.index.Index}
+ * An object specifying a key range to be used for querying various indices for
+ * key ranges.
  * @constructor
  * @struct
+ *
+ * @param {?lf.index.Index.Key} from The lower bound of this range. Null means
+ *     that there is no lower bound.
+ * @param {?lf.index.Index.Key} to The upper bound of this range. Null means
+ *     that there is no upper bound.
+ * @param {boolean} excludeLower Whether the lower bound should be excluded.
+ *     Ignored if no lower bound exists.
+ * @param {boolean} excludeUpper Whether the upper bound should be excluded.
+ *     Ignored if no upper bound exists.
  */
-lf.index.Map = function(name) {
-  /** @private {string} */
-  this.name_ = name;
+lf.index.KeyRange = function(from, to, excludeLower, excludeUpper) {
+  /** @type {?lf.index.Index.Key} */
+  this.from = from;
 
-  /**
-   * @private {!goog.structs.Map.<!lf.index.Index.Key,
-   *     !goog.structs.Set.<number>>} */
-  this.map_ = new goog.structs.Map();
+  /** @type {?lf.index.Index.Key} */
+  this.to = to;
+
+  /** @type {boolean} */
+  this.excludeLower = !goog.isNull(this.from) ? excludeLower : false;
+
+  /** @type {boolean} */
+  this.excludeUpper = !goog.isNull(this.to) ? excludeUpper : false;
 };
 
 
-/** @override */
-lf.index.Map.prototype.getName = function() {
-  return this.name_;
+/**
+ * @return {!function(!lf.index.Index.Key):boolean} A comparator function that
+ *     checks whether a key resides within the speficied key range.
+ */
+lf.index.KeyRange.prototype.getComparator = function() {
+  var lowerBoundComparator = goog.isNull(this.from) ?
+      function() { return true; } :
+      this.excludeLower ?
+          goog.bind(function(key) { return key > this.from; }, this) :
+          goog.bind(function(key) { return key >= this.from; }, this);
+
+  var upperBoundComparator = goog.isNull(this.to) ?
+      function() { return true; } :
+      this.excludeUpper ?
+          goog.bind(function(key) { return key < this.to; }, this) :
+          goog.bind(function(key) { return key <= this.to; }, this);
+
+  return goog.bind(
+      function(key) {
+        return lowerBoundComparator(key) && upperBoundComparator(key);
+      }, this);
 };
 
 
-/** @override */
-lf.index.Map.prototype.add = function(key, value) {
-  var values = this.map_.get(key, new goog.structs.Set());
-  values.add(value);
-  this.map_.set(key, values);
+/**
+ * A text representation of this key range, useful for tests.
+ * Example: [a, b] means from a to b, with both a and be included in the range.
+ * Example: (a, b] means from a to b, with a excluded, b included.
+ * Example: (a, b) means from a to b, with both a and b excluded.
+ * Example: [unbound, b) means anything less than b, with b not included.
+ * Example: [a, unbound] means anything greater than a, with a included.
+ * @override
+ */
+lf.index.KeyRange.prototype.toString = function() {
+  return (this.excludeLower ? '(' : '[') +
+      (goog.isNull(this.from) ? 'unbound' : this.from) + ', ' +
+      (goog.isNull(this.to) ? 'unbound' : this.to) +
+      (this.excludeUpper ? ')' : ']');
 };
 
 
-/** @override */
-lf.index.Map.prototype.set = function(key, value) {
-  this.map_.set(key, new goog.structs.Set([value]));
-};
-
-
-/** @override */
-lf.index.Map.prototype.remove = function(key, opt_rowId) {
-  var set = this.map_.get(key);
-  if (goog.isDefAndNotNull(set)) {
-    if (goog.isDefAndNotNull(opt_rowId)) {
-      set.remove(opt_rowId);
-    } else {
-      set.clear();
-    }
-    if (set.getCount() == 0) {
-      this.map_.remove(key);
-    }
+/**
+ * Finds the complement key range. Note that in some cases the complement is
+ * composed of two disjoint key ranges. For example complementing [10, 20] would
+ * result in [unbound, 10) and (20, unbound].
+ * @return {!Array.<!lf.index.KeyRange>} The complement key ranges. An empty
+ *     array will be returned in the case where the complement is empty.
+ */
+lf.index.KeyRange.prototype.complement = function() {
+  // Complement of lf.index.KeyRange.all() is empty.
+  if (goog.isNull(this.from) && goog.isNull(this.to)) {
+    return [];
   }
+
+  var keyRangeLow = null;
+  var keyRangeHigh = null;
+
+  if (!goog.isNull(this.from)) {
+    keyRangeLow = new lf.index.KeyRange(
+        null, this.from, false, !this.excludeLower);
+  }
+
+  if (!goog.isNull(this.to)) {
+    keyRangeHigh = new lf.index.KeyRange(
+        this.to, null, !this.excludeUpper, false);
+  }
+
+  return [keyRangeLow, keyRangeHigh].filter(function(keyRange) {
+    return !goog.isNull(keyRange);
+  });
 };
 
 
-/** @override */
-lf.index.Map.prototype.get = function(key) {
-  var set = this.map_.get(key);
-  return goog.isDefAndNotNull(set) ? set.getValues() : [];
+/**
+ * @param {!lf.index.Index.Key} key The upper bound.
+ * @param {boolean=} opt_shouldExclude Whether the upper bound should be
+ *     excluded. Defaults to false.
+ * @return {!lf.index.KeyRange}
+ */
+lf.index.KeyRange.upperBound = function(key, opt_shouldExclude) {
+  return new lf.index.KeyRange(null, key, false, opt_shouldExclude || false);
 };
 
 
-/** @override */
-lf.index.Map.prototype.cost = function(opt_keyRange) {
-  // TODO(dpapad): Calculating the cost should be O(1), instead of searching the
-  // index itself.
-  return this.getRange(opt_keyRange).length;
+/**
+ * @param {!lf.index.Index.Key} key The lower bound.
+ * @param {boolean=} opt_shouldExclude Whether the lower bound should be
+ *     excluded. Defaults to false.
+ * @return {!lf.index.KeyRange}
+ */
+lf.index.KeyRange.lowerBound = function(key, opt_shouldExclude) {
+  return new lf.index.KeyRange(key, null, opt_shouldExclude || false, false);
 };
 
 
-/** @override */
-lf.index.Map.prototype.getRange = function(opt_keyRange) {
-  var results = [];
-
-  var keyRange = opt_keyRange || lf.index.KeyRange.all();
-  var comparator = keyRange.getComparator();
-
-  this.map_.getKeys().sort().forEach(function(key) {
-    if (comparator(key)) {
-      results = results.concat(this.get(key));
-    }
-  }, this);
-
-  return results;
+/**
+ * Creates a range that includes a single key.
+ * @param {!lf.index.Index.Key} key
+ * @return {!lf.index.KeyRange}
+ */
+lf.index.KeyRange.only = function(key) {
+  return new lf.index.KeyRange(key, key, false, false);
 };
 
 
-/** @override */
-lf.index.Map.prototype.clear = function() {
-  return this.map_.clear();
-};
-
-
-/** @override */
-lf.index.Map.prototype.containsKey = function(key) {
-  return this.map_.containsKey(key);
-};
-
-
-/** @override */
-lf.index.Map.prototype.serialize = function() {
-  goog.asserts.fail('Map index serialization is not supported.');
-  return [];
+/**
+ * Creates a range that includes all keys.
+ * @return {!lf.index.KeyRange}
+ */
+lf.index.KeyRange.all = function() {
+  return new lf.index.KeyRange(null, null, false, false);
 };
 
 /**
@@ -25670,6 +24982,835 @@ lf.index.RowId.deserialize = function(name, rows) {
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+goog.provide('lf.cache.Prefetcher');
+
+goog.require('goog.Promise');
+goog.require('goog.asserts');
+goog.require('lf.Row');
+goog.require('lf.TransactionType');
+goog.require('lf.cache.Journal');
+goog.require('lf.index.BTree');
+goog.require('lf.index.IndexMetadata');
+goog.require('lf.index.RowId');
+goog.require('lf.service');
+
+
+
+/**
+ * Prefetcher fetches rows from database into cache and build indices.
+ * @constructor
+ * @struct
+ * @final
+ *
+ * @param {!lf.Global} global
+ */
+lf.cache.Prefetcher = function(global) {
+  /** @private {!lf.Global} */
+  this.global_ = global;
+
+  /** @private {!lf.BackStore} */
+  this.backStore_ = global.getService(lf.service.BACK_STORE);
+
+  /** @private {!lf.index.IndexStore} */
+  this.indexStore_ = global.getService(lf.service.INDEX_STORE);
+
+  /** @private {!lf.cache.Cache} */
+  this.cache_ = global.getService(lf.service.CACHE);
+};
+
+
+/**
+ * Performs the prefetch.
+ * @param {!lf.schema.Database} schema
+ * @return {!IThenable}
+ */
+lf.cache.Prefetcher.prototype.init = function(schema) {
+  // Sequentially load tables
+  var tables = schema.getTables();
+  var execSequentially = goog.bind(function() {
+    if (tables.length == 0) {
+      return goog.Promise.resolve();
+    }
+
+    var table = tables.shift();
+    var whenTableFetched = table.persistentIndex() ?
+        this.fetchTableWithPersistentIndices_(table) :
+        this.fetchTable_(table);
+    return whenTableFetched.then(execSequentially);
+  }, this);
+
+  return execSequentially();
+};
+
+
+/**
+ * Fetches contents of a table into cache, and reconstructs the indices from
+ * scratch.
+ * @param {!lf.schema.Table} table
+ * @return {!IThenable}
+ * @private
+ */
+lf.cache.Prefetcher.prototype.fetchTable_ = function(table) {
+  var journal = new lf.cache.Journal(this.global_, [table]);
+  var tx = this.backStore_.createTx(
+      lf.TransactionType.READ_ONLY, journal);
+  var store = tx.getTable(table.getName(), table.deserializeRow);
+  return store.get([]).then(goog.bind(function(results) {
+    this.cache_.set(table.getName(), results);
+    this.reconstructNonPersitentIndices_(table, results);
+  }, this));
+};
+
+
+/**
+ * Reconstructs a table's indices by populating them from scratch.
+ * @param {!lf.schema.Table} tableSchema The schema of the table.
+ * @param {!Array<!lf.Row>} tableRows The table's contents.
+ * @private
+ */
+lf.cache.Prefetcher.prototype.reconstructNonPersitentIndices_ = function(
+    tableSchema, tableRows) {
+  var indices = this.indexStore_.getTableIndices(tableSchema.getName());
+  tableRows.forEach(function(row) {
+    indices.forEach(function(index) {
+      var key = /** @type {!lf.index.Index.Key} */ (
+          row.keyOfIndex(index.getName()));
+      index.set(key, row.id());
+    });
+  });
+};
+
+
+/**
+ * Fetches contents of a table with persistent indices into cache, and
+ * reconstructs the indices from disk.
+ * @param {!lf.schema.Table} tableSchema
+ * @return {!IThenable}
+ * @private
+ */
+lf.cache.Prefetcher.prototype.fetchTableWithPersistentIndices_ = function(
+    tableSchema) {
+  var journal = new lf.cache.Journal(this.global_, [tableSchema]);
+  var tx = this.backStore_.createTx(
+      lf.TransactionType.READ_ONLY, journal);
+
+  var store = tx.getTable(tableSchema.getName(), tableSchema.deserializeRow);
+  var whenTableContentsFetched = store.get([]).then(goog.bind(
+      function(results) {
+        this.cache_.set(tableSchema.getName(), results);
+      }, this));
+
+  var whenIndicesReconstructed = tableSchema.getIndices().map(
+      /**
+       * @param {!lf.schema.Index} indexSchema
+       * @return {!IThenable}
+       * @this {lf.cache.Prefetcher}
+       */
+      function(indexSchema) {
+        return this.reconstructPersistentIndex_(indexSchema, tx);
+      }, this).concat(this.reconstructPersistentRowIdIndex_(tableSchema, tx));
+
+  return goog.Promise.all(
+      whenIndicesReconstructed.concat(whenTableContentsFetched));
+};
+
+
+/**
+ * Reconstructs a persistent index by deserializing it from disk.
+ * @param {!lf.schema.Index} indexSchema The schema of the index.
+ * @param {!lf.backstore.Tx} tx The current transaction.
+ * @return {!IThenable} A signal that the index was successfully reconstructed
+ *     from disk.
+ * @private
+ */
+lf.cache.Prefetcher.prototype.reconstructPersistentIndex_ = function(
+    indexSchema, tx) {
+  var indexTable = tx.getTable(
+      indexSchema.getNormalizedName(), lf.Row.deserialize);
+  return indexTable.get([]).then(goog.bind(
+      function(serializedRows) {
+        goog.asserts.assert(
+            serializedRows[0].payload()['type'] ==
+                lf.index.IndexMetadata.Type.BTREE);
+
+        // No need to replace the index if there is no index contents.
+        if (serializedRows.length > 1) {
+          var btreeIndex = lf.index.BTree.deserialize(
+              serializedRows.slice(1),
+              indexSchema.getNormalizedName(),
+              indexSchema.isUnique);
+          this.indexStore_.set(btreeIndex);
+        }
+      }, this));
+};
+
+
+/**
+ * Reconstructs a persistent RowId index by deserializing it from disk.
+ * @param {!lf.schema.Table} tableSchema The schema of the table.
+ * @param {!lf.backstore.Tx} tx The current transaction.
+ * @return {!IThenable} A signal that the index was successfully reconstructed
+ *     from disk.
+ * @private
+ */
+lf.cache.Prefetcher.prototype.reconstructPersistentRowIdIndex_ = function(
+    tableSchema, tx) {
+  var indexTable = tx.getTable(
+      tableSchema.getRowIdIndexName(), lf.Row.deserialize);
+  return indexTable.get([]).then(goog.bind(
+      function(serializedRows) {
+        goog.asserts.assert(
+            serializedRows[0].payload()['type'] ==
+                lf.index.IndexMetadata.Type.ROW_ID);
+
+        // No need to replace the index if there is no index contents.
+        if (serializedRows.length > 1) {
+          var rowIdIndex = lf.index.RowId.deserialize(
+              tableSchema.getRowIdIndexName(),
+              serializedRows.slice(1));
+          this.indexStore_.set(rowIdIndex);
+        }
+      }, this));
+};
+
+/**
+ * @license
+ * Copyright 2014 Google Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+goog.provide('lf.index.AATree');
+
+goog.require('goog.asserts');
+goog.require('lf.Exception');
+goog.require('lf.index.Index');
+goog.require('lf.index.KeyRange');
+
+
+
+/**
+ * Nodes for an AA tree. The default constructor constructs a null node. For
+ * real nodes, please use lf.index.AANode_.create() to create.
+ * @constructor @struct
+ * @private
+ */
+lf.index.AANode_ = function() {
+  /** @type {number} */
+  this.level = 0;
+
+  /** @type {!lf.index.AANode_} */
+  this.left = this;
+
+  /** @type {!lf.index.AANode_} */
+  this.right = this;
+
+  /** @type {!lf.index.Index.Key} */
+  this.key;
+
+  /** @type {number} */
+  this.value;
+};
+
+
+/**
+ * @param {!lf.index.Index.Key} key
+ * @param {number} value
+ * @param {!lf.index.AANode_} nullNode
+ * @return {!lf.index.AANode_}
+ */
+lf.index.AANode_.create = function(key, value, nullNode) {
+  var node = new lf.index.AANode_();
+  node.level = 1;
+  node.left = nullNode;
+  node.right = nullNode;
+  node.key = key;
+  node.value = value;
+  return node;
+};
+
+
+
+/**
+ * Arne Andersson Tree. The tree does not allow duplicate keys.
+ * @see http://user.it.uu.se/~arnea/abs/simp.html
+ * @param {string} name Name of this index.
+ * @implements {lf.index.Index}
+ * @constructor @struct
+ */
+lf.index.AATree = function(name) {
+  /** @private {string} */
+  this.name_ = name;
+
+  /** @private {!lf.index.AANode_} */
+  this.nullNode_ = new lf.index.AANode_();
+
+  /** @private {?lf.index.AANode_} */
+  this.deleted_ = null;
+
+  /** @private {!lf.index.AANode_} */
+  this.root_ = this.nullNode_;
+};
+
+
+/** @override */
+lf.index.AATree.prototype.getName = function() {
+  return this.name_;
+};
+
+
+/**
+ * @param {!lf.index.AANode_} node
+ * @return {!lf.index.AANode_}
+ * @private
+ */
+lf.index.AATree.prototype.skew_ = function(node) {
+  if (node.level == node.left.level) {
+    // Rotate right
+    var left = node.left;
+    node.left = left.right;
+    left.right = node;
+    return left;
+  }
+  return node;
+};
+
+
+/**
+ * @param {!lf.index.AANode_} node
+ * @return {!lf.index.AANode_}
+ * @private
+ */
+lf.index.AATree.prototype.split_ = function(node) {
+  if (node.right.right.level == node.level) {
+    // Rotate left
+    var right = node.right;
+    node.right = right.left;
+    right.left = node;
+    right.level++;
+    return right;
+  }
+  return node;
+};
+
+
+/**
+ * @param {!lf.index.AANode_} node Root node of the subtree to search for.
+ * @param {!lf.index.Index.Key} key
+ * @param {number} value
+ * @return {!lf.index.AANode_} New root of the subtree.
+ * @private
+ */
+lf.index.AATree.prototype.insert_ = function(node, key, value) {
+  if (node == this.nullNode_) {
+    return lf.index.AANode_.create(key, value, this.nullNode_);
+  }
+
+  if (key < node.key) {
+    node.left = this.insert_(node.left, key, value);
+  } else if (key > node.key) {
+    node.right = this.insert_(node.right, key, value);
+  } else {
+    throw new lf.Exception(
+        lf.Exception.Type.CONSTRAINT,
+        'AA index does not support duplicate keys');
+  }
+
+  var ret = this.skew_(node);
+  ret = this.split_(ret);
+  return ret;
+};
+
+
+/** @override */
+lf.index.AATree.prototype.add = function(key, value) {
+  this.root_ = this.insert_(this.root_, key, value);
+};
+
+
+/** @override */
+lf.index.AATree.prototype.set = function(key, value) {
+  var node = this.search_(this.root_, key);
+  if (node == null) {
+    this.add(key, value);
+  } else {
+    node.value = value;
+  }
+};
+
+
+/**
+ * @param {!lf.index.AANode_} node Root of the subtree to search for.
+ * @param {!lf.index.Index.Key} key
+ * @return {!lf.index.AANode_} New root of the subtree.
+ * @private
+ */
+lf.index.AATree.prototype.delete_ = function(node, key) {
+  if (node == this.nullNode_) {
+    return this.nullNode_;
+  }
+
+  if (key < node.key) {
+    node.left = this.delete_(node.left, key);
+  } else {
+    if (key == node.key) {
+      this.deleted_ = node;
+    }
+    node.right = this.delete_(node.right, key);
+  }
+
+  var ret = node;
+  if (this.deleted_ != null) {
+    this.deleted_.key = node.key;
+    this.deleted_.value = node.value;
+    this.deleted_ = null;
+    ret = ret.right;
+  } else if (ret.left.level < ret.level - 1 ||
+      ret.right.level < ret.level - 1) {
+    --ret.level;
+    if (ret.right.level > ret.level) {
+      ret.right.level = ret.level;
+    }
+    ret = this.skew_(node);
+    ret.right = this.skew_(ret.right);
+    ret.right.right = this.skew_(ret.right.right);
+    ret = this.split_(ret);
+    ret.right = this.split_(ret.right);
+  }
+  return ret;
+};
+
+
+/** @override */
+lf.index.AATree.prototype.remove = function(key, opt_rowId) {
+  this.root_ = this.delete_(this.root_, key);
+};
+
+
+/**
+ * @param {!lf.index.AANode_} node
+ * @param {!lf.index.Index.Key} key
+ * @return {?lf.index.AANode_}
+ * @private
+ */
+lf.index.AATree.prototype.search_ = function(node, key) {
+  if (node == this.nullNode_) {
+    return null;
+  }
+
+  return (key == node.key) ? node :
+      (key < node.key) ? this.search_(node.left, key) :
+      this.search_(node.right, key);
+};
+
+
+/** @override */
+lf.index.AATree.prototype.get = function(key) {
+  var node = this.search_(this.root_, key);
+  return node == null ? [] : [node.value];
+};
+
+
+/** @override */
+lf.index.AATree.prototype.cost = function(opt_keyRange) {
+  // TODO(dpapad): Calculating the cost should be O(1), instead of searching the
+  // index itself.
+  return this.getRange(opt_keyRange).length;
+};
+
+
+/**
+ * @return {!lf.index.AANode_} The left most node
+ * @private
+ */
+lf.index.AATree.prototype.findMin_ = function() {
+  var node = this.root_;
+  while (node.left != this.nullNode_) {
+    node = node.left;
+  }
+  return node;
+};
+
+
+/**
+ * @return {!lf.index.AANode_} The left most node
+ * @private
+ */
+lf.index.AATree.prototype.findMax_ = function() {
+  var node = this.root_;
+  while (node.right != this.nullNode_) {
+    node = node.right;
+  }
+  return node;
+};
+
+
+/**
+ * @param {!lf.index.AANode_} node
+ * @param {!lf.index.KeyRange} keyRange
+ * @param {!Array.<number>} results
+ * @private
+ */
+lf.index.AATree.prototype.traverse_ = function(node, keyRange, results) {
+  if (node == this.nullNode_) {
+    return;
+  }
+
+  if (node.key > keyRange.from) {
+    this.traverse_(node.left, keyRange, results);
+  }
+
+  if (keyRange.getComparator()(node.key)) {
+    results.push(node.value);
+  }
+
+  if (node.key < keyRange.to) {
+    this.traverse_(node.right, keyRange, results);
+  }
+};
+
+
+/** @override */
+lf.index.AATree.prototype.getRange = function(opt_keyRange) {
+  var keyRange = null;
+
+  if (!goog.isDefAndNotNull(opt_keyRange)) {
+    keyRange = new lf.index.KeyRange(
+        this.findMin_().key, this.findMax_().key, false, false);
+  } else {
+    keyRange = opt_keyRange;
+    if (goog.isNull(keyRange.from)) {
+      keyRange.from = this.findMin_().key;
+    }
+    if (goog.isNull(keyRange.to)) {
+      keyRange.to = this.findMax_().key;
+    }
+  }
+
+  var results = [];
+  this.traverse_(this.root_, keyRange, results);
+  return results;
+};
+
+
+/** @override */
+lf.index.AATree.prototype.clear = function() {
+  this.root_ = this.nullNode_;
+};
+
+
+/** @override */
+lf.index.AATree.prototype.containsKey = function(key) {
+  return this.search_(this.root_, key) != null;
+};
+
+
+/** @override */
+lf.index.AATree.prototype.serialize = function() {
+  goog.asserts.fail('AATree index serialization is not supported.');
+  return [];
+};
+
+
+/**
+ * @param {!lf.index.AANode_} node
+ * @param {!Array.<!Array.<string>>} buffer
+ * @private
+ */
+lf.index.AATree.prototype.dump_ = function(node, buffer) {
+  if (node == this.nullNode_) return;
+
+  var left = node.left == this.nullNode_ ? 0 : node.left.key;
+  var right = node.right == this.nullNode_ ? 0 : node.right.key;
+  var val = '[' + node.key + '-' + left + '/' + right + ']';
+  buffer[node.level - 1].push(val);
+
+  this.dump_(node.left, buffer);
+  this.dump_(node.right, buffer);
+};
+
+
+/** @override */
+lf.index.AATree.prototype.toString = function() {
+  var buffer = [];
+  for (var j = 0; j < this.root_.level; ++j) {
+    buffer.push([]);
+  }
+
+  this.dump_(this.root_, buffer);
+  var result = '';
+  for (var i = buffer.length - 1; i >= 0; --i) {
+    result = result + buffer[i].join('') + '\n';
+  }
+  return result;
+};
+
+/**
+ * @license
+ * Copyright 2014 Google Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+goog.provide('lf.index');
+
+
+/**
+ * Java's String.hashCode method.
+ *
+ * for each character c in string
+ *   hash = hash * 31 + c
+ *
+ * @param {string} value
+ * @return {number}
+ */
+lf.index.hashCode = function(value) {
+  var hash = 0;
+  for (var i = 0; i < value.length; ++i) {
+    hash = ((hash << 5) - hash) + value.charCodeAt(i);
+    hash = hash & hash;  // Convert to 32-bit integer.
+  }
+  return hash;
+};
+
+
+/**
+ * Compute hash key for an array.
+ * @param {!Array.<Object>} values
+ * @return {string}
+ */
+lf.index.hashArray = function(values) {
+  var keys = values.map(function(value) {
+    return goog.isDefAndNotNull(value) ?
+        lf.index.hashCode(value.toString()).toString(32) : '';
+  });
+
+  return keys.join('_');
+};
+
+/**
+ * @license
+ * Copyright 2014 Google Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+goog.provide('lf.index.IndexStore');
+
+
+
+/**
+ * IndexStore is the common place for query engine to retrieve indices of a
+ * table.
+ * @interface
+ */
+lf.index.IndexStore = function() {};
+
+
+/**
+ * Initialize index store. This will create empty index instances.
+ * @param {!lf.schema.Database} schema
+ * @return {!IThenable}
+ */
+lf.index.IndexStore.prototype.init;
+
+
+/**
+ * Returns the index by full qualified name. Returns null if not found.
+ * @param {string} name
+ * @return {?lf.index.Index}
+ */
+lf.index.IndexStore.prototype.get;
+
+
+/**
+ * @param {string} tableName
+ * @return {!Array.<!lf.index.Index>} The indices for a given table or an
+ *     empty array if no indices exist.
+ */
+lf.index.IndexStore.prototype.getTableIndices;
+
+
+/**
+ * Sets the given index. If an index with the same name already exists it will
+ * be overwritten.
+ * @param {!lf.index.Index} index
+ */
+lf.index.IndexStore.prototype.set;
+
+/**
+ * @license
+ * Copyright 2014 Google Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+goog.provide('lf.index.Map');
+
+goog.require('goog.asserts');
+goog.require('goog.structs.Map');
+goog.require('goog.structs.Set');
+goog.require('lf.index.Index');
+goog.require('lf.index.KeyRange');
+
+
+
+/**
+ * A key-value map index based on goog.structs.Map.
+ * @param {string} name
+ * @implements {lf.index.Index}
+ * @constructor
+ * @struct
+ */
+lf.index.Map = function(name) {
+  /** @private {string} */
+  this.name_ = name;
+
+  /**
+   * @private {!goog.structs.Map.<!lf.index.Index.Key,
+   *     !goog.structs.Set.<number>>} */
+  this.map_ = new goog.structs.Map();
+};
+
+
+/** @override */
+lf.index.Map.prototype.getName = function() {
+  return this.name_;
+};
+
+
+/** @override */
+lf.index.Map.prototype.add = function(key, value) {
+  var values = this.map_.get(key, new goog.structs.Set());
+  values.add(value);
+  this.map_.set(key, values);
+};
+
+
+/** @override */
+lf.index.Map.prototype.set = function(key, value) {
+  this.map_.set(key, new goog.structs.Set([value]));
+};
+
+
+/** @override */
+lf.index.Map.prototype.remove = function(key, opt_rowId) {
+  var set = this.map_.get(key);
+  if (goog.isDefAndNotNull(set)) {
+    if (goog.isDefAndNotNull(opt_rowId)) {
+      set.remove(opt_rowId);
+    } else {
+      set.clear();
+    }
+    if (set.getCount() == 0) {
+      this.map_.remove(key);
+    }
+  }
+};
+
+
+/** @override */
+lf.index.Map.prototype.get = function(key) {
+  var set = this.map_.get(key);
+  return goog.isDefAndNotNull(set) ? set.getValues() : [];
+};
+
+
+/** @override */
+lf.index.Map.prototype.cost = function(opt_keyRange) {
+  // TODO(dpapad): Calculating the cost should be O(1), instead of searching the
+  // index itself.
+  return this.getRange(opt_keyRange).length;
+};
+
+
+/** @override */
+lf.index.Map.prototype.getRange = function(opt_keyRange) {
+  var results = [];
+
+  var keyRange = opt_keyRange || lf.index.KeyRange.all();
+  var comparator = keyRange.getComparator();
+
+  this.map_.getKeys().sort().forEach(function(key) {
+    if (comparator(key)) {
+      results = results.concat(this.get(key));
+    }
+  }, this);
+
+  return results;
+};
+
+
+/** @override */
+lf.index.Map.prototype.clear = function() {
+  return this.map_.clear();
+};
+
+
+/** @override */
+lf.index.Map.prototype.containsKey = function(key) {
+  return this.map_.containsKey(key);
+};
+
+
+/** @override */
+lf.index.Map.prototype.serialize = function() {
+  goog.asserts.fail('Map index serialization is not supported.');
+  return [];
+};
+
+/**
+ * @license
+ * Copyright 2014 Google Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 goog.provide('lf.index.MemoryIndexStore');
 
 goog.require('goog.Promise');
@@ -25733,6 +25874,12 @@ lf.index.MemoryIndexStore.createIndex_ = function(indexSchema) {
 /** @override */
 lf.index.MemoryIndexStore.prototype.get = function(name) {
   return this.store_.get(name, null);
+};
+
+
+/** @override */
+lf.index.MemoryIndexStore.prototype.set = function(index) {
+  return this.store_.set(index.getName(), index);
 };
 
 

@@ -113,3 +113,29 @@ function testGetTableIndices_NoIndices() {
     asyncTestCase.continueTesting();
   });
 }
+
+
+/**
+ * Tests that set() is correctly replacing any existing indices.
+ */
+function testSet() {
+  asyncTestCase.waitForAsync('testSet');
+
+  var schema = new lf.testing.MockSchema();
+  var tableSchema = schema.getTables()[0];
+  var indexSchema = tableSchema.getIndices()[0];
+
+  indexStore.init(schema).then(function() {
+    var indexBefore = indexStore.get(indexSchema.getNormalizedName());
+    var newIndex = new lf.index.BTree(
+        indexSchema.getNormalizedName(),
+        indexSchema.isUnique);
+    indexStore.set(newIndex);
+
+    var indexAfter = indexStore.get(indexSchema.getNormalizedName());
+    assertTrue(indexBefore != indexAfter);
+    assertTrue(newIndex == indexAfter);
+
+    asyncTestCase.continueTesting();
+  });
+}
