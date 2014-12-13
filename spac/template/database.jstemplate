@@ -57,5 +57,6 @@ goog.require('lf.service.ServiceId');
   var db = new lf.proc.Database(#namespace.getGlobal());
   return db.init(
       opt_onUpgrade,
-      opt_volatile ? lf.base.BackStoreType.MEMORY : undefined);
+      opt_volatile ? lf.base.BackStoreType.MEMORY : undefined,
+      #bundledmode);
 };

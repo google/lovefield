@@ -53,5 +53,6 @@ lovefield.db.getInstance = function(opt_onUpgrade, opt_volatile) {
   var db = new lf.proc.Database(lovefield.db.getGlobal());
   return db.init(
       opt_onUpgrade,
-      opt_volatile ? lf.base.BackStoreType.MEMORY : undefined);
+      opt_volatile ? lf.base.BackStoreType.MEMORY : undefined,
+      false);
 };

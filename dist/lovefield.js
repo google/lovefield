@@ -3091,7 +3091,7 @@ goog.addDependency('labs/net/webchannel/wirev8_test.js', ['goog.labs.net.webChan
 goog.addDependency('labs/net/webchanneltransport.js', ['goog.net.WebChannelTransport'], [], false);
 goog.addDependency('labs/net/webchanneltransportfactory.js', ['goog.net.createWebChannelTransport'], ['goog.functions', 'goog.labs.net.webChannel.WebChannelBaseTransport'], false);
 goog.addDependency('labs/net/xhr.js', ['goog.labs.net.xhr', 'goog.labs.net.xhr.Error', 'goog.labs.net.xhr.HttpError', 'goog.labs.net.xhr.Options', 'goog.labs.net.xhr.PostData', 'goog.labs.net.xhr.ResponseType', 'goog.labs.net.xhr.TimeoutError'], ['goog.Promise', 'goog.debug.Error', 'goog.json', 'goog.net.HttpStatus', 'goog.net.XmlHttp', 'goog.string', 'goog.uri.utils', 'goog.userAgent'], false);
-goog.addDependency('labs/net/xhr_test.js', ['goog.labs.net.xhrTest'], ['goog.Promise', 'goog.labs.net.xhr', 'goog.net.XmlHttp', 'goog.testing.AsyncTestCase', 'goog.testing.MockClock', 'goog.testing.jsunit', 'goog.userAgent'], false);
+goog.addDependency('labs/net/xhr_test.js', ['goog.labs.net.xhrTest'], ['goog.Promise', 'goog.labs.net.xhr', 'goog.net.XmlHttp', 'goog.testing.MockClock', 'goog.testing.jsunit', 'goog.userAgent'], false);
 goog.addDependency('labs/object/object.js', ['goog.labs.object'], [], false);
 goog.addDependency('labs/object/object_test.js', ['goog.labs.objectTest'], ['goog.labs.object', 'goog.testing.jsunit'], false);
 goog.addDependency('labs/pubsub/broadcastpubsub.js', ['goog.labs.pubsub.BroadcastPubSub'], ['goog.Disposable', 'goog.Timer', 'goog.array', 'goog.async.run', 'goog.events.EventHandler', 'goog.events.EventType', 'goog.json', 'goog.log', 'goog.math', 'goog.pubsub.PubSub', 'goog.storage.Storage', 'goog.storage.mechanism.HTML5LocalStorage', 'goog.string', 'goog.userAgent'], false);
@@ -35111,11 +35111,12 @@ lf.proc.Database = function(global) {
 /**
  * @param {!function(!lf.raw.BackStore):!IThenable=} opt_onUpgrade
  * @param {lf.base.BackStoreType=} opt_backStoreType
+ * @param {boolean=} opt_bundledMode
  * @return {!IThenable.<!lf.proc.Database>}
  * @export
  */
 lf.proc.Database.prototype.init = function(
-    opt_onUpgrade, opt_backStoreType) {
+    opt_onUpgrade, opt_backStoreType, opt_bundledMode) {
   // The SCHEMA might have been removed from this.global_ in the case where
   // lf.proc.Database#close() was called, therefore it needs to be re-added.
   this.global_.registerService(lf.service.SCHEMA, this.schema_);
@@ -35125,7 +35126,7 @@ lf.proc.Database.prototype.init = function(
           this.global_,
           opt_backStoreType || lf.base.BackStoreType.INDEXED_DB,
           opt_onUpgrade,
-          false).then(goog.bind(function() {
+          opt_bundledMode).then(goog.bind(function() {
         this.initialized_ = true;
         return this;
       }, this)));
