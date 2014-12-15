@@ -18,7 +18,6 @@ goog.setTestOnly();
 
 goog.require('goog.testing.AsyncTestCase');
 goog.require('goog.testing.jsunit');
-goog.require('goog.userAgent.product');
 goog.require('lf.Global');
 goog.require('lf.proc.Relation');
 goog.require('lf.query.SelectBuilder');
@@ -55,12 +54,6 @@ function setUp() {
  * notified when the observable results are modified.
  */
 function testAddObserver() {
-  // TODO: Array.observe currently exists only in Chrome. Polyfiling mechanism
-  // not ready yet, see b/18331726. Remove this once fixed.
-  if (!goog.userAgent.product.CHROME) {
-    return;
-  }
-
   asyncTestCase.waitForAsync('testObserve');
 
   var table = schema.getTables()[0];
@@ -79,10 +72,6 @@ function testAddObserver() {
 
 
 function testRemoveObserver() {
-  if (!goog.userAgent.product.CHROME) {
-    return;
-  }
-
   var table = schema.getTables()[0];
   var builder = new lf.query.SelectBuilder(lf.Global.get(), []);
   builder.from(table);
@@ -97,10 +86,6 @@ function testRemoveObserver() {
 
 
 function testGetQueriesForTable() {
-  if (!goog.userAgent.product.CHROME) {
-    return;
-  }
-
   var tables = schema.getTables();
 
   var builder1 = new lf.query.SelectBuilder(lf.Global.get(), []);

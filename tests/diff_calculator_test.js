@@ -18,7 +18,6 @@ goog.setTestOnly();
 
 goog.require('goog.testing.AsyncTestCase');
 goog.require('goog.testing.jsunit');
-goog.require('goog.userAgent.product');
 goog.require('lf.DiffCalculator');
 goog.require('lf.Global');
 goog.require('lf.proc.Relation');
@@ -96,12 +95,6 @@ function testDiffCalculation_ImplicitColumns() {
  *     for debug purposes.
  */
 function checkDiffCalculation(query, description) {
-  // TODO: Array.observe currently exists only in Chrome. Polyfiling mechanism
-  // not ready yet, see b/18331726. Remove this once fixed.
-  if (!goog.userAgent.product.CHROME) {
-    return;
-  }
-
   asyncTestCase.waitForAsync('testDiffCalculation_' + description);
 
   var callback = function(currentVersion, changes) {
@@ -184,15 +177,16 @@ function performMutations(rowsPerVersion, query, callback) {
     var table = schema.getTables()[0];
     var newResults = lf.proc.Relation.fromRows(
         rowsPerVersion[currentVersion], [table.getName()]);
-    diffCalculator.applyDiff(oldResults, newResults);
+    var changeRecords = /** @type {!Array<!lf.DiffCalculator.ChangeRecord>} */ (
+        diffCalculator.applyDiff(
+            oldResults, newResults, true /** recordChanges */));
     oldResults = newResults;
-  };
 
-  Array.observe(observable, function(changes) {
-    callback(currentVersion, changes);
-    if (currentVersion < rowsPerVersion.length) {
+    callback(currentVersion, changeRecords);
+    if (currentVersion < rowsPerVersion.length - 1) {
       updateResultsToNextVersion();
     }
-  });
+  };
+
   updateResultsToNextVersion();
 }

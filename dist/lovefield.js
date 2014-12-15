@@ -34547,6 +34547,10 @@ lf.DiffCalculator.prototype.comparator_ = function(
  * observed array, which triggers observers to be notified.
  * @param {?lf.proc.Relation} oldResults
  * @param {!lf.proc.Relation} newResults
+ * @param {boolean} recordChanges Whether any changes made while applying the
+ *     diff should be recorded and returned.
+ * @return {?Array<!Object>} A list of changes, populated only if recordChanges
+ *     was set to true, otherwise null is returned.
  *
  * TODO(dpapad): Modify this logic to properly detect modifications. Currently
  * a modification is detected as a deletion and an insertion.
@@ -34555,7 +34559,8 @@ lf.DiffCalculator.prototype.comparator_ = function(
  * comparisons are done based on object reference, there might be a cheaper way,
  * such that longestCommonSubsequence is only called once.
  */
-lf.DiffCalculator.prototype.applyDiff = function(oldResults, newResults) {
+lf.DiffCalculator.prototype.applyDiff = function(
+    oldResults, newResults, recordChanges) {
   var oldEntries = goog.isNull(oldResults) ? [] : oldResults.entries;
 
   // Detecting and applying deletions.
@@ -34566,6 +34571,8 @@ lf.DiffCalculator.prototype.applyDiff = function(oldResults, newResults) {
         return oldEntries[indexLeft];
       });
 
+  var changeRecords = recordChanges ? [] : null;
+
   var commonIndex = 0;
   for (var i = 0; i < oldEntries.length; i++) {
     var entry = oldEntries[i];
@@ -34573,7 +34580,12 @@ lf.DiffCalculator.prototype.applyDiff = function(oldResults, newResults) {
       commonIndex++;
       continue;
     } else {
-      this.observableResults_.splice(i, 1);
+      var removed = this.observableResults_.splice(i, 1);
+      if (recordChanges) {
+        var changeRecord = lf.DiffCalculator.createChangeRecord_(
+            i, removed, 0, this.observableResults_);
+        changeRecords.push(changeRecord);
+      }
     }
   }
 
@@ -34593,9 +34605,52 @@ lf.DiffCalculator.prototype.applyDiff = function(oldResults, newResults) {
       continue;
     } else {
       this.observableResults_.splice(i, 0, entry.row.payload());
+      if (recordChanges) {
+        var changeRecord = lf.DiffCalculator.createChangeRecord_(
+            i, [], 1, this.observableResults_);
+        changeRecords.push(changeRecord);
+      }
     }
   }
+
+  return changeRecords;
 };
+
+
+/**
+ * Creates a new change record object.
+ * @param {number} index The index that was affected.
+ * @param {!Array} removed An array holding the elements that were removed.
+ * @param {number} addedCount The number of elements added to the observed
+ *     array.
+ * @param {!Array} object The array that is being observed.
+ * @return {!lf.DiffCalculator.ChangeRecord}
+ * @private
+ */
+lf.DiffCalculator.createChangeRecord_ = function(
+    index, removed, addedCount, object) {
+  return {
+    addedCount: addedCount,
+    index: index,
+    object: object,
+    removed: removed,
+    type: 'splice'
+  };
+};
+
+
+/**
+ * The format of a change record object. This matches the native implementation.
+ *
+ * @typedef {{
+ *   addedCount: number,
+ *   object: !Array,
+ *   index: number,
+ *   removed: !Array,
+ *   type: string
+ * }}
+ */
+lf.DiffCalculator.ChangeRecord;
 
 /**
  * @license
@@ -34766,6 +34821,9 @@ lf.ObserverRegistry.Entry_ = function(query) {
 
   /** @private {!lf.DiffCalculator} */
   this.diffCalculator_ = new lf.DiffCalculator(query, this.observable_);
+
+  /** @private {boolean} */
+  this.hasNativeSupport_ = lf.ObserverRegistry.Entry_.hasNativeSupport_();
 };
 
 
@@ -34778,7 +34836,9 @@ lf.ObserverRegistry.Entry_.prototype.addObserver = function(callback) {
     return;
   }
 
-  Array.observe(this.observable_, callback);
+  if (this.hasNativeSupport_) {
+    Array.observe(this.observable_, callback);
+  }
   this.observers_.add(callback);
 };
 
@@ -34788,7 +34848,9 @@ lf.ObserverRegistry.Entry_.prototype.addObserver = function(callback) {
  * @return {boolean} Whether the callback was found and removed.
  */
 lf.ObserverRegistry.Entry_.prototype.removeObserver = function(callback) {
-  Array.unobserve(this.observable_, callback);
+  if (this.hasNativeSupport_) {
+    Array.unobserve(this.observable_, callback);
+  }
   return this.observers_.remove(callback);
 };
 
@@ -34812,9 +34874,27 @@ lf.ObserverRegistry.Entry_.prototype.hasObservers = function() {
  * @param {!lf.proc.Relation} newResults The new results.
  */
 lf.ObserverRegistry.Entry_.prototype.updateResults = function(newResults) {
-  this.diffCalculator_.applyDiff(this.lastResults_, newResults);
+  var changeRecords = this.diffCalculator_.applyDiff(
+      this.lastResults_, newResults, !this.hasNativeSupport_);
   this.lastResults_ = newResults;
   this.lastResultVersion_ = this.query_.currentVersion;
+
+  if (!this.hasNativeSupport_) {
+    this.observers_.getValues().forEach(
+        function(observerFn) {
+          observerFn(changeRecords);
+        });
+  }
+};
+
+
+/**
+ * @return {boolean} Whether the underlying browser supports Array.observe.
+ * @private
+ */
+lf.ObserverRegistry.Entry_.hasNativeSupport_ = function() {
+  return (typeof Array.observe == 'function' &&
+      typeof Array.unobserve == 'function');
 };
 
 /**
