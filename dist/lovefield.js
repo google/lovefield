@@ -20457,6 +20457,8 @@ lf.Transaction.prototype.exec;
  */
 goog.provide('lf.backstore.Tx');
 
+goog.forwardDeclare('lf.backstore.TableType');
+
 
 
 /**
@@ -20472,6 +20474,8 @@ lf.backstore.Tx = function() {};
  *     exception if such a table does not exist.
  * @param {!function({id: number, value: *}): !lf.Row} deserializeFn The
  *     function to call for deserializing DB records in this table.
+ * @param {!lf.backstore.TableType=} opt_tableType The type of the requested
+ *     table. Defaults to lf.backstore.TableType.DATA if not specified.
  * @return {!lf.Stream}
  * @throws {lf.Exception}
  */
@@ -21014,6 +21018,35 @@ lf.backstore.Page.deserialize = function(data) {
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+goog.provide('lf.backstore.TableType');
+
+
+/**
+ * The possible type of a backing store table. A table can either hold actual
+ * data, or index data (for the case where persisted indices exist).
+ * @enum {number}
+ */
+lf.backstore.TableType = {
+  DATA: 0,
+  INDEX: 1
+};
+
+/**
+ * @license
+ * Copyright 2014 Google Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 goog.provide('lf.backstore.BundledObjectStore');
 
 goog.require('goog.Promise');
@@ -21024,6 +21057,7 @@ goog.require('goog.structs.Map');
 goog.require('lf.Exception');
 goog.require('lf.Stream');
 goog.require('lf.backstore.Page');
+goog.require('lf.backstore.TableType');
 goog.require('lf.service');
 
 goog.forwardDeclare('goog.debug.Logger');
@@ -21037,19 +21071,21 @@ goog.forwardDeclare('goog.debug.Logger');
  * @final
  * @implements {lf.Stream}
  *
- * @param {!lf.Global} global
  * @param {!IDBObjectStore} store
  * @param {!function({id: number, value: *}): !lf.Row} deserializeFn
+ * @param {!function(string, number): !lf.backstore.Page} retrievePageFn The
+ *     function to call for retrieving an existing page.
  */
-lf.backstore.BundledObjectStore = function(global, store, deserializeFn) {
-  /** @private {!lf.cache.Cache} */
-  this.cache_ = global.getService(lf.service.CACHE);
-
+lf.backstore.BundledObjectStore = function(
+    store, deserializeFn, retrievePageFn) {
   /** @private {!IDBObjectStore} */
   this.store_ = store;
 
   /** @private {!function({id: number, value: *}): !lf.Row} */
   this.deserializeFn_ = deserializeFn;
+
+  /** @private {!function(string, number): !lf.backstore.Page} */
+  this.retrievePageFn_ = retrievePageFn;
 
   /** @private {goog.debug.Logger} */
   this.logger_ = goog.log.getLogger('lf.backstore.BundledObjectStore');
@@ -21178,20 +21214,6 @@ lf.backstore.BundledObjectStore.prototype.performWriteOp_ = function(
 };
 
 
-/**
- * @param {number} pageId
- * @return {!lf.backstore.Page}
- * @private
- */
-lf.backstore.BundledObjectStore.prototype.getPageFromCache_ = function(pageId) {
-  var range = lf.backstore.Page.getPageRange(pageId);
-  var rows = this.cache_.getRange(this.store_.name, range[0], range[1]);
-  var page = new lf.backstore.Page(pageId);
-  page.setRows(rows);
-  return page;
-};
-
-
 /** @override */
 lf.backstore.BundledObjectStore.prototype.put = function(rows) {
   if (rows.length == 0) {
@@ -21203,7 +21225,7 @@ lf.backstore.BundledObjectStore.prototype.put = function(rows) {
     var pageId = lf.backstore.Page.toPageId(row.id());
     var page = pages.get(pageId, null);
     if (goog.isNull(page)) {
-      page = this.getPageFromCache_(pageId);
+      page = this.retrievePageFn_(this.store_.name, pageId);
     }
     page.setRows([row]);
     pages.set(pageId, page);
@@ -21235,7 +21257,7 @@ lf.backstore.BundledObjectStore.prototype.remove = function(ids) {
     var pageId = lf.backstore.Page.toPageId(id);
     var page = pages.get(pageId, null);
     if (goog.isNull(page)) {
-      page = this.getPageFromCache_(pageId);
+      page = this.retrievePageFn_(this.store_.name, pageId);
     }
     page.removeRows([id]);
     pages.set(pageId, page);
@@ -21259,6 +21281,59 @@ lf.backstore.BundledObjectStore.prototype.remove = function(ids) {
 lf.backstore.BundledObjectStore.prototype.pipe = function(stream) {
   throw new lf.Exception(lf.Exception.Type.SYNTAX,
       'BundledObjectStore should be the last in chain');
+};
+
+
+/**
+ * Retrieves a page for the case of a DATA table. It uses the Cache to retrieve
+ * the rows that belong to the requested page.
+ * @param {!lf.Global} global
+ * @param {string} tableName
+ * @param {number} pageId
+ * @return {!lf.backstore.Page}
+ * @private
+ */
+lf.backstore.BundledObjectStore.getDataTablePage_ = function(
+    global, tableName, pageId) {
+  var cache = global.getService(lf.service.CACHE);
+  var range = lf.backstore.Page.getPageRange(pageId);
+  var rows = cache.getRange(tableName, range[0], range[1]);
+  var page = new lf.backstore.Page(pageId);
+  page.setRows(rows);
+  return page;
+};
+
+
+/**
+ * Retrieves a page for the case of an INDEX table. It is basically a no-op
+ * since the full index contents are rewritten every time.
+ * @param {string} tableName
+ * @param {number} pageId
+ * @return {!lf.backstore.Page}
+ * @private
+ */
+lf.backstore.BundledObjectStore.getIndexTablePage_ = function(
+    tableName, pageId) {
+  return new lf.backstore.Page(pageId);
+};
+
+
+/**
+ *
+ * @param {!lf.Global} global
+ * @param {!IDBObjectStore} store
+ * @param {!function({id: number, value: *}): !lf.Row} deserializeFn
+ * @param {!lf.backstore.TableType} tableType
+ * @return {!lf.Stream}
+ */
+lf.backstore.BundledObjectStore.forTableType = function(
+    global, store, deserializeFn, tableType) {
+  var retrievePageFn = tableType == lf.backstore.TableType.DATA ?
+      goog.partial(lf.backstore.BundledObjectStore.getDataTablePage_, global) :
+      lf.backstore.BundledObjectStore.getIndexTablePage_;
+
+  return new lf.backstore.BundledObjectStore(
+      store, deserializeFn, retrievePageFn);
 };
 
 /**
@@ -21910,6 +21985,7 @@ goog.require('goog.log');
 goog.require('lf.backstore.BaseTx');
 goog.require('lf.backstore.BundledObjectStore');
 goog.require('lf.backstore.ObjectStore');
+goog.require('lf.backstore.TableType');
 
 
 
@@ -21955,15 +22031,17 @@ lf.backstore.IndexedDBTx.prototype.getLogger = function() {
 
 /** @override */
 lf.backstore.IndexedDBTx.prototype.getTable = function(
-    tableName, deserializeFn) {
-  return this.bundleMode_ ?
-      new lf.backstore.BundledObjectStore(
-          this.global_,
-          this.tx_.objectStore(tableName),
-          deserializeFn) :
-      new lf.backstore.ObjectStore(
-          this.tx_.objectStore(tableName),
-          deserializeFn);
+    tableName, deserializeFn, opt_tableType) {
+  if (this.bundleMode_) {
+    var tableType = goog.isDefAndNotNull(opt_tableType) ?
+        opt_tableType : lf.backstore.TableType.DATA;
+    return lf.backstore.BundledObjectStore.forTableType(
+        this.global_, this.tx_.objectStore(tableName),
+        deserializeFn, tableType);
+  } else {
+    return new lf.backstore.ObjectStore(
+        this.tx_.objectStore(tableName), deserializeFn);
+  }
 };
 
 
@@ -21996,9 +22074,12 @@ goog.require('lf.BackStore');
 goog.require('lf.Exception');
 goog.require('lf.Row');
 goog.require('lf.TransactionType');
+goog.require('lf.backstore.BundledObjectStore');
 goog.require('lf.backstore.IndexedDBRawBackStore');
 goog.require('lf.backstore.IndexedDBTx');
+goog.require('lf.backstore.ObjectStore');
 goog.require('lf.backstore.Page');
+goog.require('lf.backstore.TableType');
 goog.require('lf.index.IndexMetadata');
 goog.require('lf.index.IndexMetadataRow');
 
@@ -22197,7 +22278,17 @@ lf.backstore.IndexedDB.prototype.createIndexTable_ = function(
   if (!db.objectStoreNames.contains(indexName)) {
     db.createObjectStore(indexName, {keyPath: 'id'});
     var store = tx.objectStore(indexName);
-    store.put(lf.index.IndexMetadataRow.forType(indexType).serialize());
+
+    // Need to take into account whether bundleMode_ is enabled when
+    // initializing the index metadata row, therefore wrapping the native
+    // IDBObjectStore with ObjectStore/BundledObjectStore, since those classes
+    // already handle serializing the row appropriately.
+    var objectStore = this.bundleMode_ ?
+        lf.backstore.BundledObjectStore.forTableType(
+            this.global_, store, lf.Row.deserialize,
+            lf.backstore.TableType.INDEX) :
+        new lf.backstore.ObjectStore(store, lf.Row.deserialize);
+    objectStore.put([lf.index.IndexMetadataRow.forType(indexType)]);
   }
 };
 
@@ -22459,7 +22550,8 @@ lf.backstore.MemoryTx.prototype.getLogger = function() {
 
 
 /** @override */
-lf.backstore.MemoryTx.prototype.getTable = function(tableName, deserializeFn) {
+lf.backstore.MemoryTx.prototype.getTable = function(
+    tableName, deserializeFn, tableType) {
   return this.store_.getTableInternal(tableName);
 };
 
@@ -24988,6 +25080,7 @@ goog.require('goog.Promise');
 goog.require('goog.asserts');
 goog.require('lf.Row');
 goog.require('lf.TransactionType');
+goog.require('lf.backstore.TableType');
 goog.require('lf.cache.Journal');
 goog.require('lf.index.BTree');
 goog.require('lf.index.IndexMetadata');
@@ -25126,7 +25219,8 @@ lf.cache.Prefetcher.prototype.fetchTableWithPersistentIndices_ = function(
 lf.cache.Prefetcher.prototype.reconstructPersistentIndex_ = function(
     indexSchema, tx) {
   var indexTable = tx.getTable(
-      indexSchema.getNormalizedName(), lf.Row.deserialize);
+      indexSchema.getNormalizedName(), lf.Row.deserialize,
+      lf.backstore.TableType.INDEX);
   return indexTable.get([]).then(goog.bind(
       function(serializedRows) {
         goog.asserts.assert(
@@ -25156,7 +25250,8 @@ lf.cache.Prefetcher.prototype.reconstructPersistentIndex_ = function(
 lf.cache.Prefetcher.prototype.reconstructPersistentRowIdIndex_ = function(
     tableSchema, tx) {
   var indexTable = tx.getTable(
-      tableSchema.getRowIdIndexName(), lf.Row.deserialize);
+      tableSchema.getRowIdIndexName(), lf.Row.deserialize,
+      lf.backstore.TableType.INDEX);
   return indexTable.get([]).then(goog.bind(
       function(serializedRows) {
         goog.asserts.assert(

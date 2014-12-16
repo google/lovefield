@@ -21,13 +21,18 @@ goog.require('goog.testing.AsyncTestCase');
 goog.require('goog.testing.PropertyReplacer');
 goog.require('goog.testing.jsunit');
 goog.require('goog.userAgent.product');
+goog.require('hr.bdb');
 goog.require('hr.db');
 goog.require('lf.Row');
+goog.require('lf.backstore.BundledObjectStore');
 goog.require('lf.backstore.IndexedDB');
 goog.require('lf.backstore.Memory');
 goog.require('lf.backstore.ObjectStore');
+goog.require('lf.backstore.TableType');
+goog.require('lf.cache.DefaultCache');
 goog.require('lf.index.IndexMetadata');
 goog.require('lf.index.IndexMetadataRow');
+goog.require('lf.service');
 
 
 /** @type {!goog.testing.AsyncTestCase} */
@@ -49,39 +54,56 @@ function tearDown() {
 
 
 /**
+ * Randomizes the schema name such that a new DB is created for every test run.
+ * @param {!lf.schema.Database} schema
  * @return {!lf.schema.Database} A schema to be used for testing.
  */
-function getSampleSchema() {
-  var schema = hr.db.getSchema();
+function randomizeSchemaName(schema) {
   propertyReplacer.replace(schema, 'getName', function() {
     return 'db_' + goog.string.getRandomString();
   });
-
-  // Modifying schema such that the Job and Employee tables have persisted
-  // indices enabled.
-  var job = schema.getJob();
-  propertyReplacer.replace(job, 'persistentIndex', goog.functions.TRUE);
-  var employee = schema.getEmployee();
-  propertyReplacer.replace(employee, 'persistentIndex', goog.functions.TRUE);
 
   return schema;
 }
 
 
-function testInit_IndexedDB() {
+function testInit_IndexedDB_NonBundled() {
+  var schema = randomizeSchemaName(hr.db.getSchema());
+  var global = hr.db.getGlobal();
+  checkInit_IndexedDB(schema, global, false);
+}
+
+
+function testInit_IndexedDB_Bundled() {
+  var schema = randomizeSchemaName(hr.bdb.getSchema());
+  var global = hr.bdb.getGlobal();
+  var cache = new lf.cache.DefaultCache();
+  global.registerService(lf.service.CACHE, cache);
+
+  checkInit_IndexedDB(schema, global, true);
+}
+
+
+/**
+ * Initializes a DB with the given schema and performs assertions on the tables
+ * that were created.
+ *
+ * @param {!lf.schema.Database} schema
+ * @param {!lf.Global} global
+ * @param {boolean} bundledMode Whether to initialize the DB in BUNDLED mode.
+ */
+function checkInit_IndexedDB(schema, global, bundledMode)  {
   if (goog.userAgent.product.SAFARI) {
     return;
   }
 
-  asyncTestCase.waitForAsync('testInit_IndexedDB');
+  var description = 'testInit_IndexedDB_' +
+      bundledMode ? 'Bundled' : 'NonBundled';
+  asyncTestCase.waitForAsync(description);
 
-  var schema = getSampleSchema();
-  assertTrue(schema.getJob().persistentIndex());
-  assertTrue(schema.getEmployee().persistentIndex());
-  var global = hr.db.getGlobal();
+  assertTrue(schema.getHoliday().persistentIndex());
 
-  var indexedDb = new lf.backstore.IndexedDB(
-      global, schema, false /* bundledMode */);
+  var indexedDb = new lf.backstore.IndexedDB(global, schema, bundledMode);
   indexedDb.init().then(
       /** @suppress {accessControls} */
       function() {
@@ -90,7 +112,8 @@ function testInit_IndexedDB() {
         assertUserTables(schema, createdTableNames);
         assertIndexTables(schema, createdTableNames);
 
-        return checkAllIndexMetadataExist_IndexedDb(indexedDb.db_);
+        return checkAllIndexMetadataExist_IndexedDb(
+            indexedDb.db_, schema, global, bundledMode);
       }).then(
       function() {
         asyncTestCase.continueTesting();
@@ -101,9 +124,8 @@ function testInit_IndexedDB() {
 function testInit_Memory() {
   asyncTestCase.waitForAsync('testInit_Memory');
 
-  var schema = getSampleSchema();
-  assertTrue(schema.getJob().persistentIndex());
-  assertTrue(schema.getEmployee().persistentIndex());
+  var schema = randomizeSchemaName(hr.db.getSchema());
+  assertTrue(schema.getHoliday().persistentIndex());
 
   var memoryDb = new lf.backstore.Memory(schema);
   memoryDb.init().then(
@@ -114,7 +136,7 @@ function testInit_Memory() {
         assertUserTables(schema, createdTableNames);
         assertIndexTables(schema, createdTableNames);
 
-        return checkAllIndexMetadataExist_MemoryDb(memoryDb);
+        return checkAllIndexMetadataExist_MemoryDb(memoryDb, schema);
       }).then(
       function() {
         asyncTestCase.continueTesting();
@@ -184,15 +206,26 @@ function checkIndexMetadataExist(objectStore, indexName) {
  * Checks that index metadata have been persisted for all given indices, for the
  * case if an IndexedDB backing store.
  * @param {!IDBDatabase} db
+ * @param {!lf.schema.Database} schema
+ * @param {!lf.Global} global
+ * @param {boolean} bundledMode
  * @return {!IThenable}
  */
-function checkAllIndexMetadataExist_IndexedDb(db) {
-  var indexNames = getPersistedIndices(hr.db.getSchema());
+function checkAllIndexMetadataExist_IndexedDb(
+    db, schema, global, bundledMode) {
+  var indexNames = getPersistedIndices(schema);
+
+  var getObjectStore = function(nativeObjectStore) {
+    return bundledMode ?
+        lf.backstore.BundledObjectStore.forTableType(
+            global, nativeObjectStore, lf.Row.deserialize,
+            lf.backstore.TableType.INDEX) :
+        new lf.backstore.ObjectStore(nativeObjectStore, lf.Row.deserialize);
+  };
 
   var tx = db.transaction(indexNames, 'readonly');
   var promises = indexNames.map(function(indexName) {
-    var objectStore = new lf.backstore.ObjectStore(
-        tx.objectStore(indexName), lf.Row.deserialize);
+    var objectStore = getObjectStore(tx.objectStore(indexName));
     return checkIndexMetadataExist(objectStore, indexName);
   });
 
@@ -204,10 +237,11 @@ function checkAllIndexMetadataExist_IndexedDb(db) {
  * Checks that index metadata have been persisted for all given indices, for the
  * case if an MemoryDb backing store.
  * @param {!lf.backstore.Memory} db
+ * @param {!lf.schema.Database} schema
  * @return {!IThenable}
  */
-function checkAllIndexMetadataExist_MemoryDb(db) {
-  var indexNames = getPersistedIndices(hr.db.getSchema());
+function checkAllIndexMetadataExist_MemoryDb(db, schema) {
+  var indexNames = getPersistedIndices(schema);
 
   var promises = indexNames.map(function(indexName) {
     var objectStore = db.getTableInternal(indexName);
