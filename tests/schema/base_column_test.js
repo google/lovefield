@@ -16,22 +16,15 @@
  */
 goog.setTestOnly();
 goog.require('goog.testing.jsunit');
+goog.require('hr.db');
 goog.require('lf.testing.MockSchema');
-
-
-/** @type {!lf.schema.Database} */
-var schema;
-
-
-function setUpPage() {
-  schema = new lf.testing.MockSchema();
-}
 
 
 /**
  * Tests the case where indices exist for a given column.
  */
 function testGetIndices() {
+  var schema = new lf.testing.MockSchema();
   var table = schema.getTables()[0];
 
   var idIndices = table.id.getIndices();
@@ -48,8 +41,23 @@ function testGetIndices() {
  * Tests the case where no indices exist for a given column.
  */
 function testGetIndices_NoIndicesExist() {
+  var schema = new lf.testing.MockSchema();
   var tableWithNoIndices = schema.getTables()[2];
   assertEquals(0, tableWithNoIndices.id.getIndices().length);
   assertEquals(0, tableWithNoIndices.name.getIndices().length);
 }
 
+
+/**
+ * Tests getNormalizedName for the case where an alias for the parent table has
+ * been specified.
+ */
+function testGetNormalizedName() {
+  var schema = hr.db.getSchema();
+  var jobNoAlias = schema.getJob();
+  assertEquals('Job.title', jobNoAlias.title.getNormalizedName());
+
+  var alias = 'OtherJob';
+  var jobAlias = jobNoAlias.as(alias);
+  assertEquals(alias + '.title', jobAlias.title.getNormalizedName());
+}
