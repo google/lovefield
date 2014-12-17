@@ -29382,7 +29382,12 @@ goog.inherits(lf.proc.TableAccessNode, lf.proc.LogicalQueryPlanNode);
 
 /** @override */
 lf.proc.TableAccessNode.prototype.toString = function() {
-  return 'table_access(' + this.table.getName() + ')';
+  var out = 'table_access(' + this.table.getName();
+  if (!goog.isNull(this.table.getAlias())) {
+    out += ' as ' + this.table.getAlias();
+  }
+  out += ')';
+  return out;
 };
 
 
@@ -32808,7 +32813,7 @@ lf.proc.PushDownSelectionsPass.prototype.pushDownNodeRec_ = function(
 lf.proc.PushDownSelectionsPass.prototype.pushDownValuePredNodeRec_ =
     function(node) {
   var selectNodeTables = new goog.structs.Set(
-      [node.predicate.column.getTable().getName()]);
+      [node.predicate.column.getTable().getEffectiveName()]);
 
   var shouldPushDownFn = (function(child) {
     return this.doesReferToTables_(child, selectNodeTables);
@@ -32831,8 +32836,8 @@ lf.proc.PushDownSelectionsPass.prototype.pushDownJoinPredNodeRec_ =
     function(node) {
   // Finding all tables that are involved in the join predicate.
   var selectNodeTables = new goog.structs.Set([
-    node.predicate.leftColumn.getTable().getName(),
-    node.predicate.rightColumn.getTable().getName()
+    node.predicate.leftColumn.getTable().getEffectiveName(),
+    node.predicate.rightColumn.getTable().getEffectiveName()
   ]);
 
   var shouldPushDownFn = (function(child) {
@@ -32857,11 +32862,11 @@ lf.proc.PushDownSelectionsPass.prototype.doesReferToTables_ =
   var referredTables = new goog.structs.Set();
   lf.tree.getLeafNodes(root).forEach(
       function(tableAccessNode) {
-        referredTables.add(tableAccessNode.table.getName());
+        referredTables.add(tableAccessNode.table.getEffectiveName());
       }, this);
 
   if (root instanceof lf.proc.TableAccessNode) {
-    referredTables.add(root.table.getName());
+    referredTables.add(root.table.getEffectiveName());
   }
 
   return referredTables.containsAll(tables);

@@ -290,3 +290,46 @@ function testTree_JoinPredicates2() {
   var rootNodeAfter = pass.rewrite(rootNodeBefore);
   assertEquals(treeAfter, lf.tree.toString(rootNodeAfter));
 }
+
+
+/**
+ * Tests a tree that involves a self-table join and table aliases. The value
+ * predicate that refers to only one of the two tables is expected to be pushed
+ * below the cross product node, whereas the join predicate refers to both
+ * tables and therefore should not be pushed further down.
+ */
+function testTree_JoinPredicates3() {
+  var j1 = schema.getJob().as('j1');
+  var j2 = schema.getJob().as('j2');
+
+  var treeBefore =
+      'select(join_pred(j1.maxSalary, j2.minSalary))\n' +
+      '-select(value_pred(j1.maxSalary))\n' +
+      '--cross_product\n' +
+      '---table_access(Job as j1)\n' +
+      '---table_access(Job as j2)\n';
+
+  var treeAfter =
+      'select(join_pred(j1.maxSalary, j2.minSalary))\n' +
+      '-cross_product\n' +
+      '--select(value_pred(j1.maxSalary))\n' +
+      '---table_access(Job as j1)\n' +
+      '--table_access(Job as j2)\n';
+
+  var crossProductNode = new lf.proc.CrossProductNode();
+  crossProductNode.addChild(new lf.proc.TableAccessNode(j1));
+  crossProductNode.addChild(new lf.proc.TableAccessNode(j2));
+
+  var selectNode1 = new lf.proc.SelectNode(j1.maxSalary.lt(30000));
+  selectNode1.addChild(crossProductNode);
+
+  var selectNode2 = new lf.proc.SelectNode(j1.maxSalary.eq(j2.minSalary));
+  selectNode2.addChild(selectNode1);
+
+  var rootNodeBefore = selectNode2;
+  assertEquals(treeBefore, lf.tree.toString(rootNodeBefore));
+
+  var pass = new lf.proc.PushDownSelectionsPass();
+  var rootNodeAfter = pass.rewrite(rootNodeBefore);
+  assertEquals(treeAfter, lf.tree.toString(rootNodeAfter));
+}
