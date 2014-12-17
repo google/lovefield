@@ -115,18 +115,21 @@ function testJoinPredicate_Eval_False() {
 /**
  * Tests that evalRelations() will detect which input relation should be used as
  * "left" and which as "right" independently of the input order.
+ * @param {!hr.db.schema.Employee} employeeSchema
+ * @param {!hr.db.schema.Job} jobSchema
  */
-function testJoinPredicate_EvalRelations() {
+function checkJoinPredicate_EvalRelations(employeeSchema, jobSchema) {
   var sampleEmployee =
       lf.testing.hrSchemaSampleData.generateSampleEmployeeData(db);
   var sampleJob =
       lf.testing.hrSchemaSampleData.generateSampleJobData(db);
 
   var employeeRelation = lf.proc.Relation.fromRows(
-      [sampleEmployee], [e.getName()]);
-  var jobRelation = lf.proc.Relation.fromRows([sampleJob], [j.getName()]);
+      [sampleEmployee], [employeeSchema.getEffectiveName()]);
+  var jobRelation = lf.proc.Relation.fromRows(
+      [sampleJob], [jobSchema.getEffectiveName()]);
 
-  var joinPredicate = e.jobId.eq(j.id);
+  var joinPredicate = employeeSchema.jobId.eq(jobSchema.id);
   var result1 = joinPredicate.evalRelations(employeeRelation, jobRelation);
   var result2 = joinPredicate.evalRelations(jobRelation, employeeRelation);
 
@@ -134,16 +137,28 @@ function testJoinPredicate_EvalRelations() {
   assertEquals(1, result2.entries.length);
   assertEquals(
       sampleEmployee.payload().id,
-      result1.entries[0].getField(e.id));
+      result1.entries[0].getField(employeeSchema.id));
   assertEquals(
       sampleEmployee.payload().id,
-      result2.entries[0].getField(e.id));
+      result2.entries[0].getField(employeeSchema.id));
   assertEquals(
       sampleJob.payload().id,
-      result1.entries[0].getField(j.id));
+      result1.entries[0].getField(jobSchema.id));
   assertEquals(
       sampleJob.payload().id,
-      result2.entries[0].getField(j.id));
+      result2.entries[0].getField(jobSchema.id));
+}
+
+
+function testJoinPredicate_EvalRelations() {
+  checkJoinPredicate_EvalRelations(e, j);
+}
+
+
+function testJoinPredicate_EvalRelations_Alias() {
+  checkJoinPredicate_EvalRelations(
+      /** @type {!hr.db.schema.Employee} */ (e.as('employeeAlias')),
+      /** @type {!hr.db.schema.Job} */ (j.as('jobAlias')));
 }
 
 

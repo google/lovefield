@@ -5763,7 +5763,7 @@ goog.asserts.setErrorHandler = function(errorHandler) {
  * @param {T} condition The condition to check.
  * @param {string=} opt_message Error message in case of failure.
  * @param {...*} var_args The items to substitute into the failure message.
- * @return {!T} The value of the condition.
+ * @return {T} The value of the condition.
  * @throws {goog.asserts.AssertionError} When the condition evaluates to false.
  */
 goog.asserts.assert = function(condition, opt_message, var_args) {
@@ -5944,7 +5944,7 @@ goog.asserts.assertElement = function(value, opt_message, var_args) {
  * @param {...*} var_args The items to substitute into the failure message.
  * @throws {goog.asserts.AssertionError} When the value is not an instance of
  *     type.
- * @return {!T}
+ * @return {T}
  * @template T
  */
 goog.asserts.assertInstanceof = function(value, type, opt_message, var_args) {
@@ -12208,7 +12208,7 @@ goog.functions.not = function(f) {
  *
  * @param {function(new:T, ...)} constructor The constructor for the Object.
  * @param {...*} var_args The arguments to be passed to the constructor.
- * @return {!T} A new instance of the class given in {@code constructor}.
+ * @return {T} A new instance of the class given in {@code constructor}.
  * @template T
  */
 goog.functions.create = function(constructor, var_args) {
@@ -26372,7 +26372,7 @@ lf.proc.RelationEntry.prototype.getField = function(column) {
 
   if (this.isPrefixApplied_) {
     return this.row.payload()[
-        column.getTable().getName()][column.getName()];
+        column.getTable().getEffectiveName()][column.getName()];
   } else {
     return this.row.payload()[column.getName()];
   }
@@ -26392,10 +26392,11 @@ lf.proc.RelationEntry.prototype.setField = function(column, value) {
   }
 
   if (this.isPrefixApplied_) {
-    var containerObj = this.row.payload()[column.getTable().getName()];
+    var tableName = column.getTable().getEffectiveName();
+    var containerObj = this.row.payload()[tableName];
     if (!goog.isDefAndNotNull(containerObj)) {
       containerObj = {};
-      this.row.payload()[column.getTable().getName()] = containerObj;
+      this.row.payload()[tableName] = containerObj;
     }
     containerObj[column.getName()] = value;
   } else {
@@ -26425,6 +26426,11 @@ lf.proc.RelationEntry.combineEntries = function(
         result[prefix] = payload[prefix];
       }
     } else {
+      goog.asserts.assert(
+          !result.hasOwnProperty(entryTables[0]),
+          'Attempted to join table with itself, without using table alias, ' +
+          'or same alias ' + entryTables[0] + 'is reused for multiple tables.');
+
       // Since the entry is not prefixed, all attributes come from a single
       // table.
       result[entryTables[0]] = entry.row.payload();
@@ -28598,7 +28604,7 @@ lf.pred.JoinPredicate.prototype.toString = function() {
  */
 lf.pred.JoinPredicate.prototype.appliesToLeft_ = function(relation) {
   return relation.getTables().indexOf(
-      this.leftColumn.getTable().getName()) != -1;
+      this.leftColumn.getTable().getEffectiveName()) != -1;
 };
 
 
@@ -28610,7 +28616,7 @@ lf.pred.JoinPredicate.prototype.appliesToLeft_ = function(relation) {
  */
 lf.pred.JoinPredicate.prototype.appliesToRight_ = function(relation) {
   return relation.getTables().indexOf(
-      this.rightColumn.getTable().getName()) != -1;
+      this.rightColumn.getTable().getEffectiveName()) != -1;
 };
 
 

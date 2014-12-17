@@ -63,10 +63,22 @@ function testCopy() {
 
 
 function testEval_Eq() {
-  var table = schema.getTables()[0];
+  checkEval_Eq(schema.getTables()[0]);
+}
+
+
+function testEval_Eq_Alias() {
+  checkEval_Eq(schema.getTables()[0].as('SomeTableAlias'));
+}
+
+
+/**
+ * @param {!lf.schema.Table} table
+ */
+function checkEval_Eq(table) {
   var sampleRow = getSampleRows(1)[0];
   var relation = lf.proc.Relation.fromRows(
-      [sampleRow], [table.getName()]);
+      [sampleRow], [table.getEffectiveName()]);
 
   var predicate1 = new lf.pred.ValuePredicate(
       table.id, sampleRow.payload().id, lf.eval.Type.EQ);
@@ -150,14 +162,28 @@ function testEval_In_Reversed() {
 }
 
 
-/**
- * Testing the case where a ValuePredicate is applied on a relation that is the
- * result of a previous join operation.
- */
 function testEval_Eq_PreviousJoin() {
   var table1 = schema.getTables()[0];
   var table2 = schema.getTables()[4];
+  checkEval_Eq_PreviousJoin(table1, table2);
+}
 
+
+function testEval_Eq_PreviousJoin_Alias() {
+  var table1 = schema.getTables()[0].as('table1');
+  var table2 = schema.getTables()[4].as('table2');
+  checkEval_Eq_PreviousJoin(table1, table2);
+}
+
+
+/**
+ * Testing the case where a ValuePredicate is applied on a relation that is the
+ * result of a previous join operation.
+ *
+ * @param {!lf.schema.Table} table1
+ * @param {!lf.schema.Table} table2
+ */
+function checkEval_Eq_PreviousJoin(table1, table2) {
   var leftRow = table1.createRow({
     'id': 'dummyId',
     'name': 'dummyName'
@@ -172,9 +198,9 @@ function testEval_Eq_PreviousJoin() {
   });
 
   var leftRelation = lf.proc.Relation.fromRows(
-      [leftRow], [table1.getName()]);
+      [leftRow], [table1.getEffectiveName()]);
   var rightRelation = lf.proc.Relation.fromRows(
-      [rightRow1, rightRow2], [table2.getName()]);
+      [rightRow1, rightRow2], [table2.getEffectiveName()]);
 
   var joinPredicate = new lf.pred.JoinPredicate(
       table1.id, table2.id, lf.eval.Type.EQ);

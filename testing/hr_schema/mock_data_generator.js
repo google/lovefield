@@ -82,7 +82,8 @@ lf.testing.hrSchema.MockDataGenerator.EmployeeGroundTruth;
  *   distinctMaxSalary: !Array.<number>,
  *   countDistinctMaxSalary: number,
  *   avgDistinctMaxSalary: number,
- *   stddevDistinctMaxSalary: number
+ *   stddevDistinctMaxSalary: number,
+ *   selfJoinSalary: !Array<!Array<!hr.db.row.Job>>
  * }}
  */
 lf.testing.hrSchema.MockDataGenerator.JobGroundTruth;
@@ -145,7 +146,8 @@ lf.testing.hrSchema.MockDataGenerator.prototype.extractJobGroundTruth_ =
     avgDistinctMaxSalary:
         goog.math.average.apply(null, this.findJobDistinct_(maxSalary)),
     stddevDistinctMaxSalary: goog.math.standardDeviation.apply(
-        null, this.findJobDistinct_(maxSalary))
+        null, this.findJobDistinct_(maxSalary)),
+    selfJoinSalary: this.findSelfJoinSalary_()
   };
 };
 
@@ -219,6 +221,46 @@ lf.testing.hrSchema.MockDataGenerator.prototype.findJobDistinct_ = function(
     valueSet.add(getterFn(job));
   }, this);
   return valueSet.getValues();
+};
+
+
+/**
+ * Finds all job pairs where j1.minSalary == j2.maxSalary.
+ * @return {!Array<!Array<!hr.db.row.Job>>}
+ * @private
+ */
+lf.testing.hrSchema.MockDataGenerator.prototype.findSelfJoinSalary_ =
+    function() {
+  var result = [];
+
+  for (var i = 0; i < this.sampleJobs.length; i++) {
+    var job1 = this.sampleJobs[i];
+    for (var j = 0; j < this.sampleJobs.length; j++) {
+      var job2 = this.sampleJobs[j];
+      if (job1.getMinSalary() == job2.getMaxSalary()) {
+        result.push([job1, job2]);
+      }
+    }
+  }
+
+  // Sorting results to be in deterministic order such that they can be usefuld
+  // for assertions.
+  result.sort(function(jobPair1, jobPair2) {
+    if (jobPair1[0].getId() < jobPair2[0].getId()) {
+      return -1;
+    } else if (jobPair1[0].getId() > jobPair2[0].getId()) {
+      return 1;
+    } else {
+      if (jobPair1[1].getId() < jobPair2[1].getId()) {
+        return -1;
+      } else if (jobPair1[1].getId() > jobPair2[1].getId()) {
+        return 1;
+      }
+      return 0;
+    }
+  });
+
+  return result;
 };
 
 

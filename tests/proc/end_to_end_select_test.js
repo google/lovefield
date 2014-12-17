@@ -246,10 +246,9 @@ function testSelect_ImplicitJoin() {
           e.jobId.eq(jobId),
           e.jobId.eq(j.id))));
 
-
   queryBuilder.exec().then(
       function(results) {
-        assertEmployeesForJob(jobId, results);
+        assertEmployeesForJob(e, jobId, results);
         asyncTestCase.continueTesting();
       }, fail);
 }
@@ -272,10 +271,67 @@ function testSelect_ImplicitJoin_ReverseOrder() {
           e.jobId.eq(jobId),
           e.jobId.eq(j.id))));
 
+  queryBuilder.exec().then(
+      function(results) {
+        assertEmployeesForJob(e, jobId, results);
+        asyncTestCase.continueTesting();
+      }, fail);
+}
+
+
+/**
+ * Tests the case of a SELECT query with an implicit join and with the involved
+ * tables using aliases.
+ */
+function testSelect_ImplicitJoin_Alias() {
+  asyncTestCase.waitForAsync('testSelect_ImplicitJoin_Alias');
+
+  var jobId = 'jobId' + Math.floor(sampleJobs.length / 2).toString();
+  var j1 = j.as('j1');
+  var e1 = e.as('e1');
+
+  var queryBuilder = /** @type {!lf.query.SelectBuilder} */ (
+      db.select().
+      from(j1, e1).
+      where(lf.op.and(
+          e1.jobId.eq(jobId),
+          e1.jobId.eq(j1.id))));
 
   queryBuilder.exec().then(
       function(results) {
-        assertEmployeesForJob(jobId, results);
+        assertEmployeesForJob(e1, jobId, results);
+        asyncTestCase.continueTesting();
+      }, fail);
+}
+
+
+/**
+ * Tests the case where a SELECT query with a self-table join is being issued.
+ */
+function testSelect_SelfJoin() {
+  asyncTestCase.waitForAsync('testSelect_SelfJoin');
+
+  var j1 = j.as('j1');
+  var j2 = j.as('j2');
+
+  var queryBuilder = /** @type {!lf.query.SelectBuilder} */ (
+      db.select().
+      from(j1, j2).
+      where(j1.minSalary.eq(j2.maxSalary)).
+      orderBy(j1.id, lf.Order.ASC).
+      orderBy(j2.id, lf.Order.ASC));
+
+  queryBuilder.exec().then(
+      function(results) {
+        var groundTruth = mockDataGenerator.jobGroundTruth.selfJoinSalary;
+        assertEquals(groundTruth.length, results.length);
+        for (var i = 0; i < results.length; i++) {
+          assertEquals(
+              results[i][j1.getAlias()].id, groundTruth[i][0].getId());
+          assertEquals(
+              results[i][j2.getAlias()].id, groundTruth[i][1].getId());
+        }
+
         asyncTestCase.continueTesting();
       }, fail);
 }
@@ -630,16 +686,17 @@ function assertOrder(results, column, order) {
 /**
  * Asserts that the returned employees for a given job are agreeing with the
  * ground truth data.
+ * @param {!lf.schema.Table} employeeSchema
  * @param {string} jobId
  * @param {!Array.<{
  *     Employee: !hr.db.row.EmployeeType,
  *     Job: !hr.db.row.JobType}>} actualEmployees
  */
-function assertEmployeesForJob(jobId, actualEmployees) {
+function assertEmployeesForJob(employeeSchema, jobId, actualEmployees) {
   var expectedEmployeeIds =
       mockDataGenerator.employeeGroundTruth.employeesPerJob.get(jobId);
   var actualEmployeeIds = actualEmployees.map(function(result) {
-    return result[e.getName()]['id'];
+    return result[employeeSchema.getEffectiveName()]['id'];
   });
   assertSameElements(expectedEmployeeIds, actualEmployeeIds);
 }
@@ -655,7 +712,8 @@ function testSelect_InnerJoinOrderBy() {
       from(d, e).
       where(e.departmentId.eq(d.id)).
       orderBy(e.lastName).
-      exec().then(function(results) {
+      exec().then(
+      function(results) {
         var actual = results.map(function(row) {
           return row['elname'];
         });

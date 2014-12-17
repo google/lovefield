@@ -39,16 +39,17 @@ function testFromRows() {
 }
 
 
-function testGetSetValue_MultipleTables() {
+/**
+ * @param {!Array<!lf.schema.Table>} tables
+ */
+function checkGetSetValue_MultipleTables(tables) {
   var rows = new Array(10);
   for (var i = 0; i < rows.length; i++) {
     rows[i] = lf.Row.create();
   }
 
-  var schema = new lf.testing.MockSchema();
-  var tables = schema.getTables().slice(0, 2);
   var tableNames = tables.map(function(table) {
-    return table.getName();
+    return table.getEffectiveName();
   });
 
   var relation = lf.proc.Relation.fromRows(rows, tableNames);
@@ -71,6 +72,21 @@ function testGetSetValue_MultipleTables() {
     assertPopulated(entry, tables[0].name, field3, /* isPrefixApplied */ true);
     assertPopulated(entry, tables[1].name, field4, /* isPrefixApplied */ true);
   });
+}
+
+
+function testGetSetValue_MultipleTables() {
+  var schema = new lf.testing.MockSchema();
+  var tables = schema.getTables().slice(0, 2);
+  checkGetSetValue_MultipleTables(tables);
+}
+
+
+function testGetSetValue_MultipleTables_Alias() {
+  var schema = new lf.testing.MockSchema();
+  var table0 = schema.getTables()[0].as('table0');
+  var table1 = schema.getTables()[1].as('table1');
+  checkGetSetValue_MultipleTables([table0, table1]);
 }
 
 
@@ -131,8 +147,9 @@ function testSetField_WithAlias() {
 function assertPopulated(entry, column, expectedValue, isPrefixApplied) {
   assertEquals(expectedValue, entry.getField(column));
 
+  var tableName = column.getTable().getEffectiveName();
   var value = isPrefixApplied ?
-      entry.row.payload()[column.getTable().getName()][column.getName()] :
+      entry.row.payload()[tableName][column.getName()] :
       entry.row.payload()[column.getName()];
   assertEquals(expectedValue, value);
 }
