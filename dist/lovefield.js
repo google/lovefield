@@ -30362,7 +30362,12 @@ goog.inherits(lf.proc.TableAccessFullStep, lf.proc.PhysicalQueryPlanNode);
 
 /** @override */
 lf.proc.TableAccessFullStep.prototype.toString = function() {
-  return 'table_access(' + this.table.getName() + ')';
+  var out = 'table_access(' + this.table.getName();
+  if (!goog.isNull(this.table.getAlias())) {
+    out += ' as ' + this.table.getAlias();
+  }
+  out += ')';
+  return out;
 };
 
 
@@ -30375,7 +30380,7 @@ lf.proc.TableAccessFullStep.prototype.getScope = function() {
 /** @override */
 lf.proc.TableAccessFullStep.prototype.exec = function(journal) {
   return goog.Promise.resolve(lf.proc.Relation.fromRows(
-      journal.getTableRows(this.table), [this.table.getName()]));
+      journal.getTableRows(this.table), [this.table.getEffectiveName()]));
 };
 
 
@@ -30414,7 +30419,7 @@ lf.proc.TableAccessByRowIdStep.prototype.exec = function(journal) {
       function(relation) {
         return goog.Promise.resolve(lf.proc.Relation.fromRows(
             journal.getTableRows(this.table_, relation.getRowIds()),
-            [this.table_.getName()]));
+            [this.table_.getEffectiveName()]));
       }, this)));
 };
 
@@ -31553,7 +31558,15 @@ lf.schema.Table.prototype.getEffectiveName = function() {
  * @return {!lf.schema.Table}
  */
 lf.schema.Table.prototype.as = function(name) {
-  var clone = new this.constructor();
+  // Note1: Can't use lf.schema.Table constructor directly here, because the
+  // clone will be missing any auto-generated properties the original object
+  // has.
+
+  // Note2: Auto-generated subclasses have a no-arg constructor. The name_
+  // parameter is passed to the constructor only for the purposes of
+  // lf.testing.MockSchema tables which don't have a no-arg constructor and
+  // otherwise would not work with as() in tests.
+  var clone = new this.constructor(this.name_);
   clone.alias_ = name;
   return clone;
 };

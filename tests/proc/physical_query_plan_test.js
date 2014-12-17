@@ -24,6 +24,7 @@ goog.require('lf.index.KeyRange');
 goog.require('lf.proc.IndexRangeScanStep');
 goog.require('lf.proc.Relation');
 goog.require('lf.proc.TableAccessByRowIdStep');
+goog.require('lf.proc.TableAccessFullStep');
 goog.require('lf.testing.MockEnv');
 goog.require('lf.testing.MockSchema');
 goog.require('lf.testing.proc.DummyStep');
@@ -62,10 +63,60 @@ function setUp() {
 }
 
 
-function testTableAccessByRowId() {
-  asyncTestCase.waitForAsync('testTableAccessByRowId');
+function testTableAccessFullStep() {
+  checkTableAccessFullStep('testTableAccessFullStep', schema.getTables()[0]);
+}
 
-  var table = schema.getTables()[0];
+
+function testTableAccessFullStep_Alias() {
+  checkTableAccessFullStep(
+      'testTableAccessFullStep_Alias',
+      schema.getTables()[0].as('SomeTableAlias'));
+}
+
+
+/**
+ * Checks that a TableAccessFullStep that refers to the given table produces
+ * the expected results.
+ * @param {string} description
+ * @param {!lf.schema.Table} table
+ */
+function checkTableAccessFullStep(description, table) {
+  asyncTestCase.waitForAsync(description);
+
+  var step = new lf.proc.TableAccessFullStep(table);
+  var journal = new lf.cache.Journal(lf.Global.get(), [table]);
+  step.exec(journal).then(
+      function(relation) {
+        assertFalse(relation.isPrefixApplied());
+        assertArrayEquals([table.getEffectiveName()], relation.getTables());
+        assertTrue(relation.entries.length > 0);
+        asyncTestCase.continueTesting();
+      }, fail);
+}
+
+
+function testTableAccessByRowId() {
+  checkTableAccessByRowId('testTableAccessByRowId', schema.getTables()[0]);
+}
+
+
+function testTableAccessByRowId_Alias() {
+  checkTableAccessByRowId(
+      'testTableAccessByRowId_Alias',
+      schema.getTables()[0].as('SomeTableAlias'));
+}
+
+
+/**
+ * Checks that a TableAccessByRowIdStep that refers to the given table produces
+ * the expected results.
+ * @param {string} description
+ * @param {!lf.schema.Table} table
+ */
+function checkTableAccessByRowId(description, table) {
+  asyncTestCase.waitForAsync(description);
+
   var step = new lf.proc.TableAccessByRowIdStep(table);
 
   // Creating a "dummy" child step that will return only two row IDs.
@@ -78,9 +129,12 @@ function testTableAccessByRowId() {
 
   var journal = new lf.cache.Journal(lf.Global.get(), [table]);
   step.exec(journal).then(
-      function(result) {
-        assertEquals(rows.length, result.entries.length);
-        result.entries.forEach(function(entry, index) {
+      function(relation) {
+        assertFalse(relation.isPrefixApplied());
+        assertArrayEquals([table.getEffectiveName()], relation.getTables());
+
+        assertEquals(rows.length, relation.entries.length);
+        relation.entries.forEach(function(entry, index) {
           var rowId = rows[index].id();
           assertEquals(rowId, entry.row.id());
           assertEquals('dummyName' + rowId, entry.row.payload().name);
