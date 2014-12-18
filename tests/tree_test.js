@@ -25,7 +25,7 @@ goog.require('lf.tree');
  * @return {!Array.<!goog.structs.TreeNode>} An array holding all the nodes in
  *     the tree in pre-order traversal order.
  */
-function createTestTree() {
+function createTestTree1() {
   var nodes = new Array(11);
   for (var i = 0; i < nodes.length; i++) {
     nodes[i] = new goog.structs.TreeNode(i, null);
@@ -64,6 +64,42 @@ function createTestTree() {
 
 
 /**
+ * Creates a different tree to be used in various tests.
+ * @return {!Array.<!goog.structs.TreeNode>} An array holding all the nodes in
+ *     the tree in pre-order traversal order.
+ */
+function createTestTree2() {
+  var nodes = new Array(7);
+  for (var i = 0; i < nodes.length; i++) {
+    nodes[i] = new goog.structs.TreeNode(i, null);
+  }
+
+  // Creating a tree that has the following structure.
+  //           n0
+  //           |
+  //           n1
+  //          /  \
+  //        n2    n6
+  //       /  \
+  //      n3  n4
+  //            \
+  //            n5
+
+  nodes[0].addChild(nodes[1]);
+
+  nodes[1].addChild(nodes[2]);
+  nodes[1].addChild(nodes[6]);
+
+  nodes[2].addChild(nodes[3]);
+  nodes[2].addChild(nodes[4]);
+
+  nodes[4].addChild(nodes[5]);
+
+  return nodes;
+}
+
+
+/**
  * Tests that lf.tree.map() is constructing a new tree with the exact same
  * structure as the original tree, for a simple tree.
  */
@@ -79,25 +115,26 @@ function testMap1() {
   nodes[0].addChild(nodes[1]);
 
   var rootNode = nodes[0];
-
-  // Attempting to copy the tree.
-  var copy = lf.tree.map(rootNode, function(node) {
-    return new goog.structs.TreeNode(node.getKey(), null);
-  });
-
-  assertEquals(
-      lf.tree.toString(rootNode, stringFn),
-      lf.tree.toString(copy, stringFn));
+  checkMap(rootNode);
 }
 
 
 /**
  * Tests that lf.tree.map() is constructing a new tree with the exact same
- * structure as the original tree, for a more complex tree.
+ * structure as the original tree, for two more complex trees.
  */
 function testMap2() {
-  var rootNode = createTestTree()[0];
+  checkMap(createTestTree1()[0]);
+  checkMap(createTestTree2()[0]);
+}
 
+
+/**
+ * Checks that the given tree is producing a tree with an identical structure
+ * when cloned.
+ * @param {!goog.structs.TreeNode} rootNode
+ */
+function checkMap(rootNode) {
   // Attempting to copy the tree.
   var copy = lf.tree.map(rootNode, function(node) {
     return new goog.structs.TreeNode(node.getKey(), null);
@@ -114,7 +151,7 @@ function testMap2() {
  * Ensure that the children of the removed node are re-parented to its parent.
  */
 function testRemoveNode_Intermediate() {
-  var nodes = createTestTree();
+  var nodes = createTestTree1();
 
   var treeAfter =
       '[0,null]\n' +
@@ -138,7 +175,7 @@ function testRemoveNode_Intermediate() {
  * Testing case where a leaf node is removed.
  */
 function testRemoveNode_Leaf() {
-  var nodes = createTestTree();
+  var nodes = createTestTree1();
 
   var treeAfter =
       '[0,null]\n' +
@@ -159,7 +196,7 @@ function testRemoveNode_Leaf() {
 
 
 function testInsertNodeAt() {
-  var nodes = createTestTree();
+  var nodes = createTestTree1();
 
   var treeAfter =
       '[0,null]\n' +
@@ -182,7 +219,7 @@ function testInsertNodeAt() {
 
 
 function testReplaceChainWithChain() {
-  var nodes = createTestTree();
+  var nodes = createTestTree1();
 
   var treeAfter =
       '[0,null]\n' +
@@ -211,7 +248,7 @@ function testReplaceChainWithChain() {
 
 
 function testReplaceChainWithNode() {
-  var nodes = createTestTree();
+  var nodes = createTestTree1();
 
   var treeAfter =
       '[0,null]\n' +
@@ -233,7 +270,7 @@ function testReplaceChainWithNode() {
 
 
 function testReplaceNodeWithChain() {
-  var nodes = createTestTree();
+  var nodes = createTestTree1();
 
   var treeAfter =
       '[0,null]\n' +
@@ -262,7 +299,7 @@ function testReplaceNodeWithChain() {
 
 
 function testPushNodeBelowChild() {
-  var nodes = createTestTree();
+  var nodes = createTestTree1();
 
   var treeAfter =
       '[0,null]\n' +
@@ -293,7 +330,7 @@ function testPushNodeBelowChild() {
 
 
 function testSwapNodeWithChild() {
-  var nodes = createTestTree();
+  var nodes = createTestTree1();
 
   var treeAfter =
       '[0,null]\n' +
@@ -314,7 +351,7 @@ function testSwapNodeWithChild() {
 
 
 function testGetLeafNodes() {
-  var nodes = createTestTree();
+  var nodes = createTestTree1();
   var leafNodes = lf.tree.getLeafNodes(nodes[0]);
   var leafNodeKeys = leafNodes.map(function(node) {
     return node.getKey();
