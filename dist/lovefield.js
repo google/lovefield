@@ -31115,7 +31115,10 @@ lf.query.BaseBuilder = function(global) {
 };
 
 
-/** @override */
+/**
+ * @override
+ * @export
+ */
 lf.query.BaseBuilder.prototype.exec = function() {
   try {
     this.assertExecPreconditions();
@@ -31133,19 +31136,28 @@ lf.query.BaseBuilder.prototype.exec = function() {
 };
 
 
-/** @override */
+/**
+ * @override
+ * @export
+ */
 lf.query.BaseBuilder.prototype.explain = function() {
   return lf.tree.toString(this.queryEngine_.getPlan(this.query).getRoot());
 };
 
 
-/** @override */
+/**
+ * @override
+ * @export
+ */
 lf.query.BaseBuilder.prototype.bind = function(values) {
   return this;
 };
 
 
-/** @override */
+/**
+ * @override
+ * @export
+ */
 lf.query.BaseBuilder.prototype.toSql = function() {
   return lf.query.toSql(this);
 };
