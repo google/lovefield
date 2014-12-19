@@ -19,6 +19,7 @@ goog.provide('lf.testing.perf.SelectBenchmark');
 goog.require('goog.math');
 goog.require('lf.Order');
 goog.require('lf.fn');
+goog.require('lf.op');
 
 
 
@@ -206,6 +207,50 @@ lf.testing.perf.SelectBenchmark.prototype.querySingleRowNonIndexed =
       from(this.e_).
       where(this.e_.email.eq(this.queryData_.employeeEmail)).
       exec();
+};
+
+
+/**
+ * Note: The following query uses two ValuePredicates that both operate on an
+ * indexed property. This causes the IndexRangeScanPass to select the most
+ * selective index for the IndexRangeScan step by calling BTree#cost(), and
+ * because of the TODO that exists in that method performance is very poor.
+ * Should observe a noticeable change once BTree#cost() is optimized.
+ *
+ * @return {!IThenable}
+ */
+lf.testing.perf.SelectBenchmark.prototype.querySingleRowMultipleIndices =
+    function() {
+  // Selecting a value purposefully high such that all rows satisfy this
+  // predicate, whereas the other predicate is satisfied by only one row.
+  var salaryThreshold = 2 * this.dataGenerator_.employeeGroundTruth.avgSalary;
+
+  var q = this.db_.
+      select().
+      from(this.e_).
+      orderBy(this.e_.id, lf.Order.ASC).
+      where(lf.op.and(
+          this.e_.id.eq(this.queryData_.employeeId),
+          this.e_.salary.lt(salaryThreshold)));
+
+  return q.exec();
+};
+
+
+/**
+ * @param {!Array.<!Object>} results
+ * @return {!IThenable.<boolean>}
+ */
+lf.testing.perf.SelectBenchmark.prototype.verifySingleRowMultipleIndices =
+    function(results) {
+  var salaryThreshold = 2 * this.dataGenerator_.employeeGroundTruth.avgSalary;
+
+  var validated = results.every(function(obj) {
+    return obj[this.e_.id.getName()] == this.queryData_.employeeId &&
+        obj[this.e_.salary.getName()] < salaryThreshold;
+  }, this);
+
+  return goog.Promise.resolve(validated);
 };
 
 
@@ -525,6 +570,64 @@ lf.testing.perf.SelectBenchmark.prototype.verifyProjectAggregateNonIndexed =
           this.dataGenerator_.employeeGroundTruth.minHireDate &&
       results[0]['max(hireDate)'] ==
           this.dataGenerator_.employeeGroundTruth.maxHireDate;
+
+  return goog.Promise.resolve(validated);
+};
+
+
+/** @return {!IThenable} */
+lf.testing.perf.SelectBenchmark.prototype.queryJoinEqui = function() {
+  return this.db_.
+      select().
+      from(this.e_, this.j_).
+      where(this.e_.jobId.eq(this.j_.id)).
+      exec();
+};
+
+
+/**
+ * @param {!Array.<!Object>} results
+ * @return {!IThenable.<boolean>}
+ */
+lf.testing.perf.SelectBenchmark.prototype.verifyJoinEqui = function(results) {
+  if (this.dataGenerator_.sampleEmployees.length != results.length) {
+    return goog.Promise.resolve(false);
+  }
+
+  var validated = results.every(function(obj) {
+    return goog.object.getCount(obj) == 2 &&
+        goog.isDefAndNotNull(obj[this.e_.getName()]) &&
+        goog.isDefAndNotNull(obj[this.j_.getName()]) &&
+        obj[this.e_.getName()][this.e_.jobId.getName()] ==
+            obj[this.j_.getName()][this.j_.id.getName()];
+  }, this);
+
+  return goog.Promise.resolve(validated);
+};
+
+
+/** @return {!IThenable} */
+lf.testing.perf.SelectBenchmark.prototype.queryJoinTheta = function() {
+  return this.db_.
+      select().
+      from(this.j_, this.e_).
+      orderBy(this.e_.id, lf.Order.ASC).
+      where(lf.op.and(
+          this.e_.jobId.eq(this.j_.id),
+          this.e_.salary.gt(this.j_.maxSalary))).
+      exec();
+};
+
+
+/**
+ * @param {!Array.<!Object>} results
+ * @return {!IThenable.<boolean>}
+ */
+lf.testing.perf.SelectBenchmark.prototype.verifyJoinTheta = function(results) {
+  var validated = results.every(function(obj, i) {
+    return obj[this.e_.getName()][this.e_.id.getName()] ==
+        this.dataGenerator_.employeeGroundTruth.thetaJoinSalaryIds[i];
+  }, this);
 
   return goog.Promise.resolve(validated);
 };

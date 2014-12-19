@@ -258,6 +258,10 @@ function selectRunner(name, db) {
         selectBenchmark.querySingleRowNonIndexed.bind(selectBenchmark),
         selectBenchmark.verifySingleRowNonIndexed.bind(selectBenchmark));
     benchmarkRunner.schedule(
+        'SelectSingleRowMultipleIndices',
+        selectBenchmark.querySingleRowMultipleIndices.bind(selectBenchmark),
+        selectBenchmark.verifySingleRowMultipleIndices.bind(selectBenchmark));
+    benchmarkRunner.schedule(
         'SelectMultiRowIndexedRange',
         selectBenchmark.queryMultiRowIndexedRange.bind(selectBenchmark),
         selectBenchmark.verifyMultiRowIndexedRange.bind(selectBenchmark));
@@ -295,6 +299,14 @@ function selectRunner(name, db) {
         'SelectProjectAggregateNonIndexed',
         selectBenchmark.queryProjectAggregateNonIndexed.bind(selectBenchmark),
         selectBenchmark.verifyProjectAggregateNonIndexed.bind(selectBenchmark));
+    benchmarkRunner.schedule(
+        'SelectJoinEqui',
+        selectBenchmark.queryJoinEqui.bind(selectBenchmark),
+        selectBenchmark.verifyJoinEqui.bind(selectBenchmark));
+    benchmarkRunner.schedule(
+        'SelectJoinTheta',
+        selectBenchmark.queryJoinTheta.bind(selectBenchmark),
+        selectBenchmark.verifyJoinTheta.bind(selectBenchmark));
 
     return benchmarkRunner.run(REPETITIONS);
   }).then(tearDown, tearDown);

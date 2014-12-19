@@ -37,13 +37,13 @@ lf.testing.hrSchema.MockDataGenerator = function(schema) {
   /** @private {!hr.db.schema.Database} */
   this.schema_ = schema;
 
-  /** @type {!Array.<!hr.db.row.Job>} */
+  /** @type {!Array<!hr.db.row.Job>} */
   this.sampleJobs = [];
 
-  /** @type {!Array.<!hr.db.row.Employee>} */
+  /** @type {!Array<!hr.db.row.Employee>} */
   this.sampleEmployees = [];
 
-  /** @type {!Array.<!hr.db.row.Department>} */
+  /** @type {!Array<!hr.db.row.Department>} */
   this.sampleDepartments = [];
 
   /** @type {!lf.testing.hrSchema.MockDataGenerator.JobGroundTruth} */
@@ -63,7 +63,8 @@ lf.testing.hrSchema.MockDataGenerator = function(schema) {
  *   countSalary: number,
  *   minHireDate: !Date,
  *   maxHireDate: !Date,
- *   employeesPerJob: !goog.labs.structs.Multimap<string, string>
+ *   employeesPerJob: !goog.labs.structs.Multimap<string, string>,
+ *   thetaJoinSalaryIds: !Array<string>
  * }}
  */
 lf.testing.hrSchema.MockDataGenerator.EmployeeGroundTruth;
@@ -73,13 +74,13 @@ lf.testing.hrSchema.MockDataGenerator.EmployeeGroundTruth;
  * @typedef {{
  *   minMinSalary: number,
  *   maxMinSalary: number,
- *   distinctMinSalary: !Array.<number>,
+ *   distinctMinSalary: !Array<number>,
  *   countDistinctMinSalary: number,
  *   avgDistinctMinSalary: number,
  *   stddevDistinctMinSalary: number,
  *   minMaxSalary: number,
  *   maxMaxSalary: number,
- *   distinctMaxSalary: !Array.<number>,
+ *   distinctMaxSalary: !Array<number>,
  *   countDistinctMaxSalary: number,
  *   avgDistinctMaxSalary: number,
  *   stddevDistinctMaxSalary: number,
@@ -172,7 +173,8 @@ lf.testing.hrSchema.MockDataGenerator.prototype.extractEmployeeGroundTruth_ =
         null, this.sampleEmployees.map(salary)),
     countSalary: 0,
     minHireDate: this.findEmployeeMinDate_(),
-    maxHireDate: this.findEmployeeMaxDate_()
+    maxHireDate: this.findEmployeeMaxDate_(),
+    thetaJoinSalaryIds: this.findThetaJoinSalaryIds_()
   };
 };
 
@@ -211,7 +213,7 @@ lf.testing.hrSchema.MockDataGenerator.prototype.findJobMax_ = function(
  * Finds the DISTINCT of a given attribute in the Job table.
  * @param {!function(!hr.db.row.Job): number} getterFn The function to call for
  *     accessing the attribute of interest.
- * @return {!Array.<number>} The distinct values.
+ * @return {!Array<number>} The distinct values.
  * @private
  */
 lf.testing.hrSchema.MockDataGenerator.prototype.findJobDistinct_ = function(
@@ -307,6 +309,33 @@ lf.testing.hrSchema.MockDataGenerator.prototype.findEmployeeMaxDate_ =
         return employee2.getHireDate() - employee1.getHireDate();
       });
   return employeesSorted[0].getHireDate();
+};
+
+
+/**
+ * Finds the IDs of all employees whose salary is larger than the MAX salary for
+ * their job title.
+ * Note: This is possible because generated employee data does not respect
+ * corresponding min/max job salary.
+ * @return {!Array<string>} The employee IDs in ascending sorted order.
+ * @private
+ */
+lf.testing.hrSchema.MockDataGenerator.prototype.findThetaJoinSalaryIds_ =
+    function() {
+  var employeeIds = [];
+
+  for (var i = 0; i < this.sampleEmployees.length; i++) {
+    for (var j = 0; j < this.sampleJobs.length; j++) {
+      var employee = this.sampleEmployees[i];
+      var job = this.sampleJobs[j];
+      if (employee.getJobId() == job.getId() &&
+          employee.getSalary() > job.getMaxSalary()) {
+        employeeIds.push(employee.getId());
+      }
+    }
+  }
+
+  return employeeIds.sort();
 };
 
 
