@@ -181,11 +181,11 @@ search conditions.
 
 Lovefield provides following functions:
 
-|Function    |SQL equivalent |
-|:---------- |:------------- |
-|`lf.op.and` |`AND`          |
-|`lf.op.or`  |`OR`           |
-|`lf.op.not` |`NOT`          |
+|Function    |Number of parameters|SQL equivalent |
+|:---------- |--------------------|:------------- |
+|`lf.op.and` |variable            |`AND`          |
+|`lf.op.or`  |variable            |`OR`           |
+|`lf.op.not` |1                   |`NOT`          |
 
 #### 4.3.2 Auto-Generated Predicates
 

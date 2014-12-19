@@ -77,6 +77,29 @@ function testCopy_Simple() {
 
 /**
  * Tests that copy() creates an identical tree where each node is a new
+ * instance for the case of a tree with 3+ nodes.
+ */
+function testCopy_VarArgs() {
+  var expectedTree =
+      'combined_pred_and\n' +
+      '-value_pred(Employee.salary)\n' +
+      '-value_pred(Employee.salary)\n' +
+      '-value_pred(Employee.hireDate)\n' +
+      '-value_pred(Employee.hireDate)\n';
+
+  var original = /** @type {!lf.pred.PredicateNode} */ (
+      lf.op.and(
+          e.salary.gte(200),
+          e.salary.lte(600),
+          e.hireDate.lt(new Date()),
+          e.hireDate.gt(new Date())));
+  var copy = original.copy();
+  assertTreesIdentical(expectedTree, original, copy);
+}
+
+
+/**
+ * Tests that copy() creates an identical tree where each node is a new
  * instance for the case of a tree with nested CombinedPredicate instances.
  */
 function testCopy_Nested() {

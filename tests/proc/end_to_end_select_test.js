@@ -372,6 +372,78 @@ function testSelect_MultiJoin() {
 
 
 /**
+ * Tests the case of a SELECT with an AND condition that has 3 clauses.
+ */
+function testSelect_Predicate_VarArgAnd() {
+  asyncTestCase.waitForAsync('testSelect_Predicate_VarArgAnd');
+
+  var sampleEmployee = sampleEmployees[Math.floor(sampleEmployees.length / 2)];
+
+  var queryBuilder = /** @type {!lf.query.SelectBuilder} */ (
+      db.select().
+      from(e, j, d).
+      where(lf.op.and(
+          e.jobId.eq(j.id),
+          e.departmentId.eq(d.id),
+          e.id.eq(sampleEmployee.getId()))));
+
+  queryBuilder.exec().then(
+      function(results) {
+        assertEquals(1, results.length);
+        var obj = results[0];
+        assertEquals(sampleEmployee.getId(), obj[e.getName()][e.id.getName()]);
+        assertEquals(
+            sampleEmployee.getJobId(),
+            obj[j.getName()][j.id.getName()]);
+        assertEquals(
+            sampleEmployee.getDepartmentId(),
+            obj[d.getName()][d.id.getName()]);
+        assertEquals(
+            obj[e.getName()][e.jobId.getName()],
+            obj[j.getName()][j.id.getName()]);
+        assertEquals(
+            obj[e.getName()][e.departmentId.getName()],
+            obj[d.getName()][d.id.getName()]);
+
+        asyncTestCase.continueTesting();
+      }, fail);
+}
+
+
+/**
+ * Tests the case of a SELECT with an OR condition that has 3 clauses.
+ */
+function testSelect_Predicate_VarArgOr() {
+  asyncTestCase.waitForAsync('testSelect_Predicate_VarArgOr');
+
+  var sampleJob = sampleJobs[Math.floor(sampleJobs.length / 2)];
+
+  var queryBuilder = /** @type {!lf.query.SelectBuilder} */ (
+      db.select().
+      from(j).
+      where(lf.op.or(
+          j.minSalary.eq(mockDataGenerator.jobGroundTruth.minMinSalary),
+          j.maxSalary.eq(mockDataGenerator.jobGroundTruth.maxMaxSalary),
+          j.title.eq(sampleJob.getTitle()))));
+
+  queryBuilder.exec().then(
+      function(results) {
+        assertTrue(results.length >= 1);
+        results.forEach(function(obj) {
+          assertTrue(
+              obj[j.minSalary.getName()] ==
+                  mockDataGenerator.jobGroundTruth.minMinSalary ||
+              obj[j.maxSalary.getName()] ==
+                  mockDataGenerator.jobGroundTruth.maxMaxSalary ||
+              obj[j.id.getName()] == sampleJob.getId());
+        });
+
+        asyncTestCase.continueTesting();
+      }, fail);
+}
+
+
+/**
  * Tests that a SELECT query with an explicit join.
  */
 function testSelect_ExplicitJoin() {
