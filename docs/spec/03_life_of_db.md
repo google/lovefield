@@ -96,7 +96,7 @@ Lovefield disallows altering column types directly.
 The following is a sample code snippet demonstrating database upgrades.
 
 ```js
-lava.cr.db.getInstance(onUpgrade).then(
+my.namespace.db.getInstance(onUpgrade).then(
   /** @param {lf.Db} db */
   function(db) {
     // new db starts here

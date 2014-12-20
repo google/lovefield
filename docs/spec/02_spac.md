@@ -2,13 +2,15 @@
 
 ## 2. Schema Parsing and Code Generation
 
-The schema JSON file will need to be parsed and validated by Schema Parser And Code-Generator (SPAC). SPAC will generate JavaScript code providing:
+The schema JSON file will need to be parsed and validated by Schema Parser And
+Code-Generator (SPAC). SPAC will generate JavaScript code providing:
 
 * A static function used to create database instance.
 * A database schema class that can be used to create query conditions.
 * A database instance class that can be used to create queries.
 
-The following example is the very basic SCUD operation using SPAC generated code, assume the namespace passed into SPAC is `lava.cr.db`:
+The following example is the very basic SCUD operation using SPAC generated
+code, assume the namespace passed into SPAC is `my.namespace.db`:
 
 ```js
 var db;
@@ -35,7 +37,7 @@ function createRows() {
 }
 
 // <namespace>.<instanceName>.getInstance() to get DB instance
-lava.cr.db.getInstance().then(function(dbInstance) {
+my.namespace.db.getInstance().then(function(dbInstance) {
   db = dbInstance;
   infoCard = db.getSchema().getInfoCard();
 
@@ -67,17 +69,23 @@ lava.cr.db.getInstance().then(function(dbInstance) {
 
 ### 2.1 Namespace and DB name
 
-The user already specified a DB name in schema, and a "namespace" is also required in SPAC. These two names are serving different purposes.
+The user already specified a DB name in schema, and a "namespace" is also
+required in SPAC. These two names are serving different purposes.
 
-A DB name uniquely identifies the DB persisted. It is only useful for opening database.
+A DB name uniquely identifies the DB persisted. It is only useful for opening
+database.
 
-A namespace is used to encapsulate Lovefield generated code for a given DB schema. Each namespace can have only one DB.
+A namespace is used to encapsulate Lovefield generated code for a given DB
+schema. Each namespace can have only one DB.
 
-If the users wanted to change namespace without changing DB schema, they can use the same schema YAML file, but give SPAC a different namespace. The resulting code will be opening the same database file.
+If the users wanted to change namespace without changing DB schema, they can
+use the same schema YAML file, but give SPAC a different namespace. The
+resulting code will be opening the same database file.
 
 ### 2.2 Implicit Data Conversion
 
-Some data types will be implicitly converted when stored into DB. The conversion is shown in following table:
+Some data types will be implicitly converted when stored into DB. The
+conversion is shown in following table:
 
 | Original Type | Stored Type                                |
 |:------------- |:------------------------------------------ |
@@ -88,7 +96,8 @@ Some data types will be implicitly converted when stored into DB. The conversion
 |number         |number                                      |
 |string         |string                                      |
 
-The data will be converted again to user-specified types when retrieved from database.
+The data will be converted again to user-specified types when retrieved from
+database.
 
 ### 2.3 Automatically Generated Classes
 

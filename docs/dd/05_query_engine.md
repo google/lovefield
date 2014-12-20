@@ -10,7 +10,7 @@ web, since WebSQL was deprecated.
 
 ## Comparison with IndexedDB
   IndexedDB is a lower level API than what most web developers are looking for
-from a database solution. Pulsar team realized this the hard way, after working
+from a database solution. Our team realized this the hard way, after working
 with IDB for almost two years for the purposes of the Google+ Photos Chrome
 application.
 
@@ -19,12 +19,11 @@ layer. Performing typical **SELECT..FROM..WHERE** queries quickly reveals this
 deficiency by the fact that the resulting code to achieve such a query is
 surprisingly long and unintuitive. A more accurate way of describing IDB is as
 "an object store with some minimal database features like indices and cursors".
-The solution of the Pulsar team for the lack of querying functionality was to
-build a domain specific query layer between IDB and the rest of the
-application. The complexity of such queries was nicely hidden within that
-intermediate layer, but that layer took a lot of resources to develop and
-maintain, while solving the data access needs of this particular application
-only.
+The solution of the team for the lack of querying functionality was to build a
+domain specific query layer between IDB and the rest of the application. The
+complexity of such queries was nicely hidden within that intermediate layer,
+but that layer took a lot of resources to develop and maintain, while solving
+the data access needs of this particular application only.
 
   Lovefield is using IDB purely as the backing store. Any persistence API could
 be used as the backing store for Lovefield, but at the time of this writing the
