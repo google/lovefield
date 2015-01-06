@@ -81,7 +81,7 @@ function testDeleteToSql_Where() {
   assertEquals('DELETE FROM Job WHERE Job.id = \'1\';', query.toSql());
 
   query = db.delete().from(j).where(j.id.eq(lf.bind(0)));
-  assertEquals('DELETE FROM Job WHERE Job.id = ?;', query.toSql());
+  assertEquals('DELETE FROM Job WHERE Job.id = ?0;', query.toSql());
 
   query = db.delete().from(j).where(j.minSalary.lt(10000));
   assertEquals('DELETE FROM Job WHERE Job.minSalary < 10000;', query.toSql());
@@ -120,5 +120,24 @@ function testDeleteToSql_Where() {
   assertEquals(
       'DELETE FROM Job WHERE (Job.id = \'1\') OR ((Job.minSalary > 10000) ' +
       'AND (Job.maxSalary < 30000));',
+      query.toSql());
+}
+
+function testUpdateToSql() {
+  var query = db.update(j).set(j.minSalary, 10000);
+  assertEquals('UPDATE Job SET Job.minSalary = 10000;', query.toSql());
+
+  query = db.update(j).set(j.minSalary, 10000).where(j.id.eq('1'));
+  assertEquals(
+      'UPDATE Job SET Job.minSalary = 10000 WHERE Job.id = \'1\';',
+      query.toSql());
+
+  query = db.update(j).
+      set(j.minSalary, lf.bind(1)).
+      set(j.maxSalary, lf.bind(2)).
+      where(j.id.eq(lf.bind(0)));
+  assertEquals(
+      'UPDATE Job SET Job.minSalary = ?1, Job.maxSalary = ?2 ' +
+      'WHERE Job.id = ?0;',
       query.toSql());
 }

@@ -31083,6 +31083,51 @@ lf.query.InsertContext = function() {
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+goog.provide('lf.query.UpdateContext');
+goog.provide('lf.query.UpdateContext.Set');
+
+
+
+/**
+ * Internal representation of an UPDATE query.
+ * @constructor
+ */
+lf.query.UpdateContext = function() {
+  /** @type {!lf.schema.Table} */
+  this.table;
+
+  /** @type {!Array.<!lf.query.UpdateContext.Set>} */
+  this.set;
+
+  /** @type {!lf.Predicate} */
+  this.where;
+};
+
+
+/**
+ * @typedef {{
+ *     binding: number,
+ *     column: !lf.schema.Column,
+ *     value: *}}
+ */
+lf.query.UpdateContext.Set;
+
+/**
+ * @license
+ * Copyright 2014 Google Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 goog.provide('lf.query.toSql');
 
 goog.require('lf.Binder');
@@ -31094,6 +31139,7 @@ goog.require('lf.pred.Operator');
 goog.require('lf.pred.ValuePredicate');
 goog.require('lf.query.DeleteContext');
 goog.require('lf.query.InsertContext');
+goog.require('lf.query.UpdateContext');
 
 
 /**
@@ -31184,7 +31230,7 @@ lf.query.evaluatorToSql_ = function(op) {
  */
 lf.query.valueToSql_ = function(value, op, type) {
   if (value instanceof lf.Binder) {
-    return '?';
+    return '?' + value.getIndex().toString();
   } else if (op == lf.eval.Type.MATCH) {
     return '\'' + value.toString() + '\'';
   } else if (op == lf.eval.Type.IN) {
@@ -31282,6 +31328,31 @@ lf.query.deleteToSql_ = function(query) {
 
 
 /**
+ * @param {!lf.query.UpdateContext} query
+ * @return {string}
+ * @private
+ */
+lf.query.updateToSql_ = function(query) {
+  var sql = 'UPDATE ' + query.table.getName() + ' SET ';
+  sql += query.set.map(function(set) {
+    var setter = set.column.getNormalizedName() + ' = ';
+    if (set.binding != -1) {
+      return setter + '?' + set.binding.toString();
+    }
+    return setter + lf.query.escapeSqlValue_(
+        set.column.getType(),
+        /** @type {ArrayBuffer|Date|boolean|null|number|string} */
+        (set.value)).toString();
+  }).join(', ');
+  if (query.where) {
+    sql += lf.query.predicateToSql_(query.where);
+  }
+  sql += ';';
+  return sql;
+};
+
+
+/**
  * @param {!lf.query.BaseBuilder} builder
  * @return {string}
  */
@@ -31293,6 +31364,10 @@ lf.query.toSql = function(builder) {
 
   if (query instanceof lf.query.DeleteContext) {
     return lf.query.deleteToSql_(query);
+  }
+
+  if (query instanceof lf.query.UpdateContext) {
+    return lf.query.updateToSql_(query);
   }
 
   return 'Not implemented';
@@ -32397,51 +32472,6 @@ lf.query.SelectBuilder.prototype.bind = function(values) {
   this.query.currentVersion++;
   return this;
 };
-
-/**
- * @license
- * Copyright 2014 Google Inc. All Rights Reserved.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-goog.provide('lf.query.UpdateContext');
-goog.provide('lf.query.UpdateContext.Set');
-
-
-
-/**
- * Internal representation of an UPDATE query.
- * @constructor
- */
-lf.query.UpdateContext = function() {
-  /** @type {!lf.schema.Table} */
-  this.table;
-
-  /** @type {!Array.<!lf.query.UpdateContext.Set>} */
-  this.set;
-
-  /** @type {!lf.Predicate} */
-  this.where;
-};
-
-
-/**
- * @typedef {{
- *     binding: number,
- *     column: !lf.schema.Column,
- *     value: *}}
- */
-lf.query.UpdateContext.Set;
 
 /**
  * @license
