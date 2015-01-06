@@ -2495,7 +2495,7 @@ goog.tagUnsealableClass = function(ctr) {
  */
 goog.UNSEALABLE_CONSTRUCTOR_PROPERTY_ = 'goog_defineClass_legacy_unsealable';
 
-// Copyright 2014 The Closure Library Authors. All Rights Reserved.
+// Copyright 2015 The Closure Library Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -2598,13 +2598,13 @@ goog.addDependency('datasource/datasource.js', ['goog.ds.BaseDataNode', 'goog.ds
 goog.addDependency('datasource/datasource_test.js', ['goog.ds.JsDataSourceTest'], ['goog.dom.xml', 'goog.ds.DataManager', 'goog.ds.JsDataSource', 'goog.ds.SortedNodeList', 'goog.ds.XmlDataSource', 'goog.testing.jsunit'], false);
 goog.addDependency('datasource/expr.js', ['goog.ds.Expr'], ['goog.ds.BasicNodeList', 'goog.ds.EmptyNodeList', 'goog.string'], false);
 goog.addDependency('datasource/expr_test.js', ['goog.ds.ExprTest'], ['goog.ds.DataManager', 'goog.ds.Expr', 'goog.ds.JsDataSource', 'goog.testing.jsunit'], false);
-goog.addDependency('datasource/fastdatanode.js', ['goog.ds.AbstractFastDataNode', 'goog.ds.FastDataNode', 'goog.ds.FastListNode', 'goog.ds.PrimitiveFastDataNode'], ['goog.ds.DataManager', 'goog.ds.EmptyNodeList', 'goog.string'], false);
+goog.addDependency('datasource/fastdatanode.js', ['goog.ds.AbstractFastDataNode', 'goog.ds.FastDataNode', 'goog.ds.FastListNode', 'goog.ds.PrimitiveFastDataNode'], ['goog.ds.DataManager', 'goog.ds.DataNodeList', 'goog.ds.EmptyNodeList', 'goog.string'], false);
 goog.addDependency('datasource/fastdatanode_test.js', ['goog.ds.FastDataNodeTest'], ['goog.array', 'goog.ds.DataManager', 'goog.ds.Expr', 'goog.ds.FastDataNode', 'goog.testing.jsunit'], false);
-goog.addDependency('datasource/jsdatasource.js', ['goog.ds.JsDataSource', 'goog.ds.JsPropertyDataSource'], ['goog.ds.BaseDataNode', 'goog.ds.BasicNodeList', 'goog.ds.DataManager', 'goog.ds.EmptyNodeList', 'goog.ds.LoadState'], false);
+goog.addDependency('datasource/jsdatasource.js', ['goog.ds.JsDataSource', 'goog.ds.JsPropertyDataSource'], ['goog.ds.BaseDataNode', 'goog.ds.BasicNodeList', 'goog.ds.DataManager', 'goog.ds.DataNode', 'goog.ds.EmptyNodeList', 'goog.ds.LoadState'], false);
 goog.addDependency('datasource/jsondatasource.js', ['goog.ds.JsonDataSource'], ['goog.Uri', 'goog.dom', 'goog.ds.DataManager', 'goog.ds.JsDataSource', 'goog.ds.LoadState', 'goog.ds.logger'], false);
 goog.addDependency('datasource/jsxmlhttpdatasource.js', ['goog.ds.JsXmlHttpDataSource'], ['goog.Uri', 'goog.ds.DataManager', 'goog.ds.FastDataNode', 'goog.ds.LoadState', 'goog.ds.logger', 'goog.events', 'goog.log', 'goog.net.EventType', 'goog.net.XhrIo'], false);
 goog.addDependency('datasource/jsxmlhttpdatasource_test.js', ['goog.ds.JsXmlHttpDataSourceTest'], ['goog.ds.JsXmlHttpDataSource', 'goog.testing.TestQueue', 'goog.testing.jsunit', 'goog.testing.net.XhrIo'], false);
-goog.addDependency('datasource/xmldatasource.js', ['goog.ds.XmlDataSource', 'goog.ds.XmlHttpDataSource'], ['goog.Uri', 'goog.dom.NodeType', 'goog.dom.xml', 'goog.ds.BasicNodeList', 'goog.ds.DataManager', 'goog.ds.LoadState', 'goog.ds.logger', 'goog.net.XhrIo', 'goog.string'], false);
+goog.addDependency('datasource/xmldatasource.js', ['goog.ds.XmlDataSource', 'goog.ds.XmlHttpDataSource'], ['goog.Uri', 'goog.dom.NodeType', 'goog.dom.xml', 'goog.ds.BasicNodeList', 'goog.ds.DataManager', 'goog.ds.DataNode', 'goog.ds.LoadState', 'goog.ds.logger', 'goog.net.XhrIo', 'goog.string'], false);
 goog.addDependency('date/date.js', ['goog.date', 'goog.date.Date', 'goog.date.DateTime', 'goog.date.Interval', 'goog.date.month', 'goog.date.weekDay'], ['goog.asserts', 'goog.date.DateLike', 'goog.i18n.DateTimeSymbols', 'goog.string'], false);
 goog.addDependency('date/date_test.js', ['goog.dateTest'], ['goog.array', 'goog.date', 'goog.date.Date', 'goog.date.DateTime', 'goog.date.Interval', 'goog.date.month', 'goog.date.weekDay', 'goog.i18n.DateTimeSymbols', 'goog.testing.ExpectedFailures', 'goog.testing.jsunit', 'goog.userAgent', 'goog.userAgent.platform', 'goog.userAgent.product', 'goog.userAgent.product.isVersion'], false);
 goog.addDependency('date/datelike.js', ['goog.date.DateLike'], [], false);
@@ -3592,7 +3592,7 @@ goog.addDependency('testing/testcase.js', ['goog.testing.TestCase', 'goog.testin
 goog.addDependency('testing/testcase_test.js', ['goog.testing.TestCaseTest'], ['goog.Promise', 'goog.testing.TestCase', 'goog.testing.jsunit'], false);
 goog.addDependency('testing/testqueue.js', ['goog.testing.TestQueue'], [], false);
 goog.addDependency('testing/testrunner.js', ['goog.testing.TestRunner'], ['goog.testing.TestCase'], false);
-goog.addDependency('testing/ui/rendererasserts.js', ['goog.testing.ui.rendererasserts'], ['goog.testing.asserts'], false);
+goog.addDependency('testing/ui/rendererasserts.js', ['goog.testing.ui.rendererasserts'], ['goog.testing.asserts', 'goog.ui.ControlRenderer'], false);
 goog.addDependency('testing/ui/rendererasserts_test.js', ['goog.testing.ui.rendererassertsTest'], ['goog.testing.asserts', 'goog.testing.jsunit', 'goog.testing.ui.rendererasserts', 'goog.ui.ControlRenderer'], false);
 goog.addDependency('testing/ui/rendererharness.js', ['goog.testing.ui.RendererHarness'], ['goog.Disposable', 'goog.dom.NodeType', 'goog.testing.asserts', 'goog.testing.dom'], false);
 goog.addDependency('testing/ui/style.js', ['goog.testing.ui.style'], ['goog.array', 'goog.asserts', 'goog.dom', 'goog.dom.classlist', 'goog.testing.asserts'], false);
@@ -3757,19 +3757,19 @@ goog.addDependency('ui/labelinput_test.js', ['goog.ui.LabelInputTest'], ['goog.a
 goog.addDependency('ui/linkbuttonrenderer.js', ['goog.ui.LinkButtonRenderer'], ['goog.ui.Button', 'goog.ui.FlatButtonRenderer', 'goog.ui.registry'], false);
 goog.addDependency('ui/media/flashobject.js', ['goog.ui.media.FlashObject', 'goog.ui.media.FlashObject.ScriptAccessLevel', 'goog.ui.media.FlashObject.Wmodes'], ['goog.asserts', 'goog.dom.safe', 'goog.events.Event', 'goog.events.EventHandler', 'goog.events.EventType', 'goog.html.SafeUrl', 'goog.html.TrustedResourceUrl', 'goog.html.flash', 'goog.html.legacyconversions', 'goog.log', 'goog.object', 'goog.string', 'goog.structs.Map', 'goog.style', 'goog.ui.Component', 'goog.userAgent', 'goog.userAgent.flash'], false);
 goog.addDependency('ui/media/flashobject_test.js', ['goog.ui.media.FlashObjectTest'], ['goog.dom', 'goog.dom.DomHelper', 'goog.events', 'goog.events.Event', 'goog.events.EventType', 'goog.html.SafeUrl', 'goog.testing.MockControl', 'goog.testing.events', 'goog.testing.jsunit', 'goog.ui.media.FlashObject', 'goog.userAgent'], false);
-goog.addDependency('ui/media/flickr.js', ['goog.ui.media.FlickrSet', 'goog.ui.media.FlickrSetModel'], ['goog.ui.media.FlashObject', 'goog.ui.media.Media', 'goog.ui.media.MediaModel', 'goog.ui.media.MediaRenderer'], false);
-goog.addDependency('ui/media/flickr_test.js', ['goog.ui.media.FlickrSetTest'], ['goog.dom', 'goog.testing.jsunit', 'goog.ui.media.FlashObject', 'goog.ui.media.FlickrSet', 'goog.ui.media.FlickrSetModel', 'goog.ui.media.Media'], false);
+goog.addDependency('ui/media/flickr.js', ['goog.ui.media.FlickrSet', 'goog.ui.media.FlickrSetModel'], ['goog.html.TrustedResourceUrl', 'goog.string.Const', 'goog.ui.media.FlashObject', 'goog.ui.media.Media', 'goog.ui.media.MediaModel', 'goog.ui.media.MediaRenderer'], false);
+goog.addDependency('ui/media/flickr_test.js', ['goog.ui.media.FlickrSetTest'], ['goog.dom', 'goog.html.testing', 'goog.testing.jsunit', 'goog.ui.media.FlashObject', 'goog.ui.media.FlickrSet', 'goog.ui.media.FlickrSetModel', 'goog.ui.media.Media'], false);
 goog.addDependency('ui/media/googlevideo.js', ['goog.ui.media.GoogleVideo', 'goog.ui.media.GoogleVideoModel'], ['goog.string', 'goog.ui.media.FlashObject', 'goog.ui.media.Media', 'goog.ui.media.MediaModel', 'goog.ui.media.MediaRenderer'], false);
 goog.addDependency('ui/media/googlevideo_test.js', ['goog.ui.media.GoogleVideoTest'], ['goog.dom', 'goog.testing.jsunit', 'goog.ui.media.FlashObject', 'goog.ui.media.GoogleVideo', 'goog.ui.media.GoogleVideoModel', 'goog.ui.media.Media'], false);
 goog.addDependency('ui/media/media.js', ['goog.ui.media.Media', 'goog.ui.media.MediaRenderer'], ['goog.asserts', 'goog.style', 'goog.ui.Component', 'goog.ui.Control', 'goog.ui.ControlRenderer'], false);
 goog.addDependency('ui/media/media_test.js', ['goog.ui.media.MediaTest'], ['goog.dom', 'goog.math.Size', 'goog.testing.jsunit', 'goog.ui.ControlRenderer', 'goog.ui.media.Media', 'goog.ui.media.MediaModel', 'goog.ui.media.MediaRenderer'], false);
-goog.addDependency('ui/media/mediamodel.js', ['goog.ui.media.MediaModel', 'goog.ui.media.MediaModel.Category', 'goog.ui.media.MediaModel.Credit', 'goog.ui.media.MediaModel.Credit.Role', 'goog.ui.media.MediaModel.Credit.Scheme', 'goog.ui.media.MediaModel.Medium', 'goog.ui.media.MediaModel.MimeType', 'goog.ui.media.MediaModel.Player', 'goog.ui.media.MediaModel.SubTitle', 'goog.ui.media.MediaModel.Thumbnail'], ['goog.array'], false);
+goog.addDependency('ui/media/mediamodel.js', ['goog.ui.media.MediaModel', 'goog.ui.media.MediaModel.Category', 'goog.ui.media.MediaModel.Credit', 'goog.ui.media.MediaModel.Credit.Role', 'goog.ui.media.MediaModel.Credit.Scheme', 'goog.ui.media.MediaModel.Medium', 'goog.ui.media.MediaModel.MimeType', 'goog.ui.media.MediaModel.Player', 'goog.ui.media.MediaModel.SubTitle', 'goog.ui.media.MediaModel.Thumbnail'], ['goog.array', 'goog.html.TrustedResourceUrl', 'goog.html.legacyconversions'], false);
 goog.addDependency('ui/media/mediamodel_test.js', ['goog.ui.media.MediaModelTest'], ['goog.testing.jsunit', 'goog.ui.media.MediaModel'], false);
 goog.addDependency('ui/media/mp3.js', ['goog.ui.media.Mp3'], ['goog.string', 'goog.ui.media.FlashObject', 'goog.ui.media.Media', 'goog.ui.media.MediaRenderer'], false);
 goog.addDependency('ui/media/mp3_test.js', ['goog.ui.media.Mp3Test'], ['goog.dom', 'goog.testing.jsunit', 'goog.ui.media.FlashObject', 'goog.ui.media.Media', 'goog.ui.media.MediaModel', 'goog.ui.media.Mp3'], false);
 goog.addDependency('ui/media/photo.js', ['goog.ui.media.Photo'], ['goog.ui.media.Media', 'goog.ui.media.MediaRenderer'], false);
 goog.addDependency('ui/media/photo_test.js', ['goog.ui.media.PhotoTest'], ['goog.dom', 'goog.testing.jsunit', 'goog.ui.media.MediaModel', 'goog.ui.media.Photo'], false);
-goog.addDependency('ui/media/picasa.js', ['goog.ui.media.PicasaAlbum', 'goog.ui.media.PicasaAlbumModel'], ['goog.ui.media.FlashObject', 'goog.ui.media.Media', 'goog.ui.media.MediaModel', 'goog.ui.media.MediaRenderer'], false);
+goog.addDependency('ui/media/picasa.js', ['goog.ui.media.PicasaAlbum', 'goog.ui.media.PicasaAlbumModel'], ['goog.html.TrustedResourceUrl', 'goog.string.Const', 'goog.ui.media.FlashObject', 'goog.ui.media.Media', 'goog.ui.media.MediaModel', 'goog.ui.media.MediaRenderer'], false);
 goog.addDependency('ui/media/picasa_test.js', ['goog.ui.media.PicasaTest'], ['goog.dom', 'goog.testing.jsunit', 'goog.ui.media.FlashObject', 'goog.ui.media.Media', 'goog.ui.media.PicasaAlbum', 'goog.ui.media.PicasaAlbumModel'], false);
 goog.addDependency('ui/media/vimeo.js', ['goog.ui.media.Vimeo', 'goog.ui.media.VimeoModel'], ['goog.string', 'goog.ui.media.FlashObject', 'goog.ui.media.Media', 'goog.ui.media.MediaModel', 'goog.ui.media.MediaRenderer'], false);
 goog.addDependency('ui/media/vimeo_test.js', ['goog.ui.media.VimeoTest'], ['goog.dom', 'goog.testing.jsunit', 'goog.ui.media.FlashObject', 'goog.ui.media.Media', 'goog.ui.media.Vimeo', 'goog.ui.media.VimeoModel'], false);
@@ -12124,7 +12124,7 @@ goog.functions.nth = function(n) {
  * and replaces it with a new one.
  * @param {Function} f A function.
  * @param {T} retValue A new return value.
- * @return {function(...[?]):T} A new function.
+ * @return {function(...?):T} A new function.
  * @template T
  */
 goog.functions.withReturnValue = function(f, retValue) {
@@ -12153,9 +12153,9 @@ goog.functions.equalTo = function(value, opt_useLooseComparison) {
 /**
  * Creates the composition of the functions passed in.
  * For example, (goog.functions.compose(f, g))(a) is equivalent to f(g(a)).
- * @param {function(...[?]):T} fn The final function.
+ * @param {function(...?):T} fn The final function.
  * @param {...Function} var_args A list of functions.
- * @return {function(...[?]):T} The composition of all inputs.
+ * @return {function(...?):T} The composition of all inputs.
  * @template T
  */
 goog.functions.compose = function(fn, var_args) {
@@ -12201,7 +12201,7 @@ goog.functions.sequence = function(var_args) {
  * short-circuited as soon as a function returns false.
  * For example, (goog.functions.and(f, g))(x) is equivalent to f(x) && g(x).
  * @param {...Function} var_args A list of functions.
- * @return {function(...[?]):boolean} A function that ANDs its component
+ * @return {function(...?):boolean} A function that ANDs its component
  *      functions.
  */
 goog.functions.and = function(var_args) {
@@ -12224,7 +12224,7 @@ goog.functions.and = function(var_args) {
  * short-circuited as soon as a function returns true.
  * For example, (goog.functions.or(f, g))(x) is equivalent to f(x) || g(x).
  * @param {...Function} var_args A list of functions.
- * @return {function(...[?]):boolean} A function that ORs its component
+ * @return {function(...?):boolean} A function that ORs its component
  *    functions.
  */
 goog.functions.or = function(var_args) {
@@ -12245,7 +12245,7 @@ goog.functions.or = function(var_args) {
  * Creates a function that returns the Boolean opposite of a provided function.
  * For example, (goog.functions.not(f))(x) is equivalent to !f(x).
  * @param {!Function} f The original function.
- * @return {function(...[?]):boolean} A function that delegates to f and returns
+ * @return {function(...?):boolean} A function that delegates to f and returns
  * opposite.
  */
 goog.functions.not = function(f) {
@@ -31016,6 +31016,38 @@ lf.proc.UserQueryTask.prototype.scheduleObserverTask_ = function() {
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+goog.provide('lf.query.DeleteContext');
+
+
+
+/**
+ * Internal representation of a DELETE query.
+ * @constructor
+ */
+lf.query.DeleteContext = function() {
+  /** @type {!lf.schema.Table} */
+  this.from;
+
+  /** @type {!lf.Predicate} */
+  this.where;
+};
+
+/**
+ * @license
+ * Copyright 2014 Google Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 goog.provide('lf.query.InsertContext');
 
 
@@ -31053,8 +31085,14 @@ lf.query.InsertContext = function() {
  */
 goog.provide('lf.query.toSql');
 
+goog.require('lf.Binder');
 goog.require('lf.Row');
 goog.require('lf.Type');
+goog.require('lf.eval.Type');
+goog.require('lf.pred.CombinedPredicate');
+goog.require('lf.pred.Operator');
+goog.require('lf.pred.ValuePredicate');
+goog.require('lf.query.DeleteContext');
 goog.require('lf.query.InsertContext');
 
 
@@ -31107,6 +31145,143 @@ lf.query.insertToSql_ = function(query) {
 
 
 /**
+ * @param {!lf.eval.Type} op
+ * @return {string}
+ * @private
+ */
+lf.query.evaluatorToSql_ = function(op) {
+  switch (op) {
+    case lf.eval.Type.BETWEEN:
+      return 'BETWEEN';
+    case lf.eval.Type.EQ:
+      return '=';
+    case lf.eval.Type.GTE:
+      return '>=';
+    case lf.eval.Type.GT:
+      return '>';
+    case lf.eval.Type.IN:
+      return 'IN';
+    case lf.eval.Type.LTE:
+      return '<=';
+    case lf.eval.Type.LT:
+      return '<';
+    case lf.eval.Type.MATCH:
+      return 'LIKE';
+    case lf.eval.Type.NEQ:
+      return '<>';
+    default:
+      return 'UNKNOWN';
+  }
+};
+
+
+/**
+ * @param {!lf.Binder|Array|ArrayBuffer|Date|boolean|null|number|string} value
+ * @param {!lf.eval.Type} op
+ * @param {!lf.Type} type
+ * @return {string}
+ * @private
+ */
+lf.query.valueToSql_ = function(value, op, type) {
+  if (value instanceof lf.Binder) {
+    return '?';
+  } else if (op == lf.eval.Type.MATCH) {
+    return '\'' + value.toString() + '\'';
+  } else if (op == lf.eval.Type.IN) {
+    var array = /** @type {Array} */ (value);
+    var vals = array.map(function(e) {
+      return lf.query.escapeSqlValue_(type, e);
+    });
+    return '(' + vals.join(', ') + ')';
+  } else if (op == lf.eval.Type.BETWEEN) {
+    return lf.query.escapeSqlValue_(type, value[0]) +
+        ' AND ' +
+        lf.query.escapeSqlValue_(type, value[1]);
+  }
+
+  return lf.query.escapeSqlValue_(
+      type,
+      /** @type {ArrayBuffer|Date|boolean|null|number|string} */
+      (value)).toString();
+};
+
+
+/**
+ * @param {!lf.pred.ValuePredicate} pred
+ * @return {string}
+ * @private
+ */
+lf.query.valuePredicateToSql_ = function(pred) {
+  return [
+    pred.column.getNormalizedName(),
+    lf.query.evaluatorToSql_(pred.evaluatorType),
+    lf.query.valueToSql_(pred.value, pred.evaluatorType, pred.column.getType())
+  ].join(' ');
+};
+
+
+/**
+ * @param {!lf.pred.CombinedPredicate} pred
+ * @return {string}
+ * @private
+ */
+lf.query.combinedPredicateToSql_ = function(pred) {
+  var children = pred.getChildren().map(function(childNode) {
+    return '(' + lf.query.parseSearchCondition_(
+        /** @type {!lf.Predicate} */ (childNode)) + ')';
+  });
+  var joinToken = (pred.operator == lf.pred.Operator.AND) ? ' AND ' : ' OR ';
+  return children.join(joinToken);
+};
+
+
+/**
+ * @param {!lf.Predicate} pred
+ * @return {string}
+ * @private
+ */
+lf.query.parseSearchCondition_ = function(pred) {
+  if (pred instanceof lf.pred.ValuePredicate) {
+    return lf.query.valuePredicateToSql_(pred);
+  } else if (pred instanceof lf.pred.CombinedPredicate) {
+    return lf.query.combinedPredicateToSql_(pred);
+  }
+  // TODO(arthurhsu): implement JoinPredicate case.
+
+  return '';
+};
+
+
+/**
+ * @param {!lf.Predicate} pred
+ * @return {string}
+ * @private
+ */
+lf.query.predicateToSql_ = function(pred) {
+  var whereClause = lf.query.parseSearchCondition_(pred);
+  if (whereClause) {
+    return ' WHERE ' + whereClause;
+  }
+  return '';
+};
+
+
+/**
+ * @param {!lf.query.DeleteContext} query
+ * @return {string}
+ * @private
+ */
+lf.query.deleteToSql_ = function(query) {
+  var sql = 'DELETE FROM ' + query.from.getName();
+  if (query.where) {
+    sql += lf.query.predicateToSql_(query.where);
+  }
+  sql += ';';
+  return sql;
+};
+
+
+/**
  * @param {!lf.query.BaseBuilder} builder
  * @return {string}
  */
@@ -31114,6 +31289,10 @@ lf.query.toSql = function(builder) {
   var query = builder.query;
   if (query instanceof lf.query.InsertContext) {
     return lf.query.insertToSql_(query);
+  }
+
+  if (query instanceof lf.query.DeleteContext) {
+    return lf.query.deleteToSql_(query);
   }
 
   return 'Not implemented';
@@ -31253,38 +31432,6 @@ lf.query.BaseBuilder.bindValuesInSearchCondition = function(context, values) {
       }
     });
   }
-};
-
-/**
- * @license
- * Copyright 2014 Google Inc. All Rights Reserved.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-goog.provide('lf.query.DeleteContext');
-
-
-
-/**
- * Internal representation of a DELETE query.
- * @constructor
- */
-lf.query.DeleteContext = function() {
-  /** @type {!lf.schema.Table} */
-  this.from;
-
-  /** @type {!lf.Predicate} */
-  this.where;
 };
 
 /**
