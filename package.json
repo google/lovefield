@@ -1,8 +1,8 @@
 {
-  "name": "lovefield-spac",
+  "name": "lovefield",
   "version": "2.0.0",
-  "description": "Lovefield Schema Parser and Code-generator",
-  "keywords": ["lovefield", "spac"],
+  "description": "Lovefield - A Data Access Library",
+  "keywords": ["lovefield"],
   "homepage": "https://github.com/google/lovefield",
   "bugs": {
     "url": "https://github.com/google/lovefield/issues"
@@ -15,16 +15,20 @@
     "type": "git",
     "url": "https://github.com/google/lovefield.git"
   },
-  "scripts": {
-    "test": "node run_test.js"
-  },
   "dependencies": {
+    "closurecompiler": "*",
     "glob": "~3.2.6",
+    "google-closure-library-latest": "*",
+    "gulp": "~3.8.10",
+    "http-server": "*",
     "js-yaml": "~3.1.0",
+    "mkdirp": "*",
     "nopt": "~2.2.1",
-    "minijasminenode": "~0.4.0"
+    "rimraf": "*",
+    "tempfile": "*",
+    "temporary": "*"
   },
   "engines": {
-    "node": ">=0.10.33"
+    "node": ">=0.11"
   }
 }

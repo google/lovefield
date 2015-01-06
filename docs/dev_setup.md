@@ -12,16 +12,11 @@ Python.
 
 All these programs must be searchable from your PATH.
 
-## Closure
-
-Closure compiler and closure library must be installed to develop Lovefield.
-See [Closure Tools](https://developers.google.com/closure/) for more
-information.
-
 ## node.js
 
-Lovefield's SPAC (Schema Parser and Code-generator) uses node.js to parse the
-user-provided schema and to generate code.
+Lovefield uses node.js for various development tools. There is no run-time
+dependency. You need to have a working node.js whose version is greater
+than 0.11.
 
 ### Ubuntu
 
@@ -42,9 +37,9 @@ strongly discouraged, i.e. *DON'T DO IT*. The recommended way of doing things:
 
         nvm install v0.11
 
-4. Install npm, make sure npm is installed in nvm node_module directory
+4. Update npm
 
-        wget -qO- https://npmjs.org/install.sh | sh
+        npm update -g npm
 
 ### Mac
 
@@ -64,27 +59,23 @@ strongly discouraged, i.e. *DON'T DO IT*. The recommended way of doing things:
 3. Check if your npm can find packages. If not, you will need to set the
    NODE_PATH environment variable yourself, or by modifying nvmw.bat.
 
-### Common for all platforms
+## Set Up Dev Environment
 
-Install dependencies
+1. Install dependencies
+
+   Lovefield uses npm as its dependency manager. Run
+
 ```bash
-npm install -g glob js-yaml nopt http-server temporary rimraf mkdirp
+npm update
 ```
 
-For daily uses, use nvm to select from different node.js versions, so that you
-can easily reproduce bugs that might plague only a specific version of node.js:
+   to install packages required by Lovefield.
 
-#### Linux / Mac
-```bash
-nvm use 0.11  # use node.js 0.11.*, pick the latest one
-node
-```
+2. Build/Test Lovefield
 
-#### Windows
-```
-nvmw use 0.11.14  :: nvmw needs exact version
-node
-```
+   Lovefield uses gulp as its build manager. This part is currently under active
+   construction and will be further detailed once all the wrinkles are ironed
+   out.
 
 ## Markdowns
 

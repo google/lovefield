@@ -7,19 +7,14 @@
 Besides using the installer from nodejs.org, you can also use
 [nvm](https://github.com/creationix/nvm) to install node.js.
 
-### Install SPAC
-
-SPAC is the Lovefield Schema Parser and Code-generator, which is used to
-generate code from your DB schema. To install SPAC, you need to use `npm`:
+### Install Lovefield Dependencies
 
 ```bash
-cd spac/
-npm install -g
+npm update
 ```
 
-SPAC is not registered in NPM package list yet because it is tightly coupled
-with the source code. Due to the high code velocity of Lovefield, it is
-suggested to pull down Lovefield source and do npm install from there.
+This will install necessary dependencies used to run SPAC, Lovefield's Schema
+Parser and Codegen, which is used to generate code from your DB schema.
 
 ## How to Use Lovefield
 
@@ -50,7 +45,7 @@ table:
 Use `lovefield-spac` to generate code for your schema.
 
 ```bash
-lovefield-spac \
+spac/lovefield-spac \
   --schema my_schema.yaml \
   --namespace my.namespace \
   --outputdir mypath
