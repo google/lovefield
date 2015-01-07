@@ -64,6 +64,12 @@ var Config = function() {
           __dirname,
           '../testing/hr_schema/hr_schema_bundled.yaml')),
       'namespace': 'hr.bdb'
+    },
+    {
+      'file': pathMod.resolve(pathMod.join(
+          __dirname,
+          '../testing/order_schema.yaml')),
+      'namespace': 'order.db'
     }
   ];
 };

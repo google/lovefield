@@ -22,7 +22,7 @@
     "gulp": "~3.8.10",
     "http-server": "*",
     "js-yaml": "~3.1.0",
-    "mkdirp": "*",
+    "mkdirp": "^0.3.5",
     "nopt": "~2.2.1",
     "rimraf": "*",
     "tempfile": "*",

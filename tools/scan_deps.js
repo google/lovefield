@@ -210,7 +210,9 @@ function extractRequires(filePath) {
   var provideMap = new ProvideMap_();
   var requireMap = new RequireMap_();
   scanFiles([filePath], provideMap, requireMap);
-  return requireMap.get(filePath).join(', ');
+  return requireMap.get(filePath).map(function(ns) {
+    return '\'' + ns + '\'';
+  }).join(', ');
 }
 
 

@@ -187,6 +187,7 @@ function createTestFile(script) {
   var level = target.match(/\//g).length;
   var prefix = new Array(level).join('../') + '../';
   var fakeName = script.replace('/', '$').replace('.', '_');
+  var scriptPath = pathMod.resolve(pathMod.join(__dirname, '../' + script));
   var contents =
       '<!DOCTYPE html>\r\n' +
       '<html>\r\n' +
@@ -201,7 +202,7 @@ function createTestFile(script) {
       '      goog.addDependency(\r\n' +
       '          \'../' + prefix + script + '\',\r\n' +
       '          [\'' + fakeName + '\'],\r\n' +
-      '          [' + extractRequires(script) + '], false);\r\n' +
+      '          [' + extractRequires(scriptPath) + '], false);\r\n' +
       '      goog.require(\'goog.testing.AsyncTestCase\');\r\n' +
       '      goog.require(\'goog.testing.jsunit\');\r\n' +
       '      goog.require(\'' + fakeName + '\');\r\n' +
