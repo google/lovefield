@@ -22,11 +22,19 @@ var glob = /** @type {!Function} */ (require('glob').sync);
 var fork = /** @type {!Function} */ (require('child_process').fork);
 
 
-/** @type {{CLOSURE_LIBRARY_PATH: string}} */
+/**
+ * @type {{
+ *   CLOSURE_LIBRARY_PATH: string,
+ *   TEST_SCHEMAS: !Array.<{file: string, namespace: string}>
+ *   }
+ * }}
+ */
 var config = /** @type {!Function} */ (require(
     pathMod.resolve(__dirname + '/config.js')))();
 var genDeps = /** @type {!Function} */ (require(
     pathMod.join(__dirname, 'scan_deps.js')).genDeps);
+var extractRequires = /** @type {!Function} */ (require(
+    pathMod.join(__dirname, 'scan_deps.js')).extractRequires);
 
 
 /** @typedef {{Dir: !Function}} @private */
@@ -56,37 +64,60 @@ function createTestEnv(callback) {
   var libraryPath = config.CLOSURE_LIBRARY_PATH;
 
   createSymLinks(libraryPath, tempPath);
-
-  // Create HR schema for tests
-  var spacPath = pathMod.resolve(pathMod.join(__dirname, '../spac/spac.js'));
-  var spac = fork(
-      spacPath,
-      [
-        '--schema=' +
-       pathMod.resolve(
-            pathMod.join(__dirname, '../testing/hr_schema/hr_schema.yaml')),
-        '--namespace=hr.db',
-        '--outputdir=' + pathMod.resolve(pathMod.join(tempPath, 'html')),
-        '--nocombine=true'
-      ]);
-
-  spac.on('close', function(code) {
-    if (code == 0) {
+  var targets = config.TEST_SCHEMAS.slice(0);
+  var runSequentially = function() {
+    if (targets.length == 0) {
       createTestFiles();
-      var targets = SYMLINKS.map(function(dir) {
+      var links = SYMLINKS.map(function(dir) {
         return pathMod.join(tempPath, dir);
       });
-      targets = targets.concat(pathMod.join(tempPath, 'html'));
-      var results = genDeps(tempPath, targets);
-      fsMod.writeFileSync('deps.js', results);
+      links = links.concat(pathMod.join(tempPath, 'html'));
+      var deps = genDeps(tempPath, links);
+      fsMod.writeFileSync('deps.js', deps);
       callback(tempPath);
       return;
     }
 
-    log('ERROR: unable to generate code from schema\r\n');
-    process.chdir(origPath);
-    cleanUp(tempPath);
-    callback(null);
+    var target = targets.shift();
+    runSpac(tempPath, target.file, target.namespace, function(result) {
+      if (result) {
+        runSequentially();
+      } else {
+        process.chdir(origPath);
+        cleanUp(tempPath);
+        callback(null);
+      }
+    });
+  };
+
+  runSequentially();
+}
+
+
+/**
+ * Runs SPAC to generate code.
+ * @param {string} tempPath
+ * @param {string} path
+ * @param {string} namespace
+ * @param {!function(boolean)} callback
+ */
+function runSpac(tempPath, path, namespace, callback) {
+  var spacPath = pathMod.resolve(pathMod.join(__dirname, '../spac/spac.js'));
+  var spac = fork(
+      spacPath,
+      [
+        '--schema=' + path,
+        '--namespace=' + namespace,
+        '--outputdir=' + pathMod.resolve(pathMod.join(tempPath, 'html')),
+        '--nocombine=true'
+      ]);
+  spac.on('close', function(code) {
+    if (code == 0) {
+      callback(true);
+    } else {
+      log('ERROR: unable to generate code from ' + path + '\r\n');
+      callback(false);
+    }
   });
 }
 
@@ -155,6 +186,7 @@ function createTestFile(script) {
   var target = 'html/' + script.slice(6, -2) + 'html';
   var level = target.match(/\//g).length;
   var prefix = new Array(level).join('../') + '../';
+  var fakeName = script.replace('/', '$').replace('.', '_');
   var contents =
       '<!DOCTYPE html>\r\n' +
       '<html>\r\n' +
@@ -166,10 +198,14 @@ function createTestFile(script) {
       '  </head>\r\n' +
       '  <body>\r\n' +
       '    <script>\r\n' +
-      '      goog.require(\'goog.testing.jsunit\');\r\n' +
+      '      goog.addDependency(\r\n' +
+      '          \'../' + prefix + script + '\',\r\n' +
+      '          [\'' + fakeName + '\'],\r\n' +
+      '          [' + extractRequires(script) + '], false);\r\n' +
       '      goog.require(\'goog.testing.AsyncTestCase\');\r\n' +
+      '      goog.require(\'goog.testing.jsunit\');\r\n' +
+      '      goog.require(\'' + fakeName + '\');\r\n' +
       '    </script>\r\n' +
-      '    <script src="' + prefix + script + '"></script>\r\n' +
       '  </body>\r\n' +
       '</html>\r\n';
   mkdir(pathMod.dirname(target));

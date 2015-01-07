@@ -203,6 +203,18 @@ function scanFiles(filePaths, provideMap, requireMap) {
 
 
 /**
+ * @param {string} filePath
+ * @return {string} requires
+ */
+function extractRequires(filePath) {
+  var provideMap = new ProvideMap_();
+  var requireMap = new RequireMap_();
+  scanFiles([filePath], provideMap, requireMap);
+  return requireMap.get(filePath).join(', ');
+}
+
+
+/**
  * @param {!RequireMap_} codeRequire
  * @return {!Array.<string>} Associated Closure files
  */
@@ -334,3 +346,7 @@ exports.scanDeps = scanDeps;
 
 /** @type {Function} */
 exports.genDeps = genDeps;
+
+
+/** @type {Function} */
+exports.extractRequires = extractRequires;

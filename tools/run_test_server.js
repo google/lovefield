@@ -46,6 +46,7 @@ function runTestServer(opt_port) {
     if (tempPath) {
       server = /** @type {HTTPServerType_} */ (createServer());
       server.listen(port);
+      stdout.write('Server path: ' + tempPath + '\r\n');
       stdout.write('Server started at port ' + port + '\r\n');
       waitCtrlC(tempPath);
     } else {

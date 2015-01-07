@@ -50,6 +50,22 @@ var Config = function() {
     '--compilation_level=WHITESPACE_ONLY',
     '--formatting=PRETTY_PRINT'
   ]);
+
+  // Schemas used for tests.
+  this.TEST_SCHEMAS = [
+    {
+      'file': pathMod.resolve(pathMod.join(
+          __dirname,
+          '../testing/hr_schema/hr_schema.yaml')),
+      'namespace': 'hr.db'
+    },
+    {
+      'file': pathMod.resolve(pathMod.join(
+          __dirname,
+          '../testing/hr_schema/hr_schema_bundled.yaml')),
+      'namespace': 'hr.bdb'
+    }
+  ];
 };
 
 function createConfig() {
