@@ -11193,15 +11193,15 @@ goog.html.SafeHtml.createIframe = function(
 /**
  * Creates a SafeHtml representing a style tag. The type attribute is set
  * to "text/css".
- * @param {!goog.html.SafeHtml.TextOrHtml_|
- *     !Array<!goog.html.SafeHtml.TextOrHtml_>} styleSheet Content to
- *     put inside the tag. Array elements are concatenated.
+ * @param {!goog.html.SafeStyleSheet|!Array<!goog.html.SafeStyleSheet>}
+ *     styleSheet Content to put inside the tag. Array elements are
+ *     concatenated.
  * @param {!Object<string, goog.html.SafeHtml.AttributeValue_>=}
  *     opt_attributes Mapping from attribute names to their values. Only
  *     attribute names consisting of [a-zA-Z0-9-] are allowed. Value of null or
  *     undefined causes the attribute to be omitted.
  * @return {!goog.html.SafeHtml} The SafeHtml content with the tag.
- * @throws {Error} If attribute name, or attribute value is provided. If
+ * @throws {Error} If invalid attribute name or attribute value is provided. If
  *     opt_attributes contains the type attribute.
  */
 goog.html.SafeHtml.createStyle = function(styleSheet, opt_attributes) {
@@ -11350,8 +11350,8 @@ goog.html.SafeHtml.concat = function(var_args) {
  * Creates a new SafeHtml object with known directionality by concatenating the
  * values.
  * @param {!goog.i18n.bidi.Dir} dir Directionality.
- * @param {...!goog.html.SafeHtml.TextOrHtml_|
- *     !Array<!goog.html.SafeHtml.TextOrHtml_>} var_args Elements of array
+ * @param {...(!goog.html.SafeHtml.TextOrHtml_|
+ *     !Array<!goog.html.SafeHtml.TextOrHtml_>)} var_args Elements of array
  *     arguments would be processed recursively.
  * @return {!goog.html.SafeHtml}
  */
