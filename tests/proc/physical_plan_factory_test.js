@@ -66,7 +66,7 @@ function testCreate_DeletePlan() {
       'delete(tableA)\n' +
       '-select(value_pred(tableA.id))\n' +
       '--table_access_by_row_id(tableA)\n' +
-      '---index_range_scan(tableA.idxName, [name, name])\n';
+      '---index_range_scan(tableA.idxName, [name, name], ASC)\n';
 
   var table = env.schema.getTables()[0];
   var deleteNode = new lf.proc.DeleteNode(table);

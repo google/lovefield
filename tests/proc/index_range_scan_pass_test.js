@@ -92,7 +92,7 @@ function testSimpleTree() {
   var treeAfter =
       'project()\n' +
       '-table_access_by_row_id(Employee)\n' +
-      '--index_range_scan(Employee.pkEmployee, (100, unbound])\n';
+      '--index_range_scan(Employee.pkEmployee, (100, unbound], ASC)\n';
 
   // Generating a simple tree that has just one SelectNode corresponding to an
   // AND predicate.
@@ -120,7 +120,7 @@ function testTree1() {
   var treeAfter =
       'select(value_pred(Employee.salary))\n' +
       '-table_access_by_row_id(Employee)\n' +
-      '--index_range_scan(Employee.pkEmployee, (100, unbound])\n';
+      '--index_range_scan(Employee.pkEmployee, (100, unbound], ASC)\n';
 
   simulateIndexCost(e.salary.getIndices()[0], 100);
   simulateIndexCost(e.id.getIndices()[0], 5);
@@ -155,11 +155,11 @@ function testTree2() {
       '---order_by(Employee.salary)\n' +
       '----select(value_pred(Employee.salary))\n' +
       '-----table_access_by_row_id(Employee)\n' +
-      '------index_range_scan(Employee.pkEmployee, (100, unbound])\n' +
+      '------index_range_scan(Employee.pkEmployee, (100, unbound], ASC)\n' +
       '---order_by(Job.title)\n' +
       '----select(value_pred(Job.maxSalary))\n' +
       '-----table_access_by_row_id(Job)\n' +
-      '------index_range_scan(Job.pkJob, (100, unbound])\n';
+      '------index_range_scan(Job.pkJob, (100, unbound], ASC)\n';
 
   simulateIndexCost(e.salary.getIndices()[0], 100);
   simulateIndexCost(e.id.getIndices()[0], 5);
@@ -192,7 +192,7 @@ function testTree3() {
       'project()\n' +
       '-cross_product\n' +
       '--table_access_by_row_id(Job)\n' +
-      '---index_range_scan(Job.pkJob, [100, 100])\n' +
+      '---index_range_scan(Job.pkJob, [100, 100], ASC)\n' +
       '--table_access(Department)\n';
 
   var crossProductStep = new lf.proc.CrossProductStep();

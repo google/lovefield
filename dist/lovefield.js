@@ -30515,8 +30515,9 @@ lf.proc.TableAccessByRowIdStep.prototype.exec = function(journal) {
  *
  * @param {!lf.schema.Index} index
  * @param {!Array.<!lf.index.KeyRange>} keyRanges
+ * @param {!lf.Order} order The order in which results will be returned.
  */
-lf.proc.IndexRangeScanStep = function(index, keyRanges) {
+lf.proc.IndexRangeScanStep = function(index, keyRanges, order) {
   lf.proc.IndexRangeScanStep.base(this, 'constructor');
 
   /** @private {!lf.schema.Index} */
@@ -30524,6 +30525,9 @@ lf.proc.IndexRangeScanStep = function(index, keyRanges) {
 
   /** @private {!Array.<!lf.index.KeyRange>} */
   this.keyRanges_ = keyRanges;
+
+  /** @private {!lf.Order} */
+  this.order_ = order;
 };
 goog.inherits(lf.proc.IndexRangeScanStep, lf.proc.PhysicalQueryPlanNode);
 
@@ -30532,13 +30536,18 @@ goog.inherits(lf.proc.IndexRangeScanStep, lf.proc.PhysicalQueryPlanNode);
 lf.proc.IndexRangeScanStep.prototype.toString = function() {
   return 'index_range_scan(' +
       this.index_.getNormalizedName() + ', ' +
-      this.keyRanges_.toString() + ')';
+      this.keyRanges_.toString() + ', ' +
+      (this.order_ == lf.Order.ASC ? 'ASC' : 'DESC') + ')';
 };
 
 
 /** @override */
 lf.proc.IndexRangeScanStep.prototype.exec = function(journal) {
   var rowIds = journal.getIndexRange(this.index_, this.keyRanges_);
+  if (this.order_ == lf.Order.DESC) {
+    rowIds.reverse();
+  }
+
   var rows = rowIds.map(function(rowId) {
     return new lf.Row(rowId, {});
   }, this);
@@ -33558,6 +33567,7 @@ goog.provide('lf.proc.IndexRangeScanPass');
 
 goog.require('goog.array');
 goog.require('goog.asserts');
+goog.require('lf.Order');
 goog.require('lf.pred.ValuePredicate');
 goog.require('lf.proc.IndexRangeScanStep');
 goog.require('lf.proc.RewritePass');
@@ -33777,7 +33787,7 @@ lf.proc.IndexRangeScanPass.replaceWithIndexRangeScanStep_ = function(
   }
 
   var indexRangeScanStep = new lf.proc.IndexRangeScanStep(
-      columnIndex, predicate.toKeyRange());
+      columnIndex, predicate.toKeyRange(), lf.Order.ASC);
   var tableAccessByRowIdStep = new lf.proc.TableAccessByRowIdStep(
       tableAccessFullStep.table);
   tableAccessByRowIdStep.addChild(indexRangeScanStep);

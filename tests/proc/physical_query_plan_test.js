@@ -18,6 +18,7 @@ goog.setTestOnly();
 goog.require('goog.testing.AsyncTestCase');
 goog.require('goog.testing.jsunit');
 goog.require('lf.Global');
+goog.require('lf.Order');
 goog.require('lf.TransactionType');
 goog.require('lf.cache.Journal');
 goog.require('lf.index.KeyRange');
@@ -163,18 +164,45 @@ function testTableAccessByRowId_Empty() {
 }
 
 
-function testIndexRangeScan() {
-  asyncTestCase.waitForAsync('testIndexRangeScan');
+function testIndexRangeScan_Ascending() {
+  checkIndexRangeScan(lf.Order.ASC, 'testIndexRangeScan_Ascending');
+}
+
+
+function testIndexRangeScan_Descending() {
+  checkIndexRangeScan(lf.Order.DESC, 'testIndexRangeScan_Descending');
+}
+
+
+/**
+ * Checks that an IndexRangeScanStep returns results in the expected order.
+ * @param {!lf.Order} order The expected order.
+ * @param {string} description A description of this test.
+ */
+function checkIndexRangeScan(order, description) {
+  asyncTestCase.waitForAsync(description);
 
   var table = schema.getTables()[0];
   var index = table.getIndices()[0];
   var keyRange = new lf.index.KeyRange(5, 8, false, false);
-  var step = new lf.proc.IndexRangeScanStep(index, [keyRange]);
+  var step = new lf.proc.IndexRangeScanStep(index, [keyRange], order);
 
   var journal = new lf.cache.Journal(lf.Global.get(), [table]);
   step.exec(journal).then(
       function(relation) {
         assertEquals(keyRange.to - keyRange.from + 1, relation.entries.length);
+        relation.entries.forEach(function(entry, j) {
+          if (j == 0) {
+            return;
+          }
+
+          // Row ID is equal to the payload's ID field for the data used in this
+          // test.
+          var comparator = order == lf.Order.ASC ? 1 : -1;
+          assertTrue(comparator *
+              (entry.row.id() - relation.entries[j - 1].row.id()) > 0);
+        });
+
         asyncTestCase.continueTesting();
       }, fail);
 }
