@@ -190,23 +190,6 @@ function testWhere_ThrowsAlreadyCalled() {
 
 
 /**
- * Tests that Select#innerJoin() fails if innerJoin() has already been called.
- */
-function testInnerJoin_ThrowsAlreadyCalled() {
-  var query = new lf.query.SelectBuilder(hr.db.getGlobal(), []);
-
-  var buildQuery = function() {
-    var jobTable = db.getSchema().getJob();
-    var employeeTable = db.getSchema().getEmployee();
-    var predicate = jobTable.id.eq(employeeTable.jobId);
-    query.innerJoin(jobTable, predicate).innerJoin(jobTable, predicate);
-  };
-
-  assertThrowsSyntaxError(buildQuery);
-}
-
-
-/**
  * Tests that Select#groupBy() fails if groupBy() has already been called.
  */
 function testGroupBy_ThrowsAlreadyCalled() {

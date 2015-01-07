@@ -29241,9 +29241,6 @@ lf.query.SelectContext = function() {
   /** @type {!lf.Predicate} */
   this.where;
 
-  /** @type {!lf.query.SelectContext.InnerJoin_} */
-  this.innerJoin;
-
   /** @type {number} */
   this.limit;
 
@@ -29263,15 +29260,6 @@ lf.query.SelectContext = function() {
    */
   this.currentVersion = 0;
 };
-
-
-/**
- * @typedef {{
- *     table: !lf.schema.Table,
- *     predicate: !lf.Predicate}}
- * @private
- */
-lf.query.SelectContext.InnerJoin_;
 
 
 /**
@@ -32177,6 +32165,76 @@ lf.fn.sum = function(col) {
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+goog.provide('lf.op');
+
+goog.require('lf.pred.CombinedPredicate');
+goog.require('lf.pred.Operator');
+
+
+/**
+ * @export
+ * @param {...!lf.Predicate} var_args
+ * @return {!lf.Predicate}
+ */
+lf.op.and = function(var_args) {
+  var args = Array.prototype.slice.call(arguments);
+  return lf.op.createPredicate_(lf.pred.Operator.AND, args);
+};
+
+
+/**
+ * @export
+ * @param {...!lf.Predicate} var_args
+ * @return {!lf.Predicate}
+ */
+lf.op.or = function(var_args) {
+  var args = Array.prototype.slice.call(arguments);
+  return lf.op.createPredicate_(lf.pred.Operator.OR, args);
+};
+
+
+/**
+ * @param {!lf.pred.Operator} operator
+ * @param {!Array<!lf.pred.PredicateNode>} predicates
+ * @return {!lf.Predicate}
+ * @private
+ */
+lf.op.createPredicate_ = function(operator, predicates) {
+  var condition = new lf.pred.CombinedPredicate(operator);
+
+  predicates.forEach(function(predicate) {
+    condition.addChild(predicate);
+  });
+  return condition;
+};
+
+
+/**
+ * @export
+ * @param {!lf.Predicate} operand
+ * @return {!lf.Predicate}
+ */
+lf.op.not = function(operand) {
+  operand.setComplement(true);
+  return operand;
+};
+
+/**
+ * @license
+ * Copyright 2014 Google Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 goog.provide('lf.query.SelectBuilder');
 
 goog.require('lf.Exception');
@@ -32184,6 +32242,7 @@ goog.require('lf.Order');
 goog.require('lf.Type');
 goog.require('lf.fn.AggregatedColumn');
 goog.require('lf.fn.Type');
+goog.require('lf.op');
 goog.require('lf.query.BaseBuilder');
 goog.require('lf.query.Select');
 goog.require('lf.query.SelectContext');
@@ -32201,6 +32260,18 @@ goog.require('lf.query.SelectContext');
  */
 lf.query.SelectBuilder = function(global, columns) {
   lf.query.SelectBuilder.base(this, 'constructor', global);
+
+  /**
+   * Tracks whether where() has been called.
+   * @private {boolean}
+   */
+  this.whereAlreadyCalled_ = false;
+
+  /**
+   * Tracks whether from() has been called.
+   * @private {boolean}
+   */
+  this.fromAlreadyCalled_ = false;
 
   this.query = new lf.query.SelectContext();
   this.query.columns = columns;
@@ -32376,8 +32447,19 @@ lf.query.SelectBuilder.prototype.assertGreaterThanZero_ = function(
 
 /** @override */
 lf.query.SelectBuilder.prototype.from = function(var_args) {
-  this.assertNotAlreadyCalled_(this.query.from, 'from');
-  this.query.from = Array.prototype.slice.call(arguments);
+  if (this.fromAlreadyCalled_) {
+    throw new lf.Exception(
+        lf.Exception.Type.SYNTAX, 'from() has already been called.');
+  }
+  this.fromAlreadyCalled_ = true;
+
+  if (!goog.isDefAndNotNull(this.query.from)) {
+    this.query.from = [];
+  }
+
+  this.query.from.push.apply(
+      this.query.from,
+      Array.prototype.slice.call(arguments));
 
   return this;
 };
@@ -32385,21 +32467,40 @@ lf.query.SelectBuilder.prototype.from = function(var_args) {
 
 /** @override */
 lf.query.SelectBuilder.prototype.where = function(predicate) {
-  this.assertNotAlreadyCalled_(this.query.where, 'where');
-  this.query.where = predicate;
+  if (this.whereAlreadyCalled_) {
+    throw new lf.Exception(
+        lf.Exception.Type.SYNTAX, 'where() has already been called.');
+  }
+  this.whereAlreadyCalled_ = true;
 
+  this.augmentWhereClause_(predicate);
   return this;
+};
+
+
+/**
+ * Augments the where clause by ANDing it with the given predicate.
+ * @param {!lf.Predicate} predicate
+ * @private
+ */
+lf.query.SelectBuilder.prototype.augmentWhereClause_ = function(predicate) {
+  if (goog.isDefAndNotNull(this.query.where)) {
+    var newPredicate = lf.op.and(predicate, this.query.where);
+    this.query.where = newPredicate;
+  } else {
+    this.query.where = predicate;
+  }
 };
 
 
 /** @override */
 lf.query.SelectBuilder.prototype.innerJoin = function(table, predicate) {
-  this.assertNotAlreadyCalled_(this.query.innerJoin, 'innerJoin');
+  if (!goog.isDefAndNotNull(this.query.from)) {
+    this.query.from = [];
+  }
+  this.query.from.push(table);
 
-  this.query.innerJoin = {
-    table: table,
-    predicate: predicate
-  };
+  this.augmentWhereClause_(predicate);
 
   return this;
 };
@@ -33212,7 +33313,6 @@ goog.require('lf.proc.BaseLogicalPlanGenerator');
 goog.require('lf.proc.CrossProductNode');
 goog.require('lf.proc.CrossProductPass');
 goog.require('lf.proc.ImplicitJoinsPass');
-goog.require('lf.proc.JoinNode');
 goog.require('lf.proc.LimitNode');
 goog.require('lf.proc.LogicalPlanRewriter');
 goog.require('lf.proc.OrderByNode');
@@ -33236,9 +33336,6 @@ lf.proc.SelectLogicalPlanGenerator = function(query) {
 
   /** @private {Array.<!lf.proc.LogicalQueryPlanNode>} */
   this.tableAccessNodes_ = null;
-
-  /** @private {lf.proc.LogicalQueryPlanNode} */
-  this.joinNode_ = null;
 
   /** @private {lf.proc.LogicalQueryPlanNode} */
   this.crossProductNode_ = null;
@@ -33291,7 +33388,6 @@ lf.proc.SelectLogicalPlanGenerator.prototype.generateInternal = function() {
 lf.proc.SelectLogicalPlanGenerator.prototype.generateNodes_ = function() {
   this.generateTableAcessNodes_();
   this.generateCrossProductNode_();
-  this.generateJoinNode_();
   this.generateSelectNode_();
   this.generateOrderByNode_();
   this.generateSkipNode_();
@@ -33305,39 +33401,22 @@ lf.proc.SelectLogicalPlanGenerator.prototype.generateNodes_ = function() {
  * @private
  */
 lf.proc.SelectLogicalPlanGenerator.prototype.connectNodes_ = function() {
-  var tableAccessParentNode = this.joinNode_ || this.crossProductNode_ || null;
+  var parentOrder = [
+    this.projectNode_, this.limitNode_, this.skipNode_, this.orderByNode_,
+    this.selectNode_, this.crossProductNode_
+  ];
 
-  if (!goog.isNull(tableAccessParentNode)) {
-    this.tableAccessNodes_.forEach(function(tableAccessNode) {
-      tableAccessParentNode.addChild(tableAccessNode);
-    });
-  }
-
-  if (!goog.isNull(this.selectNode_)) {
-    this.selectNode_.addChild(
-        !goog.isNull(tableAccessParentNode) ?
-            tableAccessParentNode : this.tableAccessNodes_[0]);
-  }
-
-  var parentNodeSoFar =
-      this.selectNode_ || tableAccessParentNode || this.tableAccessNodes_[0];
-
-  /**
-   * Sets the specified node as the parent of the entire tree.
-   * @param {?lf.proc.LogicalQueryPlanNode} node The node to set as a parent, if
-   *     not null.
-   */
-  var setAsParent = function(node) {
-    if (!goog.isNull(node)) {
-      node.addChild(parentNodeSoFar);
-      parentNodeSoFar = node;
+  var lastExistingParentIndex = 0;
+  for (var i = 1; i < parentOrder.length; i++) {
+    if (!goog.isNull(parentOrder[i])) {
+      parentOrder[lastExistingParentIndex].addChild(parentOrder[i]);
+      lastExistingParentIndex = i;
     }
-  };
+  }
 
-  setAsParent(this.orderByNode_);
-  setAsParent(this.skipNode_);
-  setAsParent(this.limitNode_);
-  setAsParent(this.projectNode_);
+  this.tableAccessNodes_.forEach(function(tableAccessNode) {
+    parentOrder[lastExistingParentIndex].addChild(tableAccessNode);
+  });
 };
 
 
@@ -33347,20 +33426,6 @@ lf.proc.SelectLogicalPlanGenerator.prototype.generateTableAcessNodes_ =
   this.tableAccessNodes_ = this.query.from.map(function(table) {
     return new lf.proc.TableAccessNode(table);
   }, this);
-
-  if (this.query.innerJoin) {
-    // TODO(dpapad): Assert that from has exactly one table.
-    this.tableAccessNodes_.push(
-        new lf.proc.TableAccessNode(this.query.innerJoin.table));
-  }
-};
-
-
-/** @private */
-lf.proc.SelectLogicalPlanGenerator.prototype.generateJoinNode_ = function() {
-  if (this.query.innerJoin) {
-    this.joinNode_ = new lf.proc.JoinNode(this.query.innerJoin.predicate);
-  }
 };
 
 
@@ -36229,75 +36294,5 @@ lf.Global.prototype.getService = function(serviceId) {
  */
 lf.Global.prototype.isRegistered = function(serviceId) {
   return this.services_.containsKey(serviceId.toString());
-};
-
-/**
- * @license
- * Copyright 2014 Google Inc. All Rights Reserved.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-goog.provide('lf.op');
-
-goog.require('lf.pred.CombinedPredicate');
-goog.require('lf.pred.Operator');
-
-
-/**
- * @export
- * @param {...!lf.Predicate} var_args
- * @return {!lf.Predicate}
- */
-lf.op.and = function(var_args) {
-  var args = Array.prototype.slice.call(arguments);
-  return lf.op.createPredicate_(lf.pred.Operator.AND, args);
-};
-
-
-/**
- * @export
- * @param {...!lf.Predicate} var_args
- * @return {!lf.Predicate}
- */
-lf.op.or = function(var_args) {
-  var args = Array.prototype.slice.call(arguments);
-  return lf.op.createPredicate_(lf.pred.Operator.OR, args);
-};
-
-
-/**
- * @param {!lf.pred.Operator} operator
- * @param {!Array<!lf.pred.PredicateNode>} predicates
- * @return {!lf.Predicate}
- * @private
- */
-lf.op.createPredicate_ = function(operator, predicates) {
-  var condition = new lf.pred.CombinedPredicate(operator);
-
-  predicates.forEach(function(predicate) {
-    condition.addChild(predicate);
-  });
-  return condition;
-};
-
-
-/**
- * @export
- * @param {!lf.Predicate} operand
- * @return {!lf.Predicate}
- */
-lf.op.not = function(operand) {
-  operand.setComplement(true);
-  return operand;
 };
 

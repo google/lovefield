@@ -340,15 +340,37 @@ function testSelect_SelfJoin() {
 /**
  * Tests the case of a SELECT query with a 3+ table join.
  */
-function testSelect_MultiJoin() {
-  asyncTestCase.waitForAsync('testSelect_MultiJoin');
-
+function testSelect_MultiJoin_Implicit() {
   var queryBuilder = /** @type {!lf.query.SelectBuilder} */ (
       db.select().
       from(e, j, d).
       where(lf.op.and(
           e.jobId.eq(j.id),
           e.departmentId.eq(d.id))));
+  checkMultiJoin(queryBuilder, 'testSelect_MultiJoin_Implicit');
+}
+
+
+/**
+ * Tests the case of a SELECT query with a 3+ table join.
+ */
+function testSelect_MultiJoin_Explicit() {
+  var queryBuilder = /** @type {!lf.query.SelectBuilder} */ (
+      db.select().
+      from(e).
+      innerJoin(j, j.id.eq(e.jobId)).
+      innerJoin(d, d.id.eq(e.departmentId)));
+  checkMultiJoin(queryBuilder, 'testSelect_MultiJoin_Explicit');
+}
+
+
+/**
+ * Executes and checks the given multi-join query (implicit vs explicit).
+ * @param {!lf.query.SelectBuilder} queryBuilder
+ * @param {string} description A description of the query.
+ */
+function checkMultiJoin(queryBuilder, description) {
+  asyncTestCase.waitForAsync(description);
 
   queryBuilder.exec().then(
       function(results) {
@@ -476,6 +498,44 @@ function testSelect_ExplicitJoin() {
                   result[e.getName()]['jobId'],
                   result[e.getName()]['id']));
         });
+        asyncTestCase.continueTesting();
+      }, fail);
+}
+
+
+/**
+ * Tests that a SELECT query with an explicit join that also includes a cross
+ * product with a third table (a table not involved in the join predicate).
+ */
+function testSelect_ExplicitJoin_WithCrossProduct() {
+  asyncTestCase.waitForAsync('testSelect_ExplicitJoin_WithCrossProduct');
+
+  var sampleEmployee = sampleEmployees[Math.floor(sampleEmployees.length / 2)];
+  var expectedDepartmentId = sampleEmployee.getDepartmentId();
+
+  var queryBuilder = /** @type {!lf.query.SelectBuilder} */ (
+      db.select().
+      from(e, d).
+      innerJoin(j, j.id.eq(e.jobId)).
+      where(d.id.eq(expectedDepartmentId)));
+
+  queryBuilder.exec().then(
+      function(results) {
+        assertEquals(sampleEmployees.length, results.length);
+        results.forEach(function(obj) {
+          assertEquals(3, goog.object.getCount(obj));
+          assertTrue(goog.isDefAndNotNull(obj[e.getName()]));
+          assertTrue(goog.isDefAndNotNull(obj[j.getName()]));
+          assertTrue(goog.isDefAndNotNull(obj[d.getName()]));
+
+          var departmentId = obj[d.getName()][d.id.getName()];
+          assertEquals(expectedDepartmentId, departmentId);
+
+          var employeeJobId = obj[e.getName()][e.jobId.getName()];
+          var jobId = obj[j.getName()][j.id.getName()];
+          assertEquals(employeeJobId, jobId);
+        });
+
         asyncTestCase.continueTesting();
       }, fail);
 }
