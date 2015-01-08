@@ -45,7 +45,7 @@ function setUp() {
   capability = lf.testing.Capability.get();
   asyncTestCase.waitForAsync('setUp');
   var options = {
-    storeType: capability.memoryDbOnly ? lf.schema.DataStoreType.MEMORY :
+    storeType: !capability.indexedDb ? lf.schema.DataStoreType.MEMORY :
         lf.schema.DataStoreType.INDEXED_DB
   };
   hr.db.connect(options).then(

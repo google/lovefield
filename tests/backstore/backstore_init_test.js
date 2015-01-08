@@ -97,7 +97,7 @@ function testInit_IndexedDB_Bundled() {
  * @param {!lf.Global} global
  */
 function checkInit_IndexedDB(schema, global)  {
-  if (capability.memoryDbOnly) {
+  if (!capability.indexedDb) {
     return;
   }
 

@@ -57,7 +57,7 @@ function setUpPage() {
 
 
 function setUp() {
-  if (capability.memoryDbOnly) {
+  if (!capability.indexedDb) {
     return;
   }
 
@@ -74,7 +74,7 @@ function setUp() {
 
 
 function testCRUD() {
-  if (capability.memoryDbOnly) {
+  if (!capability.indexedDb) {
     return;
   }
 
@@ -86,7 +86,7 @@ function testCRUD() {
 
 
 function testOverlappingScope_MultipleInserts() {
-  if (capability.memoryDbOnly) {
+  if (!capability.indexedDb) {
     return;
   }
 
@@ -98,7 +98,7 @@ function testOverlappingScope_MultipleInserts() {
 
 
 function testTransaction() {
-  if (capability.memoryDbOnly) {
+  if (!capability.indexedDb) {
     return;
   }
 

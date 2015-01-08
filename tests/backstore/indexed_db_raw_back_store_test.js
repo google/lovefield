@@ -64,7 +64,7 @@ function setUpPage() {
 
 
 function setUp() {
-  if (capability.memoryDbOnly) {
+  if (!capability.indexedDb) {
     return;
   }
 
@@ -77,7 +77,7 @@ function setUp() {
 }
 
 function testConvert() {
-  if (capability.memoryDbOnly) {
+  if (!capability.indexedDb) {
     return;
   }
 
@@ -102,7 +102,7 @@ function testConvert() {
 // Tests that onUpgrade function is still called with version 0 for a new DB
 // instance.
 function testNewDBInstance() {
-  if (capability.memoryDbOnly) {
+  if (!capability.indexedDb) {
     return;
   }
 
@@ -226,7 +226,7 @@ function prepareBundledTxForTableA(db) {
 
 
 function testAddTableColumn() {
-  if (capability.memoryDbOnly) {
+  if (!capability.indexedDb) {
     return;
   }
 
@@ -255,7 +255,7 @@ function testAddTableColumn() {
 
 
 function testAddTableColumn_Bundled() {
-  if (capability.memoryDbOnly) {
+  if (!capability.indexedDb) {
     return;
   }
 
@@ -299,7 +299,7 @@ function upgradeDropTableColumn(dbInterface) {
 
 
 function testDropTableColumn() {
-  if (capability.memoryDbOnly) {
+  if (!capability.indexedDb) {
     return;
   }
 
@@ -326,7 +326,7 @@ function testDropTableColumn() {
 
 
 function testDropTableColumn_Bundled() {
-  if (capability.memoryDbOnly) {
+  if (!capability.indexedDb) {
     return;
   }
 
@@ -368,7 +368,7 @@ function upgradeRenameTableColumn(dbInterface) {
 
 
 function testRenameTableColumn() {
-  if (capability.memoryDbOnly) {
+  if (!capability.indexedDb) {
     return;
   }
 
@@ -397,7 +397,7 @@ function testRenameTableColumn() {
 
 
 function testRenameTableColumn_Bundled() {
-  if (capability.memoryDbOnly) {
+  if (!capability.indexedDb) {
     return;
   }
 
@@ -441,7 +441,7 @@ function upgradeDropTable(dbInterface) {
 
 
 function testDropTable() {
-  if (capability.memoryDbOnly) {
+  if (!capability.indexedDb) {
     return;
   }
 
@@ -478,7 +478,7 @@ function upgradeDumping(dbInterface) {
 
 
 function testDump() {
-  if (capability.memoryDbOnly) {
+  if (!capability.indexedDb) {
     return;
   }
 
@@ -500,7 +500,7 @@ function testDump() {
 
 
 function testDump_Bundled() {
-  if (capability.memoryDbOnly) {
+  if (!capability.indexedDb) {
     return;
   }
 

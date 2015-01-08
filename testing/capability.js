@@ -27,9 +27,12 @@ goog.require('goog.userAgent.product');
  * @constructor
  */
 lf.testing.Capability = function() {
-  /** @type {boolean} */
-  this.memoryDbOnly = goog.userAgent.product.SAFARI ||
-      (goog.userAgent.product.IE && !goog.userAgent.isVersionOrHigher(10));
+  /**
+   * IndexedDB support: usable IndexedDB on IE 10+, Chrome, Firefox.
+   * @type {boolean}
+   */
+  this.indexedDb = !(goog.userAgent.product.SAFARI ||
+      (goog.userAgent.product.IE && !goog.userAgent.isVersionOrHigher(10)));
 
   /**
    * Cannot obtain reliable LocalStorage event on IE10, so disable it.

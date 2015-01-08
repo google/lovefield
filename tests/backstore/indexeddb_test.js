@@ -67,7 +67,7 @@ function setUpPage() {
 }
 
 function setUp() {
-  if (capability.memoryDbOnly) {
+  if (!capability.indexedDb) {
     return;
   }
 
@@ -82,7 +82,7 @@ function setUp() {
 
 
 function tearDown() {
-  if (capability.memoryDbOnly) {
+  if (!capability.indexedDb) {
     return;
   }
 
@@ -110,7 +110,7 @@ function tearDown() {
 
 
 function testSCUD() {
-  if (capability.memoryDbOnly) {
+  if (!capability.indexedDb) {
     return;
   }
 
@@ -126,7 +126,7 @@ function testSCUD() {
 
 
 function testSCUD_Bundled() {
-  if (capability.memoryDbOnly) {
+  if (!capability.indexedDb) {
     return;
   }
 
@@ -144,7 +144,7 @@ function testSCUD_Bundled() {
 
 
 function testTwoTableInserts_Bundled() {
-  if (capability.memoryDbOnly) {
+  if (!capability.indexedDb) {
     return;
   }
 
@@ -244,7 +244,7 @@ function testTwoTableInserts_Bundled() {
 
 /** @suppress {accessControls} */
 function testScanRowId() {
-  if (capability.memoryDbOnly) {
+  if (!capability.indexedDb) {
     return;
   }
 
@@ -300,7 +300,7 @@ function testScanRowId() {
  * @suppress {accessControls}
  */
 function testScanRowId_Empty() {
-  if (capability.memoryDbOnly) {
+  if (!capability.indexedDb) {
     return;
   }
 
@@ -316,7 +316,7 @@ function testScanRowId_Empty() {
 
 /** @suppress {accessControls} */
 function testScanRowId_BundledDB() {
-  if (capability.memoryDbOnly) {
+  if (!capability.indexedDb) {
     return;
   }
 
@@ -371,7 +371,7 @@ function filterTableA() {
 }
 
 function testUpgrade() {
-  if (capability.memoryDbOnly) {
+  if (!capability.indexedDb) {
     return;
   }
 

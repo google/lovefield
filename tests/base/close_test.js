@@ -35,7 +35,7 @@ function setUpPage() {
 
 
 function testClose() {
-  if (capability.memoryDbOnly) {
+  if (!capability.indexedDb) {
     return;
   }
 

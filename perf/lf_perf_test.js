@@ -68,7 +68,7 @@ function benchmarkSetUp() {
 }
 
 function test1LoadingEmptyDB() {
-  if (capability.memoryDbOnly) {
+  if (!capability.indexedDb) {
     return;
   }
 
@@ -126,7 +126,7 @@ function fullTableOps(test2, benchmark) {
 }
 
 function test2FullTableOps() {
-  if (capability.memoryDbOnly) {
+  if (!capability.indexedDb) {
     return;
   }
 
@@ -208,7 +208,7 @@ function pkTableOps(test3, benchmark) {
 }
 
 function test3PKTableOps() {
-  if (capability.memoryDbOnly) {
+  if (!capability.indexedDb) {
     return;
   }
 
@@ -332,7 +332,7 @@ function selectRunner(name, db) {
 }
 
 function test4Select() {
-  if (capability.memoryDbOnly) {
+  if (!capability.indexedDb) {
     return;
   }
 
@@ -360,7 +360,7 @@ function test4Select_Mem() {
 }
 
 function test5LoadingPopulatedDB() {
-  if (capability.memoryDbOnly) {
+  if (!capability.indexedDb) {
     return;
   }
 
