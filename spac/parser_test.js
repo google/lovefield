@@ -54,6 +54,10 @@ describe('YAML Parser Test', function() {
     thrower('invalid.yaml');
   });
 
+  it('should throw if column had invalid name', function() {
+    thrower('invalid_column_name.yaml');
+  });
+
   it('should throw if column had invalid type', function() {
     thrower('invalid_column_type.yaml');
   });
@@ -83,12 +87,20 @@ describe('YAML Parser Test', function() {
         thrower('primary_key_name_conflict.yaml');
       });
 
+  it('should throw if unique constraint name is invalid', function() {
+    thrower('invalid_unique_key_name.yaml');
+  });
+
   it('should throw if unique constraint name conflicted', function() {
     thrower('unique_key_name_conflict.yaml');
   });
 
   it('should throw if unique were not on a column', function() {
     thrower('unique_key_not_found.yaml');
+  });
+
+  it('should throw if foreign key name is invalid', function() {
+    thrower('invalid_foreign_key_name.yaml');
   });
 
   it('should throw if foreign key had invalid local column', function() {
@@ -143,6 +155,10 @@ describe('YAML Parser Test', function() {
     thrower('boolean_nullable_not_allowed.yaml');
   });
 
+  it('should throw if index name is invalid', function() {
+    thrower('invalid_index_name.yaml');
+  });
+
   it('should throw if index name conflicted with table', function() {
     thrower('index_name_conflict.yaml');
   });
@@ -166,5 +182,9 @@ describe('YAML Parser Test', function() {
 
   it('should throw if DB name conflicted with reserved words', function() {
     thrower('invalid_db_name.yaml');
+  });
+
+  it('should throw if table had invalid name', function() {
+    thrower('invalid_table_name.yaml');
   });
 });

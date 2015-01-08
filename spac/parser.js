@@ -110,6 +110,14 @@ var VALID_INDEX_ORDER = ['asc', 'desc'];
 var INVALID_DB_NAMES = ['Db', 'Observer', 'Transaction'];
 
 
+/** @param {string} name */
+function checkName(name) {
+  if (!/^[a-zA-Z_][0-9a-zA-Z_]*$/.test(name)) {
+    throw new Error(name + ' has illegal characters.');
+  }
+}
+
+
 /**
  * @param {string} name
  * @param {*} data
@@ -134,6 +142,7 @@ function checkObject(name, rule, data) {
     var fieldName = name + '.' + key;
 
     if (data.hasOwnProperty(key)) {
+      checkName(key);
       switch (rule[key]) {
         case 'string':
         case 'boolean':
@@ -210,6 +219,7 @@ function checkUnique(tableName, schema, colNames, names, unique) {
   var notNullable = [];
 
   for (var item in schema) {
+    checkName(item);
     checkObject(tableName + '.' + item, UNIQUE_SCHEMA, schema[item]);
     if (names.indexOf(item) != -1) {
       throw new Error(tableName + ' has name conflict:' + item);
@@ -249,6 +259,7 @@ function checkForeignKey(tableName, schemas, schema, colNames, names, keyed) {
   }
 
   for (var fk in schema) {
+    checkName(fk);
     var fkName = tableName + '.' + fk;
     checkObject(fkName, FOREIGN_KEY_SCHEMA, schema[fk]);
 
@@ -382,6 +393,7 @@ function checkIndices(tableName, schema, colNames, names, nullable) {
   }
 
   for (var index in schema.index) {
+    checkName(index);
     var indexSchema = schema.index[index];
     var indexName = tableName + '.' + index;
     checkObject(indexName, INDEX_SCHEMA, indexSchema);
@@ -419,6 +431,7 @@ function checkIndices(tableName, schema, colNames, names, nullable) {
  * @param {!Object} schemas
  */
 function checkTable(tableName, schemas) {
+  checkName(tableName);
   var schema = schemas[tableName];
 
   checkObject(tableName, TABLE_SCHEMA, schema);
@@ -428,6 +441,7 @@ function checkTable(tableName, schemas) {
 
   // Check column types.
   for (var col in schema.column) {
+    checkName(col);
     names.push(col);
     if (VALID_COLUMN_TYPE.indexOf(schema.column[col]) == -1) {
       throw new Error(tableName + '.' + col + ' has invalid type');
