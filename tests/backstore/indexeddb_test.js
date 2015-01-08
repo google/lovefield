@@ -17,6 +17,7 @@
 goog.setTestOnly();
 goog.require('goog.Promise');
 goog.require('goog.testing.AsyncTestCase');
+goog.require('goog.testing.PropertyReplacer');
 goog.require('goog.testing.jsunit');
 goog.require('goog.userAgent.product');
 goog.require('lf.Global');
@@ -35,6 +36,10 @@ goog.require('lf.testing.backstore.ScudTester');
 var asyncTestCase = goog.testing.AsyncTestCase.createAndInstall('IndexedDB');
 
 
+/** @type {!goog.testing.PropertyReplacer} */
+var propertyReplacer;
+
+
 /** @type {!lf.cache.Cache} */
 var cache;
 
@@ -50,6 +55,10 @@ var schema;
 /** @type {!lf.backstore.IndexedDB} */
 var db;
 
+
+function setUpPage() {
+  propertyReplacer = new goog.testing.PropertyReplacer();
+}
 
 function setUp() {
   if (goog.userAgent.product.SAFARI) {
@@ -71,6 +80,7 @@ function tearDown() {
     return;
   }
 
+  propertyReplacer.reset();
   asyncTestCase.waitForAsync('tearDown');
 
   // Clearing all tables.
@@ -318,6 +328,23 @@ function selectAll() {
   return table.get([]);
 }
 
+
+/**
+ * @suppress {accessControls}
+ * @return {!Array.<string>}
+ */
+function filterTableA() {
+  var list = db.db_.objectStoreNames;
+  var results = [];
+  for (var i = 0; i < list.length; ++i) {
+    var name = list.item(i);
+    if (name.indexOf('tableA') != -1) {
+      results.push(list.item(i));
+    }
+  }
+  return results;
+}
+
 function testUpgrade() {
   if (goog.userAgent.product.SAFARI) {
     return;
@@ -327,15 +354,25 @@ function testUpgrade() {
   var name = schema.name + goog.now();
   schema.name = name;
 
+  // Modifying tableA to use persisted indices.
+  propertyReplacer.replace(
+      schema.getTables()[0], 'persistentIndex', goog.functions.TRUE);
+
   db = new lf.backstore.IndexedDB(lf.Global.get(), schema);
   db.init().then(function() {
+    // Verify that index tables are created.
+    var tables = filterTableA();
+    assertTrue(tables.length > 1);
     db.close();
+    propertyReplacer.reset();
     setUp();  // reset the environment
     schema.version = 2;
     schema.name = name;
     db = new lf.backstore.IndexedDB(lf.Global.get(), schema);
     return db.init();
   }).then(function() {
+    var tables = filterTableA();
+    assertEquals(1, tables.length);
     var table = schema.getTables().slice(-1)[0];
     assertEquals('tablePlusOne', table.getName());
     var tx = db.createTx(

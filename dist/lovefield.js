@@ -3093,7 +3093,7 @@ goog.addDependency('labs/net/webchannel/wirev8_test.js', ['goog.labs.net.webChan
 goog.addDependency('labs/net/webchanneltransport.js', ['goog.net.WebChannelTransport'], [], false);
 goog.addDependency('labs/net/webchanneltransportfactory.js', ['goog.net.createWebChannelTransport'], ['goog.functions', 'goog.labs.net.webChannel.WebChannelBaseTransport'], false);
 goog.addDependency('labs/net/xhr.js', ['goog.labs.net.xhr', 'goog.labs.net.xhr.Error', 'goog.labs.net.xhr.HttpError', 'goog.labs.net.xhr.Options', 'goog.labs.net.xhr.PostData', 'goog.labs.net.xhr.ResponseType', 'goog.labs.net.xhr.TimeoutError'], ['goog.Promise', 'goog.debug.Error', 'goog.json', 'goog.net.HttpStatus', 'goog.net.XmlHttp', 'goog.string', 'goog.uri.utils', 'goog.userAgent'], false);
-goog.addDependency('labs/net/xhr_test.js', ['goog.labs.net.xhrTest'], ['goog.Promise', 'goog.labs.net.xhr', 'goog.net.XmlHttp', 'goog.testing.MockClock', 'goog.testing.jsunit', 'goog.userAgent'], false);
+goog.addDependency('labs/net/xhr_test.js', ['goog.labs.net.xhrTest'], ['goog.Promise', 'goog.labs.net.xhr', 'goog.net.WrapperXmlHttpFactory', 'goog.net.XmlHttp', 'goog.testing.MockClock', 'goog.testing.jsunit', 'goog.userAgent'], false);
 goog.addDependency('labs/object/object.js', ['goog.labs.object'], [], false);
 goog.addDependency('labs/object/object_test.js', ['goog.labs.objectTest'], ['goog.labs.object', 'goog.testing.jsunit'], false);
 goog.addDependency('labs/pubsub/broadcastpubsub.js', ['goog.labs.pubsub.BroadcastPubSub'], ['goog.Disposable', 'goog.Timer', 'goog.array', 'goog.async.run', 'goog.events.EventHandler', 'goog.events.EventType', 'goog.json', 'goog.log', 'goog.math', 'goog.pubsub.PubSub', 'goog.storage.Storage', 'goog.storage.mechanism.HTML5LocalStorage', 'goog.string', 'goog.userAgent'], false);
@@ -22393,8 +22393,35 @@ lf.backstore.IndexedDB.prototype.onUpgradeNeeded_ = function(onUpgrade, ev) {
   var tx = ev.target.transaction;
   var rawDb = new lf.backstore.IndexedDBRawBackStore(
       ev.oldVersion, db, tx, this.bundleMode_);
+  this.removeIndexTables_(db, tx);
   this.createTables_(db, tx);
   return onUpgrade(rawDb);
+};
+
+
+/**
+ * Removes Lovefield-created index tables.
+ * @param {!IDBDatabase} db
+ * @param {!IDBTransaction} tx The IndexedDB upgrade transaction from
+ *     IDBOpenDBRequest.
+ * @private
+ */
+lf.backstore.IndexedDB.prototype.removeIndexTables_ = function(db, tx) {
+  var storeNames = [];
+  for (var i = 0; i < db.objectStoreNames.length; ++i) {
+    var name = db.objectStoreNames.item(i);
+    // Remove all persisted indices.
+    if (name.indexOf('.') != -1) {
+      storeNames.push(name);
+    }
+  }
+  storeNames.forEach(function(store) {
+    try {
+      db.deleteObjectStore(store);
+    } catch (e) {
+      // Ignore the error.
+    }
+  });
 };
 
 
