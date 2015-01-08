@@ -166,7 +166,8 @@ function testRemoveNode_Intermediate() {
       '-[10,null]\n';
 
   // Removing node n1.
-  lf.tree.removeNode(nodes[1]);
+  var parentNode = lf.tree.removeNode(nodes[1]);
+  assertEquals(nodes[0], parentNode);
   assertEquals(treeAfter, lf.tree.toString(nodes[0], stringFn));
 }
 
@@ -190,7 +191,8 @@ function testRemoveNode_Leaf() {
       '-[10,null]\n';
 
   // Removing node n2.
-  lf.tree.removeNode(nodes[2]);
+  var parentNode = lf.tree.removeNode(nodes[2]);
+  assertEquals(nodes[1], parentNode);
   assertEquals(treeAfter, lf.tree.toString(nodes[0], stringFn));
 }
 

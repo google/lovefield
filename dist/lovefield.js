@@ -26621,6 +26621,7 @@ lf.tree.getLeafNodes = function(node) {
  * Removes a node from a tree. It takes care of re-parenting the children of the
  * removed node with its parent (if any).
  * @param {!goog.structs.TreeNode} node The node to be removed.
+ * @return {goog.structs.TreeNode}
  */
 lf.tree.removeNode = function(node) {
   var parentNode = node.getParent();
@@ -26637,6 +26638,7 @@ lf.tree.removeNode = function(node) {
           parentNode.addChildAt(child, originalIndex + index);
         }
       });
+  return parentNode;
 };
 
 
@@ -30520,14 +30522,14 @@ lf.proc.TableAccessByRowIdStep.prototype.exec = function(journal) {
 lf.proc.IndexRangeScanStep = function(index, keyRanges, order) {
   lf.proc.IndexRangeScanStep.base(this, 'constructor');
 
-  /** @private {!lf.schema.Index} */
-  this.index_ = index;
+  /** @type {!lf.schema.Index} */
+  this.index = index;
 
   /** @private {!Array.<!lf.index.KeyRange>} */
   this.keyRanges_ = keyRanges;
 
-  /** @private {!lf.Order} */
-  this.order_ = order;
+  /** @type {!lf.Order} */
+  this.order = order;
 };
 goog.inherits(lf.proc.IndexRangeScanStep, lf.proc.PhysicalQueryPlanNode);
 
@@ -30535,16 +30537,16 @@ goog.inherits(lf.proc.IndexRangeScanStep, lf.proc.PhysicalQueryPlanNode);
 /** @override */
 lf.proc.IndexRangeScanStep.prototype.toString = function() {
   return 'index_range_scan(' +
-      this.index_.getNormalizedName() + ', ' +
+      this.index.getNormalizedName() + ', ' +
       this.keyRanges_.toString() + ', ' +
-      (this.order_ == lf.Order.ASC ? 'ASC' : 'DESC') + ')';
+      (this.order == lf.Order.ASC ? 'ASC' : 'DESC') + ')';
 };
 
 
 /** @override */
 lf.proc.IndexRangeScanStep.prototype.exec = function(journal) {
-  var rowIds = journal.getIndexRange(this.index_, this.keyRanges_);
-  if (this.order_ == lf.Order.DESC) {
+  var rowIds = journal.getIndexRange(this.index, this.keyRanges_);
+  if (this.order == lf.Order.DESC) {
     rowIds.reverse();
   }
 
@@ -30553,7 +30555,7 @@ lf.proc.IndexRangeScanStep.prototype.exec = function(journal) {
   }, this);
 
   return goog.Promise.resolve(lf.proc.Relation.fromRows(
-      rows, [this.index_.tableName]));
+      rows, [this.index.tableName]));
 };
 
 
@@ -34059,6 +34061,198 @@ lf.proc.LimitStep.prototype.exec = function(journal) {
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+goog.provide('lf.proc.OrderByIndexPass');
+
+goog.require('goog.asserts');
+goog.require('lf.index.KeyRange');
+goog.require('lf.proc.IndexRangeScanStep');
+goog.require('lf.proc.OrderByStep');
+goog.require('lf.proc.RewritePass');
+goog.require('lf.proc.TableAccessByRowIdStep');
+goog.require('lf.proc.TableAccessFullStep');
+goog.require('lf.tree');
+
+
+
+/**
+ * The OrderByIndexPass is responsible for modifying a tree that has a
+ * OrderByStep node to an equivalent tree that leverages indices to perform
+ * sorting.
+ *
+ * @constructor
+ * @struct
+ * @extends {lf.proc.RewritePass.<!lf.proc.PhysicalQueryPlanNode>}
+ */
+lf.proc.OrderByIndexPass = function() {
+  lf.proc.OrderByIndexPass.base(this, 'constructor');
+};
+goog.inherits(lf.proc.OrderByIndexPass, lf.proc.RewritePass);
+
+
+/** @override */
+lf.proc.OrderByIndexPass.prototype.rewrite = function(rootNode) {
+  this.rootNode = rootNode;
+  this.traverse_(this.rootNode);
+  return this.rootNode;
+};
+
+
+/**
+ * Traverses each node of the tree starting at the given node, rewriting the
+ * tree if possible.
+ * @param {!lf.proc.PhysicalQueryPlanNode} rootNode The root node of the
+ *     sub-tree to be traversed.
+ * @private
+ */
+lf.proc.OrderByIndexPass.prototype.traverse_ = function(rootNode) {
+  var newRootNode = rootNode;
+  // TODO(dpapad): Currently only OrderByStep that sort by a single column are
+  // considered. Once multi-column indices are implemented (b/17486563), this
+  // needs to be updated such that it can optimize cases where sorting is
+  // performed by multiple columns, and a multi-column index exists for those
+  // columns.
+  if (rootNode instanceof lf.proc.OrderByStep &&
+      rootNode.orderBy.length == 1 &&
+      rootNode.orderBy[0].column.getIndices().length != 0) {
+    newRootNode = this.applyTableAccessFullOptimization_(rootNode);
+    if (newRootNode == rootNode) {
+      newRootNode = this.applyIndexRangeScanStepOptimization_(rootNode);
+    }
+  }
+
+  newRootNode.getChildren().forEach(
+      function(child) {
+        this.traverse_(
+            /** @type {!lf.proc.PhysicalQueryPlanNode} */ (child));
+      }, this);
+};
+
+
+/**
+ * Attempts to replace the OrderByStep with a new IndexRangeScanStep.
+ * @param {!lf.proc.OrderByStep} orderByStep
+ * @return {!lf.proc.PhysicalQueryPlanNode}
+ * @private
+ */
+lf.proc.OrderByIndexPass.prototype.applyTableAccessFullOptimization_ =
+    function(orderByStep) {
+  var rootNode = orderByStep;
+
+  var tableAccessFullStep = lf.proc.OrderByIndexPass.findTableAccessFullStep_(
+      /** @type {!lf.proc.PhysicalQueryPlanNode} */ (
+          orderByStep.getChildAt(0)));
+  if (!goog.isNull(tableAccessFullStep)) {
+    var orderBy = orderByStep.orderBy[0];
+    var columnIndex = orderBy.column.getIndices()[0];
+    var indexRangeScanStep = new lf.proc.IndexRangeScanStep(
+        columnIndex, [lf.index.KeyRange.all()], orderBy.order);
+    var tableAccessByRowIdStep = new lf.proc.TableAccessByRowIdStep(
+        tableAccessFullStep.table);
+
+    lf.tree.removeNode(orderByStep);
+    rootNode = /** @type {!lf.proc.PhysicalQueryPlanNode} */ (
+        lf.tree.replaceNodeWithChain(
+            tableAccessFullStep,
+            indexRangeScanStep, tableAccessByRowIdStep));
+  }
+
+  return rootNode;
+};
+
+
+/**
+ * Attempts to replace the OrderByStep with an existing IndexRangeScanStep.
+ * @param {!lf.proc.OrderByStep} orderByStep
+ * @return {!lf.proc.PhysicalQueryPlanNode}
+ * @private
+ */
+lf.proc.OrderByIndexPass.prototype.applyIndexRangeScanStepOptimization_ =
+    function(orderByStep) {
+  var rootNode = orderByStep;
+  var indexRangeScanStep = lf.proc.OrderByIndexPass.findIndexRangeScanStep_(
+      orderByStep.orderBy[0],
+      /** @type {!lf.proc.PhysicalQueryPlanNode} */ (
+          orderByStep.getChildAt(0)));
+  if (!goog.isNull(indexRangeScanStep)) {
+    indexRangeScanStep.order = orderByStep.orderBy[0].order;
+    rootNode = /** @type {!lf.proc.PhysicalQueryPlanNode} */ (
+        lf.tree.removeNode(orderByStep));
+  }
+
+  return rootNode;
+};
+
+
+/**
+ * Finds any existing IndexRangeScanStep that can be used to produce the
+ * requested ordering instead of the OrderByStep.
+ * @param {!lf.query.SelectContext.OrderBy} orderBy
+ * @param {!lf.proc.PhysicalQueryPlanNode} currentNode
+ * @return {lf.proc.IndexRangeScanStep}
+ * @private
+ */
+lf.proc.OrderByIndexPass.findIndexRangeScanStep_ = function(
+    orderBy, currentNode) {
+  if (currentNode instanceof lf.proc.IndexRangeScanStep &&
+      currentNode.index.columnNames[0] == orderBy.column.getName()) {
+    return currentNode;
+  }
+
+  // CrossProductStep and JoinStep nodes have more than one child, and mess up
+  // the ordering of results. Therefore if such nodes exist this optimization
+  // can not be applied.
+  if (currentNode.getChildCount() != 1) {
+    return null;
+  }
+
+  return lf.proc.OrderByIndexPass.findIndexRangeScanStep_(
+      orderBy,
+      /** @type {!lf.proc.PhysicalQueryPlanNode} */ (
+          currentNode.getChildAt(0)));
+};
+
+
+/**
+ * Finds any existing TableAccessFullStep that can converted to an
+ * IndexRangeScanStep instead of using an explicit OrderByStep.
+ * @param {!lf.proc.PhysicalQueryPlanNode} currentNode
+ * @return {lf.proc.TableAccessFullStep}
+ * @private
+ */
+lf.proc.OrderByIndexPass.findTableAccessFullStep_ = function(
+    currentNode) {
+  if (currentNode instanceof lf.proc.TableAccessFullStep) {
+    return currentNode;
+  }
+
+  // CrossProductStep and JoinStep nodes have more than one child, and mess up
+  // the ordering of results. Therefore if such nodes exist this optimization
+  // can not be applied.
+  if (currentNode.getChildCount() != 1) {
+    return null;
+  }
+
+  return lf.proc.OrderByIndexPass.findTableAccessFullStep_(
+      /** @type {!lf.proc.PhysicalQueryPlanNode} */ (
+          currentNode.getChildAt(0)));
+};
+
+/**
+ * @license
+ * Copyright 2014 Google Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 goog.provide('lf.proc.PhysicalPlanRewriter');
 
 
@@ -34685,6 +34879,7 @@ goog.require('lf.proc.JoinNode');
 goog.require('lf.proc.JoinStep');
 goog.require('lf.proc.LimitNode');
 goog.require('lf.proc.LimitStep');
+goog.require('lf.proc.OrderByIndexPass');
 goog.require('lf.proc.OrderByNode');
 goog.require('lf.proc.OrderByStep');
 goog.require('lf.proc.PhysicalPlanRewriter');
@@ -34726,13 +34921,19 @@ lf.proc.PhysicalPlanFactory.prototype.create = function(
     return this.createPlan_(logicalQueryPlanRoot);
   }
 
+  if (logicalQueryPlanRoot instanceof lf.proc.ProjectNode) {
+    return this.createPlan_(
+        logicalQueryPlanRoot, [
+          new lf.proc.IndexRangeScanPass(this.global_),
+          new lf.proc.OrderByIndexPass()
+        ]);
+  }
+
   if ((logicalQueryPlanRoot instanceof lf.proc.DeleteNode) ||
-      (logicalQueryPlanRoot instanceof lf.proc.ProjectNode) ||
       (logicalQueryPlanRoot instanceof lf.proc.UpdateNode)) {
     return this.createPlan_(
         logicalQueryPlanRoot, [new lf.proc.IndexRangeScanPass(this.global_)]);
   }
-
 
   // Should never get here since all cases are handled above.
   goog.asserts.fail('Unknown query type.');
