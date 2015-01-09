@@ -6504,7 +6504,7 @@ goog.array.count = function(arr, f, opt_obj) {
  *     for every element. This function takes 3 arguments (the element, the
  *     index and the array) and should return a boolean.
  * @param {S=} opt_obj An optional "this" context for the function.
- * @return {?T} The first array element that passes the test, or null if no
+ * @return {T|null} The first array element that passes the test, or null if no
  *     element is found.
  * @template T,S
  */
@@ -6550,7 +6550,7 @@ goog.array.findIndex = function(arr, f, opt_obj) {
  *     takes 3 arguments (the element, the index and the array) and should
  *     return a boolean.
  * @param {S=} opt_obj An optional "this" context for the function.
- * @return {?T} The last array element that passes the test, or null if no
+ * @return {T|null} The last array element that passes the test, or null if no
  *     element is found.
  * @template T,S
  */
@@ -22574,8 +22574,9 @@ lf.backstore.IndexedDB.prototype.scanRowId_ = function(opt_tx) {
       req.onsuccess = function(ev) {
         var cursor = ev.target.result;
         if (cursor) {
+          // Since the cursor is traversed in the reverse direction, only the
+          // first record needs to be examined to determine the max row ID.
           maxRowId = Math.max(maxRowId, extractRowId(cursor));
-          cursor.continue();
         }
         resolve(maxRowId);
       };

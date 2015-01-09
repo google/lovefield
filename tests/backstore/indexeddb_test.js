@@ -238,37 +238,65 @@ function testScanRowId() {
     return;
   }
 
-  /** @return {!IThenable} */
-  var insertIntoTable = function() {
+  /**
+   * Generates a set of rows where they are on purpose not sorted with respect
+   * to the row ID and with the larger rowID in position 0.
+   * @return {!Array.<!lf.Row>}
+   */
+  var generateRows = function() {
+    var rowIds = [
+      200, 9, 1, 3, 2, 20, 100
+    ];
     var CONTENTS = {'scan': 'rowid'};
-    var rows = [];
-    for (var i = 0; i < 10; ++i) {
-      rows.push(lf.Row.create(CONTENTS));
-    }
+    return rowIds.map(function(rowId) {
+      return new lf.Row(rowId, CONTENTS);
+    });
+  };
 
+  /**
+   * @param {!Array.<!lf.Row>} rows
+   * @return {!IThenable}
+   */
+  var insertIntoTable = function(rows) {
     var table = schema.getTables()[0];
     var tx = db.createTx(
         lf.TransactionType.READ_WRITE,
         new lf.cache.Journal(lf.Global.get(), [table]));
     var store = /** @type {!lf.backstore.ObjectStore} */ (
         tx.getTable(table.getName(), table.deserializeRow));
-
     store.put(rows);
     return tx.finished();
   };
 
   db = new lf.backstore.IndexedDB(lf.Global.get(), schema);
+  var rows = generateRows();
   db.init().then(function() {
-    return insertIntoTable();
+    assertEquals(lf.Row.nextId_, 1);
+    return insertIntoTable(rows);
   }).then(function() {
-    return db.scanRowId_();
-  }).then(function(rowId) {
-    assertEquals(lf.Row.getNextId() - 1, rowId);
-    return insertIntoTable();
+    db.close();
+    return db.init();
   }).then(function() {
-    return db.scanRowId_();
-  }).then(function(rowId) {
-    assertEquals(lf.Row.getNextId() - 1, rowId);
+    assertEquals(lf.Row.nextId_, rows[0].id() + 1);
+    asyncTestCase.continueTesting();
+  });
+
+  asyncTestCase.waitForAsync('testScanRowId');
+}
+
+
+/**
+ * Tests scanRowId() for the case where all tables are empty.
+ * @suppress {accessControls}
+ */
+function testScanRowId_Empty() {
+  if (goog.userAgent.product.SAFARI) {
+    return;
+  }
+
+  db = new lf.backstore.IndexedDB(lf.Global.get(), schema);
+  db.init().then(function() {
+    assertEquals(1, lf.Row.nextId_);
     asyncTestCase.continueTesting();
   });
 
