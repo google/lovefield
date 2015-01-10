@@ -34176,12 +34176,13 @@ lf.proc.OrderByIndexPass.prototype.applyTableAccessFullOptimization_ =
         columnIndex, [lf.index.KeyRange.all()], orderBy.order);
     var tableAccessByRowIdStep = new lf.proc.TableAccessByRowIdStep(
         tableAccessFullStep.table);
+    tableAccessByRowIdStep.addChild(indexRangeScanStep);
 
     lf.tree.removeNode(orderByStep);
     rootNode = /** @type {!lf.proc.PhysicalQueryPlanNode} */ (
         lf.tree.replaceNodeWithChain(
             tableAccessFullStep,
-            indexRangeScanStep, tableAccessByRowIdStep));
+            tableAccessByRowIdStep, indexRangeScanStep));
   }
 
   return rootNode;

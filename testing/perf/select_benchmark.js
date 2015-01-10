@@ -441,6 +441,8 @@ lf.testing.perf.SelectBenchmark.prototype.verifyOrderByIndexed =
   }
 
   for (var i = 1; i < results.length; i++) {
+    assertTrue(goog.isDefAndNotNull(results[i].salary));
+    assertTrue(goog.isDefAndNotNull(results[i - 1].salary));
     if (results[i].salary > results[i - 1].salary) {
       return goog.Promise.resolve(false);
     }
@@ -472,6 +474,8 @@ lf.testing.perf.SelectBenchmark.prototype.verifyOrderByNonIndexed =
   }
 
   for (var i = 1; i < results.length; i++) {
+    assertTrue(goog.isDefAndNotNull(results[i].commissionPercent));
+    assertTrue(goog.isDefAndNotNull(results[i - 1].commissionPercent));
     if (results[i].commissionPercent > results[i - 1].commissionPercent) {
       return goog.Promise.resolve(false);
     }

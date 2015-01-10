@@ -64,7 +64,8 @@ function testTree1() {
   var treeAfter =
       'project()\n' +
       '-select(value_pred(Employee.id))\n' +
-      '--index_range_scan(Employee.idx_salary, [unbound, unbound], ASC)\n';
+      '--table_access_by_row_id(Employee)\n' +
+      '---index_range_scan(Employee.idx_salary, [unbound, unbound], ASC)\n';
 
   var rootNodeBefore = constructTree1(e.salary);
   assertEquals(treeBefore, lf.tree.toString(rootNodeBefore));
