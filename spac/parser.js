@@ -90,6 +90,7 @@ var VALID_COLUMN_TYPE = [
   'datetime',
   'integer',
   'number',
+  'object',
   'string'
 ];
 
@@ -98,7 +99,15 @@ var VALID_COLUMN_TYPE = [
 var NULLABLE_COLUMN_TYPE = [
   'arraybuffer',
   'datetime',
+  'object',
   'string'
+];
+
+
+/** @const {!Array.<string>} */
+var NON_INDEXABLE_TYPE = [
+  'arraybuffer',
+  'object'
 ];
 
 
@@ -107,7 +116,7 @@ var VALID_INDEX_ORDER = ['asc', 'desc'];
 
 
 /** @const {!Array.<string>} */
-var INVALID_DB_NAMES = ['Db', 'Observer', 'Transaction'];
+var INVALID_DB_NAMES = ['Db', 'Transaction'];
 
 
 /** @param {string} name */
@@ -208,15 +217,16 @@ function checkPrimaryKey(tableName, schema, colNames, names) {
 
 /**
  * @param {string} tableName
- * @param {!Object} schema
+ * @param {!Object} tableSchema
  * @param {!Array.<string>} colNames Column names in this table.
  * @param {!Array.<string>} names Names of unique identifiers in table, this
  *     function will insert entries into it as side effect.
  * @param {!Array.<string>} unique Known unique columns.
  * @return {!Array.<string>} Columns associated.
  */
-function checkUnique(tableName, schema, colNames, names, unique) {
+function checkUnique(tableName, tableSchema, colNames, names, unique) {
   var notNullable = [];
+  var schema = tableSchema.constraint.unique;
 
   for (var item in schema) {
     checkName(item);
@@ -225,6 +235,7 @@ function checkUnique(tableName, schema, colNames, names, unique) {
       throw new Error(tableName + ' has name conflict:' + item);
     }
 
+    checkIndexable(tableSchema, schema[item].column);
     schema[item].column.forEach(function(col) {
       if (colNames.indexOf(col) == -1) {
         throw new Error(tableName + '.' + item + ' has invalid columns');
@@ -264,6 +275,7 @@ function checkForeignKey(tableName, schemas, schema, colNames, names, keyed) {
     checkObject(fkName, FOREIGN_KEY_SCHEMA, schema[fk]);
 
     var local = schema[fk].localColumn;
+    checkIndexable(schemas[tableName], [local]);
     if (colNames.indexOf(local) == -1) {
       throw new Error(fkName + ' has invalid local column');
     }
@@ -328,6 +340,21 @@ function checkNullable(tableName, schema, colNames, notNullable) {
 
 
 /**
+ * Validates whether the given columns are indexable or not.
+ * @param {!Object} tableSchema
+ * @param {!Array.<string>} cols
+ */
+function checkIndexable(tableSchema, cols) {
+  cols.forEach(function(col) {
+    if (NON_INDEXABLE_TYPE.indexOf(tableSchema.column[col]) != -1) {
+      throw new Error(
+          tableSchema.name + ' key on nonindexable column: ' + col);
+    }
+  });
+}
+
+
+/**
  * @param {string} tableName
  * @param {!Object} schemas
  * @param {!Array.<string>} colNames
@@ -345,13 +372,15 @@ function checkConstraint(tableName, schemas, colNames, names) {
     if (schema.primaryKey.length == 0) {
       throw new Error('Empty primaryKey for ' + tableName);
     }
+    checkIndexable(schemas[tableName], schema.primaryKey);
     notNullable = notNullable.concat(
         checkPrimaryKey(tableName, schema.primaryKey, colNames, names));
   }
 
   if (schema.hasOwnProperty('unique')) {
     notNullable = notNullable.concat(
-        checkUnique(tableName, schema.unique, colNames, names, notNullable));
+        checkUnique(
+            tableName, schemas[tableName], colNames, names, notNullable));
   }
 
   if (schema.hasOwnProperty('foreignKey')) {
@@ -408,6 +437,9 @@ function checkIndices(tableName, schema, colNames, names, nullable) {
       }
       if (nullable.indexOf(col) != -1) {
         throw new Error(indexName + ' referencing nullable column: ' + col);
+      }
+      if (NON_INDEXABLE_TYPE.indexOf(schema.column[col]) != -1) {
+        throw new Error(indexName + ' referencing nonindexable column: ' + col);
       }
     });
 

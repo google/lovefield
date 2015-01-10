@@ -87,6 +87,10 @@ describe('YAML Parser Test', function() {
         thrower('primary_key_name_conflict.yaml');
       });
 
+  it('should throw if primary key on non-indexable column', function() {
+    thrower('invalid_primary_key.yaml');
+  });
+
   it('should throw if unique constraint name is invalid', function() {
     thrower('invalid_unique_key_name.yaml');
   });
@@ -97,6 +101,10 @@ describe('YAML Parser Test', function() {
 
   it('should throw if unique were not on a column', function() {
     thrower('unique_key_not_found.yaml');
+  });
+
+  it('should throw if unique on non-indexable column', function() {
+    thrower('invalid_unique_key.yaml');
   });
 
   it('should throw if foreign key name is invalid', function() {
@@ -117,6 +125,10 @@ describe('YAML Parser Test', function() {
 
   it('should throw if foreign key name conflicted', function() {
     thrower('foreign_key_name_conflict.yaml');
+  });
+
+  it('should throw if foreign key on non-indexable column', function() {
+    thrower('invalid_foreign_key.yaml');
   });
 
   it('should throw if a column is both PK and FK', function() {
@@ -178,6 +190,10 @@ describe('YAML Parser Test', function() {
 
   it('should throw if index order were invalid', function() {
     thrower('invalid_index_order.yaml');
+  });
+
+  it('should throw if index on non-indexable column', function() {
+    thrower('invalid_index_type.yaml');
   });
 
   it('should throw if DB name conflicted with reserved words', function() {

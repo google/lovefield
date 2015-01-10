@@ -74,19 +74,25 @@ types are:
 * `datetime` (pseudo, will convert to timestamp integer internally, but nullable)
 * `integer` (32-bit integer, default to 0)
 * `number` (default to 0)
+* `object` (nullable generic JavaScript object, will be stored verbatim)
 * `string` (default to empty string, but nullable)
 
-Lovefield does not support composite data type. Integer is called out from
-number because of its wide usage. Boolean, integer, and number fields are not
-nullable. Lovefield does not allow undefined in any of the field value.
+Integer is called out from number because of its wide usage. Boolean, integer,
+and number fields are not nullable. Lovefield does not allow undefined in any
+of the field value.
 
-Lovefield accepts only string or number as index key. Implicit conversions will
-be performed internally if these types are used as index / primary key or being
-placed a unique constraint:
-* `arraybuffer`: convert to SHA-512 hash string, *PERFORMANCE IMPACT!*
+Lovefield accepts only string or number as index key. Array buffers and objects
+are not indexable (i.e. you cannot put them as index or any of the constraints)
+nor searchable (i.e. you cannot put them as part of `WHERE` clause). Implicit
+conversions will be performed internally if the following types are used as
+index / primary key or being placed as a unique constraint:
 * `boolean`: convert to string
 * `datetime`: convert to number
 * `integer`: convert to number
+
+Array buffers may be converted to hex strings when stored into the backstore
+since some browser implementations disallow direct blob storage. Users need to
+be aware of the performance impact of blob conversion.
 
 Lovefield assumes all columns are `NOT NULL` by default, which is a different
 behavior from SQL and the user shall be aware of it.

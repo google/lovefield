@@ -12286,9 +12286,9 @@ goog.functions.not = function(f) {
  */
 goog.functions.create = function(constructor, var_args) {
   /**
- * @constructor
- * @final
- */
+   * @constructor
+   * @final
+   */
   var temp = function() {};
   temp.prototype = constructor.prototype;
 
@@ -28394,7 +28394,8 @@ lf.Type = {
   DATE_TIME: 2,
   INTEGER: 3,
   NUMBER: 4,
-  STRING: 5
+  STRING: 5,
+  OBJECT: 6
 };
 
 /**

@@ -11,6 +11,7 @@ table:
       createdByAction: boolean
       timestamp: datetime
       tacotownJspb: arraybuffer
+      proto: object
     constraint:
       primaryKey: [ id ]
     index:
@@ -29,6 +30,7 @@ table:
       albumId: string
       isCoverPhoto: boolean
       tacotownJspb: arraybuffer
+      proto: object
     index:
       idx_timestamp:
         column: [ timestamp ]
@@ -41,7 +43,7 @@ table:
           reference: Album
           remoteColumn: id
           cascade: true
-      nullable: [ tacotownJspb, accessTimestamp, imageHash ]
+      nullable: [ proto, tacotownJspb, accessTimestamp, imageHash ]
 
   Details:
     column:

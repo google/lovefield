@@ -467,6 +467,8 @@ CodeGenerator.prototype.genGetDefaultPayload_ = function(table, prefix) {
       body.push(lhs + (col.nullable ? 'null' : 'new Date(0)') + ';');
     } else if (col.type == 'arraybuffer') {
       body.push(lhs + (col.nullable ? 'null' : 'new ArrayBuffer(0)') + ';');
+    } else if (col.type == 'object') {
+      body.push(lhs + (col.nullable ? 'null' : '{}') + ';');
     } else {  // integer, number
       body.push(lhs + '0;');
     }
@@ -529,10 +531,6 @@ CodeGenerator.columnToKey_ = function(table, column) {
     }
 
     switch (col.type) {
-      case 'arraybuffer':
-        result = 'lf.Row.hexToBin(this.payload().' + column + ')';
-        break;
-
       case 'datetime':
         result = 'this.payload().' + column + '.getTime()';
         break;
@@ -574,10 +572,6 @@ CodeGenerator.columnToKeyString_ = function(table, column) {
     }
 
     switch (col.type) {
-      case 'arraybuffer':
-        result = 'lf.Row.hexToBin(this.payload().' + column + ')';
-        break;
-
       case 'datetime':
         result = 'this.payload().' + column + '.getTime().toString()';
         break;
@@ -780,6 +774,8 @@ CodeGenerator.columnTypeToJsType_ = function(columnType, isNullable) {
     columnType = 'number';
   } else if (columnType == 'string') {
     columnType = (isNullable ? '?' : '') + 'string';
+  } else if (columnType == 'object') {
+    columnType = (isNullable ? '' : '!') + 'Object';
   }
 
   // Must be either 'number', 'boolean', which are non-nullable according to the
@@ -802,7 +798,9 @@ CodeGenerator.columnTypeToEnumType_ = function(columnType) {
     case 'datetime': return 'lf.Type.DATE_TIME';
     case 'integer': return 'lf.Type.INTEGER';
     case 'number': return 'lf.Type.NUMBER';
-    default /* 'string' */: return 'lf.Type.STRING';
+    case 'string': return 'lf.Type.STRING';
+    case 'object': return 'lf.Type.OBJECT';
+    default: throw new Error('Invalid type: ' + columnType);
   }
 };
 
@@ -1111,8 +1109,12 @@ CodeGenerator.prototype.getColumnAsMembers_ = function(table) {
 
       case 'integer':
         type = 'number';
-        type2 = 'number';
+        type2 = type;
         break;
+
+      case 'object':
+        type = col.nullable ? 'Object' : '!Object';
+        type2 = type;
     }
 
     var pattern =

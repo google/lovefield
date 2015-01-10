@@ -141,6 +141,11 @@ lovefield.db.schema.Album = function() {
       this, 'tacotownJspb', false, lf.Type.ARRAY_BUFFER);
   cols.push(this.tacotownJspb);
 
+  /** @type {!lf.schema.BaseColumn.<!Object>} */
+  this.proto = new lf.schema.BaseColumn(
+      this, 'proto', false, lf.Type.OBJECT);
+  cols.push(this.proto);
+
   var indices = [
     new lf.schema.Index('Album', 'pkAlbum', true, ['id']),
     new lf.schema.Index('Album', 'idx_timestamp', false, ['timestamp'])
@@ -168,6 +173,7 @@ lovefield.db.schema.Album.prototype.deserializeRow = function(dbRecord) {
   payload.timestamp = new Date(data.timestamp);
   payload.tacotownJspb = /** @type {!ArrayBuffer} */ (
       lf.Row.hexToBin(data.tacotownJspb));
+  payload.proto = data.proto;
   return new lovefield.db.row.Album(dbRecord['id'], payload);
 };
 
@@ -180,7 +186,8 @@ lovefield.db.schema.Album.prototype.getConstraint = function() {
     this.isLocal,
     this.createdByAction,
     this.timestamp,
-    this.tacotownJspb
+    this.tacotownJspb,
+    this.proto
   ];
   var foreignKeys = [];
   var unique = [
@@ -207,6 +214,8 @@ lovefield.db.row.AlbumType = function() {
   this.timestamp;
   /** @export @type {!ArrayBuffer} */
   this.tacotownJspb;
+  /** @export @type {!Object} */
+  this.proto;
 };
 
 
@@ -228,6 +237,8 @@ lovefield.db.row.AlbumDbType = function() {
   this.timestamp;
   /** @export @type {string} */
   this.tacotownJspb;
+  /** @export @type {!Object} */
+  this.proto;
 };
 
 
@@ -255,6 +266,7 @@ lovefield.db.row.Album.prototype.defaultPayload = function() {
   payload.createdByAction = false;
   payload.timestamp = new Date(0);
   payload.tacotownJspb = new ArrayBuffer(0);
+  payload.proto = {};
   return payload;
 };
 
@@ -267,6 +279,7 @@ lovefield.db.row.Album.prototype.toDbPayload = function() {
   payload.createdByAction = this.payload().createdByAction;
   payload.timestamp = this.payload().timestamp.getTime();
   payload.tacotownJspb = lf.Row.binToHex(this.payload().tacotownJspb);
+  payload.proto = this.payload().proto;
   return payload;
 };
 
@@ -367,6 +380,22 @@ lovefield.db.row.Album.prototype.setTacotownJspb = function(value) {
 };
 
 
+/** @return {!Object} */
+lovefield.db.row.Album.prototype.getProto = function() {
+  return this.payload().proto;
+};
+
+
+/**
+ * @param {!Object} value
+ * @return {!lovefield.db.row.Album}
+*/
+lovefield.db.row.Album.prototype.setProto = function(value) {
+  this.payload().proto = value;
+  return this;
+};
+
+
 
 /**
  * @extends {lf.schema.Table.<!lovefield.db.row.PhotoType,
@@ -421,6 +450,11 @@ lovefield.db.schema.Photo = function() {
       this, 'tacotownJspb', false, lf.Type.ARRAY_BUFFER);
   cols.push(this.tacotownJspb);
 
+  /** @type {!lf.schema.BaseColumn.<!Object>} */
+  this.proto = new lf.schema.BaseColumn(
+      this, 'proto', false, lf.Type.OBJECT);
+  cols.push(this.proto);
+
   var indices = [
     new lf.schema.Index('Photo', 'pkPhoto', true, ['id']),
     new lf.schema.Index('Photo', 'idx_timestamp', false, ['timestamp'])
@@ -452,6 +486,7 @@ lovefield.db.schema.Photo.prototype.deserializeRow = function(dbRecord) {
   payload.albumId = data.albumId;
   payload.isCoverPhoto = data.isCoverPhoto;
   payload.tacotownJspb = lf.Row.hexToBin(data.tacotownJspb);
+  payload.proto = data.proto;
   return new lovefield.db.row.Photo(dbRecord['id'], payload);
 };
 
@@ -500,6 +535,8 @@ lovefield.db.row.PhotoType = function() {
   this.isCoverPhoto;
   /** @export @type {?ArrayBuffer} */
   this.tacotownJspb;
+  /** @export @type {Object} */
+  this.proto;
 };
 
 
@@ -529,6 +566,8 @@ lovefield.db.row.PhotoDbType = function() {
   this.isCoverPhoto;
   /** @export @type {?string} */
   this.tacotownJspb;
+  /** @export @type {Object} */
+  this.proto;
 };
 
 
@@ -560,6 +599,7 @@ lovefield.db.row.Photo.prototype.defaultPayload = function() {
   payload.albumId = '';
   payload.isCoverPhoto = false;
   payload.tacotownJspb = null;
+  payload.proto = null;
   return payload;
 };
 
@@ -577,6 +617,7 @@ lovefield.db.row.Photo.prototype.toDbPayload = function() {
   payload.albumId = this.payload().albumId;
   payload.isCoverPhoto = this.payload().isCoverPhoto;
   payload.tacotownJspb = lf.Row.binToHex(this.payload().tacotownJspb);
+  payload.proto = this.payload().proto;
   return payload;
 };
 
@@ -737,6 +778,22 @@ lovefield.db.row.Photo.prototype.getTacotownJspb = function() {
 */
 lovefield.db.row.Photo.prototype.setTacotownJspb = function(value) {
   this.payload().tacotownJspb = value;
+  return this;
+};
+
+
+/** @return {Object} */
+lovefield.db.row.Photo.prototype.getProto = function() {
+  return this.payload().proto;
+};
+
+
+/**
+ * @param {Object} value
+ * @return {!lovefield.db.row.Photo}
+*/
+lovefield.db.row.Photo.prototype.setProto = function(value) {
+  this.payload().proto = value;
   return this;
 };
 
