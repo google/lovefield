@@ -287,6 +287,10 @@ function selectRunner(name, db) {
         selectBenchmark.queryOrderByNonIndexed.bind(selectBenchmark),
         selectBenchmark.verifyOrderByNonIndexed.bind(selectBenchmark));
     benchmarkRunner.schedule(
+        'SelectLimitSkipIndexed',
+        selectBenchmark.queryLimitSkipIndexed.bind(selectBenchmark),
+        selectBenchmark.verifyLimitSkipIndexed.bind(selectBenchmark));
+    benchmarkRunner.schedule(
         'SelectProjectNonAggregatedColumns',
         selectBenchmark.queryProjectNonAggregatedColumns.bind(selectBenchmark),
         selectBenchmark.verifyProjectNonAggregatedColumns.bind(

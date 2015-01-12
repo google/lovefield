@@ -72,7 +72,9 @@ lf.testing.perf.SelectBenchmark.EPSILON_ = Math.pow(10, -9);
 *    employeeSalaryStart: number,
 *    employeeSalaryEnd: number,
 *    employeeSalariesSpacedOut: !Array.<number>,
-*    employeeHireDatesSpacedOut: !Array.<!Date>
+*    employeeHireDatesSpacedOut: !Array.<!Date>,
+*    employeeLimit: number,
+*    employeeSkip: number
 *  }}
  * @private
  */
@@ -137,6 +139,8 @@ lf.testing.perf.SelectBenchmark.prototype.generateQueryData_ = function() {
       sampleEmployees[employee1Index].getSalary();
   queryData.employeeSalaryEnd =
       sampleEmployees[employee2Index].getSalary();
+  queryData.employeeLimit = 5;
+  queryData.employeeSkip = 2000;
 
   return /** @type {!lf.testing.perf.SelectBenchmark.QueryData_} */ (queryData);
 };
@@ -482,6 +486,47 @@ lf.testing.perf.SelectBenchmark.prototype.verifyOrderByNonIndexed =
   }
 
   return goog.Promise.resolve(true);
+};
+
+
+/** @return {!IThenable} */
+lf.testing.perf.SelectBenchmark.prototype.queryLimitSkipIndexed =
+    function() {
+  return this.db_.
+      select().
+      from(this.e_).
+      orderBy(this.e_.salary, lf.Order.DESC).
+      limit(this.queryData_.employeeLimit).
+      skip(this.queryData_.employeeSkip).
+      exec();
+};
+
+
+/**
+ * @param {!Array.<!Object>} results
+ * @return {!IThenable.<boolean>}
+ */
+lf.testing.perf.SelectBenchmark.prototype.verifyLimitSkipIndexed =
+    function(results) {
+  if (this.queryData_.employeeLimit != results.length) {
+    return goog.Promise.resolve(false);
+  }
+
+  // Sorting sample employees by descending salary.
+  this.dataGenerator_.sampleEmployees.sort(function(emp1, emp2) {
+    return emp2.getSalary() - emp1.getSalary();
+  });
+
+  var expectedEmployees = this.dataGenerator_.sampleEmployees.slice(
+      this.queryData_.employeeSkip,
+      this.queryData_.employeeSkip + this.queryData_.employeeLimit);
+
+  var validated = expectedEmployees.every(function(employee, index) {
+    var obj = results[index];
+    return employee.getId() == obj[this.e_.id.getName()];
+  }, this);
+
+  return goog.Promise.resolve(validated);
 };
 
 
