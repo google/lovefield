@@ -31210,14 +31210,18 @@ lf.query.UpdateContext.Set;
 goog.provide('lf.query.toSql');
 
 goog.require('lf.Binder');
+goog.require('lf.Exception');
+goog.require('lf.Order');
 goog.require('lf.Row');
 goog.require('lf.Type');
 goog.require('lf.eval.Type');
 goog.require('lf.pred.CombinedPredicate');
+goog.require('lf.pred.JoinPredicate');
 goog.require('lf.pred.Operator');
 goog.require('lf.pred.ValuePredicate');
 goog.require('lf.query.DeleteContext');
 goog.require('lf.query.InsertContext');
+goog.require('lf.query.SelectContext');
 goog.require('lf.query.UpdateContext');
 
 
@@ -31361,6 +31365,20 @@ lf.query.combinedPredicateToSql_ = function(pred) {
 
 
 /**
+ * @param {!lf.pred.JoinPredicate} pred
+ * @return {string}
+ * @private
+ */
+lf.query.joinPredicateToSql_ = function(pred) {
+  return [
+    pred.leftColumn.getNormalizedName(),
+    lf.query.evaluatorToSql_(pred.evaluatorType),
+    pred.rightColumn.getNormalizedName()
+  ].join(' ');
+};
+
+
+/**
  * @param {!lf.Predicate} pred
  * @return {string}
  * @private
@@ -31370,10 +31388,12 @@ lf.query.parseSearchCondition_ = function(pred) {
     return lf.query.valuePredicateToSql_(pred);
   } else if (pred instanceof lf.pred.CombinedPredicate) {
     return lf.query.combinedPredicateToSql_(pred);
+  } else if (pred instanceof lf.pred.JoinPredicate) {
+    return lf.query.joinPredicateToSql_(pred);
   }
-  // TODO(arthurhsu): implement JoinPredicate case.
 
-  return '';
+  throw new lf.Exception(lf.Exception.Type.NOT_SUPPORTED,
+      'toSql does not support predicate type: ' + typeof(pred));
 };
 
 
@@ -31432,6 +31452,61 @@ lf.query.updateToSql_ = function(query) {
 
 
 /**
+ * @param {!lf.query.SelectContext} query
+ * @return {string}
+ * @private
+ */
+lf.query.selectToSql_ = function(query) {
+  var colList = '*';
+  if (query.columns.length) {
+    colList = query.columns.map(function(col) {
+      if (col.getAlias()) {
+        return col.getNormalizedName() + ' AS ' + col.getAlias();
+      } else {
+        return col.getNormalizedName();
+      }
+    }).join(', ');
+  }
+
+  var fromList = query.from.map(function(table) {
+    if (table.getEffectiveName() != table.getName()) {
+      return table.getName() + ' AS ' + table.getEffectiveName();
+    } else {
+      return table.getName();
+    }
+  }).join(', ');
+
+  var sql = 'SELECT ' + colList + ' FROM ' + fromList;
+  if (query.where) {
+    sql += lf.query.predicateToSql_(query.where);
+  }
+
+  if (query.orderBy) {
+    var orderBy = query.orderBy.map(function(order) {
+      return order.column.getNormalizedName() +
+          ((order.order == lf.Order.DESC) ? ' DESC' : ' ASC');
+    }).join(', ');
+    sql += ' ORDER BY ' + orderBy;
+  }
+
+  if (query.groupBy) {
+    sql += ' GROUP BY ' + query.groupBy.getNormalizedName();
+  }
+
+  if (query.limit) {
+    sql += ' LIMIT ' + query.limit.toString();
+  }
+
+  if (query.skip) {
+    sql += ' SKIP ' + query.skip.toString();
+  }
+
+  sql += ';';
+  return sql;
+};
+
+
+/**
  * @param {!lf.query.BaseBuilder} builder
  * @return {string}
  */
@@ -31449,7 +31524,12 @@ lf.query.toSql = function(builder) {
     return lf.query.updateToSql_(query);
   }
 
-  return 'Not implemented';
+  if (query instanceof lf.query.SelectContext) {
+    return lf.query.selectToSql_(query);
+  }
+
+  throw new lf.Exception(lf.Exception.Type.NOT_SUPPORTED,
+      'toSql not implemented for ' + typeof(query));
 };
 
 /**
@@ -32145,13 +32225,13 @@ goog.require('lf.fn.AggregatedColumn');
  * @enum {string}
  */
 lf.fn.Type = {
-  AVG: 'avg',
-  COUNT: 'count',
-  DISTINCT: 'distinct',
-  MAX: 'max',
-  MIN: 'min',
-  STDDEV: 'stddev',
-  SUM: 'sum'
+  AVG: 'AVG',
+  COUNT: 'COUNT',
+  DISTINCT: 'DISTINCT',
+  MAX: 'MAX',
+  MIN: 'MIN',
+  STDDEV: 'STDDEV',
+  SUM: 'SUM'
 };
 
 
