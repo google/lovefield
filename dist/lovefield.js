@@ -14680,7 +14680,7 @@ goog.structs.isEmpty = function(col) {
     return col.isEmpty();
   }
 
-  // We do not use goog.string.isEmpty because here we treat the string as
+  // We do not use goog.string.isEmptyOrWhitespace because here we treat the string as
   // collection and as such even whitespace matters
 
   if (goog.isArrayLike(col) || goog.isString(col)) {
@@ -23924,6 +23924,81 @@ lf.cache.Journal.prototype.checkScope_ = function(tableSchema) {
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+goog.provide('lf.index');
+
+
+/**
+ * Java's String.hashCode method.
+ *
+ * for each character c in string
+ *   hash = hash * 31 + c
+ *
+ * @param {string} value
+ * @return {number}
+ */
+lf.index.hashCode = function(value) {
+  var hash = 0;
+  for (var i = 0; i < value.length; ++i) {
+    hash = ((hash << 5) - hash) + value.charCodeAt(i);
+    hash = hash & hash;  // Convert to 32-bit integer.
+  }
+  return hash;
+};
+
+
+/**
+ * Compute hash key for an array.
+ * @param {!Array.<Object>} values
+ * @return {string}
+ */
+lf.index.hashArray = function(values) {
+  var keys = values.map(function(value) {
+    return goog.isDefAndNotNull(value) ?
+        lf.index.hashCode(value.toString()).toString(32) : '';
+  });
+
+  return keys.join('_');
+};
+
+
+/**
+ * Slice result array by limit and skip.
+ * @param {!Array.<number>} source
+ * @param {number=} opt_limit
+ * @param {number=} opt_skip
+ * @return {!Array.<number>}
+ */
+lf.index.slice = function(source, opt_limit, opt_skip) {
+  var array = source;
+  if (array.length && (goog.isDef(opt_limit) || goog.isDef(opt_skip))) {
+    var limit = goog.isDef(opt_limit) ? opt_limit : array.length;
+    if (limit == 0) {
+      return [];
+    }
+    limit = Math.min(array.length, limit);
+    var skip = opt_skip || 0;
+    skip = Math.min(array.length, skip);
+    array = array.slice(skip, skip + limit);
+  }
+  return array;
+};
+
+/**
+ * @license
+ * Copyright 2014 Google Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 goog.provide('lf.index.Index');
 
 goog.forwardDeclare('lf.Row');
@@ -23996,6 +24071,8 @@ lf.index.Index.prototype.cost;
  * Retrieves all data within the range. Returns empty array if not found.
  * @param {!lf.index.KeyRange=} opt_keyRange The key range to search for. If not
  *     provided, all rowIds in this index will be returned.
+ * @param {number=} opt_limit Max number of rows to return
+ * @param {number=} opt_skip Skip first N rows
  * @return {!Array.<number>}
  */
 lf.index.Index.prototype.getRange;
@@ -24048,6 +24125,7 @@ goog.provide('lf.index.BTree');
 goog.require('goog.array');
 goog.require('lf.Exception');
 goog.require('lf.Row');
+goog.require('lf.index');
 goog.require('lf.index.Index');
 
 
@@ -24129,7 +24207,8 @@ lf.index.BTree.prototype.cost = function(opt_keyRange) {
 
 
 /** @override */
-lf.index.BTree.prototype.getRange = function(opt_keyRange) {
+lf.index.BTree.prototype.getRange = function(
+    opt_keyRange, opt_limit, opt_skip) {
   var start = null;
   if (opt_keyRange) {
     if (!goog.isNull(opt_keyRange.from)) {
@@ -24141,7 +24220,7 @@ lf.index.BTree.prototype.getRange = function(opt_keyRange) {
     start = this.root_.getLeftMostNode();
   }
 
-  return start.getRange(opt_keyRange);
+  return lf.index.slice(start.getRange(opt_keyRange), opt_limit, opt_skip);
 };
 
 
@@ -25154,6 +25233,7 @@ goog.provide('lf.index.RowId');
 goog.require('goog.structs.Set');
 goog.require('lf.Exception');
 goog.require('lf.Row');
+goog.require('lf.index');
 goog.require('lf.index.Index');
 goog.require('lf.index.KeyRange');
 
@@ -25227,7 +25307,8 @@ lf.index.RowId.prototype.cost = function(opt_keyRange) {
 
 
 /** @override */
-lf.index.RowId.prototype.getRange = function(opt_keyRange) {
+lf.index.RowId.prototype.getRange = function(
+    opt_keyRange, opt_limit, opt_skip) {
   var keyRange = opt_keyRange || lf.index.KeyRange.all();
 
   if ((goog.isDefAndNotNull(keyRange.from) &&
@@ -25235,7 +25316,10 @@ lf.index.RowId.prototype.getRange = function(opt_keyRange) {
       (goog.isDefAndNotNull(keyRange.to) && typeof(keyRange.to) != 'number')) {
     throw new lf.Exception(lf.Exception.Type.DATA, 'Row id must be numbers');
   }
-  return this.rows_.getValues().filter(keyRange.getComparator());
+  return lf.index.slice(
+      this.rows_.getValues().filter(keyRange.getComparator()),
+      opt_limit,
+      opt_skip);
 };
 
 
@@ -25502,6 +25586,7 @@ goog.provide('lf.index.AATree');
 
 goog.require('goog.asserts');
 goog.require('lf.Exception');
+goog.require('lf.index');
 goog.require('lf.index.Index');
 goog.require('lf.index.KeyRange');
 
@@ -25789,7 +25874,8 @@ lf.index.AATree.prototype.traverse_ = function(node, keyRange, results) {
 
 
 /** @override */
-lf.index.AATree.prototype.getRange = function(opt_keyRange) {
+lf.index.AATree.prototype.getRange = function(
+    opt_keyRange, opt_limit, opt_skip) {
   var keyRange = null;
 
   if (!goog.isDefAndNotNull(opt_keyRange)) {
@@ -25807,7 +25893,7 @@ lf.index.AATree.prototype.getRange = function(opt_keyRange) {
 
   var results = [];
   this.traverse_(this.root_, keyRange, results);
-  return results;
+  return lf.index.slice(results, opt_limit, opt_skip);
 };
 
 
@@ -25861,58 +25947,6 @@ lf.index.AATree.prototype.toString = function() {
     result = result + buffer[i].join('') + '\n';
   }
   return result;
-};
-
-/**
- * @license
- * Copyright 2014 Google Inc. All Rights Reserved.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-goog.provide('lf.index');
-
-
-/**
- * Java's String.hashCode method.
- *
- * for each character c in string
- *   hash = hash * 31 + c
- *
- * @param {string} value
- * @return {number}
- */
-lf.index.hashCode = function(value) {
-  var hash = 0;
-  for (var i = 0; i < value.length; ++i) {
-    hash = ((hash << 5) - hash) + value.charCodeAt(i);
-    hash = hash & hash;  // Convert to 32-bit integer.
-  }
-  return hash;
-};
-
-
-/**
- * Compute hash key for an array.
- * @param {!Array.<Object>} values
- * @return {string}
- */
-lf.index.hashArray = function(values) {
-  var keys = values.map(function(value) {
-    return goog.isDefAndNotNull(value) ?
-        lf.index.hashCode(value.toString()).toString(32) : '';
-  });
-
-  return keys.join('_');
 };
 
 /**
@@ -25995,6 +26029,7 @@ goog.provide('lf.index.Map');
 goog.require('goog.asserts');
 goog.require('goog.structs.Map');
 goog.require('goog.structs.Set');
+goog.require('lf.index');
 goog.require('lf.index.Index');
 goog.require('lf.index.KeyRange');
 
@@ -26070,7 +26105,7 @@ lf.index.Map.prototype.cost = function(opt_keyRange) {
 
 
 /** @override */
-lf.index.Map.prototype.getRange = function(opt_keyRange) {
+lf.index.Map.prototype.getRange = function(opt_keyRange, opt_limit, opt_skip) {
   var results = [];
 
   var keyRange = opt_keyRange || lf.index.KeyRange.all();
@@ -26082,7 +26117,7 @@ lf.index.Map.prototype.getRange = function(opt_keyRange) {
     }
   }, this);
 
-  return results;
+  return lf.index.slice(results, opt_limit, opt_skip);
 };
 
 
