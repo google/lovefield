@@ -362,6 +362,40 @@ function testGetLeafNodes() {
 }
 
 
+function testFind() {
+  var nodes = createTestTree1();
+  var minKey = 6;
+  var retrievedNodes = lf.tree.find(
+      nodes[0],
+      function(node) {
+        return node.getKey() >= minKey;
+      });
+  retrievedNodes.forEach(function(node) {
+    assertTrue(node.getKey() >= minKey);
+
+  });
+}
+
+
+function testFind_Stop() {
+  var nodes = createTestTree1();
+  var minKey = 4;
+  var retrievedNodes = lf.tree.find(
+      nodes[0],
+      function(node) {
+        return node.getKey() >= minKey;
+      },
+      function(node) {
+        return node.getKey() == 7;
+      });
+  assertArrayEquals(
+      [4, 5, 6, 7, 10],
+      retrievedNodes.map(function(node) {
+        return node.getKey();
+      }));
+}
+
+
 /**
  * @param {!goog.structs.TreeNode} node The node to be stringified.
  * @return {string} A string representation of the node.

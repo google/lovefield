@@ -26668,15 +26668,7 @@ lf.tree.map = function(original, mapFn) {
  * @return {!Array.<!goog.structs.TreeNode>}
  */
 lf.tree.getLeafNodes = function(node) {
-  var leafNodes = [];
-
-  node.forEachDescendant(function(child) {
-    if (child.isLeaf()) {
-      leafNodes.push(child);
-    }
-  });
-
-  return leafNodes;
+  return lf.tree.find(node, function(node) { return node.isLeaf(); });
 };
 
 
@@ -26912,6 +26904,37 @@ lf.tree.replaceNodeWithChain = function(node, head, tail) {
  */
 lf.tree.replaceChainWithNode = function(head, tail, node) {
   return lf.tree.replaceChainWithChain(head, tail, node, node);
+};
+
+
+/**
+ * Finds all nodes in the given tree that satisfy a given condition.
+ * @param {!goog.structs.TreeNode} root The root of the tree to search.
+ * @param {!function(!goog.structs.TreeNode):boolean} filterFn The filter
+ *     function. It will be called on every node of the tree.
+ * @param {!function(!goog.structs.TreeNode):boolean=} opt_stopFn A function
+ *     that indicates whether searching should be stopped. It will be called on
+ *     every visited node on the tree. If false is returned searching will stop
+ *     for nodes below that node.
+ *     such a function is not provided the entire tree is searched.
+ * @return {!Array.<!goog.structs.TreeNode>}
+ */
+lf.tree.find = function(root, filterFn, opt_stopFn) {
+  var stopFn = opt_stopFn || function() { return false; };
+  var results = [];
+
+  var filterRec = function(node) {
+    if (filterFn(node)) {
+      results.push(node);
+    }
+    if (!stopFn(node)) {
+      node.getChildren().forEach(filterRec);
+    }
+  };
+
+  filterRec(root);
+
+  return results;
 };
 
 
@@ -33748,7 +33771,12 @@ goog.inherits(lf.proc.IndexRangeScanPass, lf.proc.RewritePass);
 lf.proc.IndexRangeScanPass.prototype.rewrite = function(rootNode) {
   this.rootNode = rootNode;
 
-  var tableAccessFullSteps = this.findTableAccessFullSteps_();
+  var tableAccessFullSteps =
+      /** @type {!Array.<!lf.proc.TableAccessFullStep>} */ (lf.tree.find(
+          rootNode,
+          function(node) {
+            return node instanceof lf.proc.TableAccessFullStep;
+          }));
   tableAccessFullSteps.forEach(
       function(tableAccessFullStep) {
         var selectStepsCandidates = this.findSelectStepCandidates_(
@@ -33767,43 +33795,6 @@ lf.proc.IndexRangeScanPass.prototype.rewrite = function(rootNode) {
       }, this);
 
   return this.rootNode;
-};
-
-
-/**
- * Finds all the TableAccessFullSteps in the physical plan.
- * @return {!Array.<!lf.proc.TableAccessFullStep>}
- * @private
- */
-lf.proc.IndexRangeScanPass.prototype.findTableAccessFullSteps_ = function() {
-  var tableAccessFullSteps = [];
-  lf.proc.IndexRangeScanPass.findTableAccessFullStepsRec_(
-      this.rootNode, tableAccessFullSteps);
-  return tableAccessFullSteps;
-};
-
-
-/**
- * Traverses a tree recursively and finds all full table access steps.
- * @param {!lf.proc.PhysicalQueryPlanNode} rootNode The root node of the
- *     sub-tree to be traversed.
- * @param {!Array.<!lf.proc.TableAccessFullStep>} tableAccessFullSteps An
- *     accumulator containing all the full table access steps that have been
- *     discovered so far.
- * @private
- */
-lf.proc.IndexRangeScanPass.findTableAccessFullStepsRec_ = function(
-    rootNode, tableAccessFullSteps) {
-  if (rootNode instanceof lf.proc.TableAccessFullStep) {
-    tableAccessFullSteps.push(rootNode);
-  }
-
-  rootNode.getChildren().forEach(
-      function(child) {
-        lf.proc.IndexRangeScanPass.findTableAccessFullStepsRec_(
-            /** @type {!lf.proc.PhysicalQueryPlanNode} */ (child),
-            tableAccessFullSteps);
-      });
 };
 
 
@@ -34332,54 +34323,51 @@ lf.proc.OrderByIndexPass.prototype.applyIndexRangeScanStepOptimization_ =
  * Finds any existing IndexRangeScanStep that can be used to produce the
  * requested ordering instead of the OrderByStep.
  * @param {!lf.query.SelectContext.OrderBy} orderBy
- * @param {!lf.proc.PhysicalQueryPlanNode} currentNode
+ * @param {!lf.proc.PhysicalQueryPlanNode} rootNode
  * @return {lf.proc.IndexRangeScanStep}
  * @private
  */
 lf.proc.OrderByIndexPass.findIndexRangeScanStep_ = function(
-    orderBy, currentNode) {
-  if (currentNode instanceof lf.proc.IndexRangeScanStep &&
-      currentNode.index.columnNames[0] == orderBy.column.getName()) {
-    return currentNode;
-  }
-
+    orderBy, rootNode) {
+  var filterFn = function(node) {
+    return node instanceof lf.proc.IndexRangeScanStep &&
+        node.index.columnNames[0] == orderBy.column.getName();
+  };
   // CrossProductStep and JoinStep nodes have more than one child, and mess up
   // the ordering of results. Therefore if such nodes exist this optimization
   // can not be applied.
-  if (currentNode.getChildCount() != 1) {
-    return null;
-  }
+  var stopFn = function(node) {
+    return node.getChildCount() != 1;
+  };
 
-  return lf.proc.OrderByIndexPass.findIndexRangeScanStep_(
-      orderBy,
-      /** @type {!lf.proc.PhysicalQueryPlanNode} */ (
-          currentNode.getChildAt(0)));
+  var indexRangeScanSteps = /** @type {!Array<lf.proc.IndexRangeScanStep>} */ (
+      lf.tree.find(rootNode, filterFn, stopFn));
+  return indexRangeScanSteps.length > 0 ? indexRangeScanSteps[0] : null;
 };
 
 
 /**
  * Finds any existing TableAccessFullStep that can converted to an
  * IndexRangeScanStep instead of using an explicit OrderByStep.
- * @param {!lf.proc.PhysicalQueryPlanNode} currentNode
+ * @param {!lf.proc.PhysicalQueryPlanNode} rootNode
  * @return {lf.proc.TableAccessFullStep}
  * @private
  */
-lf.proc.OrderByIndexPass.findTableAccessFullStep_ = function(
-    currentNode) {
-  if (currentNode instanceof lf.proc.TableAccessFullStep) {
-    return currentNode;
-  }
-
+lf.proc.OrderByIndexPass.findTableAccessFullStep_ = function(rootNode) {
+  var filterFn = function(node) {
+    return node instanceof lf.proc.TableAccessFullStep;
+  };
   // CrossProductStep and JoinStep nodes have more than one child, and mess up
   // the ordering of results. Therefore if such nodes exist this optimization
   // can not be applied.
-  if (currentNode.getChildCount() != 1) {
-    return null;
-  }
+  var stopFn = function(node) {
+    return node.getChildCount() != 1;
+  };
 
-  return lf.proc.OrderByIndexPass.findTableAccessFullStep_(
-      /** @type {!lf.proc.PhysicalQueryPlanNode} */ (
-          currentNode.getChildAt(0)));
+  var tableAccessFullSteps =
+      /** @type {!Array<lf.proc.TableAccessFullStep>} */ (
+      lf.tree.find(rootNode, filterFn, stopFn));
+  return tableAccessFullSteps.length > 0 ? tableAccessFullSteps[0] : null;
 };
 
 /**
