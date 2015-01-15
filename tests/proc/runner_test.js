@@ -159,3 +159,51 @@ function testScheduleTask_Prioritize() {
 
   resolver.resolve();
 }
+
+
+/**
+ * Tests that a READ_WRITE transaction will wait for an alreday running
+ * READ_ONLY transaction with overlapping scope to finish.
+ */
+function testTransaction_WriteWhileReading() {
+  asyncTestCase.waitForAsync('testTransaction_WriteWhileReading');
+
+  var resolver = goog.Promise.withResolver();
+  var executionOrder = [];
+
+  // Creating a READ_ONLY and a READ_WRITE task that refer to the same scope.
+  var queryTask1 = new lf.testing.MockTask(
+      lf.TransactionType.READ_ONLY,
+      new goog.structs.Set([j]),
+      function() {
+        executionOrder.push('q1 start');
+        return resolver.promise.then(function() {
+          executionOrder.push('q1 end');
+        });
+      });
+  var queryTask2 = new lf.testing.MockTask(
+      lf.TransactionType.READ_WRITE,
+      new goog.structs.Set([j]),
+      function() {
+        executionOrder.push('q2 start');
+        executionOrder.push('q2 end');
+      });
+
+  var promises = [queryTask1, queryTask2].map(
+      function(queryTask) {
+        return runner.scheduleTask(queryTask);
+      });
+
+  goog.Promise.all(promises).then(
+      function(results) {
+        // Ensuring that the READ_ONLY task completed before the READ_WRITE task
+        // started.
+        assertArrayEquals(
+            ['q1 start', 'q1 end', 'q2 start', 'q2 end'],
+            executionOrder);
+
+        asyncTestCase.continueTesting();
+      });
+
+  resolver.resolve();
+}

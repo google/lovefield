@@ -64,6 +64,12 @@ lf.testing.MockTask.prototype.getResolver = function() {
 
 
 /** @override */
+lf.testing.MockTask.prototype.getId = function() {
+  return goog.getUid(this);
+};
+
+
+/** @override */
 lf.testing.MockTask.prototype.exec = function() {
   return new goog.Promise(goog.bind(
       function(resolve, reject) {
