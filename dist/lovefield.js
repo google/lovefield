@@ -25448,7 +25448,7 @@ lf.cache.Prefetcher.prototype.fetchTable_ = function(table) {
   var store = tx.getTable(table.getName(), table.deserializeRow);
   return store.get([]).then(goog.bind(function(results) {
     this.cache_.set(table.getName(), results);
-    this.reconstructNonPersitentIndices_(table, results);
+    this.reconstructNonPersistentIndices_(table, results);
   }, this));
 };
 
@@ -25459,14 +25459,14 @@ lf.cache.Prefetcher.prototype.fetchTable_ = function(table) {
  * @param {!Array<!lf.Row>} tableRows The table's contents.
  * @private
  */
-lf.cache.Prefetcher.prototype.reconstructNonPersitentIndices_ = function(
+lf.cache.Prefetcher.prototype.reconstructNonPersistentIndices_ = function(
     tableSchema, tableRows) {
   var indices = this.indexStore_.getTableIndices(tableSchema.getName());
   tableRows.forEach(function(row) {
     indices.forEach(function(index) {
       var key = /** @type {!lf.index.Index.Key} */ (
           row.keyOfIndex(index.getName()));
-      index.set(key, row.id());
+      index.add(key, row.id());
     });
   });
 };
