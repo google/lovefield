@@ -23242,6 +23242,31 @@ lf.cache.DefaultCache.prototype.getCount = function(opt_tableName) {
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+goog.provide('lf.Order');
+
+
+/** @enum {number} */
+lf.Order = {
+  DESC: 0,
+  ASC: 1
+};
+
+/**
+ * @license
+ * Copyright 2014 Google Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 goog.provide('lf.cache.TableDiff');
 
 goog.require('goog.asserts');
@@ -23463,6 +23488,7 @@ goog.require('goog.asserts');
 goog.require('goog.structs.Map');
 goog.require('goog.structs.Set');
 goog.require('lf.Exception');
+goog.require('lf.Order');
 goog.require('lf.cache.ConstraintChecker');
 goog.require('lf.cache.TableDiff');
 goog.require('lf.service');
@@ -23618,19 +23644,35 @@ lf.cache.Journal.prototype.getIndexScope = function() {
  * @param {!lf.schema.Index} indexSchema
  * @param {!Array.<!lf.index.KeyRange>} keyRanges
  * @param {!lf.Order} order
+ * @param {number=} opt_limit
+ * @param {number=} opt_skip
  * @return {!Array.<number>}
  */
 lf.cache.Journal.prototype.getIndexRange = function(
-    indexSchema, keyRanges, order) {
-  var rowIds = new goog.structs.Set();
+    indexSchema, keyRanges, order, opt_limit, opt_skip) {
   var index = this.indexStore_.get(indexSchema.getNormalizedName());
 
+  if (keyRanges.length == 1) {
+    return index.getRange(keyRanges[0], order, opt_limit, opt_skip);
+  }
+
+  var msg = 'Using index for limit/skip not implemented for ' +
+      'multi-keyrange queries.';
+  goog.asserts.assert(!goog.isDefAndNotNull(opt_limit), msg);
+  goog.asserts.assert(!goog.isDefAndNotNull(opt_skip), msg);
+
+  var rowIds = new goog.structs.Set();
   // Getting rowIds within the given key ranges according to IndexStore.
   keyRanges.forEach(function(keyRange) {
     rowIds.addAll(index.getRange(keyRange, order));
   }, this);
 
-  return rowIds.getValues();
+  var results = rowIds.getValues();
+  if (order == lf.Order.DESC) {
+    results.reverse();
+  }
+
+  return results;
 };
 
 
@@ -23908,31 +23950,6 @@ lf.cache.Journal.prototype.checkScope_ = function(tableSchema) {
         lf.Exception.Type.SCOPE_ERROR,
         tableSchema.getName() + ' is not in the journal\'s scope.');
   }
-};
-
-/**
- * @license
- * Copyright 2014 Google Inc. All Rights Reserved.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-goog.provide('lf.Order');
-
-
-/** @enum {number} */
-lf.Order = {
-  DESC: 0,
-  ASC: 1
 };
 
 /**
@@ -26972,14 +26989,13 @@ lf.tree.replaceChainWithNode = function(head, tail, node) {
  * @return {!Array.<!goog.structs.TreeNode>}
  */
 lf.tree.find = function(root, filterFn, opt_stopFn) {
-  var stopFn = opt_stopFn || function() { return false; };
   var results = [];
 
   var filterRec = function(node) {
     if (filterFn(node)) {
       results.push(node);
     }
-    if (!stopFn(node)) {
+    if (!goog.isDefAndNotNull(opt_stopFn) || !opt_stopFn(node)) {
       node.getChildren().forEach(filterRec);
     }
   };
@@ -30639,11 +30655,17 @@ lf.proc.IndexRangeScanStep = function(index, keyRanges, order) {
   /** @type {!lf.schema.Index} */
   this.index = index;
 
-  /** @private {!Array.<!lf.index.KeyRange>} */
-  this.keyRanges_ = keyRanges;
+  /** @type {!Array.<!lf.index.KeyRange>} */
+  this.keyRanges = keyRanges;
 
   /** @type {!lf.Order} */
   this.order = order;
+
+  /** @type {?number} */
+  this.limit = null;
+
+  /** @type {?number} */
+  this.skip = null;
 };
 goog.inherits(lf.proc.IndexRangeScanStep, lf.proc.PhysicalQueryPlanNode);
 
@@ -30652,14 +30674,21 @@ goog.inherits(lf.proc.IndexRangeScanStep, lf.proc.PhysicalQueryPlanNode);
 lf.proc.IndexRangeScanStep.prototype.toString = function() {
   return 'index_range_scan(' +
       this.index.getNormalizedName() + ', ' +
-      this.keyRanges_.toString() + ', ' +
-      (this.order == lf.Order.ASC ? 'ASC' : 'DESC') + ')';
+      this.keyRanges.toString() + ', ' +
+      (this.order == lf.Order.ASC ? 'ASC' : 'DESC') +
+      (!goog.isNull(this.limit) ? ', limit:' + this.limit : '') +
+      (!goog.isNull(this.skip) ? ', skip:' + this.skip : '') +
+      ')';
 };
 
 
 /** @override */
 lf.proc.IndexRangeScanStep.prototype.exec = function(journal) {
-  var rowIds = journal.getIndexRange(this.index, this.keyRanges_, this.order);
+  var rowIds = journal.getIndexRange(
+      this.index, this.keyRanges,
+      this.order,
+      !goog.isNull(this.limit) ? this.limit : undefined,
+      !goog.isNull(this.skip) ? this.skip : undefined);
 
   var rows = rowIds.map(function(rowId) {
     return new lf.Row(rowId, {});
@@ -34233,6 +34262,208 @@ lf.proc.LimitStep.prototype.exec = function(journal) {
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+goog.provide('lf.proc.SkipStep');
+
+goog.require('goog.asserts');
+goog.require('lf.proc.PhysicalQueryPlanNode');
+goog.require('lf.proc.Relation');
+
+
+
+/**
+ * @constructor @struct
+ * @extends {lf.proc.PhysicalQueryPlanNode}
+ *
+ * @param {number} skip
+ */
+lf.proc.SkipStep = function(skip) {
+  lf.proc.SkipStep.base(this, 'constructor');
+
+  /** @type {number} */
+  this.skip = skip;
+};
+goog.inherits(lf.proc.SkipStep, lf.proc.PhysicalQueryPlanNode);
+
+
+/** @override */
+lf.proc.SkipStep.prototype.toString = function() {
+  return 'skip(' + this.skip + ')';
+};
+
+
+/** @override */
+lf.proc.SkipStep.prototype.exec = function(journal) {
+  goog.asserts.assert(
+      this.getChildCount() == 1,
+      'SkipStep should have exactly one child.');
+
+  return this.getChildAt(0).exec(journal).then(goog.bind(
+      /**
+       * @param {!lf.proc.Relation} relation
+       * @this {lf.proc.SkipStep}
+       */
+      function(relation) {
+        return new lf.proc.Relation(
+            relation.entries.slice(this.skip), relation.getTables());
+      }, this));
+
+};
+
+/**
+ * @license
+ * Copyright 2014 Google Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+goog.provide('lf.proc.LimitSkipByIndexPass');
+
+goog.require('goog.asserts');
+goog.require('lf.proc.IndexRangeScanStep');
+goog.require('lf.proc.LimitStep');
+goog.require('lf.proc.RewritePass');
+goog.require('lf.proc.SelectStep');
+goog.require('lf.proc.SkipStep');
+goog.require('lf.tree');
+
+
+
+/**
+ * The LimitSkipByIndexPass is responsible for leveraging indices to perform
+ * LIMIT and SKIP, if possible.
+ *
+ * @constructor
+ * @struct
+ * @extends {lf.proc.RewritePass.<!lf.proc.PhysicalQueryPlanNode>}
+ */
+lf.proc.LimitSkipByIndexPass = function() {
+  lf.proc.LimitSkipByIndexPass.base(this, 'constructor');
+
+  /**
+   * Populated the first time the IndexRangeScanStep is located such that the
+   * tree does not have to be re-traversed. It is populated with null if the
+   * first traversal reveals that this optimization can't be applied.
+   * @private {?lf.proc.IndexRangeScanStep}
+   */
+  this.indexRangeScanStep_;
+};
+goog.inherits(lf.proc.LimitSkipByIndexPass, lf.proc.RewritePass);
+
+
+/** @override */
+lf.proc.LimitSkipByIndexPass.prototype.rewrite = function(rootNode) {
+  this.rootNode = rootNode;
+  this.traverse_(this.rootNode);
+  return this.rootNode;
+};
+
+
+/**
+ * Traverses each node of the tree starting at the given node, rewriting the
+ * tree if possible.
+ * @param {!lf.proc.PhysicalQueryPlanNode} rootNode The root node of the
+ *     sub-tree to be traversed.
+ * @private
+ */
+lf.proc.LimitSkipByIndexPass.prototype.traverse_ = function(rootNode) {
+  var newRootNode = rootNode;
+  if (rootNode instanceof lf.proc.LimitStep ||
+      rootNode instanceof lf.proc.SkipStep) {
+
+    var indexRangeScanStep = this.findIndexRangeScanStep_(rootNode);
+    if (!goog.isNull(indexRangeScanStep)) {
+      newRootNode = this.mergeToIndexRangeScanStep_(
+          rootNode, indexRangeScanStep);
+    }
+  }
+
+  newRootNode.getChildren().forEach(
+      function(child) {
+        this.traverse_(
+            /** @type {!lf.proc.PhysicalQueryPlanNode} */ (child));
+      }, this);
+};
+
+
+/**
+ * Merges a LimitStep or SkipStep to the given IndexRangeScanStep.
+ * @param {!lf.proc.LimitStep|!lf.proc.SkipStep} node
+ * @param {!lf.proc.IndexRangeScanStep} indexRangeScanStep
+ * @return {!lf.proc.PhysicalQueryPlanNode} The new root of the tree.
+ * @private
+ */
+lf.proc.LimitSkipByIndexPass.prototype.mergeToIndexRangeScanStep_ = function(
+    node, indexRangeScanStep) {
+  if (node instanceof lf.proc.LimitStep) {
+    indexRangeScanStep.limit = node.limit;
+  } else {
+    indexRangeScanStep.skip = node.skip;
+  }
+
+  return /** @type {!lf.proc.PhysicalQueryPlanNode} */ (
+      lf.tree.removeNode(node));
+};
+
+
+/**
+ * Finds any existing IndexRangeScanStep that can be leveraged to limit and
+ * skip results.
+ * @param {!lf.proc.PhysicalQueryPlanNode} rootNode
+ * @return {?lf.proc.IndexRangeScanStep}
+ * @private
+ */
+lf.proc.LimitSkipByIndexPass.prototype.findIndexRangeScanStep_ =
+    function(rootNode) {
+  if (goog.isDef(this.indexRangeScanStep_)) {
+    return this.indexRangeScanStep_;
+  }
+
+  var filterFn = function(node) {
+    // TODO(dpapad): Only IndexRangeScanStep with a single KeyRange instance
+    // can be currently optimized, see b/19005405.
+    return node instanceof lf.proc.IndexRangeScanStep &&
+        node.keyRanges.length == 1;
+  };
+
+  // LIMIT and SKIP needs to be executed after joins, cross-products and
+  // selections have been calculated. Therefore if such nodes exist this
+  // optimization can not be applied.
+  var stopFn = function(node) {
+    return node.getChildCount() != 1 || node instanceof lf.proc.SelectStep;
+  };
+
+  var indexRangeScanSteps = /** @type {!Array<lf.proc.IndexRangeScanStep>} */ (
+      lf.tree.find(rootNode, filterFn, stopFn));
+  this.indexRangeScanStep_ =
+      indexRangeScanSteps.length > 0 ? indexRangeScanSteps[0] : null;
+  return this.indexRangeScanStep_;
+};
+
+/**
+ * @license
+ * Copyright 2014 Google Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 goog.provide('lf.proc.OrderByIndexPass');
 
 goog.require('goog.asserts');
@@ -34970,69 +35201,6 @@ lf.proc.ProjectStep.prototype.calculateGroupedRelations_ = function(relation) {
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-goog.provide('lf.proc.SkipStep');
-
-goog.require('goog.asserts');
-goog.require('lf.proc.PhysicalQueryPlanNode');
-goog.require('lf.proc.Relation');
-
-
-
-/**
- * @constructor @struct
- * @extends {lf.proc.PhysicalQueryPlanNode}
- *
- * @param {number} skip
- */
-lf.proc.SkipStep = function(skip) {
-  lf.proc.SkipStep.base(this, 'constructor');
-
-  /** @type {number} */
-  this.skip = skip;
-};
-goog.inherits(lf.proc.SkipStep, lf.proc.PhysicalQueryPlanNode);
-
-
-/** @override */
-lf.proc.SkipStep.prototype.toString = function() {
-  return 'skip(' + this.skip + ')';
-};
-
-
-/** @override */
-lf.proc.SkipStep.prototype.exec = function(journal) {
-  goog.asserts.assert(
-      this.getChildCount() == 1,
-      'SkipStep should have exactly one child.');
-
-  return this.getChildAt(0).exec(journal).then(goog.bind(
-      /**
-       * @param {!lf.proc.Relation} relation
-       * @this {lf.proc.SkipStep}
-       */
-      function(relation) {
-        return new lf.proc.Relation(
-            relation.entries.slice(this.skip), relation.getTables());
-      }, this));
-
-};
-
-/**
- * @license
- * Copyright 2014 Google Inc. All Rights Reserved.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
 goog.provide('lf.proc.PhysicalPlanFactory');
 
 goog.require('goog.asserts');
@@ -35048,6 +35216,7 @@ goog.require('lf.proc.InsertStep');
 goog.require('lf.proc.JoinNode');
 goog.require('lf.proc.JoinStep');
 goog.require('lf.proc.LimitNode');
+goog.require('lf.proc.LimitSkipByIndexPass');
 goog.require('lf.proc.LimitStep');
 goog.require('lf.proc.OrderByIndexPass');
 goog.require('lf.proc.OrderByNode');
@@ -35095,7 +35264,8 @@ lf.proc.PhysicalPlanFactory.prototype.create = function(
     return this.createPlan_(
         logicalQueryPlanRoot, [
           new lf.proc.IndexRangeScanPass(this.global_),
-          new lf.proc.OrderByIndexPass()
+          new lf.proc.OrderByIndexPass(),
+          new lf.proc.LimitSkipByIndexPass()
         ]);
   }
 
