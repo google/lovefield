@@ -71,7 +71,7 @@ function setUp() {
     j = db.getSchema().getJob();
     e = db.getSchema().getEmployee();
     backStore = hr.db.getGlobal().getService(lf.service.BACK_STORE);
-    return addSampleData();
+    return addSampleData(50);
   }).then(function() {
     asyncTestCase.continueTesting();
   }, fail);
@@ -80,13 +80,14 @@ function setUp() {
 
 /**
  * Populates the databse with sample data.
+ * @param {number} rowCount The number of rows to insert.
  * @return {!IThenable} A signal firing when the data has been added.
  */
-function addSampleData() {
+function addSampleData(rowCount) {
   var schema = /** @type {!hr.db.schema.Database} */ (db.getSchema());
   var jobGenerator =
       new lf.testing.hrSchema.JobDataGenerator(schema);
-  sampleJobs = jobGenerator.generate(50);
+  sampleJobs = jobGenerator.generate(rowCount);
 
   return db.insert().into(j).values(sampleJobs).exec();
 }
@@ -293,4 +294,64 @@ function selectAll() {
       new lf.cache.Journal(hr.db.getGlobal(), [j]));
   var table = tx.getTable(j.getName(), j.deserializeRow);
   return table.get([]);
+}
+
+
+/**
+ * Tests the case where multiple observers are registered for the same query
+ * semantically (but not the same query object instance). Each observer should
+ * receive different "change" records, depending on the time it was registered.
+ */
+function testObserve_MultipleObservers() {
+  asyncTestCase.waitForAsync('testObserve_MultipleObservers');
+
+  var schema = /** @type {!hr.db.schema.Database} */ (db.getSchema());
+  var jobGenerator =
+      new lf.testing.hrSchema.JobDataGenerator(schema);
+
+  /**
+   * @param {number} id A suffix to apply to the ID (to avoid triggering
+   * constraint violations).
+   * @return {!hr.db.row.Job}
+   */
+  var createNewRow = function(id) {
+    var sampleJob = jobGenerator.generate(1)[0];
+    sampleJob.setId('someJobId' + id);
+    return sampleJob;
+  };
+
+  /** @return {!lf.query.Select} */
+  var getQuery = function() { return db.select().from(j); };
+
+  var callback1Params = [];
+  var callback2Params = [];
+  var callback3Params = [];
+
+  var doAssertions = function() {
+    // Expecting callback1 to have been called 3 times.
+    assertArrayEquals([sampleJobs.length + 1, 1, 1], callback1Params);
+    // Expecting callback2 to have been called 2 times.
+    assertArrayEquals([sampleJobs.length + 2, 1], callback2Params);
+    // Expecting callback3 to have been called 1 time.
+    assertArrayEquals([sampleJobs.length + 3], callback3Params);
+    asyncTestCase.continueTesting();
+  };
+
+  var callback1 = function(changes) { callback1Params.push(changes.length); };
+  var callback2 = function(changes) { callback2Params.push(changes.length); };
+  var callback3 = function(changes) {
+    callback3Params.push(changes.length);
+    doAssertions();
+  };
+
+  db.observe(getQuery(), callback1);
+  db.insert().into(j).values([createNewRow(1)]).exec().then(
+      function() {
+        db.observe(getQuery(), callback2);
+        return db.insert().into(j).values([createNewRow(2)]).exec();
+      }).then(
+      function() {
+        db.observe(getQuery(), callback3);
+        return db.insert().into(j).values([createNewRow(3)]).exec();
+      }, fail);
 }

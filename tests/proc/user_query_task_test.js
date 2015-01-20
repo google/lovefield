@@ -18,7 +18,6 @@ goog.setTestOnly();
 goog.require('goog.Promise');
 goog.require('goog.testing.AsyncTestCase');
 goog.require('goog.testing.jsunit');
-goog.require('goog.userAgent.product');
 goog.require('hr.db');
 goog.require('lf.Exception');
 goog.require('lf.TransactionType');
@@ -259,12 +258,6 @@ function testMultiPlan_Rollback() {
  * notified.
  */
 function testSinglePlan_ParametrizedQuery() {
-  // TODO: Array.observe currently exists only in Chrome. Polyfiling mechanism
-  // not ready yet, see b/18331726. Remove this once fixed.
-  if (!goog.userAgent.product.CHROME) {
-    return;
-  }
-
   asyncTestCase.waitForAsync('testSinglePlan_ParametrizedQuery');
 
   var selectQueryBuilder = /** @type {!lf.query.SelectBuilder} */ (

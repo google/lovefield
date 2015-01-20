@@ -18737,6 +18737,7 @@ goog.provide('goog.async.throwException');
 goog.require('goog.debug.entryPointRegistry');
 goog.require('goog.functions');
 goog.require('goog.labs.userAgent.browser');
+goog.require('goog.labs.userAgent.engine');
 
 
 /**
@@ -18827,7 +18828,10 @@ goog.async.nextTick.getSetImmediateEmulator_ = function() {
   // document.addEventListener. The latter excludes IE8 because it has a
   // synchronous postMessage implementation.
   if (typeof Channel === 'undefined' && typeof window !== 'undefined' &&
-      window.postMessage && window.addEventListener) {
+      window.postMessage && window.addEventListener &&
+      // Presto (The old pre-blink Opera engine) has problems with iframes
+      // and contentWindow.
+      !goog.labs.userAgent.engine.isPresto()) {
     /** @constructor */
     Channel = function() {
       // Make an empty, invisible iframe.
@@ -35908,10 +35912,7 @@ lf.DiffCalculator.prototype.comparator_ = function(
  * observed array, which triggers observers to be notified.
  * @param {?lf.proc.Relation} oldResults
  * @param {!lf.proc.Relation} newResults
- * @param {boolean} recordChanges Whether any changes made while applying the
- *     diff should be recorded and returned.
- * @return {?Array<!Object>} A list of changes, populated only if recordChanges
- *     was set to true, otherwise null is returned.
+ * @return {!Array<!Object>} The list of changes.
  *
  * TODO(dpapad): Modify this logic to properly detect modifications. Currently
  * a modification is detected as a deletion and an insertion.
@@ -35920,8 +35921,7 @@ lf.DiffCalculator.prototype.comparator_ = function(
  * comparisons are done based on object reference, there might be a cheaper way,
  * such that longestCommonSubsequence is only called once.
  */
-lf.DiffCalculator.prototype.applyDiff = function(
-    oldResults, newResults, recordChanges) {
+lf.DiffCalculator.prototype.applyDiff = function(oldResults, newResults) {
   var oldEntries = goog.isNull(oldResults) ? [] : oldResults.entries;
 
   // Detecting and applying deletions.
@@ -35932,7 +35932,7 @@ lf.DiffCalculator.prototype.applyDiff = function(
         return oldEntries[indexLeft];
       });
 
-  var changeRecords = recordChanges ? [] : null;
+  var changeRecords = [];
 
   var commonIndex = 0;
   for (var i = 0; i < oldEntries.length; i++) {
@@ -35942,11 +35942,9 @@ lf.DiffCalculator.prototype.applyDiff = function(
       continue;
     } else {
       var removed = this.observableResults_.splice(i, 1);
-      if (recordChanges) {
-        var changeRecord = lf.DiffCalculator.createChangeRecord_(
-            i, removed, 0, this.observableResults_);
-        changeRecords.push(changeRecord);
-      }
+      var changeRecord = lf.DiffCalculator.createChangeRecord_(
+          i, removed, 0, this.observableResults_);
+      changeRecords.push(changeRecord);
     }
   }
 
@@ -35966,11 +35964,9 @@ lf.DiffCalculator.prototype.applyDiff = function(
       continue;
     } else {
       this.observableResults_.splice(i, 0, entry.row.payload());
-      if (recordChanges) {
-        var changeRecord = lf.DiffCalculator.createChangeRecord_(
-            i, [], 1, this.observableResults_);
-        changeRecords.push(changeRecord);
-      }
+      var changeRecord = lf.DiffCalculator.createChangeRecord_(
+          i, [], 1, this.observableResults_);
+      changeRecords.push(changeRecord);
     }
   }
 
@@ -36178,9 +36174,6 @@ lf.ObserverRegistry.Entry_ = function(query) {
 
   /** @private {!lf.DiffCalculator} */
   this.diffCalculator_ = new lf.DiffCalculator(query, this.observable_);
-
-  /** @private {boolean} */
-  this.hasNativeSupport_ = lf.ObserverRegistry.Entry_.hasNativeSupport_();
 };
 
 
@@ -36193,9 +36186,6 @@ lf.ObserverRegistry.Entry_.prototype.addObserver = function(callback) {
     return;
   }
 
-  if (this.hasNativeSupport_) {
-    Array.observe(this.observable_, callback);
-  }
   this.observers_.add(callback);
 };
 
@@ -36205,9 +36195,6 @@ lf.ObserverRegistry.Entry_.prototype.addObserver = function(callback) {
  * @return {boolean} Whether the callback was found and removed.
  */
 lf.ObserverRegistry.Entry_.prototype.removeObserver = function(callback) {
-  if (this.hasNativeSupport_) {
-    Array.unobserve(this.observable_, callback);
-  }
   return this.observers_.remove(callback);
 };
 
@@ -36232,27 +36219,15 @@ lf.ObserverRegistry.Entry_.prototype.hasObservers = function() {
  */
 lf.ObserverRegistry.Entry_.prototype.updateResults = function(newResults) {
   var changeRecords = this.diffCalculator_.applyDiff(
-      this.lastResults_, newResults, !this.hasNativeSupport_);
+      this.lastResults_, newResults);
   this.lastResults_ = newResults;
 
-  if (!this.hasNativeSupport_) {
-    if (changeRecords.length > 0) {
-      this.observers_.getValues().forEach(
-          function(observerFn) {
-            observerFn(changeRecords);
-          });
-    }
+  if (changeRecords.length > 0) {
+    this.observers_.getValues().forEach(
+        function(observerFn) {
+          observerFn(changeRecords);
+        });
   }
-};
-
-
-/**
- * @return {boolean} Whether the underlying browser supports Array.observe.
- * @private
- */
-lf.ObserverRegistry.Entry_.hasNativeSupport_ = function() {
-  return (typeof Array.observe == 'function' &&
-      typeof Array.unobserve == 'function');
 };
 
 /**

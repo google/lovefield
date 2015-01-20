@@ -18,7 +18,6 @@ goog.setTestOnly();
 goog.require('goog.Promise');
 goog.require('goog.testing.AsyncTestCase');
 goog.require('goog.testing.jsunit');
-goog.require('goog.userAgent.product');
 goog.require('hr.db');
 goog.require('lf.proc.ObserverQueryTask');
 goog.require('lf.testing.hrSchemaSampleData');
@@ -80,12 +79,6 @@ function insertSampleJobs() {
  * ObserveTask.
  */
 function testExec() {
-  // TODO: Array.observe currently exists only in Chrome. Polyfiling mechanism
-  // not ready yet, see b/18331726. Remove this once fixed.
-  if (!goog.userAgent.product.CHROME) {
-    return;
-  }
-
   asyncTestCase.waitForAsync('testExec');
 
   var selectQuery = /** @type {!lf.query.SelectBuilder} */ (

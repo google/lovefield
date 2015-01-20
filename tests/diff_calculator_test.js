@@ -178,8 +178,7 @@ function performMutations(rowsPerVersion, query, callback) {
     var newResults = lf.proc.Relation.fromRows(
         rowsPerVersion[currentVersion], [table.getName()]);
     var changeRecords = /** @type {!Array<!lf.DiffCalculator.ChangeRecord>} */ (
-        diffCalculator.applyDiff(
-            oldResults, newResults, true /** recordChanges */));
+        diffCalculator.applyDiff(oldResults, newResults));
     oldResults = newResults;
 
     callback(currentVersion, changeRecords);
