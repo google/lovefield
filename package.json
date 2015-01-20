@@ -9,7 +9,7 @@
   },
   "license": "Apache-2.0",
   "bin": {
-    "lovefield-spac": "lovefield-spac"
+    "lovefield-spac": "spac/lovefield-spac"
   },
   "repository": {
     "type": "git",
