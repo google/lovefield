@@ -23617,16 +23617,17 @@ lf.cache.Journal.prototype.getIndexScope = function() {
  * Finds the rowIds corresponding to records within the given key ranges.
  * @param {!lf.schema.Index} indexSchema
  * @param {!Array.<!lf.index.KeyRange>} keyRanges
+ * @param {!lf.Order} order
  * @return {!Array.<number>}
  */
 lf.cache.Journal.prototype.getIndexRange = function(
-    indexSchema, keyRanges) {
+    indexSchema, keyRanges, order) {
   var rowIds = new goog.structs.Set();
   var index = this.indexStore_.get(indexSchema.getNormalizedName());
 
   // Getting rowIds within the given key ranges according to IndexStore.
   keyRanges.forEach(function(keyRange) {
-    rowIds.addAll(index.getRange(keyRange));
+    rowIds.addAll(index.getRange(keyRange, order));
   }, this);
 
   return rowIds.getValues();
@@ -23640,7 +23641,8 @@ lf.cache.Journal.prototype.getIndexRange = function(
  */
 lf.cache.Journal.prototype.getTableRows = function(table, opt_rowIds) {
   var rowIds = goog.isDefAndNotNull(opt_rowIds) ?
-      opt_rowIds : this.indexStore_.get(table.getRowIdIndexName()).getRange();
+      opt_rowIds :
+      this.indexStore_.get(table.getRowIdIndexName()).getRange();
   return this.cache_.get(rowIds);
 };
 
@@ -23924,7 +23926,34 @@ lf.cache.Journal.prototype.checkScope_ = function(tableSchema) {
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+goog.provide('lf.Order');
+
+
+/** @enum {number} */
+lf.Order = {
+  DESC: 0,
+  ASC: 1
+};
+
+/**
+ * @license
+ * Copyright 2014 Google Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 goog.provide('lf.index');
+
+goog.require('lf.Order');
 
 
 /**
@@ -23963,24 +23992,43 @@ lf.index.hashArray = function(values) {
 
 /**
  * Slice result array by limit and skip.
- * @param {!Array.<number>} source
+ * Note: For performance reasons the input array might be modified in place.
+ *
+ * @param {!Array.<number>} array
+ * @param {!lf.Order=} opt_order
  * @param {number=} opt_limit
  * @param {number=} opt_skip
  * @return {!Array.<number>}
  */
-lf.index.slice = function(source, opt_limit, opt_skip) {
-  var array = source;
-  if (array.length && (goog.isDef(opt_limit) || goog.isDef(opt_skip))) {
-    var limit = goog.isDef(opt_limit) ? opt_limit : array.length;
-    if (limit == 0) {
-      return [];
+lf.index.slice = function(array, opt_order, opt_limit, opt_skip) {
+  // First handling case where no limit and no skip parameters have been
+  // specified, such that no copying of the input array is performed. This is an
+  // optimization such that unnecessary copying can be avoided for the majority
+  // case (no limit/skip params).
+  if (!goog.isDefAndNotNull(opt_limit) && !goog.isDefAndNotNull(opt_skip)) {
+    // All indices are build in ASC order and the order can't be controlled by
+    // the schema.
+    if (opt_order == lf.Order.DESC) {
+      array.reverse();
     }
-    limit = Math.min(array.length, limit);
-    var skip = opt_skip || 0;
-    skip = Math.min(array.length, skip);
-    array = array.slice(skip, skip + limit);
+    return array;
   }
-  return array;
+
+  // Handling case where at least one of limit/skip parameters has been
+  // specified. The input array will have to be sliced.
+  var limit = Math.min(
+      goog.isDef(opt_limit) ? opt_limit : array.length,
+      array.length);
+  if (limit == 0) {
+    return [];
+  }
+
+  var skip = Math.min(opt_skip || 0, array.length);
+  if (opt_order == lf.Order.DESC) {
+    array.reverse();
+  }
+
+  return array.slice(skip, skip + limit);
 };
 
 /**
@@ -24001,6 +24049,7 @@ lf.index.slice = function(source, opt_limit, opt_skip) {
  */
 goog.provide('lf.index.Index');
 
+goog.forwardDeclare('lf.Order');
 goog.forwardDeclare('lf.Row');
 goog.forwardDeclare('lf.index.KeyRange');
 
@@ -24071,6 +24120,8 @@ lf.index.Index.prototype.cost;
  * Retrieves all data within the range. Returns empty array if not found.
  * @param {!lf.index.KeyRange=} opt_keyRange The key range to search for. If not
  *     provided, all rowIds in this index will be returned.
+ * @param {!lf.Order=} opt_order The order in which the results should be
+ *     retrieved. If not provided, the index's default order will be used.
  * @param {number=} opt_limit Max number of rows to return
  * @param {number=} opt_skip Skip first N rows
  * @return {!Array.<number>}
@@ -24208,7 +24259,7 @@ lf.index.BTree.prototype.cost = function(opt_keyRange) {
 
 /** @override */
 lf.index.BTree.prototype.getRange = function(
-    opt_keyRange, opt_limit, opt_skip) {
+    opt_keyRange, opt_order, opt_limit, opt_skip) {
   var start = null;
   if (opt_keyRange) {
     if (!goog.isNull(opt_keyRange.from)) {
@@ -24220,7 +24271,8 @@ lf.index.BTree.prototype.getRange = function(
     start = this.root_.getLeftMostNode();
   }
 
-  return lf.index.slice(start.getRange(opt_keyRange), opt_limit, opt_skip);
+  return lf.index.slice(
+      start.getRange(opt_keyRange), opt_order, opt_limit, opt_skip);
 };
 
 
@@ -25308,7 +25360,7 @@ lf.index.RowId.prototype.cost = function(opt_keyRange) {
 
 /** @override */
 lf.index.RowId.prototype.getRange = function(
-    opt_keyRange, opt_limit, opt_skip) {
+    opt_keyRange, opt_order, opt_limit, opt_skip) {
   var keyRange = opt_keyRange || lf.index.KeyRange.all();
 
   if ((goog.isDefAndNotNull(keyRange.from) &&
@@ -25318,8 +25370,7 @@ lf.index.RowId.prototype.getRange = function(
   }
   return lf.index.slice(
       this.rows_.getValues().filter(keyRange.getComparator()),
-      opt_limit,
-      opt_skip);
+      opt_order, opt_limit, opt_skip);
 };
 
 
@@ -25875,7 +25926,7 @@ lf.index.AATree.prototype.traverse_ = function(node, keyRange, results) {
 
 /** @override */
 lf.index.AATree.prototype.getRange = function(
-    opt_keyRange, opt_limit, opt_skip) {
+    opt_keyRange, opt_order, opt_limit, opt_skip) {
   var keyRange = null;
 
   if (!goog.isDefAndNotNull(opt_keyRange)) {
@@ -25893,7 +25944,7 @@ lf.index.AATree.prototype.getRange = function(
 
   var results = [];
   this.traverse_(this.root_, keyRange, results);
-  return lf.index.slice(results, opt_limit, opt_skip);
+  return lf.index.slice(results, opt_order, opt_limit, opt_skip);
 };
 
 
@@ -26105,7 +26156,8 @@ lf.index.Map.prototype.cost = function(opt_keyRange) {
 
 
 /** @override */
-lf.index.Map.prototype.getRange = function(opt_keyRange, opt_limit, opt_skip) {
+lf.index.Map.prototype.getRange = function(
+    opt_keyRange, opt_order, opt_limit, opt_skip) {
   var results = [];
 
   var keyRange = opt_keyRange || lf.index.KeyRange.all();
@@ -26117,7 +26169,7 @@ lf.index.Map.prototype.getRange = function(opt_keyRange, opt_limit, opt_skip) {
     }
   }, this);
 
-  return lf.index.slice(results, opt_limit, opt_skip);
+  return lf.index.slice(results, opt_order, opt_limit, opt_skip);
 };
 
 
@@ -30306,31 +30358,6 @@ lf.query.Delete.prototype.where;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-goog.provide('lf.Order');
-
-
-/** @enum {number} */
-lf.Order = {
-  DESC: 0,
-  ASC: 1
-};
-
-/**
- * @license
- * Copyright 2014 Google Inc. All Rights Reserved.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
 goog.provide('lf.proc.DeleteStep');
 goog.provide('lf.proc.IndexRangeScanStep');
 goog.provide('lf.proc.OrderByStep');
@@ -30632,10 +30659,7 @@ lf.proc.IndexRangeScanStep.prototype.toString = function() {
 
 /** @override */
 lf.proc.IndexRangeScanStep.prototype.exec = function(journal) {
-  var rowIds = journal.getIndexRange(this.index, this.keyRanges_);
-  if (this.order == lf.Order.DESC) {
-    rowIds.reverse();
-  }
+  var rowIds = journal.getIndexRange(this.index, this.keyRanges_, this.order);
 
   var rows = rowIds.map(function(rowId) {
     return new lf.Row(rowId, {});

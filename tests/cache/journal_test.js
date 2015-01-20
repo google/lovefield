@@ -19,6 +19,7 @@ goog.require('goog.testing.AsyncTestCase');
 goog.require('goog.testing.jsunit');
 goog.require('lf.Exception');
 goog.require('lf.Global');
+goog.require('lf.Order');
 goog.require('lf.Row');
 goog.require('lf.cache.Journal');
 goog.require('lf.index.KeyRange');
@@ -705,7 +706,8 @@ function testGetIndexRange() {
 
   // Checking that the Journal returns row3 as a match, given that row3 has not
   // been modified within the journal itself yet.
-  rowIds = journal.getIndexRange(indexSchema, [keyRange1, keyRange2]);
+  rowIds = journal.getIndexRange(
+      indexSchema, [keyRange1, keyRange2], lf.Order.ASC);
   assertSameElements([row3.id()], rowIds);
 
   // Inserting new rows within this journal, where row1 and row2 are within the
@@ -714,7 +716,8 @@ function testGetIndexRange() {
   var row3Updated = new lf.testing.MockSchema.Row(
       row3.id(), {'id': 'dummyId3', 'name': 'bbba'});
   journal.insertOrReplace(table, [row1, row2, row3Updated]);
-  rowIds = journal.getIndexRange(indexSchema, [keyRange1, keyRange2]);
+  rowIds = journal.getIndexRange(
+      indexSchema, [keyRange1, keyRange2], lf.Order.ASC);
   assertSameElements([row1.id(), row2.id()], rowIds);
 }
 
