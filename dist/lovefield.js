@@ -29409,13 +29409,6 @@ lf.query.SelectContext = function() {
 
   /** @type {!lf.schema.Column} */
   this.groupBy;
-
-  /**
-   * The current version of this query context. Should be bumped up every time
-   * parametrized values are bound to new literal values.
-   * @type {number}
-   */
-  this.currentVersion = 0;
 };
 
 
@@ -32830,7 +32823,6 @@ lf.query.SelectBuilder.isAggregationValid_ = function(
 /** @override */
 lf.query.SelectBuilder.prototype.bind = function(values) {
   lf.query.BaseBuilder.bindValuesInSearchCondition(this.query, values);
-  this.query.currentVersion++;
   return this;
 };
 
@@ -36146,7 +36138,7 @@ lf.ObserverRegistry.prototype.getQueriesForTables = function(tables) {
 
 /**
  * Updates the results of a given query. It is ignored if the query is no longer
- * being observed or if the results have already been reported to observers.
+ * being observed.
  * @param {!lf.query.SelectContext} query
  * @param {!lf.proc.Relation} results The new results.
  * @return {boolean} Whether any results were updated.
@@ -36155,8 +36147,7 @@ lf.ObserverRegistry.prototype.updateResultsForQuery = function(query, results) {
   var queryId = this.getQueryId_(query);
   var entry = this.entries_.get(queryId, null);
 
-  if (!goog.isNull(entry) &&
-      entry.lastResultVersion_ != query.currentVersion) {
+  if (!goog.isNull(entry)) {
     entry.updateResults(results);
     return true;
   }
@@ -36184,9 +36175,6 @@ lf.ObserverRegistry.Entry_ = function(query) {
 
   /** @private {?lf.proc.Relation} */
   this.lastResults_ = null;
-
-  /** @private {number} */
-  this.lastResultVersion_ = -1;
 
   /** @private {!lf.DiffCalculator} */
   this.diffCalculator_ = new lf.DiffCalculator(query, this.observable_);
@@ -36246,13 +36234,14 @@ lf.ObserverRegistry.Entry_.prototype.updateResults = function(newResults) {
   var changeRecords = this.diffCalculator_.applyDiff(
       this.lastResults_, newResults, !this.hasNativeSupport_);
   this.lastResults_ = newResults;
-  this.lastResultVersion_ = this.query_.currentVersion;
 
   if (!this.hasNativeSupport_) {
-    this.observers_.getValues().forEach(
-        function(observerFn) {
-          observerFn(changeRecords);
-        });
+    if (changeRecords.length > 0) {
+      this.observers_.getValues().forEach(
+          function(observerFn) {
+            observerFn(changeRecords);
+          });
+    }
   }
 };
 

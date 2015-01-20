@@ -60,14 +60,20 @@ function testAddObserver() {
   var builder = new lf.query.SelectBuilder(lf.Global.get(), []);
   builder.from(table);
 
-  var callback = function() {
+  var callback = function(changes) {
     asyncTestCase.continueTesting();
   };
 
   registry.addObserver(builder, callback);
-  var row = table.createRow({ 'id': 'dummyId', 'value': 'dummyValue'});
-  var newResults = lf.proc.Relation.fromRows([row], [table.getName()]);
-  assertTrue(registry.updateResultsForQuery(builder.getQuery(), newResults));
+  var row1 = table.createRow({ 'id': 'dummyId1', 'value': 'dummyValue1'});
+  var row2 = table.createRow({ 'id': 'dummyId2', 'value': 'dummyValue2'});
+
+  var firstResults = lf.proc.Relation.fromRows([row1], [table.getName()]);
+  assertTrue(registry.updateResultsForQuery(builder.getQuery(), firstResults));
+
+  var secondResults = lf.proc.Relation.fromRows(
+      [row1, row2], [table.getName()]);
+  assertTrue(registry.updateResultsForQuery(builder.getQuery(), secondResults));
 }
 
 
