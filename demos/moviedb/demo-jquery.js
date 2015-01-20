@@ -137,9 +137,10 @@ function getSampleData(filename) {
  */
 function checkForExistingData() {
   var movie = db.getSchema().getMovie();
-  return db.select(lf.fn.count(movie.id)).from(movie).exec().then(
+  var column = lf.fn.count(movie.id);
+  return db.select(column).from(movie).exec().then(
       function(rows) {
-        return rows[0]['count(id)'] > 0;
+        return rows[0][column.getName()] > 0;
       });
 }
 
