@@ -24,20 +24,21 @@ opened instance first, then call `getInstance()` again.
 Users are free to use two or more database instances at the same program and
 the same time.
 
-#### 3.1.1 Testing Support
+#### 3.1.1 Volatile Storage
 
-Persisting test data onto persistent storage in unit tests is generally not a
-good idea. It usually slows down the test, and also requires test
-infrastructure support for removing persisted data. In Lovefield, a testing
-support is provided to make sure all data are volatile. One can explicitly call
+In certain use cases, persistent storage is not required or even a bad idea.
+For example, persisting test data onto persistent storage in unit tests is
+typically undesirable. It slows down the test, and requires test infrastructure
+support for removing persisted data. In Lovefield, one can use a pure in-memory
+storage to make sure all data are volatile by calling
 
 ```js
 db.getInstance(onUpgrade, /* opt_volatile */ true)
 ```
 
 to force all data are stored and retrieve data from memory cache only. The
-`onUpgrade` can be replaced with undefined if the upgrade logic is not of
-interest.
+`onUpgrade` must be `undefined` in this case since upgrading volatile data store
+is not applicable.
 
 ### 3.2 Multi-Process Connection
 

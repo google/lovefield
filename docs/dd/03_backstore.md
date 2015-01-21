@@ -1,11 +1,12 @@
 #Lovefield Design Document
 ## Backstore
 
-In the beginning of Lovefield design, it is identified that two different
-backstore needs to exist: a persistent backstore for real applications, and a
-temporary backstore for unit testing. By defining the interface of backstore,
-we hope that the need to use persistent backstore in tests can be vastly
-reduced.
+In the beginning of Lovefield design, it was identified that two different
+backstore needs to exist: a persistent backstore for applications that need
+persistence, and a volatile in-memory backstore for remaining applications and
+for testing purposes. By defining the interface of backstore, we hope that the
+need to use persistent backstore in tests can be vastly reduced, and backstores
+can be swapped for better testability.
 
 > #### Why not persistent storage in testing?
 > One cruel fact of testing is that tests can fail, which is the reason why
@@ -97,7 +98,7 @@ req.onsuccess = function() {
 };
 ```
 
-This code snippet involes N calls of cursor.continue and N eventing of
+This code snippet involves N calls of cursor.continue and N eventing of
 `onsuccess`, which is very expensive when N is big. WebKit needs 57us for
 firing an event on an HP Z620, and the wall clock time for loading 100K rows
 just for firing N onsuccess events will be 5.7 seconds, not to mention the
