@@ -68,7 +68,7 @@ function testCreate_DeletePlan() {
       '--table_access_by_row_id(tableA)\n' +
       '---index_range_scan(tableA.idxName, [name, name], ASC)\n';
 
-  var table = env.schema.getTables()[0];
+  var table = env.schema.tables()[0];
   var deleteNode = new lf.proc.DeleteNode(table);
   var selectNode1 = new lf.proc.SelectNode(table.id.eq('id'));
   deleteNode.addChild(selectNode1);

@@ -77,15 +77,15 @@ function checkGetSetValue_MultipleTables(tables) {
 
 function testGetSetValue_MultipleTables() {
   var schema = new lf.testing.MockSchema();
-  var tables = schema.getTables().slice(0, 2);
+  var tables = schema.tables().slice(0, 2);
   checkGetSetValue_MultipleTables(tables);
 }
 
 
 function testGetSetValue_MultipleTables_Alias() {
   var schema = new lf.testing.MockSchema();
-  var table0 = schema.getTables()[0].as('table0');
-  var table1 = schema.getTables()[1].as('table1');
+  var table0 = schema.tables()[0].as('table0');
+  var table1 = schema.tables()[1].as('table1');
   checkGetSetValue_MultipleTables([table0, table1]);
 }
 
@@ -97,7 +97,7 @@ function testGetSetValue_SingleTable() {
   }
 
   var schema = new lf.testing.MockSchema();
-  var table = schema.getTables()[0];
+  var table = schema.tables()[0];
 
   var relation = lf.proc.Relation.fromRows(rows, [table.getName()]);
   relation.entries.forEach(function(entry) {
@@ -121,7 +121,7 @@ function testSetField_WithAlias() {
   }
 
   var schema = new lf.testing.MockSchema();
-  var table = schema.getTables()[0];
+  var table = schema.tables()[0];
   var col = table.name.as('nickName');
 
   var relation = lf.proc.Relation.fromRows(rows, [table.getName()]);

@@ -84,7 +84,7 @@ function tearDown() {
   asyncTestCase.waitForAsync('tearDown');
 
   // Clearing all tables.
-  var promises = schema.getTables().map(
+  var promises = schema.tables().map(
       function(table) {
         var tx = db.createTx(
             lf.TransactionType.READ_WRITE,
@@ -124,7 +124,7 @@ function testSCUD_Bundled() {
     return;
   }
 
-  schema.name = schema.name + '_bundled';
+  schema.setName(schema.name() + '_bundled');
   db = new lf.backstore.IndexedDB(lf.Global.get(), schema, true);
   var scudTester = new lf.testing.backstore.ScudTester(db, lf.Global.get());
 
@@ -141,7 +141,7 @@ function testTwoTableInserts_Bundled() {
     return;
   }
 
-  schema.name = schema.name + '_b2';
+  schema.setName(schema.name() + '_b2');
   db = new lf.backstore.IndexedDB(lf.Global.get(), schema, true);
 
   /** @const {!Object} */
@@ -149,8 +149,8 @@ function testTwoTableInserts_Bundled() {
   /** @const {!Object} */
   var CONTENTS2 = {'id': 'hello2', 'name': 'world2'};
 
-  var tableA = schema.getTables()[0];
-  var tableB = schema.getTables()[1];
+  var tableA = schema.tables()[0];
+  var tableB = schema.tables()[1];
   var row = lf.Row.create(CONTENTS);
   var row2 = lf.Row.create(CONTENTS);
   var row3 = lf.Row.create(CONTENTS2);
@@ -258,7 +258,7 @@ function testScanRowId() {
    * @return {!IThenable}
    */
   var insertIntoTable = function(rows) {
-    var table = schema.getTables()[0];
+    var table = schema.tables()[0];
     var tx = db.createTx(
         lf.TransactionType.READ_WRITE,
         new lf.cache.Journal(lf.Global.get(), [table]));
@@ -318,7 +318,7 @@ function testScanRowId_BundledDB() {
       rows.push(new lf.Row(i, CONTENTS));
     }
 
-    var table = schema.getTables()[0];
+    var table = schema.tables()[0];
     var tx = db.createTx(
         lf.TransactionType.READ_WRITE,
         new lf.cache.Journal(lf.Global.get(), [table]));
@@ -348,7 +348,7 @@ function testScanRowId_BundledDB() {
  * @return {!IThenable}
  */
 function selectAll() {
-  var tableSchema = schema.getTables()[0];
+  var tableSchema = schema.tables()[0];
   var tx = db.createTx(
       lf.TransactionType.READ_ONLY,
       new lf.cache.Journal(lf.Global.get(), [tableSchema]));
@@ -379,12 +379,12 @@ function testUpgrade() {
   }
 
   // Randomize schema name to ensure upgrade test works.
-  var name = schema.name + goog.now();
-  schema.name = name;
+  var name = schema.name() + goog.now();
+  schema.setName(name);
 
   // Modifying tableA to use persisted indices.
   propertyReplacer.replace(
-      schema.getTables()[0], 'persistentIndex', goog.functions.TRUE);
+      schema.tables()[0], 'persistentIndex', goog.functions.TRUE);
 
   db = new lf.backstore.IndexedDB(lf.Global.get(), schema);
   db.init().then(function() {
@@ -394,14 +394,14 @@ function testUpgrade() {
     db.close();
     propertyReplacer.reset();
     setUp();  // reset the environment
-    schema.version = 2;
-    schema.name = name;
+    schema.setVersion(2);
+    schema.setName(name);
     db = new lf.backstore.IndexedDB(lf.Global.get(), schema);
     return db.init();
   }).then(function() {
     var tables = filterTableA();
     assertEquals(1, tables.length);
-    var table = schema.getTables().slice(-1)[0];
+    var table = schema.tables().slice(-1)[0];
     assertEquals('tablePlusOne', table.getName());
     var tx = db.createTx(
         lf.TransactionType.READ_WRITE,

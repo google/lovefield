@@ -25,7 +25,7 @@ goog.require('lf.testing.MockSchema');
  */
 function testGetIndices() {
   var schema = new lf.testing.MockSchema();
-  var table = schema.getTables()[0];
+  var table = schema.tables()[0];
 
   var idIndices = table.id.getIndices();
   assertEquals(1, idIndices.length);
@@ -42,7 +42,7 @@ function testGetIndices() {
  */
 function testGetIndices_NoIndicesExist() {
   var schema = new lf.testing.MockSchema();
-  var tableWithNoIndices = schema.getTables()[2];
+  var tableWithNoIndices = schema.tables()[2];
   assertEquals(0, tableWithNoIndices.id.getIndices().length);
   assertEquals(0, tableWithNoIndices.name.getIndices().length);
 }

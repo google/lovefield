@@ -41,7 +41,7 @@ lf.testing.backstore.ScudTester = function(db, global) {
       global.getService(lf.service.SCHEMA));
 
   /** @private {!lf.schema.Table} */
-  this.tableSchema_ = schema.getTables()[0];
+  this.tableSchema_ = schema.tables()[0];
 
   /** @private {!lf.cache.Cache} */
   this.cache_ = global.getService(lf.service.CACHE);

@@ -56,19 +56,19 @@ lovefield.db.schema.Database = function() {
 
 
 /** @override */
-lovefield.db.schema.Database.prototype.getName = function() {
+lovefield.db.schema.Database.prototype.name = function() {
   return 'db';
 };
 
 
 /** @override */
-lovefield.db.schema.Database.prototype.getVersion = function() {
+lovefield.db.schema.Database.prototype.version = function() {
   return 1;
 };
 
 
 /** @override */
-lovefield.db.schema.Database.prototype.getTables = function() {
+lovefield.db.schema.Database.prototype.tables = function() {
   return [
     this.album_,
     this.photo_,

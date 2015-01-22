@@ -34,19 +34,19 @@ goog.require('lf.schema.Table');
 
 
 /** @override */
-#namespace.schema.Database.prototype.getName = function() {
+#namespace.schema.Database.prototype.name = function() {
   return '#dbname';
 };
 
 
 /** @override */
-#namespace.schema.Database.prototype.getVersion = function() {
+#namespace.schema.Database.prototype.version = function() {
   return #dbversion;
 };
 
 
 /** @override */
-#namespace.schema.Database.prototype.getTables = function() {
+#namespace.schema.Database.prototype.tables = function() {
   return [
 #dbtablelist
   ];

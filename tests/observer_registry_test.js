@@ -56,7 +56,7 @@ function setUp() {
 function testAddObserver() {
   asyncTestCase.waitForAsync('testObserve');
 
-  var table = schema.getTables()[0];
+  var table = schema.tables()[0];
   var builder = new lf.query.SelectBuilder(lf.Global.get(), []);
   builder.from(table);
 
@@ -78,7 +78,7 @@ function testAddObserver() {
 
 
 function testRemoveObserver() {
-  var table = schema.getTables()[0];
+  var table = schema.tables()[0];
   var builder = new lf.query.SelectBuilder(lf.Global.get(), []);
   builder.from(table);
 
@@ -92,7 +92,7 @@ function testRemoveObserver() {
 
 
 function testGetQueriesForTable() {
-  var tables = schema.getTables();
+  var tables = schema.tables();
 
   var builder1 = new lf.query.SelectBuilder(lf.Global.get(), []);
   builder1.from(tables[0]);

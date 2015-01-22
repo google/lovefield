@@ -65,7 +65,7 @@ function setUp() {
  * @return {!IThenable}
  */
 function clearDb() {
-  var tables = db.getSchema().getTables();
+  var tables = db.getSchema().tables();
   var deletePromises = tables.map(function(table) {
     return db.delete().from(table).exec();
   });

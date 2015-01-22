@@ -230,7 +230,7 @@ function testAddTableColumn() {
   }).then(function() {
     db.close();
     db = null;
-    schema.version = 2;
+    schema.setVersion(2);
     db = new lf.backstore.IndexedDB(lf.Global.get(), schema);
     return db.init(goog.partial(upgradeAddTableColumn, date));
   }).then(function(newDb) {
@@ -259,7 +259,7 @@ function testAddTableColumn_Bundled() {
   }).then(function() {
     db.close();
     db = null;
-    schema.version = 2;
+    schema.setVersion(2);
     db = new lf.backstore.IndexedDB(lf.Global.get(), schema, true);
     return db.init(goog.partial(upgradeAddTableColumn, date));
   }).then(function(newDb) {
@@ -300,7 +300,7 @@ function testDropTableColumn() {
   }).then(function() {
     db.close();
     db = null;
-    schema.version = 2;
+    schema.setVersion(2);
     db = new lf.backstore.IndexedDB(lf.Global.get(), schema);
     return db.init(upgradeDropTableColumn);
   }).then(function(newDb) {
@@ -327,7 +327,7 @@ function testDropTableColumn_Bundled() {
   }).then(function() {
     db.close();
     db = null;
-    schema.version = 2;
+    schema.setVersion(2);
     db = new lf.backstore.IndexedDB(lf.Global.get(), schema, true);
     return db.init(upgradeDropTableColumn);
   }).then(function(newDb) {
@@ -368,7 +368,7 @@ function testRenameTableColumn() {
   }).then(function() {
     db.close();
     db = null;
-    schema.version = 2;
+    schema.setVersion(2);
     db = new lf.backstore.IndexedDB(lf.Global.get(), schema);
     return db.init(upgradeRenameTableColumn);
   }).then(function(newDb) {
@@ -397,7 +397,7 @@ function testRenameTableColumn_Bundled() {
   }).then(function() {
     db.close();
     db = null;
-    schema.version = 2;
+    schema.setVersion(2);
     db = new lf.backstore.IndexedDB(lf.Global.get(), schema, true);
     return db.init(upgradeRenameTableColumn);
   }).then(function(newDb) {
@@ -439,7 +439,7 @@ function testDropTable() {
     assertEquals(2, rawDb.objectStoreNames.length);
     db.close();
     db = null;
-    schema.version = 2;
+    schema.setVersion(2);
     db = new lf.backstore.IndexedDB(lf.Global.get(), schema);
     return db.init(upgradeDropTable);
   }, fail).then(function(rawDb) {
@@ -477,7 +477,7 @@ function testDump() {
   }, fail).then(function() {
     db.close();
     db = null;
-    schema.version = 2;
+    schema.setVersion(2);
     db = new lf.backstore.IndexedDB(lf.Global.get(), schema);
     return db.init(upgradeDumping);
   }, fail).then(function() {
@@ -499,7 +499,7 @@ function testDump_Bundled() {
   }, fail).then(function() {
     db.close();
     db = null;
-    schema.version = 2;
+    schema.setVersion(2);
     db = new lf.backstore.IndexedDB(lf.Global.get(), schema, true);
     return db.init(upgradeDumping);
   }, fail).then(function() {
@@ -519,8 +519,8 @@ var Schema_ = function() {
   /** @private {string} */
   this.name_ = 'schema' + goog.now();
 
-  /** @type {number} */
-  this.version = 1;
+  /** @private {number} */
+  this.version_ = 1;
 
   /** @private {!lf.schema.Table} */
   this.tableA_ = new Table_('tableA_');
@@ -531,20 +531,26 @@ var Schema_ = function() {
 
 
 /** @override */
-Schema_.prototype.getTables = function() {
-  return (this.version == 1) ? [this.tableA_, this.tableB_] : [this.tableA_];
+Schema_.prototype.tables = function() {
+  return (this.version_ == 1) ? [this.tableA_, this.tableB_] : [this.tableA_];
 };
 
 
 /** @override */
-Schema_.prototype.getName = function() {
+Schema_.prototype.name = function() {
   return this.name_;
 };
 
 
 /** @override */
-Schema_.prototype.getVersion = function() {
-  return this.version;
+Schema_.prototype.version = function() {
+  return this.version_;
+};
+
+
+/** @param {number} version */
+Schema_.prototype.setVersion = function(version) {
+  this.version_ = version;
 };
 
 

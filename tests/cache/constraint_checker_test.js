@@ -48,7 +48,7 @@ function setUp() {
 
 
 function testFindExistingRowIdInPkIndex() {
-  var table = env.schema.getTables()[0];
+  var table = env.schema.tables()[0];
   var pkIndexSchema = table.getConstraint().getPrimaryKey();
   var pkIndex = env.indexStore.get(pkIndexSchema.getNormalizedName());
 
@@ -74,7 +74,7 @@ function testFindExistingRowIdInPkIndex() {
 
 
 function testCheckNotNullable() {
-  var table = env.schema.getTables()[4];
+  var table = env.schema.tables()[4];
 
   // Attempting to insert rows that violate the constraint.
   var invalidRows = [1, 2, 3].map(function(primaryKey) {

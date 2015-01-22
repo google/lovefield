@@ -55,7 +55,7 @@ function testCrossProduct() {
   var rightRowCount = 4;
 
   var leftRows = new Array(leftRowCount);
-  var leftTable = schema.getTables()[0];
+  var leftTable = schema.tables()[0];
   for (var i = 0; i < leftRowCount; i++) {
     leftRows[i] = leftTable.createRow({
       'id': 'id' + i.toString(),
@@ -64,7 +64,7 @@ function testCrossProduct() {
   }
 
   var rightRows = new Array(rightRowCount);
-  var rightTable = schema.getTables()[4];
+  var rightTable = schema.tables()[4];
   for (var i = 0; i < rightRowCount; i++) {
     rightRows[i] = rightTable.createRow({
       'id': 'id' + i.toString(),
@@ -103,7 +103,7 @@ function testCrossProduct_PreviousJoins() {
   var relation3Count = 5;
 
   var relation1Rows = [];
-  var table1 = schema.getTables()[0];
+  var table1 = schema.tables()[0];
   for (var i = 0; i < relation1Count; i++) {
     var row = table1.createRow({
       'id': 'id' + i.toString(),
@@ -113,7 +113,7 @@ function testCrossProduct_PreviousJoins() {
   }
 
   var relation2Rows = [];
-  var table2 = schema.getTables()[1];
+  var table2 = schema.tables()[1];
   for (var i = 0; i < relation2Count; i++) {
     var row = table2.createRow({
       'id': 'id' + i.toString(),
@@ -123,7 +123,7 @@ function testCrossProduct_PreviousJoins() {
   }
 
   var relation3Rows = [];
-  var table3 = schema.getTables()[4];
+  var table3 = schema.tables()[4];
   for (var i = 0; i < relation3Count; i++) {
     var row = table3.createRow({
       'id': 'id' + i.toString(),

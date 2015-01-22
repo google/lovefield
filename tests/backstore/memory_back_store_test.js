@@ -68,9 +68,9 @@ function setUp() {
  * instance that is passed into its constructor.
  */
 function testConstruction() {
-  assertTrue(schema.getTables().length > 0);
+  assertTrue(schema.tables().length > 0);
 
-  schema.getTables().forEach(
+  schema.tables().forEach(
       function(table) {
         assertNotNull(db.getTableInternal(table.getName()));
       });

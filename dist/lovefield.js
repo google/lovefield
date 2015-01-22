@@ -22351,7 +22351,7 @@ lf.backstore.IndexedDB.prototype.init = function(opt_onUpgrade) {
     var request;
     try {
       request = indexedDB.open(
-          this.schema_.getName(), this.schema_.getVersion());
+          this.schema_.name(), this.schema_.version());
     } catch (e) {
       reject(e);
       return;
@@ -22437,7 +22437,7 @@ lf.backstore.IndexedDB.prototype.removeIndexTables_ = function(db, tx) {
  * @private
  */
 lf.backstore.IndexedDB.prototype.createTables_ = function(db, tx) {
-  this.schema_.getTables().forEach(
+  this.schema_.tables().forEach(
       goog.partial(this.createObjectStoresForTable_, db, tx),
       this);
 };
@@ -22538,7 +22538,7 @@ lf.backstore.IndexedDB.prototype.createTx = function(
  * @private
  */
 lf.backstore.IndexedDB.prototype.scanRowId_ = function(opt_tx) {
-  var tableNames = this.schema_.getTables().map(function(table) {
+  var tableNames = this.schema_.tables().map(function(table) {
     return table.getName();
   });
 
@@ -22835,7 +22835,7 @@ lf.backstore.Memory = function(schema) {
 
 /** @override */
 lf.backstore.Memory.prototype.init = function(opt_onUpgrade) {
-  this.schema_.getTables().forEach(this.initTable_, this);
+  this.schema_.tables().forEach(this.initTable_, this);
   return goog.Promise.resolve();
 };
 
@@ -25489,7 +25489,7 @@ lf.cache.Prefetcher = function(global) {
  */
 lf.cache.Prefetcher.prototype.init = function(schema) {
   // Sequentially load tables
-  var tables = schema.getTables();
+  var tables = schema.tables();
   var execSequentially = goog.bind(function() {
     if (tables.length == 0) {
       return goog.Promise.resolve();
@@ -26251,7 +26251,7 @@ lf.index.MemoryIndexStore = function() {
 
 /** @override */
 lf.index.MemoryIndexStore.prototype.init = function(schema) {
-  var tables = schema.getTables();
+  var tables = schema.tables();
 
   tables.forEach(function(table) {
     var rowIdIndexName = table.getRowIdIndexName();
@@ -32027,15 +32027,15 @@ lf.schema.Database = function() {};
 
 
 /** @return {string} */
-lf.schema.Database.prototype.getName;
+lf.schema.Database.prototype.name;
 
 
 /** @return {number} */
-lf.schema.Database.prototype.getVersion;
+lf.schema.Database.prototype.version;
 
 
 /** @return {!Array.<!lf.schema.Table>} */
-lf.schema.Database.prototype.getTables;
+lf.schema.Database.prototype.tables;
 
 
 /**

@@ -54,8 +54,8 @@ function testMemoryIndexStore() {
   asyncTestCase.waitForAsync('testMemoryIndexStore');
 
   var schema = new lf.testing.MockSchema();
-  var tableA = schema.getTables()[0];
-  var tableB = schema.getTables()[1];
+  var tableA = schema.tables()[0];
+  var tableB = schema.tables()[1];
   propertyReplacer.replace(tableB, 'persistentIndex', goog.functions.TRUE);
 
   assertFalse(tableA.persistentIndex());
@@ -105,7 +105,7 @@ function testGetTableIndices_NoIndices() {
   var schema = new lf.testing.MockSchema();
 
   indexStore.init(schema).then(function() {
-    var tableWithNoIndexName = schema.getTables()[2];  // tableC_
+    var tableWithNoIndexName = schema.tables()[2];  // tableC_
     // There should be at least one row id index.
     assertEquals(1,
         indexStore.getTableIndices(tableWithNoIndexName.getName()).length);
@@ -141,7 +141,7 @@ function testSet() {
   asyncTestCase.waitForAsync('testSet');
 
   var schema = new lf.testing.MockSchema();
-  var tableSchema = schema.getTables()[0];
+  var tableSchema = schema.tables()[0];
   var indexSchema = tableSchema.getIndices()[0];
 
   indexStore.init(schema).then(function() {

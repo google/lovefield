@@ -46,7 +46,7 @@ function setUp() {
 
 
 function generateSamlpeRows() {
-  var table = schema.getTables()[0];
+  var table = schema.tables()[0];
   var rowCount = 10;
   var rows = new Array(rowCount);
   for (var i = 0; i < rowCount; i++) {
@@ -65,7 +65,7 @@ function generateSamlpeRows() {
  * projected.
  */
 function testDiffCalculation_ExplicitColumns() {
-  var table = schema.getTables()[0];
+  var table = schema.tables()[0];
   var builder = new lf.query.SelectBuilder(
       lf.Global.get(), [table.id, table.name]);
   builder.from(table);
@@ -78,7 +78,7 @@ function testDiffCalculation_ExplicitColumns() {
  * Tests the case where the observed query implicitly projects all columns.
  */
 function testDiffCalculation_ImplicitColumns() {
-  var table = schema.getTables()[0];
+  var table = schema.tables()[0];
   var builder = new lf.query.SelectBuilder(lf.Global.get(), []);
   builder.from(table);
   var query = builder.getQuery();
@@ -174,7 +174,7 @@ function performMutations(rowsPerVersion, query, callback) {
    */
   var updateResultsToNextVersion = function() {
     currentVersion++;
-    var table = schema.getTables()[0];
+    var table = schema.tables()[0];
     var newResults = lf.proc.Relation.fromRows(
         rowsPerVersion[currentVersion], [table.getName()]);
     var changeRecords = /** @type {!Array<!lf.DiffCalculator.ChangeRecord>} */ (

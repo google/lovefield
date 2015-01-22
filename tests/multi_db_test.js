@@ -60,8 +60,8 @@ function setUp() {
 }
 
 function deleteAll() {
-  var hrTables = hrDb.getSchema().getTables();
-  var orderTables = orderDb.getSchema().getTables();
+  var hrTables = hrDb.getSchema().tables();
+  var orderTables = orderDb.getSchema().tables();
   var promises = hrTables.map(function(table) {
     return hrDb.delete().from(table).exec();
   });

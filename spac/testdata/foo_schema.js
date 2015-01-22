@@ -28,19 +28,19 @@ foo.db.schema.Database = function() {
 
 
 /** @override */
-foo.db.schema.Database.prototype.getName = function() {
+foo.db.schema.Database.prototype.name = function() {
   return 'idb';
 };
 
 
 /** @override */
-foo.db.schema.Database.prototype.getVersion = function() {
+foo.db.schema.Database.prototype.version = function() {
   return 1;
 };
 
 
 /** @override */
-foo.db.schema.Database.prototype.getTables = function() {
+foo.db.schema.Database.prototype.tables = function() {
   return [
     this.foo_
   ];

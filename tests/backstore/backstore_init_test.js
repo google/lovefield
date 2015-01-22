@@ -59,7 +59,7 @@ function tearDown() {
  * @return {!lf.schema.Database} A schema to be used for testing.
  */
 function randomizeSchemaName(schema) {
-  propertyReplacer.replace(schema, 'getName', function() {
+  propertyReplacer.replace(schema, 'name', function() {
     return 'db_' + goog.string.getRandomString();
   });
 
@@ -151,7 +151,7 @@ function testInit_Memory() {
  *     were created in the backing store.
  */
 function assertUserTables(schema, tableNames) {
-  schema.getTables().forEach(function(tableSchema) {
+  schema.tables().forEach(function(tableSchema) {
     assertTrue(tableNames.contains(tableSchema.getName()));
   });
 }
@@ -165,7 +165,7 @@ function assertUserTables(schema, tableNames) {
  *     were created in the backing store.
  */
 function assertIndexTables(schema, tableNames) {
-  schema.getTables().forEach(function(tableSchema) {
+  schema.tables().forEach(function(tableSchema) {
     tableSchema.getIndices().forEach(function(indexSchema) {
       assertEquals(
           tableSchema.persistentIndex(),
@@ -260,7 +260,7 @@ function checkAllIndexMetadataExist_MemoryDb(db, schema) {
 function getPersistedIndices(schema) {
   var indexNames = [];
 
-  schema.getTables().forEach(function(tableSchema) {
+  schema.tables().forEach(function(tableSchema) {
     if (tableSchema.persistentIndex()) {
       tableSchema.getIndices().forEach(function(indexSchema) {
         indexNames.push(indexSchema.getNormalizedName());

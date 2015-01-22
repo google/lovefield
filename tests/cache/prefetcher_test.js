@@ -57,7 +57,7 @@ function setUp() {
 
   // Modifying tableA to use persisted indices.
   propertyReplacer.replace(
-      env.schema.getTables()[0], 'persistentIndex', goog.functions.TRUE);
+      env.schema.tables()[0], 'persistentIndex', goog.functions.TRUE);
 
   asyncTestCase.waitForAsync('init');
   env.init().then(goog.bind(asyncTestCase.continueTesting, asyncTestCase));
@@ -68,9 +68,9 @@ function testPrefetcher() {
   // Setup some data first.
   var rows = getSampleRows(19);
 
-  var table = env.store.getTableInternal(env.schema.getTables()[3].getName());
+  var table = env.store.getTableInternal(env.schema.tables()[3].getName());
   var indices = env.indexStore.getTableIndices(
-      env.schema.getTables()[3].getName());
+      env.schema.tables()[3].getName());
   var rowIdIndex = indices[0];
   var pkIndex = indices[1];
   var nameIndex = indices[2];
@@ -109,7 +109,7 @@ function testInit_PersistentIndices() {
 
 
   var rows = getSampleRows(10);
-  var tableSchema = env.schema.getTables()[0];
+  var tableSchema = env.schema.tables()[0];
   propertyReplacer.replace(tableSchema, 'persistentIndex', goog.functions.TRUE);
 
   simulatePersistedIndices(tableSchema, rows).then(

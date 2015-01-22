@@ -59,7 +59,7 @@ function setUp() {
  * object.
  */
 function testCreate_DeletePlan() {
-  var table = env.schema.getTables()[0];
+  var table = env.schema.tables()[0];
 
   var queryBuilder = new lf.query.DeleteBuilder(lf.Global.get());
   queryBuilder.
@@ -92,7 +92,7 @@ function testCreate_DeletePlan() {
  * generating a plan.
  */
 function testCreate_SelectPlan() {
-  var table = env.schema.getTables()[0];
+  var table = env.schema.tables()[0];
 
   var queryBuilder = new lf.query.SelectBuilder(lf.Global.get(), []);
   queryBuilder.
@@ -125,7 +125,7 @@ function testCreate_SelectPlan() {
  * generating a plan.
  */
 function testCreate_UpdatePlan() {
-  var table = env.schema.getTables()[0];
+  var table = env.schema.tables()[0];
 
   var queryBuilder = new lf.query.UpdateBuilder(lf.Global.get(), table);
   queryBuilder.

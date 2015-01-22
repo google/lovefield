@@ -53,21 +53,21 @@ lf.testing.MockSchema = function() {
   /** @private {!lf.schema.Table} */
   this.tablePlusOne_ = new Table_('tablePlusOne');
 
-  /** @type {string} */
-  this.name = 'mock_schema';
+  /** @private {string} */
+  this.name_ = 'mock_schema';
 
-  /** @type {number} */
-  this.version = 1;
+  /** @private {number} */
+  this.version_ = 1;
 };
 
 
 /** @override */
-lf.testing.MockSchema.prototype.getTables = function() {
+lf.testing.MockSchema.prototype.tables = function() {
   var tables = [
     this.tableA_, this.tableB_, this.tableC_,
     this.tableD_, this.tableE_
   ];
-  if (this.version > 1) {
+  if (this.version_ > 1) {
     tables.push(this.tablePlusOne_);
   }
   return tables;
@@ -75,14 +75,26 @@ lf.testing.MockSchema.prototype.getTables = function() {
 
 
 /** @override */
-lf.testing.MockSchema.prototype.getName = function() {
-  return this.name;
+lf.testing.MockSchema.prototype.name = function() {
+  return this.name_;
 };
 
 
 /** @override */
-lf.testing.MockSchema.prototype.getVersion = function() {
-  return this.version;
+lf.testing.MockSchema.prototype.version = function() {
+  return this.version_;
+};
+
+
+/** @param {string} name */
+lf.testing.MockSchema.prototype.setName = function(name) {
+  this.name_ = name;
+};
+
+
+/** @param {number} version */
+lf.testing.MockSchema.prototype.setVersion = function(version) {
+  this.version_ = version;
 };
 
 

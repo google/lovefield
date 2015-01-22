@@ -65,14 +65,14 @@ function setUp() {
 
 
 function testTableAccessFullStep() {
-  checkTableAccessFullStep('testTableAccessFullStep', schema.getTables()[0]);
+  checkTableAccessFullStep('testTableAccessFullStep', schema.tables()[0]);
 }
 
 
 function testTableAccessFullStep_Alias() {
   checkTableAccessFullStep(
       'testTableAccessFullStep_Alias',
-      schema.getTables()[0].as('SomeTableAlias'));
+      schema.tables()[0].as('SomeTableAlias'));
 }
 
 
@@ -98,14 +98,14 @@ function checkTableAccessFullStep(description, table) {
 
 
 function testTableAccessByRowId() {
-  checkTableAccessByRowId('testTableAccessByRowId', schema.getTables()[0]);
+  checkTableAccessByRowId('testTableAccessByRowId', schema.tables()[0]);
 }
 
 
 function testTableAccessByRowId_Alias() {
   checkTableAccessByRowId(
       'testTableAccessByRowId_Alias',
-      schema.getTables()[0].as('SomeTableAlias'));
+      schema.tables()[0].as('SomeTableAlias'));
 }
 
 
@@ -149,7 +149,7 @@ function checkTableAccessByRowId(description, table) {
 function testTableAccessByRowId_Empty() {
   asyncTestCase.waitForAsync('testTableAccessByRowId_Empty');
 
-  var table = schema.getTables()[1];
+  var table = schema.tables()[1];
   var step = new lf.proc.TableAccessByRowIdStep(table);
 
   // Creating a "dummy" child step that will not return any row IDs.
@@ -182,7 +182,7 @@ function testIndexRangeScan_Descending() {
 function checkIndexRangeScan(order, description) {
   asyncTestCase.waitForAsync(description);
 
-  var table = schema.getTables()[0];
+  var table = schema.tables()[0];
   var index = table.getIndices()[0];
   var keyRange = new lf.index.KeyRange(5, 8, false, false);
   var step = new lf.proc.IndexRangeScanStep(index, [keyRange], order);
@@ -222,7 +222,7 @@ function addSampleData() {
     });
   }
 
-  var table = schema.getTables()[0];
+  var table = schema.tables()[0];
   var tx = backStore.createTx(
       lf.TransactionType.READ_WRITE,
       new lf.cache.Journal(lf.Global.get(), [table]));
