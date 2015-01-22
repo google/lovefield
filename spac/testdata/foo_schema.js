@@ -4,6 +4,8 @@ goog.provide('foo.db.row.FooType');
 goog.provide('foo.db.schema.Database');
 goog.provide('foo.db.schema.Foo');
 
+/** @suppress {extraRequire} */
+goog.require('lf.Order');
 goog.require('lf.Row');
 goog.require('lf.Type');
 goog.require('lf.schema.BaseColumn');
@@ -76,9 +78,10 @@ foo.db.schema.Foo = function() {
   cols.push(this.bar);
 
   var indices = [
-    new lf.schema.Index('Foo', 'pkFoo', true, ['id']),
-    new lf.schema.Index('Foo', 'uq_bar', true, ['bar']),
-    new lf.schema.Index('Foo', 'idx_Name', false, ['name'])
+    new lf.schema.Index('Foo', 'pkFoo', true, [{'name': 'id'}]),
+    new lf.schema.Index('Foo', 'uq_bar', true, [{'name': 'bar'}]),
+    new lf.schema.Index('Foo', 'idx_Name', false,
+        [{'name': 'name'}])
   ];
 
   foo.db.schema.Foo.base(
@@ -101,7 +104,7 @@ foo.db.schema.Foo.prototype.deserializeRow = function(dbRecord) {
 
 /** @override */
 foo.db.schema.Foo.prototype.getConstraint = function() {
-  var pk = new lf.schema.Index('Foo', 'pkFoo', true, ['id']);
+  var pk = new lf.schema.Index('Foo', 'pkFoo', true, [{'name': 'id'}]);
   var notNullable = [
     this.id,
     this.name,
@@ -109,7 +112,7 @@ foo.db.schema.Foo.prototype.getConstraint = function() {
   ];
   var foreignKeys = [];
   var unique = [
-    new lf.schema.Index('Foo', 'uq_bar', true, ['bar'])
+    new lf.schema.Index('Foo', 'uq_bar', true, [{'name': 'bar'}])
   ];
   return new lf.schema.Constraint(pk, notNullable, foreignKeys, unique);
 };

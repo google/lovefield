@@ -29,11 +29,11 @@ function testGetIndices() {
 
   var idIndices = table.id.getIndices();
   assertEquals(1, idIndices.length);
-  assertTrue(idIndices[0].columnNames.indexOf(table.id.getName()) != -1);
+  assertEquals(table.id.getName(), idIndices[0].columns[0].name);
 
   var nameIndices = table.name.getIndices();
   assertEquals(1, nameIndices.length);
-  assertTrue(nameIndices[0].columnNames.indexOf(table.name.getName()) != -1);
+  assertEquals(table.name.getName(), nameIndices[0].columns[0].name);
 }
 
 

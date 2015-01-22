@@ -134,13 +134,14 @@ var Table_ = function(tableName) {
   this.name = new lf.schema.BaseColumn(this, 'name', false, lf.Type.STRING);
 
   var indices = [
-    new lf.schema.Index(tableName, 'pkId', true, ['id']),
-    new lf.schema.Index(tableName, 'idxName', false, ['name'])
+    new lf.schema.Index(tableName, 'pkId', true, [{'name': 'id'}]),
+    new lf.schema.Index(tableName, 'idxName', false, [{'name': 'name'}])
   ];
 
   if (tableName == 'tableD') {
     indices.push(
-        new lf.schema.Index(tableName, 'idxBoth', true, ['id', 'name']));
+        new lf.schema.Index(tableName, 'idxBoth', true,
+            [{'name': 'id'}, {'name': 'name'}]));
   }
 
   Table_.base(this, 'constructor',
@@ -169,7 +170,7 @@ Table_.prototype.deserializeRow = function(dbPayload) {
 /** @override */
 Table_.prototype.getConstraint = function() {
   return new lf.schema.Constraint(
-      new lf.schema.Index(this.getName(), 'pkId', true, ['id']),
+      new lf.schema.Index(this.getName(), 'pkId', true, [{'name': 'id'}]),
       [this.id, this.name] /* notNullable */,
       [], []);
 };
@@ -236,8 +237,8 @@ var TableWithUnique_ = function(tableName) {
   this.email = new lf.schema.BaseColumn(this, 'email', true, lf.Type.STRING);
 
   var indices = [
-    new lf.schema.Index(tableName, 'pkId', true, ['id']),
-    new lf.schema.Index(tableName, 'uq_email', true, ['email'])
+    new lf.schema.Index(tableName, 'pkId', true, [{'name': 'id'}]),
+    new lf.schema.Index(tableName, 'uq_email', true, [{'name': 'email'}])
   ];
   TableWithUnique_.base(this, 'constructor',
       tableName, [this.id, this.email], indices, false);
@@ -260,7 +261,8 @@ TableWithUnique_.prototype.deserializeRow = function(dbPayload) {
 /** @override */
 TableWithUnique_.prototype.getConstraint = function() {
   return new lf.schema.Constraint(
-      new lf.schema.Index(this.getName(), 'pkId', true, ['id']),
+      new lf.schema.Index(this.getName(), 'pkId', true, [{'name': 'id'}]),
       [this.id, this.email] /* notNullable */, [],
-      [new lf.schema.Index(this.getName(), 'uq_email', true, ['email'])]);
+      [new lf.schema.Index(this.getName(), 'uq_email', true,
+       [{'name': 'email'}])]);
 };

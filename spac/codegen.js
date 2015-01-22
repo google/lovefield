@@ -923,6 +923,26 @@ CodeGenerator.prototype.checkMultiColumnIndex_ = function(columns) {
 
 
 /**
+ * @param {!Array.<string>} columns
+ * @param {string=} opt_order
+ * @return {string}
+ * @private
+ */
+CodeGenerator.prototype.getIndexColumnString_ = function(columns, opt_order) {
+  var body = columns.map(function(col) {
+    var colBody = '';
+    colBody += '{\'name\': \'' + col + '\'';
+    if (opt_order == 'desc') {
+      colBody += ', \'order\': lf.Order.DESC';
+    }
+    colBody += '}';
+    return colBody;
+  }).join(', ');
+  return '[' + body + ']';
+};
+
+
+/**
  * @param {!Object} schema primaryKey schema.
  * @return {!Array.<string>} Primary Key columns.
  * @private
@@ -955,9 +975,9 @@ CodeGenerator.prototype.getPrimaryKeyIndex_ = function(table) {
     this.checkMultiColumnIndex_(pkCols);
 
     var header = 'new lf.schema.Index(\'' + table.name + '\', \'';
-    var cols = pkCols.join(', \'');
+    var cols = this.getIndexColumnString_(pkCols);
     var keyName = 'pk' + this.toPascal_(table.name);
-    results.push(header + keyName + '\', true, [\'' + cols + '\'])');
+    results.push(header + keyName + '\', true, ' + cols + ')');
   } else {
     results.push('null');
   }
@@ -1027,9 +1047,9 @@ CodeGenerator.prototype.getUniqueIndices_ = function(table) {
     // TODO(arthurhsu): remove this check.
     this.checkMultiColumnIndex_(uniqueConstraint.column);
 
-    var cols = uniqueConstraint.column.join(', \'');
+    var cols = this.getIndexColumnString_(uniqueConstraint.column);
     var uniqueIndex = 'new lf.schema.Index(\'' + table.name + '\', \'' +
-        uniqueConstraint.name + '\', true, [\'' + cols + '\'])';
+        uniqueConstraint.name + '\', true, ' + cols + ')';
     uniqueIndices.push(uniqueIndex);
   }
 
@@ -1069,7 +1089,7 @@ CodeGenerator.prototype.getIndices_ = function(table) {
 
       var isUnique = index.unique ? true : false;
       results.push(header + index.name + '\', ' + isUnique.toString() +
-          ', [\'' + col.join('\', \'') + '\'])');
+          ',\n        ' + this.getIndexColumnString_(col, index.order) + ')');
     }
   }
 

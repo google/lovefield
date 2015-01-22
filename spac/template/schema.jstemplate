@@ -8,6 +8,8 @@ goog.provide('#namespace.schema.#table#pascal');
 goog.provide('#namespace.schema.Database');
 /// #sortend
 
+/** @suppress {extraRequire} */
+goog.require('lf.Order');
 goog.require('lf.Row');
 goog.require('lf.Type');
 goog.require('lf.schema.BaseColumn');

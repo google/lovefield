@@ -31982,8 +31982,10 @@ lf.query.InsertBuilder.prototype.assertValuesPreconditions_ = function() {
 goog.provide('lf.schema.Column');
 goog.provide('lf.schema.Database');
 goog.provide('lf.schema.Index');
+goog.provide('lf.schema.IndexedColumn');
 goog.provide('lf.schema.Table');
 
+goog.forwardDeclare('lf.Order');
 goog.forwardDeclare('lf.Predicate');
 goog.forwardDeclare('lf.Row');
 goog.forwardDeclare('lf.Type');
@@ -32036,15 +32038,25 @@ lf.schema.Database.prototype.getVersion;
 lf.schema.Database.prototype.getTables;
 
 
+/**
+ * @typedef {{
+ *   name: string,
+ *   order: !lf.Order,
+ *   autoIncrement: boolean
+ * }}
+ */
+lf.schema.IndexedColumn;
+
+
 
 /**
  * @param {string} tableName
  * @param {string} name
  * @param {boolean} isUnique
- * @param {!Array.<string>} columnNames
+ * @param {!Array.<!lf.schema.IndexedColumn>} columns
  * @constructor @struct
  */
-lf.schema.Index = function(tableName, name, isUnique, columnNames) {
+lf.schema.Index = function(tableName, name, isUnique, columns) {
   /** @type {string} */
   this.tableName = tableName;
 
@@ -32054,8 +32066,8 @@ lf.schema.Index = function(tableName, name, isUnique, columnNames) {
   /** @type {boolean} */
   this.isUnique = isUnique;
 
-  /** @type {!Array.<string>} */
-  this.columnNames = columnNames;
+  /** @type {!Array.<!lf.schema.IndexedColumn>} */
+  this.columns = columns;
 };
 
 
@@ -33959,7 +33971,7 @@ lf.proc.IndexRangeScanPass.getIndexForPredicate_ = function(predicate) {
   return goog.array.find(
       indices,
       function(index) {
-        return index.columnNames.length == 1;
+        return index.columns.length == 1;
       });
 };
 
@@ -34595,7 +34607,7 @@ lf.proc.OrderByIndexPass.findIndexRangeScanStep_ = function(
     orderBy, rootNode) {
   var filterFn = function(node) {
     return node instanceof lf.proc.IndexRangeScanStep &&
-        node.index.columnNames[0] == orderBy.column.getName();
+        node.index.columns[0].name == orderBy.column.getName();
   };
   // CrossProductStep and JoinStep nodes have more than one child, and mess up
   // the ordering of results. Therefore if such nodes exist this optimization
@@ -36730,7 +36742,10 @@ lf.schema.BaseColumn.prototype.getIndices = function() {
     this.indices_ = [];
     this.getTable().getIndices().forEach(
         function(index) {
-          if (index.columnNames.indexOf(this.name_) != -1) {
+          var colNames = index.columns.map(function(col) {
+            return col.name;
+          });
+          if (colNames.indexOf(this.name_) != -1) {
             this.indices_.push(index);
           }
         }, this);
