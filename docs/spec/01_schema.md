@@ -336,13 +336,13 @@ CREATE INDEX idxItag
 
 ### 1.5 Dynamic Schema Creation
 
-Dynamic schema creation starts with a helper function: `lf.createSchema()` that
+Dynamic schema creation starts with a helper function: `lf.schema.create()` that
 returns a schema builder object which provides several helper methods to define
 schema. The code snippet below is an example of how to create the same schema
 as described in previous section:
 
 ```js
-var ds = lf.createSchema('crdb', 1);
+var ds = lf.schema.create('crdb', 1);
 
 ds.createTable('ImageCache').
     addColumn('remote', lf.Type.STRING).
@@ -370,14 +370,17 @@ ds.createTable('InfoCard').
     addColumn('fileName', lf.Type.STRING).
     addPrimaryKey(['id', 'lang']);
 
-lf.createDatabaseInstance(
-    ds.getSchema(),
+// This signals end of schema building and creates schema.
+var dbSchema = ds.getSchema();
+
+lf.base.createDatabaseInstance(
+    dbSchema,
     /* opt_onUpgrade */ undefined,
     /* opt_volatile */ true).then(function(db) {
-      // Syntactic sugar asset.id.eq is no longer available.
-      // Caller must call asset.getColumn() to get the column.
+      // You cannot use asset.id if Closure advanced optimization is in place.
+      // Use asset['id'] instead.
       var query =
-          db.select().from(asset).where(asset.getColumn('id').eq('12345'));
+          db.select().from(asset).where(asset['id'].eq('12345'));
       return query.exec();
     }).then(function(results) {
     });
@@ -387,11 +390,11 @@ The functions and usages are detailed below:
 
 #### 1.5.1 Global Functions
 
-| Function                    | Returns                               |
-|:----------------------------|:--------------------------------------|
-|`lf.createSchema()`          |`lf.SchemaBuilder` for building schema |
+| Function                    | Returns                                |
+|:----------------------------|:---------------------------------------|
+|`lf.schema.create()`         |`lf.schema.Builder` for building schema |
 
-Parameters for `lf.createSchema()`:
+Parameters for `lf.schema.create()`:
 
 | Parameter | Type   |Meaning         |
 |:----------|:-------|:---------------|
@@ -402,17 +405,17 @@ Parameters for `lf.createSchema()`:
 
 | Function                    | Returns                               |
 |:----------------------------|:--------------------------------------|
-|`lf.createDatabaseInstance()`|Lovefield internal representation for a database.|
+|`lf.base.createDatabaseInstance()` |Lovefield internal representation for a database.|
 
-Parameters for `lf.createDatabaseInstance()`:
+Parameters for `lf.base.createDatabaseInstance()`:
 
 | Parameter | Type             |Meaning         |
 |:----------|:-----------------|:---------------|
-|`ds`       |`lf.SchemaBuilder`|The schema builder for the database. |
+|`ds`       |`lf.schema.Builder`|The schema builder for the database. |
 |`onUpgrade`|`!function(!lf.raw.BackStore):!IThenable=`|Optional DB upgrade function.|
 |`volatile` |`boolean=`        |Optional volatile parameter.|
 
-#### 1.5.2 Class `lf.SchemaBuilder`
+#### 1.5.2 Class `lf.schema.Builder`
 
 |Member Function |Returns                  |Meaning                       |
 |:---------------|:------------------------|:-----------------------------|
@@ -420,19 +423,19 @@ Parameters for `lf.createDatabaseInstance()`:
 |`getSchema`     |`lf.schema.Database`     |Returns DB schema.            |
 |`getTable`      |`lf.schema.TableBuilder` |Returns table schema.         |
 
-Parameters for `lf.SchemaBuilder.prototype.createTable`:
+Parameters for `lf.schema.Builder.prototype.createTable`:
 
 | Parameter | Type   |Meaning         |
 |:----------|:-------|:---------------|
 |`name`     |`string`|Table name      |
 
-Parameters for `lf.SchemaBuilder.prototype.getSchema`:
+Parameters for `lf.schema.Builder.prototype.getSchema`:
 
 | Parameter | Type   |Meaning         |
 |:----------|:-------|:---------------|
 |`name`     |`string`|Database name   |
 
-Parameters for `lf.SchemaBuilder.prototype.getTable`:
+Parameters for `lf.schema.Builder.prototype.getTable`:
 
 | Parameter | Type   |Meaning         |
 |:----------|:-------|:---------------|
@@ -450,7 +453,6 @@ Parameters for `lf.SchemaBuilder.prototype.getTable`:
 |`addNullable`   |`lf.schema.TableBuilder`|Adds nullable constraint.           |
 |`addIndex`      |`lf.schema.TableBuilder`|Adds index to table.                |
 |`getSchema`     |`lf.schema.Table`       |Returns table schema.               |
-|`getColumn`     |`lf.schema.Column`      |Returns column schema.              |
 
 Parameters for `lf.schema.TableBuilder.prototype.addColumn`:
 
@@ -480,7 +482,8 @@ Parameters for `lf.schema.TableBuilder.prototype.addForeignKey`:
 |:------------|:------------------|:------------------------------------------|
 |`name`       |`string`           |Key name.                                  |
 |`localCol`   |`string`           |Local column name.                         |
-|`remoteCol`  |`!lf.schema.Column`|Existing remote column.                    |
+|`remoteTable`|`string`           |Remote table name.                         |
+|`remoteCol`  |`string`           |Remote column name.                        |
 |`opt_cascade`|`boolean=`         |Cascade, default to false.                 |
 
 Parameters for `lf.schema.TableBuilder.prototype.addUnique`:
@@ -501,7 +504,7 @@ Parameters for `lf.schema.TableBuilder.prototype.addIndex`:
 | Parameter   | Type            |Meaning                          |
 |:------------|:----------------|:--------------------------------|
 |`name`       |`string`         |Key name.                        |
-|`columns`    |`!Array<{column:string, order:lf.Order}>`|Existing columns and their corresponding order.|
+|`columns`    |`!Array<{column:string, order:lf.Order}>` or `!Array<string>`|Existing columns and their corresponding order.|
 |`opt_unique` |`boolean=`       |Optional, default to false.      |
 
 Parameters for `lf.schema.TableBuilder.prototype.getSchema`:
@@ -509,10 +512,4 @@ Parameters for `lf.schema.TableBuilder.prototype.getSchema`:
 | Parameter | Type   |Meaning         |
 |:----------|:-------|:---------------|
 |`name`     |`string`|Table name      |
-
-Parameters for `lf.schema.TableBuilder.prototype.getColumn`:
-
-| Parameter | Type   |Meaning         |
-|:----------|:-------|:---------------|
-|`name`     |`string`|Column name     |
 
