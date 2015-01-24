@@ -37,20 +37,28 @@ goog.require('lf.schema.Table');
  * @constructor
  */
 lovefield.db.schema.Database = function() {
+  /** @private {!Object} */
+  this.tableMap_ = {};
+
   /** @private {!lovefield.db.schema.Album} */
   this.album_ = new lovefield.db.schema.Album();
+  this.tableMap_['Album'] = this.album_;
 
   /** @private {!lovefield.db.schema.Photo} */
   this.photo_ = new lovefield.db.schema.Photo();
+  this.tableMap_['Photo'] = this.photo_;
 
   /** @private {!lovefield.db.schema.Details} */
   this.details_ = new lovefield.db.schema.Details();
+  this.tableMap_['Details'] = this.details_;
 
   /** @private {!lovefield.db.schema.Curator} */
   this.curator_ = new lovefield.db.schema.Curator();
+  this.tableMap_['Curator'] = this.curator_;
 
   /** @private {!lovefield.db.schema.PhotoCurator} */
   this.photoCurator_ = new lovefield.db.schema.PhotoCurator();
+  this.tableMap_['PhotoCurator'] = this.photoCurator_;
 
 };
 
@@ -76,6 +84,12 @@ lovefield.db.schema.Database.prototype.tables = function() {
     this.curator_,
     this.photoCurator_
   ];
+};
+
+
+/** @override */
+lovefield.db.schema.Database.prototype.table = function(tableName) {
+  return this.tableMap_[tableName] || null;
 };
 
 

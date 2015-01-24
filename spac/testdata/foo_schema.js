@@ -21,8 +21,12 @@ goog.require('lf.schema.Table');
  * @constructor
  */
 foo.db.schema.Database = function() {
+  /** @private {!Object} */
+  this.tableMap_ = {};
+
   /** @private {!foo.db.schema.Foo} */
   this.foo_ = new foo.db.schema.Foo();
+  this.tableMap_['Foo'] = this.foo_;
 
 };
 
@@ -44,6 +48,12 @@ foo.db.schema.Database.prototype.tables = function() {
   return [
     this.foo_
   ];
+};
+
+
+/** @override */
+foo.db.schema.Database.prototype.table = function(tableName) {
+  return this.tableMap_[tableName] || null;
 };
 
 

@@ -86,6 +86,22 @@ lf.testing.MockSchema.prototype.version = function() {
 };
 
 
+/** @override */
+lf.testing.MockSchema.prototype.table = function(tableName) {
+  var tables = {
+    'tableA': this.tableA_,
+    'tableB': this.tableB_,
+    'tableC': this.tableC_,
+    'tableD': this.tableD_,
+    'tableE': this.tableE_
+  };
+  if (this.version_ > 1) {
+    tables['tablePlusOne'] = this.tablePlusOne_;
+  }
+  return tables[tableName] || null;
+};
+
+
 /** @param {string} name */
 lf.testing.MockSchema.prototype.setName = function(name) {
   this.name_ = name;

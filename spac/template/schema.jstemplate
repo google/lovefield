@@ -25,9 +25,13 @@ goog.require('lf.schema.Table');
  * @constructor
  */
 #namespace.schema.Database = function() {
+  /** @private {!Object} */
+  this.tableMap_ = {};
+
   /// #repeattable
   /** @private {!#namespace.schema.#table#pascal} */
   this.#table#camel_ = new #namespace.schema.#table#pascal();
+  this.tableMap_['#tablename'] = this.#table#camel_;
 
   /// #repeattableend
 };
@@ -50,6 +54,12 @@ goog.require('lf.schema.Table');
   return [
 #dbtablelist
   ];
+};
+
+
+/** @override */
+#namespace.schema.Database.prototype.table = function(tableName) {
+  return this.tableMap_[tableName] || null;
 };
 /// #repeattable
 

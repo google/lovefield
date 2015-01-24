@@ -548,6 +548,16 @@ Schema_.prototype.version = function() {
 };
 
 
+/** @override */
+Schema_.prototype.table = function(tableName) {
+  var map = {
+    'tableA': this.tableA_,
+    'tableB': this.tableB_
+  };
+  return map[tableName] || null;
+};
+
+
 /** @param {number} version */
 Schema_.prototype.setVersion = function(version) {
   this.version_ = version;
