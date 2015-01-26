@@ -354,7 +354,6 @@ ds.createTable('Asset').
     addColumn('asset', lf.Type.STRING).
     addColumn('timestamp', lf.Type.INTEGER).
     addPrimaryKey(['id']);
-var asset = ds.getTable('Asset');
 
 ds.createTable('Pin').
     addColumn('id', lf.Type.STRING).
@@ -370,8 +369,12 @@ ds.createTable('InfoCard').
     addColumn('fileName', lf.Type.STRING).
     addPrimaryKey(['id', 'lang']);
 
-// This signals end of schema building and creates schema.
+// This signals end of schema building and creates schema, a.k.a. finalize.
 var dbSchema = ds.getSchema();
+
+// You can only acquire table schema after the DB schema is finalized.
+// There is no syntactic sugar getter (getAsset() in this case).
+var asset = dbSchema.table('Asset');
 
 lf.base.createDatabaseInstance(
     dbSchema,
@@ -383,6 +386,10 @@ lf.base.createDatabaseInstance(
           db.select().from(asset).where(asset['id'].eq('12345'));
       return query.exec();
     }).then(function(results) {
+      results.forEach(function(row) {
+        // The syntactic sugar row.getId() is no longer available.
+        console.log(row.payload()['id']);
+      });
     });
 ```
 
