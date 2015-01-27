@@ -1,0 +1,32 @@
+#query-builder {
+  padding: 20px;
+  flex: 1;
+}
+
+#results {
+  padding: 20px;
+  flex: 5;
+}
+
+body {
+  display: flex;
+  background: url('chalk.png');
+  font-size: 18px;
+}
+
+label,td {
+  color: white;
+}
+
+.table-hover>tbody>tr:hover,
+.table-striped>tbody>tr:nth-of-type(odd):hover {
+  background-color: black
+}
+
+.table-striped>tbody>tr:nth-of-type(odd) {
+  background-color: rgba(19,80,90, 0.7);
+}
+
+textarea {
+  margin-top: 20px;
+}

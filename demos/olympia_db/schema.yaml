@@ -1,0 +1,25 @@
+%YAML 1.2
+---
+name: olympia
+version: 1
+table:
+  Medal:
+    column:
+      city: string
+      color: string
+      country: string
+      discipline: string
+      eventGender: string
+      event: string
+      firstName: string
+      gender: string
+      lastName: string
+      sport: string
+      year: number
+    index:
+      idx_year:
+        column: [ year ]
+        order: asc
+      idx_lastName:
+        column: [ lastName ]
+        order: asc

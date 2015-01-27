@@ -1,0 +1,21 @@
+{
+  "name": "olympia-db",
+  "version": "0.0.1",
+  "description": "A demo of te Lovefield library using a database of Olympic medals.",
+  "main": "demo-angular.js",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/google/lovefield"
+  },
+  "author": "Demetrios Papadopoulos",
+  "license": "http://www.apache.org/licenses/LICENSE-2.0",
+  "bugs": {
+    "url": "https://github.com/google/lovefield/issues"
+  },
+  "homepage": "https://github.com/google/lovefield",
+  "devDependencies": {
+    "gulp": "^3.8.10",
+    "gulp-webserver": "^0.9.0",
+    "lovefield": "git://github.com/google/lovefield"
+  }
+}
