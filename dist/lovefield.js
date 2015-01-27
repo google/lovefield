@@ -28533,7 +28533,7 @@ lf.Type = {
 
 /** @export @const */
 lf.type.DEFAULT_VALUES = {
-  0: Object.freeze(new ArrayBuffer(0)),  // lf.Type.ARRAY_BUFFER
+  0: new ArrayBuffer(0),  // lf.Type.ARRAY_BUFFER
   1: false,  // lf.Type.BOOLEAN
   2: Object.freeze(new Date(0)),  // lf.Type.DATE_TIME
   3: 0,  // lf.Type.INTEGER

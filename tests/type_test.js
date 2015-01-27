@@ -1,6 +1,6 @@
 /**
  * @license
- * Copyright 2014 Google Inc. All Rights Reserved.
+ * Copyright 2015 Google Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,29 +14,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-goog.provide('lf.Type');
-goog.provide('lf.type');
+goog.setTestOnly();
+goog.require('goog.object');
+goog.require('goog.testing.jsunit');
+goog.require('lf.Type');
+goog.require('lf.type');
 
 
-/** @export @enum {number} */
-lf.Type = {
-  ARRAY_BUFFER: 0,
-  BOOLEAN: 1,
-  DATE_TIME: 2,
-  INTEGER: 3,
-  NUMBER: 4,
-  STRING: 5,
-  OBJECT: 6
-};
-
-
-/** @export @const */
-lf.type.DEFAULT_VALUES = {
-  0: new ArrayBuffer(0),  // lf.Type.ARRAY_BUFFER
-  1: false,  // lf.Type.BOOLEAN
-  2: Object.freeze(new Date(0)),  // lf.Type.DATE_TIME
-  3: 0,  // lf.Type.INTEGER
-  4: 0,  // lf.Type.NUMBER
-  5: '',  // lf.Type.STRING
-  6: Object.freeze({})  // lf.Type.OBJECT
-};
+/**
+ * This test is used to make sure all supported browsers not complaining about
+ * default values.
+ */
+function testDefaultValues() {
+  var clone = goog.object.getValues(lf.Type).map(function(type) {
+    return lf.type.DEFAULT_VALUES[type];
+  });
+  assertTrue(clone.length > 0);
+}
