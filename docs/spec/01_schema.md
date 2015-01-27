@@ -56,9 +56,11 @@ syntax:
 ```
 
 A table must have a unique name in the database. All names in schema definition
-must consist only alphanumeric characters or underscore. The names are
-case-sensitive (contrary to SQL's case-insensitiveness). For best readability
-of generated code, it is suggested to use Camel style for names.
+must consist only alphanumeric characters or underscore, and the first character
+must not be numeric (i.e. `/^[A-Za-z_][A-Za-z0-9_]*$/.test(name)` needs to be
+`true`). The names are case-sensitive (contrary to SQL's case-insensitiveness).
+For best readability of generated code, it is suggested to use Camel style for
+names.
 
 Please note that although names are case-sensitive, the SPAC may still emit
 errors if it is not able to generate unique names for them. For example, if you

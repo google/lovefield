@@ -150,3 +150,78 @@ function testSchemaCorrectness() {
   var row3 = dummy.deserializeRow(row2.serialize());
   assertObjectEquals(row2.payload(), row3.payload());
 }
+
+function testThrowsOnNonIndexableColumns() {
+  assertThrows(function() {
+    var ds = lf.schema.create('d1', 1);
+    ds.createTable('NewTable').
+        addColumn('object', lf.Type.OBJECT).
+        addPrimaryKey(['object']);
+  });
+
+  assertThrows(function() {
+    var ds = lf.schema.create('d2', 1);
+    ds.createTable('NameTable').
+        addColumn('arraybuffer', lf.Type.ARRAY_BUFFER).
+        addIndex('idx_arraybuffer', ['arraybuffer']);
+  });
+}
+
+function testThrowsOnIllegalName() {
+  assertThrows(function() {
+    var ds = lf.schema.create('d1', 1);
+    ds.createTable('#NewTable');
+  });
+
+  assertThrows(function() {
+    var ds = lf.schema.create('d2', 1);
+    ds.createTable('NameTable').
+        addColumn('22arraybuffer', lf.Type.ARRAY_BUFFER);
+  });
+
+  assertThrows(function() {
+    var ds = lf.schema.create('d3', 1);
+    ds.createTable('NameTable').
+        addColumn('_obj_#ect', lf.Type.OBJECT);
+  });
+
+  assertThrows(function() {
+    var ds = lf.schema.create('d4', 1);
+    ds.createTable('NameTable').
+        addColumn('name', lf.Type.STRING).
+        addIndex('idx.name', ['name']);
+  });
+
+  assertThrows(function() {
+    var ds = lf.schema.create('d4', 1);
+    ds.createTable('NameTable').
+        addColumn('name', lf.Type.STRING).
+        addUnique('unq#name', ['name']);
+  });
+}
+
+function testKeyOfIndex() {
+  var ds = lf.schema.create('ki', 1);
+  ds.createTable('DummyTable').
+      addColumn('datetime', lf.Type.DATE_TIME).
+      addColumn('integer', lf.Type.INTEGER).
+      addColumn('number', lf.Type.NUMBER).
+      addColumn('string', lf.Type.STRING).
+      addIndex('idx_datetime', ['datetime']).
+      addIndex('idx_integer', ['integer']).
+      addIndex('idx_number', ['number']).
+      addIndex('idx_string', ['string']);
+  var schema = ds.getSchema();
+  var dummy = schema.table('DummyTable');
+  var row = dummy.createRow({
+    'datetime': new Date(999),
+    'integer': 2,
+    'number': 3,
+    'string': 'bar'
+  });
+  assertEquals(999, row.keyOfIndex('DummyTable.idx_datetime'));
+  assertEquals(2, row.keyOfIndex('DummyTable.idx_integer'));
+  assertEquals(3, row.keyOfIndex('DummyTable.idx_number'));
+  assertEquals('bar', row.keyOfIndex('DummyTable.idx_string'));
+  assertEquals(row.id(), row.keyOfIndex('DummyTable.#'));
+}

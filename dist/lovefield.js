@@ -37036,6 +37036,8 @@ lf.schema.TableBuilder = function(tableName) {
 
   /** @private {boolean} */
   this.persistIndex_ = false;
+
+  this.checkName_(tableName);
 };
 
 
@@ -37054,7 +37056,11 @@ lf.schema.TableBuilder.toPascal_ = function(name) {
  * @param {string} name
  * @private
  */
-lf.schema.TableBuilder.prototype.assertNotDuplicate_ = function(name) {
+lf.schema.TableBuilder.prototype.checkName_ = function(name) {
+  if (!(/^[A-Za-z_][A-Za-z0-9_]*$/.test(name))) {
+    throw new lf.Exception(lf.Exception.Type.SYNTAX,
+        name + ' violates naming rule');
+  }
   if (this.columns_.containsKey(name) ||
       this.indices_.containsKey(name) ||
       this.uniqueIndices_.contains(name)) {
@@ -37070,7 +37076,7 @@ lf.schema.TableBuilder.prototype.assertNotDuplicate_ = function(name) {
  * @return {!lf.schema.TableBuilder}
  */
 lf.schema.TableBuilder.prototype.addColumn = function(name, type) {
-  this.assertNotDuplicate_(name);
+  this.checkName_(name);
   this.columns_.set(name, type);
   return this;
 };
@@ -37083,8 +37089,8 @@ lf.schema.TableBuilder.prototype.addColumn = function(name, type) {
  */
 lf.schema.TableBuilder.prototype.addPrimaryKey = function(
     columns, opt_autoInc) {
-  this.assertNotDuplicate_(this.pkName_);
-  var cols = this.normalizeColumns_(columns, undefined, opt_autoInc);
+  this.checkName_(this.pkName_);
+  var cols = this.normalizeColumns_(columns, true, undefined, opt_autoInc);
   cols.forEach(function(col) {
     this.uniqueColumns_.add(col.name);
   }, this);
@@ -37115,8 +37121,8 @@ lf.schema.TableBuilder.prototype.addForeignKey = function(
  * @return {!lf.schema.TableBuilder}
  */
 lf.schema.TableBuilder.prototype.addUnique = function(name, columns) {
-  this.assertNotDuplicate_(name);
-  var cols = this.normalizeColumns_(columns);
+  this.checkName_(name);
+  var cols = this.normalizeColumns_(columns, true);
   this.indices_.set(name, cols);
   this.uniqueIndices_.add(name);
   return this;
@@ -37128,7 +37134,7 @@ lf.schema.TableBuilder.prototype.addUnique = function(name, columns) {
  * @return {!lf.schema.TableBuilder}
  */
 lf.schema.TableBuilder.prototype.addNullable = function(columns) {
-  var cols = this.normalizeColumns_(columns);
+  var cols = this.normalizeColumns_(columns, false);
   cols.forEach(function(col) {
     this.nullable_.add(col.name);
   }, this);
@@ -37147,8 +37153,8 @@ lf.schema.TableBuilder.prototype.addNullable = function(columns) {
  */
 lf.schema.TableBuilder.prototype.addIndex = function(
     name, columns, opt_order, opt_unique) {
-  this.assertNotDuplicate_(name);
-  var cols = this.normalizeColumns_(columns, opt_order);
+  this.checkName_(name);
+  var cols = this.normalizeColumns_(columns, true, opt_order);
   if (opt_unique) {
     this.uniqueIndices_.add(name);
   }
@@ -37175,13 +37181,14 @@ lf.schema.TableBuilder.prototype.getSchema = function() {
  * into column object array. Also performs consistency check to make sure
  * referred columns are actually defined.
  * @param {(!Array<string>|!Array<!lf.schema.IndexedColumn>)} columns
+ * @param {boolean} checkIndexable
  * @param {!lf.Order=} opt_order
  * @param {boolean=} opt_autoInc
  * @return {!Array<!lf.schema.IndexedColumn>} Normalized columns
  * @private
  */
 lf.schema.TableBuilder.prototype.normalizeColumns_ = function(
-    columns, opt_order, opt_autoInc) {
+    columns, checkIndexable, opt_order, opt_autoInc) {
   var normalized = columns;
   if (typeof(columns[0]) == 'string') {
     normalized = columns.map(function(col) {
@@ -37198,6 +37205,14 @@ lf.schema.TableBuilder.prototype.normalizeColumns_ = function(
       throw new lf.Exception(
           lf.Exception.Type.SYNTAX,
           this.name_ + ' does not have column: ' + col.name);
+    }
+    if (checkIndexable) {
+      var type = this.columns_.get(col.name);
+      if (type == lf.Type.ARRAY_BUFFER || type == lf.Type.OBJECT) {
+        throw new lf.Exception(
+            lf.Exception.Type.SYNTAX,
+            this.name_ + ' index on non-indexable column: ' + col.name);
+      }
     }
   }, this);
 
@@ -37255,8 +37270,7 @@ lf.schema.TableBuilder.prototype.generateTableClass_ = function() {
         new lf.schema.Constraint(pk, notNullable, foreignKeys, unique);
 
     /** @private {!Function} */
-    this.rowClass_ =
-        lf.schema.TableBuilder.generateRowClass_(this.cols_, indices);
+    this.rowClass_ = that.generateRowClass_(this.cols_, indices);
   };
   goog.inherits(tableClass, lf.schema.Table);
 
@@ -37298,7 +37312,7 @@ lf.schema.TableBuilder.prototype.generateTableClass_ = function() {
  * @return {!Function}
  * @private
  */
-lf.schema.TableBuilder.generateRowClass_ = function(
+lf.schema.TableBuilder.prototype.generateRowClass_ = function(
     columns, indices) {
   /**
    * @param {number} rowId
@@ -37345,10 +37359,33 @@ lf.schema.TableBuilder.generateRowClass_ = function(
     return obj;
   };
 
+  var functionMap = {};
+  indices.forEach(function(index) {
+    // TODO(arthurhsu): add multi-column support.
+    //     see https://github.com/google/lovefield/issues/15
+    var firstColumnName = index.columns[0].name;
+    var key = index.getNormalizedName();
+    if (this.columns_.get(firstColumnName) == lf.Type.DATE_TIME) {
+      functionMap[key] = function(payload) {
+        return payload[firstColumnName].getTime();
+      };
+    } else {
+      functionMap[key] = function(payload) {
+        return payload[firstColumnName];
+      };
+    }
+  }, this);
+
   /** @override */
   rowClass.prototype.keyOfIndex = function(indexName) {
-    // TODO(arthurhsu): implement
-    return rowClass.base(this, 'keyOfIndex', indexName);
+    if (indexName.indexOf('#') != -1) {
+      return /** @type {!lf.index.Index.Key} */ (this.id());
+    }
+    if (functionMap.hasOwnProperty(indexName)) {
+      var payload = this.payload();
+      return functionMap[indexName](payload);
+    }
+    return null;
   };
 
   return rowClass;
