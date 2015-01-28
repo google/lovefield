@@ -5922,7 +5922,7 @@ goog.asserts.assertBoolean = function(value, opt_message, var_args) {
  * @param {...*} var_args The items to substitute into the failure message.
  * @return {!Element} The value, likely to be a DOM Element when asserts are
  *     enabled.
- * @throws {goog.asserts.AssertionError} When the value is not a boolean.
+ * @throws {goog.asserts.AssertionError} When the value is not an Element.
  */
 goog.asserts.assertElement = function(value, opt_message, var_args) {
   if (goog.asserts.ENABLE_ASSERTS && (!goog.isObject(value) ||
