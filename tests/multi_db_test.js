@@ -20,6 +20,7 @@ goog.require('goog.testing.AsyncTestCase');
 goog.require('goog.testing.jsunit');
 goog.require('goog.userAgent.product');
 goog.require('hr.db');
+goog.require('lf.testing.SmokeTester');
 goog.require('order.db');
 
 
@@ -27,20 +28,12 @@ goog.require('order.db');
 var asyncTestCase = goog.testing.AsyncTestCase.createAndInstall('MultiDBTest');
 
 
-/** @type {!lf.Database} */
-var hrDb;
+/** @type {!lf.testing.SmokeTester} */
+var hrTester;
 
 
-/** @type {!lf.Database} */
-var orderDb;
-
-
-/** @const {string} */
-var CONTENT1 = 'something';
-
-
-/** @const {string} */
-var CONTENT2 = 'nothing';
+/** @type {!lf.testing.SmokeTester} */
+var orderTester;
 
 
 function setUp() {
@@ -50,145 +43,21 @@ function setUp() {
     hr.db.getInstance(undefined, volatile),
     order.db.getInstance(undefined, volatile)
   ]).then(function(dbs) {
-    hrDb = dbs[0];
-    orderDb = dbs[1];
+    hrTester = new lf.testing.SmokeTester(hr.db.getGlobal(), dbs[0]);
+    orderTester = new lf.testing.SmokeTester(order.db.getGlobal(), dbs[1]);
 
-    return deleteAll();
+    return goog.Promise.all([hrTester.clearDb(), orderTester.clearDb()]);
   }).then(function() {
     asyncTestCase.continueTesting();
   }, fail);
-}
-
-function deleteAll() {
-  var hrTables = hrDb.getSchema().tables();
-  var orderTables = orderDb.getSchema().tables();
-  var promises = hrTables.map(function(table) {
-    return hrDb.delete().from(table).exec();
-  });
-  promises.concat(orderTables.map(function(table) {
-    return orderDb.delete().from(table).exec();
-  }));
-  return goog.Promise.all(promises);
-}
-
-function tearDown() {
-  asyncTestCase.waitForAsync();
-  deleteAll().then(function() {
-    asyncTestCase.continueTesting();
-  });
-}
-
-
-/**
- * Generates sample records for hrDb.
- * @return {!Array.<!hr.db.row.Region>}
- */
-function generateSampleRowsHR() {
-  var r = hrDb.getSchema().getRegion();
-  return [
-    r.createRow({id: '1', name: 'North America' }),
-    r.createRow({id: '2', name: 'Central America' }),
-    r.createRow({id: '3', name: 'South America' }),
-    r.createRow({id: '4', name: 'Western Europe' }),
-    r.createRow({id: '5', name: 'Southern Europe' })
-  ];
-}
-
-
-/**
- * Generates sample records to be used for testing.
- * @return {!Array.<!hr.db.row.Region>}
- */
-function generateSampleRowsOrder() {
-  var r = orderDb.getSchema().getRegion();
-  return [
-    r.createRow({id: 'NAM', name: 'North America' }),
-    r.createRow({id: 'CAM', name: 'Central America' }),
-    r.createRow({id: 'SAM', name: 'South America' }),
-    r.createRow({id: 'WEU', name: 'Western Europe' }),
-    r.createRow({id: 'SEU', name: 'Southern Europe' })
-  ];
 }
 
 
 function testCRUD() {
   asyncTestCase.waitForAsync('testCRUD');
 
-  var hrRows = generateSampleRowsHR();
-  var orderRows = generateSampleRowsOrder();
-  var hrRegion = hrDb.getSchema().getRegion();
-  var orderRegion = orderDb.getSchema().getRegion();
-
-  /**
-   * Inserts sample rows into according databases.
-   * @return {!IThenable}
-   */
-  var insertFn = function() {
-    return goog.Promise.all([
-      hrDb.insert().into(hrRegion).values(hrRows).exec(),
-      orderDb.insert().into(orderRegion).values(orderRows).exec()
-    ]);
-  };
-
-
-  /**
-   * Select all rows from different databases.
-   * @return {!IThenable}
-   */
-  var selectAllFn = function() {
-    return goog.Promise.all([
-      hrDb.select().from(hrRegion).exec(),
-      orderDb.select().from(orderRegion).exec()
-    ]);
-  };
-
-
-  /**
-   * Update different rows in different databases.
-   * @return {!IThenable}
-   */
-  var updateFn = function() {
-    return goog.Promise.all([
-      hrDb.update(hrRegion).set(hrRegion.name, CONTENT1).exec(),
-      orderDb.update(orderRegion).set(orderRegion.name, CONTENT2).exec()
-    ]);
-  };
-
-
-  /**
-   * Delete some rows in different databases.
-   * @return {!IThenable}
-   */
-  var deleteFn = function() {
-    return goog.Promise.all([
-      hrDb.delete().from(hrRegion).where(hrRegion.id.in(['1', '3'])).exec(),
-      orderDb.delete().from(orderRegion).exec()
-    ]);
-  };
-
-  insertFn().then(function() {
-    return selectAllFn();
-  }).then(function(results) {
-    assertEquals(hrRows.length, results[0].length);
-    assertEquals(orderRows.length, results[1].length);
-    return updateFn();
-  }).then(function() {
-    return selectAllFn();
-  }).then(function(results) {
-    assertEquals(hrRows.length, results[0].length);
-    assertEquals(orderRows.length, results[1].length);
-    results[0].forEach(function(row) {
-      assertEquals(row['name'], CONTENT1);
-    });
-    results[1].forEach(function(row) {
-      assertEquals(row['name'], CONTENT2);
-    });
-    return deleteFn();
-  }).then(function() {
-    return selectAllFn();
-  }).then(function(results) {
-    assertEquals(hrRows.length - 2, results[0].length);
-    assertEquals(0, results[1].length);
-    asyncTestCase.continueTesting();
-  }, fail);
+  goog.Promise.all([hrTester.testCRUD(), orderTester.testCRUD()]).then(
+      function() {
+        asyncTestCase.continueTesting();
+      }, fail);
 }
