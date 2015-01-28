@@ -37253,7 +37253,7 @@ lf.schema.TableBuilder = function(tableName) {
   this.indices_ = new goog.structs.Map();
 
   /** @private {boolean} */
-  this.persistIndex_ = false;
+  this.persistentIndex_ = false;
 
   this.checkName_(tableName);
 };
@@ -37382,8 +37382,8 @@ lf.schema.TableBuilder.prototype.addIndex = function(
 
 
 /** @param {boolean} value */
-lf.schema.TableBuilder.prototype.persistIndex = function(value) {
-  this.persistIndex_ = value;
+lf.schema.TableBuilder.prototype.persistentIndex = function(value) {
+  this.persistentIndex_ = value;
 };
 
 
@@ -37468,7 +37468,7 @@ lf.schema.TableBuilder.prototype.generateTableClass_ = function() {
     }, this);
     tableClass.base(
         this, 'constructor',
-        that.name_, this.cols_, indices, that.persistIndex_);
+        that.name_, this.cols_, indices, that.persistentIndex_);
 
     var pk = that.indices_.containsKey(that.pkName_) ?
         new lf.schema.Index(
@@ -37642,61 +37642,20 @@ goog.require('lf.service.ServiceId');
 
 /**
  * Dynamic DB builder.
- * @implements {lf.schema.Database}
  * @constructor
  *
  * @param {string} dbName
  * @param {number} dbVersion
  */
 lf.schema.Builder = function(dbName, dbVersion) {
-  /** @private {string} */
-  this.name_ = dbName;
-
-  /** @private {number} */
-  this.version_ = dbVersion;
+  /** @private {!lf.schema.DatabaseSchema_} */
+  this.schema_ = new lf.schema.DatabaseSchema_(dbName, dbVersion);
 
   /** @private {!goog.structs.Map.<string, !lf.schema.TableBuilder>} */
   this.tableBuilders_ = new goog.structs.Map();
 
   /** @private {boolean} */
   this.finalized_ = false;
-
-  /** @private {!goog.structs.Map.<string, !lf.schema.Table>} */
-  this.tables_ = new goog.structs.Map();
-};
-
-
-/** @override */
-lf.schema.Builder.prototype.name = function() {
-  return this.name_;
-};
-
-
-/** @override */
-lf.schema.Builder.prototype.version = function() {
-  return this.version_;
-};
-
-
-/** @override */
-lf.schema.Builder.prototype.tables = function() {
-  if (!this.finalized_) {
-    throw new lf.Exception(
-        lf.Exception.Type.SYNTAX,
-        'Attempt to getTables before getSchema is invoked');
-  }
-  return this.tables_.getValues();
-};
-
-
-/** @override */
-lf.schema.Builder.prototype.table = function(tableName) {
-  if (!this.tables_.containsKey(tableName)) {
-    throw new lf.Exception(
-        lf.Exception.Type.NOT_FOUND,
-        tableName + ' is not found in database');
-  }
-  return this.tables_.get(tableName);
 };
 
 
@@ -37705,7 +37664,7 @@ lf.schema.Builder.prototype.finalize_ = function() {
   if (!this.finalized_) {
     this.tableBuilders_.getKeys().forEach(function(tableName) {
       var builder = this.tableBuilders_.get(tableName);
-      this.tables_.set(tableName, builder.getSchema());
+      this.schema_.setTable(builder.getSchema());
     }, this);
     this.tableBuilders_.clear();
     this.finalized_ = true;
@@ -37718,13 +37677,14 @@ lf.schema.Builder.prototype.getSchema = function() {
   if (!this.finalized_) {
     this.finalize_();
   }
-  return this;
+  return this.schema_;
 };
 
 
 /** @return {!lf.Global} */
 lf.schema.Builder.prototype.getGlobal = function() {
-  var namespacedGlobalId = new lf.service.ServiceId('ns_' + this.name_);
+  var namespacedGlobalId =
+      new lf.service.ServiceId('ns_' + this.schema_.name());
   var global = lf.Global.get();
 
   var namespacedGlobal = null;
@@ -37747,11 +37707,8 @@ lf.schema.Builder.prototype.getGlobal = function() {
 lf.schema.Builder.prototype.getInstance = function(
     opt_onUpgrade, opt_volatile) {
   var global = this.getGlobal();
-  if (!this.finalized_) {
-    this.finalize_();
-    if (!global.isRegistered(lf.service.SCHEMA)) {
-      global.registerService(lf.service.SCHEMA, this);
-    }
+  if (!global.isRegistered(lf.service.SCHEMA)) {
+    global.registerService(lf.service.SCHEMA, this.getSchema());
   }
 
   var db = new lf.proc.Database(global);
@@ -37774,6 +37731,64 @@ lf.schema.Builder.prototype.createTable = function(tableName) {
   }
   this.tableBuilders_.set(tableName, new lf.schema.TableBuilder(tableName));
   return this.tableBuilders_.get(tableName);
+};
+
+
+
+/**
+ * @implements {lf.schema.Database}
+ * @constructor
+ *
+ * @param {string} name
+ * @param {number} version
+ * @private
+ */
+lf.schema.DatabaseSchema_ = function(name, version) {
+  /** @private {string} */
+  this.name_ = name;
+
+  /** @private {number} */
+  this.version_ = version;
+
+  /** @private !goog.structs.Map.<string, !lf.schema.Table>} */
+  this.tables_ = new goog.structs.Map();
+};
+
+
+/** @override */
+lf.schema.DatabaseSchema_.prototype.name = function() {
+  return this.name_;
+};
+
+
+/** @override */
+lf.schema.DatabaseSchema_.prototype.version = function() {
+  return this.version_;
+};
+
+
+/** @override */
+lf.schema.DatabaseSchema_.prototype.tables = function() {
+  return this.tables_.getValues();
+};
+
+
+/** @override */
+lf.schema.DatabaseSchema_.prototype.table = function(tableName) {
+  if (!this.tables_.containsKey(tableName)) {
+    throw new lf.Exception(
+        lf.Exception.Type.NOT_FOUND,
+        tableName + ' is not found in database');
+  }
+  return this.tables_.get(tableName);
+};
+
+
+/**
+ * @param {!lf.schema.Table} table
+ */
+lf.schema.DatabaseSchema_.prototype.setTable = function(table) {
+  this.tables_.set(table.getName(), table);
 };
 
 

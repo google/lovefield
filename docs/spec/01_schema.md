@@ -411,6 +411,7 @@ Parameters for `lf.schema.create()`:
 |:---------------|:------------------------|:-----------------------------|
 |`createTable`   |`lf.schema.TableBuilder` |Creates a table in schema.    |
 |`getInstance`   |`lf.proc.Database`       |Finalizes schema building and returns DB instance. |
+|`getSchema`     |`lf.schema.Database`     |Finalizes schema building and returns DB schema. |
 |`table`         |`lf.schema.TableBuilder` |Returns table schema.         |
 
 Parameters for `lf.schema.Builder.prototype.createTable`:
@@ -444,7 +445,7 @@ Parameters for `lf.schema.Builder.prototype.table`:
 |`addNullable`   |`lf.schema.TableBuilder`|Adds nullable constraint.           |
 |`addIndex`      |`lf.schema.TableBuilder`|Adds index to table.                |
 |`getSchema`     |`lf.schema.Table`       |Returns table schema.               |
-|`persistIndex`  |`void`                  |Indicates the table should persist index, equivalent of `pragma { persistentIndex }` in YAML. |
+|`persistentIndex`  |`void`                  |Indicates the table should persist index, equivalent of `pragma { persistentIndex }` in YAML. |
 
 Parameters for `lf.schema.TableBuilder.prototype.addColumn`:
 
@@ -505,7 +506,7 @@ Parameters for `lf.schema.TableBuilder.prototype.getSchema`:
 |:----------|:-------|:---------------|
 |`name`     |`string`|Table name      |
 
-Parameters for `lf.schema.TableBuilder.prototype.persistIndex`:
+Parameters for `lf.schema.TableBuilder.prototype.persistentIndex`:
 
 | Parameter | Type    |Meaning         |
 |:----------|:--------|:---------------|
