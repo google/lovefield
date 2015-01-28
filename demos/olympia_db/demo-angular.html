@@ -77,10 +77,13 @@
 
   </div>
 
-  <div id="results">
+  <div id="results" ng-controller="ResultsController as resultsController">
+    <h1>Found {{resultsController.getResults().length}} results.</h1>
     <table class="table table-striped table-bordered table-hover table-condensed"
-           data-pagination="true" data-search="true"
-        ng-controller="ResultsController as resultsController">
+           data-pagination="true" data-search="true">
+      <tr>
+        <th ng-repeat="columnName in resultsController.getColumnNames()">{{columnName}}</th>
+      </tr>
       <tr ng-repeat="x in resultsController.getResults()">
         <td ng-repeat="(key, data) in x">{{data}}</td>
       </tr>

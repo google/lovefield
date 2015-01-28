@@ -1,6 +1,9 @@
 #query-builder {
-  padding: 20px;
+  border-right-color: whitesmoke;
+  border-right-style: solid;
+  border-right-width: 4px;
   flex: 1;
+  padding: 20px;
 }
 
 #results {
@@ -17,6 +20,16 @@ body {
 label,td {
   color: white;
 }
+
+h1 {
+  color: white;
+  font-weight: bold;
+}
+
+th {
+  background-color: yellow;
+}
+
 
 .table-hover>tbody>tr:hover,
 .table-striped>tbody>tr:nth-of-type(odd):hover {

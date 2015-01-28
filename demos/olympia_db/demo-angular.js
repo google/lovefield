@@ -94,14 +94,34 @@ app.service('ResultsService', function() {
   /** @private {!Array<!Object>} */
   this.results_ = [];
 
+  /** @private {!Array<string>} */
+  this.columnNames_ = [];
+
+
   /** @return {!Array<!Object>} */
-  this.get = function() {
+  this.getResults = function() {
     return this.results_;
   };
 
+
   /** @param {!Array<!Object>} results */
-  this.set = function(results) {
+  this.setResults = function(results) {
+    this.columnNames_ = [];
+
+    if (results.length > 0) {
+      Object.keys(results[0]).forEach(
+          function(columnName) {
+            this.columnNames_.push(columnName);
+          }, this);
+    }
+
     this.results_ = results;
+  };
+
+
+  /** @return {!Array<string>} */
+  this.getColumnNames = function() {
+    return this.columnNames_;
   };
 });
 
@@ -110,7 +130,11 @@ app.controller(
     'ResultsController',
     ['$scope', 'ResultsService', function($scope, resultsService) {
       this.getResults = function() {
-        return resultsService.get();
+        return resultsService.getResults();
+      };
+
+      this.getColumnNames = function() {
+        return resultsService.getColumnNames();
       };
     }]);
 
@@ -147,7 +171,7 @@ app.controller(
          $scope.eventSelection = unboundValue;
 
          // Removing last results, if any.
-         resultsService.set([]);
+         resultsService.setResults([]);
 
          // Clearing SQL query.
          $scope.sqlQuery = '';
@@ -180,7 +204,7 @@ app.controller(
        this.genders = [];
        this.colors = [];
        this.sqlQuery = '';
-        this.populateUi_();
+       this.populateUi_();
 
 
        this.search = function() {
@@ -188,7 +212,7 @@ app.controller(
            $scope.sqlQuery = query.toSql();
            return query.exec();
          }).then(function(results) {
-           resultsService.set(results);
+           resultsService.setResults(results);
          });
        };
 
