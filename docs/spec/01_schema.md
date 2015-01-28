@@ -361,7 +361,7 @@ ds.createTable('Pin').
     addColumn('id', lf.Type.STRING).
     addColumn('state', lf.Type.INTEGER).
     addColumn('sessionId', lf.Type.STRING).
-    addForeignKey('fkId', 'id', assetTable.getColumn('id'), true);
+    addForeignKey('fkId', 'id', 'Asset', 'id', true);
 
 ds.createTable('InfoCard').
     addColumn('id', lf.Type.STRING).
@@ -371,17 +371,13 @@ ds.createTable('InfoCard').
     addColumn('fileName', lf.Type.STRING).
     addPrimaryKey(['id', 'lang']);
 
-// This signals end of schema building and creates schema, a.k.a. finalize.
-var dbSchema = ds.getSchema();
+// This signals end of schema building and creates instance. You cannot change
+// the schema from this point on.
+ds.getInstance(/* opt_onUpgrade */ undefined, /* opt_volatile */ true).then(
+    function(db) {
+      // There is no syntactic sugar getter (getAsset() in this case).
+      var asset = db.getSchema().table('Asset');
 
-// You can only acquire table schema after the DB schema is finalized.
-// There is no syntactic sugar getter (getAsset() in this case).
-var asset = dbSchema.table('Asset');
-
-lf.base.createDatabaseInstance(
-    dbSchema,
-    /* opt_onUpgrade */ undefined,
-    /* opt_volatile */ true).then(function(db) {
       // You cannot use asset.id if Closure advanced optimization is in place.
       // Use asset['id'] instead.
       var query =
@@ -389,8 +385,7 @@ lf.base.createDatabaseInstance(
       return query.exec();
     }).then(function(results) {
       results.forEach(function(row) {
-        // The syntactic sugar row.getId() is no longer available.
-        console.log(row.payload()['id']);
+        console.log(row['id']);
       });
     });
 ```
@@ -410,27 +405,13 @@ Parameters for `lf.schema.create()`:
 |`name`     |`string`|Database name   |
 |`version`  |`number`|Database version|
 
------
-
-| Function                    | Returns                               |
-|:----------------------------|:--------------------------------------|
-|`lf.base.createDatabaseInstance()` |Lovefield internal representation for a database.|
-
-Parameters for `lf.base.createDatabaseInstance()`:
-
-| Parameter | Type             |Meaning         |
-|:----------|:-----------------|:---------------|
-|`ds`       |`lf.schema.Builder`|The schema builder for the database. |
-|`onUpgrade`|`!function(!lf.raw.BackStore):!IThenable=`|Optional DB upgrade function.|
-|`volatile` |`boolean=`        |Optional volatile parameter.|
-
 #### 1.5.2 Class `lf.schema.Builder`
 
 |Member Function |Returns                  |Meaning                       |
 |:---------------|:------------------------|:-----------------------------|
 |`createTable`   |`lf.schema.TableBuilder` |Creates a table in schema.    |
-|`getSchema`     |`lf.schema.Database`     |Returns DB schema.            |
-|`getTable`      |`lf.schema.TableBuilder` |Returns table schema.         |
+|`getInstance`   |`lf.proc.Database`       |Finalizes schema building and returns DB instance. |
+|`table`         |`lf.schema.TableBuilder` |Returns table schema.         |
 
 Parameters for `lf.schema.Builder.prototype.createTable`:
 
@@ -438,13 +419,14 @@ Parameters for `lf.schema.Builder.prototype.createTable`:
 |:----------|:-------|:---------------|
 |`name`     |`string`|Table name      |
 
-Parameters for `lf.schema.Builder.prototype.getSchema`:
+Parameters for `lf.schema.Builder.prototype.getInstance`:
 
-| Parameter | Type   |Meaning         |
-|:----------|:-------|:---------------|
-|`name`     |`string`|Database name   |
+| Parameter | Type             |Meaning         |
+|:----------|:-----------------|:---------------|
+|`onUpgrade`|`!function(!lf.raw.BackStore):!IThenable=`|Optional DB upgrade function.|
+|`volatile` |`boolean=`        |Optional volatile parameter.|
 
-Parameters for `lf.schema.Builder.prototype.getTable`:
+Parameters for `lf.schema.Builder.prototype.table`:
 
 | Parameter | Type   |Meaning         |
 |:----------|:-------|:---------------|
@@ -462,6 +444,7 @@ Parameters for `lf.schema.Builder.prototype.getTable`:
 |`addNullable`   |`lf.schema.TableBuilder`|Adds nullable constraint.           |
 |`addIndex`      |`lf.schema.TableBuilder`|Adds index to table.                |
 |`getSchema`     |`lf.schema.Table`       |Returns table schema.               |
+|`persistIndex`  |`void`                  |Indicates the table should persist index, equivalent of `pragma { persistentIndex }` in YAML. |
 
 Parameters for `lf.schema.TableBuilder.prototype.addColumn`:
 
@@ -521,4 +504,10 @@ Parameters for `lf.schema.TableBuilder.prototype.getSchema`:
 | Parameter | Type   |Meaning         |
 |:----------|:-------|:---------------|
 |`name`     |`string`|Table name      |
+
+Parameters for `lf.schema.TableBuilder.prototype.persistIndex`:
+
+| Parameter | Type    |Meaning         |
+|:----------|:--------|:---------------|
+|`value`    |`boolean`|Persistent index|
 

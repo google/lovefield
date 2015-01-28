@@ -20820,7 +20820,8 @@ lf.backstore.BaseTx.prototype.mergeTableChanges_ = function() {
       function(tableName) {
         var tableSchema = this.journal_.getScope().get(tableName);
         var table = this.getTable(
-            tableSchema.getName(), tableSchema.deserializeRow);
+            tableSchema.getName(),
+            goog.bind(tableSchema.deserializeRow, tableSchema));
         var tableDiff = diff.get(tableName);
         var toDeleteRowIds = tableDiff.getDeleted().getValues().map(
             function(row) {
@@ -25536,7 +25537,8 @@ lf.cache.Prefetcher.prototype.fetchTable_ = function(table) {
   var journal = new lf.cache.Journal(this.global_, [table]);
   var tx = this.backStore_.createTx(
       lf.TransactionType.READ_ONLY, journal);
-  var store = tx.getTable(table.getName(), table.deserializeRow);
+  var store = tx.getTable(
+      table.getName(), goog.bind(table.deserializeRow, table));
   return store.get([]).then(goog.bind(function(results) {
     this.cache_.set(table.getName(), results);
     this.reconstructNonPersistentIndices_(table, results);
@@ -37045,6 +37047,100 @@ lf.schema.BaseColumn.prototype.as = function(name) {
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+goog.provide('lf.Global');
+
+goog.require('goog.structs.Map');
+goog.require('lf.Exception');
+
+
+
+/**
+ * Global context for Lovefield services.
+ * @constructor @struct
+ */
+lf.Global = function() {
+  /** @private {!goog.structs.Map.<string, !Object>} */
+  this.services_ = new goog.structs.Map();
+};
+
+
+/** @private {?lf.Global} */
+lf.Global.instance_;
+
+
+/** @return {!lf.Global} */
+lf.Global.get = function() {
+  if (!lf.Global.instance_) {
+    lf.Global.instance_ = new lf.Global();
+  }
+  return lf.Global.instance_;
+};
+
+
+/**
+ * Clears the Global instance by removing all references to all singleton
+ * services.
+ * @export
+ */
+lf.Global.prototype.clear = function() {
+  this.services_.clear();
+};
+
+
+/**
+ * @template T
+ * @param {!lf.service.ServiceId.<T>} serviceId
+ * @param {!T} service
+ * @return {!T} The registered service for chaining.
+ * @export
+ */
+lf.Global.prototype.registerService = function(serviceId, service) {
+  this.services_.set(serviceId.toString(), service);
+  return service;
+};
+
+
+/**
+ * @template T
+ * @param {!lf.service.ServiceId.<T>} serviceId
+ * @return {!T} The registered service or throws if not registered yet.
+ * @throws {!lf.Exception}
+ * @export
+ */
+lf.Global.prototype.getService = function(serviceId) {
+  var service = this.services_.get(serviceId.toString(), null);
+  if (service == null) {
+    throw new lf.Exception(lf.Exception.Type.NOT_FOUND, serviceId.toString());
+  }
+  return service;
+};
+
+
+/**
+ * @param {!lf.service.ServiceId} serviceId
+ * @return {boolean} Whether the service is registered or not.
+ * @export
+ */
+lf.Global.prototype.isRegistered = function(serviceId) {
+  return this.services_.containsKey(serviceId.toString());
+};
+
+/**
+ * @license
+ * Copyright 2014 Google Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 goog.provide('lf.schema.Constraint');
 
 
@@ -37534,13 +37630,18 @@ goog.provide('lf.schema.Builder');
 
 goog.require('goog.structs.Map');
 goog.require('lf.Exception');
+goog.require('lf.Global');
+goog.require('lf.base.BackStoreType');
+goog.require('lf.proc.Database');
 goog.require('lf.schema.Database');
 goog.require('lf.schema.TableBuilder');
+goog.require('lf.service');
+goog.require('lf.service.ServiceId');
 
 
 
 /**
- * Dynamic DB schema builder.
+ * Dynamic DB builder.
  * @implements {lf.schema.Database}
  * @constructor
  *
@@ -37599,15 +37700,65 @@ lf.schema.Builder.prototype.table = function(tableName) {
 };
 
 
+/** @private */
+lf.schema.Builder.prototype.finalize_ = function() {
+  if (!this.finalized_) {
+    this.tableBuilders_.getKeys().forEach(function(tableName) {
+      var builder = this.tableBuilders_.get(tableName);
+      this.tables_.set(tableName, builder.getSchema());
+    }, this);
+    this.tableBuilders_.clear();
+    this.finalized_ = true;
+  }
+};
+
+
 /** @return {!lf.schema.Database} */
 lf.schema.Builder.prototype.getSchema = function() {
-  this.tableBuilders_.getKeys().forEach(function(tableName) {
-    var builder = this.tableBuilders_.get(tableName);
-    this.tables_.set(tableName, builder.getSchema());
-  }, this);
-  this.tableBuilders_.clear();
-  this.finalized_ = true;
+  if (!this.finalized_) {
+    this.finalize_();
+  }
   return this;
+};
+
+
+/** @return {!lf.Global} */
+lf.schema.Builder.prototype.getGlobal = function() {
+  var namespacedGlobalId = new lf.service.ServiceId('ns_' + this.name_);
+  var global = lf.Global.get();
+
+  var namespacedGlobal = null;
+  if (!global.isRegistered(namespacedGlobalId)) {
+    namespacedGlobal = new lf.Global();
+    global.registerService(namespacedGlobalId, namespacedGlobal);
+  } else {
+    namespacedGlobal = global.getService(namespacedGlobalId);
+  }
+
+  return namespacedGlobal;
+};
+
+
+/**
+ * @param {!function(!lf.raw.BackStore):!IThenable=} opt_onUpgrade
+ * @param {boolean=} opt_volatile Default to false
+ * @return {!IThenable.<!lf.proc.Database>}
+ */
+lf.schema.Builder.prototype.getInstance = function(
+    opt_onUpgrade, opt_volatile) {
+  var global = this.getGlobal();
+  if (!this.finalized_) {
+    this.finalize_();
+    if (!global.isRegistered(lf.service.SCHEMA)) {
+      global.registerService(lf.service.SCHEMA, this);
+    }
+  }
+
+  var db = new lf.proc.Database(global);
+  return db.init(
+      opt_onUpgrade,
+      opt_volatile ? lf.base.BackStoreType.MEMORY : undefined,
+      false);
 };
 
 
@@ -37635,99 +37786,5 @@ lf.schema.Builder.prototype.createTable = function(tableName) {
  */
 lf.schema.create = function(dbName, dbVersion) {
   return new lf.schema.Builder(dbName, dbVersion);
-};
-
-/**
- * @license
- * Copyright 2014 Google Inc. All Rights Reserved.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-goog.provide('lf.Global');
-
-goog.require('goog.structs.Map');
-goog.require('lf.Exception');
-
-
-
-/**
- * Global context for Lovefield services.
- * @constructor @struct
- */
-lf.Global = function() {
-  /** @private {!goog.structs.Map.<string, !Object>} */
-  this.services_ = new goog.structs.Map();
-};
-
-
-/** @private {?lf.Global} */
-lf.Global.instance_;
-
-
-/** @return {!lf.Global} */
-lf.Global.get = function() {
-  if (!lf.Global.instance_) {
-    lf.Global.instance_ = new lf.Global();
-  }
-  return lf.Global.instance_;
-};
-
-
-/**
- * Clears the Global instance by removing all references to all singleton
- * services.
- * @export
- */
-lf.Global.prototype.clear = function() {
-  this.services_.clear();
-};
-
-
-/**
- * @template T
- * @param {!lf.service.ServiceId.<T>} serviceId
- * @param {!T} service
- * @return {!T} The registered service for chaining.
- * @export
- */
-lf.Global.prototype.registerService = function(serviceId, service) {
-  this.services_.set(serviceId.toString(), service);
-  return service;
-};
-
-
-/**
- * @template T
- * @param {!lf.service.ServiceId.<T>} serviceId
- * @return {!T} The registered service or throws if not registered yet.
- * @throws {!lf.Exception}
- * @export
- */
-lf.Global.prototype.getService = function(serviceId) {
-  var service = this.services_.get(serviceId.toString(), null);
-  if (service == null) {
-    throw new lf.Exception(lf.Exception.Type.NOT_FOUND, serviceId.toString());
-  }
-  return service;
-};
-
-
-/**
- * @param {!lf.service.ServiceId} serviceId
- * @return {boolean} Whether the service is registered or not.
- * @export
- */
-lf.Global.prototype.isRegistered = function(serviceId) {
-  return this.services_.containsKey(serviceId.toString());
 };
 

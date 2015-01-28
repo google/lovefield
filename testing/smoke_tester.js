@@ -63,65 +63,83 @@ lf.testing.SmokeTester.prototype.clearDb = function() {
 
 
 /**
+ * @typedef {{
+ *   id: !lf.schema.BaseColumn.<string>,
+ *   name: !lf.schema.BaseColumn.<string>
+ * }}
+ * @private
+ */
+var RegionTableType_;
+
+
+/**
  * Smoke test for the most basic DB operations, Create, Read, Update, Delete.
  * @return {!IThenable}
  */
 lf.testing.SmokeTester.prototype.testCRUD = function() {
   var regionRows = this.generateSampleRows_();
   var db = this.db_;
-  var r = this.r_;
+
+  // Workaround Closure compiler type checking for dynamic schema creation.
+  // Closure compiler does not know that "id" and "name" were added at runtime,
+  // therefore use a typedef to make it think so.
+  var r = /** @type {!RegionTableType_} */ (this.r_);
 
   /**
    * Inserts 5 records to the database.
    * @return {!IThenable}
    */
-  var insertFn = function() {
-    return db.insert().into(r).values(regionRows).exec();
-  };
+  var insertFn = goog.bind(function() {
+    return db.insert().into(this.r_).values(regionRows).exec();
+  }, this);
 
   /**
    * Selects all records from the database.
    * @return {!IThenable}
    */
-  var selectAllFn = function() {
-    return db.select().from(r).exec();
-  };
+  var selectAllFn = goog.bind(function() {
+    return db.select().from(this.r_).exec();
+  }, this);
 
   /**
    * Selects some records from the databse.
    * @param {!Array.<string>} ids
    * @return {!IThenable}
    */
-  var selectFn = function(ids) {
-    return db.select().from(r).where(r.id.in(ids)).exec();
-  };
+  var selectFn = goog.bind(function(ids) {
+    return db.select().from(this.r_).where(r.id.in(ids)).exec();
+  }, this);
 
   /**
    * Upadates the 'name' field of two specific rows.
    * @return {!IThenable}
    */
-  var updateFn = function() {
-    return db.update(r).where(r.id.in(['1', '2'])).set(r.name, 'Mars').exec();
-  };
+  var updateFn = goog.bind(function() {
+    return db.update(this.r_).
+        where(r.id.in(['1', '2'])).
+        set(r.name, 'Mars').exec();
+  }, this);
 
   /**
    * Updates two specific records by replacing the entire row.
    * @return {!IThenable}
    */
-  var replaceFn = function() {
-    var regionRow0 = r.createRow({id: '1', name: 'Venus' });
-    var regionRow1 = r.createRow({id: '2', name: 'Zeus' });
+  var replaceFn = goog.bind(function() {
+    var regionRow0 = this.r_.createRow({id: '1', name: 'Venus' });
+    var regionRow1 = this.r_.createRow({id: '2', name: 'Zeus' });
 
-    return db.insertOrReplace().into(r).values([regionRow0, regionRow1]).exec();
-  };
+    return db.insertOrReplace().
+        into(this.r_).
+        values([regionRow0, regionRow1]).exec();
+  }, this);
 
   /**
    * Deletes two specific records from the database.
    * @return {!IThenable}
    */
-  var deleteFn = function() {
-    return db.delete().from(r).where(r.id.in(['4', '5'])).exec();
-  };
+  var deleteFn = goog.bind(function() {
+    return db.delete().from(this.r_).where(r.id.in(['4', '5'])).exec();
+  }, this);
 
 
   return insertFn().then(function() {
@@ -191,7 +209,9 @@ lf.testing.SmokeTester.prototype.testOverlappingScope_MultipleInserts =
 
     var retrievedRow = results[0];
     // Assert the retrieved row matches the value ordered by the last query.
-    assertEquals('Region' + String(rowCount - 1), retrievedRow.getName());
+    assertEquals(
+        'Region' + String(rowCount - 1),
+        retrievedRow.payload()['name']);
   });
 };
 
@@ -289,5 +309,5 @@ lf.testing.SmokeTester.prototype.selectAll_ = function() {
   var tx = this.backStore_.createTx(
       lf.TransactionType.READ_ONLY,
       new lf.cache.Journal(this.global_, [r]));
-  return tx.getTable(r.getName(), r.deserializeRow).get([]);
+  return tx.getTable(r.getName(), goog.bind(r.deserializeRow, r)).get([]);
 }
