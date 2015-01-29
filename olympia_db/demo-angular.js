@@ -229,6 +229,11 @@ app.controller(
          });
        }).bind(this);
 
+       window.displayResults = (function(results) {
+         resultsService.setResults(results);
+         $scope.$apply();
+       }).bind(this);
+
 
        /** @return {?lf.Predicate} */
        this.getPredicates_ = function() {
