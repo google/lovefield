@@ -25842,11 +25842,9 @@ goog.provide('lf.index.AATree');
 
 goog.require('goog.asserts');
 goog.require('lf.Exception');
-goog.require('lf.Order');
 goog.require('lf.index');
 goog.require('lf.index.Index');
 goog.require('lf.index.KeyRange');
-goog.require('lf.index.SimpleComparator');
 
 
 
@@ -25895,11 +25893,13 @@ lf.index.AANode_.create = function(key, value, nullNode) {
 /**
  * Arne Andersson Tree. The tree does not allow duplicate keys.
  * @see http://user.it.uu.se/~arnea/abs/simp.html
- * @param {string} name Name of this index.
  * @implements {lf.index.Index}
  * @constructor @struct
+ *
+ * @param {string} name Name of this index.
+ * @param {!lf.index.Comparator} comparator
  */
-lf.index.AATree = function(name) {
+lf.index.AATree = function(name, comparator) {
   /** @private {string} */
   this.name_ = name;
 
@@ -25913,7 +25913,7 @@ lf.index.AATree = function(name) {
   this.root_ = this.nullNode_;
 
   /** @private {!lf.index.Comparator} */
-  this.comparator_ = new lf.index.SimpleComparator(lf.Order.ASC);
+  this.comparator_ = comparator;
 };
 
 
@@ -25970,9 +25970,10 @@ lf.index.AATree.prototype.insert_ = function(node, key, value) {
     return lf.index.AANode_.create(key, value, this.nullNode_);
   }
 
-  if (key < node.key) {
+  var favor = this.comparator_.compare(key, node.key);
+  if (favor == lf.index.FAVOR.RHS) {
     node.left = this.insert_(node.left, key, value);
-  } else if (key > node.key) {
+  } else if (favor == lf.index.FAVOR.LHS) {
     node.right = this.insert_(node.right, key, value);
   } else {
     throw new lf.Exception(
@@ -26014,10 +26015,11 @@ lf.index.AATree.prototype.delete_ = function(node, key) {
     return this.nullNode_;
   }
 
-  if (key < node.key) {
+  var favor = this.comparator_.compare(key, node.key);
+  if (favor == lf.index.FAVOR.RHS) {
     node.left = this.delete_(node.left, key);
   } else {
-    if (key == node.key) {
+    if (favor == lf.index.FAVOR.TIE) {
       this.deleted_ = node;
     }
     node.right = this.delete_(node.right, key);
@@ -26120,7 +26122,10 @@ lf.index.AATree.prototype.traverse_ = function(node, keyRange, results) {
     return;
   }
 
-  if (node.key > keyRange.from) {
+  if (this.comparator_.compare(
+          node.key,
+          /** @type {!lf.index.Index.Key} */ (keyRange.from)) ==
+      lf.index.FAVOR.LHS) {
     this.traverse_(node.left, keyRange, results);
   }
 
@@ -26128,7 +26133,10 @@ lf.index.AATree.prototype.traverse_ = function(node, keyRange, results) {
     results.push(node.value);
   }
 
-  if (node.key < keyRange.to) {
+  if (this.comparator_.compare(
+          node.key,
+          /** @type {!lf.index.Index.Key} */ (keyRange.to)) ==
+      lf.index.FAVOR.RHS) {
     this.traverse_(node.right, keyRange, results);
   }
 };

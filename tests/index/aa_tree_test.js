@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 /**
  * @fileoverview The AA tree algorithm verification is based on
  * @see http://mypages.valdosta.edu/dgibson/courses/cs3410/notes/ch19_6.pdf
@@ -22,7 +23,9 @@ goog.setTestOnly();
 goog.require('goog.string');
 goog.require('goog.structs.Set');
 goog.require('goog.testing.jsunit');
+goog.require('lf.Order');
 goog.require('lf.index.AATree');
+goog.require('lf.index.SimpleComparator');
 goog.require('lf.testing.index.TestSingleRowNumericalKey');
 goog.require('lf.testing.index.TestSingleRowStringKey');
 
@@ -72,8 +75,13 @@ var EXPECTED_CASE4 =
 var tree;
 
 
+/** @type {!lf.index.Comparator} */
+var c;
+
+
 function setUp() {
-  tree = new lf.index.AATree('test');
+  c = new lf.index.SimpleComparator(lf.Order.ASC);
+  tree = new lf.index.AATree('test', c);
 
   // Construct the base tree.
   tree.add(10, 110);
@@ -131,7 +139,7 @@ function testAATree_Throws() {
 
 function testSingleRow_NumericalKey() {
   var test = new lf.testing.index.TestSingleRowNumericalKey(function() {
-    return new lf.index.AATree('test');
+    return new lf.index.AATree('test', c);
   });
   test.run();
 }
@@ -139,7 +147,7 @@ function testSingleRow_NumericalKey() {
 
 function testSingleRow_StringKey() {
   var test = new lf.testing.index.TestSingleRowStringKey(function() {
-    return new lf.index.AATree('test');
+    return new lf.index.AATree('test', c);
   });
   test.run();
 }
@@ -155,7 +163,7 @@ function manualTestBenchmark() {
   }
 
   var values = rows.getValues();
-  tree = new lf.index.AATree('test');
+  tree = new lf.index.AATree('test', c);
   var start = goog.global.performance.now();
   for (var i = 0; i < ROW_COUNT; i++) {
     tree.add(values[i], i);
@@ -169,7 +177,7 @@ function manualTestBenchmark() {
   }
 
   values = rows.getValues();
-  tree = new lf.index.AATree('test');
+  tree = new lf.index.AATree('test', c);
   start = goog.global.performance.now();
   for (var i = 0; i < ROW_COUNT; i++) {
     tree.add(values[i], i);
