@@ -1,0 +1,23 @@
+%YAML 1.2
+---
+name: sample
+version: 1
+table:
+  Person:
+    column:
+      id: string
+      name: string
+    constraint:
+      primaryKey: [id]
+
+  Employee:
+    column:
+      id: string
+      name: string
+    constraint:
+      primaryKey: [id]
+      foreignKey:
+        fkId:  # Should throw: a column cannot be both PK and FK
+          localColumn: id
+          reference: Person
+          remoteColumn: id

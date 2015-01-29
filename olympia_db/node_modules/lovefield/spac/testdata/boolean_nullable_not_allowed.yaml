@@ -1,0 +1,13 @@
+%YAML 1.2
+---
+name: sample
+version: 1
+table:
+  Employee:
+    column:
+      id: string
+      stockHolder: boolean
+    constraint:
+      primaryKey: [id]
+      nullable: [stockHolder]  # Should throw: boolean type is not nullable
+

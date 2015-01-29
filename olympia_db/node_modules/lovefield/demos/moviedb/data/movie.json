@@ -1,0 +1,3586 @@
+[
+  {
+    "id": "2000",
+    "title": "In & Out",
+    "year": 1997,
+    "rating": "PG-13",
+    "company": "Paramount Pictures"
+  },
+  {
+    "id": "2002",
+    "title": "In Dreams",
+    "year": 1999,
+    "rating": "R",
+    "company": "Amblin Entertainment"
+  },
+  {
+    "id": "2007",
+    "title": "In Pursuit of Honor",
+    "year": 1995,
+    "rating": "PG-13",
+    "company": "Home Box Office (HBO)"
+  },
+  {
+    "id": "2008",
+    "title": "In the Bedroom",
+    "year": 2001,
+    "rating": "R",
+    "company": "Good Machine"
+  },
+  {
+    "id": "2009",
+    "title": "In the Bleak Midwinter",
+    "year": 1995,
+    "rating": "R",
+    "company": "Castle Rock Entertainment"
+  },
+  {
+    "id": "2010",
+    "title": "In the Company of Men",
+    "year": 1997,
+    "rating": "R",
+    "company": "Fair and Square Productions"
+  },
+  {
+    "id": "2013",
+    "title": "In the Gloaming",
+    "year": 1997,
+    "rating": "PG",
+    "company": "Frederick Zollo Productions"
+  },
+  {
+    "id": "2018",
+    "title": "In the Time of the Butterflies",
+    "year": 2001,
+    "rating": "PG-13",
+    "company": "Metro-Goldwyn-Mayer (MGM)"
+  },
+  {
+    "id": "2019",
+    "title": "Incognito",
+    "year": 1997,
+    "rating": "R",
+    "company": "Morgan Creek Productions"
+  },
+  {
+    "id": "2024",
+    "title": "Independence Day",
+    "year": 1996,
+    "rating": "PG-13",
+    "company": "20th Century Fox"
+  },
+  {
+    "id": "2026",
+    "title": "Indian in the Cupboard,The",
+    "year": 1995,
+    "rating": "PG",
+    "company": "Columbia Pictures Corporation"
+  },
+  {
+    "id": "2028",
+    "title": "Indictment: The McMartin Trial",
+    "year": 1995,
+    "rating": "R",
+    "company": "Abby Mann Productions"
+  },
+  {
+    "id": "2034",
+    "title": "Infinity",
+    "year": 1996,
+    "rating": "PG",
+    "company": "Neo Productions"
+  },
+  {
+    "id": "2035",
+    "title": "Informant,The",
+    "year": 1997,
+    "rating": "R",
+    "company": "Hallmark Entertainment"
+  },
+  {
+    "id": "2036",
+    "title": "Inherit the Wind",
+    "year": 1999,
+    "rating": "PG",
+    "company": "MGM Television"
+  },
+  {
+    "id": "2046",
+    "title": "Inside",
+    "year": 1996,
+    "rating": "R",
+    "company": "Logo Entertainment"
+  },
+  {
+    "id": "2047",
+    "title": "Insomnia",
+    "year": 2002,
+    "rating": "R",
+    "company": "Alcon Entertainment"
+  },
+  {
+    "id": "2055",
+    "title": "Interstate 60",
+    "year": 2002,
+    "rating": "R",
+    "company": "Redeemable Features"
+  },
+  {
+    "id": "2066",
+    "title": "Introducing Dorothy Dandridge",
+    "year": 1999,
+    "rating": "R",
+    "company": "Esparza/Katz Productions"
+  },
+  {
+    "id": "2072",
+    "title": "Invisible Circus,The",
+    "year": 2001,
+    "rating": "R",
+    "company": "Fine Line Features"
+  },
+  {
+    "id": "2080",
+    "title": "Island of Dr. Moreau,The",
+    "year": 1996,
+    "rating": "PG-13",
+    "company": "New Line Cinema"
+  },
+  {
+    "id": "2082",
+    "title": "Isnt She Great",
+    "year": 2000,
+    "rating": "R",
+    "company": "Lobell/Bergman Productions"
+  },
+  {
+    "id": "2086",
+    "title": "Its My Party",
+    "year": 1996,
+    "rating": "R",
+    "company": "Metro-Goldwyn-Mayer (MGM)"
+  },
+  {
+    "id": "2092",
+    "title": "Jack Bull,The",
+    "year": 1999,
+    "rating": "R",
+    "company": "Home Box Office (HBO)"
+  },
+  {
+    "id": "2097",
+    "title": "Jack-O",
+    "year": 1995,
+    "rating": "R",
+    "company": "American Independent Productions"
+  },
+  {
+    "id": "2100",
+    "title": "Jackie Brown",
+    "year": 1997,
+    "rating": "R",
+    "company": "A Band Apart"
+  },
+  {
+    "id": "2102",
+    "title": "Jade",
+    "year": 1995,
+    "rating": "R",
+    "company": "Paramount Pictures"
+  },
+  {
+    "id": "2103",
+    "title": "Jaded",
+    "year": 1996,
+    "rating": "R",
+    "company": "City Block Productions Inc."
+  },
+  {
+    "id": "2105",
+    "title": "Jailbreakers",
+    "year": 1994,
+    "rating": "R",
+    "company": "Spelling Films International"
+  },
+  {
+    "id": "2106",
+    "title": "Jails,Hospitals & Hip-Hop",
+    "year": 2001,
+    "rating": "R",
+    "company": "JHH Pictures"
+  },
+  {
+    "id": "2112",
+    "title": "Jason X",
+    "year": 2001,
+    "rating": "R",
+    "company": "Crystal Lake Entertainment Inc."
+  },
+  {
+    "id": "2114",
+    "title": "Jay and Silent Bob Strike Back",
+    "year": 2001,
+    "rating": "R",
+    "company": "Miramax Films"
+  },
+  {
+    "id": "2116",
+    "title": "Jefferson in Paris",
+    "year": 1995,
+    "rating": "PG-13",
+    "company": "Merchant-Ivory Productions"
+  },
+  {
+    "id": "2122",
+    "title": "Jerry Maguire",
+    "year": 1996,
+    "rating": "R",
+    "company": "Gracie Films"
+  },
+  {
+    "id": "2123",
+    "title": "Jerusalem",
+    "year": 1996,
+    "rating": "PG-13",
+    "company": "Det Danske Filminstitut"
+  },
+  {
+    "id": "2130",
+    "title": "Jimmy Show,The",
+    "year": 2001,
+    "rating": "R",
+    "company": "Stonelock Pictures"
+  },
+  {
+    "id": "2135",
+    "title": "Jingle All the Way",
+    "year": 1996,
+    "rating": "PG",
+    "company": "1492 Pictures"
+  },
+  {
+    "id": "2139",
+    "title": "Joe Goulds Secret",
+    "year": 2000,
+    "rating": "R",
+    "company": "Bohemian Productions"
+  },
+  {
+    "id": "2141",
+    "title": "Joe the King",
+    "year": 1999,
+    "rating": "R",
+    "company": "49th Parallel"
+  },
+  {
+    "id": "2146",
+    "title": "John Q",
+    "year": 2002,
+    "rating": "PG-13",
+    "company": "Burg/Koules Productions"
+  },
+  {
+    "id": "2156",
+    "title": "Josie and the Pussycats",
+    "year": 2001,
+    "rating": "PG",
+    "company": "Marc Platt Productions"
+  },
+  {
+    "id": "2158",
+    "title": "Journey of August King,The",
+    "year": 1995,
+    "rating": "PG-13",
+    "company": "Addis Wechsler Pictures"
+  },
+  {
+    "id": "2163",
+    "title": "Juana la Loca",
+    "year": 2001,
+    "rating": "R",
+    "company": "Canal+ España [es]"
+  },
+  {
+    "id": "2165",
+    "title": "Jude",
+    "year": 1996,
+    "rating": "R",
+    "company": "PolyGram Filmed Entertainment"
+  },
+  {
+    "id": "2168",
+    "title": "Judgment Day",
+    "year": 1999,
+    "rating": "R",
+    "company": "Cinetel Films"
+  },
+  {
+    "id": "2180",
+    "title": "Just a Kiss",
+    "year": 2002,
+    "rating": "R",
+    "company": "GreeneStreet Films Inc."
+  },
+  {
+    "id": "2183",
+    "title": "Just Looking",
+    "year": 1999,
+    "rating": "R",
+    "company": "Camellia Productions"
+  },
+  {
+    "id": "2191",
+    "title": "K-19: The Widowmaker",
+    "year": 2002,
+    "rating": "PG-13",
+    "company": "First Light Production"
+  },
+  {
+    "id": "2195",
+    "title": "Kama Sutra: A Tale of Love",
+    "year": 1996,
+    "rating": "R",
+    "company": "Mirabai Films"
+  },
+  {
+    "id": "2197",
+    "title": "Kansas City",
+    "year": 1996,
+    "rating": "R",
+    "company": "Sandcastle 5 Productions"
+  },
+  {
+    "id": "2201",
+    "title": "Kates Addiction",
+    "year": 1999,
+    "rating": "R",
+    "company": "Table 7 Productions"
+  },
+  {
+    "id": "2206",
+    "title": "Keeping the Faith",
+    "year": 2000,
+    "rating": "PG-13",
+    "company": "Spyglass Entertainment"
+  },
+  {
+    "id": "2225",
+    "title": "Kikujiro no natsu",
+    "year": 1999,
+    "rating": "PG-13",
+    "company": "Tokyo FM Broadcasting Company"
+  },
+  {
+    "id": "2229",
+    "title": "Killer Eye,The",
+    "year": 1998,
+    "rating": "R",
+    "company": "Full Moon Entertainment"
+  },
+  {
+    "id": "2235",
+    "title": "Killing Me Softly",
+    "year": 2002,
+    "rating": "R",
+    "company": "The Montecito Picture Company"
+  },
+  {
+    "id": "2241",
+    "title": "Killjoy 2: Deliverance From Evil",
+    "year": 2002,
+    "rating": "R",
+    "company": "Tempe Video"
+  },
+  {
+    "id": "2249",
+    "title": "Kingpin",
+    "year": 1996,
+    "rating": "PG-13",
+    "company": "Metro-Goldwyn-Mayer (MGM)"
+  },
+  {
+    "id": "2252",
+    "title": "Kiss of the Dragon",
+    "year": 2001,
+    "rating": "R",
+    "company": "Current Entertainment"
+  },
+  {
+    "id": "2257",
+    "title": "Kiss Tomorrow Goodbye",
+    "year": 2000,
+    "rating": "R",
+    "company": "20th Century Fox Television"
+  },
+  {
+    "id": "2263",
+    "title": "Kleptomania",
+    "year": 1995,
+    "rating": "R",
+    "company": "Curb Entertainment International"
+  },
+  {
+    "id": "2266",
+    "title": "Knock Off",
+    "year": 1998,
+    "rating": "R",
+    "company": "Knock Films AVV"
+  },
+  {
+    "id": "2270",
+    "title": "Kolobos",
+    "year": 1999,
+    "rating": "R",
+    "company": "Armitage Pictures"
+  },
+  {
+    "id": "2280",
+    "title": "Kull the Conqueror",
+    "year": 1997,
+    "rating": "PG-13",
+    "company": "Korsala Productions"
+  },
+  {
+    "id": "2283",
+    "title": "Kurt & Courtney",
+    "year": 1998,
+    "rating": "R",
+    "company": "Strength Ltd."
+  },
+  {
+    "id": "2284",
+    "title": "L.I.E.",
+    "year": 2001,
+    "rating": "R",
+    "company": "Alter Ego"
+  },
+  {
+    "id": "2293",
+    "title": "Ladybird Ladybird",
+    "year": 1994,
+    "rating": "R",
+    "company": "Parallax Pictures,Ltd."
+  },
+  {
+    "id": "2296",
+    "title": "Lake Placid",
+    "year": 1999,
+    "rating": "R",
+    "company": "Digital Domain"
+  },
+  {
+    "id": "2297",
+    "title": "Lakeboat",
+    "year": 2000,
+    "rating": "R",
+    "company": "One Vibe Entertainment"
+  },
+  {
+    "id": "2301",
+    "title": "Landspeed",
+    "year": 2001,
+    "rating": "PG-13",
+    "company": "Landspeed Productions LLC"
+  },
+  {
+    "id": "2303",
+    "title": "Lansky",
+    "year": 1999,
+    "rating": "R",
+    "company": "Frederick Zollo Productions"
+  },
+  {
+    "id": "2312",
+    "title": "Lashou shentan",
+    "year": 1992,
+    "rating": "R",
+    "company": "Milestone Pictures"
+  },
+  {
+    "id": "2316",
+    "title": "Last Castle,The",
+    "year": 2001,
+    "rating": "R",
+    "company": "DreamWorks SKG"
+  },
+  {
+    "id": "2317",
+    "title": "Last Chance",
+    "year": 1999,
+    "rating": "R",
+    "company": "The Last Chance Picture Company"
+  },
+  {
+    "id": "2319",
+    "title": "Last Dance",
+    "year": 1996,
+    "rating": "R",
+    "company": "Touchstone Pictures"
+  },
+  {
+    "id": "2321",
+    "title": "Last Days of Frankie the Fly,The",
+    "year": 1997,
+    "rating": "R",
+    "company": "Blueline Productions"
+  },
+  {
+    "id": "2323",
+    "title": "Last Debate,The",
+    "year": 2000,
+    "rating": "R",
+    "company": "Paramount Network Television Productions"
+  },
+  {
+    "id": "2326",
+    "title": "Last Good Time,The",
+    "year": 1995,
+    "rating": "R",
+    "company": "Apogee Films Venture"
+  },
+  {
+    "id": "2329",
+    "title": "Last Man Standing",
+    "year": 1996,
+    "rating": "R",
+    "company": "Lone Wolf"
+  },
+  {
+    "id": "2333",
+    "title": "Last Night",
+    "year": 1998,
+    "rating": "R",
+    "company": "Cineplex"
+  },
+  {
+    "id": "2334",
+    "title": "Last of the Blonde Bombshells,The",
+    "year": 2000,
+    "rating": "PG-13",
+    "company": "HBO Films"
+  },
+  {
+    "id": "2337",
+    "title": "Last Orders",
+    "year": 2001,
+    "rating": "R",
+    "company": "Winchester Films"
+  },
+  {
+    "id": "2340",
+    "title": "Last Producer,The",
+    "year": 2000,
+    "rating": "R",
+    "company": "Bigel/Mailer Films"
+  },
+  {
+    "id": "2348",
+    "title": "Last Summer in the Hamptons",
+    "year": 1995,
+    "rating": "R",
+    "company": "Jagtoria Films"
+  },
+  {
+    "id": "2356",
+    "title": "Laughter on the 23rd Floor",
+    "year": 2001,
+    "rating": "R",
+    "company": "Paramount Television"
+  },
+  {
+    "id": "2357",
+    "title": "Laurel Canyon",
+    "year": 2002,
+    "rating": "R",
+    "company": "Antidote International Films Inc."
+  },
+  {
+    "id": "2359",
+    "title": "Lawn Dogs",
+    "year": 1997,
+    "rating": "R",
+    "company": "Toledo Pictures"
+  },
+  {
+    "id": "2368",
+    "title": "Leaving Las Vegas",
+    "year": 1995,
+    "rating": "R",
+    "company": "Initial Productions"
+  },
+  {
+    "id": "2372",
+    "title": "Legend of Bagger Vance,The",
+    "year": 2000,
+    "rating": "PG-13",
+    "company": "Allied Filmmakers"
+  },
+  {
+    "id": "2378",
+    "title": "Leggenda del pianista sulloceano,La",
+    "year": 1998,
+    "rating": "R",
+    "company": "Sciarlò [it]"
+  },
+  {
+    "id": "2387",
+    "title": "Lesson Before Dying,A",
+    "year": 1999,
+    "rating": "PG-13",
+    "company": "Ellen M. Krass Productions"
+  },
+  {
+    "id": "2394",
+    "title": "Lethal Weapon 4",
+    "year": 1998,
+    "rating": "R",
+    "company": "Donner/Schuler-Donner Productions"
+  },
+  {
+    "id": "2404",
+    "title": "Life",
+    "year": 1999,
+    "rating": "R",
+    "company": "Imagine Entertainment"
+  },
+  {
+    "id": "2406",
+    "title": "Life as a House",
+    "year": 2001,
+    "rating": "R",
+    "company": "Winkler Films"
+  },
+  {
+    "id": "2407",
+    "title": "Life Before This,The",
+    "year": 1999,
+    "rating": "R",
+    "company": "Thump Productions"
+  },
+  {
+    "id": "2409",
+    "title": "Life Less Ordinary,A",
+    "year": 1997,
+    "rating": "R",
+    "company": "PolyGram Filmed Entertainment"
+  },
+  {
+    "id": "2411",
+    "title": "Life of David Gale,The",
+    "year": 2003,
+    "rating": "R",
+    "company": "Dirty Hands Productions"
+  },
+  {
+    "id": "2412",
+    "title": "Life or Something Like It",
+    "year": 2002,
+    "rating": "PG-13",
+    "company": "AEI Entertainment"
+  },
+  {
+    "id": "2417",
+    "title": "Lighthouse",
+    "year": 1999,
+    "rating": "R",
+    "company": "Tungsten Pictures"
+  },
+  {
+    "id": "2423",
+    "title": "Limbo",
+    "year": 1999,
+    "rating": "R",
+    "company": "Green/Renzi"
+  },
+  {
+    "id": "2424",
+    "title": "Limey,The",
+    "year": 1999,
+    "rating": "R",
+    "company": "Artisan Entertainment"
+  },
+  {
+    "id": "2439",
+    "title": "Little Shots of Happiness",
+    "year": 1997,
+    "rating": "R",
+    "company": "Bangor Films"
+  },
+  {
+    "id": "2440",
+    "title": "Little Vampire,The",
+    "year": 2000,
+    "rating": "PG",
+    "company": "Avrora Media"
+  },
+  {
+    "id": "2446",
+    "title": "Living Out Loud",
+    "year": 1998,
+    "rating": "R",
+    "company": "Jersey Films"
+  },
+  {
+    "id": "2450",
+    "title": "Lock,Stock and Two Smoking Barrels",
+    "year": 1998,
+    "rating": "R",
+    "company": "PolyGram Filmed Entertainment"
+  },
+  {
+    "id": "2454",
+    "title": "Lola rennt",
+    "year": 1998,
+    "rating": "R",
+    "company": "German Independents"
+  },
+  {
+    "id": "2455",
+    "title": "Lolita",
+    "year": 1997,
+    "rating": "R",
+    "company": "Guild"
+  },
+  {
+    "id": "2459",
+    "title": "Lone Star",
+    "year": 1996,
+    "rating": "R",
+    "company": "Castle Rock Entertainment"
+  },
+  {
+    "id": "2462",
+    "title": "Long Kiss Goodnight,The",
+    "year": 1996,
+    "rating": "R",
+    "company": "Forge"
+  },
+  {
+    "id": "2470",
+    "title": "Looking for Lola",
+    "year": 1998,
+    "rating": "PG",
+    "company": "Nu Image"
+  },
+  {
+    "id": "2472",
+    "title": "Lord of Illusions",
+    "year": 1995,
+    "rating": "R",
+    "company": "Seraphim Films"
+  },
+  {
+    "id": "2473",
+    "title": "Lord of the Rings: The Fellowship of the Ring,The",
+    "year": 2001,
+    "rating": "PG-13",
+    "company": "New Line Cinema"
+  },
+  {
+    "id": "2475",
+    "title": "Lord of the Rings: The Two Towers,The",
+    "year": 2002,
+    "rating": "PG-13",
+    "company": "New Line Cinema"
+  },
+  {
+    "id": "2478",
+    "title": "Loser",
+    "year": 2000,
+    "rating": "PG-13",
+    "company": "Branti Film Productions"
+  },
+  {
+    "id": "2479",
+    "title": "Losing Chase",
+    "year": 1996,
+    "rating": "R",
+    "company": "Hallmark Entertainment"
+  },
+  {
+    "id": "2480",
+    "title": "Losing Isaiah",
+    "year": 1995,
+    "rating": "R",
+    "company": "Paramount Pictures"
+  },
+  {
+    "id": "2481",
+    "title": "Loss of Sexual Innocence,The",
+    "year": 1999,
+    "rating": "R",
+    "company": "Newmarket Capital Group LLC"
+  },
+  {
+    "id": "2483",
+    "title": "Lost Highway",
+    "year": 1997,
+    "rating": "R",
+    "company": "Asymmetrical Productions"
+  },
+  {
+    "id": "2489",
+    "title": "Lost Souls",
+    "year": 2000,
+    "rating": "R",
+    "company": "Avery Pix"
+  },
+  {
+    "id": "2490",
+    "title": "Lost Voyage,The",
+    "year": 2001,
+    "rating": "R",
+    "company": "Unified Film Organization LLC (UFO)"
+  },
+  {
+    "id": "2492",
+    "title": "Lost World: Jurassic Park,The",
+    "year": 1997,
+    "rating": "PG-13",
+    "company": "Amblin Entertainment"
+  },
+  {
+    "id": "2493",
+    "title": "Love & Basketball",
+    "year": 2000,
+    "rating": "PG-13",
+    "company": "40 Acres & a Mule Filmworks"
+  },
+  {
+    "id": "2494",
+    "title": "Love & Human Remains",
+    "year": 1993,
+    "rating": "R",
+    "company": "First Choice"
+  },
+  {
+    "id": "2498",
+    "title": "Love and Death on Long Island",
+    "year": 1997,
+    "rating": "PG-13",
+    "company": "Mikado Films"
+  },
+  {
+    "id": "2506",
+    "title": "Love Is All There Is",
+    "year": 1996,
+    "rating": "R",
+    "company": "Cinema 7"
+  },
+  {
+    "id": "2513",
+    "title": "Love Song",
+    "year": 2000,
+    "rating": "PG",
+    "company": "Handprint Entertainment"
+  },
+  {
+    "id": "2521",
+    "title": "Loves Labours Lost",
+    "year": 2000,
+    "rating": "PG",
+    "company": "Miramax Films"
+  },
+  {
+    "id": "2522",
+    "title": "Love,Honour and Obey",
+    "year": 2000,
+    "rating": "R",
+    "company": "Fugitive Features"
+  },
+  {
+    "id": "2534",
+    "title": "Lucie Aubrac",
+    "year": 1997,
+    "rating": "R",
+    "company": "D.A. Films"
+  },
+  {
+    "id": "2536",
+    "title": "Luck of the Draw",
+    "year": 2000,
+    "rating": "R",
+    "company": "Blue Rider Pictures"
+  },
+  {
+    "id": "2538",
+    "title": "Lucky Numbers",
+    "year": 2000,
+    "rating": "R",
+    "company": "DreamWorks SKG"
+  },
+  {
+    "id": "2540",
+    "title": "Lulu on the Bridge",
+    "year": 1998,
+    "rating": "PG-13",
+    "company": "Capitol Films"
+  },
+  {
+    "id": "2542",
+    "title": "Lunarcop",
+    "year": 1994,
+    "rating": "R",
+    "company": "NU World Services"
+  },
+  {
+    "id": "2560",
+    "title": "Made",
+    "year": 2001,
+    "rating": "R",
+    "company": "Cardiff Giant Productions"
+  },
+  {
+    "id": "2564",
+    "title": "Madness of King George,The",
+    "year": 1994,
+    "rating": "PG-13",
+    "company": "Close Call Films"
+  },
+  {
+    "id": "2571",
+    "title": "Maid in Manhattan",
+    "year": 2002,
+    "rating": "PG-13",
+    "company": "Hughes Entertainment"
+  },
+  {
+    "id": "2582",
+    "title": "Mallrats",
+    "year": 1995,
+    "rating": "R",
+    "company": "Alphaville Films"
+  },
+  {
+    "id": "2583",
+    "title": "Malèna",
+    "year": 2000,
+    "rating": "R",
+    "company": "Miramax Films"
+  },
+  {
+    "id": "2585",
+    "title": "Man from Elysian Fields,The",
+    "year": 2001,
+    "rating": "R",
+    "company": "CineSon Productions"
+  },
+  {
+    "id": "2592",
+    "title": "Man Who Knew Too Little,The",
+    "year": 1997,
+    "rating": "PG",
+    "company": "Polar Productions"
+  },
+  {
+    "id": "2593",
+    "title": "Man Who Wasnt There,The",
+    "year": 2001,
+    "rating": "R",
+    "company": "Good Machine"
+  },
+  {
+    "id": "2597",
+    "title": "Mandela and de Klerk",
+    "year": 1997,
+    "rating": "PG-13",
+    "company": "Hallmark Entertainment"
+  },
+  {
+    "id": "2606",
+    "title": "Margarets Museum",
+    "year": 1995,
+    "rating": "R",
+    "company": "Glace Bay Pictures"
+  },
+  {
+    "id": "2608",
+    "title": "Mariette in Ecstasy",
+    "year": 1996,
+    "rating": "PG-13",
+    "company": "Price Entertainment"
+  },
+  {
+    "id": "2611",
+    "title": "Mars Attacks!",
+    "year": 1996,
+    "rating": "PG-13",
+    "company": "Warner Bros."
+  },
+  {
+    "id": "2616",
+    "title": "Mary Reilly",
+    "year": 1996,
+    "rating": "R",
+    "company": "TriStar Pictures"
+  },
+  {
+    "id": "2630",
+    "title": "Matilda",
+    "year": 1996,
+    "rating": "PG",
+    "company": "Jersey Films"
+  },
+  {
+    "id": "2632",
+    "title": "Matrix,The",
+    "year": 1999,
+    "rating": "R",
+    "company": "Groucho II Film Partnership"
+  },
+  {
+    "id": "2643",
+    "title": "Maybe Baby",
+    "year": 2000,
+    "rating": "R",
+    "company": "Pandora Cinema"
+  },
+  {
+    "id": "2645",
+    "title": "Maze",
+    "year": 2000,
+    "rating": "R",
+    "company": "Bits and Pieces Picture Co."
+  },
+  {
+    "id": "2652",
+    "title": "Me,Myself & Irene",
+    "year": 2000,
+    "rating": "R",
+    "company": "20th Century Fox"
+  },
+  {
+    "id": "2658",
+    "title": "Meet Joe Black",
+    "year": 1998,
+    "rating": "PG-13",
+    "company": "City Light Films"
+  },
+  {
+    "id": "2660",
+    "title": "Meet the Deedles",
+    "year": 1998,
+    "rating": "PG",
+    "company": "DiC Enterprises"
+  },
+  {
+    "id": "2667",
+    "title": "Member of the Wedding,The",
+    "year": 1997,
+    "rating": "PG",
+    "company": "Gideon Productions"
+  },
+  {
+    "id": "2668",
+    "title": "Memento",
+    "year": 2000,
+    "rating": "R",
+    "company": "I Remember Productions,Llc"
+  },
+  {
+    "id": "2671",
+    "title": "Men in Black",
+    "year": 1997,
+    "rating": "PG-13",
+    "company": "Amblin Entertainment"
+  },
+  {
+    "id": "2672",
+    "title": "Men in Black II",
+    "year": 2002,
+    "rating": "PG-13",
+    "company": "Amblin Entertainment"
+  },
+  {
+    "id": "2674",
+    "title": "Men of War",
+    "year": 1994,
+    "rating": "R",
+    "company": "Grandview Avenue Pictures"
+  },
+  {
+    "id": "2697",
+    "title": "Midnight Hour,The",
+    "year": 2000,
+    "rating": "R",
+    "company": "Red Violet Productions"
+  },
+  {
+    "id": "2705",
+    "title": "Mighty Aphrodite",
+    "year": 1995,
+    "rating": "R",
+    "company": "Magnolia Pictures"
+  },
+  {
+    "id": "2708",
+    "title": "Mighty,The",
+    "year": 1998,
+    "rating": "PG-13",
+    "company": "Chaos Productions"
+  },
+  {
+    "id": "2710",
+    "title": "Mille et une recettes du cuisinier amoureux,Les",
+    "year": 1996,
+    "rating": "PG-13",
+    "company": "Adam et Eve"
+  },
+  {
+    "id": "2712",
+    "title": "Million Dollar Hotel,The",
+    "year": 2000,
+    "rating": "R",
+    "company": "Icon Entertainment International"
+  },
+  {
+    "id": "2713",
+    "title": "Million Dollar Kid,The",
+    "year": 1999,
+    "rating": "PG",
+    "company": "Crystal Sky Communications"
+  },
+  {
+    "id": "2720",
+    "title": "Minority Report",
+    "year": 2002,
+    "rating": "PG-13",
+    "company": "20th Century Fox"
+  },
+  {
+    "id": "2721",
+    "title": "Minus Man,The",
+    "year": 1999,
+    "rating": "R",
+    "company": "The Shooting Gallery"
+  },
+  {
+    "id": "2722",
+    "title": "Mio viaggio in Italia,Il",
+    "year": 1999,
+    "rating": "PG-13",
+    "company": "Cappa Production"
+  },
+  {
+    "id": "2724",
+    "title": "Mirror Has Two Faces,The",
+    "year": 1996,
+    "rating": "PG-13",
+    "company": "Barwood Films"
+  },
+  {
+    "id": "2729",
+    "title": "Miss Evers Boys",
+    "year": 1997,
+    "rating": "PG",
+    "company": "Anasazi Productions"
+  },
+  {
+    "id": "2730",
+    "title": "Miss Julie",
+    "year": 1999,
+    "rating": "R",
+    "company": "Moonstone Entertainment"
+  },
+  {
+    "id": "2735",
+    "title": "Mission: Impossible II",
+    "year": 2000,
+    "rating": "PG-13",
+    "company": "Cruise-Wagner Productions"
+  },
+  {
+    "id": "2740",
+    "title": "Misérables,Les",
+    "year": 1998,
+    "rating": "PG-13",
+    "company": "Mandalay Entertainment"
+  },
+  {
+    "id": "2742",
+    "title": "Moby Dick",
+    "year": 1998,
+    "rating": "PG",
+    "company": "American Zoetrope"
+  },
+  {
+    "id": "2750",
+    "title": "Molly",
+    "year": 1999,
+    "rating": "PG-13",
+    "company": "Absolute Entertainment"
+  },
+  {
+    "id": "2761",
+    "title": "Monsoon Wedding",
+    "year": 2001,
+    "rating": "R",
+    "company": "Delhi Dot Com"
+  },
+  {
+    "id": "2765",
+    "title": "Month by the Lake,A",
+    "year": 1995,
+    "rating": "PG",
+    "company": "Anuline"
+  },
+  {
+    "id": "2768",
+    "title": "Moonlight and Valentino",
+    "year": 1995,
+    "rating": "R",
+    "company": "PolyGram Filmed Entertainment"
+  },
+  {
+    "id": "2776",
+    "title": "Mosaic Project,The",
+    "year": 1994,
+    "rating": "R",
+    "company": "Caroli Pictures"
+  },
+  {
+    "id": "2779",
+    "title": "Mostro,Il",
+    "year": 1994,
+    "rating": "R",
+    "company": "IRIS Films"
+  },
+  {
+    "id": "2780",
+    "title": "Motel Blue",
+    "year": 1997,
+    "rating": "R",
+    "company": "DeMartini/Anderson Productions"
+  },
+  {
+    "id": "2781",
+    "title": "Mother Night",
+    "year": 1996,
+    "rating": "R",
+    "company": "Fine Line Features"
+  },
+  {
+    "id": "2784",
+    "title": "Moulin Rouge!",
+    "year": 2001,
+    "rating": "PG-13",
+    "company": "Bazmark Films"
+  },
+  {
+    "id": "2790",
+    "title": "Mr. Accident",
+    "year": 2000,
+    "rating": "PG-13",
+    "company": "Goldwyn Films"
+  },
+  {
+    "id": "2791",
+    "title": "Mr. Death: The Rise and Fall of Fred A. Leuchter,Jr.",
+    "year": 1999,
+    "rating": "PG-13",
+    "company": "Fourth Floor Pictures"
+  },
+  {
+    "id": "2793",
+    "title": "Mr. Hollands Opus",
+    "year": 1995,
+    "rating": "PG",
+    "company": "Hollywood Pictures"
+  },
+  {
+    "id": "2798",
+    "title": "Mr. Rices Secret",
+    "year": 2000,
+    "rating": "PG",
+    "company": "New City Productions"
+  },
+  {
+    "id": "2799",
+    "title": "Mr. Stitch",
+    "year": 1996,
+    "rating": "PG-13",
+    "company": "Rysher Entertainment"
+  },
+  {
+    "id": "2801",
+    "title": "Mrs. Brown",
+    "year": 1997,
+    "rating": "PG",
+    "company": "Irish Screen"
+  },
+  {
+    "id": "2803",
+    "title": "Mrs. Munck",
+    "year": 1995,
+    "rating": "R",
+    "company": "Diane Ladd Inc."
+  },
+  {
+    "id": "2804",
+    "title": "Mrs. Winterbourne",
+    "year": 1996,
+    "rating": "PG-13",
+    "company": "A&M Films"
+  },
+  {
+    "id": "2806",
+    "title": "Mulholland Dr.",
+    "year": 2001,
+    "rating": "R",
+    "company": "Asymmetrical Productions"
+  },
+  {
+    "id": "2808",
+    "title": "Multiplicity",
+    "year": 1996,
+    "rating": "PG-13",
+    "company": "Columbia Pictures Corporation"
+  },
+  {
+    "id": "2809",
+    "title": "Mumford",
+    "year": 1999,
+    "rating": "R",
+    "company": "Kasdan Pictures"
+  },
+  {
+    "id": "2812",
+    "title": "Murder by Numbers",
+    "year": 2002,
+    "rating": "R",
+    "company": "Castle Rock Entertainment"
+  },
+  {
+    "id": "2816",
+    "title": "Murdered Innocence",
+    "year": 1995,
+    "rating": "R",
+    "company": "Columbia Pictures Corporation"
+  },
+  {
+    "id": "2819",
+    "title": "Muse,The",
+    "year": 1999,
+    "rating": "PG-13",
+    "company": "October Films"
+  },
+  {
+    "id": "2821",
+    "title": "Music of the Heart",
+    "year": 1999,
+    "rating": "PG",
+    "company": "Craven-Maddalena Films"
+  },
+  {
+    "id": "2822",
+    "title": "Musketeer,The",
+    "year": 2001,
+    "rating": "PG-13",
+    "company": "Behaviour Worldwide"
+  },
+  {
+    "id": "2825",
+    "title": "Mute Witness",
+    "year": 1994,
+    "rating": "R",
+    "company": "Avrora Media"
+  },
+  {
+    "id": "2826",
+    "title": "Mutiny",
+    "year": 1999,
+    "rating": "PG-13",
+    "company": "Big Productions"
+  },
+  {
+    "id": "2832",
+    "title": "My Big Fat Greek Wedding",
+    "year": 2002,
+    "rating": "PG",
+    "company": "Gold Circle Films"
+  },
+  {
+    "id": "2834",
+    "title": "My Brothers Keeper",
+    "year": 2002,
+    "rating": "R",
+    "company": "New Line Television"
+  },
+  {
+    "id": "2836",
+    "title": "My Dog Skip",
+    "year": 2000,
+    "rating": "PG",
+    "company": "Alcon Entertainment"
+  },
+  {
+    "id": "2837",
+    "title": "My Family",
+    "year": 1995,
+    "rating": "R",
+    "company": "American Playhouse"
+  },
+  {
+    "id": "2840",
+    "title": "My First Mister",
+    "year": 2001,
+    "rating": "R",
+    "company": "Carol Baum Productions"
+  },
+  {
+    "id": "2842",
+    "title": "My Horrible Year!",
+    "year": 2001,
+    "rating": "PG-13",
+    "company": "Millbrook Farm Productions"
+  },
+  {
+    "id": "2844",
+    "title": "My Life So Far",
+    "year": 1999,
+    "rating": "PG-13",
+    "company": "Enigma"
+  },
+  {
+    "id": "2845",
+    "title": "My Lifes in Turnaround",
+    "year": 1994,
+    "rating": "R",
+    "company": "Frontier Pictures"
+  },
+  {
+    "id": "2847",
+    "title": "My Name Is Joe",
+    "year": 1998,
+    "rating": "R",
+    "company": "Parallax Pictures,Ltd."
+  },
+  {
+    "id": "2857",
+    "title": "Mystic Masseur,The",
+    "year": 2001,
+    "rating": "PG",
+    "company": "Merchant-Ivory Productions"
+  },
+  {
+    "id": "2859",
+    "title": "Nadie conoce a nadie",
+    "year": 1999,
+    "rating": "R",
+    "company": "Canal+ España [es]"
+  },
+  {
+    "id": "2870",
+    "title": "National Security",
+    "year": 2003,
+    "rating": "PG-13",
+    "company": "Columbia Pictures Corporation"
+  },
+  {
+    "id": "2881",
+    "title": "Net,The",
+    "year": 1995,
+    "rating": "PG-13",
+    "company": "Columbia Pictures Corporation"
+  },
+  {
+    "id": "2883",
+    "title": "Never Again",
+    "year": 2001,
+    "rating": "R",
+    "company": "Five Minutes Before the Miracle"
+  },
+  {
+    "id": "2894",
+    "title": "New Rose Hotel",
+    "year": 1998,
+    "rating": "R",
+    "company": "Edward R. Pressman Film Corporation"
+  },
+  {
+    "id": "2898",
+    "title": "Newton Boys,The",
+    "year": 1998,
+    "rating": "PG-13",
+    "company": "20th Century Fox"
+  },
+  {
+    "id": "2899",
+    "title": "Next Best Thing,The",
+    "year": 2000,
+    "rating": "PG-13",
+    "company": "Lakeshore Entertainment"
+  },
+  {
+    "id": "2903",
+    "title": "Ngo si sui",
+    "year": 1998,
+    "rating": "PG-13",
+    "company": "Panasia Films Production Company Ltd."
+  },
+  {
+    "id": "2905",
+    "title": "Nice Guys Sleep Alone",
+    "year": 1999,
+    "rating": "R",
+    "company": "Lunacy Unlimited Productions"
+  },
+  {
+    "id": "2908",
+    "title": "Nick of Time",
+    "year": 1995,
+    "rating": "R",
+    "company": "Paramount Pictures"
+  },
+  {
+    "id": "2913",
+    "title": "Night Falls on Manhattan",
+    "year": 1997,
+    "rating": "R",
+    "company": "Paramount Pictures"
+  },
+  {
+    "id": "2923",
+    "title": "Nightjohn",
+    "year": 1996,
+    "rating": "PG-13",
+    "company": "Hallmark Entertainment"
+  },
+  {
+    "id": "2924",
+    "title": "Nightwatch",
+    "year": 1998,
+    "rating": "R",
+    "company": "Dimension Films"
+  },
+  {
+    "id": "2926",
+    "title": "Nil by Mouth",
+    "year": 1997,
+    "rating": "R",
+    "company": "Seaside Productions"
+  },
+  {
+    "id": "2927",
+    "title": "Nine Months",
+    "year": 1995,
+    "rating": "PG-13",
+    "company": "1492 Pictures"
+  },
+  {
+    "id": "2928",
+    "title": "Ninth Gate,The",
+    "year": 1999,
+    "rating": "R",
+    "company": "Kino Vision"
+  },
+  {
+    "id": "2930",
+    "title": "Nirvana",
+    "year": 1997,
+    "rating": "R",
+    "company": "Colorado Films"
+  },
+  {
+    "id": "2931",
+    "title": "Nixon",
+    "year": 1995,
+    "rating": "R",
+    "company": "Cinergi"
+  },
+  {
+    "id": "2934",
+    "title": "No Code of Conduct",
+    "year": 1998,
+    "rating": "R",
+    "company": "Nu Image"
+  },
+  {
+    "id": "2939",
+    "title": "No Mans Land",
+    "year": 2001,
+    "rating": "R",
+    "company": "Eurimages"
+  },
+  {
+    "id": "2943",
+    "title": "No Such Thing",
+    "year": 2001,
+    "rating": "R",
+    "company": "American Zoetrope"
+  },
+  {
+    "id": "2947",
+    "title": "No Way Home",
+    "year": 1997,
+    "rating": "R",
+    "company": "Back Alley Film Productions"
+  },
+  {
+    "id": "2954",
+    "title": "Normal Life",
+    "year": 1996,
+    "rating": "R",
+    "company": "Fine Line Features"
+  },
+  {
+    "id": "2964",
+    "title": "Nothing to Lose",
+    "year": 1997,
+    "rating": "R",
+    "company": "Touchstone Pictures"
+  },
+  {
+    "id": "2972",
+    "title": "Nurse Betty",
+    "year": 2000,
+    "rating": "R",
+    "company": "Gramercy Pictures"
+  },
+  {
+    "id": "2974",
+    "title": "Nutt House,The",
+    "year": 1992,
+    "rating": "PG-13",
+    "company": "Connexion Film Productions"
+  },
+  {
+    "id": "2978",
+    "title": "O Brother,Where Art Thou?",
+    "year": 2000,
+    "rating": "PG-13",
+    "company": "Buena Vista Pictures"
+  },
+  {
+    "id": "2979",
+    "title": "O Que É Isso,Companheiro?",
+    "year": 1997,
+    "rating": "R",
+    "company": "Columbia Pictures Television Trading Company"
+  },
+  {
+    "id": "2981",
+    "title": "Object of My Affection,The",
+    "year": 1998,
+    "rating": "R",
+    "company": "20th Century Fox"
+  },
+  {
+    "id": "2983",
+    "title": "Oceans Eleven",
+    "year": 2001,
+    "rating": "PG-13",
+    "company": "Jerry Weintraub Productions"
+  },
+  {
+    "id": "2991",
+    "title": "Odyssey,The",
+    "year": 1997,
+    "rating": "PG-13",
+    "company": "American Zoetrope"
+  },
+  {
+    "id": "2993",
+    "title": "Office Killer",
+    "year": 1997,
+    "rating": "R",
+    "company": "Good Fear"
+  },
+  {
+    "id": "2994",
+    "title": "Office Space",
+    "year": 1999,
+    "rating": "R",
+    "company": "Cubicle Inc."
+  },
+  {
+    "id": "2998",
+    "title": "Olive Juice",
+    "year": 2001,
+    "rating": "PG-13",
+    "company": "Doubble Troubble Entertainment"
+  },
+  {
+    "id": "3007",
+    "title": "On the Edge",
+    "year": 2001,
+    "rating": "R",
+    "company": "Chanticleer Films"
+  },
+  {
+    "id": "3008",
+    "title": "On the Line",
+    "year": 2001,
+    "rating": "PG",
+    "company": "A Happy Place"
+  },
+  {
+    "id": "3009",
+    "title": "Once a Thief",
+    "year": 1996,
+    "rating": "R",
+    "company": "NDG Productions"
+  },
+  {
+    "id": "3011",
+    "title": "Once in the Life",
+    "year": 2000,
+    "rating": "R",
+    "company": "Cinema Gypsy Productions"
+  },
+  {
+    "id": "3013",
+    "title": "Once Upon a Time... When We Were Colored",
+    "year": 1996,
+    "rating": "PG",
+    "company": "BET Pictures"
+  },
+  {
+    "id": "3015",
+    "title": "One Day in September",
+    "year": 1999,
+    "rating": "R",
+    "company": "Arthur Cohn Productions"
+  },
+  {
+    "id": "3022",
+    "title": "One Night at McCools",
+    "year": 2001,
+    "rating": "R",
+    "company": "Further Films"
+  },
+  {
+    "id": "3023",
+    "title": "One Night Stand",
+    "year": 1997,
+    "rating": "R",
+    "company": "New Line Cinema"
+  },
+  {
+    "id": "3027",
+    "title": "One Tough Cop",
+    "year": 1998,
+    "rating": "R",
+    "company": "Patriot Pictures LLC"
+  },
+  {
+    "id": "3028",
+    "title": "One True Thing",
+    "year": 1998,
+    "rating": "R",
+    "company": "Monarch Pictures"
+  },
+  {
+    "id": "3033",
+    "title": "Operation Delta Force",
+    "year": 1997,
+    "rating": "R",
+    "company": "Nu Image"
+  },
+  {
+    "id": "3039",
+    "title": "Operation Splitsville",
+    "year": 1999,
+    "rating": "PG-13",
+    "company": "Film Bridge International"
+  },
+  {
+    "id": "3045",
+    "title": "Opposite of Sex,The",
+    "year": 1998,
+    "rating": "R",
+    "company": "Rysher Entertainment"
+  },
+  {
+    "id": "3052",
+    "title": "Original Kings of Comedy,The",
+    "year": 2000,
+    "rating": "R",
+    "company": "40 Acres & a Mule Filmworks"
+  },
+  {
+    "id": "3054",
+    "title": "Original Sin",
+    "year": 2001,
+    "rating": "R",
+    "company": "DiNovi Pictures"
+  },
+  {
+    "id": "3055",
+    "title": "Oscar and Lucinda",
+    "year": 1997,
+    "rating": "R",
+    "company": "Dalton Films"
+  },
+  {
+    "id": "3056",
+    "title": "Osmosis Jones",
+    "year": 2001,
+    "rating": "PG",
+    "company": "Conundrum Entertainment"
+  },
+  {
+    "id": "3061",
+    "title": "Other Sister,The",
+    "year": 1999,
+    "rating": "PG-13",
+    "company": "Touchstone Pictures"
+  },
+  {
+    "id": "3063",
+    "title": "Others,The",
+    "year": 1997,
+    "rating": "R",
+    "company": "Brook Drive Films"
+  },
+  {
+    "id": "3074",
+    "title": "Out There",
+    "year": 1995,
+    "rating": "PG-13",
+    "company": "IRS Media"
+  },
+  {
+    "id": "3075",
+    "title": "Out to Sea",
+    "year": 1997,
+    "rating": "PG-13",
+    "company": "20th Century Fox"
+  },
+  {
+    "id": "3076",
+    "title": "Out-of-Sync",
+    "year": 1995,
+    "rating": "R",
+    "company": "Black Entertainment Television (BET)"
+  },
+  {
+    "id": "3078",
+    "title": "Outbreak",
+    "year": 1995,
+    "rating": "R",
+    "company": "Punch Productions"
+  },
+  {
+    "id": "3083",
+    "title": "Outside Providence",
+    "year": 1999,
+    "rating": "R",
+    "company": "Eagle Beach"
+  },
+  {
+    "id": "3101",
+    "title": "Pale Saints",
+    "year": 1997,
+    "rating": "R",
+    "company": "Frequency Films"
+  },
+  {
+    "id": "3102",
+    "title": "Pallbearer,The",
+    "year": 1996,
+    "rating": "PG-13",
+    "company": "Miramax Films"
+  },
+  {
+    "id": "3103",
+    "title": "Palmers Pick Up",
+    "year": 1999,
+    "rating": "R",
+    "company": "ACC Entertainment & Company"
+  },
+  {
+    "id": "3107",
+    "title": "Pandora Project,The",
+    "year": 1998,
+    "rating": "R",
+    "company": "Cinetel Film"
+  },
+  {
+    "id": "3119",
+    "title": "Parent Trap,The",
+    "year": 1998,
+    "rating": "PG",
+    "company": "The Meyers/Shyer Company"
+  },
+  {
+    "id": "3120",
+    "title": "Parole Officer,The",
+    "year": 2001,
+    "rating": "R",
+    "company": "Toledo Pictures"
+  },
+  {
+    "id": "3126",
+    "title": "Passion of Mind",
+    "year": 2000,
+    "rating": "PG-13",
+    "company": "Lakeshore Entertainment"
+  },
+  {
+    "id": "3132",
+    "title": "Pathfinder,The",
+    "year": 1996,
+    "rating": "PG-13",
+    "company": "Leather Stockings Productions"
+  },
+  {
+    "id": "3133",
+    "title": "Patriot,The",
+    "year": 2000,
+    "rating": "R",
+    "company": "Centropolis Entertainment"
+  },
+  {
+    "id": "3135",
+    "title": "Pauline en Paulette",
+    "year": 2000,
+    "rating": "PG",
+    "company": "NCRV"
+  },
+  {
+    "id": "3143",
+    "title": "Pearl Harbor",
+    "year": 2001,
+    "rating": "PG-13",
+    "company": "Jerry Bruckheimer Films"
+  },
+  {
+    "id": "3145",
+    "title": "Pecker",
+    "year": 1998,
+    "rating": "R",
+    "company": "Polar Entertainment"
+  },
+  {
+    "id": "3147",
+    "title": "Pentagon Wars,The",
+    "year": 1998,
+    "rating": "R",
+    "company": "Home Box Office (HBO)"
+  },
+  {
+    "id": "3149",
+    "title": "People vs. Larry Flynt,The",
+    "year": 1996,
+    "rating": "R",
+    "company": "Columbia Pictures Corporation"
+  },
+  {
+    "id": "3150",
+    "title": "Pep Squad",
+    "year": 1998,
+    "rating": "R",
+    "company": "Dikenga Films"
+  },
+  {
+    "id": "3152",
+    "title": "Perez Family,The",
+    "year": 1995,
+    "rating": "R",
+    "company": "Samuel Goldwyn Company"
+  },
+  {
+    "id": "3157",
+    "title": "Perfect Storm,The",
+    "year": 2000,
+    "rating": "PG-13",
+    "company": "Baltimore Spring Creek Productions"
+  },
+  {
+    "id": "3168",
+    "title": "Persons Unknown",
+    "year": 1996,
+    "rating": "R",
+    "company": "Promark Entertainment Group"
+  },
+  {
+    "id": "3171",
+    "title": "Petticoat Planet",
+    "year": 1996,
+    "rating": "R",
+    "company": "Torchlight Entertainment"
+  },
+  {
+    "id": "3177",
+    "title": "Phase IV",
+    "year": 2001,
+    "rating": "R",
+    "company": "American Cinema International"
+  },
+  {
+    "id": "3183",
+    "title": "Phone Booth",
+    "year": 2002,
+    "rating": "R",
+    "company": "Fox 2000 Pictures"
+  },
+  {
+    "id": "3184",
+    "title": "Photographer,The",
+    "year": 2000,
+    "rating": "R",
+    "company": "The Photographer Company,LLC"
+  },
+  {
+    "id": "3186",
+    "title": "Pi",
+    "year": 1998,
+    "rating": "R",
+    "company": "Harvest Filmworks"
+  },
+  {
+    "id": "3187",
+    "title": "Pianist,The",
+    "year": 2002,
+    "rating": "R",
+    "company": "Beverly Detroit"
+  },
+  {
+    "id": "3188",
+    "title": "Pianiste,La",
+    "year": 2001,
+    "rating": "R",
+    "company": "WFF"
+  },
+  {
+    "id": "3190",
+    "title": "Picking Up the Pieces",
+    "year": 2000,
+    "rating": "R",
+    "company": "Comala Films Productions"
+  },
+  {
+    "id": "3210",
+    "title": "Planet of the Apes",
+    "year": 2001,
+    "rating": "PG-13",
+    "company": "20th Century Fox"
+  },
+  {
+    "id": "3214",
+    "title": "Play It to the Bone",
+    "year": 1999,
+    "rating": "R",
+    "company": "Shanghai'd Films"
+  },
+  {
+    "id": "3219",
+    "title": "Players Club,The",
+    "year": 1998,
+    "rating": "R",
+    "company": "New Line Cinema"
+  },
+  {
+    "id": "3228",
+    "title": "Pledge,The",
+    "year": 2001,
+    "rating": "R",
+    "company": "Clyde Is Hungry Productions"
+  },
+  {
+    "id": "3239",
+    "title": "Pollock",
+    "year": 2000,
+    "rating": "R",
+    "company": "Brant-Allen"
+  },
+  {
+    "id": "3248",
+    "title": "Portrait of a Lady,The",
+    "year": 1996,
+    "rating": "PG-13",
+    "company": "PolyGram Filmed Entertainment"
+  },
+  {
+    "id": "3249",
+    "title": "Possession",
+    "year": 2002,
+    "rating": "PG-13",
+    "company": "Baltimore Spring Creek Productions"
+  },
+  {
+    "id": "3258",
+    "title": "Power and Beauty",
+    "year": 2002,
+    "rating": "R",
+    "company": "Adelson Entertainment"
+  },
+  {
+    "id": "3262",
+    "title": "Practical Magic",
+    "year": 1998,
+    "rating": "PG-13",
+    "company": "DiNovi Pictures"
+  },
+  {
+    "id": "3266",
+    "title": "Prehysteria! 3",
+    "year": 1995,
+    "rating": "PG",
+    "company": "Full Moon Entertainment"
+  },
+  {
+    "id": "3274",
+    "title": "Prey of the Jaguar",
+    "year": 1996,
+    "rating": "R",
+    "company": "Hit Entertainment Inc."
+  },
+  {
+    "id": "3281",
+    "title": "Primal Fear",
+    "year": 1996,
+    "rating": "R",
+    "company": "Paramount Pictures"
+  },
+  {
+    "id": "3282",
+    "title": "Primary Colors",
+    "year": 1998,
+    "rating": "R",
+    "company": "Award Entertainment"
+  },
+  {
+    "id": "3289",
+    "title": "Prison Song",
+    "year": 2001,
+    "rating": "R",
+    "company": "New Line Cinema"
+  },
+  {
+    "id": "3292",
+    "title": "Private Obsession",
+    "year": 1995,
+    "rating": "R",
+    "company": "Via Lido Films"
+  },
+  {
+    "id": "3294",
+    "title": "Priyatel pokojnika",
+    "year": 1997,
+    "rating": "R",
+    "company": "Compagnie Est-Ouest"
+  },
+  {
+    "id": "3303",
+    "title": "Pronto",
+    "year": 1997,
+    "rating": "R",
+    "company": "Showtime Pictures"
+  },
+  {
+    "id": "3304",
+    "title": "Proof of Life",
+    "year": 2000,
+    "rating": "R",
+    "company": "Anvil Productions Inc."
+  },
+  {
+    "id": "3311",
+    "title": "Proposition,The",
+    "year": 1997,
+    "rating": "R",
+    "company": "A-Pix Entertainment Inc."
+  },
+  {
+    "id": "3326",
+    "title": "Pura formalità,Una",
+    "year": 1994,
+    "rating": "PG-13",
+    "company": "Sidonie"
+  },
+  {
+    "id": "3328",
+    "title": "Pure Race",
+    "year": 1995,
+    "rating": "R",
+    "company": "Cornerstone Films of America"
+  },
+  {
+    "id": "3330",
+    "title": "Pushing Tin",
+    "year": 1999,
+    "rating": "R",
+    "company": "3 Miles Apart Productions Ltd."
+  },
+  {
+    "id": "3337",
+    "title": "Quiet American,The",
+    "year": 2002,
+    "rating": "R",
+    "company": "Mirage Enterprises"
+  },
+  {
+    "id": "3340",
+    "title": "Quills",
+    "year": 2000,
+    "rating": "R",
+    "company": "Fox Searchlight Pictures"
+  },
+  {
+    "id": "3357",
+    "title": "Random Hearts",
+    "year": 1999,
+    "rating": "R",
+    "company": "Columbia Pictures Corporation"
+  },
+  {
+    "id": "3361",
+    "title": "Ransom",
+    "year": 1996,
+    "rating": "R",
+    "company": "Imagine Entertainment"
+  },
+  {
+    "id": "3367",
+    "title": "Rat Pack,The",
+    "year": 1998,
+    "rating": "R",
+    "company": "Home Box Office (HBO)"
+  },
+  {
+    "id": "3368",
+    "title": "Rat Race",
+    "year": 2001,
+    "rating": "PG-13",
+    "company": "Alphaville Films"
+  },
+  {
+    "id": "3370",
+    "title": "Rated X",
+    "year": 2000,
+    "rating": "R",
+    "company": "District"
+  },
+  {
+    "id": "3391",
+    "title": "Recruit,The",
+    "year": 2003,
+    "rating": "PG-13",
+    "company": "Spyglass Entertainment"
+  },
+  {
+    "id": "3394",
+    "title": "Red Corner",
+    "year": 1997,
+    "rating": "R",
+    "company": "Avnet/Kerner Productions"
+  },
+  {
+    "id": "3397",
+    "title": "Red Line",
+    "year": 1996,
+    "rating": "R",
+    "company": "Caroli Pictures"
+  },
+  {
+    "id": "3408",
+    "title": "Redwood Curtain",
+    "year": 1995,
+    "rating": "PG",
+    "company": "Chris/Rose Productions"
+  },
+  {
+    "id": "3410",
+    "title": "Regeneration",
+    "year": 1997,
+    "rating": "R",
+    "company": "Famous Players"
+  },
+  {
+    "id": "3414",
+    "title": "Reindeer Games",
+    "year": 2000,
+    "rating": "R",
+    "company": "Dimension Films"
+  },
+  {
+    "id": "3419",
+    "title": "Relic,The",
+    "year": 1997,
+    "rating": "R",
+    "company": "Pacific Western"
+  },
+  {
+    "id": "3428",
+    "title": "Requiem for a Dream",
+    "year": 2000,
+    "rating": "R",
+    "company": "Artisan Entertainment"
+  },
+  {
+    "id": "3433",
+    "title": "Restaurant",
+    "year": 1998,
+    "rating": "R",
+    "company": "Chaiken Films"
+  },
+  {
+    "id": "3443",
+    "title": "Return to Me",
+    "year": 2000,
+    "rating": "PG",
+    "company": "JLT Productions"
+  },
+  {
+    "id": "3450",
+    "title": "Richard III",
+    "year": 1995,
+    "rating": "R",
+    "company": "Bayly/Paré Productions"
+  },
+  {
+    "id": "3456",
+    "title": "Riding in Cars with Boys",
+    "year": 2001,
+    "rating": "PG-13",
+    "company": "Flower Films (Barrymore/Juvonen)"
+  },
+  {
+    "id": "3479",
+    "title": "Road to El Dorado,The",
+    "year": 2000,
+    "rating": "PG",
+    "company": "DreamWorks SKG"
+  },
+  {
+    "id": "3481",
+    "title": "Road to Perdition",
+    "year": 2002,
+    "rating": "R",
+    "company": "20th Century Fox"
+  },
+  {
+    "id": "3491",
+    "title": "Rock Star",
+    "year": 2001,
+    "rating": "R",
+    "company": "Bel Air Entertainment"
+  },
+  {
+    "id": "3493",
+    "title": "Rock,The",
+    "year": 1996,
+    "rating": "R",
+    "company": "Don Simpson/Jerry Bruckheimer Films"
+  },
+  {
+    "id": "3494",
+    "title": "Rocket Man",
+    "year": 1997,
+    "rating": "PG",
+    "company": "Caravan Pictures"
+  },
+  {
+    "id": "3499",
+    "title": "Rollerball",
+    "year": 2002,
+    "rating": "PG-13",
+    "company": "Atlas Entertainment"
+  },
+  {
+    "id": "3504",
+    "title": "Romeo + Juliet",
+    "year": 1996,
+    "rating": "PG-13",
+    "company": "20th Century Fox"
+  },
+  {
+    "id": "3506",
+    "title": "Ronin",
+    "year": 1998,
+    "rating": "R",
+    "company": "FGM Entertainment"
+  },
+  {
+    "id": "3508",
+    "title": "Room for Romeo Brass,A",
+    "year": 1999,
+    "rating": "R",
+    "company": "Big Arty"
+  },
+  {
+    "id": "3512",
+    "title": "Rosewood",
+    "year": 1997,
+    "rating": "R",
+    "company": "New Deal Productions"
+  },
+  {
+    "id": "3521",
+    "title": "Rowdy Girls,The",
+    "year": 1999,
+    "rating": "R",
+    "company": "Girl Next Door Productions"
+  },
+  {
+    "id": "3528",
+    "title": "Rules of Attraction,The",
+    "year": 2002,
+    "rating": "R",
+    "company": "Kingsgate Films"
+  },
+  {
+    "id": "3529",
+    "title": "Rules of Engagement",
+    "year": 2000,
+    "rating": "R",
+    "company": "Paramount Pictures"
+  },
+  {
+    "id": "3534",
+    "title": "Run for the Money",
+    "year": 2002,
+    "rating": "R",
+    "company": "Canyon Productions A.V.V."
+  },
+  {
+    "id": "3537",
+    "title": "Runaway Bride",
+    "year": 1999,
+    "rating": "PG",
+    "company": "Interscope Communications"
+  },
+  {
+    "id": "3550",
+    "title": "Sabrina",
+    "year": 1995,
+    "rating": "PG",
+    "company": "Constellation Films"
+  },
+  {
+    "id": "3552",
+    "title": "Safe",
+    "year": 1995,
+    "rating": "R",
+    "company": "American Playhouse"
+  },
+  {
+    "id": "3555",
+    "title": "Saint,The",
+    "year": 1997,
+    "rating": "PG-13",
+    "company": "David Brown/Robert Evans Production"
+  },
+  {
+    "id": "3558",
+    "title": "Salton Sea,The",
+    "year": 2002,
+    "rating": "R",
+    "company": "Castle Rock Entertainment"
+  },
+  {
+    "id": "3568",
+    "title": "Saturn",
+    "year": 1999,
+    "rating": "R",
+    "company": "Sibling Productions"
+  },
+  {
+    "id": "3574",
+    "title": "Saving Silverman",
+    "year": 2001,
+    "rating": "PG-13",
+    "company": "Columbia Pictures Corporation"
+  },
+  {
+    "id": "3576",
+    "title": "Savior",
+    "year": 1998,
+    "rating": "R",
+    "company": "Initial Entertainment Group (IEG)"
+  },
+  {
+    "id": "3593",
+    "title": "Score,The",
+    "year": 2001,
+    "rating": "R",
+    "company": "Eagle Point Production"
+  },
+  {
+    "id": "3601",
+    "title": "Scream 3",
+    "year": 2000,
+    "rating": "R",
+    "company": "Craven-Maddalena Films"
+  },
+  {
+    "id": "3616",
+    "title": "Second Civil War,The",
+    "year": 1997,
+    "rating": "R",
+    "company": "Baltimore Pictures"
+  },
+  {
+    "id": "3621",
+    "title": "Secret Agent,The",
+    "year": 1996,
+    "rating": "R",
+    "company": "20th Century Fox"
+  },
+  {
+    "id": "3622",
+    "title": "Secret Kingdom,The",
+    "year": 1998,
+    "rating": "PG",
+    "company": "Kushner-Locke Company"
+  },
+  {
+    "id": "3623",
+    "title": "Secret Lives of Dentists,The",
+    "year": 2002,
+    "rating": "R",
+    "company": "Holedigger Films Inc."
+  },
+  {
+    "id": "3637",
+    "title": "Selena",
+    "year": 1997,
+    "rating": "PG",
+    "company": "Esparza/Katz Productions"
+  },
+  {
+    "id": "3638",
+    "title": "Sen to Chihiro no kamikakushi",
+    "year": 2001,
+    "rating": "PG",
+    "company": "Mitsubishi Commercial Affairs"
+  },
+  {
+    "id": "3641",
+    "title": "Sense and Sensibility",
+    "year": 1995,
+    "rating": "PG",
+    "company": "Columbia Pictures Corporation"
+  },
+  {
+    "id": "3642",
+    "title": "Senseless",
+    "year": 1998,
+    "rating": "R",
+    "company": "Dimension Films"
+  },
+  {
+    "id": "3646",
+    "title": "Serendipity",
+    "year": 2001,
+    "rating": "PG-13",
+    "company": "Simon Fields Productions"
+  },
+  {
+    "id": "3651",
+    "title": "Serving Sara",
+    "year": 2002,
+    "rating": "PG-13",
+    "company": "FTM Productions"
+  },
+  {
+    "id": "3654",
+    "title": "Set Up,The",
+    "year": 1995,
+    "rating": "R",
+    "company": "Metro-Goldwyn-Mayer (MGM)"
+  },
+  {
+    "id": "3656",
+    "title": "Seunlau ngaklau",
+    "year": 2000,
+    "rating": "R",
+    "company": "Columbia Pictures Film Production Asia"
+  },
+  {
+    "id": "3657",
+    "title": "Seven Days to Live",
+    "year": 2000,
+    "rating": "R",
+    "company": "Roof Top Entertainment"
+  },
+  {
+    "id": "3659",
+    "title": "Seven Years in Tibet",
+    "year": 1997,
+    "rating": "PG-13",
+    "company": "Applecross"
+  },
+  {
+    "id": "3676",
+    "title": "Sgt. Bilko",
+    "year": 1996,
+    "rating": "PG",
+    "company": "Imagine Entertainment"
+  },
+  {
+    "id": "3685",
+    "title": "Shadow of Doubt",
+    "year": 1998,
+    "rating": "R",
+    "company": "Largo Entertainment"
+  },
+  {
+    "id": "3689",
+    "title": "Shaft",
+    "year": 2000,
+    "rating": "R",
+    "company": "New Deal Productions"
+  },
+  {
+    "id": "3690",
+    "title": "Shake,Rattle and Rock!",
+    "year": 1994,
+    "rating": "PG-13",
+    "company": "Spelling Films International"
+  },
+  {
+    "id": "3692",
+    "title": "Shakespeare in Love",
+    "year": 1998,
+    "rating": "R",
+    "company": "Bedford Falls Productions"
+  },
+  {
+    "id": "3693",
+    "title": "Shall We Dansu?",
+    "year": 1996,
+    "rating": "PG-13",
+    "company": "Miramax Films"
+  },
+  {
+    "id": "3694",
+    "title": "Shallow Grave",
+    "year": 1994,
+    "rating": "R",
+    "company": "PolyGram Filmed Entertainment"
+  },
+  {
+    "id": "3695",
+    "title": "Shallow Hal",
+    "year": 2001,
+    "rating": "PG-13",
+    "company": "20th Century Fox"
+  },
+  {
+    "id": "3699",
+    "title": "Shape of Things,The",
+    "year": 2003,
+    "rating": "R",
+    "company": "Mepris Films"
+  },
+  {
+    "id": "3708",
+    "title": "Shes All That",
+    "year": 1999,
+    "rating": "PG-13",
+    "company": "All That Productions"
+  },
+  {
+    "id": "3709",
+    "title": "Shes So Lovely",
+    "year": 1997,
+    "rating": "R",
+    "company": "Clyde Is Hungry Productions"
+  },
+  {
+    "id": "3715",
+    "title": "Shiner",
+    "year": 2000,
+    "rating": "R",
+    "company": "Geoff Reeve Films"
+  },
+  {
+    "id": "3724",
+    "title": "Shot at Glory,A",
+    "year": 2000,
+    "rating": "R",
+    "company": "Butcher's Run Films"
+  },
+  {
+    "id": "3725",
+    "title": "Shot in the Heart",
+    "year": 2001,
+    "rating": "R",
+    "company": "Home Box Office (HBO)"
+  },
+  {
+    "id": "3730",
+    "title": "Showgirls",
+    "year": 1995,
+    "rating": "NC-17",
+    "company": "Carolco Pictures"
+  },
+  {
+    "id": "3735",
+    "title": "Shrink Is In,The",
+    "year": 2000,
+    "rating": "R",
+    "company": "Shrink Productions Inc."
+  },
+  {
+    "id": "3738",
+    "title": "Shu shan zheng zhuan",
+    "year": 2001,
+    "rating": "PG-13",
+    "company": "Distant Horizons"
+  },
+  {
+    "id": "3739",
+    "title": "Shuang long hui",
+    "year": 1992,
+    "rating": "PG-13",
+    "company": "Distant Horizons"
+  },
+  {
+    "id": "3743",
+    "title": "Siege,The",
+    "year": 1998,
+    "rating": "R",
+    "company": "20th Century Fox"
+  },
+  {
+    "id": "3748",
+    "title": "Silent Trigger",
+    "year": 1996,
+    "rating": "R",
+    "company": "Algonquin Productions Limited"
+  },
+  {
+    "id": "3751",
+    "title": "Simian Line,The",
+    "year": 2000,
+    "rating": "R",
+    "company": "DaWa Movies"
+  },
+  {
+    "id": "3756",
+    "title": "Simple Plan,A",
+    "year": 1998,
+    "rating": "R",
+    "company": "Mutual Film Company"
+  },
+  {
+    "id": "3757",
+    "title": "Simple Wish,A",
+    "year": 1997,
+    "rating": "PG",
+    "company": "The Bubble Factory"
+  },
+  {
+    "id": "3774",
+    "title": "Siu lam juk kau",
+    "year": 2001,
+    "rating": "PG",
+    "company": "Star Overseas"
+  },
+  {
+    "id": "3776",
+    "title": "Six Ways to Sunday",
+    "year": 1998,
+    "rating": "R",
+    "company": "Prosperity Electric"
+  },
+  {
+    "id": "3781",
+    "title": "Skateboard Kid 2,The",
+    "year": 1995,
+    "rating": "PG",
+    "company": "Concorde-New Horizons"
+  },
+  {
+    "id": "3790",
+    "title": "Skulls,The",
+    "year": 2000,
+    "rating": "PG-13",
+    "company": "Cranium Films"
+  },
+  {
+    "id": "3798",
+    "title": "Slap Her... Shes French",
+    "year": 2002,
+    "rating": "PG-13",
+    "company": "Bandeira Entertainment"
+  },
+  {
+    "id": "3799",
+    "title": "Slap Shot 2: Breaking the Ice",
+    "year": 2002,
+    "rating": "R",
+    "company": "Universal Pictures"
+  },
+  {
+    "id": "3803",
+    "title": "Sleepers",
+    "year": 1996,
+    "rating": "R",
+    "company": "Baltimore Pictures"
+  },
+  {
+    "id": "3805",
+    "title": "Sleepwalkers",
+    "year": 1992,
+    "rating": "R",
+    "company": "Columbia Pictures Corporation"
+  },
+  {
+    "id": "3807",
+    "title": "Sleepy Hollow",
+    "year": 1999,
+    "rating": "R",
+    "company": "American Zoetrope"
+  },
+  {
+    "id": "3811",
+    "title": "Small Faces",
+    "year": 1996,
+    "rating": "R",
+    "company": "Billy MacKinnon"
+  },
+  {
+    "id": "3812",
+    "title": "Small Soldiers",
+    "year": 1998,
+    "rating": "PG-13",
+    "company": "Amblin Entertainment"
+  },
+  {
+    "id": "3814",
+    "title": "Small Time Crooks",
+    "year": 2000,
+    "rating": "PG",
+    "company": "Sweetland Films"
+  },
+  {
+    "id": "3816",
+    "title": "Smillas Sense of Snow",
+    "year": 1997,
+    "rating": "R",
+    "company": "Det Danske Filminstitut"
+  },
+  {
+    "id": "3818",
+    "title": "Smoke",
+    "year": 1995,
+    "rating": "R",
+    "company": "Eurospace"
+  },
+  {
+    "id": "3822",
+    "title": "Snatch.",
+    "year": 2000,
+    "rating": "R",
+    "company": "Columbia Pictures Corporation"
+  },
+  {
+    "id": "3824",
+    "title": "Snitch",
+    "year": 1998,
+    "rating": "R",
+    "company": "Apostle"
+  },
+  {
+    "id": "3828",
+    "title": "Snow Dogs",
+    "year": 2002,
+    "rating": "PG",
+    "company": "Galapagos Productions"
+  },
+  {
+    "id": "3829",
+    "title": "Snow Falling on Cedars",
+    "year": 1999,
+    "rating": "PG-13",
+    "company": "The Kennedy/Marshall Company"
+  },
+  {
+    "id": "3841",
+    "title": "Soldiers Daughter Never Cries,A",
+    "year": 1998,
+    "rating": "R",
+    "company": "Capitol Films"
+  },
+  {
+    "id": "3845",
+    "title": "Solo",
+    "year": 1996,
+    "rating": "PG-13",
+    "company": "Kinema Films de Mexico"
+  },
+  {
+    "id": "3852",
+    "title": "Someone Elses America",
+    "year": 1995,
+    "rating": "R",
+    "company": "Intrinsica Films"
+  },
+  {
+    "id": "3853",
+    "title": "Someone Like You",
+    "year": 2001,
+    "rating": "PG-13",
+    "company": "Fox 2000 Pictures"
+  },
+  {
+    "id": "3861",
+    "title": "Sonatine",
+    "year": 1993,
+    "rating": "R",
+    "company": "Shouchiku Co."
+  },
+  {
+    "id": "3863",
+    "title": "Songcatcher",
+    "year": 2000,
+    "rating": "PG-13",
+    "company": "ErgoArts"
+  },
+  {
+    "id": "3864",
+    "title": "Sonny",
+    "year": 2002,
+    "rating": "R",
+    "company": "Gold Circle Films"
+  },
+  {
+    "id": "3878",
+    "title": "Soulkeeper",
+    "year": 2001,
+    "rating": "R",
+    "company": "One-Tu-Three Productions Inc."
+  },
+  {
+    "id": "3879",
+    "title": "Soundman",
+    "year": 1999,
+    "rating": "R",
+    "company": "Mountainair Films Inc."
+  },
+  {
+    "id": "3882",
+    "title": "South of Heaven,West of Hell",
+    "year": 2000,
+    "rating": "R",
+    "company": "Delta Deuce Films"
+  },
+  {
+    "id": "3883",
+    "title": "South Park: Bigger Longer & Uncut",
+    "year": 1999,
+    "rating": "R",
+    "company": "Comedy Central"
+  },
+  {
+    "id": "3888",
+    "title": "Space Truckers",
+    "year": 1997,
+    "rating": "PG-13",
+    "company": "Goldcrest Films International"
+  },
+  {
+    "id": "3891",
+    "title": "Spanish Prisoner,The",
+    "year": 1997,
+    "rating": "PG",
+    "company": "Jasmine Productions Inc."
+  },
+  {
+    "id": "3896",
+    "title": "Specials,The",
+    "year": 2000,
+    "rating": "R",
+    "company": "Brillstein-Grey Entertainment"
+  },
+  {
+    "id": "3897",
+    "title": "Species",
+    "year": 1995,
+    "rating": "R",
+    "company": "Metro-Goldwyn-Mayer (MGM)"
+  },
+  {
+    "id": "3898",
+    "title": "Species II",
+    "year": 1998,
+    "rating": "R",
+    "company": "FGM Entertainment"
+  },
+  {
+    "id": "3902",
+    "title": "Sphere",
+    "year": 1998,
+    "rating": "PG-13",
+    "company": "Baltimore Pictures"
+  },
+  {
+    "id": "3904",
+    "title": "Spider",
+    "year": 2002,
+    "rating": "R",
+    "company": "Artists Independent Network"
+  },
+  {
+    "id": "3906",
+    "title": "Spider-Man",
+    "year": 2002,
+    "rating": "PG-13",
+    "company": "Columbia Pictures Corporation"
+  },
+  {
+    "id": "3911",
+    "title": "Splendor",
+    "year": 1999,
+    "rating": "R",
+    "company": "Desperate Pictures"
+  },
+  {
+    "id": "3919",
+    "title": "Spy Game",
+    "year": 2001,
+    "rating": "R",
+    "company": "Beacon Communications LLC"
+  },
+  {
+    "id": "3921",
+    "title": "Spy Kids 2: Island of Lost Dreams",
+    "year": 2002,
+    "rating": "PG",
+    "company": "Dimension Films"
+  },
+  {
+    "id": "3929",
+    "title": "Stanza del figlio,La",
+    "year": 2001,
+    "rating": "R",
+    "company": "Telepiù [it]"
+  },
+  {
+    "id": "3933",
+    "title": "Star Trek: First Contact",
+    "year": 1996,
+    "rating": "PG-13",
+    "company": "Paramount Pictures"
+  },
+  {
+    "id": "3934",
+    "title": "Star Trek: Insurrection",
+    "year": 1998,
+    "rating": "PG",
+    "company": "Paramount Pictures"
+  },
+  {
+    "id": "3940",
+    "title": "Star Wars: Episode II - Attack of the Clones",
+    "year": 2002,
+    "rating": "PG",
+    "company": "Lucasfilm Ltd."
+  },
+  {
+    "id": "3942",
+    "title": "Stardom",
+    "year": 2000,
+    "rating": "R",
+    "company": "SODEC"
+  },
+  {
+    "id": "3946",
+    "title": "Starquest II",
+    "year": 1997,
+    "rating": "R",
+    "company": "The Pacific Trust"
+  },
+  {
+    "id": "3948",
+    "title": "Starship Troopers",
+    "year": 1997,
+    "rating": "R",
+    "company": "Big Bug Pictures"
+  },
+  {
+    "id": "3950",
+    "title": "State and Main",
+    "year": 2000,
+    "rating": "R",
+    "company": "El Dorado Pictures"
+  },
+  {
+    "id": "3956",
+    "title": "Stealing Beauty",
+    "year": 1996,
+    "rating": "R",
+    "company": "Jeremy Thomas Productions"
+  },
+  {
+    "id": "3963",
+    "title": "Stepmom",
+    "year": 1998,
+    "rating": "PG-13",
+    "company": "1492 Pictures"
+  },
+  {
+    "id": "3977",
+    "title": "Storefront Hitchcock",
+    "year": 1998,
+    "rating": "PG-13",
+    "company": "Clinica Estetico"
+  },
+  {
+    "id": "3982",
+    "title": "Story of Us,The",
+    "year": 1999,
+    "rating": "R",
+    "company": "Castle Rock Entertainment"
+  },
+  {
+    "id": "3983",
+    "title": "Storytelling",
+    "year": 2001,
+    "rating": "R",
+    "company": "Good Machine"
+  },
+  {
+    "id": "3984",
+    "title": "Strange Days",
+    "year": 1995,
+    "rating": "R",
+    "company": "Lightstorm Entertainment"
+  },
+  {
+    "id": "3990",
+    "title": "Stranger Than Fiction",
+    "year": 1999,
+    "rating": "R",
+    "company": "Bergman Lustig Productions"
+  },
+  {
+    "id": "4009",
+    "title": "Stuart Saves His Family",
+    "year": 1995,
+    "rating": "PG-13",
+    "company": "Constellation"
+  },
+  {
+    "id": "4022",
+    "title": "SubUrbia",
+    "year": 1996,
+    "rating": "R",
+    "company": "Castle Rock Entertainment"
+  },
+  {
+    "id": "4023",
+    "title": "Sudden Death",
+    "year": 1995,
+    "rating": "R",
+    "company": "Imperial Entertainment"
+  },
+  {
+    "id": "4026",
+    "title": "Sugar Town",
+    "year": 1999,
+    "rating": "R",
+    "company": "October Films"
+  },
+  {
+    "id": "4036",
+    "title": "Summer of Sam",
+    "year": 1999,
+    "rating": "R",
+    "company": "40 Acres & a Mule Filmworks"
+  },
+  {
+    "id": "4038",
+    "title": "Sunchaser,The",
+    "year": 1996,
+    "rating": "R",
+    "company": "Appledown Films Inc."
+  },
+  {
+    "id": "4043",
+    "title": "Sunshine State",
+    "year": 2002,
+    "rating": "PG-13",
+    "company": "Anarchist's Convention Films"
+  },
+  {
+    "id": "4044",
+    "title": "Super Sucker",
+    "year": 2002,
+    "rating": "R",
+    "company": "Purple Rose Productions"
+  },
+  {
+    "id": "4049",
+    "title": "Supreme Sanction",
+    "year": 1999,
+    "rating": "R",
+    "company": "Sanction Films,Inc."
+  },
+  {
+    "id": "4053",
+    "title": "Surviving Picasso",
+    "year": 1996,
+    "rating": "R",
+    "company": "Merchant-Ivory Productions"
+  },
+  {
+    "id": "4055",
+    "title": "Susans Plan",
+    "year": 1998,
+    "rating": "R",
+    "company": "Kushner-Locke Company"
+  },
+  {
+    "id": "4058",
+    "title": "Svitati",
+    "year": 1999,
+    "rating": "R",
+    "company": "Wolf Pictures"
+  },
+  {
+    "id": "4061",
+    "title": "Sweet and Lowdown",
+    "year": 1999,
+    "rating": "PG-13",
+    "company": "Magnolia Productions"
+  },
+  {
+    "id": "4062",
+    "title": "Sweet Hereafter,The",
+    "year": 1997,
+    "rating": "R",
+    "company": "Ego Film Arts"
+  },
+  {
+    "id": "4067",
+    "title": "Sweetest Thing,The",
+    "year": 2002,
+    "rating": "R",
+    "company": "Columbia Pictures Corporation"
+  },
+  {
+    "id": "4073",
+    "title": "Swimfan",
+    "year": 2002,
+    "rating": "PG-13",
+    "company": "Cobalt Media Group"
+  },
+  {
+    "id": "4080",
+    "title": "Swordfish",
+    "year": 2001,
+    "rating": "R",
+    "company": "Jonathan Krane Group"
+  },
+  {
+    "id": "4092",
+    "title": "Tailor of Panama,The",
+    "year": 2001,
+    "rating": "R",
+    "company": "Columbia Pictures Corporation"
+  },
+  {
+    "id": "4098",
+    "title": "Tale of the Mummy",
+    "year": 1998,
+    "rating": "R",
+    "company": "7th Voyage"
+  },
+  {
+    "id": "4108",
+    "title": "Tango",
+    "year": 1998,
+    "rating": "PG-13",
+    "company": "Adela Pictures"
+  },
+  {
+    "id": "4112",
+    "title": "Tape",
+    "year": 2001,
+    "rating": "R",
+    "company": "Detour Film Production"
+  },
+  {
+    "id": "4120",
+    "title": "Teaching Mrs. Tingle",
+    "year": 1999,
+    "rating": "PG-13",
+    "company": "Interscope Communications"
+  },
+  {
+    "id": "4121",
+    "title": "Ted Bundy",
+    "year": 2002,
+    "rating": "R",
+    "company": "Incessant Barking Productions Inc."
+  },
+  {
+    "id": "4146",
+    "title": "Tetsuo II: Body Hammer",
+    "year": 1992,
+    "rating": "R",
+    "company": "Kaijyu Theater"
+  },
+  {
+    "id": "4149",
+    "title": "Texas Rangers",
+    "year": 2001,
+    "rating": "PG-13",
+    "company": "Greisman Productions"
+  },
+  {
+    "id": "4150",
+    "title": "That Championship Season",
+    "year": 1999,
+    "rating": "R",
+    "company": "Metro-Goldwyn-Mayer (MGM)"
+  },
+  {
+    "id": "4152",
+    "title": "That Old Feeling",
+    "year": 1997,
+    "rating": "PG-13",
+    "company": "All Girl Productions"
+  },
+  {
+    "id": "4157",
+    "title": "Theres Something About Mary",
+    "year": 1998,
+    "rating": "R",
+    "company": "20th Century Fox"
+  },
+  {
+    "id": "4165",
+    "title": "Thin Line Between Love and Hate,A",
+    "year": 1996,
+    "rating": "R",
+    "company": "Savoy Pictures"
+  },
+  {
+    "id": "4166",
+    "title": "Thin Red Line,The",
+    "year": 1998,
+    "rating": "R",
+    "company": "Fox 2000 Pictures"
+  },
+  {
+    "id": "4167",
+    "title": "Things Behind the Sun",
+    "year": 2001,
+    "rating": "R",
+    "company": "Echo Lake Productions"
+  },
+  {
+    "id": "4172",
+    "title": "Third Miracle,The",
+    "year": 1999,
+    "rating": "R",
+    "company": "American Zoetrope"
+  },
+  {
+    "id": "4173",
+    "title": "Third Society,The",
+    "year": 2000,
+    "rating": "R",
+    "company": "Hubble Productions"
+  },
+  {
+    "id": "4177",
+    "title": "Thirteen Days",
+    "year": 2000,
+    "rating": "PG-13",
+    "company": "Beacon Communications LLC"
+  },
+  {
+    "id": "4181",
+    "title": "Thomas Crown Affair,The",
+    "year": 1999,
+    "rating": "R",
+    "company": "Irish DreamTime"
+  },
+  {
+    "id": "4183",
+    "title": "Thousand Acres,A",
+    "year": 1997,
+    "rating": "R",
+    "company": "Beacon Communications LLC"
+  },
+  {
+    "id": "4189",
+    "title": "Three Wishes",
+    "year": 1995,
+    "rating": "PG",
+    "company": "Rysher Entertainment"
+  },
+  {
+    "id": "4199",
+    "title": "Tie That Binds,The",
+    "year": 1995,
+    "rating": "R",
+    "company": "Hollywood Pictures"
+  },
+  {
+    "id": "4203",
+    "title": "Tiger Woods Story,The",
+    "year": 1998,
+    "rating": "PG-13",
+    "company": "MTV Productions"
+  },
+  {
+    "id": "4204",
+    "title": "Tigerland",
+    "year": 2000,
+    "rating": "R",
+    "company": "Haft Entertainment"
+  },
+  {
+    "id": "4205",
+    "title": "Tillsammans",
+    "year": 2000,
+    "rating": "R",
+    "company": "TV1000 AB"
+  },
+  {
+    "id": "4213",
+    "title": "Time to Kill,A",
+    "year": 1996,
+    "rating": "R",
+    "company": "Regency Enterprises"
+  },
+  {
+    "id": "4215",
+    "title": "Timecode",
+    "year": 2000,
+    "rating": "R",
+    "company": "Red Mullet Productions"
+  },
+  {
+    "id": "4220",
+    "title": "Tin Cup",
+    "year": 1996,
+    "rating": "R",
+    "company": "Regency Enterprises"
+  },
+  {
+    "id": "4221",
+    "title": "Tin Soldier",
+    "year": 1995,
+    "rating": "PG",
+    "company": "Republic Pictures Corporation"
+  },
+  {
+    "id": "4223",
+    "title": "Titan A.E.",
+    "year": 2000,
+    "rating": "PG",
+    "company": "20th Century Fox"
+  },
+  {
+    "id": "4224",
+    "title": "Titanic",
+    "year": 1997,
+    "rating": "PG-13",
+    "company": "20th Century Fox"
+  },
+  {
+    "id": "4225",
+    "title": "Titus",
+    "year": 1999,
+    "rating": "R",
+    "company": "Clear Blue Sky Productions"
+  },
+  {
+    "id": "4228",
+    "title": "To Gillian on Her 37th Birthday",
+    "year": 1996,
+    "rating": "PG-13",
+    "company": "Rastar Pictures"
+  },
+  {
+    "id": "4245",
+    "title": "Topsy-Turvy",
+    "year": 1999,
+    "rating": "R",
+    "company": "Goldwyn Films"
+  },
+  {
+    "id": "4251",
+    "title": "Town & Country",
+    "year": 2001,
+    "rating": "R",
+    "company": "FR Production"
+  },
+  {
+    "id": "4254",
+    "title": "Traffic",
+    "year": 2000,
+    "rating": "R",
+    "company": "Bedford Falls Productions"
+  },
+  {
+    "id": "4255",
+    "title": "Train de vie",
+    "year": 1998,
+    "rating": "R",
+    "company": "Eurimages"
+  },
+  {
+    "id": "4257",
+    "title": "Trainspotting",
+    "year": 1996,
+    "rating": "R",
+    "company": "PolyGram Filmed Entertainment"
+  },
+  {
+    "id": "4265",
+    "title": "Treasure Planet",
+    "year": 2002,
+    "rating": "PG",
+    "company": "Walt Disney Pictures"
+  },
+  {
+    "id": "4268",
+    "title": "Trees Lounge",
+    "year": 1996,
+    "rating": "R",
+    "company": "Addis Wechsler Pictures"
+  },
+  {
+    "id": "4275",
+    "title": "Trick",
+    "year": 1999,
+    "rating": "R",
+    "company": "Good Machine"
+  },
+  {
+    "id": "4284",
+    "title": "Trixie",
+    "year": 2000,
+    "rating": "R",
+    "company": "Pandora Cinema"
+  },
+  {
+    "id": "4294",
+    "title": "True Crime",
+    "year": 1999,
+    "rating": "R",
+    "company": "Malpaso Productions"
+  },
+  {
+    "id": "4295",
+    "title": "True Friends",
+    "year": 1998,
+    "rating": "R",
+    "company": "2nd Generation Films"
+  },
+  {
+    "id": "4297",
+    "title": "True Women",
+    "year": 1997,
+    "rating": "PG-13",
+    "company": "Craig Anderson Productions Inc."
+  },
+  {
+    "id": "4299",
+    "title": "Truman Show,The",
+    "year": 1998,
+    "rating": "PG",
+    "company": "Paramount Pictures"
+  }
+]
