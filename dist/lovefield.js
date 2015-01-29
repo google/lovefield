@@ -23980,6 +23980,16 @@ goog.require('lf.Order');
 
 
 /**
+ * @const @enum {number}
+ */
+lf.index.FAVOR = {
+  RHS: -1,  // favors right hand side, i.e. lhs < rhs
+  TIE: 0,  // no favorite, i.e. lhs == rhs
+  LHS: 1    // favors left hand side, i.e. lhs > rhs
+};
+
+
+/**
  * Java's String.hashCode method.
  *
  * for each character c in string
@@ -24075,6 +24085,7 @@ goog.provide('lf.index.Index');
 
 goog.forwardDeclare('lf.Order');
 goog.forwardDeclare('lf.Row');
+goog.forwardDeclare('lf.index.FAVOR');
 goog.forwardDeclare('lf.index.KeyRange');
 
 
@@ -24090,9 +24101,17 @@ lf.index.Comparator = function() {};
 /**
  * @param {lf.index.Index.Key|!Array<(string|number)>} lhs
  * @param {lf.index.Index.Key|!Array<(string|number)>} rhs
- * @return {number} -1: favor rhs, 0: equally favored, 1: favor lhs
+ * @return {!lf.index.FAVOR}
  */
 lf.index.Comparator.prototype.compare;
+
+
+/**
+ * @typedef {!function((lf.index.Index.Key|!Array<(string|number)>),
+ *                     (lf.index.Index.Key|!Array<(string|number)>)):
+ *                     !lf.index.FAVOR}
+ */
+lf.index.Comparator.FunctionType;
 
 
 
@@ -26057,11 +26076,17 @@ lf.index.AATree.prototype.toString = function() {
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
+ * @fileoverview Provides default comparators. The comparators in this file
+ * use the following logic for compare: whoever has a bigger array index wins.
+ * For example, DESC order for (3, 5), since 3 shall have a bigger array index
+ * when sorted descending, it wins the comparison.
  */
 goog.provide('lf.index.MultiKeyComparator');
 goog.provide('lf.index.SimpleComparator');
 
 goog.require('lf.Order');
+goog.require('lf.index');
 goog.require('lf.index.Comparator');
 
 
@@ -26086,7 +26111,9 @@ lf.index.SimpleComparator = function(order) {
  * @return {number} -1: favor rhs, 0: equal, 1: favor lhs
  */
 lf.index.SimpleComparator.compareAscending = function(lhs, rhs) {
-  return lhs > rhs ? 1 : (lhs < rhs ? -1 : 0);
+  return lhs > rhs ?
+      lf.index.FAVOR.LHS :
+      (lhs < rhs ? lf.index.FAVOR.RHS : lf.index.FAVOR.TIE);
 };
 
 
@@ -26096,7 +26123,9 @@ lf.index.SimpleComparator.compareAscending = function(lhs, rhs) {
  * @return {number} -1: favor rhs, 0: equal, 1: favor lhs
  */
 lf.index.SimpleComparator.compareDescending = function(lhs, rhs) {
-  return lhs > rhs ? -1 : (lhs < rhs ? 1 : 0);
+  return lhs > rhs ?
+      lf.index.FAVOR.RHS :
+      (lhs < rhs ? lf.index.FAVOR.LHS : lf.index.FAVOR.TIE);
 };
 
 

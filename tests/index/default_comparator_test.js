@@ -17,48 +17,51 @@
 goog.setTestOnly();
 goog.require('goog.testing.jsunit');
 goog.require('lf.Order');
+goog.require('lf.index');
 goog.require('lf.index.MultiKeyComparator');
 goog.require('lf.index.SimpleComparator');
 
+
+var favor = lf.index.FAVOR;
 
 function testSimpleComparator_ASC() {
   var comparator = new lf.index.SimpleComparator(lf.Order.ASC);
   var c = goog.bind(comparator.compare, comparator);
 
-  assertEquals(0, c(0, 0));
-  assertEquals(0, c('', ''));
-  assertEquals(0, c(888.88, 888.88));
-  assertEquals(0, c('ab', 'ab'));
+  assertEquals(favor.TIE, c(0, 0));
+  assertEquals(favor.TIE, c('', ''));
+  assertEquals(favor.TIE, c(888.88, 888.88));
+  assertEquals(favor.TIE, c('ab', 'ab'));
 
-  assertEquals(1, c(1, 0));
-  assertEquals(-1, c(0, 1));
-  assertEquals(1, c(888.88, 888.87));
-  assertEquals(-1, c(888.87, 888.88));
+  assertEquals(favor.LHS, c(1, 0));
+  assertEquals(favor.RHS, c(0, 1));
+  assertEquals(favor.LHS, c(888.88, 888.87));
+  assertEquals(favor.RHS, c(888.87, 888.88));
 
-  assertEquals(1, c('b', 'a'));
-  assertEquals(-1, c('a', 'b'));
-  assertEquals(1, c('bbb', 'bba'));
-  assertEquals(-1, c('bba', 'bbb'));
+  assertEquals(favor.LHS, c('b', 'a'));
+  assertEquals(favor.RHS, c('a', 'b'));
+  assertEquals(favor.LHS, c('bbb', 'bba'));
+  assertEquals(favor.RHS, c('bba', 'bbb'));
 }
 
 function testSimpleComparator_DESC() {
   var comparator = new lf.index.SimpleComparator(lf.Order.DESC);
   var c = goog.bind(comparator.compare, comparator);
 
-  assertEquals(0, c(0, 0));
-  assertEquals(0, c('', ''));
-  assertEquals(0, c(888.88, 888.88));
-  assertEquals(0, c('ab', 'ab'));
+  assertEquals(favor.TIE, c(0, 0));
+  assertEquals(favor.TIE, c('', ''));
+  assertEquals(favor.TIE, c(888.88, 888.88));
+  assertEquals(favor.TIE, c('ab', 'ab'));
 
-  assertEquals(-1, c(1, 0));
-  assertEquals(1, c(0, 1));
-  assertEquals(-1, c(888.88, 888.87));
-  assertEquals(1, c(888.87, 888.88));
+  assertEquals(favor.RHS, c(1, 0));
+  assertEquals(favor.LHS, c(0, 1));
+  assertEquals(favor.RHS, c(888.88, 888.87));
+  assertEquals(favor.LHS, c(888.87, 888.88));
 
-  assertEquals(-1, c('b', 'a'));
-  assertEquals(1, c('a', 'b'));
-  assertEquals(-1, c('bbb', 'bba'));
-  assertEquals(1, c('bba', 'bbb'));
+  assertEquals(favor.RHS, c('b', 'a'));
+  assertEquals(favor.LHS, c('a', 'b'));
+  assertEquals(favor.RHS, c('bbb', 'bba'));
+  assertEquals(favor.LHS, c('bba', 'bbb'));
 }
 
 function testMultiKeyComparator_DefaultOrder() {
@@ -66,23 +69,23 @@ function testMultiKeyComparator_DefaultOrder() {
   var comparator = new lf.index.MultiKeyComparator(orders);
   var c = goog.bind(comparator.compare, comparator);
 
-  assertEquals(0, c([0, 0], [0, 0]));
-  assertEquals(0, c(['', ''], ['', '']));
-  assertEquals(0, c([99.99, 99.99], [99.99, 99.99]));
-  assertEquals(0, c(['ab', 'ab'], ['ab', 'ab']));
-  assertEquals(0, c([77, 'ab'], [77, 'ab']));
+  assertEquals(favor.TIE, c([0, 0], [0, 0]));
+  assertEquals(favor.TIE, c(['', ''], ['', '']));
+  assertEquals(favor.TIE, c([99.99, 99.99], [99.99, 99.99]));
+  assertEquals(favor.TIE, c(['ab', 'ab'], ['ab', 'ab']));
+  assertEquals(favor.TIE, c([77, 'ab'], [77, 'ab']));
 
-  assertEquals(1, c([7, 6], [5, 4]));
-  assertEquals(1, c([7, 6], [7, 4]));
-  assertEquals(-1, c([5, 4], [7, 6]));
-  assertEquals(-1, c([5, 4], [5, 8]));
+  assertEquals(favor.LHS, c([7, 6], [5, 4]));
+  assertEquals(favor.LHS, c([7, 6], [7, 4]));
+  assertEquals(favor.RHS, c([5, 4], [7, 6]));
+  assertEquals(favor.RHS, c([5, 4], [5, 8]));
 
-  assertEquals(1, c([9, 'abc'], [8, 'zzz']));
-  assertEquals(1, c(['zzz', 8], ['abc', 12]));
-  assertEquals(1, c(['zzz', 2], ['zzz', 1]));
-  assertEquals(1, c([2, 'zzz'], [2, 'zza']));
-  assertEquals(-1, c(['zzz', 1], ['zzz', 2]));
-  assertEquals(-1, c([2, 'zza'], [2, 'zzz']));
+  assertEquals(favor.LHS, c([9, 'abc'], [8, 'zzz']));
+  assertEquals(favor.LHS, c(['zzz', 8], ['abc', 12]));
+  assertEquals(favor.LHS, c(['zzz', 2], ['zzz', 1]));
+  assertEquals(favor.LHS, c([2, 'zzz'], [2, 'zza']));
+  assertEquals(favor.RHS, c(['zzz', 1], ['zzz', 2]));
+  assertEquals(favor.RHS, c([2, 'zza'], [2, 'zzz']));
 }
 
 function testMultiKeyComparator_CustomOrder() {
@@ -90,21 +93,21 @@ function testMultiKeyComparator_CustomOrder() {
       new lf.index.MultiKeyComparator([lf.Order.DESC, lf.Order.ASC]);
   var c = goog.bind(comparator.compare, comparator);
 
-  assertEquals(0, c([0, 0], [0, 0]));
-  assertEquals(0, c(['', ''], ['', '']));
-  assertEquals(0, c([99.99, 99.99], [99.99, 99.99]));
-  assertEquals(0, c(['ab', 'ab'], ['ab', 'ab']));
-  assertEquals(0, c([77, 'ab'], [77, 'ab']));
+  assertEquals(favor.TIE, c([0, 0], [0, 0]));
+  assertEquals(favor.TIE, c(['', ''], ['', '']));
+  assertEquals(favor.TIE, c([99.99, 99.99], [99.99, 99.99]));
+  assertEquals(favor.TIE, c(['ab', 'ab'], ['ab', 'ab']));
+  assertEquals(favor.TIE, c([77, 'ab'], [77, 'ab']));
 
-  assertEquals(-1, c([7, 6], [5, 4]));
-  assertEquals(1, c([7, 6], [7, 4]));
-  assertEquals(1, c([5, 4], [7, 6]));
-  assertEquals(-1, c([5, 4], [5, 8]));
+  assertEquals(favor.RHS, c([7, 6], [5, 4]));
+  assertEquals(favor.LHS, c([7, 6], [7, 4]));
+  assertEquals(favor.LHS, c([5, 4], [7, 6]));
+  assertEquals(favor.RHS, c([5, 4], [5, 8]));
 
-  assertEquals(-1, c([9, 'abc'], [8, 'zzz']));
-  assertEquals(-1, c(['zzz', 8], ['abc', 12]));
-  assertEquals(1, c(['zzz', 2], ['zzz', 1]));
-  assertEquals(1, c([2, 'zzz'], [2, 'zza']));
-  assertEquals(-1, c(['zzz', 1], ['zzz', 2]));
-  assertEquals(-1, c([2, 'zza'], [2, 'zzz']));
+  assertEquals(favor.RHS, c([9, 'abc'], [8, 'zzz']));
+  assertEquals(favor.RHS, c(['zzz', 8], ['abc', 12]));
+  assertEquals(favor.LHS, c(['zzz', 2], ['zzz', 1]));
+  assertEquals(favor.LHS, c([2, 'zzz'], [2, 'zza']));
+  assertEquals(favor.RHS, c(['zzz', 1], ['zzz', 2]));
+  assertEquals(favor.RHS, c([2, 'zza'], [2, 'zzz']));
 }
