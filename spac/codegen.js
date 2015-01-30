@@ -703,30 +703,23 @@ CodeGenerator.prototype.genKeyOfIndex_ = function(table, prefix) {
  */
 CodeGenerator.prototype.genDeserializeRow_ = function(table, target, record) {
   var source = record + '[\'value\']';
+  var columns = table.column;
+
   var body = [
     '  var data = ' + source + ';',
-    '  var payload = new ' + target + 'Type();'
   ];
-  var columns = table.column;
-  var hasConversion = false;
 
   for (var i = 0; i < columns.length; ++i) {
     var col = columns[i];
-    var prefix = '  payload.' + col.name + ' = ';
+    var prefix = '  data.' + col.name + ' = ';
     switch (col.type) {
       case 'arraybuffer':
         if (!col.nullable) {
-          // Need to cast because hexToBin returns ?ArrayBuffer, but in the case
-          // of a non-nullable arraybuffer field, the return value is always
-          // non-null.
-          body.push(prefix +
-              '/** @type {!ArrayBuffer} */ (\n' +
+          body.push(prefix + '/** @type {!ArrayBuffer} */ (\n' +
               '      lf.Row.hexToBin(data.' + col.name + '));');
         } else {
-          body.push(
-              prefix + 'lf.Row.hexToBin(data.' + col.name + ');');
+          body.push(prefix + 'lf.Row.hexToBin(data.' + col.name + ');');
         }
-        hasConversion = true;
         break;
 
       case 'datetime':
@@ -737,21 +730,11 @@ CodeGenerator.prototype.genDeserializeRow_ = function(table, target, record) {
         } else {
           body.push(prefix + 'new Date(' + temp + ');');
         }
-        hasConversion = true;
-        break;
-
-      default:
-        body.push(prefix + 'data.' + col.name + ';');
         break;
     }
   }
 
-  var commonNew = '  return new ' + target + '(' + record + '[\'id\'], ';
-  if (hasConversion) {
-    body.push(commonNew + 'payload);');
-  } else {
-    body = [commonNew + source + ');'];
-  }
+  body.push('  return new ' + target + '(' + record + '[\'id\'], data);');
   return body.join('\n');
 };
 

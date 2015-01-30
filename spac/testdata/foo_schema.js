@@ -108,7 +108,8 @@ foo.db.schema.Foo.prototype.createRow = function(opt_value) {
 
 /** @override */
 foo.db.schema.Foo.prototype.deserializeRow = function(dbRecord) {
-  return new foo.db.row.Foo(dbRecord['id'], dbRecord['value']);
+  var data = dbRecord['value'];
+  return new foo.db.row.Foo(dbRecord['id'], data);
 };
 
 
