@@ -4,7 +4,7 @@
 <head>
   <script src="lib/angular.min.js"></script>
   <!-- Lovefield -->
-  <script src="lib/lovefield.js"></script>
+  <script src="lib/lovefield.min.js"></script>
   <script src="lib/olympia_db_gen.js"></script>
   <link href="lib//bootstrap.min.css" rel="stylesheet">
   <link href="lib/demo.css" rel="stylesheet">
@@ -82,7 +82,8 @@
     <table class="table table-striped table-bordered table-hover table-condensed"
            data-pagination="true" data-search="true">
       <tr>
-        <th ng-repeat="columnName in resultsController.getColumnNames()">{{columnName}}</th>
+        <th ng-repeat="columnName in
+          resultsController.getColumnNames() | filter:'!$$hashKey'">{{columnName}}</th>
       </tr>
       <tr ng-repeat="x in resultsController.getResults()">
         <td ng-repeat="(key, data) in x">{{data}}</td>

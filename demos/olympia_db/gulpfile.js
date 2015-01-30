@@ -47,8 +47,8 @@ gulp.task('generate_db', function(done) {
 
 gulp.task('copy_lovefield', function() {
   return fs.
-      createReadStream('node_modules/lovefield/dist/lovefield.js').
-      pipe(fs.createWriteStream('lib/lovefield.js'));
+      createReadStream('node_modules/lovefield/dist/lovefield.min.js').
+      pipe(fs.createWriteStream('lib/lovefield.min.js'));
 });
 
 

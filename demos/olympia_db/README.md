@@ -6,7 +6,5 @@ Lovefield demo using a database of Olympic medals.
 * Step 4: Pull dependencies in bower.json, ```bower install```
 * Step 5: Copy all dependencies to output folder, ```gulp default```
 * Step 6: Start a local webserver, ```gulp webserver```
-* Step 7: Naviate to http://localhost:8000/demo-angular.html, and start making
-queries.
-
-
+* Step 7: Navigate to [http://localhost:8000/demo-angular.html](http://localhost:8000/demo-angular.html),
+          and start making queries.

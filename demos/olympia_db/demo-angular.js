@@ -32,6 +32,7 @@ app.service('DbService', function($http) {
   this.init_ = function() {
     return olympia.db.getInstance().then((function(database) {
       db = database;
+      window.db = database;
       return this.checkForExistingData_();
     }).bind(this)).then((function(dataExist) {
       return dataExist ? Promise.resolve() : this.insertData_();
@@ -113,6 +114,7 @@ app.service('ResultsService', function() {
           function(columnName) {
             this.columnNames_.push(columnName);
           }, this);
+      this.columnNames_.sort();
     }
 
     this.results_ = results;
@@ -215,6 +217,22 @@ app.controller(
            resultsService.setResults(results);
          });
        };
+
+
+       // Used to execute a query from the dev tools and have the UI update too.
+       window.execQuery = (function(query) {
+         this.clear();
+         $scope.sqlQuery = query.toSql();
+         query.exec().then(function(results) {
+           resultsService.setResults(results);
+           $scope.$apply();
+         });
+       }).bind(this);
+
+       window.displayResults = (function(results) {
+         resultsService.setResults(results);
+         $scope.$apply();
+       }).bind(this);
 
 
        /** @return {?lf.Predicate} */
