@@ -580,13 +580,16 @@ lf.testing.perf.SelectBenchmark.prototype.verifyProjectAggregateIndexed =
     return goog.Promise.resolve(false);
   }
 
+  var avgSalaryColumn = lf.fn.avg(this.e_.salary);
+  var stddevSalaryColumn = lf.fn.stddev(this.e_.salary);
+
   var validated =
       goog.math.nearlyEquals(
-          results[0]['avg(salary)'],
+          results[0][avgSalaryColumn.getName()],
           this.dataGenerator_.employeeGroundTruth.avgSalary,
           lf.testing.perf.SelectBenchmark.EPSILON_) &&
       goog.math.nearlyEquals(
-          results[0]['stddev(salary)'],
+          results[0][stddevSalaryColumn.getName()],
           this.dataGenerator_.employeeGroundTruth.stddevSalary,
           lf.testing.perf.SelectBenchmark.EPSILON_);
 
@@ -614,10 +617,13 @@ lf.testing.perf.SelectBenchmark.prototype.verifyProjectAggregateNonIndexed =
     return goog.Promise.resolve(false);
   }
 
+  var minHireDateColumn = lf.fn.min(this.e_.hireDate);
+  var maxHireDateColumn = lf.fn.max(this.e_.hireDate);
+
   var validated =
-      results[0]['min(hireDate)'] ==
+      results[0][minHireDateColumn.getName()] ==
           this.dataGenerator_.employeeGroundTruth.minHireDate &&
-      results[0]['max(hireDate)'] ==
+      results[0][maxHireDateColumn.getName()] ==
           this.dataGenerator_.employeeGroundTruth.maxHireDate;
 
   return goog.Promise.resolve(validated);
