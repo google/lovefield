@@ -21,6 +21,7 @@ goog.require('goog.testing.AsyncTestCase');
 goog.require('goog.testing.PropertyReplacer');
 goog.require('goog.testing.jsunit');
 goog.require('lf.index.BTree');
+goog.require('lf.index.ComparatorFactory');
 goog.require('lf.index.MemoryIndexStore');
 goog.require('lf.index.RowId');
 goog.require('lf.testing.MockSchema');
@@ -146,8 +147,10 @@ function testSet() {
 
   indexStore.init(schema).then(function() {
     var indexBefore = indexStore.get(indexSchema.getNormalizedName());
+    var comparator = lf.index.ComparatorFactory.create(indexSchema);
     var newIndex = new lf.index.BTree(
         indexSchema.getNormalizedName(),
+        comparator,
         indexSchema.isUnique);
     indexStore.set(newIndex);
 

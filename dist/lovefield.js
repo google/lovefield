@@ -24253,6 +24253,7 @@ goog.require('lf.index.Index');
  * Wrapper of the BTree.
  * @implements {lf.index.Index}
  * @param {string} name
+ * @param {!lf.index.Comparator} comparator
  * @param {boolean} uniqueKeyOnly The tree does not allow duplicate keys.
  * @param {!Array.<!lf.index.BTreeNode_.Payload>=} opt_data Init sorted
  *     key-value pairs. This is used to quickly construct the tree from already
@@ -24264,9 +24265,12 @@ goog.require('lf.index.Index');
  * @struct
  * @final
  */
-lf.index.BTree = function(name, uniqueKeyOnly, opt_data) {
+lf.index.BTree = function(name, comparator, uniqueKeyOnly, opt_data) {
   /** @private {string} */
   this.name_ = name;
+
+  /** @private {!lf.index.Comparator} */
+  this.comparator_ = comparator;
 
   /** @private {boolean} */
   this.uniqueKeyOnly_ = uniqueKeyOnly;
@@ -24362,6 +24366,38 @@ lf.index.BTree.prototype.isUniqueKeyOnly = function() {
 };
 
 
+/** @return {!lf.index.Comparator} */
+lf.index.BTree.prototype.getComparator = function() {
+  return this.comparator_;
+};
+
+
+/**
+ * @param {?lf.index.Index.Key|!Array<(string|number)>} lhs
+ * @param {lf.index.Index.Key|!Array<(string|number)>} rhs
+ * @return {boolean}
+ */
+lf.index.BTree.prototype.lt = function(lhs, rhs) {
+  if (goog.isDefAndNotNull(lhs)) {
+    return this.comparator_.compare(lhs, rhs) == lf.index.FAVOR.RHS;
+  }
+  return false;
+};
+
+
+/**
+ * @param {?lf.index.Index.Key|!Array<(string|number)>} lhs
+ * @param {!lf.index.Index.Key|!Array<(string|number)>} rhs
+ * @return {boolean}
+ */
+lf.index.BTree.prototype.eq = function(lhs, rhs) {
+  if (goog.isDefAndNotNull(lhs)) {
+    return this.comparator_.compare(lhs, rhs) == lf.index.FAVOR.TIE;
+  }
+  return false;
+};
+
+
 /**
  * Converts the tree leaves into serializable rows that can be written into
  * persistent stores. Each leaf node is one row.
@@ -24375,13 +24411,14 @@ lf.index.BTree.prototype.serialize = function() {
 
 /**
  * Creates tree from serialized leaves.
+ * @param {!lf.index.Comparator} comparator
  * @param {!Array.<!lf.Row>} rows
  * @param {string} name
  * @param {boolean} uniqueKeyOnly
  * @return {!lf.index.BTree}
  */
-lf.index.BTree.deserialize = function(rows, name, uniqueKeyOnly) {
-  var tree = new lf.index.BTree(name, uniqueKeyOnly);
+lf.index.BTree.deserialize = function(comparator, rows, name, uniqueKeyOnly) {
+  var tree = new lf.index.BTree(name, comparator, uniqueKeyOnly);
   var newRoot = lf.index.BTreeNode_.deserialize(rows, tree);
   tree.root_ = newRoot;
   return tree;
@@ -24726,12 +24763,13 @@ lf.index.BTreeNode_.prototype.get = function(key) {
   var pos = this.searchKey_(key);
   if (this.isLeaf_()) {
     var results = [];
-    if (this.keys_[pos] == key) {
+    if (this.tree_.eq(this.keys_[pos], key)) {
+      // Use concat here because this.values_[pos] can be number or array.
       results = results.concat(this.values_[pos]);
     }
     return results;
   } else {
-    pos = (this.keys_[pos] == key) ? pos + 1 : pos;
+    pos = (this.tree_.eq(this.keys_[pos], key)) ? pos + 1 : pos;
     return this.children_[pos].get(key);
   }
 };
@@ -24743,7 +24781,7 @@ lf.index.BTreeNode_.prototype.get = function(key) {
  */
 lf.index.BTreeNode_.prototype.containsKey = function(key) {
   var pos = this.searchKey_(key);
-  if (this.keys_[pos] == key) {
+  if (this.tree_.eq(this.keys_[pos], key)) {
     return true;
   }
 
@@ -24820,17 +24858,17 @@ lf.index.BTreeNode_.prototype.fix_ = function() {
 lf.index.BTreeNode_.prototype.delete_ = function(key, parentPos, opt_value) {
   var pos = this.searchKey_(key);
   if (!this.isLeaf_()) {
-    var index = (this.keys_[pos] == key) ? pos + 1 : pos;
+    var index = this.tree_.eq(this.keys_[pos], key) ? pos + 1 : pos;
     if (this.children_[index].delete_(key, index, opt_value)) {
       this.fix_();
     } else {
       return false;
     }
-  } else if (this.keys_[pos] != key) {
+  } else if (!this.tree_.eq(this.keys_[pos], key)) {
     return false;
   }
 
-  if (this.keys_.length > pos && this.keys_[pos] == key) {
+  if (this.keys_.length > pos && this.tree_.eq(this.keys_[pos], key)) {
     if (goog.isDef(opt_value) &&
         !this.tree_.isUniqueKeyOnly() &&
         this.isLeaf_()) {
@@ -24950,7 +24988,7 @@ lf.index.BTreeNode_.prototype.merge_ = function(parentPos) {
 lf.index.BTreeNode_.prototype.insert = function(key, value, opt_replace) {
   var pos = this.searchKey_(key);
   if (this.isLeaf_()) {
-    if (this.keys_[pos] == key) {
+    if (this.tree_.eq(this.keys_[pos], key)) {
       if (opt_replace) {
         this.values_[pos] = this.tree_.isUniqueKeyOnly() ? value : [value];
         return this;
@@ -24973,7 +25011,7 @@ lf.index.BTreeNode_.prototype.insert = function(key, value, opt_replace) {
     return (this.keys_.length == lf.index.BTreeNode_.MAX_COUNT_) ?
         this.splitLeaf_() : this;
   } else {
-    pos = (this.keys_[pos] == key) ? pos + 1 : pos;
+    pos = this.tree_.eq(this.keys_[pos], key) ? pos + 1 : pos;
     var node = this.children_[pos].insert(key, value, opt_replace);
     if (!node.isLeaf_() && node.keys_.length == 1) {
       // Merge the internal to self.
@@ -25058,8 +25096,7 @@ lf.index.BTreeNode_.prototype.searchKey_ = function(key) {
   var right = this.keys_.length;
   while (left < right) {
     var middle = (left + right) >> 1;
-    var median = this.keys_[middle];
-    if (median < key) {
+    if (this.tree_.lt(this.keys_[middle], key)) {
       left = middle + 1;
     } else {
       right = middle;
@@ -25077,7 +25114,7 @@ lf.index.BTreeNode_.prototype.searchKey_ = function(key) {
 lf.index.BTreeNode_.prototype.getContainingLeaf = function(key) {
   if (!this.isLeaf_()) {
     var pos = this.searchKey_(key);
-    if (this.keys_[pos] == key) {
+    if (this.tree_.eq(this.keys_[pos], key)) {
       pos++;
     }
     return this.children_[pos].getContainingLeaf(key);
@@ -25094,21 +25131,28 @@ lf.index.BTreeNode_.prototype.getContainingLeaf = function(key) {
 lf.index.BTreeNode_.prototype.getRange = function(opt_keyRange) {
   var start = 0;
   var end = this.keys_.length - 1;
+
   if (goog.isDefAndNotNull(opt_keyRange)) {
+    var comparator = this.tree_.getComparator();
+    var c = goog.bind(comparator.compare, comparator);
+
     if (!goog.isNull(opt_keyRange.to)) {
-      if (this.keys_[0] > opt_keyRange.to) {
+      if (c(this.keys_[0], opt_keyRange.to) == lf.index.FAVOR.LHS) {
         return [];
-      } else if (this.keys_[end] >= opt_keyRange.to) {
+      } else if (c(this.keys_[end], opt_keyRange.to) != lf.index.FAVOR.RHS) {
         end = this.searchKey_(opt_keyRange.to);
-        if ((opt_keyRange.excludeUpper && this.keys_[end] == opt_keyRange.to) ||
-            this.keys_[end] > opt_keyRange.to) {
+        if ((opt_keyRange.excludeUpper &&
+            c(this.keys_[end], opt_keyRange.to) == lf.index.FAVOR.TIE) ||
+            c(this.keys_[end], opt_keyRange.to) == lf.index.FAVOR.LHS) {
           end--;
         }
       }
     }
-    if (!goog.isNull(opt_keyRange.from) && this.keys_[0] <= opt_keyRange.from) {
+    if (!goog.isNull(opt_keyRange.from) &&
+        c(this.keys_[0], opt_keyRange.from) != lf.index.FAVOR.LHS) {
       start = this.searchKey_(opt_keyRange.from);
-      if (opt_keyRange.excludeLower && this.keys_[start] == opt_keyRange.from) {
+      if (opt_keyRange.excludeLower &&
+          c(this.keys_[start], opt_keyRange.from) == lf.index.FAVOR.TIE) {
         start++;
       }
     }
@@ -25188,12 +25232,24 @@ lf.index.BTreeNode_.deserialize = function(rows, tree) {
  * For example, DESC order for (3, 5), since 3 shall have a bigger array index
  * when sorted descending, it wins the comparison.
  */
+goog.provide('lf.index.ComparatorFactory');
 goog.provide('lf.index.MultiKeyComparator');
 goog.provide('lf.index.SimpleComparator');
 
 goog.require('lf.Order');
 goog.require('lf.index');
 goog.require('lf.index.Comparator');
+goog.forwardDeclare('lf.schema.Index');
+
+
+/**
+ * @param {!lf.schema.Index} indexSchema
+ * @return {!lf.index.Comparator}
+ */
+lf.index.ComparatorFactory.create = function(indexSchema) {
+  // TODO(arthurhsu): implement the real factory.
+  return new lf.index.SimpleComparator(lf.Order.ASC);
+};
 
 
 
@@ -25636,6 +25692,7 @@ goog.require('lf.TransactionType');
 goog.require('lf.backstore.TableType');
 goog.require('lf.cache.Journal');
 goog.require('lf.index.BTree');
+goog.require('lf.index.ComparatorFactory');
 goog.require('lf.index.IndexMetadata');
 goog.require('lf.index.RowId');
 goog.require('lf.service');
@@ -25775,6 +25832,7 @@ lf.cache.Prefetcher.prototype.reconstructPersistentIndex_ = function(
   var indexTable = tx.getTable(
       indexSchema.getNormalizedName(), lf.Row.deserialize,
       lf.backstore.TableType.INDEX);
+  var comparator = lf.index.ComparatorFactory.create(indexSchema);
   return indexTable.get([]).then(goog.bind(
       function(serializedRows) {
         goog.asserts.assert(
@@ -25784,6 +25842,7 @@ lf.cache.Prefetcher.prototype.reconstructPersistentIndex_ = function(
         // No need to replace the index if there is no index contents.
         if (serializedRows.length > 1) {
           var btreeIndex = lf.index.BTree.deserialize(
+              comparator,
               serializedRows.slice(1),
               indexSchema.getNormalizedName(),
               indexSchema.isUnique);
@@ -26433,6 +26492,7 @@ goog.provide('lf.index.MemoryIndexStore');
 goog.require('goog.Promise');
 goog.require('goog.structs.Map');
 goog.require('lf.index.BTree');
+goog.require('lf.index.ComparatorFactory');
 goog.require('lf.index.IndexStore');
 goog.require('lf.index.RowId');
 
@@ -26482,8 +26542,10 @@ lf.index.MemoryIndexStore.prototype.init = function(schema) {
  * @private
  */
 lf.index.MemoryIndexStore.createIndex_ = function(indexSchema) {
+  var comparator = lf.index.ComparatorFactory.create(indexSchema);
   return new lf.index.BTree(
       indexSchema.getNormalizedName(),
+      comparator,
       indexSchema.isUnique);
 };
 

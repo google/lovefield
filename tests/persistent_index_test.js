@@ -24,6 +24,7 @@ goog.require('lf.Row');
 goog.require('lf.TransactionType');
 goog.require('lf.cache.Journal');
 goog.require('lf.index.BTree');
+goog.require('lf.index.ComparatorFactory');
 goog.require('lf.index.IndexMetadata');
 goog.require('lf.index.RowId');
 goog.require('lf.service');
@@ -311,7 +312,9 @@ function assertIndexContents(indexSchema, serializedRows, dataRows) {
       indexMetadataRow.payload()['type']);
 
   // Reconstructing the index and ensuring it contains all expected keys.
+  var comparator = lf.index.ComparatorFactory.create(indexSchema);
   var btreeIndex = lf.index.BTree.deserialize(
+      comparator,
       serializedRows.slice(1),
       indexSchema.getNormalizedName(),
       indexSchema.isUnique);

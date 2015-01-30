@@ -20,9 +20,11 @@ goog.require('goog.string');
 goog.require('goog.structs.Set');
 goog.require('goog.testing.PropertyReplacer');
 goog.require('goog.testing.jsunit');
+goog.require('lf.Order');
 goog.require('lf.Row');
 goog.require('lf.index.BTree');
 goog.require('lf.index.KeyRange');
+goog.require('lf.index.SimpleComparator');
 goog.require('lf.testing.index.TestSingleRowNumericalKey');
 goog.require('lf.testing.index.TestSingleRowStringKey');
 
@@ -30,7 +32,14 @@ goog.require('lf.testing.index.TestSingleRowStringKey');
 /** @type {!goog.testing.PropertyReplacer} */
 var stub;
 
+
+/** @type {!lf.index.SimpleComparator} */
+var c;
+
+
 function setUp() {
+  c = new lf.index.SimpleComparator(lf.Order.ASC);
+
   // Replace the max count of B-Tree to 5 so that we verify the tree
   // construction algorithm.
   stub = new goog.testing.PropertyReplacer();
@@ -71,7 +80,7 @@ var SEQUENCE = [
  */
 function insertToTree(index, opt_duplicate) {
   var unique = !opt_duplicate;
-  var tree = new lf.index.BTree('test', unique);
+  var tree = new lf.index.BTree('test', c, unique);
   var i = 0;
   while (i < index) {
     tree.add(SEQUENCE[i], SEQUENCE[i]);
@@ -89,7 +98,7 @@ function insertToTree(index, opt_duplicate) {
  * @return {!lf.index.BTree}
  */
 function deserializeTree(rows) {
-  return lf.index.BTree.deserialize(rows, 'test', true);
+  return lf.index.BTree.deserialize(c, rows, 'test', true);
 }
 
 
@@ -308,7 +317,7 @@ function testSplit_Case4() {
  * -995|97  98|99  100|101  102|103|104  363|364|365  366|367|368 369|370|371
  */
 function testSplit_Case5() {
-  var tree = new lf.index.BTree('test', true);
+  var tree = new lf.index.BTree('test', c, true);
   var keys = [
     -995, 371, 370, 369,
     368,  // New level created here
@@ -364,7 +373,7 @@ function testConstructFromData() {
   var data = key.map(function(i) {
     return {key: i, value: i};
   });
-  var tree = new lf.index.BTree('test', true, data);
+  var tree = new lf.index.BTree('test', c, true, data);
   var expected =
       '6[21]\n' +
       '_{7|8}_\n' +
@@ -840,20 +849,20 @@ function testDelete_None() {
 
 function testSingleRow_NumericalKey() {
   var test = new lf.testing.index.TestSingleRowNumericalKey(function() {
-    return new lf.index.BTree('test', true);
+    return new lf.index.BTree('test', c, true);
   });
   test.run();
 }
 
 function testSingleRow_StringKey() {
   var test = new lf.testing.index.TestSingleRowStringKey(function() {
-    return new lf.index.BTree('test', true);
+    return new lf.index.BTree('test', c, true);
   });
   test.run();
 }
 
 function testGetRange_Numeric() {
-  var tree = new lf.index.BTree('test', true);
+  var tree = new lf.index.BTree('test', c, true);
   for (var i = -10; i <= 10; ++i) {
     tree.set(i, i);
   }
@@ -917,7 +926,7 @@ function testRandomNumbers() {
     return a - b;
   });
 
-  var tree = new lf.index.BTree('test', true);
+  var tree = new lf.index.BTree('test', c, true);
   for (var i = 0; i < ROW_COUNT; ++i) {
     tree.add(keys[i], keys[i]);
   }
@@ -1051,7 +1060,7 @@ function manualTestBenchmark() {
 
   /** @param {!Array.<!lf.Row>} rows */
   var runTest = function(rows) {
-    var tree = new lf.index.BTree('test', true);
+    var tree = new lf.index.BTree('test', c, true);
     var start = goog.global.performance.now();
     for (var i = 0; i < ROW_COUNT; i++) {
       tree.add(values[i], i);
@@ -1067,7 +1076,7 @@ function manualTestBenchmark() {
     });
 
     start = goog.global.performance.now();
-    new lf.index.BTree('test', true, sortedData);
+    new lf.index.BTree('test', c, true, sortedData);
     end = goog.global.performance.now();
     log('btree, sorted construct:', end - start);
   };
