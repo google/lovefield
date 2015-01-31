@@ -88,7 +88,6 @@ function testPrefetcher() {
   }, fail).then(function() {
     assertEquals(rows.length, env.cache.getCount());
     assertEquals(rows[1], env.cache.get([pkIndex.get(1001)[0]])[0]);
-    assertEquals(rows[1], env.cache.get([indices[3].get('1001_name1')[0]])[0]);
 
     // Checking that indices have the right size after initialization.
     assertEquals(rows.length, rowIdIndex.getRange().length);

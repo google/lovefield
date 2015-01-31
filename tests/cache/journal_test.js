@@ -632,7 +632,6 @@ function testIndexUpdate() {
 
   var pkId = env.indexStore.get(indices[0].getNormalizedName());
   var idxName = env.indexStore.get(indices[1].getNormalizedName());
-  var idxBoth = env.indexStore.get(indices[2].getNormalizedName());
   var rowIdIndex = env.indexStore.get(table.getRowIdIndexName());
 
   assertFalse(rowIdIndex.containsKey(1));
@@ -644,10 +643,6 @@ function testIndexUpdate() {
   assertFalse(pkId.containsKey('4'));
   assertFalse(idxName.containsKey('1'));
   assertFalse(idxName.containsKey('2'));
-  assertFalse(idxBoth.containsKey('1_1'));
-  assertFalse(idxBoth.containsKey('2_2'));
-  assertFalse(idxBoth.containsKey('3_2'));
-  assertFalse(idxBoth.containsKey('4_4'));
 
   journal.insert(table, [row1, row2, row3]);
   assertArrayEquals([row1, row2, row3], journal.getTableRows(table));
@@ -678,12 +673,6 @@ function testIndexUpdate() {
   assertArrayEquals([], idxName.get('1'));
   assertArrayEquals([3], idxName.get('2'));
   assertArrayEquals([1], idxName.get('4'));
-  assertFalse(idxBoth.containsKey('1_1'));
-  assertFalse(idxBoth.containsKey('2_2'));
-  assertTrue(idxBoth.containsKey('3_2'));
-  assertTrue(idxBoth.containsKey('4_4'));
-  assertArrayEquals([3], idxBoth.get('3_2'));
-  assertArrayEquals([1], idxBoth.get('4_4'));
 }
 
 

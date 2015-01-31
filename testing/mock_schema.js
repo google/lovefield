@@ -136,8 +136,6 @@ lf.testing.MockSchema.Row.prototype.keyOfIndex = function(indexName) {
     return this.payload()['id'];
   } else if (goog.string.endsWith(indexName, 'idxName')) {
     return this.payload()['name'];
-  } else if (goog.string.endsWith(indexName, 'idxBoth')) {
-    return this.payload()['id'] + '_' + this.payload()['name'];
   } else if (goog.string.endsWith(indexName, 'uq_email')) {
     return this.payload()['email'];
   }
@@ -165,12 +163,6 @@ var Table_ = function(tableName) {
     new lf.schema.Index(tableName, 'pkId', true, [{'name': 'id'}]),
     new lf.schema.Index(tableName, 'idxName', false, [{'name': 'name'}])
   ];
-
-  if (tableName == 'tableD') {
-    indices.push(
-        new lf.schema.Index(tableName, 'idxBoth', true,
-            [{'name': 'id'}, {'name': 'name'}]));
-  }
 
   Table_.base(this, 'constructor',
       tableName, [this.id, this.name], indices, false);
