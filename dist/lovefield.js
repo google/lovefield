@@ -32429,6 +32429,7 @@ lf.schema.Table.prototype.as = function(name) {
  * @param {UserType=} opt_value
  * @return {!lf.Row.<UserType, StoredType>}
  * @throws {lf.Exception}
+ * @export
  */
 lf.schema.Table.prototype.createRow = goog.abstractMethod;
 
@@ -32436,6 +32437,7 @@ lf.schema.Table.prototype.createRow = goog.abstractMethod;
 /**
  * @param {{id: number, value: *}} dbRecord
  * @return {!lf.Row.<UserType, StoredType>}
+ * @export
  */
 lf.schema.Table.prototype.deserializeRow = goog.abstractMethod;
 
@@ -32452,7 +32454,7 @@ lf.schema.Table.prototype.getColumns = function() {
 };
 
 
-/** @return {!lf.schema.Constraint} */
+/** @export @return {!lf.schema.Constraint} */
 lf.schema.Table.prototype.getConstraint = goog.abstractMethod;
 
 
@@ -37429,6 +37431,7 @@ lf.schema.TableBuilder.prototype.checkName_ = function(name) {
  * @param {string} name
  * @param {!lf.Type} type
  * @return {!lf.schema.TableBuilder}
+ * @export
  */
 lf.schema.TableBuilder.prototype.addColumn = function(name, type) {
   this.checkName_(name);
@@ -37441,6 +37444,7 @@ lf.schema.TableBuilder.prototype.addColumn = function(name, type) {
  * @param {(!Array<string>|!Array<!lf.schema.IndexedColumn>)} columns
  * @param {boolean=} opt_autoInc
  * @return {!lf.schema.TableBuilder}
+ * @export
  */
 lf.schema.TableBuilder.prototype.addPrimaryKey = function(
     columns, opt_autoInc) {
@@ -37462,6 +37466,7 @@ lf.schema.TableBuilder.prototype.addPrimaryKey = function(
  * @param {string} remoteColumn
  * @param {boolean=} opt_cascade
  * @return {!lf.schema.TableBuilder}
+ * @export
  */
 lf.schema.TableBuilder.prototype.addForeignKey = function(
     name, localColumn, remoteTable, remoteColumn, opt_cascade) {
@@ -37474,6 +37479,7 @@ lf.schema.TableBuilder.prototype.addForeignKey = function(
  * @param {string} name
  * @param {!Array<string>} columns
  * @return {!lf.schema.TableBuilder}
+ * @export
  */
 lf.schema.TableBuilder.prototype.addUnique = function(name, columns) {
   this.checkName_(name);
@@ -37487,6 +37493,7 @@ lf.schema.TableBuilder.prototype.addUnique = function(name, columns) {
 /**
  * @param {!Array<string>} columns
  * @return {!lf.schema.TableBuilder}
+ * @export
  */
 lf.schema.TableBuilder.prototype.addNullable = function(columns) {
   var cols = this.normalizeColumns_(columns, false);
@@ -37505,6 +37512,7 @@ lf.schema.TableBuilder.prototype.addNullable = function(columns) {
  *     are array of strings.
  * @param {boolean=} opt_unique Whether the index is unique, default is false.
  * @return {!lf.schema.TableBuilder}
+ * @export
  */
 lf.schema.TableBuilder.prototype.addIndex = function(
     name, columns, opt_order, opt_unique) {
@@ -37518,13 +37526,13 @@ lf.schema.TableBuilder.prototype.addIndex = function(
 };
 
 
-/** @param {boolean} value */
+/** @export @param {boolean} value */
 lf.schema.TableBuilder.prototype.persistentIndex = function(value) {
   this.persistentIndex_ = value;
 };
 
 
-/** @return {!lf.schema.Table} */
+/** @export @return {!lf.schema.Table} */
 lf.schema.TableBuilder.prototype.getSchema = function() {
   var tableClass = this.generateTableClass_();
   return new tableClass();
@@ -37809,7 +37817,7 @@ lf.schema.Builder.prototype.finalize_ = function() {
 };
 
 
-/** @return {!lf.schema.Database} */
+/** @export @return {!lf.schema.Database} */
 lf.schema.Builder.prototype.getSchema = function() {
   if (!this.finalized_) {
     this.finalize_();
@@ -37818,7 +37826,7 @@ lf.schema.Builder.prototype.getSchema = function() {
 };
 
 
-/** @return {!lf.Global} */
+/** @export @return {!lf.Global} */
 lf.schema.Builder.prototype.getGlobal = function() {
   var namespacedGlobalId =
       new lf.service.ServiceId('ns_' + this.schema_.name());
@@ -37840,6 +37848,7 @@ lf.schema.Builder.prototype.getGlobal = function() {
  * @param {!function(!lf.raw.BackStore):!IThenable=} opt_onUpgrade
  * @param {boolean=} opt_volatile Default to false
  * @return {!IThenable.<!lf.proc.Database>}
+ * @export
  */
 lf.schema.Builder.prototype.getInstance = function(
     opt_onUpgrade, opt_volatile) {
@@ -37859,6 +37868,7 @@ lf.schema.Builder.prototype.getInstance = function(
 /**
  * @param {string} tableName
  * @return {!lf.schema.TableBuilder}
+ * @export
  */
 lf.schema.Builder.prototype.createTable = function(tableName) {
   if (this.tableBuilders_.containsKey(tableName) || this.finalized_) {
