@@ -112,3 +112,26 @@ function testComplement_OnlyOneValue() {
   assertEquals('[unbound, 20)', complementKeyRanges[0].toString());
   assertEquals('(20, unbound]', complementKeyRanges[1].toString());
 }
+
+
+function testReverse() {
+  var keyRange = lf.index.KeyRange.only(20);
+  assertEquals('[20, 20]' , keyRange.toString());
+  assertEquals('[20, 20]', keyRange.reverse().toString());
+
+  keyRange = lf.index.KeyRange.upperBound(20);
+  assertEquals('[unbound, 20]' , keyRange.toString());
+  assertEquals('[20, unbound]' , keyRange.reverse().toString());
+
+  keyRange = lf.index.KeyRange.lowerBound(20);
+  assertEquals('[20, unbound]' , keyRange.toString());
+  assertEquals('[unbound, 20]' , keyRange.reverse().toString());
+
+  keyRange = lf.index.KeyRange.all();
+  assertEquals('[unbound, unbound]' , keyRange.toString());
+  assertEquals('[unbound, unbound]' , keyRange.reverse().toString());
+
+  keyRange = new lf.index.KeyRange(20, 50, false, true);
+  assertEquals('[20, 50)' , keyRange.toString());
+  assertEquals('(50, 20]' , keyRange.reverse().toString());
+}

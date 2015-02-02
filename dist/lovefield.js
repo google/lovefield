@@ -24115,6 +24115,20 @@ lf.index.Comparator.prototype.isInRange;
 
 
 /**
+ * KeyRange objects by-default are expressing a key range in ascending order,
+ * meaning that keyRange.from is less or equal to keyRange.to. Given that a
+ * comparator does not simply compare values, but "favors" left or right operand
+ * based on a preferred ordering, key ranges need to be reversed in the
+ * case of a comparator that sends larger values to the left and smaller values
+ * to the right (DESC order) for indices to return correct results.
+ *
+ * @param {!lf.index.KeyRange=} opt_keyRange
+ * @return {?lf.index.KeyRange}
+ */
+lf.index.Comparator.prototype.normalizeKeyRange;
+
+
+/**
  * @typedef {!function((lf.index.Index.Key|!Array<(string|number)>),
  *                     (lf.index.Index.Key|!Array<(string|number)>)):
  *                     !lf.index.FAVOR}
@@ -24333,9 +24347,10 @@ lf.index.BTree.prototype.cost = function(opt_keyRange) {
 lf.index.BTree.prototype.getRange = function(
     opt_keyRange, opt_order, opt_limit, opt_skip) {
   var start = null;
-  if (opt_keyRange) {
-    if (!goog.isNull(opt_keyRange.from)) {
-      start = this.root_.getContainingLeaf(opt_keyRange.from);
+  var normalizedKeyRange = this.comparator_.normalizeKeyRange(opt_keyRange);
+  if (normalizedKeyRange) {
+    if (!goog.isNull(normalizedKeyRange.from)) {
+      start = this.root_.getContainingLeaf(normalizedKeyRange.from);
     }
   }
 
@@ -24344,7 +24359,7 @@ lf.index.BTree.prototype.getRange = function(
   }
 
   return lf.index.slice(
-      start.getRange(opt_keyRange), opt_order, opt_limit, opt_skip);
+      start.getRange(normalizedKeyRange), opt_order, opt_limit, opt_skip);
 };
 
 
@@ -25236,6 +25251,7 @@ goog.provide('lf.index.ComparatorFactory');
 goog.provide('lf.index.MultiKeyComparator');
 goog.provide('lf.index.SimpleComparator');
 
+goog.require('goog.functions');
 goog.require('lf.Order');
 goog.require('lf.index');
 goog.require('lf.index.Comparator');
@@ -25247,8 +25263,14 @@ goog.forwardDeclare('lf.schema.Index');
  * @return {!lf.index.Comparator}
  */
 lf.index.ComparatorFactory.create = function(indexSchema) {
-  // TODO(arthurhsu): implement the real factory.
-  return new lf.index.SimpleComparator(lf.Order.ASC);
+  if (indexSchema.columns.length == 1) {
+    return new lf.index.SimpleComparator(indexSchema.columns[0].order);
+  }
+
+  var orders = indexSchema.columns.map(function(col) {
+    return col.order;
+  });
+  return new lf.index.MultiKeyComparator(orders);
 };
 
 
@@ -25264,6 +25286,13 @@ lf.index.SimpleComparator = function(order) {
   this.compare_ = (order == lf.Order.DESC) ?
       lf.index.SimpleComparator.compareDescending :
       lf.index.SimpleComparator.compareAscending;
+
+  /** @private {!Function} */
+  this.normalizeKeyRange_ = (order == lf.Order.DESC) ?
+      function(opt_keyRange) {
+        return goog.isDefAndNotNull(opt_keyRange) ?
+            opt_keyRange.reverse() : null;
+      } : goog.functions.identity;
 };
 
 
@@ -25330,6 +25359,12 @@ lf.index.SimpleComparator.prototype.isInRange = function(key, range) {
 };
 
 
+/** @override */
+lf.index.SimpleComparator.prototype.normalizeKeyRange = function(keyRange) {
+  return this.normalizeKeyRange_(keyRange);
+};
+
+
 
 /**
  * @implements {lf.index.Comparator}
@@ -25374,6 +25409,12 @@ lf.index.MultiKeyComparator.prototype.compare = function(lhs, rhs) {
 /** @override */
 lf.index.MultiKeyComparator.prototype.isInRange = function(key, range) {
   // TODO(arthurhsu): implement
+};
+
+
+/** @override */
+lf.index.MultiKeyComparator.prototype.normalizeKeyRange = function(keyRange) {
+  // TODO(dpapad): implement.
 };
 
 /**
@@ -25474,6 +25515,18 @@ lf.index.KeyRange.prototype.complement = function() {
   return [keyRangeLow, keyRangeHigh].filter(function(keyRange) {
     return !goog.isNull(keyRange);
   });
+};
+
+
+/**
+ * Reverses a keyRange such that "lower" refers to larger values and "upper"
+ * refers to smaller values. Note: This is different than what complement()
+ * does.
+ * @return {!lf.index.KeyRange}
+ */
+lf.index.KeyRange.prototype.reverse = function() {
+  return new lf.index.KeyRange(
+      this.to, this.from, this.excludeUpper, this.excludeLower);
 };
 
 
@@ -32263,7 +32316,8 @@ goog.provide('lf.schema.Index');
 goog.provide('lf.schema.IndexedColumn');
 goog.provide('lf.schema.Table');
 
-goog.forwardDeclare('lf.Order');
+goog.require('lf.Order');
+
 goog.forwardDeclare('lf.Predicate');
 goog.forwardDeclare('lf.Row');
 goog.forwardDeclare('lf.Type');
@@ -32350,6 +32404,16 @@ lf.schema.Index = function(tableName, name, isUnique, columns) {
 
   /** @type {boolean} */
   this.isUnique = isUnique;
+
+  // Adding lf.Order.ASC as the default order for all IndexedColumns that don't
+  // have an order specified.
+  // TODO(dpapad): Remove this once SPAC is updated to normalize IndexedColumn
+  // instances before passing them to this constructor.
+  columns.forEach(function(column) {
+    if (!goog.isDefAndNotNull(column.order)) {
+      column.order = lf.Order.ASC;
+    }
+  });
 
   /** @type {!Array.<!lf.schema.IndexedColumn>} */
   this.columns = columns;
@@ -34097,7 +34161,6 @@ goog.provide('lf.proc.IndexRangeScanPass');
 
 goog.require('goog.array');
 goog.require('goog.asserts');
-goog.require('lf.Order');
 goog.require('lf.pred.ValuePredicate');
 goog.require('lf.proc.IndexRangeScanStep');
 goog.require('lf.proc.RewritePass');
@@ -34285,7 +34348,8 @@ lf.proc.IndexRangeScanPass.replaceWithIndexRangeScanStep_ = function(
   }
 
   var indexRangeScanStep = new lf.proc.IndexRangeScanStep(
-      columnIndex, predicate.toKeyRange(), lf.Order.ASC);
+      columnIndex, predicate.toKeyRange(),
+      columnIndex.columns[0].order);
   var tableAccessByRowIdStep = new lf.proc.TableAccessByRowIdStep(
       tableAccessFullStep.table);
   tableAccessByRowIdStep.addChild(indexRangeScanStep);
