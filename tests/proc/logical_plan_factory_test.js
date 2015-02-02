@@ -73,8 +73,8 @@ function testCreate_DeletePlan() {
 
   var expectedTree =
       'delete(tableA)\n' +
-      '-select(value_pred(tableA.id))\n' +
-      '--select(value_pred(tableA.name))\n' +
+      '-select(value_pred(tableA.id eq id))\n' +
+      '--select(value_pred(tableA.name eq name))\n' +
       '---table_access(tableA)\n';
 
   var logicalPlan = logicalPlanFactory.create(query);
@@ -106,8 +106,8 @@ function testCreate_SelectPlan() {
 
   var expectedTree =
       'project()\n' +
-      '-select(value_pred(tableA.id))\n' +
-      '--select(value_pred(tableA.name))\n' +
+      '-select(value_pred(tableA.id eq id))\n' +
+      '--select(value_pred(tableA.name eq name))\n' +
       '---table_access(tableA)\n';
 
   var logicalPlan = logicalPlanFactory.create(query);

@@ -56,11 +56,14 @@ function testTree_ValuePredicates1() {
   var e = schema.getEmployee();
   var j = schema.getJob();
 
+  var hireDate = new Date(1422667933572);
+
   var treeBefore =
       'order_by(Employee.id)\n' +
-      '-select(value_pred(Employee.salary))\n' +
-      '--select(value_pred(Job.minSalary))\n' +
-      '---select(value_pred(Employee.hireDate))\n' +
+      '-select(value_pred(Employee.salary gt 1000))\n' +
+      '--select(value_pred(Job.minSalary gt 100))\n' +
+      '---select(value_pred(Employee.hireDate lt ' + hireDate.toString() +
+          '))\n' +
       '----cross_product\n' +
       '-----table_access(Employee)\n' +
       '-----table_access(Job)\n';
@@ -68,10 +71,11 @@ function testTree_ValuePredicates1() {
   var treeAfter =
       'order_by(Employee.id)\n' +
       '-cross_product\n' +
-      '--select(value_pred(Employee.salary))\n' +
-      '---select(value_pred(Employee.hireDate))\n' +
+      '--select(value_pred(Employee.salary gt 1000))\n' +
+      '---select(value_pred(Employee.hireDate lt ' + hireDate.toString() +
+          '))\n' +
       '----table_access(Employee)\n' +
-      '--select(value_pred(Job.minSalary))\n' +
+      '--select(value_pred(Job.minSalary gt 100))\n' +
       '---table_access(Job)\n';
 
   var orderByNode = new lf.proc.OrderByNode(
@@ -80,7 +84,7 @@ function testTree_ValuePredicates1() {
   orderByNode.addChild(selectNode1);
   var selectNode2 = new lf.proc.SelectNode(j.minSalary.gt(100));
   selectNode1.addChild(selectNode2);
-  var selectNode3 = new lf.proc.SelectNode(e.hireDate.lt(new Date()));
+  var selectNode3 = new lf.proc.SelectNode(e.hireDate.lt(hireDate));
   selectNode2.addChild(selectNode3);
   var crossProductNode = new lf.proc.CrossProductNode();
   selectNode3.addChild(crossProductNode);
@@ -105,8 +109,8 @@ function testTree_ValuePredicates2() {
 
   var treeBefore =
       'order_by(Employee.id)\n' +
-      '-select(value_pred(Employee.salary))\n' +
-      '--select(value_pred(Employee.salary))\n' +
+      '-select(value_pred(Employee.salary gt 10))\n' +
+      '--select(value_pred(Employee.salary lt 20))\n' +
       '---table_access(Employee)\n';
 
   var orderByNode = new lf.proc.OrderByNode(
@@ -136,7 +140,7 @@ function testTree_ValuePredicates3() {
 
   var treeBefore =
       'order_by(Employee.id)\n' +
-      '-select(value_pred(Employee.salary))\n' +
+      '-select(value_pred(Employee.salary gt 10))\n' +
       '--cross_product\n' +
       '---table_access(Employee)\n' +
       '---table_access(Job)\n';
@@ -144,7 +148,7 @@ function testTree_ValuePredicates3() {
   var treeAfter =
       'order_by(Employee.id)\n' +
       '-cross_product\n' +
-      '--select(value_pred(Employee.salary))\n' +
+      '--select(value_pred(Employee.salary gt 10))\n' +
       '---table_access(Employee)\n' +
       '--table_access(Job)\n';
 
@@ -226,7 +230,7 @@ function testTree_JoinPredicates2() {
 
   var treeBefore =
       'select(join_pred(Country.id, Department.id))\n' +
-      '-select(value_pred(Employee.id))\n' +
+      '-select(value_pred(Employee.id eq empId))\n' +
       '--select(join_pred(Employee.departmentId, Department.id))\n' +
       '---select(join_pred(Employee.jobId, Job.id))\n' +
       '----select(join_pred(JobHistory.jobId, Job.id))\n' +
@@ -249,7 +253,7 @@ function testTree_JoinPredicates2() {
       '-----cross_product\n' +
       '------select(join_pred(Employee.jobId, Job.id))\n' +
       '-------cross_product\n' +
-      '--------select(value_pred(Employee.id))\n' +
+      '--------select(value_pred(Employee.id eq empId))\n' +
       '---------table_access(Employee)\n' +
       '--------table_access(Job)\n' +
       '------table_access(Department)\n' +
@@ -304,7 +308,7 @@ function testTree_JoinPredicates3() {
 
   var treeBefore =
       'select(join_pred(j1.maxSalary, j2.minSalary))\n' +
-      '-select(value_pred(j1.maxSalary))\n' +
+      '-select(value_pred(j1.maxSalary lt 30000))\n' +
       '--cross_product\n' +
       '---table_access(Job as j1)\n' +
       '---table_access(Job as j2)\n';
@@ -312,7 +316,7 @@ function testTree_JoinPredicates3() {
   var treeAfter =
       'select(join_pred(j1.maxSalary, j2.minSalary))\n' +
       '-cross_product\n' +
-      '--select(value_pred(j1.maxSalary))\n' +
+      '--select(value_pred(j1.maxSalary lt 30000))\n' +
       '---table_access(Job as j1)\n' +
       '--table_access(Job as j2)\n';
 

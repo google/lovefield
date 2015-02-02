@@ -97,7 +97,7 @@ function testTree2() {
       'project()\n' +
       '-limit(100)\n' +
       '--skip(200)\n' +
-      '---select(value_pred(Employee.id))\n' +
+      '---select(value_pred(Employee.id lt 300))\n' +
       '----table_access_by_row_id(Employee)\n' +
       '-----index_range_scan(Employee.idx_salary, [unbound, unbound], ASC)\n';
 

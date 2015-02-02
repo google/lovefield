@@ -58,13 +58,13 @@ function setUp() {
 function testCreate_DeletePlan() {
   var logicalTree =
       'delete(tableA)\n' +
-      '-select(value_pred(tableA.id))\n' +
-      '--select(value_pred(tableA.name))\n' +
+      '-select(value_pred(tableA.id eq id))\n' +
+      '--select(value_pred(tableA.name eq name))\n' +
       '---table_access(tableA)\n';
 
   var physicalTree =
       'delete(tableA)\n' +
-      '-select(value_pred(tableA.id))\n' +
+      '-select(value_pred(tableA.id eq id))\n' +
       '--table_access_by_row_id(tableA)\n' +
       '---index_range_scan(tableA.idxName, [name, name], ASC)\n';
 

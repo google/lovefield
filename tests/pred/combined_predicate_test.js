@@ -65,8 +65,8 @@ function setUp() {
 function testCopy_Simple() {
   var expectedTree =
       'combined_pred_and\n' +
-      '-value_pred(Employee.salary)\n' +
-      '-value_pred(Employee.salary)\n';
+      '-value_pred(Employee.salary gte 200)\n' +
+      '-value_pred(Employee.salary lte 600)\n';
 
   var original = /** @type {!lf.pred.PredicateNode} */ (
       lf.op.and(e.salary.gte(200), e.salary.lte(600)));
@@ -82,17 +82,17 @@ function testCopy_Simple() {
 function testCopy_VarArgs() {
   var expectedTree =
       'combined_pred_and\n' +
-      '-value_pred(Employee.salary)\n' +
-      '-value_pred(Employee.salary)\n' +
-      '-value_pred(Employee.hireDate)\n' +
-      '-value_pred(Employee.hireDate)\n';
+      '-value_pred(Employee.salary gte 200)\n' +
+      '-value_pred(Employee.salary lte 600)\n' +
+      '-value_pred(Employee.commissionPercent lt 0.15)\n' +
+      '-value_pred(Employee.commissionPercent gt 0.1)\n';
 
   var original = /** @type {!lf.pred.PredicateNode} */ (
       lf.op.and(
           e.salary.gte(200),
           e.salary.lte(600),
-          e.hireDate.lt(new Date()),
-          e.hireDate.gt(new Date())));
+          e.commissionPercent.lt(0.15),
+          e.commissionPercent.gt(0.1)));
   var copy = original.copy();
   assertTreesIdentical(expectedTree, original, copy);
 }
@@ -105,7 +105,7 @@ function testCopy_VarArgs() {
 function testCopy_Nested() {
   var expectedTree =
       'combined_pred_and\n' +
-      '-value_pred(Employee.salary)\n' +
+      '-value_pred(Employee.salary gte 200)\n' +
       '-combined_pred_and\n' +
       '--join_pred(Employee.jobId, Job.id)\n' +
       '--join_pred(Employee.departmentId, Department.id)\n';

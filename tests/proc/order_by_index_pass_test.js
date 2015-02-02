@@ -58,12 +58,12 @@ function testTree1() {
   var treeBefore =
       'project()\n' +
       '-order_by(Employee.salary)\n' +
-      '--select(value_pred(Employee.id))\n' +
+      '--select(value_pred(Employee.id gt 100))\n' +
       '---table_access(Employee)\n';
 
   var treeAfter =
       'project()\n' +
-      '-select(value_pred(Employee.id))\n' +
+      '-select(value_pred(Employee.id gt 100))\n' +
       '--table_access_by_row_id(Employee)\n' +
       '---index_range_scan(Employee.idx_salary, [unbound, unbound], ASC)\n';
 
@@ -120,7 +120,7 @@ function testTree3() {
   var treeBefore =
       'project()\n' +
       '-order_by(Employee.hireDate)\n' +
-      '--select(value_pred(Employee.id))\n' +
+      '--select(value_pred(Employee.id gt 100))\n' +
       '---table_access(Employee)\n';
 
   var rootNodeBefore = constructTree1(e.hireDate);

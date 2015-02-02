@@ -56,8 +56,8 @@ function testSimpleTree() {
       '-table_access(Employee)\n';
 
   var treeAfter =
-      'select(value_pred(Employee.id))\n' +
-      '-select(value_pred(Employee.salary))\n' +
+      'select(value_pred(Employee.id gt 100))\n' +
+      '-select(value_pred(Employee.salary lt 100))\n' +
       '--table_access(Employee)\n';
 
   // Generating a simple tree that has just one SelectNode corresponding to an

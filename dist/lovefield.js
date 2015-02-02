@@ -29543,7 +29543,10 @@ lf.pred.ValuePredicate.prototype.evalAsIn_ = function(relation) {
 
 /** @override */
 lf.pred.ValuePredicate.prototype.toString = function() {
-  return 'value_pred(' + this.column.getNormalizedName() + ')';
+  return 'value_pred(' +
+      this.column.getNormalizedName() + ' ' +
+      this.evaluatorType + (this.isComplement_ ? '(complement)' : '') + ' ' +
+      this.value + ')';
 };
 
 

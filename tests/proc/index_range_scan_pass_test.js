@@ -86,7 +86,7 @@ function tearDown() {
 function testSimpleTree() {
   var treeBefore =
       'project()\n' +
-      '-select(value_pred(Employee.id))\n' +
+      '-select(value_pred(Employee.id gt 100))\n' +
       '--table_access(Employee)\n';
 
   var treeAfter =
@@ -113,12 +113,12 @@ function testSimpleTree() {
 
 function testTree1() {
   var treeBefore =
-      'select(value_pred(Employee.id))\n' +
-      '-select(value_pred(Employee.salary))\n' +
+      'select(value_pred(Employee.id gt 100))\n' +
+      '-select(value_pred(Employee.salary eq 10000))\n' +
       '--table_access(Employee)\n';
 
   var treeAfter =
-      'select(value_pred(Employee.salary))\n' +
+      'select(value_pred(Employee.salary eq 10000))\n' +
       '-table_access_by_row_id(Employee)\n' +
       '--index_range_scan(Employee.pkEmployee, (100, unbound], ASC)\n';
 
@@ -139,13 +139,13 @@ function testTree2() {
       'project()\n' +
       '-order_by(Employee.salary)\n' +
       '--join(join_pred(Job.id, Employee.jobId))\n' +
-      '---select(value_pred(Employee.id))\n' +
+      '---select(value_pred(Employee.id gt 100))\n' +
       '----order_by(Employee.salary)\n' +
-      '-----select(value_pred(Employee.salary))\n' +
+      '-----select(value_pred(Employee.salary eq 10000))\n' +
       '------table_access(Employee)\n' +
-      '---select(value_pred(Job.id))\n' +
+      '---select(value_pred(Job.id gt 100))\n' +
       '----order_by(Job.title)\n' +
-      '-----select(value_pred(Job.maxSalary))\n' +
+      '-----select(value_pred(Job.maxSalary eq 1000))\n' +
       '------table_access(Job)\n';
 
   var treeAfter =
@@ -153,11 +153,11 @@ function testTree2() {
       '-order_by(Employee.salary)\n' +
       '--join(join_pred(Job.id, Employee.jobId))\n' +
       '---order_by(Employee.salary)\n' +
-      '----select(value_pred(Employee.salary))\n' +
+      '----select(value_pred(Employee.salary eq 10000))\n' +
       '-----table_access_by_row_id(Employee)\n' +
       '------index_range_scan(Employee.pkEmployee, (100, unbound], ASC)\n' +
       '---order_by(Job.title)\n' +
-      '----select(value_pred(Job.maxSalary))\n' +
+      '----select(value_pred(Job.maxSalary eq 1000))\n' +
       '-----table_access_by_row_id(Job)\n' +
       '------index_range_scan(Job.pkJob, (100, unbound], ASC)\n';
 
@@ -183,7 +183,7 @@ function testTree2() {
 function testTree3() {
   var treeBefore =
       'project()\n' +
-      '-select(value_pred(Job.id))\n' +
+      '-select(value_pred(Job.id eq 100))\n' +
       '--cross_product\n' +
       '---table_access(Job)\n' +
       '---table_access(Department)\n';
