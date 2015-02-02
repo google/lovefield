@@ -120,6 +120,47 @@ function testCreate_SelectPlan() {
 
 
 /**
+ * Tests that the generated logical query plan for a SELECT query with "SKIP 0"
+ * does not include a "skip" node, since it has no effect on the query results.
+ */
+function testCreate_SelectPlan_SkipZero() {
+  var table = env.schema.tables()[0];
+  var queryBuilder = new lf.query.SelectBuilder(lf.Global.get(), []);
+  queryBuilder.from(table).skip(0);
+
+  var query = queryBuilder.query;
+
+  var expectedTree =
+      'project()\n' +
+      '-table_access(tableA)\n';
+
+  var logicalPlan = logicalPlanFactory.create(query);
+  assertEquals(expectedTree, lf.tree.toString(logicalPlan));
+}
+
+
+/**
+ * Tests that the generated logical query plan for a SELECT query with "LIMIT 0"
+ * does in fact include a "limit" node.
+ */
+function testCreate_SelectPlan_LimitZero() {
+  var table = env.schema.tables()[0];
+  var queryBuilder = new lf.query.SelectBuilder(lf.Global.get(), []);
+  queryBuilder.from(table).limit(0);
+
+  var query = queryBuilder.query;
+
+  var expectedTree =
+      'project()\n' +
+      '-limit(0)\n' +
+      '--table_access(tableA)\n';
+
+  var logicalPlan = logicalPlanFactory.create(query);
+  assertEquals(expectedTree, lf.tree.toString(logicalPlan));
+}
+
+
+/**
  * Tests that the generated logical query plan for a simple UPDATE query is as
  * expected and also that the query object itself is not mutated as part of
  * generating a plan.

@@ -56,6 +56,11 @@ function testExec_SkipEqualToResults() {
 }
 
 
+function testExec_SkipZero() {
+  checkExec(/* sampleDataCount */ 20, /* skip */ 0);
+}
+
+
 /**
  * Checks that the returned results do not include skipped rows.
  * @param {number} sampleDataCount The total number of rows available.

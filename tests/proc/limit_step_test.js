@@ -56,6 +56,11 @@ function testExec_LimitEqualToResults() {
 }
 
 
+function testExec_LimitZero() {
+  checkExec(/* sampleDataCount */ 20, /* limit */ 0);
+}
+
+
 /**
  * Checks that the number of returned results is as expected.
  * @param {number} sampleDataCount The total number of rows available.

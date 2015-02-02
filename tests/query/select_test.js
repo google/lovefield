@@ -220,23 +220,16 @@ function testLimit_ThrowsAlreadyCalled() {
 
 
 /**
- * Tests that Select#limit() fails if a value that is not greater than zero is
- * passed.
+ * Tests that Select#limit() fails if a negative value is passed.
  */
 function testLimit_ThrowsInvalidParameter() {
   var query = new lf.query.SelectBuilder(hr.db.getGlobal(), []);
   var employeeTable = db.getSchema().getEmployee();
 
-  var buildQuery1 = function() {
+  var buildQuery = function() {
     query.from(employeeTable).limit(-100);
   };
-  assertThrowsSyntaxError(buildQuery1);
-
-  var buildQuery2 = function() {
-    query.from(employeeTable).limit(0);
-  };
-
-  assertThrowsSyntaxError(buildQuery2);
+  assertThrowsSyntaxError(buildQuery);
 }
 
 
@@ -256,23 +249,16 @@ function testSkip_ThrowsAlreadyCalled() {
 
 
 /**
- * Tests that Select#skip() fails if a value that is not greater than zero is
- * passed.
+ * Tests that Select#skip() fails if a negative value is passed.
  */
 function testSkip_ThrowsInvalidParameter() {
   var query = new lf.query.SelectBuilder(hr.db.getGlobal(), []);
   var employeeTable = db.getSchema().getEmployee();
 
-  var buildQuery1 = function() {
+  var buildQuery = function() {
     query.from(employeeTable).skip(-100);
   };
-  assertThrowsSyntaxError(buildQuery1);
-
-  var buildQuery2 = function() {
-    query.from(employeeTable).skip(0);
-  };
-
-  assertThrowsSyntaxError(buildQuery2);
+  assertThrowsSyntaxError(buildQuery);
 }
 
 

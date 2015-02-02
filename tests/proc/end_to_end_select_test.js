@@ -132,9 +132,25 @@ function testSelect_All() {
  * Tests that a SELECT query with a specified limit respects that limit.
  */
 function testSelect_Limit() {
-  asyncTestCase.waitForAsync('testSelect_Limit');
+  checkSelect_Limit(Math.floor(sampleJobs.length / 3), 'testSelect_Limit');
+}
 
-  var limit = Math.floor(sampleJobs.length / 3);
+
+/**
+ * Tests that a SELECT query with a specified limit of zero respects that limit.
+ */
+function testSelect_LimitZero() {
+  checkSelect_Limit(0 /* limit */, 'testSelect_LimitZero');
+}
+
+
+/**
+ * @param {number} limit
+ * @param {string} description
+ */
+function checkSelect_Limit(limit, description) {
+  asyncTestCase.waitForAsync(description);
+
   var queryBuilder = /** @type {!lf.query.SelectBuilder} */ (
       db.select().from(j).limit(limit));
 
@@ -150,9 +166,25 @@ function testSelect_Limit() {
  * Tests that a SELECT query with a specified SKIP actually skips those rows.
  */
 function testSelect_Skip() {
-  asyncTestCase.waitForAsync('testSelect_Skip');
+  checkSelect_Skip(Math.floor(sampleJobs.length / 3), 'testSelect_Skip');
+}
 
-  var skip = Math.floor(sampleJobs.length / 3);
+
+/**
+ * Tests that a SELECT query with a specified SKIP of zero skips no rows.
+ */
+function testSelect_SkipZero() {
+  checkSelect_Skip(0 /* limit */, 'testSelect_SkipZero');
+}
+
+
+/**
+ * @param {number} skip
+ * @param {string} description
+ */
+function checkSelect_Skip(skip, description) {
+  asyncTestCase.waitForAsync(description);
+
   var queryBuilder = /** @type {!lf.query.SelectBuilder} */ (
       db.select().from(j).skip(skip));
 

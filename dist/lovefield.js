@@ -32969,18 +32969,18 @@ lf.query.SelectBuilder.prototype.assertNotAlreadyCalled_ = function(
 
 
 /**
- * Checks that the given number argument is greater than zero.
+ * Checks that the given number argument is not a negative number.
  * @param {number} numberOfRows The argument to be checked.
  * @param {string} name The name of the field being checked, used for providing
  *     an informative error message.
  * @private
  */
-lf.query.SelectBuilder.prototype.assertGreaterThanZero_ = function(
+lf.query.SelectBuilder.prototype.assertNotNegative_ = function(
     numberOfRows, name) {
-  if (numberOfRows <= 0) {
+  if (numberOfRows < 0) {
     throw new lf.Exception(
         lf.Exception.Type.SYNTAX,
-        name + '() accepts only values greater than 0');
+        name + '() does not accept negative values');
   }
 };
 
@@ -33055,7 +33055,7 @@ lf.query.SelectBuilder.prototype.leftOuterJoin = function(table) {
 /** @override */
 lf.query.SelectBuilder.prototype.limit = function(numberOfRows) {
   this.assertNotAlreadyCalled_(this.query.limit, 'limit');
-  this.assertGreaterThanZero_(numberOfRows, 'limit');
+  this.assertNotNegative_(numberOfRows, 'limit');
 
   this.query.limit = numberOfRows;
   return this;
@@ -33065,7 +33065,7 @@ lf.query.SelectBuilder.prototype.limit = function(numberOfRows) {
 /** @override */
 lf.query.SelectBuilder.prototype.skip = function(numberOfRows) {
   this.assertNotAlreadyCalled_(this.query.skip, 'skip');
-  this.assertGreaterThanZero_(numberOfRows, 'skip');
+  this.assertNotNegative_(numberOfRows, 'skip');
 
   this.query.skip = numberOfRows;
   return this;
@@ -33994,7 +33994,7 @@ lf.proc.SelectLogicalPlanGenerator.prototype.generateOrderByNode_ = function() {
 
 /** @private */
 lf.proc.SelectLogicalPlanGenerator.prototype.generateLimitNode_ = function() {
-  if (this.query.limit) {
+  if (goog.isDefAndNotNull(this.query.limit)) {
     this.limitNode_ = new lf.proc.LimitNode(this.query.limit);
   }
 };
@@ -34002,7 +34002,7 @@ lf.proc.SelectLogicalPlanGenerator.prototype.generateLimitNode_ = function() {
 
 /** @private */
 lf.proc.SelectLogicalPlanGenerator.prototype.generateSkipNode_ = function() {
-  if (this.query.skip) {
+  if (goog.isDefAndNotNull(this.query.skip) && this.query.skip > 0) {
     this.skipNode_ = new lf.proc.SkipNode(this.query.skip);
   }
 };
