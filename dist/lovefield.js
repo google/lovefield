@@ -32316,8 +32316,7 @@ goog.provide('lf.schema.Index');
 goog.provide('lf.schema.IndexedColumn');
 goog.provide('lf.schema.Table');
 
-goog.require('lf.Order');
-
+goog.forwardDeclare('lf.Order');
 goog.forwardDeclare('lf.Predicate');
 goog.forwardDeclare('lf.Row');
 goog.forwardDeclare('lf.Type');
@@ -32404,16 +32403,6 @@ lf.schema.Index = function(tableName, name, isUnique, columns) {
 
   /** @type {boolean} */
   this.isUnique = isUnique;
-
-  // Adding lf.Order.ASC as the default order for all IndexedColumns that don't
-  // have an order specified.
-  // TODO(dpapad): Remove this once SPAC is updated to normalize IndexedColumn
-  // instances before passing them to this constructor.
-  columns.forEach(function(column) {
-    if (!goog.isDefAndNotNull(column.order)) {
-      column.order = lf.Order.ASC;
-    }
-  });
 
   /** @type {!Array.<!lf.schema.IndexedColumn>} */
   this.columns = columns;

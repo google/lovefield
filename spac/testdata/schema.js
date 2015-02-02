@@ -163,7 +163,8 @@ lovefield.db.schema.Album = function() {
   cols.push(this.proto);
 
   var indices = [
-    new lf.schema.Index('Album', 'pkAlbum', true, [{'name': 'id'}]),
+    new lf.schema.Index('Album', 'pkAlbum', true,
+        [{'name': 'id', 'order': lf.Order.ASC}]),
     new lf.schema.Index('Album', 'idx_timestamp', false,
         [{'name': 'timestamp', 'order': lf.Order.DESC}])
   ];
@@ -192,7 +193,8 @@ lovefield.db.schema.Album.prototype.deserializeRow = function(dbRecord) {
 
 /** @override */
 lovefield.db.schema.Album.prototype.getConstraint = function() {
-  var pk = new lf.schema.Index('Album', 'pkAlbum', true, [{'name': 'id'}]);
+  var pk = new lf.schema.Index('Album', 'pkAlbum', true,
+      [{'name': 'id', 'order': lf.Order.ASC}]);
   var notNullable = [
     this.id,
     this.isLocal,
@@ -468,7 +470,8 @@ lovefield.db.schema.Photo = function() {
   cols.push(this.proto);
 
   var indices = [
-    new lf.schema.Index('Photo', 'pkPhoto', true, [{'name': 'id'}]),
+    new lf.schema.Index('Photo', 'pkPhoto', true,
+        [{'name': 'id', 'order': lf.Order.ASC}]),
     new lf.schema.Index('Photo', 'idx_timestamp', false,
         [{'name': 'timestamp', 'order': lf.Order.DESC}])
   ];
@@ -498,7 +501,8 @@ lovefield.db.schema.Photo.prototype.deserializeRow = function(dbRecord) {
 
 /** @override */
 lovefield.db.schema.Photo.prototype.getConstraint = function() {
-  var pk = new lf.schema.Index('Photo', 'pkPhoto', true, [{'name': 'id'}]);
+  var pk = new lf.schema.Index('Photo', 'pkPhoto', true,
+      [{'name': 'id', 'order': lf.Order.ASC}]);
   var notNullable = [
     this.id,
     this.isLocal,
@@ -1015,8 +1019,10 @@ lovefield.db.schema.Curator = function() {
   cols.push(this.name);
 
   var indices = [
-    new lf.schema.Index('Curator', 'pkCurator', true, [{'name': 'id'}]),
-    new lf.schema.Index('Curator', 'uq_name', true, [{'name': 'name'}])
+    new lf.schema.Index('Curator', 'pkCurator', true,
+        [{'name': 'id', 'order': lf.Order.ASC}]),
+    new lf.schema.Index('Curator', 'uq_name', true,
+        [{'name': 'name', 'order': lf.Order.ASC}])
   ];
 
   lovefield.db.schema.Curator.base(
@@ -1040,14 +1046,16 @@ lovefield.db.schema.Curator.prototype.deserializeRow = function(dbRecord) {
 
 /** @override */
 lovefield.db.schema.Curator.prototype.getConstraint = function() {
-  var pk = new lf.schema.Index('Curator', 'pkCurator', true, [{'name': 'id'}]);
+  var pk = new lf.schema.Index('Curator', 'pkCurator', true,
+      [{'name': 'id', 'order': lf.Order.ASC}]);
   var notNullable = [
     this.id,
     this.name
   ];
   var foreignKeys = [];
   var unique = [
-    new lf.schema.Index('Curator', 'uq_name', true, [{'name': 'name'}])
+    new lf.schema.Index('Curator', 'uq_name', true,
+        [{'name': 'name', 'order': lf.Order.ASC}])
   ];
   return new lf.schema.Constraint(pk, notNullable, foreignKeys, unique);
 };
@@ -1190,7 +1198,8 @@ lovefield.db.schema.PhotoCurator = function() {
   cols.push(this.topic);
 
   var indices = [
-    new lf.schema.Index('PhotoCurator', 'uq_topic', true, [{'name': 'topic'}])
+    new lf.schema.Index('PhotoCurator', 'uq_topic', true,
+        [{'name': 'topic', 'order': lf.Order.ASC}])
   ];
 
   lovefield.db.schema.PhotoCurator.base(
@@ -1222,7 +1231,8 @@ lovefield.db.schema.PhotoCurator.prototype.getConstraint = function() {
   ];
   var foreignKeys = [];
   var unique = [
-    new lf.schema.Index('PhotoCurator', 'uq_topic', true, [{'name': 'topic'}])
+    new lf.schema.Index('PhotoCurator', 'uq_topic', true,
+        [{'name': 'topic', 'order': lf.Order.ASC}])
   ];
   return new lf.schema.Constraint(pk, notNullable, foreignKeys, unique);
 };

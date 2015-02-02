@@ -914,10 +914,8 @@ CodeGenerator.prototype.checkMultiColumnIndex_ = function(columns) {
 CodeGenerator.prototype.getIndexColumnString_ = function(columns, opt_order) {
   var body = columns.map(function(col) {
     var colBody = '';
-    colBody += '{\'name\': \'' + col + '\'';
-    if (opt_order == 'desc') {
-      colBody += ', \'order\': lf.Order.DESC';
-    }
+    colBody += '{\'name\': \'' + col + '\', \'order\': ';
+    colBody += (opt_order == 'desc') ? 'lf.Order.DESC' : 'lf.Order.ASC';
     colBody += '}';
     return colBody;
   }).join(', ');
@@ -944,11 +942,13 @@ CodeGenerator.prototype.getPrimaryKeyCols_ = function(schema) {
 
 /**
  * @param {!Object} table
+ * @param {string=} opt_indent
  * @return {string}
  * @private
  */
-CodeGenerator.prototype.getPrimaryKeyIndex_ = function(table) {
+CodeGenerator.prototype.getPrimaryKeyIndex_ = function(table, opt_indent) {
   var results = [];
+  var indent = '      ' + (opt_indent || '');
 
   if (table.constraint && table.constraint.primaryKey) {
     var pkCols = this.getPrimaryKeyCols_(table.constraint.primaryKey);
@@ -960,7 +960,7 @@ CodeGenerator.prototype.getPrimaryKeyIndex_ = function(table) {
     var header = 'new lf.schema.Index(\'' + table.name + '\', \'';
     var cols = this.getIndexColumnString_(pkCols);
     var keyName = 'pk' + this.toPascal_(table.name);
-    results.push(header + keyName + '\', true, ' + cols + ')');
+    results.push(header + keyName + '\', true,\n' + indent + cols + ')');
   } else {
     results.push('null');
   }
@@ -1032,7 +1032,7 @@ CodeGenerator.prototype.getUniqueIndices_ = function(table) {
 
     var cols = this.getIndexColumnString_(uniqueConstraint.column);
     var uniqueIndex = 'new lf.schema.Index(\'' + table.name + '\', \'' +
-        uniqueConstraint.name + '\', true, ' + cols + ')';
+        uniqueConstraint.name + '\', true,\n        ' + cols + ')';
     uniqueIndices.push(uniqueIndex);
   }
 
@@ -1050,7 +1050,7 @@ CodeGenerator.prototype.getIndices_ = function(table) {
 
   if (table.constraint) {
     if (table.constraint.primaryKey) {
-      results.push('    ' + this.getPrimaryKeyIndex_(table));
+      results.push('    ' + this.getPrimaryKeyIndex_(table, '  '));
     }
 
     if (table.constraint.unique) {
