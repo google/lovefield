@@ -24099,15 +24099,15 @@ lf.index.Comparator = function() {};
 
 
 /**
- * @param {lf.index.Index.Key|!Array<(string|number)>} lhs
- * @param {lf.index.Index.Key|!Array<(string|number)>} rhs
+ * @param {lf.index.Index.Key} lhs
+ * @param {lf.index.Index.Key} rhs
  * @return {!lf.index.FAVOR}
  */
 lf.index.Comparator.prototype.compare;
 
 
 /**
- * @param {!lf.index.Index.Key|!Array<(string|number)>} key
+ * @param {!lf.index.Index.Key} key
  * @param {!lf.index.KeyRange} range
  * @return {boolean}
  */
@@ -24129,9 +24129,7 @@ lf.index.Comparator.prototype.normalizeKeyRange;
 
 
 /**
- * @typedef {!function((lf.index.Index.Key|!Array<(string|number)>),
- *                     (lf.index.Index.Key|!Array<(string|number)>)):
- *                     !lf.index.FAVOR}
+ * @typedef {!function(lf.index.Index.Key, lf.index.Index.Key): !lf.index.FAVOR}
  */
 lf.index.Comparator.FunctionType;
 
@@ -24144,7 +24142,7 @@ lf.index.Comparator.FunctionType;
 lf.index.Index = function() {};
 
 
-/** @typedef {(string|number)} */
+/** @typedef {(string|number|!Array<(string|number)>)} */
 lf.index.Index.Key;
 
 
@@ -24388,8 +24386,8 @@ lf.index.BTree.prototype.getComparator = function() {
 
 
 /**
- * @param {?lf.index.Index.Key|!Array<(string|number)>} lhs
- * @param {lf.index.Index.Key|!Array<(string|number)>} rhs
+ * @param {?lf.index.Index.Key} lhs
+ * @param {lf.index.Index.Key} rhs
  * @return {boolean}
  */
 lf.index.BTree.prototype.lt = function(lhs, rhs) {
@@ -24401,8 +24399,8 @@ lf.index.BTree.prototype.lt = function(lhs, rhs) {
 
 
 /**
- * @param {?lf.index.Index.Key|!Array<(string|number)>} lhs
- * @param {!lf.index.Index.Key|!Array<(string|number)>} rhs
+ * @param {?lf.index.Index.Key} lhs
+ * @param {!lf.index.Index.Key} rhs
  * @return {boolean}
  */
 lf.index.BTree.prototype.eq = function(lhs, rhs) {
@@ -25322,7 +25320,7 @@ lf.index.SimpleComparator.compareDescending = function(lhs, rhs) {
 
 /**
  * @param {!lf.index.Comparator.FunctionType} fn
- * @param {!lf.index.Index.Key|!Array<(string|number)>} key
+ * @param {!lf.index.Index.Key} key
  * @param {!lf.index.KeyRange} range
  * @return {boolean}
  */
