@@ -190,26 +190,56 @@ function checkObject(name, rule, data) {
 
 /**
  * @param {string} tableName
- * @param {!Array.<string>} schema
+ * @param {!Object} schema The constraint section of schema
  * @param {!Array.<string>} colNames Column names in this table.
  * @param {!Array.<string>} names Names of unique identifiers in table, this
  *     function will insert entries into it as side effect.
  * @return {!Array.<string>} Columns associated.
  */
-function checkPrimaryKey(tableName, schema, colNames, names) {
+function convertPrimaryKey(tableName, schema, colNames, names) {
   var keyName = 'pk' + tableName;
 
   if (names.indexOf(keyName) != -1) {
     throw new Error('Primary key name conflicts with column name: ' + keyName);
   }
 
-  var notNullable = schema.map(function(key) {
-    if (colNames.indexOf(key) == -1) {
-      throw new Error('Primary key ' + key + ' of ' + tableName +
-          ' is not its column');
+  var givenPK = schema.primaryKey;
+  if (givenPK.length == 0) {
+    throw new Error('Primary key of ' + tableName + ' is empty.');
+  }
+  var pk;
+  if (typeof(givenPK[0]) == 'string') {
+    pk = givenPK.map(function(colName) {
+      return {'name': colName, 'order': 'asc'};
+    });
+  } else {
+    pk = givenPK.map(function(obj) {
+      if (obj.order && VALID_INDEX_ORDER.indexOf(obj.order) == -1) {
+        throw new Error('Primary key of ' + tableName + ' has invalid order.');
+      }
+      if (obj.order == 'desc' && obj.autoIncrement) {
+        throw new Error('Primary key of ' + tableName +
+            ' try to autoIncrement in descending order.');
+      }
+      if (obj.column) {
+        return {
+          'name': obj.column,
+          'order': obj.order || 'asc',
+          'autoIncrement': obj.autoIncrement
+        };
+      } else {
+        throw new Error('Primary key of ' + tableName + ' has empty column.');
+      }
+    });
+  }
+
+  var notNullable = pk.map(function(keyCol) {
+    if (colNames.indexOf(keyCol.name) == -1) {
+      throw new Error('Primary key of ' + tableName + ' has invalid column');
     }
-    return key;
+    return keyCol.name;
   });
+  schema.primaryKey = pk;
   names.push(keyName);
   return notNullable;
 }
@@ -374,7 +404,7 @@ function checkConstraint(tableName, schemas, colNames, names) {
     }
     checkIndexable(schemas[tableName], schema.primaryKey);
     notNullable = notNullable.concat(
-        checkPrimaryKey(tableName, schema.primaryKey, colNames, names));
+        convertPrimaryKey(tableName, schema, colNames, names));
   }
 
   if (schema.hasOwnProperty('unique')) {
@@ -412,7 +442,9 @@ function checkIndices(tableName, schema, colNames, names, nullable) {
   if (schema.hasOwnProperty('constraint')) {
     var constraint = schema.constraint;
     if (constraint.hasOwnProperty('primaryKey')) {
-      indexedCol.push(constraint.primaryKey.join('#'));
+      indexedCol.push(constraint.primaryKey.map(function(keyCol) {
+        return keyCol.name;
+      }).join('#'));
     }
     if (constraint.hasOwnProperty('unique')) {
       for (var item in constraint.unique) {

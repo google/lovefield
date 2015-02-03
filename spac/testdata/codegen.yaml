@@ -36,7 +36,9 @@ table:
         column: [ timestamp ]
         order: desc
     constraint:
-      primaryKey: [ id ]
+      primaryKey:
+        - column: id
+          order: asc
       foreignKey:
         fk_albumId:
           localColumn: albumId
@@ -68,7 +70,9 @@ table:
       id: integer
       name: string
     constraint:
-      primaryKey: [ id ]
+      primaryKey:
+        - column: id
+          autoIncrement: true
       unique:
         uq_name:
           column: [ name ]

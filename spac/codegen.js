@@ -47,7 +47,11 @@
 
 /**
  * @typedef {{
- *   primaryKey: !Array.<string>,
+ *   primaryKey: !Array.<{
+ *     name: string,
+ *     order: ?string,
+ *     autoIncrement: ?boolean
+ *   }>,
  *   nullable: !Array.<string>,
  *   unique: !Array.<{
  *     name: string,
@@ -647,9 +651,11 @@ CodeGenerator.prototype.genKeyOfIndex_ = function(table, prefix) {
 
   if (table.constraint) {
     if (table.constraint.primaryKey) {
+      var colNames = table.constraint.primaryKey.map(function(keyCol) {
+        return keyCol.name;
+      });
       genCase('pk' + this.toPascal_(table.name));
-      body.push(this.genKeyFromColumns_(table,
-          this.getPrimaryKeyCols_(table.constraint.primaryKey)));
+      body.push(this.genKeyFromColumns_(table, colNames));
     }
 
     if (table.constraint.unique) {
@@ -913,8 +919,7 @@ CodeGenerator.prototype.checkMultiColumnIndex_ = function(columns) {
  */
 CodeGenerator.prototype.getIndexColumnString_ = function(columns, opt_order) {
   var body = columns.map(function(col) {
-    var colBody = '';
-    colBody += '{\'name\': \'' + col + '\', \'order\': ';
+    var colBody = '{\'name\': \'' + col + '\', \'order\': ';
     colBody += (opt_order == 'desc') ? 'lf.Order.DESC' : 'lf.Order.ASC';
     colBody += '}';
     return colBody;
@@ -924,19 +929,18 @@ CodeGenerator.prototype.getIndexColumnString_ = function(columns, opt_order) {
 
 
 /**
- * @param {!Object} schema primaryKey schema.
- * @return {!Array.<string>} Primary Key columns.
+ * @param {!Array.<!Object>} columns
+ * @return {string}
  * @private
  */
-CodeGenerator.prototype.getPrimaryKeyCols_ = function(schema) {
-  if (schema.length) {
-    // Format 1: primaryKey: [ cols ]
-    return /** @type {!Array.<string>} */ (schema);
-  } else {
-    // Format 2: primaryKey:
-    //             column: [ cols ]
-    return schema.column;
-  }
+CodeGenerator.indexedColumnsToString_ = function(columns) {
+  var body = columns.map(function(col) {
+    var colBody = '{\'name\': \'' + col.name + '\', \'order\': ';
+    colBody += (col.order == 'desc') ? 'lf.Order.DESC' : 'lf.Order.ASC';
+    colBody += '}';
+    return colBody;
+  }).join(', ');
+  return '[' + body + ']';
 };
 
 
@@ -951,14 +955,14 @@ CodeGenerator.prototype.getPrimaryKeyIndex_ = function(table, opt_indent) {
   var indent = '      ' + (opt_indent || '');
 
   if (table.constraint && table.constraint.primaryKey) {
-    var pkCols = this.getPrimaryKeyCols_(table.constraint.primaryKey);
+    var pkCols = table.constraint.primaryKey;
 
     // TODO(arthurhsu): remove this check.
     //     https://github.com/google/lovefield/issues/15
     this.checkMultiColumnIndex_(pkCols);
 
     var header = 'new lf.schema.Index(\'' + table.name + '\', \'';
-    var cols = this.getIndexColumnString_(pkCols);
+    var cols = CodeGenerator.indexedColumnsToString_(pkCols);
     var keyName = 'pk' + this.toPascal_(table.name);
     results.push(header + keyName + '\', true,\n' + indent + cols + ')');
   } else {
@@ -1143,9 +1147,10 @@ CodeGenerator.prototype.getUniqueColumns_ = function(table) {
 
   if (table.hasOwnProperty('constraint')) {
     var constraint = table.constraint;
-    if (constraint.hasOwnProperty('primaryKey') &&
-        constraint.primaryKey.length == 1) {
-      ret.push(constraint.primaryKey[0]);
+    if (constraint.hasOwnProperty('primaryKey')) {
+      constraint.primaryKey.forEach(function(keyCol) {
+        ret.push(keyCol.name);
+      });
     }
     if (constraint.hasOwnProperty('unique')) {
       constraint.unique.forEach(function(unq) {
