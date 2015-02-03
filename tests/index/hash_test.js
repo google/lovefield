@@ -16,7 +16,6 @@
  */
 goog.setTestOnly();
 goog.require('goog.testing.jsunit');
-goog.require('lf.Order');
 goog.require('lf.index');
 
 
@@ -40,19 +39,10 @@ function testHashArray() {
 
 
 /**
- * Tests the case where lf.index.slice() is called without explicitly specifying
- * the order.
- */
-function testSlice() {
-  checkSlice();
-}
-
-
-/**
  * Tests the case where lf.index.slice() is called with an explicit ASC order.
  */
 function testSlice_Asc() {
-  checkSlice(lf.Order.ASC);
+  checkSlice([0, 1, 2, 3, 4]);
 }
 
 
@@ -60,56 +50,34 @@ function testSlice_Asc() {
  * Tests the case where lf.index.slice() is called with an explicit DESC order.
  */
 function testSlice_Desc() {
-  checkSlice(lf.Order.DESC);
+  checkSlice([4, 3, 2, 1, 0]);
 }
 
 
 /**
- * @param {!lf.Order=} opt_order
+ * @param {!Array<number>} array
  */
-function checkSlice(opt_order) {
-  /** @const {!Array.<number>} */
-  var ARRAY = [0, 1, 2, 3, 4];
-  /** @const {!Array.<number>} */
-  var REVERSE_ARRAY = ARRAY.slice().reverse();
-
-  var effectiveOrder =
-      goog.isDefAndNotNull(opt_order) ? opt_order : lf.Order.ASC;
-
-  assertArrayEquals(
-      effectiveOrder == lf.Order.ASC ? ARRAY : REVERSE_ARRAY,
-      lf.index.slice(ARRAY.slice(), opt_order));
+function checkSlice(array) {
+  assertArrayEquals(array, lf.index.slice(array.slice()));
 
   // Test empty array
   assertArrayEquals([], lf.index.slice([]));
-  assertArrayEquals([], lf.index.slice([], opt_order, 1));
-  assertArrayEquals([], lf.index.slice([], opt_order, undefined, 1));
+  assertArrayEquals([], lf.index.slice([], 1));
+  assertArrayEquals([], lf.index.slice([], undefined, 1));
 
   // Test LIMIT
-  assertArrayEquals([], lf.index.slice(ARRAY.slice(), opt_order, 0));
-  assertArrayEquals(
-      effectiveOrder == lf.Order.ASC ? [ARRAY[0]] : [REVERSE_ARRAY[0]],
-      lf.index.slice(ARRAY.slice(), opt_order, 1));
-  assertArrayEquals(
-      effectiveOrder == lf.Order.ASC ? ARRAY : REVERSE_ARRAY,
-      lf.index.slice(ARRAY.slice(), opt_order, ARRAY.length));
-  assertArrayEquals(
-      effectiveOrder == lf.Order.ASC ? ARRAY : REVERSE_ARRAY,
-      lf.index.slice(ARRAY.slice(), opt_order, ARRAY.length + 1));
+  assertArrayEquals([], lf.index.slice(array.slice(), 0));
+  assertArrayEquals([array[0]], lf.index.slice(array.slice(), 1));
+  assertArrayEquals(array, lf.index.slice(array.slice(), array.length));
+  assertArrayEquals(array, lf.index.slice(array.slice(), array.length + 1));
 
   // Test SKIP
-  assertArrayEquals(
-      effectiveOrder == lf.Order.ASC ? ARRAY : REVERSE_ARRAY,
-      lf.index.slice(ARRAY.slice(), opt_order, undefined, 0));
-  assertArrayEquals(
-      effectiveOrder == lf.Order.ASC ? ARRAY : REVERSE_ARRAY,
-      lf.index.slice(ARRAY.slice(), opt_order, ARRAY.length, 0));
+  assertArrayEquals(array, lf.index.slice(array.slice(), undefined, 0));
+  assertArrayEquals(array, lf.index.slice(array.slice(), array.length, 0));
 
-  for (var i = 0; i < ARRAY.length; ++i) {
-    assertArrayEquals(
-        effectiveOrder == lf.Order.ASC ? [ARRAY[i]] : [REVERSE_ARRAY[i]],
-        lf.index.slice(ARRAY.slice(), opt_order, 1, i));
+  for (var i = 0; i < array.length; ++i) {
+    assertArrayEquals([array[i]], lf.index.slice(array.slice(), 1, i));
   }
   assertArrayEquals(
-      [], lf.index.slice(ARRAY.slice(), opt_order, undefined, ARRAY.length));
+      [], lf.index.slice(array.slice(), undefined, array.length));
 }

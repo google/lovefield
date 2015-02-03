@@ -183,14 +183,17 @@ function checkIndexRangeScan(order, description) {
   asyncTestCase.waitForAsync(description);
 
   var table = schema.tables()[0];
-  var index = table.getIndices()[0];
-  var keyRange = new lf.index.KeyRange(5, 8, false, false);
+  var index = order == lf.Order.ASC ?
+      table.getIndices()[0] : table.getIndices()[1];
+  var keyRange = order == lf.Order.ASC ?
+      new lf.index.KeyRange(5, 8, false, false) :
+      new lf.index.KeyRange('dummyName' + 5, 'dummyName' + 8, false, false);
   var step = new lf.proc.IndexRangeScanStep(index, [keyRange], order);
 
   var journal = new lf.cache.Journal(lf.Global.get(), [table]);
   step.exec(journal).then(
       function(relation) {
-        assertEquals(keyRange.to - keyRange.from + 1, relation.entries.length);
+        assertEquals(4, relation.entries.length);
         relation.entries.forEach(function(entry, j) {
           if (j == 0) {
             return;
@@ -213,7 +216,7 @@ function checkIndexRangeScan(order, description) {
  * @return {!IThenable} A signal that sample data have been added.
  */
 function addSampleData() {
-  var sampleDataCount = 10;
+  var sampleDataCount = 9;
   var rows = new Array(sampleDataCount);
   for (var i = 0; i < sampleDataCount; i++) {
     rows[i] = new lf.testing.MockSchema.Row(i, {

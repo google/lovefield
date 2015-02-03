@@ -164,7 +164,7 @@ var Table_ = function(tableName) {
     new lf.schema.Index(tableName, 'pkId', true,
         [{'name': 'id', 'order': lf.Order.ASC}]),
     new lf.schema.Index(tableName, 'idxName', false,
-        [{'name': 'name', 'order': lf.Order.ASC}])
+        [{'name': 'name', 'order': lf.Order.DESC}])
   ];
 
   Table_.base(this, 'constructor',

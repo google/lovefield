@@ -261,7 +261,7 @@ function test_Not_Or() {
         var actualSalaries = results.map(function(result) {
           return result.salary;
         });
-        var expectedSalaries = [300, 400, 500];
+        var expectedSalaries = [500, 400, 300];
         assertArrayEquals(expectedSalaries, actualSalaries);
         asyncTestCase.continueTesting();
       }, fail);

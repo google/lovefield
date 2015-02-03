@@ -23976,8 +23976,6 @@ lf.cache.Journal.prototype.checkScope_ = function(tableSchema) {
  */
 goog.provide('lf.index');
 
-goog.require('lf.Order');
-
 
 /**
  * @const @enum {number}
@@ -24028,22 +24026,16 @@ lf.index.hashArray = function(values) {
  * Note: For performance reasons the input array might be modified in place.
  *
  * @param {!Array.<number>} array
- * @param {!lf.Order=} opt_order
  * @param {number=} opt_limit
  * @param {number=} opt_skip
  * @return {!Array.<number>}
  */
-lf.index.slice = function(array, opt_order, opt_limit, opt_skip) {
+lf.index.slice = function(array, opt_limit, opt_skip) {
   // First handling case where no limit and no skip parameters have been
   // specified, such that no copying of the input array is performed. This is an
   // optimization such that unnecessary copying can be avoided for the majority
   // case (no limit/skip params).
   if (!goog.isDefAndNotNull(opt_limit) && !goog.isDefAndNotNull(opt_skip)) {
-    // All indices are build in ASC order and the order can't be controlled by
-    // the schema.
-    if (opt_order == lf.Order.DESC) {
-      array.reverse();
-    }
     return array;
   }
 
@@ -24057,9 +24049,6 @@ lf.index.slice = function(array, opt_order, opt_limit, opt_skip) {
   }
 
   var skip = Math.min(opt_skip || 0, array.length);
-  if (opt_order == lf.Order.DESC) {
-    array.reverse();
-  }
 
   return array.slice(skip, skip + limit);
 };
@@ -24357,7 +24346,7 @@ lf.index.BTree.prototype.getRange = function(
   }
 
   return lf.index.slice(
-      start.getRange(normalizedKeyRange), opt_order, opt_limit, opt_skip);
+      start.getRange(normalizedKeyRange), opt_limit, opt_skip);
 };
 
 
@@ -25681,7 +25670,7 @@ lf.index.RowId.prototype.getRange = function(
   var values = this.rows_.getValues().filter(function(value) {
     return this.comparator_.isInRange(value, keyRange);
   }, this);
-  return lf.index.slice(values, opt_order, opt_limit, opt_skip);
+  return lf.index.slice(values, opt_limit, opt_skip);
 };
 
 
@@ -26272,7 +26261,7 @@ lf.index.AATree.prototype.getRange = function(
 
   var results = [];
   this.traverse_(this.root_, keyRange, results);
-  return lf.index.slice(results, opt_order, opt_limit, opt_skip);
+  return lf.index.slice(results, opt_limit, opt_skip);
 };
 
 
@@ -26500,7 +26489,7 @@ lf.index.Map.prototype.getRange = function(
     }
   }, this);
 
-  return lf.index.slice(results, opt_order, opt_limit, opt_skip);
+  return lf.index.slice(results, opt_limit, opt_skip);
 };
 
 
@@ -31010,6 +30999,10 @@ lf.proc.IndexRangeScanStep.prototype.toString = function() {
 
 /** @override */
 lf.proc.IndexRangeScanStep.prototype.exec = function(journal) {
+  goog.asserts.assert(
+      this.order == this.index.columns[0].order,
+      'Invalid IndexRangeScanStep, uses reverse order than the index.');
+
   var rowIds = journal.getIndexRange(
       this.index, this.keyRanges,
       this.order,
@@ -34826,7 +34819,10 @@ goog.require('lf.tree');
 /**
  * The OrderByIndexPass is responsible for modifying a tree that has a
  * OrderByStep node to an equivalent tree that leverages indices to perform
- * sorting.
+ * sorting. Because indices can't handle reverse order, it only applies the
+ * optimization when the requested order and the index order match.
+ * TODO(dpapad): Perform necessary changes at the indexing layer to be able to
+ * optimize even when the order does not match.
  *
  * @constructor
  * @struct
@@ -34893,17 +34889,22 @@ lf.proc.OrderByIndexPass.prototype.applyTableAccessFullOptimization_ =
   if (!goog.isNull(tableAccessFullStep)) {
     var orderBy = orderByStep.orderBy[0];
     var columnIndex = orderBy.column.getIndices()[0];
-    var indexRangeScanStep = new lf.proc.IndexRangeScanStep(
-        columnIndex, [lf.index.KeyRange.all()], orderBy.order);
-    var tableAccessByRowIdStep = new lf.proc.TableAccessByRowIdStep(
-        tableAccessFullStep.table);
-    tableAccessByRowIdStep.addChild(indexRangeScanStep);
+    // Only apply the optimization if the requested order matches the index's
+    // order for now (taking into account the first indexed column only), since
+    // indices can't handle reverse order.
+    if (columnIndex.columns[0].order == orderBy.order) {
+      var indexRangeScanStep = new lf.proc.IndexRangeScanStep(
+          columnIndex, [lf.index.KeyRange.all()], orderBy.order);
+      var tableAccessByRowIdStep = new lf.proc.TableAccessByRowIdStep(
+          tableAccessFullStep.table);
+      tableAccessByRowIdStep.addChild(indexRangeScanStep);
 
-    lf.tree.removeNode(orderByStep);
-    rootNode = /** @type {!lf.proc.PhysicalQueryPlanNode} */ (
-        lf.tree.replaceNodeWithChain(
-            tableAccessFullStep,
-            tableAccessByRowIdStep, indexRangeScanStep));
+      lf.tree.removeNode(orderByStep);
+      rootNode = /** @type {!lf.proc.PhysicalQueryPlanNode} */ (
+          lf.tree.replaceNodeWithChain(
+              tableAccessFullStep,
+              tableAccessByRowIdStep, indexRangeScanStep));
+    }
   }
 
   return rootNode;
@@ -34924,7 +34925,6 @@ lf.proc.OrderByIndexPass.prototype.applyIndexRangeScanStepOptimization_ =
       /** @type {!lf.proc.PhysicalQueryPlanNode} */ (
           orderByStep.getChildAt(0)));
   if (!goog.isNull(indexRangeScanStep)) {
-    indexRangeScanStep.order = orderByStep.orderBy[0].order;
     rootNode = /** @type {!lf.proc.PhysicalQueryPlanNode} */ (
         lf.tree.removeNode(orderByStep));
   }
@@ -34945,7 +34945,8 @@ lf.proc.OrderByIndexPass.findIndexRangeScanStep_ = function(
     orderBy, rootNode) {
   var filterFn = function(node) {
     return node instanceof lf.proc.IndexRangeScanStep &&
-        node.index.columns[0].name == orderBy.column.getName();
+        node.index.columns[0].name == orderBy.column.getName() &&
+        node.index.columns[0].order == orderBy.order;
   };
   // CrossProductStep and JoinStep nodes have more than one child, and mess up
   // the ordering of results. Therefore if such nodes exist this optimization

@@ -591,11 +591,11 @@ function testSelect_OrderBy_Descending() {
   asyncTestCase.waitForAsync('testSelect_OrderBy_Descending');
 
   var queryBuilder = /** @type {!lf.query.SelectBuilder} */ (
-      db.select().from(j).orderBy(j.minSalary, lf.Order.DESC));
+      db.select().from(j).orderBy(j.maxSalary, lf.Order.DESC));
 
   queryBuilder.exec().then(
       function(results) {
-        assertOrder(results, j.minSalary, lf.Order.DESC);
+        assertOrder(results, j.maxSalary, lf.Order.DESC);
         asyncTestCase.continueTesting();
       }, fail);
 }
