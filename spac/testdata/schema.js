@@ -164,7 +164,7 @@ lovefield.db.schema.Album = function() {
 
   var indices = [
     new lf.schema.Index('Album', 'pkAlbum', true,
-        [{'name': 'id', 'order': lf.Order.ASC}]),
+        [{'name': 'id', 'order': lf.Order.ASC, 'autoIncrement': false}]),
     new lf.schema.Index('Album', 'idx_timestamp', false,
         [{'name': 'timestamp', 'order': lf.Order.DESC}])
   ];
@@ -194,7 +194,7 @@ lovefield.db.schema.Album.prototype.deserializeRow = function(dbRecord) {
 /** @override */
 lovefield.db.schema.Album.prototype.getConstraint = function() {
   var pk = new lf.schema.Index('Album', 'pkAlbum', true,
-      [{'name': 'id', 'order': lf.Order.ASC}]);
+      [{'name': 'id', 'order': lf.Order.ASC, 'autoIncrement': false}]);
   var notNullable = [
     this.id,
     this.isLocal,
@@ -471,7 +471,7 @@ lovefield.db.schema.Photo = function() {
 
   var indices = [
     new lf.schema.Index('Photo', 'pkPhoto', true,
-        [{'name': 'id', 'order': lf.Order.ASC}]),
+        [{'name': 'id', 'order': lf.Order.ASC, 'autoIncrement': false}]),
     new lf.schema.Index('Photo', 'idx_timestamp', false,
         [{'name': 'timestamp', 'order': lf.Order.DESC}])
   ];
@@ -502,7 +502,7 @@ lovefield.db.schema.Photo.prototype.deserializeRow = function(dbRecord) {
 /** @override */
 lovefield.db.schema.Photo.prototype.getConstraint = function() {
   var pk = new lf.schema.Index('Photo', 'pkPhoto', true,
-      [{'name': 'id', 'order': lf.Order.ASC}]);
+      [{'name': 'id', 'order': lf.Order.ASC, 'autoIncrement': false}]);
   var notNullable = [
     this.id,
     this.isLocal,
@@ -1020,7 +1020,7 @@ lovefield.db.schema.Curator = function() {
 
   var indices = [
     new lf.schema.Index('Curator', 'pkCurator', true,
-        [{'name': 'id', 'order': lf.Order.ASC}]),
+        [{'name': 'id', 'order': lf.Order.ASC, 'autoIncrement': true}]),
     new lf.schema.Index('Curator', 'uq_name', true,
         [{'name': 'name', 'order': lf.Order.ASC}])
   ];
@@ -1047,7 +1047,7 @@ lovefield.db.schema.Curator.prototype.deserializeRow = function(dbRecord) {
 /** @override */
 lovefield.db.schema.Curator.prototype.getConstraint = function() {
   var pk = new lf.schema.Index('Curator', 'pkCurator', true,
-      [{'name': 'id', 'order': lf.Order.ASC}]);
+      [{'name': 'id', 'order': lf.Order.ASC, 'autoIncrement': true}]);
   var notNullable = [
     this.id,
     this.name

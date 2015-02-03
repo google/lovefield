@@ -89,7 +89,7 @@ foo.db.schema.Foo = function() {
 
   var indices = [
     new lf.schema.Index('Foo', 'pkFoo', true,
-        [{'name': 'id', 'order': lf.Order.ASC}]),
+        [{'name': 'id', 'order': lf.Order.ASC, 'autoIncrement': false}]),
     new lf.schema.Index('Foo', 'uq_bar', true,
         [{'name': 'bar', 'order': lf.Order.ASC}]),
     new lf.schema.Index('Foo', 'idx_Name', false,
@@ -118,7 +118,7 @@ foo.db.schema.Foo.prototype.deserializeRow = function(dbRecord) {
 /** @override */
 foo.db.schema.Foo.prototype.getConstraint = function() {
   var pk = new lf.schema.Index('Foo', 'pkFoo', true,
-      [{'name': 'id', 'order': lf.Order.ASC}]);
+      [{'name': 'id', 'order': lf.Order.ASC, 'autoIncrement': false}]);
   var notNullable = [
     this.id,
     this.name,

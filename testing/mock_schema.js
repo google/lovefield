@@ -162,7 +162,7 @@ var Table_ = function(tableName) {
 
   var indices = [
     new lf.schema.Index(tableName, 'pkId', true,
-        [{'name': 'id', 'order': lf.Order.ASC}]),
+        [{'name': 'id', 'order': lf.Order.ASC, 'autoIncrement': false}]),
     new lf.schema.Index(tableName, 'idxName', false,
         [{'name': 'name', 'order': lf.Order.DESC}])
   ];
@@ -194,7 +194,7 @@ Table_.prototype.deserializeRow = function(dbPayload) {
 Table_.prototype.getConstraint = function() {
   return new lf.schema.Constraint(
       new lf.schema.Index(this.getName(), 'pkId', true,
-          [{'name': 'id', 'order': lf.Order.ASC}]),
+          [{'name': 'id', 'order': lf.Order.ASC, 'autoIncrement': false}]),
       [this.id, this.name] /* notNullable */,
       [], []);
 };
@@ -262,7 +262,7 @@ var TableWithUnique_ = function(tableName) {
 
   var indices = [
     new lf.schema.Index(tableName, 'pkId', true,
-        [{'name': 'id', 'order': lf.Order.ASC}]),
+        [{'name': 'id', 'order': lf.Order.ASC, 'autoIncrement': false}]),
     new lf.schema.Index(tableName, 'uq_email', true,
         [{'name': 'email', 'order': lf.Order.ASC}])
   ];
@@ -288,7 +288,7 @@ TableWithUnique_.prototype.deserializeRow = function(dbPayload) {
 TableWithUnique_.prototype.getConstraint = function() {
   return new lf.schema.Constraint(
       new lf.schema.Index(this.getName(), 'pkId', true,
-          [{'name': 'id', 'order': lf.Order.ASC}]),
+          [{'name': 'id', 'order': lf.Order.ASC, 'autoIncrement': false}]),
       [this.id, this.email] /* notNullable */, [],
       [new lf.schema.Index(this.getName(), 'uq_email', true,
        [{'name': 'email', 'order': lf.Order.ASC}])]);

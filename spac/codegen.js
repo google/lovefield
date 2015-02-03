@@ -935,8 +935,10 @@ CodeGenerator.prototype.getIndexColumnString_ = function(columns, opt_order) {
  */
 CodeGenerator.indexedColumnsToString_ = function(columns) {
   var body = columns.map(function(col) {
-    var colBody = '{\'name\': \'' + col.name + '\', \'order\': ';
-    colBody += (col.order == 'desc') ? 'lf.Order.DESC' : 'lf.Order.ASC';
+    var colBody = '{\'name\': \'' + col.name + '\',';
+    colBody += ' \'order\': ' +
+        (col.order == 'desc' ? 'lf.Order.DESC' : 'lf.Order.ASC') + ',';
+    colBody += ' \'autoIncrement\': ' + (col.autoIncrement ? 'true' : 'false');
     colBody += '}';
     return colBody;
   }).join(', ');
