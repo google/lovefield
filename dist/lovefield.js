@@ -909,8 +909,8 @@ if (goog.DEPENDENCIES_ENABLED) {
 
 
   /** @const @private {boolean} */
-  goog.IS_OLD_IE_ = goog.global.document &&
-      goog.global.document.all && !goog.global.atob;
+  goog.IS_OLD_IE_ = !goog.global.atob && goog.global.document &&
+      goog.global.document.all;
 
 
   /**

@@ -33,8 +33,10 @@ table:
       proto: object
     index:
       idx_timestamp:
-        column: [ timestamp ]
-        order: desc
+        column:
+          - name: timestamp
+            order: desc
+        unique: false
     constraint:
       primaryKey:
         - column: id

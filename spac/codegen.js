@@ -92,8 +92,10 @@ var Pragma_;
  *     constraint: Constraint_,
  *     index: !Array.<{
  *       name: string,
- *       column: !Array.<string>,
- *       order: ?string,
+ *       column: !Array.<{
+ *         name: string,
+ *         order: ?string
+ *       }>,
  *       unique: ?boolean
  *     }>,
  *     pragma: {
@@ -671,7 +673,10 @@ CodeGenerator.prototype.genKeyOfIndex_ = function(table, prefix) {
     for (var i = 0; i < table.index.length; ++i) {
       var index = table.index[i];
       genCase(index.name);
-      body.push(this.genKeyFromColumns_(table, index.column));
+      var colNames = index.column.map(function(col) {
+        return col.name;
+      });
+      body.push(this.genKeyFromColumns_(table, colNames));
     }
   }
 
@@ -930,15 +935,19 @@ CodeGenerator.prototype.getIndexColumnString_ = function(columns, opt_order) {
 
 /**
  * @param {!Array.<!Object>} columns
+ * @param {boolean=} opt_primaryKey
  * @return {string}
  * @private
  */
-CodeGenerator.indexedColumnsToString_ = function(columns) {
+CodeGenerator.indexedColumnsToString_ = function(columns, opt_primaryKey) {
   var body = columns.map(function(col) {
     var colBody = '{\'name\': \'' + col.name + '\',';
     colBody += ' \'order\': ' +
-        (col.order == 'desc' ? 'lf.Order.DESC' : 'lf.Order.ASC') + ',';
-    colBody += ' \'autoIncrement\': ' + (col.autoIncrement ? 'true' : 'false');
+        (col.order == 'desc' ? 'lf.Order.DESC' : 'lf.Order.ASC');
+    if (opt_primaryKey) {
+      colBody += ', \'autoIncrement\': ' +
+          (col.autoIncrement ? 'true' : 'false');
+    }
     colBody += '}';
     return colBody;
   }).join(', ');
@@ -964,7 +973,7 @@ CodeGenerator.prototype.getPrimaryKeyIndex_ = function(table, opt_indent) {
     this.checkMultiColumnIndex_(pkCols);
 
     var header = 'new lf.schema.Index(\'' + table.name + '\', \'';
-    var cols = CodeGenerator.indexedColumnsToString_(pkCols);
+    var cols = CodeGenerator.indexedColumnsToString_(pkCols, true);
     var keyName = 'pk' + this.toPascal_(table.name);
     results.push(header + keyName + '\', true,\n' + indent + cols + ')');
   } else {
@@ -1071,14 +1080,11 @@ CodeGenerator.prototype.getIndices_ = function(table) {
     var header = '    new lf.schema.Index(\'' + table.name + '\', \'';
     for (var i = 0; i < table.index.length; ++i) {
       var index = table.index[i];
-      var col = [];
-      col = col.concat(index.column);
-      // TODO(arthurhsu): remove this check.
-      this.checkMultiColumnIndex_(col);
-
       var isUnique = index.unique ? true : false;
+
       results.push(header + index.name + '\', ' + isUnique.toString() +
-          ',\n        ' + this.getIndexColumnString_(col, index.order) + ')');
+          ',\n        ' + CodeGenerator.indexedColumnsToString_(index.column) +
+          ')');
     }
   }
 

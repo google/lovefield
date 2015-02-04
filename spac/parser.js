@@ -430,6 +430,51 @@ function checkConstraint(tableName, schemas, colNames, names) {
 
 
 /**
+ * @param {string} indexName
+ * @param {Object} raw
+ * @return {!Object}
+ */
+function convertIndexSchema(indexName, raw) {
+  if (raw.column.length == 0) {
+    throw new Error(indexName + ' is empty');
+  }
+
+  var index = {
+    'name': indexName.substring(indexName.indexOf('.') + 1),
+    'column': []
+  };
+  if (raw.hasOwnProperty('unique')) {
+    index.unique = raw.unique;
+  }
+
+  var order = raw.order ? raw.order : 'asc';
+  if (VALID_INDEX_ORDER.indexOf(order) == -1) {
+    throw new Error(indexName + ' has invalid order');
+  }
+
+  raw.column.forEach(function(col) {
+    if (typeof(col) == 'string') {
+      index.column.push({
+        'name': col,
+        'order': order
+      });
+    } else {
+      var colOrder = col.order || order;
+      if (VALID_INDEX_ORDER.indexOf(colOrder) == -1) {
+        throw new Error(indexName + ' has invalid order');
+      }
+      index.column.push({
+        'name': col.name,
+        'order': colOrder
+      });
+    }
+  });
+
+  return index;
+}
+
+
+/**
  * @param {string} tableName
  * @param {!Object} schema
  * @param {!Array.<string>} colNames
@@ -455,37 +500,35 @@ function checkIndices(tableName, schema, colNames, names, nullable) {
 
   for (var index in schema.index) {
     checkName(index);
-    var indexSchema = schema.index[index];
     var indexName = tableName + '.' + index;
-    checkObject(indexName, INDEX_SCHEMA, indexSchema);
+    checkObject(indexName, INDEX_SCHEMA, schema.index[index]);
     if (names.indexOf(index) != -1) {
       throw new Error(tableName + ' has name conflict: ' + index);
     }
     names.push(index);
 
+    var indexSchema = convertIndexSchema(indexName, schema.index[index]);
     indexSchema.column.forEach(function(col) {
-      if (colNames.indexOf(col) == -1) {
+      if (colNames.indexOf(col.name) == -1) {
         throw new Error(indexName + ' has invalid column: ' + col);
       }
-      if (nullable.indexOf(col) != -1) {
+      if (nullable.indexOf(col.name) != -1) {
         throw new Error(indexName + ' referencing nullable column: ' + col);
       }
-      if (NON_INDEXABLE_TYPE.indexOf(schema.column[col]) != -1) {
+      if (NON_INDEXABLE_TYPE.indexOf(schema.column[col.name]) != -1) {
         throw new Error(indexName + ' referencing nonindexable column: ' + col);
       }
     });
 
-    var indexed = indexSchema.column.join('#');
+    var indexed = indexSchema.column.map(function(col) {
+      return col.name;
+    }).join('#');
     if (indexedCol.indexOf(indexed) != -1) {
       throw new Error(indexName + ' indexed on already indexed column');
     }
     indexedCol.push(indexed);
 
-    if (indexSchema.hasOwnProperty('order')) {
-      if (VALID_INDEX_ORDER.indexOf(indexSchema.order) == -1) {
-        throw new Error(indexName + ' has invalid order');
-      }
-    }
+    schema.index[index] = indexSchema;
   }
 }
 
