@@ -85,7 +85,7 @@ function testTree2() {
       'project()\n' +
       '-order_by(Employee.salary)\n' +
       '--table_access_by_row_id(Employee)\n' +
-      '---index_range_scan(Employee.idx_salary, [10000, unbound], DESC)\n';
+      '---index_range_scan(Employee.idx_salary, [10000, unbound], ASC)\n';
 
   var treeAfter =
       'project()\n' +
@@ -99,7 +99,7 @@ function testTree2() {
   }]);
   var tableAccessByRowIdNode = new lf.proc.TableAccessByRowIdStep(e);
   var indexRangeScanNode = new lf.proc.IndexRangeScanStep(
-      e.getIndices()[1], [lf.index.KeyRange.lowerBound(10000)], lf.Order.DESC);
+      e.getIndices()[1], [lf.index.KeyRange.lowerBound(10000)], lf.Order.ASC);
   tableAccessByRowIdNode.addChild(indexRangeScanNode);
   orderByNode.addChild(tableAccessByRowIdNode);
   rootNodeBefore.addChild(orderByNode);
@@ -129,60 +129,6 @@ function testTree3() {
   var pass = new lf.proc.OrderByIndexPass();
   var rootNodeAfter = pass.rewrite(rootNodeBefore);
   // Tree should be unaffected, since no index exists on Employee#hireDate.
-  assertEquals(treeBefore, lf.tree.toString(rootNodeAfter));
-}
-
-
-/**
- * Tests the case where an OrderByNode exists for an indexed column, but the
- * requested order does not much the index's order. The tree should be left
- * unaffected.
- */
-function testTree4() {
-  var treeBefore =
-      'project()\n' +
-      '-order_by(Employee.salary)\n' +
-      '--select(value_pred(Employee.id gt 100))\n' +
-      '---table_access(Employee)\n';
-
-  var rootNodeBefore = constructTree1(e.salary, lf.Order.ASC);
-  assertEquals(treeBefore, lf.tree.toString(rootNodeBefore));
-
-  var pass = new lf.proc.OrderByIndexPass();
-  var rootNodeAfter = pass.rewrite(rootNodeBefore);
-  assertEquals(treeBefore, lf.tree.toString(rootNodeAfter));
-}
-
-
-/**
- * Tests the case where an OrderByNode exists for an indexed column and an
- * IndexRangeScanStep already exists in the tree, but the requested order does
- * not much the index's order. The tree should be left
- * unaffected.
- */
-function testTree5() {
-  var treeBefore =
-      'project()\n' +
-      '-order_by(Employee.salary)\n' +
-      '--table_access_by_row_id(Employee)\n' +
-      '---index_range_scan(Employee.idx_salary, [10000, unbound], DESC)\n';
-
-  var rootNodeBefore = new lf.proc.ProjectStep([], null);
-  var orderByNode = new lf.proc.OrderByStep([{
-    column: e.salary,
-    order: lf.Order.ASC
-  }]);
-  var tableAccessByRowIdNode = new lf.proc.TableAccessByRowIdStep(e);
-  var indexRangeScanNode = new lf.proc.IndexRangeScanStep(
-      e.getIndices()[1], [lf.index.KeyRange.lowerBound(10000)], lf.Order.DESC);
-  tableAccessByRowIdNode.addChild(indexRangeScanNode);
-  orderByNode.addChild(tableAccessByRowIdNode);
-  rootNodeBefore.addChild(orderByNode);
-
-  assertEquals(treeBefore, lf.tree.toString(rootNodeBefore));
-
-  var pass = new lf.proc.OrderByIndexPass();
-  var rootNodeAfter = pass.rewrite(rootNodeBefore);
   assertEquals(treeBefore, lf.tree.toString(rootNodeAfter));
 }
 
