@@ -17,6 +17,7 @@
 goog.provide('lf.testing.util');
 
 goog.require('goog.Promise');
+goog.require('lf.Exception');
 
 
 /**
@@ -49,3 +50,19 @@ lf.testing.util.sequentiallyRun = function(functions) {
   runner();
   return resolver.promise;
 };
+
+
+/**
+ * Asserts that an lf.Exception.Type.SYNTAX error is thrown.
+ * @param {!function()} fn The function to be checked.
+ */
+lf.testing.util.assertThrowsSyntaxError = function(fn) {
+  var thrown = false;
+  try {
+    fn.call();
+  } catch (e) {
+    thrown = true;
+    assertEquals(e.name, lf.Exception.Type.SYNTAX);
+  }
+  assertTrue(thrown);
+}

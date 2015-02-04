@@ -133,6 +133,7 @@ All properties of the constraint object are optional.
 `primaryKey` can contain one or more columns. Primary key implies not null and
 unique, and conflicting definitions will cause SPAC to reject this schema.
 
+#### 1.3.1 Primary Key Definition
 There are two types of primary key definition:
 
 ```yaml
@@ -148,8 +149,11 @@ primaryKey:
     autoIncrement: true
 ```
 The first variation is used to define an auto-increment primary key. Lovefield
-supports only single-column numeric auto-increment primary key. The second
-variation allows specification of order:
+supports only single-column integer auto-increment primary key. An
+`lf.Exception.SYNTAX` will be thrown if a non-integer or multi-column primary
+key is declared.
+
+The second variation allows specification of order:
 
 ```yaml
 primaryKey:
@@ -159,6 +163,8 @@ primaryKey:
     order: <desc | asc>
   ...
 ```
+
+#### 1.3.2 Uniqueness Definition
 
 `unique` can be defined on a single column or cross column, and each will imply
 an implicit index. The uniqueness definition is a YAML object
@@ -171,7 +177,13 @@ an implicit index. The uniqueness definition is a YAML object
 A cross-column `unique` constraint means the value combinations of these columns
 must be unique.
 
+
+#### 1.3.3 Nullable Definition
+
 `nullable` is an array of all nullable columns.
+
+
+#### 1.3.4 Foreign Key Definition
 
 Foreign key is defined as a YAML object
 

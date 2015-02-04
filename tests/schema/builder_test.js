@@ -22,6 +22,7 @@ goog.require('lf.Type');
 goog.require('lf.schema');
 goog.require('lf.schema.BaseColumn');
 goog.require('lf.schema.Table');
+goog.require('lf.testing.util');
 
 
 /** @return {!lf.schema.Builder} */
@@ -46,7 +47,7 @@ function createBuilder() {
       addForeignKey('fk_DeptId', 'departmentId', 'Department', 'id', true);
 
   ds.createTable('Employee').
-      addColumn('id', lf.Type.STRING).
+      addColumn('id', lf.Type.INTEGER).
       addColumn('firstName', lf.Type.STRING).
       addColumn('lastName', lf.Type.STRING).
       addColumn('email', lf.Type.STRING).
@@ -86,29 +87,57 @@ function createBuilder() {
   return ds;
 }
 
-function testNoDuplicateTable() {
+
+function testDuplicateTableThrows() {
   var ds = createBuilder();
-  assertThrows(function() {
+  lf.testing.util.assertThrowsSyntaxError(function() {
     ds.createTable('DummyTable');
   });
 }
 
-function testNoDplicateColumn() {
+
+function testDuplicateColumnThrows() {
   var ds = createBuilder();
-  assertThrows(function() {
+  lf.testing.util.assertThrowsSyntaxError(function() {
     ds.createTable('Table2').
         addColumn('col', lf.Type.STRING).
         addColumn('col', lf.Type.STRING);
   });
 }
 
-function testNoModificationAfterFinalization() {
+
+function testModificationAfterFinalizationThrows() {
   var ds = createBuilder();
   ds.getSchema();
-  assertThrows(function() {
+  lf.testing.util.assertThrowsSyntaxError(function() {
     ds.createTable('NewTable');
   });
 }
+
+
+function testCrossColumnPkWithAutoIncThrows() {
+  var ds = lf.schema.create('hr', 1);
+  lf.testing.util.assertThrowsSyntaxError(function() {
+    ds.createTable('Employee').
+        addColumn('id1', lf.Type.INTEGER).
+        addColumn('id2', lf.Type.INTEGER).
+        addPrimaryKey([
+          {'name': 'id1', 'autoIncrement': true},
+          {'name': 'id2', 'autoIncrement': true}
+        ]);
+  });
+}
+
+
+function testNonIntegerPkWithAutoIncThrows() {
+  var ds = lf.schema.create('hr', 1);
+  lf.testing.util.assertThrowsSyntaxError(function() {
+    ds.createTable('Employee').
+        addColumn('id', lf.Type.STRING).
+        addPrimaryKey([{'name': 'id', 'autoIncrement': true}]);
+  });
+}
+
 
 function testSchemaCorrectness() {
   var ds = createBuilder();
@@ -151,15 +180,16 @@ function testSchemaCorrectness() {
   assertObjectEquals(row2.payload(), row3.payload());
 }
 
-function testThrowsOnNonIndexableColumns() {
-  assertThrows(function() {
+
+function testNonIndexableColumnsThrows() {
+  lf.testing.util.assertThrowsSyntaxError(function() {
     var ds = lf.schema.create('d1', 1);
     ds.createTable('NewTable').
         addColumn('object', lf.Type.OBJECT).
         addPrimaryKey(['object']);
   });
 
-  assertThrows(function() {
+  lf.testing.util.assertThrowsSyntaxError(function() {
     var ds = lf.schema.create('d2', 1);
     ds.createTable('NameTable').
         addColumn('arraybuffer', lf.Type.ARRAY_BUFFER).
@@ -167,38 +197,40 @@ function testThrowsOnNonIndexableColumns() {
   });
 }
 
-function testThrowsOnIllegalName() {
-  assertThrows(function() {
+
+function testIllegalNameThrows() {
+  lf.testing.util.assertThrowsSyntaxError(function() {
     var ds = lf.schema.create('d1', 1);
     ds.createTable('#NewTable');
   });
 
-  assertThrows(function() {
+  lf.testing.util.assertThrowsSyntaxError(function() {
     var ds = lf.schema.create('d2', 1);
     ds.createTable('NameTable').
         addColumn('22arraybuffer', lf.Type.ARRAY_BUFFER);
   });
 
-  assertThrows(function() {
+  lf.testing.util.assertThrowsSyntaxError(function() {
     var ds = lf.schema.create('d3', 1);
     ds.createTable('NameTable').
         addColumn('_obj_#ect', lf.Type.OBJECT);
   });
 
-  assertThrows(function() {
+  lf.testing.util.assertThrowsSyntaxError(function() {
     var ds = lf.schema.create('d4', 1);
     ds.createTable('NameTable').
         addColumn('name', lf.Type.STRING).
         addIndex('idx.name', ['name']);
   });
 
-  assertThrows(function() {
+  lf.testing.util.assertThrowsSyntaxError(function() {
     var ds = lf.schema.create('d4', 1);
     ds.createTable('NameTable').
         addColumn('name', lf.Type.STRING).
         addUnique('unq#name', ['name']);
   });
 }
+
 
 function testKeyOfIndex() {
   var ds = lf.schema.create('ki', 1);

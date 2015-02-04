@@ -23,6 +23,7 @@ goog.require('lf.Exception');
 goog.require('lf.bind');
 goog.require('lf.fn');
 goog.require('lf.query.SelectBuilder');
+goog.require('lf.testing.util');
 
 
 /** @type {!goog.testing.AsyncTestCase} */
@@ -169,7 +170,7 @@ function testFrom_ThrowsAlreadyCalled() {
     query.from(jobTable).from(employeeTable);
   };
 
-  assertThrowsSyntaxError(buildQuery);
+  lf.testing.util.assertThrowsSyntaxError(buildQuery);
 }
 
 
@@ -185,7 +186,7 @@ function testWhere_ThrowsAlreadyCalled() {
     query.where(predicate).where(predicate);
   };
 
-  assertThrowsSyntaxError(buildQuery);
+  lf.testing.util.assertThrowsSyntaxError(buildQuery);
 }
 
 
@@ -200,7 +201,7 @@ function testGroupBy_ThrowsAlreadyCalled() {
     query.groupBy(employeeTable.id).groupBy(employeeTable.jobId);
   };
 
-  assertThrowsSyntaxError(buildQuery);
+  lf.testing.util.assertThrowsSyntaxError(buildQuery);
 }
 
 
@@ -215,7 +216,7 @@ function testLimit_ThrowsAlreadyCalled() {
     query.from(employeeTable).limit(100).limit(100);
   };
 
-  assertThrowsSyntaxError(buildQuery);
+  lf.testing.util.assertThrowsSyntaxError(buildQuery);
 }
 
 
@@ -229,7 +230,7 @@ function testLimit_ThrowsInvalidParameter() {
   var buildQuery = function() {
     query.from(employeeTable).limit(-100);
   };
-  assertThrowsSyntaxError(buildQuery);
+  lf.testing.util.assertThrowsSyntaxError(buildQuery);
 }
 
 
@@ -244,7 +245,7 @@ function testSkip_ThrowsAlreadyCalled() {
     query.from(employeeTable).skip(100).skip(100);
   };
 
-  assertThrowsSyntaxError(buildQuery);
+  lf.testing.util.assertThrowsSyntaxError(buildQuery);
 }
 
 
@@ -258,7 +259,7 @@ function testSkip_ThrowsInvalidParameter() {
   var buildQuery = function() {
     query.from(employeeTable).skip(-100);
   };
-  assertThrowsSyntaxError(buildQuery);
+  lf.testing.util.assertThrowsSyntaxError(buildQuery);
 }
 
 
@@ -272,7 +273,7 @@ function testProject_ThrowsInvalidColumns() {
     ]);
     query.from(job);
   };
-  assertThrowsSyntaxError(buildQuery1);
+  lf.testing.util.assertThrowsSyntaxError(buildQuery1);
 
   var buildQuery2 = function() {
     var query = new lf.query.SelectBuilder(hr.db.getGlobal(), [
@@ -281,7 +282,7 @@ function testProject_ThrowsInvalidColumns() {
     ]);
     query.from(job);
   };
-  assertThrowsSyntaxError(buildQuery2);
+  lf.testing.util.assertThrowsSyntaxError(buildQuery2);
 }
 
 
@@ -400,7 +401,7 @@ function checkAggregators(invalidAggregators, validAggregators, table) {
       return new lf.query.SelectBuilder(
           hr.db.getGlobal(), [aggregator]).from(table);
     };
-    assertThrowsSyntaxError(buildQuery);
+    lf.testing.util.assertThrowsSyntaxError(buildQuery);
   });
 
   validAggregators.forEach(function(aggregator) {
@@ -420,20 +421,4 @@ function testExplain() {
       '-skip(1)\n' +
       '--table_access(Employee)\n';
   assertEquals(expected, query.explain());
-}
-
-
-/**
- * Asserts that an lf.Exception.Type.SYNTAX error is thrown.
- * @param {!function()} fn The function to be checked.
- */
-function assertThrowsSyntaxError(fn) {
-  var thrown = false;
-  try {
-    fn.call();
-  } catch (e) {
-    thrown = true;
-    assertEquals(e.name, lf.Exception.Type.SYNTAX);
-  }
-  assertTrue(thrown);
 }
