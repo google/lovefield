@@ -1,0 +1,15 @@
+%YAML 1.2
+---
+name: sample
+version: 1
+table:
+  Employee:
+    column:
+      id1: integer
+      id2: integer
+    constraint:
+      primaryKey:
+        - column: id1
+          autoIncrement: true
+        - column: id2
+          autoIncrement: true

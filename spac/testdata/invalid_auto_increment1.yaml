@@ -1,0 +1,13 @@
+%YAML 1.2
+---
+name: sample
+version: 1
+table:
+  Employee:
+    column:
+      id: string # Invalid type for an auto-increment primary key.
+      name: string
+    constraint:
+      primaryKey:
+        - column: id
+          autoIncrement: true

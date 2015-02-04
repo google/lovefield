@@ -246,6 +246,33 @@ function convertPrimaryKey(tableName, schema, colNames, names) {
 
 
 /**
+ * Checks if an invalid usage of "auto-increment" occurred.
+ * @param {!Object} table
+ * @private
+ */
+function checkAutoIncrement(table) {
+  var pkColumns = table.constraint.primaryKey;
+
+  var hasAutoIncrement = false;
+  pkColumns.forEach(function(pkColumn) {
+    var columnType = table.column[pkColumn.column];
+    hasAutoIncrement = hasAutoIncrement || pkColumn.autoIncrement;
+    if (pkColumn.autoIncrement && columnType != 'integer') {
+      throw new Error(
+          'Can not use autoIncrement with a non-integer' +
+          ' primary key, \'' + pkColumn.column + '\' is of type ' +
+          columnType + '.');
+    }
+  });
+
+  if (hasAutoIncrement && pkColumns.length > 1) {
+    throw new Error(
+        'Can not use autoIncrement with a cross-column primary key.');
+  }
+}
+
+
+/**
  * @param {string} tableName
  * @param {!Object} tableSchema
  * @param {!Array.<string>} colNames Column names in this table.
@@ -402,6 +429,7 @@ function checkConstraint(tableName, schemas, colNames, names) {
     if (schema.primaryKey.length == 0) {
       throw new Error('Empty primaryKey for ' + tableName);
     }
+    checkAutoIncrement(schemas[tableName]);
     checkIndexable(schemas[tableName], schema.primaryKey);
     notNullable = notNullable.concat(
         convertPrimaryKey(tableName, schema, colNames, names));

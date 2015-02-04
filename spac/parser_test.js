@@ -91,6 +91,14 @@ describe('YAML Parser Test', function() {
     thrower('invalid_primary_key.yaml');
   });
 
+  it('should throw if auto-inc used with non-integer primary key', function() {
+    thrower('invalid_auto_increment1.yaml');
+  });
+
+  it('should throw if auto-inc used cross-column primary key', function() {
+    thrower('invalid_auto_increment2.yaml');
+  });
+
   it('should throw if unique constraint name is invalid', function() {
     thrower('invalid_unique_key_name.yaml');
   });
