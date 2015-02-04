@@ -24082,22 +24082,24 @@ goog.forwardDeclare('lf.index.KeyRange');
 /**
  * Comparator used to provide necessary information for building an index tree.
  * It offers methods to indicate which operand is "favorable".
- * @interface
+ *
+ * @template KeyType, RangeType
+ * @constructor
  */
 lf.index.Comparator = function() {};
 
 
 /**
- * @param {lf.index.Index.Key} lhs
- * @param {lf.index.Index.Key} rhs
+ * @param {KeyType} lhs
+ * @param {KeyType} rhs
  * @return {!lf.index.FAVOR}
  */
 lf.index.Comparator.prototype.compare;
 
 
 /**
- * @param {!lf.index.Index.Key} key
- * @param {!lf.index.KeyRange} range
+ * @param {KeyType} key
+ * @param {RangeType} range
  * @return {boolean}
  */
 lf.index.Comparator.prototype.isInRange;
@@ -24111,16 +24113,10 @@ lf.index.Comparator.prototype.isInRange;
  * case of a comparator that sends larger values to the left and smaller values
  * to the right (DESC order) for indices to return correct results.
  *
- * @param {!lf.index.KeyRange=} opt_keyRange
- * @return {?lf.index.KeyRange}
+ * @param {RangeType=} opt_keyRange
+ * @return {?RangeType}
  */
 lf.index.Comparator.prototype.normalizeKeyRange;
-
-
-/**
- * @typedef {!function(lf.index.Index.Key, lf.index.Index.Key): !lf.index.FAVOR}
- */
-lf.index.Comparator.FunctionType;
 
 
 
@@ -24131,8 +24127,12 @@ lf.index.Comparator.FunctionType;
 lf.index.Index = function() {};
 
 
-/** @typedef {(string|number|!Array<(string|number)>)} */
+/** @typedef {string|number} */
 lf.index.Index.Key;
+
+
+/** @typedef {!Array<!lf.index.Index.Key>} */
+lf.index.Index.MultiKey;
 
 
 /** @return {string} Normalized name for this index. */
@@ -25263,12 +25263,14 @@ lf.index.ComparatorFactory.create = function(indexSchema) {
 
 
 /**
- * @implements {lf.index.Comparator}
+ * @extends {lf.index.Comparator.<!lf.index.Index.Key, !lf.index.KeyRange>}
  * @constructor
  *
  * @param {!lf.Order} order
  */
 lf.index.SimpleComparator = function(order) {
+  lf.index.SimpleComparator.base(this, 'constructor');
+
   /** @private {!Function} */
   this.compare_ = (order == lf.Order.DESC) ?
       lf.index.SimpleComparator.compareDescending :
@@ -25281,12 +25283,13 @@ lf.index.SimpleComparator = function(order) {
             opt_keyRange.reverse() : null;
       } : goog.functions.identity;
 };
+goog.inherits(lf.index.SimpleComparator, lf.index.Comparator);
 
 
 /**
- * @param {(string|number)} lhs
- * @param {(string|number)} rhs
- * @return {number} -1: favor rhs, 0: equal, 1: favor lhs
+ * @param {!lf.index.Index.Key} lhs
+ * @param {!lf.index.Index.Key} rhs
+ * @return {!lf.index.FAVOR}
  */
 lf.index.SimpleComparator.compareAscending = function(lhs, rhs) {
   return lhs > rhs ?
@@ -25296,9 +25299,9 @@ lf.index.SimpleComparator.compareAscending = function(lhs, rhs) {
 
 
 /**
- * @param {(string|number)} lhs
- * @param {(string|number)} rhs
- * @return {number} -1: favor rhs, 0: equal, 1: favor lhs
+ * @param {!lf.index.Index.Key} lhs
+ * @param {!lf.index.Index.Key} rhs
+ * @return {!lf.index.FAVOR}
  */
 lf.index.SimpleComparator.compareDescending = function(lhs, rhs) {
   return lhs > rhs ?
@@ -25308,7 +25311,8 @@ lf.index.SimpleComparator.compareDescending = function(lhs, rhs) {
 
 
 /**
- * @param {!lf.index.Comparator.FunctionType} fn
+ * @param {!function(!lf.index.Index.Key, !lf.index.Index.Key):
+ *     !lf.index.FAVOR} fn
  * @param {!lf.index.Index.Key} key
  * @param {!lf.index.KeyRange} range
  * @return {boolean}
@@ -25354,12 +25358,15 @@ lf.index.SimpleComparator.prototype.normalizeKeyRange = function(keyRange) {
 
 
 /**
- * @implements {lf.index.Comparator}
+ * @extends {lf.index.Comparator.<!lf.index.Index.MultiKey,
+ *     !Array<!lf.index.KeyRange>>}
  * @constructor
  *
  * @param {!Array<!lf.Order>} orders
  */
 lf.index.MultiKeyComparator = function(orders) {
+  lf.index.MultiKeyComparator.base(this, 'constructor');
+
   /** @private {!Array<!Function>} */
   this.comparators_ = orders.map(function(order) {
     return order == lf.Order.DESC ?
@@ -25367,6 +25374,7 @@ lf.index.MultiKeyComparator = function(orders) {
         lf.index.SimpleComparator.compareAscending;
   });
 };
+goog.inherits(lf.index.MultiKeyComparator, lf.index.Comparator);
 
 
 /**
