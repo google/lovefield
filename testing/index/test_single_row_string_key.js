@@ -102,6 +102,13 @@ lf.testing.index.TestSingleRowStringKey.prototype.testSet = function(index) {
 };
 
 
+/** @override */
+lf.testing.index.TestSingleRowStringKey.prototype.testMinMax = function(
+    index) {
+  // TODO(dpapad): Implement.
+};
+
+
 /**
  * Populates the index with dummy data to be used for al tests.
  * @param {!lf.index.Index} index

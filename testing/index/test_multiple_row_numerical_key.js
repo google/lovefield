@@ -34,6 +34,20 @@ goog.require('lf.testing.index.TestSingleRowNumericalKey');
 lf.testing.index.TestMultiRowNumericalKey = function(constructorFn) {
   lf.testing.index.TestMultiRowNumericalKey.base(
       this, 'constructor', constructorFn);
+
+  /**
+   * Holds the max key and the corresponding values, populated in
+   * populateIndex_.
+   * @private {?Array}
+   */
+  this.maxKeyValuePair_ = null;
+
+  /**
+   * Holds the min key and the corresponding values, populated in
+   * populateIndex_.
+   * @private {?Array}
+   */
+  this.minKeyValuePair_ = null;
 };
 goog.inherits(
     lf.testing.index.TestMultiRowNumericalKey,
@@ -102,6 +116,19 @@ lf.testing.index.TestMultiRowNumericalKey.prototype.testSet = function(index) {
 };
 
 
+/** @override */
+lf.testing.index.TestMultiRowNumericalKey.prototype.testMinMax = function(
+    index) {
+  // First try an empty index.
+  assertArrayEquals([null, null], index.min());
+  assertArrayEquals([null, null], index.max());
+
+  this.populateIndex_(index);
+  assertArrayEquals(this.minKeyValuePair_, index.min());
+  assertArrayEquals(this.maxKeyValuePair_, index.max());
+};
+
+
 /**
  * Populates the index with dummy data to be used for al tests.
  * @param {!lf.index.Index} index
@@ -115,6 +142,18 @@ lf.testing.index.TestMultiRowNumericalKey.prototype.populateIndex_ =
     var value2 = 30 + i;
     index.add(key, value1);
     index.add(key, value2);
+
+    // Detecting min key and corresponding value to be used later in assertions.
+    if (goog.isNull(this.minKeyValuePair_) ||
+        key < this.minKeyValuePair_[0]) {
+      this.minKeyValuePair_ = [key, [value1, value2]];
+    }
+
+    // Detecting max key and corresponding value to be used later in assertions.
+    if (goog.isNull(this.maxKeyValuePair_) ||
+        key > this.maxKeyValuePair_[0]) {
+      this.maxKeyValuePair_ = [key, [value1, value2]];
+    }
   }
 };
 

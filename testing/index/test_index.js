@@ -33,6 +33,7 @@ lf.testing.index.TestIndex = function(constructorFn) {
   this.testCases_ = [
     this.testAddGet,
     this.testGetRangeCost,
+    this.testMinMax,
     this.testRemove,
     this.testSet
   ];
@@ -65,6 +66,10 @@ lf.testing.index.TestIndex.prototype.testRemove = goog.abstractMethod;
 
 /** @param {!lf.index.Index} index */
 lf.testing.index.TestIndex.prototype.testSet = goog.abstractMethod;
+
+
+/** @param {!lf.index.Index} index */
+lf.testing.index.TestIndex.prototype.testMinMax = goog.abstractMethod;
 
 
 /**

@@ -23,14 +23,15 @@ goog.require('lf.index.RowId');
 
 /**
  * Creates a new Index pre-populated with dummy data to be used for tests.
+ * @param {number} rowCount
  * @return {!lf.index.Index}
  */
-function getSampleIndex() {
+function getSampleIndex(rowCount) {
   var index = new lf.index.RowId('dummyName');
 
-  var rows = [];
-  for (var i = 0; i < 10; ++i) {
-    rows.push(new lf.Row(i, {id: i * 100}));
+  var rows = new Array(rowCount);
+  for (var i = 0; i < rows.length; ++i) {
+    rows[i] = new lf.Row(i, {id: i * 100});
     index.set(i, rows[i]);
   }
 
@@ -61,12 +62,12 @@ function checkGetRange(index) {
 
 
 function testConstruction() {
-  checkGetRange(getSampleIndex());
+  checkGetRange(getSampleIndex(10));
 }
 
 
 function testRemove() {
-  var index = getSampleIndex();
+  var index = getSampleIndex(10);
   index.remove(2, 2);
   assertArrayEquals([], index.get(2));
   assertArrayEquals([], index.getRange(lf.index.KeyRange.only(2)));
@@ -78,7 +79,7 @@ function testRemove() {
  * Tests that serializing and deserializing produces the original index.
  */
 function testSerialize() {
-  var index = getSampleIndex();
+  var index = getSampleIndex(10);
 
   var serialized = index.serialize();
   assertEquals(1, serialized.length);
@@ -86,4 +87,16 @@ function testSerialize() {
 
   var deserialized = lf.index.RowId.deserialize('dummyName', serialized);
   checkGetRange(deserialized);
+}
+
+
+function testMinMax() {
+  var index1 = new lf.index.RowId('dummyName');
+  assertArrayEquals([null, null], index1.min());
+  assertArrayEquals([null, null], index1.max());
+
+  var rowCount = 7;
+  var index2 = getSampleIndex(rowCount);
+  assertArrayEquals([0, [0]], index2.min());
+  assertArrayEquals([rowCount - 1, [rowCount - 1]], index2.max());
 }

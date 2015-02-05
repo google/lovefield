@@ -24210,6 +24210,22 @@ lf.index.Index.prototype.containsKey;
 
 
 /**
+ * @return {!Array} An array of exactly two elements, holding the minimum key at
+ *     position 0, and all associated values at position 1. If no keys exist in
+ *     the index [null, null] is returned.
+ */
+lf.index.Index.prototype.min;
+
+
+/**
+ * @return {!Array} An array of exactly two elements, holding the maximum key at
+ *     position 0, and all associated values at position 1. If no keys exist in
+ *     the index [null, null] is returned.
+ */
+lf.index.Index.prototype.max;
+
+
+/**
  * Serializes this index such that it can be persisted.
  * @return {!Array.<!lf.Row>}
  */
@@ -24357,6 +24373,44 @@ lf.index.BTree.prototype.clear = function() {
 /** @override */
 lf.index.BTree.prototype.containsKey = function(key) {
   return this.root_.containsKey(key);
+};
+
+
+/** @override */
+lf.index.BTree.prototype.min = function() {
+  return this.minMax_(goog.bind(this.comparator_.min, this.comparator_));
+};
+
+
+/** @override */
+lf.index.BTree.prototype.max = function() {
+  return this.minMax_(goog.bind(this.comparator_.max, this.comparator_));
+};
+
+
+/**
+ * @param {!function(!lf.index.Index.Key, !lf.index.Index.Key):!lf.index.FAVOR}
+ *     compareFn
+ * @return {!Array} See lf.index.Index.min() or max() for details.
+ * @private
+ */
+lf.index.BTree.prototype.minMax_ = function(compareFn) {
+  var leftMostNode = this.root_.getLeftMostNode();
+  var rightMostNode = this.root_.getRightMostNode();
+
+  if (leftMostNode.keys_.length == 0 && rightMostNode.keys_.length == 0) {
+    return [null, null];
+  }
+
+  var leftMostKey = leftMostNode.keys_[0];
+  var leftMostValues = leftMostNode.values_[0];
+  var rightMostKey = rightMostNode.keys_[rightMostNode.keys_.length - 1];
+  var rightMostValues =
+      rightMostNode.values_[rightMostNode.keys_.length - 1];
+
+  return compareFn(leftMostKey, rightMostKey) == lf.index.FAVOR.LHS ?
+      [leftMostKey, this.uniqueKeyOnly_ ? [leftMostValues] : leftMostValues] :
+      [rightMostKey, this.uniqueKeyOnly_ ? [rightMostValues] : rightMostValues];
 };
 
 
@@ -24597,6 +24651,15 @@ lf.index.BTreeNode_.prototype.getLeftMostNode = function() {
     return this;
   }
   return this.children_[0].getLeftMostNode();
+};
+
+
+/** @return {!lf.index.BTreeNode_} Right most leaf of the sub-tree */
+lf.index.BTreeNode_.prototype.getRightMostNode = function() {
+  if (this.isLeaf_()) {
+    return this;
+  }
+  return this.children_[this.children_.length - 1].getRightMostNode();
 };
 
 
@@ -25709,6 +25772,40 @@ lf.index.RowId.prototype.get = function(key) {
 
 
 /** @override */
+lf.index.RowId.prototype.min = function() {
+  return this.minMax_(goog.bind(this.comparator_.min, this.comparator_));
+};
+
+
+/** @override */
+lf.index.RowId.prototype.max = function() {
+  return this.minMax_(goog.bind(this.comparator_.max, this.comparator_));
+};
+
+
+/**
+ * @param {!function(!lf.index.Index.Key, !lf.index.Index.Key):!lf.index.FAVOR}
+ *     compareFn
+ * @return {!Array} See lf.index.Index.min() or max() for details.
+ * @private
+ */
+lf.index.RowId.prototype.minMax_ = function(compareFn) {
+  if (this.rows_.isEmpty()) {
+    return [null, null];
+  }
+
+  var key = this.rows_.getValues().reduce(goog.bind(
+      function(keySoFar, key) {
+        return goog.isNull(keySoFar) ||
+            compareFn(key, keySoFar) == lf.index.FAVOR.LHS ?
+            key : keySoFar;
+      }, this), null);
+
+  return [key, [key]];
+};
+
+
+/** @override */
 lf.index.RowId.prototype.cost = function(opt_keyRange) {
   // Give the worst case so that this index is not used unless necessary.
   return this.rows_.getCount();
@@ -26337,6 +26434,39 @@ lf.index.AATree.prototype.containsKey = function(key) {
 
 
 /** @override */
+lf.index.AATree.prototype.min = function() {
+  return this.minMax_(goog.bind(this.comparator_.min, this.comparator_));
+};
+
+
+/** @override */
+lf.index.AATree.prototype.max = function() {
+  return this.minMax_(goog.bind(this.comparator_.max, this.comparator_));
+};
+
+
+/**
+ * @param {!function(!lf.index.Index.Key, !lf.index.Index.Key):!lf.index.FAVOR}
+ *     compareFn
+ * @return {!Array} See lf.index.Index.min() or max() for details.
+ * @private
+ */
+lf.index.AATree.prototype.minMax_ = function(compareFn) {
+  var leftMostNode = this.findMin_();
+  var rightMostNode = this.findMax_();
+
+  if (!goog.isDefAndNotNull(leftMostNode.key) &&
+      !goog.isDefAndNotNull(rightMostNode.key)) {
+    return [null, null];
+  }
+
+  return compareFn(leftMostNode.key, rightMostNode.key) == lf.index.FAVOR.LHS ?
+      [leftMostNode.key, [leftMostNode.value]] :
+      [rightMostNode.key, [rightMostNode.value]];
+};
+
+
+/** @override */
 lf.index.AATree.prototype.serialize = function() {
   goog.asserts.fail('AATree index serialization is not supported.');
   return [];
@@ -26561,6 +26691,40 @@ lf.index.Map.prototype.clear = function() {
 /** @override */
 lf.index.Map.prototype.containsKey = function(key) {
   return this.map_.containsKey(key);
+};
+
+
+/** @override */
+lf.index.Map.prototype.min = function() {
+  return this.minMax_(goog.bind(this.comparator_.min, this.comparator_));
+};
+
+
+/** @override */
+lf.index.Map.prototype.max = function() {
+  return this.minMax_(goog.bind(this.comparator_.max, this.comparator_));
+};
+
+
+/**
+ * @param {!function(!lf.index.Index.Key, !lf.index.Index.Key):!lf.index.FAVOR}
+ *     compareFn
+ * @return {!Array} See lf.index.Index.min() or max() for details.
+ * @private
+ */
+lf.index.Map.prototype.minMax_ = function(compareFn) {
+  if (this.map_.isEmpty()) {
+    return [null, null];
+  }
+
+  var key = this.map_.getKeys().reduce(goog.bind(
+      function(keySoFar, key) {
+        return goog.isNull(keySoFar) ||
+            compareFn(key, keySoFar) == lf.index.FAVOR.LHS ?
+            key : keySoFar;
+      }, this), null);
+
+  return [key, this.map_.get(key).getValues()];
 };
 
 

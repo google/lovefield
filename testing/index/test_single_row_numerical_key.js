@@ -33,6 +33,20 @@ goog.require('lf.testing.index.TestIndex');
 lf.testing.index.TestSingleRowNumericalKey = function(constructorFn) {
   lf.testing.index.TestSingleRowNumericalKey.base(
       this, 'constructor', constructorFn);
+
+  /**
+   * Holds the max key and the corresponding values, populated in
+   * populateIndex_.
+   * @private {?Array}
+   */
+  this.maxKeyValuePair_ = null;
+
+  /**
+   * Holds the min key and the corresponding values, populated in
+   * populateIndex_.
+   * @private {?Array}
+   */
+  this.minKeyValuePair_ = null;
 };
 goog.inherits(
     lf.testing.index.TestSingleRowNumericalKey,
@@ -61,7 +75,7 @@ lf.testing.index.TestSingleRowNumericalKey.prototype.testGetRangeCost =
   lf.testing.index.TestSingleRowNumericalKey.keyRanges.forEach(
       function(keyRange, counter) {
         var expectedResult = lf.testing.index.TestSingleRowNumericalKey.
-            getRangeExpectations[counter];
+            getRangeExpectations_[counter];
         lf.testing.index.TestIndex.assertGetRangeCost(
             index, keyRange, expectedResult);
       });
@@ -100,8 +114,21 @@ lf.testing.index.TestSingleRowNumericalKey.prototype.testSet = function(index) {
 };
 
 
+/** @override */
+lf.testing.index.TestSingleRowNumericalKey.prototype.testMinMax = function(
+    index) {
+  // First try an empty index.
+  assertArrayEquals([null, null], index.min());
+  assertArrayEquals([null, null], index.max());
+
+  this.populateIndex_(index);
+  assertArrayEquals(this.minKeyValuePair_, index.min());
+  assertArrayEquals(this.maxKeyValuePair_, index.max());
+};
+
+
 /**
- * Populates the index with dummy data to be used for al tests.
+ * Populates the index with dummy data to be used for all tests.
  * @param {!lf.index.Index} index
  * @private
  */
@@ -109,8 +136,20 @@ lf.testing.index.TestSingleRowNumericalKey.prototype.populateIndex_ =
     function(index) {
   for (var i = 0; i < 10; ++i) {
     var key = 10 + i;
-    var value = 20 + i;
+    var value = key + 10;
     index.add(key, value);
+
+    // Detecting min key and corresponding value to be used later in assertions.
+    if (goog.isNull(this.minKeyValuePair_) ||
+        key < this.minKeyValuePair_[0]) {
+      this.minKeyValuePair_ = [key, [value]];
+    }
+
+    // Detecting max key and corresponding value to be used later in assertions.
+    if (goog.isNull(this.maxKeyValuePair_) ||
+        key > this.maxKeyValuePair_[0]) {
+      this.maxKeyValuePair_ = [key, [value]];
+    }
   }
 };
 
@@ -142,9 +181,9 @@ lf.testing.index.TestSingleRowNumericalKey.keyRanges = [
 /**
  * The expected results for all key ranges in
  * lf.testing.index.TestSingleRowNumericalKeyCases.keyRanges.
- * @type {!Array.<!Array.<number>>}
+ * @private {!Array.<!Array.<number>>}
  */
-lf.testing.index.TestSingleRowNumericalKey.getRangeExpectations = [
+lf.testing.index.TestSingleRowNumericalKey.getRangeExpectations_ = [
   // get all.
   [20, 21, 22, 23, 24, 25, 26, 27, 28, 29],
   [20, 21, 22, 23, 24, 25, 26, 27, 28, 29],
