@@ -170,12 +170,11 @@ transaction. Although queries return promises, and one can use it to replace
 transactions, there can be possible performance penalty since Lovefield may have
 flushed the data and have to delete them in rejection case.
 
-The suggested way is to create transactions:
+The simple usage of transaction is demonstrated in the following:
 
 ```js
-// Assume query1 - query6 are read-only
-// create a read-only transaction, any write op in it will fail.
-var tx1 = db.createTransaction(lf.TransactionType.READ_ONLY);
+// Get a transaction object first.
+var tx1 = db.createTransaction();
 
 // exec in order: query 1 first then query2, guaranteed snapshot
 tx1.exec([query1, query2]);
@@ -189,8 +188,7 @@ query3.exec().then(function() {
 query5.exec();
 query6.exec();
 
-// default to read-write transaction
-var tx2 = db.createTransaction(); 
+var tx2 = db.createTransaction();
 tx2.exec([query7, query8]);
 ```
 
@@ -222,7 +220,74 @@ result in error.  This implies any conditional behavior must either span
 multiple transactions or be composed out of the available primitives within a
 transaction.
 
-### 3.5 Delete Database
+#### 3.4.2 Attaching to a Transaction
+
+It would be useful to attach to a transaction if the queries must be executed
+in sequence, and the following queries are referencing the results from previous
+queries.
+
+In Lovefield, this is done through transaction attachment, as demonstrated
+below:
+
+```js
+var schema = db.getSchema();
+var e = schema.table('Employee');
+var v = schema.table('Vacations')
+
+// Get a transaction object as usual.
+var tx = db.createTransaction();
+
+// Secure the scope of your queries so that there will be no surprise.
+// All tables will be exclusively locked. See Concurrency Control section.
+tx.begin([e, v]).then(function() {
+  var q1 = db.select(e.id).from(e).where(e.hireDate.gt(someDate));
+
+  // Attach will actually run the query in memory and get back the results.
+  return tx.attach(q1);
+}).then(function(results) {
+  var ids = results.map(function(row) {
+    return row['id'];
+  });
+
+  var q2 = db.update(v).set(v.days, 15).where(v.empId.in(ids));
+  return tx.attach(q2);
+}).then(function() {
+  // Commit the transaction, which writes everything into database.
+  // Remember, commit() is an asynchronous call that returns a Promise.
+  return tx.commit();
+}).then(function() {
+  // Your handler here.
+});
+
+var tx2 = db.createTransaction();
+tx2.begin([e]).then(function() {
+  return tx.attach(
+      db.update(e).set(e.location, 'MTV').where(e.id.lt(1000)));
+}).then(function() {
+  // You can use exec() to commit the transaction, too.
+  return tx.exec(
+      [db.update(e).set(e.location, 'LAX').where(e.id.gte(1000))]);
+});
+
+var tx3 = db.createTransaction();
+tx3.begin([v]).then(function() {
+  return tx.attach(db.update(v).set(v.days, 0);
+}).then(function() {
+  // Cancelling everyone's vacation is not really a good idea.
+  // Remember, rollback() is an asynchronous call that returns a Promise.
+  return tx.rollback();
+});
+```
+
+The `exec()`, `commit()`, and `rollback()` call will make the transaction be in
+the termination state, which means that all member functions of the transaction
+object will throw error if called after termination.
+
+### 3.5 Concurrency Control
+
+TBA
+
+### 3.6 Delete Database
 
 Lovefield does not support deleting a database, unfortunately. User is required
 to use IndexedDB API to delete the database if required.
