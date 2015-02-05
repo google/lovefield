@@ -2693,7 +2693,7 @@ goog.addDependency('dom/classlist.js', ['goog.dom.classlist'], ['goog.array'], f
 goog.addDependency('dom/classlist_test.js', ['goog.dom.classlist_test'], ['goog.dom', 'goog.dom.classlist', 'goog.testing.ExpectedFailures', 'goog.testing.jsunit'], false);
 goog.addDependency('dom/controlrange.js', ['goog.dom.ControlRange', 'goog.dom.ControlRangeIterator'], ['goog.array', 'goog.dom', 'goog.dom.AbstractMultiRange', 'goog.dom.AbstractRange', 'goog.dom.RangeIterator', 'goog.dom.RangeType', 'goog.dom.SavedRange', 'goog.dom.TagWalkType', 'goog.dom.TextRange', 'goog.iter.StopIteration', 'goog.userAgent'], false);
 goog.addDependency('dom/controlrange_test.js', ['goog.dom.ControlRangeTest'], ['goog.dom', 'goog.dom.ControlRange', 'goog.dom.RangeType', 'goog.dom.TagName', 'goog.dom.TextRange', 'goog.testing.dom', 'goog.testing.jsunit', 'goog.userAgent'], false);
-goog.addDependency('dom/dataset.js', ['goog.dom.dataset'], ['goog.string'], false);
+goog.addDependency('dom/dataset.js', ['goog.dom.dataset'], ['goog.string', 'goog.userAgent.product'], false);
 goog.addDependency('dom/dataset_test.js', ['goog.dom.datasetTest'], ['goog.dom', 'goog.dom.dataset', 'goog.testing.jsunit'], false);
 goog.addDependency('dom/dom.js', ['goog.dom', 'goog.dom.Appendable', 'goog.dom.DomHelper'], ['goog.array', 'goog.asserts', 'goog.dom.BrowserFeature', 'goog.dom.NodeType', 'goog.dom.TagName', 'goog.dom.safe', 'goog.html.SafeHtml', 'goog.math.Coordinate', 'goog.math.Size', 'goog.object', 'goog.string', 'goog.string.Unicode', 'goog.userAgent'], false);
 goog.addDependency('dom/dom_test.js', ['goog.dom.dom_test'], ['goog.dom', 'goog.dom.BrowserFeature', 'goog.dom.DomHelper', 'goog.dom.NodeType', 'goog.dom.TagName', 'goog.functions', 'goog.html.testing', 'goog.object', 'goog.string.Unicode', 'goog.testing.PropertyReplacer', 'goog.testing.asserts', 'goog.userAgent', 'goog.userAgent.product', 'goog.userAgent.product.isVersion'], false);
@@ -20628,10 +20628,45 @@ lf.Transaction = function() {};
 
 
 /**
- * @param {!Array.<!lf.query.Builder>} queries
+ * Executes a list of queries and commits the transaction.
+ * @param {!Array<!lf.query.Builder>} queries
  * @return {!IThenable}
  */
 lf.Transaction.prototype.exec;
+
+
+/**
+ * @param {!Array<!lf.schema.Table>} scope The tables that this transaction will
+ *     be allowed to access. An exclusive lock will be obtained on all tables
+ *     before any queries belonging to this transaction can be served.
+ * @return {!IThenable} A promise fulfilled when all required locks have been
+ *     acquired.
+ */
+lf.Transaction.prototype.begin;
+
+
+/**
+ * @param {!lf.query.Builder} query The query to be attached to this
+ *     transaction.
+ * @return {!IThenable}
+ */
+lf.Transaction.prototype.attach;
+
+
+/**
+ * Commits this transactions. Any queries that were performed will be flushed to
+ * disk.
+ * @return {!IThenable}
+ */
+lf.Transaction.prototype.commit;
+
+
+/**
+ * Rolls back all changes that were made within this transaction. Rollback is
+ * only allowed if the transaction has not been yet committed.
+ * @return {!IThenable}
+ */
+lf.Transaction.prototype.rollback;
 
 /**
  * @license
@@ -37096,6 +37131,34 @@ lf.proc.Transaction.prototype.exec = function(queryBuilders) {
         this.completed_ = true;
         throw e;
       }, this));
+};
+
+
+/** @override */
+lf.proc.Transaction.prototype.begin = function(scope) {
+  // TODO(dpapad): Implement
+  return goog.Promise.reject();
+};
+
+
+/** @override */
+lf.proc.Transaction.prototype.attach = function(query) {
+  // TODO(dpapad): Implement
+  return goog.Promise.reject();
+};
+
+
+/** @override */
+lf.proc.Transaction.prototype.commit = function() {
+  // TODO(dpapad): Implement
+  return goog.Promise.reject();
+};
+
+
+/** @override */
+lf.proc.Transaction.prototype.rollback = function() {
+  // TODO(dpapad): Implement
+  return goog.Promise.reject();
 };
 
 goog.provide('lf.proc.Database');
