@@ -64,6 +64,71 @@ function testSimpleComparator_DESC() {
   assertEquals(favor.LHS, c('bba', 'bbb'));
 }
 
+
+function testSimpleComparator_Min() {
+  var c1 = new lf.index.SimpleComparator(lf.Order.DESC);
+  checkSimpleComparator_Min(c1);
+
+  // Ensuring that Comparator#min() is not be affected by the order.
+  var c2 = new lf.index.SimpleComparator(lf.Order.ASC);
+  checkSimpleComparator_Min(c2);
+}
+
+
+function testSimpleComparator_Max() {
+  var c1 = new lf.index.SimpleComparator(lf.Order.DESC);
+  checkSimpleComparator_Max(c1);
+
+  // Ensuring that Comparator#max() is not be affected by the order.
+  var c2 = new lf.index.SimpleComparator(lf.Order.ASC);
+  checkSimpleComparator_Max(c2);
+}
+
+
+/**
+ * Checks the min() method of the given comparator.
+ * @param {!lf.index.SimpleComparator} c
+ */
+function checkSimpleComparator_Min(c) {
+  assertEquals(favor.TIE, c.min(0, 0));
+  assertEquals(favor.TIE, c.min('', ''));
+  assertEquals(favor.TIE, c.min(888.88, 888.88));
+  assertEquals(favor.TIE, c.min('ab', 'ab'));
+
+  assertEquals(favor.RHS, c.min(1, 0));
+  assertEquals(favor.LHS, c.min(0, 1));
+  assertEquals(favor.RHS, c.min(888.88, 888.87));
+  assertEquals(favor.LHS, c.min(888.87, 888.88));
+
+  assertEquals(favor.RHS, c.min('b', 'a'));
+  assertEquals(favor.LHS, c.min('a', 'b'));
+  assertEquals(favor.RHS, c.min('bbb', 'bba'));
+  assertEquals(favor.LHS, c.min('bba', 'bbb'));
+}
+
+
+/**
+ * Checks the max() method of the given comparator.
+ * @param {!lf.index.SimpleComparator} c
+ */
+function checkSimpleComparator_Max(c) {
+  assertEquals(favor.TIE, c.max(0, 0));
+  assertEquals(favor.TIE, c.max('', ''));
+  assertEquals(favor.TIE, c.max(888.88, 888.88));
+  assertEquals(favor.TIE, c.max('ab', 'ab'));
+
+  assertEquals(favor.LHS, c.max(1, 0));
+  assertEquals(favor.RHS, c.max(0, 1));
+  assertEquals(favor.LHS, c.max(888.88, 888.87));
+  assertEquals(favor.RHS, c.max(888.87, 888.88));
+
+  assertEquals(favor.LHS, c.max('b', 'a'));
+  assertEquals(favor.RHS, c.max('a', 'b'));
+  assertEquals(favor.LHS, c.max('bbb', 'bba'));
+  assertEquals(favor.RHS, c.max('bba', 'bbb'));
+}
+
+
 function testMultiKeyComparator_DefaultOrder() {
   var orders = lf.index.MultiKeyComparator.createOrders(2, lf.Order.ASC);
   var comparator = new lf.index.MultiKeyComparator(orders);

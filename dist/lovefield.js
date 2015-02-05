@@ -24077,6 +24077,24 @@ lf.index.Comparator.prototype.compare;
 
 
 /**
+ * Finds which one of the two operands is the minimum in absolute terms.
+ * @param {KeyType} lhs
+ * @param {KeyType} rhs
+ * @return {!lf.index.FAVOR}
+ */
+lf.index.Comparator.prototype.min;
+
+
+/**
+ * Finds which one of the two operands is the maximum in absolute terms.
+ * @param {KeyType} lhs
+ * @param {KeyType} rhs
+ * @return {!lf.index.FAVOR}
+ */
+lf.index.Comparator.prototype.max;
+
+
+/**
  * @param {KeyType} key
  * @param {RangeType} range
  * @return {boolean}
@@ -25350,6 +25368,20 @@ lf.index.SimpleComparator.prototype.compare = function(lhs, rhs) {
 
 
 /** @override */
+lf.index.SimpleComparator.prototype.min = function(lhs, rhs) {
+  return lhs < rhs ? lf.index.FAVOR.LHS :
+      (lhs == rhs ? lf.index.FAVOR.TIE : lf.index.FAVOR.RHS);
+};
+
+
+/** @override */
+lf.index.SimpleComparator.prototype.max = function(lhs, rhs) {
+  return lhs > rhs ? lf.index.FAVOR.LHS :
+      (lhs == rhs ? lf.index.FAVOR.TIE : lf.index.FAVOR.RHS);
+};
+
+
+/** @override */
 lf.index.SimpleComparator.prototype.isInRange = function(key, range) {
   return lf.index.SimpleComparator.isInRange(this.compare_, key, range);
 };
@@ -25403,6 +25435,20 @@ lf.index.MultiKeyComparator.prototype.compare = function(lhs, rhs) {
     base = this.comparators_[i](lhs[i], rhs[i]);
   }
   return base;
+};
+
+
+/** @override */
+lf.index.MultiKeyComparator.prototype.min = function(lhs, rhs) {
+  // TODO(dpapad): Implement
+  return lf.index.FAVOR.LHS;
+};
+
+
+/** @override */
+lf.index.MultiKeyComparator.prototype.max = function(lhs, rhs) {
+  // TODO(dpapad): Implement
+  return lf.index.FAVOR.RHS;
 };
 
 
