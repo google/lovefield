@@ -9801,7 +9801,7 @@ goog.html.SafeStyle.PropertyMap;
  * Creates a new SafeStyle object from the properties specified in the map.
  * @param {goog.html.SafeStyle.PropertyMap} map Mapping of property names to
  *     their values, for example {'margin': '1px'}. Names must consist of
- *     [-_a-zA-Z0-9]. Values might be strings consisting of [-.%_!# a-zA-Z0-9].
+ *     [-_a-zA-Z0-9]. Values might be strings consisting of [-,.%_!# a-zA-Z0-9].
  *     Other values must be wrapped in goog.string.Const. Null value causes
  *     skipping the property.
  * @return {!goog.html.SafeStyle}
@@ -9827,7 +9827,7 @@ goog.html.SafeStyle.create = function(map) {
       goog.asserts.assert(!/[{;}]/.test(value), 'Value does not allow [{;}].');
     } else if (!goog.html.SafeStyle.VALUE_RE_.test(value)) {
       goog.asserts.fail(
-          'String value allows only [-.%_!# a-zA-Z0-9], got: ' + value);
+          'String value allows only [-,.%_!# a-zA-Z0-9], got: ' + value);
       value = goog.html.SafeStyle.INNOCUOUS_STRING;
     }
     style += name + ':' + value + ';';
@@ -9844,10 +9844,14 @@ goog.html.SafeStyle.create = function(map) {
 // Keep in sync with the error string in create().
 /**
  * Regular expression for safe values.
+ *
+ * ',' allows multiple values to be assigned to the same property
+ * (e.g. background-attachment or font-family) and hence could allow
+ * multiple values to get injected, but that should pose no risk of XSS.
  * @const {!RegExp}
  * @private
  */
-goog.html.SafeStyle.VALUE_RE_ = /^[-.%_!# a-zA-Z0-9]+$/;
+goog.html.SafeStyle.VALUE_RE_ = /^[-,.%_!# a-zA-Z0-9]+$/;
 
 
 /**
@@ -23619,6 +23623,16 @@ lf.cache.Journal.prototype.getIndexScope = function() {
 
 
 /**
+ * TODO(dpapad): Remove when cleaning up Journal API, see b/19280493 for
+ * details.
+ * @return {!lf.index.IndexStore}
+ */
+lf.cache.Journal.prototype.getIndexStore = function() {
+  return this.indexStore_;
+};
+
+
+/**
  * Finds the rowIds corresponding to records within the given key ranges.
  * @param {!lf.schema.Index} indexSchema
  * @param {!Array.<!lf.index.KeyRange>} keyRanges
@@ -34612,7 +34626,6 @@ goog.require('lf.proc.Relation');
  */
 lf.proc.InsertStep = function(table, values) {
   lf.proc.InsertStep.base(this, 'constructor');
-  // TODO(dpapad): This step can be one of TableInsert or IndexInsert.
 
   /** @private {!Array.<!lf.Row>} */
   this.values_ = values;
@@ -34637,8 +34650,39 @@ lf.proc.InsertStep.prototype.getScope = function() {
 
 /** @override */
 lf.proc.InsertStep.prototype.exec = function(journal) {
+  lf.proc.InsertStep.assignAutoIncrementPks_(
+      this.table_, this.values_, journal.getIndexStore());
   journal.insert(this.table_, this.values_);
   return goog.Promise.resolve(lf.proc.Relation.createEmpty());
+};
+
+
+/**
+ * Assigns primary keys if 'autoIncrement' is specified for this table, only for
+ * rows where the primary key has been left unspecified.
+ * @param {!lf.schema.Table} table The table schema.
+ * @param {!Array<!lf.Row>} values
+ * @param {!lf.index.IndexStore} indexStore
+ * @private
+ */
+lf.proc.InsertStep.assignAutoIncrementPks_ = function(
+    table, values, indexStore) {
+  var pkIndexSchema = table.getConstraint().getPrimaryKey();
+  var autoIncrement = pkIndexSchema.columns[0].autoIncrement;
+  if (autoIncrement) {
+    var pkColumnName = pkIndexSchema.columns[0].name;
+    var index = indexStore.get(pkIndexSchema.getNormalizedName());
+    var maxKey = index.max()[0] || 0;
+
+    values.forEach(function(row) {
+      // The value of zero indicates that a primary key should automatically be
+      // assigned.
+      if (row.payload()[pkColumnName] == 0) {
+        maxKey++;
+        row.payload()[pkColumnName] = maxKey;
+      }
+    });
+  }
 };
 
 
@@ -34676,6 +34720,8 @@ lf.proc.InsertOrReplaceStep.prototype.getScope = function() {
 
 /** @override */
 lf.proc.InsertOrReplaceStep.prototype.exec = function(journal) {
+  lf.proc.InsertStep.assignAutoIncrementPks_(
+      this.table_, this.values_, journal.getIndexStore());
   journal.insertOrReplace(this.table_, this.values_);
   return goog.Promise.resolve(lf.proc.Relation.createEmpty());
 };

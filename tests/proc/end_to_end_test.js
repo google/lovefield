@@ -107,10 +107,89 @@ function testInsert() {
 
   queryBuilder.exec().then(
       function() {
-        return selectAll();
+        return selectAll(j);
       }).then(
       function(results) {
         assertEquals(sampleJobs.length + 1, results.length);
+        asyncTestCase.continueTesting();
+      }, fail);
+}
+
+
+/**
+ * Tests that an INSERT query on a tabe that uses 'autoIncrement' primary key
+ * does indeed automatically assign incrementing primary keys to rows being
+ * inserted.
+ */
+function testInsert_AutoIncrement() {
+  checkAutoIncrement(
+      function() {
+        return db.insert();
+      },
+      'testInsert_AutoIncrement');
+}
+
+
+/**
+ * Tests that an INSERT OR REPLACE query on a tabe that uses 'autoIncrement'
+ * primary key does indeed automatically assign incrementing primary keys to
+ * rows being inserted.
+ */
+function testInsertOrReplace_AutoIncrement() {
+  checkAutoIncrement(
+      function() {
+        return db.insertOrReplace();
+      }, 'testInsertOrReplace_AutoIncrement');
+}
+
+
+/**
+ * @param {!function():!lf.query.Insert} builderFn The function to call for
+ *     getting a new query builder (insert() or insertOrReplace()).
+ * @param {string} description The description of this test case.
+ */
+function checkAutoIncrement(builderFn, description) {
+  asyncTestCase.waitForAsync(description);
+
+  var c = db.getSchema().getCountry();
+
+  var rows = new Array(11);
+  for (var i = 0; i < rows.length - 1; i++) {
+    rows[i] = c.createRow();
+    // Default value of the primary key column is set to 0 within createRow
+    // (since only integer keys are allowed to be marked as auto-incrementing),
+    // which will trigger an automatically assigned primary key.
+  }
+
+  // Adding a row with a manually assigned primary key. This ID should not be
+  // replaced by an automatically assigned ID.
+  var manuallyAssignedId = 1000;
+  rows[rows.length - 1] = c.createRow();
+  rows[rows.length - 1].setId(manuallyAssignedId);
+
+  builderFn().into(c).values(rows.slice(0, 5)).exec().then(
+      function() {
+        return builderFn().into(c).values(rows.slice(5)).exec();
+      }).then(
+      function() {
+        return selectAll(c);
+      }).then(
+      function(results) {
+        // Sorting by primary key.
+        results.sort(function(leftRow, rightRow) {
+          return leftRow.getId() - rightRow.getId();
+        });
+
+        // Checking that all primary keys starting from 1 were automatically
+        // assigned.
+        results.forEach(function(row, index) {
+          if (index < results.length - 1) {
+            assertEquals(index + 1, row.getId());
+          } else {
+            assertEquals(manuallyAssignedId, row.getId());
+          }
+        });
+
         asyncTestCase.continueTesting();
       }, fail);
 }
@@ -131,7 +210,7 @@ function testUpdate_All() {
 
   queryBuilder.exec().then(
       function() {
-        return selectAll();
+        return selectAll(j);
       }).then(
       function(results) {
         results.forEach(function(row) {
@@ -160,7 +239,7 @@ function testUpdate_Predicate() {
           set(j.maxSalary, 20000));
 
   queryBuilder.exec().then(function() {
-    return selectAll();
+    return selectAll(j);
   }).then(function(results) {
     var verified = false;
     for (var i = 0; i < results.length; ++i) {
@@ -189,7 +268,7 @@ function testUpdate_UnboundPredicate() {
 
   var jobId = sampleJobs[0].getId();
   queryBuilder.bind([jobId, 10000]).exec().then(function() {
-    return selectAll();
+    return selectAll(j);
   }).then(function() {
     return db.select().from(j).where(j.id.eq(jobId)).exec();
   }).then(function(results) {
@@ -219,7 +298,7 @@ function testDelete_Predicate() {
 
   queryBuilder.exec().then(
       function() {
-        return selectAll();
+        return selectAll(j);
       }).then(
       function(results) {
         assertEquals(sampleJobs.length - 1, results.length);
@@ -238,7 +317,7 @@ function testDelete_UnboundPredicate() {
 
   queryBuilder.bind(['', jobId]).exec().then(
       function() {
-        return selectAll();
+        return selectAll(j);
       }).then(
       function(results) {
         assertEquals(sampleJobs.length - 1, results.length);
@@ -273,7 +352,7 @@ function testDelete_All() {
 
   queryBuilder.exec().then(
       function() {
-        return selectAll();
+        return selectAll(j);
       }).then(
       function(results) {
         assertEquals(0, results.length);
@@ -284,15 +363,16 @@ function testDelete_All() {
 
 
 /**
- * Selects all entries in the Album table directly from the database (skips the
+ * Selects all entries in the given table directly from the database (skips the
  * cache).
+ * @param {!lf.schema.Table} tableSchema
  * @return {!IThenable}
  */
-function selectAll() {
+function selectAll(tableSchema) {
   var tx = backStore.createTx(
       lf.TransactionType.READ_ONLY,
-      new lf.cache.Journal(hr.db.getGlobal(), [j]));
-  var table = tx.getTable(j.getName(), j.deserializeRow);
+      new lf.cache.Journal(hr.db.getGlobal(), [tableSchema]));
+  var table = tx.getTable(tableSchema.getName(), tableSchema.deserializeRow);
   return table.get([]);
 }
 

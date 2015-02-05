@@ -109,11 +109,13 @@ table:
 
   Country:
     column:
-      id: string
+      id: integer
       name: string
       regionId: string
     constraint:
-      primaryKey: [ id ]
+      primaryKey:
+        - column: id
+          autoIncrement: true
       foreignKey:
         fk_RegionId:
           localColumn: regionId
