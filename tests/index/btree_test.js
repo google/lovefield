@@ -25,6 +25,7 @@ goog.require('lf.Row');
 goog.require('lf.index.BTree');
 goog.require('lf.index.KeyRange');
 goog.require('lf.index.SimpleComparator');
+goog.require('lf.testing.index.TestMultiRowNumericalKey');
 goog.require('lf.testing.index.TestSingleRowNumericalKey');
 goog.require('lf.testing.index.TestSingleRowStringKey');
 
@@ -847,6 +848,7 @@ function testDelete_None() {
   assertEquals(expected, tree.toString());
 }
 
+
 function testSingleRow_NumericalKey() {
   var test = new lf.testing.index.TestSingleRowNumericalKey(function() {
     return new lf.index.BTree('test', c, true);
@@ -854,12 +856,22 @@ function testSingleRow_NumericalKey() {
   test.run();
 }
 
+
 function testSingleRow_StringKey() {
   var test = new lf.testing.index.TestSingleRowStringKey(function() {
     return new lf.index.BTree('test', c, true);
   });
   test.run();
 }
+
+
+function testMultiRow_NumericalKey() {
+  var test = new lf.testing.index.TestMultiRowNumericalKey(function() {
+    return new lf.index.BTree('test', c, false);
+  });
+  test.run();
+}
+
 
 function testGetRange_Numeric() {
   var tree = new lf.index.BTree('test', c, true);
