@@ -1,99 +1,53 @@
 # Quick Start Guide for Lovefield
 
-## Prerequisites
+1. Download <a href="https://raw.githubusercontent.com/google/lovefield/master/dist/lovefield.min.js">Lovefield distribution</a> and serve in your server.
 
-### [node.js](http://nodejs.org)
-
-Besides using the installer from nodejs.org, you can also use
-[nvm](https://github.com/creationix/nvm) to install node.js.
-
-### Install Lovefield Dependencies
-
-```bash
-npm update
-```
-
-This will install necessary dependencies used to run SPAC, Lovefield's Schema
-Parser and Codegen, which is used to generate code from your DB schema.
-
-## How to Use Lovefield
-
-There are three steps to use Lovefield in your code:
-
-1. Define schema
-2. Generate JavaScript files from the schema
-3. Use the generated code
-
-### Define schema
-
-Write a YAML file to define your DB schema:
-
-```yaml
-%YAML 1.2
----
-name: mydb
-version: 1
-table:
-  Card:
-    column:
-      id: string
-      name: string
-```
-
-### Code Generation
-
-Use `lovefield-spac` to generate code for your schema.
-
-```bash
-spac/lovefield-spac \
-  --schema my_schema.yaml \
-  --namespace my.namespace \
-  --outputdir mypath
-```
-
-Running `lovefield-spac` without any arguments will give you the usage. The
-`namespace` here is a namespace for all generated code to be placed in.
-Lovefield has a philosophy of not polluting the global namespace so it will
-place all generated code under the namespace you designated.
-
-By default `lovefield-spac` will generate one single file
-`<escaped_namespace>_gen.js`. You'll need to include this file into your code
-after including `dist/lovefield_min.js`.
-
-
-### Use in code
-
-For Closure Library users, please read the [special instructions]
-(quick_start.md#special_instructions). If you don't use Closure Library, you can
-do the following:
+2. Use it in your code. You can grab the following HTML from <a href="https://raw.githubusercontent.com/google/lovefield/master/examples/todo.html">examples/todo.html.</a>
 
 ```html
-<script src="mypath/lovefield.min.js"></script>
-<script src="mypath/my_namespace_gen.js"></script>
-<script>
-my.namespace.getInstance().then(
-  function(db) {
-    var card =
-      db.getSchema().getCard();
-    var query = db.select().
-        from(card).
-        where(
-          card.id.eq('12345'));
-    return query.exec();
-  }).then(function(results) {
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Minimal example of using Lovefield</title>
+    <script src="lovefield.min.js"></script>
+  </head>
+  <body>
+    <script>
+
+var ds = lf.schema.create('todo', 1);
+
+ds.createTable('Item').
+    addColumn('id', lf.Type.INTEGER).
+    addColumn('description', lf.Type.STRING).
+    addColumn('deadline', lf.Type.DATE_TIME).
+    addColumn('done', lf.Type.BOOLEAN).
+    addPrimaryKey(['id']).
+    addIndex('idxDeadline', ['deadline'], lf.Order.DESC);
+
+var todoDb;
+var item;
+ds.getInstance().then(function(db) {
+  todoDb = db;
+  item = db.getSchema().table('Item');
+  var row = item.createRow({
+    'id': 1,
+    'description': 'Get a cup of coffee',
+    'deadline': new Date(),
+    'done': false
   });
-</script>
+
+  return db.insertOrReplace().into(item).values([row]).exec();
+}).then(function() {
+  return todoDb.select().from(item).where(item.done.eq(false)).exec();
+}).then(function(results) {
+  results.forEach(function(row) {
+    console.log(row['description'], 'before', row['deadline']);
+  });
+});
+
+    </script>
+  </body>
+</html>
 ```
 
-The file `lovefield.min.js` can be found at `dist/`. You can also use the debug
-version, `lovefield.js`, for debugging purposes.
-
-## Special Instructions
-
-The special instructions are for Closure library users or the developers of
-Lovefield library. For convenience, the Lovefield distribution includes all the
-Closure library dependencies used. As a result, Closure library users need to
-compile Lovefield with their code instead of using the dist file directly.
-
-If you work for Google and would like to use Lovefield inside Google, please
-`go/lovefield` for more details.
