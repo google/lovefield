@@ -23680,30 +23680,7 @@ lf.cache.Journal.prototype.getIndexStore = function() {
 lf.cache.Journal.prototype.getIndexRange = function(
     indexSchema, keyRanges, reverseOrder, opt_limit, opt_skip) {
   var index = this.indexStore_.get(indexSchema.getNormalizedName());
-
-  if (keyRanges.length == 1) {
-    return index.getRange(keyRanges[0], reverseOrder, opt_limit, opt_skip);
-  }
-
-  // TODO(arthurhsu): remove the patchy code below and make index.getRange()
-  //     returning correct results.
-  var msg = 'Using index for limit/skip not implemented for ' +
-      'multi-keyrange queries.';
-  goog.asserts.assert(!goog.isDefAndNotNull(opt_limit), msg);
-  goog.asserts.assert(!goog.isDefAndNotNull(opt_skip), msg);
-
-  var rowIds = new goog.structs.Set();
-  // Getting rowIds within the given key ranges according to IndexStore.
-  keyRanges.forEach(function(keyRange) {
-    rowIds.addAll(index.getRange(keyRange, reverseOrder, opt_limit, opt_skip));
-  }, this);
-
-  var results = rowIds.getValues();
-  if (reverseOrder) {
-    results.reverse();
-  }
-
-  return results;
+  return index.getRange(keyRanges, reverseOrder, opt_limit, opt_skip);
 };
 
 
@@ -24003,6 +23980,8 @@ goog.provide('lf.index');
 
 
 /**
+ * The comparison result constant. This must be consistent with the constant
+ * required by the sort function of Array.prototype.sort.
  * @const @enum {number}
  */
 lf.index.FAVOR = {
@@ -24233,8 +24212,10 @@ lf.index.Index.prototype.cost;
 
 /**
  * Retrieves all data within the range. Returns empty array if not found.
- * @param {!lf.index.KeyRange=} opt_keyRange The key range to search for. If not
- *     provided, all rowIds in this index will be returned.
+ * @param {!Array.<!lf.index.KeyRange>=} opt_keyRanges The key ranges to search
+ *     for. When multiple key ranges are specified, the function will return the
+ *     union of range query results. If none provided, all rowIds in this index
+ *     will be returned. Caller must ensure the ranges do not overlap.
  * @param {!boolean=} opt_reverseOrder Retrive the results in the reverse
  *     ordering of the index's comparator.
  * @param {number=} opt_limit Max number of rows to return
@@ -24303,6 +24284,159 @@ lf.index.Index.prototype.comparator;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+goog.provide('lf.index.KeyRange');
+
+goog.forwardDeclare('lf.index.Index.Key');
+
+
+
+/**
+ * An object specifying a key range to be used for querying various indices for
+ * key ranges.
+ * @constructor
+ * @struct
+ *
+ * @param {?lf.index.Index.Key} from The lower bound of this range. Null means
+ *     that there is no lower bound.
+ * @param {?lf.index.Index.Key} to The upper bound of this range. Null means
+ *     that there is no upper bound.
+ * @param {boolean} excludeLower Whether the lower bound should be excluded.
+ *     Ignored if no lower bound exists.
+ * @param {boolean} excludeUpper Whether the upper bound should be excluded.
+ *     Ignored if no upper bound exists.
+ */
+lf.index.KeyRange = function(from, to, excludeLower, excludeUpper) {
+  /** @type {?lf.index.Index.Key} */
+  this.from = from;
+
+  /** @type {?lf.index.Index.Key} */
+  this.to = to;
+
+  /** @type {boolean} */
+  this.excludeLower = !goog.isNull(this.from) ? excludeLower : false;
+
+  /** @type {boolean} */
+  this.excludeUpper = !goog.isNull(this.to) ? excludeUpper : false;
+};
+
+
+/**
+ * A text representation of this key range, useful for tests.
+ * Example: [a, b] means from a to b, with both a and be included in the range.
+ * Example: (a, b] means from a to b, with a excluded, b included.
+ * Example: (a, b) means from a to b, with both a and b excluded.
+ * Example: [unbound, b) means anything less than b, with b not included.
+ * Example: [a, unbound] means anything greater than a, with a included.
+ * @override
+ */
+lf.index.KeyRange.prototype.toString = function() {
+  return (this.excludeLower ? '(' : '[') +
+      (goog.isNull(this.from) ? 'unbound' : this.from) + ', ' +
+      (goog.isNull(this.to) ? 'unbound' : this.to) +
+      (this.excludeUpper ? ')' : ']');
+};
+
+
+/**
+ * Finds the complement key range. Note that in some cases the complement is
+ * composed of two disjoint key ranges. For example complementing [10, 20] would
+ * result in [unbound, 10) and (20, unbound].
+ * @return {!Array.<!lf.index.KeyRange>} The complement key ranges. An empty
+ *     array will be returned in the case where the complement is empty.
+ */
+lf.index.KeyRange.prototype.complement = function() {
+  // Complement of lf.index.KeyRange.all() is empty.
+  if (goog.isNull(this.from) && goog.isNull(this.to)) {
+    return [];
+  }
+
+  var keyRangeLow = null;
+  var keyRangeHigh = null;
+
+  if (!goog.isNull(this.from)) {
+    keyRangeLow = new lf.index.KeyRange(
+        null, this.from, false, !this.excludeLower);
+  }
+
+  if (!goog.isNull(this.to)) {
+    keyRangeHigh = new lf.index.KeyRange(
+        this.to, null, !this.excludeUpper, false);
+  }
+
+  return [keyRangeLow, keyRangeHigh].filter(function(keyRange) {
+    return !goog.isNull(keyRange);
+  });
+};
+
+
+/**
+ * Reverses a keyRange such that "lower" refers to larger values and "upper"
+ * refers to smaller values. Note: This is different than what complement()
+ * does.
+ * @return {!lf.index.KeyRange}
+ */
+lf.index.KeyRange.prototype.reverse = function() {
+  return new lf.index.KeyRange(
+      this.to, this.from, this.excludeUpper, this.excludeLower);
+};
+
+
+/**
+ * @param {!lf.index.Index.Key} key The upper bound.
+ * @param {boolean=} opt_shouldExclude Whether the upper bound should be
+ *     excluded. Defaults to false.
+ * @return {!lf.index.KeyRange}
+ */
+lf.index.KeyRange.upperBound = function(key, opt_shouldExclude) {
+  return new lf.index.KeyRange(null, key, false, opt_shouldExclude || false);
+};
+
+
+/**
+ * @param {!lf.index.Index.Key} key The lower bound.
+ * @param {boolean=} opt_shouldExclude Whether the lower bound should be
+ *     excluded. Defaults to false.
+ * @return {!lf.index.KeyRange}
+ */
+lf.index.KeyRange.lowerBound = function(key, opt_shouldExclude) {
+  return new lf.index.KeyRange(key, null, opt_shouldExclude || false, false);
+};
+
+
+/**
+ * Creates a range that includes a single key.
+ * @param {!lf.index.Index.Key} key
+ * @return {!lf.index.KeyRange}
+ */
+lf.index.KeyRange.only = function(key) {
+  return new lf.index.KeyRange(key, key, false, false);
+};
+
+
+/**
+ * Creates a range that includes all keys.
+ * @return {!lf.index.KeyRange}
+ */
+lf.index.KeyRange.all = function() {
+  return new lf.index.KeyRange(null, null, false, false);
+};
+
+/**
+ * @license
+ * Copyright 2014 Google Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
 /**
  * @fileoverview B+ Tree implementation. See "Database Systems: The Complete
@@ -24316,6 +24450,7 @@ goog.require('lf.Exception');
 goog.require('lf.Row');
 goog.require('lf.index');
 goog.require('lf.index.Index');
+goog.require('lf.index.KeyRange');
 
 
 
@@ -24395,28 +24530,39 @@ lf.index.BTree.prototype.get = function(key) {
 /** @override */
 lf.index.BTree.prototype.cost = function(opt_keyRange) {
   // TODO(arthurhsu): B-Tree should have better cost calculation.
-  return this.getRange(opt_keyRange).length;
+  return goog.isDefAndNotNull(opt_keyRange) ?
+      this.getRange([opt_keyRange]).length :
+      this.getRange().length;
 };
 
 
 /** @override */
 lf.index.BTree.prototype.getRange = function(
-    opt_keyRange, opt_reverseOrder, opt_limit, opt_skip) {
-  var start = null;
-  var normalizedKeyRange = this.comparator_.normalizeKeyRange(opt_keyRange);
-  if (normalizedKeyRange) {
-    if (!goog.isNull(normalizedKeyRange.from)) {
-      start = this.root_.getContainingLeaf(normalizedKeyRange.from);
-    }
+    opt_keyRanges, opt_reverseOrder, opt_limit, opt_skip) {
+  var normalizedKeyRanges;
+  var min = this.root_.getLeftMostNode().keys_[0];
+  var rightMostKeys = this.root_.getRightMostNode().keys_;
+  var max = rightMostKeys[rightMostKeys.length - 1];
+  if (goog.isDefAndNotNull(opt_keyRanges)) {
+    normalizedKeyRanges = opt_keyRanges.map(function(range) {
+      var normalized = this.comparator_.normalizeKeyRange(range);
+      normalized.from = goog.isNull(normalized.from) ? min : normalized.from;
+      normalized.to = goog.isNull(normalized.to) ? max : normalized.to;
+      return normalized;
+    }, this).sort(goog.bind(function(lhs, rhs) {
+      return this.comparator_.compare(lhs.from, rhs.from);
+    }, this));
+  } else {
+    normalizedKeyRanges = [new lf.index.KeyRange(min, max, false, false)];
   }
 
-  if (start == null) {
-    start = this.root_.getLeftMostNode();
-  }
+  var results = [];
+  normalizedKeyRanges.forEach(function(range) {
+    var start = this.root_.getContainingLeaf(range.from);
+    results = results.concat(start.getRange(range));
+  }, this);
 
-  return lf.index.slice(
-      start.getRange(normalizedKeyRange),
-      opt_reverseOrder, opt_limit, opt_skip);
+  return lf.index.slice(results, opt_reverseOrder, opt_limit, opt_skip);
 };
 
 
@@ -25605,159 +25751,6 @@ lf.index.MultiKeyComparator.prototype.normalizeKeyRange = function(keyRange) {
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-goog.provide('lf.index.KeyRange');
-
-goog.forwardDeclare('lf.index.Index.Key');
-
-
-
-/**
- * An object specifying a key range to be used for querying various indices for
- * key ranges.
- * @constructor
- * @struct
- *
- * @param {?lf.index.Index.Key} from The lower bound of this range. Null means
- *     that there is no lower bound.
- * @param {?lf.index.Index.Key} to The upper bound of this range. Null means
- *     that there is no upper bound.
- * @param {boolean} excludeLower Whether the lower bound should be excluded.
- *     Ignored if no lower bound exists.
- * @param {boolean} excludeUpper Whether the upper bound should be excluded.
- *     Ignored if no upper bound exists.
- */
-lf.index.KeyRange = function(from, to, excludeLower, excludeUpper) {
-  /** @type {?lf.index.Index.Key} */
-  this.from = from;
-
-  /** @type {?lf.index.Index.Key} */
-  this.to = to;
-
-  /** @type {boolean} */
-  this.excludeLower = !goog.isNull(this.from) ? excludeLower : false;
-
-  /** @type {boolean} */
-  this.excludeUpper = !goog.isNull(this.to) ? excludeUpper : false;
-};
-
-
-/**
- * A text representation of this key range, useful for tests.
- * Example: [a, b] means from a to b, with both a and be included in the range.
- * Example: (a, b] means from a to b, with a excluded, b included.
- * Example: (a, b) means from a to b, with both a and b excluded.
- * Example: [unbound, b) means anything less than b, with b not included.
- * Example: [a, unbound] means anything greater than a, with a included.
- * @override
- */
-lf.index.KeyRange.prototype.toString = function() {
-  return (this.excludeLower ? '(' : '[') +
-      (goog.isNull(this.from) ? 'unbound' : this.from) + ', ' +
-      (goog.isNull(this.to) ? 'unbound' : this.to) +
-      (this.excludeUpper ? ')' : ']');
-};
-
-
-/**
- * Finds the complement key range. Note that in some cases the complement is
- * composed of two disjoint key ranges. For example complementing [10, 20] would
- * result in [unbound, 10) and (20, unbound].
- * @return {!Array.<!lf.index.KeyRange>} The complement key ranges. An empty
- *     array will be returned in the case where the complement is empty.
- */
-lf.index.KeyRange.prototype.complement = function() {
-  // Complement of lf.index.KeyRange.all() is empty.
-  if (goog.isNull(this.from) && goog.isNull(this.to)) {
-    return [];
-  }
-
-  var keyRangeLow = null;
-  var keyRangeHigh = null;
-
-  if (!goog.isNull(this.from)) {
-    keyRangeLow = new lf.index.KeyRange(
-        null, this.from, false, !this.excludeLower);
-  }
-
-  if (!goog.isNull(this.to)) {
-    keyRangeHigh = new lf.index.KeyRange(
-        this.to, null, !this.excludeUpper, false);
-  }
-
-  return [keyRangeLow, keyRangeHigh].filter(function(keyRange) {
-    return !goog.isNull(keyRange);
-  });
-};
-
-
-/**
- * Reverses a keyRange such that "lower" refers to larger values and "upper"
- * refers to smaller values. Note: This is different than what complement()
- * does.
- * @return {!lf.index.KeyRange}
- */
-lf.index.KeyRange.prototype.reverse = function() {
-  return new lf.index.KeyRange(
-      this.to, this.from, this.excludeUpper, this.excludeLower);
-};
-
-
-/**
- * @param {!lf.index.Index.Key} key The upper bound.
- * @param {boolean=} opt_shouldExclude Whether the upper bound should be
- *     excluded. Defaults to false.
- * @return {!lf.index.KeyRange}
- */
-lf.index.KeyRange.upperBound = function(key, opt_shouldExclude) {
-  return new lf.index.KeyRange(null, key, false, opt_shouldExclude || false);
-};
-
-
-/**
- * @param {!lf.index.Index.Key} key The lower bound.
- * @param {boolean=} opt_shouldExclude Whether the lower bound should be
- *     excluded. Defaults to false.
- * @return {!lf.index.KeyRange}
- */
-lf.index.KeyRange.lowerBound = function(key, opt_shouldExclude) {
-  return new lf.index.KeyRange(key, null, opt_shouldExclude || false, false);
-};
-
-
-/**
- * Creates a range that includes a single key.
- * @param {!lf.index.Index.Key} key
- * @return {!lf.index.KeyRange}
- */
-lf.index.KeyRange.only = function(key) {
-  return new lf.index.KeyRange(key, key, false, false);
-};
-
-
-/**
- * Creates a range that includes all keys.
- * @return {!lf.index.KeyRange}
- */
-lf.index.KeyRange.all = function() {
-  return new lf.index.KeyRange(null, null, false, false);
-};
-
-/**
- * @license
- * Copyright 2014 Google Inc. All Rights Reserved.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
 goog.provide('lf.index.RowId');
 
 goog.require('goog.structs.Set');
@@ -25877,17 +25870,12 @@ lf.index.RowId.prototype.cost = function(opt_keyRange) {
 
 /** @override */
 lf.index.RowId.prototype.getRange = function(
-    opt_keyRange, opt_reverseOrder, opt_limit, opt_skip) {
-  var keyRange = opt_keyRange || lf.index.KeyRange.all();
-
-  if ((goog.isDefAndNotNull(keyRange.from) &&
-      typeof(keyRange.from) != 'number') ||
-      (goog.isDefAndNotNull(keyRange.to) && typeof(keyRange.to) != 'number')) {
-    throw new lf.Exception(lf.Exception.Type.DATA, 'Row id must be numbers');
-  }
-
+    opt_keyRanges, opt_reverseOrder, opt_limit, opt_skip) {
+  var keyRanges = opt_keyRanges || [lf.index.KeyRange.all()];
   var values = this.rows_.getValues().filter(function(value) {
-    return this.comparator_.isInRange(value, keyRange);
+    return keyRanges.some(function(range) {
+      return this.comparator_.isInRange(value, range);
+    }, this);
   }, this);
   return lf.index.slice(values, opt_reverseOrder, opt_limit, opt_skip);
 };
@@ -26403,9 +26391,9 @@ lf.index.AATree.prototype.get = function(key) {
 
 /** @override */
 lf.index.AATree.prototype.cost = function(opt_keyRange) {
-  // TODO(dpapad): Calculating the cost should be O(1), instead of searching the
-  // index itself.
-  return this.getRange(opt_keyRange).length;
+  return goog.isDefAndNotNull(opt_keyRange) ?
+      this.getRange([opt_keyRange]).length :
+      this.getRange().length;
 };
 
 
@@ -26468,24 +26456,28 @@ lf.index.AATree.prototype.traverse_ = function(node, keyRange, results) {
 
 /** @override */
 lf.index.AATree.prototype.getRange = function(
-    opt_keyRange, opt_reverseOrder, opt_limit, opt_skip) {
-  var keyRange = null;
+    opt_keyRanges, opt_reverseOrder, opt_limit, opt_skip) {
+  var keyRanges;
 
-  if (!goog.isDefAndNotNull(opt_keyRange)) {
-    keyRange = new lf.index.KeyRange(
-        this.findMin_().key, this.findMax_().key, false, false);
+  var min = this.findMin_().key;
+  var max = this.findMax_().key;
+  if (!goog.isDefAndNotNull(opt_keyRanges)) {
+    keyRanges = [new lf.index.KeyRange(min, max, false, false)];
   } else {
-    keyRange = opt_keyRange;
-    if (goog.isNull(keyRange.from)) {
-      keyRange.from = this.findMin_().key;
-    }
-    if (goog.isNull(keyRange.to)) {
-      keyRange.to = this.findMax_().key;
-    }
+    keyRanges = opt_keyRanges.map(function(range) {
+      var normalized = this.comparator_.normalizeKeyRange(range);
+      normalized.from = goog.isNull(normalized.from) ? min : normalized.from;
+      normalized.to = goog.isNull(normalized.to) ? max : normalized.to;
+      return normalized;
+    }, this).sort(goog.bind(function(lhs, rhs) {
+      return this.comparator_.compare(lhs.from, rhs.from);
+    }, this));
   }
 
   var results = [];
-  this.traverse_(this.root_, keyRange, results);
+  keyRanges.forEach(function(range) {
+    this.traverse_(this.root_, range, results);
+  }, this);
   return lf.index.slice(results, opt_reverseOrder, opt_limit, opt_skip);
 };
 
@@ -26735,20 +26727,24 @@ lf.index.Map.prototype.get = function(key) {
 
 /** @override */
 lf.index.Map.prototype.cost = function(opt_keyRange) {
-  // TODO(dpapad): Calculating the cost should be O(1), instead of searching the
-  // index itself.
-  return this.getRange(opt_keyRange).length;
+  return goog.isDefAndNotNull(opt_keyRange) ?
+      this.getRange([opt_keyRange]).length :
+      this.getRange().length;
 };
 
 
 /** @override */
 lf.index.Map.prototype.getRange = function(
-    opt_keyRange, opt_reverseOrder, opt_limit, opt_skip) {
+    opt_keyRanges, opt_reverseOrder, opt_limit, opt_skip) {
   var results = [];
 
-  var keyRange = opt_keyRange || lf.index.KeyRange.all();
+  var keyRanges = opt_keyRanges || [lf.index.KeyRange.all()];
   this.map_.getKeys().sort().forEach(function(key) {
-    if (this.comparator_.isInRange(key, keyRange)) {
+    var toAdd = keyRanges.some(function(range) {
+      return this.comparator_.isInRange(key, range);
+    }, this);
+
+    if (toAdd) {
       results = results.concat(this.get(key));
     }
   }, this);

@@ -668,7 +668,7 @@ function testIndexUpdate() {
   assertFalse(pkId.containsKey('2'));
   assertArrayEquals(
       [3, 1],
-      pkId.getRange(new lf.index.KeyRange('3', '4', false, false)));
+      pkId.getRange([new lf.index.KeyRange('3', '4', false, false)]));
   assertArrayEquals([], idxName.get('1'));
   assertArrayEquals([3], idxName.get('2'));
   assertArrayEquals([1], idxName.get('4'));
@@ -689,7 +689,7 @@ function testGetIndexRange() {
   // Adding row3 in the index such that it is within the range [aaa,bbb].
   journal.insert(table, [row3]);
   var index = env.indexStore.get(indexSchema.getNormalizedName());
-  var rowIds = index.getRange(keyRange1);
+  var rowIds = index.getRange([keyRange1]);
   assertSameElements([row3.id()], rowIds);
 
   // Checking that the Journal returns row3 as a match, given that row3 has not

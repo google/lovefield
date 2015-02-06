@@ -91,7 +91,7 @@ lf.testing.index.TestSingleRowNumericalKey.prototype.testRemove =
   assertArrayEquals([], index.get(12));
 
   var keyRange = lf.index.KeyRange.only(12);
-  assertArrayEquals([], index.getRange(keyRange));
+  assertArrayEquals([], index.getRange([keyRange]));
   assertEquals(0, index.cost(keyRange));
 };
 
@@ -124,6 +124,28 @@ lf.testing.index.TestSingleRowNumericalKey.prototype.testMinMax = function(
   this.populateIndex_(index);
   assertArrayEquals(this.minKeyValuePair_, index.min());
   assertArrayEquals(this.maxKeyValuePair_, index.max());
+};
+
+
+/** @override */
+lf.testing.index.TestSingleRowNumericalKey.prototype.testMultiRange = function(
+    index) {
+  for (var i = 0; i < 20; ++i) {
+    index.set(i, i);
+  }
+
+  // Simulate NOT(BETWEEN(2, 18))
+  var range1 = new lf.index.KeyRange(null, 2, false, true);
+  var range2 = new lf.index.KeyRange(18, null, true, false);
+
+  var comparator = index.comparator();
+  var expected = [0, 1, 19].sort(goog.bind(comparator.compare, comparator));
+  var expectedReverse = expected.slice().reverse();
+
+  assertArrayEquals(expected, index.getRange([range1, range2]));
+  assertArrayEquals(expected, index.getRange([range2, range1]));
+  assertArrayEquals(expectedReverse, index.getRange([range1, range2], true));
+  assertArrayEquals(expectedReverse, index.getRange([range2, range1], true));
 };
 
 

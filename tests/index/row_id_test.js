@@ -48,13 +48,13 @@ function checkGetRange(index) {
 
   var result = index.getRange();
   assertEquals(10, result.length);
-  result = index.getRange(lf.index.KeyRange.lowerBound(1));
+  result = index.getRange([lf.index.KeyRange.lowerBound(1)]);
   assertEquals(9, result.length);
   assertEquals(1, result[0]);
-  result = index.getRange(new lf.index.KeyRange(1, 1, false, false));
+  result = index.getRange([new lf.index.KeyRange(1, 1, false, false)]);
   assertEquals(1, result.length);
   assertEquals(1, result[0]);
-  result = index.getRange(new lf.index.KeyRange(1, 2, false, false));
+  result = index.getRange([new lf.index.KeyRange(1, 2, false, false)]);
   assertEquals(2, result.length);
   assertEquals(1, result[0]);
   assertEquals(2, result[1]);
@@ -70,7 +70,7 @@ function testRemove() {
   var index = getSampleIndex(10);
   index.remove(2, 2);
   assertArrayEquals([], index.get(2));
-  assertArrayEquals([], index.getRange(lf.index.KeyRange.only(2)));
+  assertArrayEquals([], index.getRange([lf.index.KeyRange.only(2)]));
   assertEquals(9, index.cost(new lf.index.KeyRange(1, 3, false, false)));
 }
 

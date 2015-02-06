@@ -94,7 +94,7 @@ lf.testing.index.TestMultiRowNumericalKey.prototype.testRemove =
   index.remove(12, 22);
   index.remove(12, 32);
   assertArrayEquals([], index.get(12));
-  assertArrayEquals([], index.getRange(lf.index.KeyRange.only(12)));
+  assertArrayEquals([], index.getRange([lf.index.KeyRange.only(12)]));
 };
 
 
@@ -126,6 +126,13 @@ lf.testing.index.TestMultiRowNumericalKey.prototype.testMinMax = function(
   this.populateIndex_(index);
   assertArrayEquals(this.minKeyValuePair_, index.min());
   assertArrayEquals(this.maxKeyValuePair_, index.max());
+};
+
+
+/** @override */
+lf.testing.index.TestMultiRowNumericalKey.prototype.testMultiRange = function(
+    index) {
+  // TODO(arthurhsu): implement
 };
 
 

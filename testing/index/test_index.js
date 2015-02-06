@@ -35,7 +35,8 @@ lf.testing.index.TestIndex = function(constructorFn) {
     this.testGetRangeCost,
     this.testMinMax,
     this.testRemove,
-    this.testSet
+    this.testSet,
+    this.testMultiRange
   ];
 };
 
@@ -72,6 +73,10 @@ lf.testing.index.TestIndex.prototype.testSet = goog.abstractMethod;
 lf.testing.index.TestIndex.prototype.testMinMax = goog.abstractMethod;
 
 
+/** @param {!lf.index.Index} index */
+lf.testing.index.TestIndex.prototype.testMultiRange = goog.abstractMethod;
+
+
 /**
  * Asserts that the return values of getRange() and cost() are as expected for
  * the given index, for the given key range.
@@ -81,7 +86,8 @@ lf.testing.index.TestIndex.prototype.testMinMax = goog.abstractMethod;
  */
 lf.testing.index.TestIndex.assertGetRangeCost =
     function(index, keyRange, expectedResult) {
-  var actualResult = index.getRange(keyRange);
+  var actualResult = index.getRange(
+      goog.isDef(keyRange) ? [keyRange] : undefined);
   assertArrayEquals(expectedResult, actualResult);
   assertEquals(actualResult.length, index.cost(keyRange));
 };

@@ -883,38 +883,38 @@ function testGetRange_Numeric() {
   assertEquals(21, results.length);
   assertEquals(-10, results[0]);
   assertEquals(10, results[20]);
-  var results2 = tree.getRange(lf.index.KeyRange.all());
-  assertArrayEquals(results2, results);
+  var results2 = tree.getRange([lf.index.KeyRange.all()]);
+  assertArrayEquals(results, results2);
 
-  results = tree.getRange(lf.index.KeyRange.only(0));
+  results = tree.getRange([lf.index.KeyRange.only(0)]);
   assertEquals(1, results.length);
   assertEquals(0, results[0]);
 
-  results = tree.getRange(lf.index.KeyRange.only(12));
+  results = tree.getRange([lf.index.KeyRange.only(12)]);
   assertArrayEquals([], results);
 
-  results = tree.getRange(lf.index.KeyRange.lowerBound(0));
+  results = tree.getRange([lf.index.KeyRange.lowerBound(0)]);
   assertEquals(11, results.length);
   assertEquals(0, results[0]);
   assertEquals(10, results[10]);
 
-  results = tree.getRange(lf.index.KeyRange.upperBound(0));
+  results = tree.getRange([lf.index.KeyRange.upperBound(0)]);
   assertEquals(11, results.length);
   assertEquals(-10, results[0]);
   assertEquals(0, results[10]);
 
-  results = tree.getRange(lf.index.KeyRange.lowerBound(0, true));
+  results = tree.getRange([lf.index.KeyRange.lowerBound(0, true)]);
   assertEquals(10, results.length);
   assertEquals(1, results[0]);
   assertEquals(10, results[9]);
 
-  results = tree.getRange(lf.index.KeyRange.upperBound(0, true));
+  results = tree.getRange([lf.index.KeyRange.upperBound(0, true)]);
   assertEquals(10, results.length);
   assertEquals(-10, results[0]);
   assertEquals(-1, results[9]);
 
   tree.remove(7);
-  results = tree.getRange(lf.index.KeyRange.only(7));
+  results = tree.getRange([lf.index.KeyRange.only(7)]);
   assertEquals(0, results.length);
 }
 
@@ -1016,7 +1016,7 @@ function testDuplicateKeys_DeleteSimple() {
       '1{21,21000/25,25000/27,27000}2\n';
   assertEquals(expected, tree.toString());
   assertArrayEquals([13000], tree.get(13));
-  assertArrayEquals([13000], tree.getRange(lf.index.KeyRange.only(13)));
+  assertArrayEquals([13000], tree.getRange([lf.index.KeyRange.only(13)]));
 }
 
 function testDuplicateKeys_DeleteAll() {
@@ -1046,7 +1046,7 @@ function testDuplicateKeys_SmokeTest() {
         tree.get(SEQUENCE[i]));
     assertArrayEquals(
         [SEQUENCE[i], SEQUENCE[i] * 1000],
-        tree.getRange(lf.index.KeyRange.only(SEQUENCE[i])));
+        tree.getRange([lf.index.KeyRange.only(SEQUENCE[i])]));
   }
   assertEquals(2 * SEQUENCE.length, tree.cost(lf.index.KeyRange.all()));
 
@@ -1056,7 +1056,7 @@ function testDuplicateKeys_SmokeTest() {
     assertArrayEquals([SEQUENCE[i] * 1000], tree.get(SEQUENCE[i]));
     assertArrayEquals(
         [SEQUENCE[i] * 1000],
-        tree.getRange(lf.index.KeyRange.only(SEQUENCE[i])));
+        tree.getRange([lf.index.KeyRange.only(SEQUENCE[i])]));
   }
   assertEquals(SEQUENCE.length, tree.cost(lf.index.KeyRange.all()));
 

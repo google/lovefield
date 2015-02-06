@@ -75,12 +75,8 @@ var EXPECTED_CASE4 =
 var tree;
 
 
-/** @type {!lf.index.Comparator} */
-var c;
-
-
 function setUp() {
-  c = new lf.index.SimpleComparator(lf.Order.ASC);
+  var c = new lf.index.SimpleComparator(lf.Order.ASC);
   tree = new lf.index.AATree('test', c);
 
   // Construct the base tree.
@@ -129,29 +125,29 @@ function testAATree_Algorithm() {
   assertEquals(EXPECTED_CASE4, tree.toString());
 }
 
-
 function testAATree_Throws() {
   assertThrows(function() {
     tree.add(10, 10);
   });
 }
 
-
 function testSingleRow_NumericalKey() {
   var test = new lf.testing.index.TestSingleRowNumericalKey(function() {
-    return new lf.index.AATree('test', c);
+    return new lf.index.AATree(
+        'test',
+        new lf.index.SimpleComparator(lf.Order.ASC));
   });
   test.run();
 }
-
 
 function testSingleRow_StringKey() {
   var test = new lf.testing.index.TestSingleRowStringKey(function() {
-    return new lf.index.AATree('test', c);
+    return new lf.index.AATree(
+        'test',
+        new lf.index.SimpleComparator(lf.Order.ASC));
   });
   test.run();
 }
-
 
 function manualTestBenchmark() {
   var log = goog.bind(console['log'], console);
@@ -163,6 +159,7 @@ function manualTestBenchmark() {
   }
 
   var values = rows.getValues();
+  var c = new lf.index.SimpleComparator(lf.Order.ASC);
   tree = new lf.index.AATree('test', c);
   var start = goog.global.performance.now();
   for (var i = 0; i < ROW_COUNT; i++) {
