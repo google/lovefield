@@ -22,11 +22,9 @@ goog.require('goog.testing.AsyncTestCase');
 goog.require('goog.testing.jsunit');
 goog.require('hr.db');
 goog.require('lf.Exception');
-goog.require('lf.TransactionType');
 goog.require('lf.bind');
-goog.require('lf.cache.Journal');
-goog.require('lf.service');
 goog.require('lf.testing.hrSchema.JobDataGenerator');
+goog.require('lf.testing.util');
 
 
 /** @type {!goog.testing.AsyncTestCase} */
@@ -58,8 +56,8 @@ var sampleJobs;
 var sampleEmployees;
 
 
-/** @type {!lf.BackStore} */
-var backStore;
+/** @type {!lf.Global} */
+var global;
 
 
 function setUp() {
@@ -70,7 +68,7 @@ function setUp() {
     db = database;
     j = db.getSchema().getJob();
     e = db.getSchema().getEmployee();
-    backStore = hr.db.getGlobal().getService(lf.service.BACK_STORE);
+    global = hr.db.getGlobal();
     return addSampleData(50);
   }).then(function() {
     asyncTestCase.continueTesting();
@@ -107,7 +105,7 @@ function testInsert() {
 
   queryBuilder.exec().then(
       function() {
-        return selectAll(j);
+        return lf.testing.util.selectAll(global, j);
       }).then(
       function(results) {
         assertEquals(sampleJobs.length + 1, results.length);
@@ -172,7 +170,7 @@ function checkAutoIncrement(builderFn, description) {
         return builderFn().into(c).values(rows.slice(5)).exec();
       }).then(
       function() {
-        return selectAll(c);
+        return lf.testing.util.selectAll(global, c);
       }).then(
       function(results) {
         // Sorting by primary key.
@@ -210,7 +208,7 @@ function testUpdate_All() {
 
   queryBuilder.exec().then(
       function() {
-        return selectAll(j);
+        return lf.testing.util.selectAll(global, j);
       }).then(
       function(results) {
         results.forEach(function(row) {
@@ -239,7 +237,7 @@ function testUpdate_Predicate() {
           set(j.maxSalary, 20000));
 
   queryBuilder.exec().then(function() {
-    return selectAll(j);
+    return lf.testing.util.selectAll(global, j);
   }).then(function(results) {
     var verified = false;
     for (var i = 0; i < results.length; ++i) {
@@ -268,7 +266,7 @@ function testUpdate_UnboundPredicate() {
 
   var jobId = sampleJobs[0].getId();
   queryBuilder.bind([jobId, 10000]).exec().then(function() {
-    return selectAll(j);
+    return lf.testing.util.selectAll(global, j);
   }).then(function() {
     return db.select().from(j).where(j.id.eq(jobId)).exec();
   }).then(function(results) {
@@ -298,7 +296,7 @@ function testDelete_Predicate() {
 
   queryBuilder.exec().then(
       function() {
-        return selectAll(j);
+        return lf.testing.util.selectAll(global, j);
       }).then(
       function(results) {
         assertEquals(sampleJobs.length - 1, results.length);
@@ -317,7 +315,7 @@ function testDelete_UnboundPredicate() {
 
   queryBuilder.bind(['', jobId]).exec().then(
       function() {
-        return selectAll(j);
+        return lf.testing.util.selectAll(global, j);
       }).then(
       function(results) {
         assertEquals(sampleJobs.length - 1, results.length);
@@ -352,28 +350,13 @@ function testDelete_All() {
 
   queryBuilder.exec().then(
       function() {
-        return selectAll(j);
+        return lf.testing.util.selectAll(global, j);
       }).then(
       function(results) {
         assertEquals(0, results.length);
 
         asyncTestCase.continueTesting();
       }, fail);
-}
-
-
-/**
- * Selects all entries in the given table directly from the database (skips the
- * cache).
- * @param {!lf.schema.Table} tableSchema
- * @return {!IThenable}
- */
-function selectAll(tableSchema) {
-  var tx = backStore.createTx(
-      lf.TransactionType.READ_ONLY,
-      new lf.cache.Journal(hr.db.getGlobal(), [tableSchema]));
-  var table = tx.getTable(tableSchema.getName(), tableSchema.deserializeRow);
-  return table.get([]);
 }
 
 

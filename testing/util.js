@@ -18,6 +18,9 @@ goog.provide('lf.testing.util');
 
 goog.require('goog.Promise');
 goog.require('lf.Exception');
+goog.require('lf.TransactionType');
+goog.require('lf.cache.Journal');
+goog.require('lf.service');
 
 
 /**
@@ -65,4 +68,22 @@ lf.testing.util.assertThrowsSyntaxError = function(fn) {
     assertEquals(e.name, lf.Exception.Type.SYNTAX);
   }
   assertTrue(thrown);
-}
+};
+
+
+/**
+ * Selects all entries in the given table directly from the database (skips the
+ * cache).
+ * @param {!lf.Global} global
+ * @param {!lf.schema.Table} tableSchema
+ * @return {!IThenable}
+ */
+lf.testing.util.selectAll = function(global, tableSchema) {
+  var backStore = global.getService(lf.service.BACK_STORE);
+
+  var tx = backStore.createTx(
+      lf.TransactionType.READ_ONLY,
+      new lf.cache.Journal(global, [tableSchema]));
+  var table = tx.getTable(tableSchema.getName(), tableSchema.deserializeRow);
+  return table.get([]);
+};

@@ -20,12 +20,11 @@ goog.require('goog.testing.AsyncTestCase');
 goog.require('goog.testing.jsunit');
 goog.require('hr.db');
 goog.require('lf.Exception');
-goog.require('lf.TransactionType');
 goog.require('lf.bind');
-goog.require('lf.cache.Journal');
 goog.require('lf.proc.UserQueryTask');
 goog.require('lf.service');
 goog.require('lf.testing.hrSchemaSampleData');
+goog.require('lf.testing.util');
 
 
 /** @type {!goog.testing.AsyncTestCase} */
@@ -37,8 +36,8 @@ var asyncTestCase = goog.testing.AsyncTestCase.createAndInstall(
 var db;
 
 
-/** @type {!lf.BackStore} */
-var backStore;
+/** @type {!lf.Global} */
+var global;
 
 
 /** @type {!lf.cache.Cache} */
@@ -61,7 +60,7 @@ function setUp() {
   asyncTestCase.waitForAsync('setUp');
   hr.db.getInstance(undefined, true).then(function(database) {
     db = database;
-    backStore = hr.db.getGlobal().getService(lf.service.BACK_STORE);
+    global = hr.db.getGlobal();
     cache = hr.db.getGlobal().getService(lf.service.CACHE);
     j = db.getSchema().getJob();
   }).then(function() {
@@ -105,7 +104,7 @@ function testSinglePlan_Insert() {
   var queryTask = new lf.proc.UserQueryTask(
       hr.db.getGlobal(), [getSampleQuery()]);
   queryTask.exec().then(function() {
-    return selectAll();
+    return lf.testing.util.selectAll(global, j);
   }).then(function(results) {
     assertEquals(ROW_COUNT, results.length);
     assertEquals(ROW_COUNT, cache.getCount());
@@ -136,7 +135,7 @@ function testSinglePlan_Update() {
         hr.db.getGlobal(), [query]);
     return updateQueryTask.exec();
   }).then(function() {
-    return selectAll();
+    return lf.testing.util.selectAll(global, j);
   }).then(function(results) {
     assertEquals(ROW_COUNT, results.length);
     assertEquals(ROW_COUNT, cache.getCount());
@@ -167,7 +166,7 @@ function testSinglePlan_Delete() {
         hr.db.getGlobal(), [query]);
     return deleteQueryTask.exec();
   }).then(function() {
-    return selectAll();
+    return lf.testing.util.selectAll(global, j);
   }).then(function(results) {
     assertEquals(0, results.length);
     assertEquals(0, cache.getCount());
@@ -207,7 +206,7 @@ function testMultiPlan() {
   queryTask.exec().then(function() {
     assertEquals(ROW_COUNT - 1, cache.getCount());
 
-    return selectAll();
+    return lf.testing.util.selectAll(global, j);
   }).then(function(results) {
     assertEquals(ROW_COUNT - 1, results.length);
     for (var i = 0; i < results.length; ++i) {
@@ -244,7 +243,7 @@ function testMultiPlan_Rollback() {
       function(e) {
         assertEquals(lf.Exception.Type.CONSTRAINT, e.name);
         assertEquals(0, cache.getCount());
-        selectAll().then(
+        lf.testing.util.selectAll(global, j).then(
             function(results) {
               assertEquals(0, results.length);
               asyncTestCase.continueTesting();
@@ -289,16 +288,4 @@ function testSinglePlan_ParametrizedQuery() {
         hr.db.getGlobal(), [selectQueryBuilder.getQuery()]);
     return selectQueryTask.exec();
   }, fail);
-}
-
-
-/**
- * Selects all entries from the database (skips the cache).
- * @return {!IThenable}
- */
-function selectAll() {
-  var tx = backStore.createTx(
-      lf.TransactionType.READ_ONLY,
-      new lf.cache.Journal(hr.db.getGlobal(), [j]));
-  return tx.getTable(j.getName(), j.deserializeRow).get([]);
 }

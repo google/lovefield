@@ -30,6 +30,7 @@ goog.require('lf.index.MemoryIndexStore');
 goog.require('lf.service');
 goog.require('lf.testing.MockSchema');
 goog.require('lf.testing.backstore.ScudTester');
+goog.require('lf.testing.util');
 
 
 /** @type {!goog.testing.AsyncTestCase} */
@@ -141,8 +142,10 @@ function testTwoTableInserts_Bundled() {
     return;
   }
 
+  var global = lf.Global.get();
   schema.setName(schema.name() + '_b2');
-  db = new lf.backstore.IndexedDB(lf.Global.get(), schema, true);
+  db = new lf.backstore.IndexedDB(global, schema, true);
+  global.registerService(lf.service.BACK_STORE, db);
 
   /** @const {!Object} */
   var CONTENTS = {'id': 'hello', 'name': 'world'};
@@ -201,7 +204,7 @@ function testTwoTableInserts_Bundled() {
     store.put([row4, row3]);
     return tx.finished();
   }).then(function() {
-    return selectAll();
+    return lf.testing.util.selectAll(global, tableA);
   }).then(function(results) {
     assertEquals(2, results.length);
     assertEquals(row4.id(), results[0].id());
@@ -222,7 +225,7 @@ function testTwoTableInserts_Bundled() {
     store.remove([row3.id()]);
     return tx.finished();
   }).then(function() {
-    return selectAll();
+    return lf.testing.util.selectAll(global, tableA);
   }).then(function(results) {
     assertEquals(1, results.length);
     assertEquals(row4.id(), results[0].id());
@@ -340,20 +343,6 @@ function testScanRowId_BundledDB() {
   });
 
   asyncTestCase.waitForAsync('testScanRowId_BundledDB');
-}
-
-
-/**
- * Selects all entries from the database (skips the cache).
- * @return {!IThenable}
- */
-function selectAll() {
-  var tableSchema = schema.tables()[0];
-  var tx = db.createTx(
-      lf.TransactionType.READ_ONLY,
-      new lf.cache.Journal(lf.Global.get(), [tableSchema]));
-  var table = tx.getTable(tableSchema.getName(), tableSchema.deserializeRow);
-  return table.get([]);
 }
 
 
