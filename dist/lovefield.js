@@ -24280,6 +24280,13 @@ lf.index.Index.prototype.max;
  */
 lf.index.Index.prototype.serialize;
 
+
+/**
+ * Returns the comparator used by this index.
+ * @return {!lf.index.Comparator}
+ */
+lf.index.Index.prototype.comparator;
+
 /**
  * @license
  * Copyright 2014 Google Inc. All Rights Reserved.
@@ -24469,8 +24476,8 @@ lf.index.BTree.prototype.isUniqueKeyOnly = function() {
 };
 
 
-/** @return {!lf.index.Comparator} */
-lf.index.BTree.prototype.getComparator = function() {
+/** @override */
+lf.index.BTree.prototype.comparator = function() {
   return this.comparator_;
 };
 
@@ -25245,7 +25252,7 @@ lf.index.BTreeNode_.prototype.getRange = function(opt_keyRange) {
   var end = this.keys_.length - 1;
 
   if (goog.isDefAndNotNull(opt_keyRange)) {
-    var comparator = this.tree_.getComparator();
+    var comparator = this.tree_.comparator();
     var c = goog.bind(comparator.compare, comparator);
 
     if (!goog.isNull(opt_keyRange.to)) {
@@ -25502,6 +25509,13 @@ lf.index.SimpleComparator.prototype.isInRange = function(key, range) {
 /** @override */
 lf.index.SimpleComparator.prototype.normalizeKeyRange = function(keyRange) {
   return this.normalizeKeyRange_(keyRange);
+};
+
+
+/** @override */
+lf.index.SimpleComparator.prototype.toString = function() {
+  return this.compare_ == lf.index.SimpleComparator.compareDescending ?
+      'SimpleComparator_DESC' : 'SimpleComparator_ASC';
 };
 
 
@@ -25894,6 +25908,12 @@ lf.index.RowId.prototype.containsKey = function(key) {
 /** @override */
 lf.index.RowId.prototype.serialize = function() {
   return [new lf.Row(lf.index.RowId.ROW_ID, this.rows_.getValues())];
+};
+
+
+/** @override */
+lf.index.RowId.prototype.comparator = function() {
+  return this.comparator_;
 };
 
 
@@ -26522,6 +26542,12 @@ lf.index.AATree.prototype.serialize = function() {
 };
 
 
+/** @override */
+lf.index.AATree.prototype.comparator = function() {
+  return this.comparator_;
+};
+
+
 /**
  * @param {!lf.index.AANode_} node
  * @param {!Array.<!Array.<string>>} buffer
@@ -26781,6 +26807,12 @@ lf.index.Map.prototype.minMax_ = function(compareFn) {
 lf.index.Map.prototype.serialize = function() {
   goog.asserts.fail('Map index serialization is not supported.');
   return [];
+};
+
+
+/** @override */
+lf.index.Map.prototype.comparator = function() {
+  return this.comparator_;
 };
 
 /**
