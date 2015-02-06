@@ -2,366 +2,24 @@
 
 ## 1. Schema Definition
 
-Lovefield provides two different ways of defining database schema: static and
-dynamic. The static way of schema definition is to use a YAML file to describe
-the schema, and SPAC (Schema Parser And Code-generator) will read the file and
-generate corresponding classes and code, similar to what has been done in
-protobuf: define a proto file, and then use protoc to generate code for it.
-The dynamic way is to create database schema programmatically without using a
-YAML schema, at the cost of losing some syntactic sugars that static schema
-provides. The dynamic schema creation and its limitations are detailed on
-[Dynamic Schema Creation](01_schema.md#15-dynamic-schema-creation).
-
-The static schema YAML file looks like the following:
-
-```yaml
-%YAML 1.2
----
-name: <string>  # Required
-version: <integer>  # Required, must be positive integer >= 1
-table:  # Required, at least one table definition must exist
-  <table1_definition>
-  <table2_definition>
-  ...
-```
-A schema contains a name to uniquely identify a database schema on the
-persistence store and will be forged onto generated code. The origin and schema
-name uniquely identifies a database, please see
-[Lovefield Initialization](03_life_of_db.md#31-lovefield-initialization) for
+Schema is the structure of the relational database. A schema contains a name and
+a version number. The origin of the program, the name, and the version number
+together uniquely identify a database schema on the persistence store. Please
+see [Lovefield Initialization](03_life_of_db.md#31-lovefield-initialization) for
 detailed explanation.
 
-Database version must be an integer greater than 0. This version will be used by
-Lovefield to determine if a database needs upgrade. The developers are supposed
-to do data migration using
-[database upgrade](03_life_of_db.md#33-database-upgrade) mechanism described
-below.
-
-### 1.1 Table Definition
-
-A table definition is a [YAML](http://www.yaml.org) object using following
-syntax:
-
-```yaml
-<table_name>:
-  column:  # required, each table must have at least one column
-    <column1_name>: <type>
-    <column2_name>: <type>
-    ...
-  constraint:  # optional
-    <constraint_definition>
-  index:  # optional
-    <index1_definition>
-    <index2_definition>
-    ...
-```
-
-A table must have a unique name in the database. All names in schema definition
-must consist only alphanumeric characters or underscore, and the first character
-must not be numeric (i.e. `/^[A-Za-z_][A-Za-z0-9_]*$/.test(name)` needs to be
-`true`). The names are case-sensitive (contrary to SQL's case-insensitiveness).
-For best readability of generated code, it is suggested to use Camel style for
-names.
-
-Please note that although names are case-sensitive, the SPAC may still emit
-errors if it is not able to generate unique names for them. For example, if you
-have two tables, one named “hd” and the other named “Hd”, SPAC will not be able
-to auto-generate code for that and will reject the schema.
-
-### 1.2 Column Definition
-
-A column definition is a YAML field:
-
-```yaml
-<column_name>: <type>
-```
-
-Columns are identified by column names, and column names must be unique within
-the table. Each column must have an associated data type. The supported data
-types are:
-
-* `arraybuffer` (the ArrayBuffer in JavaScript, default to null)
-* `boolean` (default to false)
-* `datetime` (pseudo, will convert to timestamp integer internally, but nullable)
-* `integer` (32-bit integer, default to 0)
-* `number` (default to 0)
-* `object` (nullable generic JavaScript object, will be stored verbatim)
-* `string` (default to empty string, but nullable)
-
-Integer is called out from number because of its wide usage. Boolean, integer,
-and number fields are not nullable. Lovefield does not allow undefined in any
-of the field value.
-
-Lovefield accepts only string or number as index key. Array buffers and objects
-are not indexable (i.e. you cannot put them as index or any of the constraints)
-nor searchable (i.e. you cannot put them as part of `WHERE` clause). Implicit
-conversions will be performed internally if the following types are used as
-index / primary key or being placed as a unique constraint:
-* `boolean`: convert to string
-* `datetime`: convert to number
-* `integer`: convert to number
-
-Array buffers may be converted to hex strings when stored into the backstore
-since some browser implementations disallow direct blob storage. Users need to
-be aware of the performance impact of blob conversion.
-
-Lovefield assumes all columns are `NOT NULL` by default, which is a different
-behavior from SQL and the user shall be aware of it.
-
-### 1.3 Constraint Definition
-
-Constraints are optional. There are four different constraints supported by
-Lovefield: primary key, foreign key, nullable, and unique. Constraints are
-defined as a YAML object:
-
-```yaml
-constraint:
-  primaryKey:  # optional
-    <primaryKey_definition>
-  unique:  # optional
-    <uniqueness1_definition>
-    <uniqueness2_definition>
-    ...
-  nullable: [ <nullable_columns> ]  # optional
-  foreignKey:  # optional
-    <foreignKey1_definition>
-    <foreignKey2_definition>
-    ...
-```
-
-All properties of the constraint object are optional.
-
-`primaryKey` can contain one or more columns. Primary key implies not null and
-unique, and conflicting definitions will cause SPAC to reject this schema.
-
-#### 1.3.1 Primary Key Definition
-There are two types of primary key definition:
-
-```yaml
-primaryKey: [columns]
-```
-
-This type is used to define simple primary keys that use default ascending
-order. The second type has two different variations:
-
-```yaml
-primaryKey:
-  - column: <column_name>
-    autoIncrement: true
-```
-The first variation is used to define an auto-increment primary key. Lovefield
-supports only single-column integer auto-increment primary key. An
-`lf.Exception.SYNTAX` will be thrown if a non-integer or multi-column primary
-key is declared.
-
-The second variation allows specification of order:
-
-```yaml
-primaryKey:
-  - column: <column_name>
-    order: <desc | asc>
-  - column: <column_name>
-    order: <desc | asc>
-  ...
-```
-
-#### 1.3.2 Uniqueness Definition
-
-`unique` can be defined on a single column or cross column, and each will imply
-an implicit index. The uniqueness definition is a YAML object
-
-```yaml
-<uniqueness_name>:
-  column: [ <unique_columns> ]  # required
-```
-
-A cross-column `unique` constraint means the value combinations of these columns
-must be unique.
-
-
-#### 1.3.3 Nullable Definition
-
-`nullable` is an array of all nullable columns.
-
-
-#### 1.3.4 Foreign Key Definition
-
-Foreign key is defined as a YAML object
-
-```yaml
-<foreignKey_name>:
-  localColumn: <local_column>  # required
-  reference: <remote_table>  # required
-  remoteColumn: <remote_column>  # required
-  cascade: <boolean>  # optional
-```
-
-Primary key and foreign key constraint violations will cause transaction
-rejection, just like what happens in SQL. The not null constraint applies only
-to strings.
-
-When the `cascade` field is true for a foreign key, Lovefield query engine will
-perform cascade delete and update. `cascade` field is optional and defaulted to
-false.
-
-### 1.4 Index Definition
-
-An index definition is a YAML object, which accepts two different syntaxes. The
-first syntax is:
-
-```yaml
-<index_name>:
-  column: [ <column_names> ]  # required
-  order: < desc | asc >  # optional, default to asc
-  unique: <boolean>  # optional
-```
-
-This is used when all columns are of the same order. If not, you need to use
-this syntax instead:
-
-```yaml
-<index_name>:
-  column:
-    - name: <column_name>
-      order: < desc | asc >  # optional, default to asc
-    - name: <column_name>
-      order: < desc | asc >
-    ...
-  unique: <boolean>  # optional
-```
-
-Indices can be single-column or cross-column. Unlike most SQL engines, Lovefield
-has a limit that all values in indexed column must not be null. The order and
-unique fields are optional. If not specified, all indices are created in
-ascending order. All unique constraint also builds implicit index, so you don't
-need to create index on them. There can be multiple columns in an index.
-
-#### Custom Index
-Custom index means creating an index based on transformations. For example,
-reverse text of an e-mail address field. It's not included because we cannot
-persist JavaScript functions and eval due to Chrome Apps v2 constraints. Users
-are supposed to do the transformations in their own JavaScript and store the
-transformed data.
-
-Below is the example of a sample schema in Lovefield and their SQL-equivalent:
-<table>
-  <tr>
-    <td><pre>
-%YAML 1.2
----
-name: crdb
-version: 1
-table:
-  ImageCache:
-    column:
-      remote: string
-      local: string
-    constraint:
-      primaryKey: [ remote ]
-
-  Asset:
-    column:
-      id: string
-      asset: string
-      timestamp: integer
-    constraint:
-      primaryKey: [ id ]
-
-  Pin:
-    column:
-      id: string
-      state: integer
-      sessionId: string
-    constraint:
-      foreignKey:
-        fkId:
-          localColumn: id
-          reference: Asset
-          remoteColumn: id
-          cascade: true
-
-  InfoCard:
-    column:
-      id: string
-      lang: string
-      itag: integer
-      country: string
-      fileName: string
-    constraint:
-      primaryKey: [ id, lang ]
-      unique:
-        uniqFN:
-          column: [ fileName ]
-    index:
-      idxPinItag:
-        column: [ itag ]
-</pre></td><td><pre>
-
-
-CREATE DATABASE crdb;
-
-
-CREATE TABLE ImageCache (
-  remote AS TEXT PRIMARY KEY,
-  local AS TEXT NOT NULL
-);
-
-
-
-CREATE TABLE Asset (
-  id AS TEXT PRIMARY KEY,
-  asset AS TEXT,
-  timestamp AS INTEGER
-);
-
-
-
-CREATE TABLE Pin (
-  id,
-  state AS INTEGER,
-  sessionId AS TEXT,
-  FOREIGN KEY id
-    REFERENCES Asset(id)
-    ON DELETE CASCADE
-    ON UPDATE CASCADE
-);
-
-
-
-
-CREATE TABLE InfoCard (
-  id AS TEXT,
-  lang AS TEXT,
-  itag AS INTEGER,
-  country AS TEXT,
-  fileName AS TEXT UNIQUE
-  PRIMARY KEY (id, lang)
-);
-
-
-
-
-CREATE INDEX idxItag
-  ON InfoCard.itag;
-
-</pre></td>
-  </tr>
-</table>
-
-
-### 1.5 Dynamic Schema Creation
-
-Dynamic schema creation starts with a helper function: `lf.schema.create()` that
-returns a schema builder object which provides several helper methods to define
-schema. The code snippet below is an example of how to create the same schema
-as described in previous section:
+The database name must abide [naming rule](#11-naming-rules). Database version
+must be an integer greater than 0. This version will be used by Lovefield to
+determine if a database needs upgrade. The developers are supposed to do data
+migration using [database upgrade](03_life_of_db.md#33-database-upgrade)
+mechanism described in the spec.
+
+The following code demonstrates how to use Lovefield-provided APIs to declare
+a database schema.
 
 ```js
+// Begin schema creation.
 var ds = lf.schema.create('crdb', 1);
-
-ds.createTable('ImageCache').
-    addColumn('remote', lf.Type.STRING).
-    addColumn('local', lf.Type.STRING).
-    addPrimaryKey(['remote']);
 
 ds.createTable('Asset').
     addColumn('id', lf.Type.STRING).
@@ -369,31 +27,11 @@ ds.createTable('Asset').
     addColumn('timestamp', lf.Type.INTEGER).
     addPrimaryKey(['id']);
 
-ds.createTable('Pin').
-    addColumn('id', lf.Type.STRING).
-    addColumn('state', lf.Type.INTEGER).
-    addColumn('sessionId', lf.Type.STRING).
-    addForeignKey('fkId', 'id', 'Asset', 'id', true);
-
-ds.createTable('InfoCard').
-    addColumn('id', lf.Type.STRING).
-    addColumn('lang', lf.Type.STRING).
-    addColumn('itag', lf.Type.INTEGER).
-    addColumn('country', lf.Type.STRING).
-    addColumn('fileName', lf.Type.STRING).
-    addPrimaryKey(['id', 'lang']);
-
-// This signals end of schema building and creates instance. You cannot change
-// the schema from this point on.
 ds.getInstance(/* opt_onUpgrade */ undefined, /* opt_volatile */ true).then(
+    // End of schema creation, begin queries.
     function(db) {
-      // There is no syntactic sugar getter (getAsset() in this case).
       var asset = db.getSchema().table('Asset');
-
-      // You cannot use asset.id if Closure advanced optimization is in place.
-      // Use asset['id'] instead.
-      var query =
-          db.select().from(asset).where(asset['id'].eq('12345'));
+      var query = db.select().from(asset).where(asset['id'].eq('12345'));
       return query.exec();
     }).then(function(results) {
       results.forEach(function(row) {
@@ -402,125 +40,278 @@ ds.getInstance(/* opt_onUpgrade */ undefined, /* opt_volatile */ true).then(
     });
 ```
 
-The functions and usages are detailed below:
+### 1.1 Naming Rules
 
-#### 1.5.1 Global Functions
+All naming in Lovefield must pass the following JavaScript regex check:
 
-| Function                    | Returns                                |
-|:----------------------------|:---------------------------------------|
-|`lf.schema.create()`         |`lf.schema.Builder` for building schema |
+`/^[A-Za-z_][A-Za-z0-9_]*$/.test(name)`
 
-Parameters for `lf.schema.create()`:
+Names that violates this check will result in exceptions.
 
-| Parameter | Type   |Meaning         |
-|:----------|:-------|:---------------|
-|`name`     |`string`|Database name   |
-|`version`  |`number`|Database version|
 
-#### 1.5.2 Class `lf.schema.Builder`
+### 1.2 Initiate Schema Builder
 
-|Member Function |Returns                  |Meaning                       |
-|:---------------|:------------------------|:-----------------------------|
-|`createTable`   |`lf.schema.TableBuilder` |Creates a table in schema.    |
-|`getInstance`   |`lf.proc.Database`       |Finalizes schema building and returns DB instance. |
-|`getSchema`     |`lf.schema.Database`     |Finalizes schema building and returns DB schema. |
-|`table`         |`lf.schema.TableBuilder` |Returns table schema.         |
+The API used to create schema is `lf.schema.create`:
 
-Parameters for `lf.schema.Builder.prototype.createTable`:
+| Function                            | Returns           |
+|:------------------------------------|:------------------|
+|`lf.schema.create(dbName, dbVersion)`|`lf.schema.Builder`|
+
+Creates a schema builder to build database schema.
+
+##### Parameters
 
 | Parameter | Type   |Meaning         |
 |:----------|:-------|:---------------|
-|`name`     |`string`|Table name      |
+|`dbName`   |`string`|Database name   |
+|`dbVersion`|`number`|Database version|
 
-Parameters for `lf.schema.Builder.prototype.getInstance`:
+Lovefield APIs are grouped inside the `lf` namespace to avoid polluting the
+global namespace. All schema creations start from instantiating a schema
+builder.
 
-| Parameter | Type             |Meaning         |
-|:----------|:-----------------|:---------------|
-|`onUpgrade`|`!function(!lf.raw.BackStore):!IThenable=`|Optional DB upgrade function.|
-|`volatile` |`boolean=`        |Optional volatile parameter.|
+### 1.3 Class `lf.schema.Builder`
 
-Parameters for `lf.schema.Builder.prototype.table`:
+|Section                  |Function      |
+|:------------------------|--------------|
+|[1.3.1](#131-constructor)|Constructor   |
+|[1.3.2](#132-createtable)|`createTable` |
+|[1.3.3](#133-getinstance)|`getInstance` |
 
-| Parameter | Type   |Meaning         |
-|:----------|:-------|:---------------|
-|`name`     |`string`|Table name      |
+#### 1.3.1 Constructor
 
+User shall only instantiate this class object through `lf.schema.create`.
 
-#### 1.5.3 Class `lf.schema.TableBuilder`
+#### 1.3.2 `createTable`
 
-|Member Function |Returns                 |Meaning                             |
-|:---------------|:-----------------------|:-----------------------------------|
-|`addColumn`     |`lf.schema.TableBuilder`|Adds one column to schema.          |
-|`addPrimaryKey` |`lf.schema.TableBuilder`|Adds primary key(s) to schema.      |
-|`addForeignKey` |`lf.schema.TableBuilder`|Adds foreign key to schema.         |
-|`addUnique`     |`lf.schema.TableBuilder`|Adds unique constraint on column(s).|
-|`addNullable`   |`lf.schema.TableBuilder`|Adds nullable constraint.           |
-|`addIndex`      |`lf.schema.TableBuilder`|Adds index to table.                |
-|`getSchema`     |`lf.schema.Table`       |Returns table schema.               |
-|`persistentIndex`  |`void`                  |Indicates the table should persist index, equivalent of `pragma { persistentIndex }` in YAML. |
+| Function               | Returns                |
+|:-----------------------|:-----------------------|
+|`createTable(tableName)`|`lf.schema.TableBuilder`|
 
-Parameters for `lf.schema.TableBuilder.prototype.addColumn`:
-
-| Parameter | Type    |Meaning         |
-|:----------|:--------|:---------------|
-|`name`     |`string` |Column name     |
-|`type`     |`lf.Type`|Column type     |
-
-There are two overloads for `lf.schema.TableBuilder.prototype.addPrimaryKey`.
-The first one specifies primary key with default ascending orders, or auto-
-increment primary key:
-
-| Parameter   | Type           |Meaning                          |
-|:------------|:---------------|:--------------------------------|
-|`columns`    |`!Array<string>`|Existing column(s) in schema.    |
-|`opt_autoInc`|`boolean=`      |When true, must have only one numeric column as primary key.|
-
-The second one specifies primary key with non-default orders.
-
-| Parameter   | Type            |Meaning                          |
-|:------------|:----------------|:--------------------------------|
-|`columns`    |`!Array<{column:string, order:lf.Order}>`|Existing columns and their corresponding order.|
-
-Parameters for `lf.schema.TableBuilder.prototype.addForeignKey`:
-
-| Parameter   | Type              |Meaning                                    |
-|:------------|:------------------|:------------------------------------------|
-|`name`       |`string`           |Key name.                                  |
-|`localCol`   |`string`           |Local column name.                         |
-|`remoteTable`|`string`           |Remote table name.                         |
-|`remoteCol`  |`string`           |Remote column name.                        |
-|`opt_cascade`|`boolean=`         |Cascade, default to false.                 |
-
-Parameters for `lf.schema.TableBuilder.prototype.addUnique`:
-
-| Parameter   | Type           |Meaning                          |
-|:------------|:---------------|:--------------------------------|
-|`name`       |`string`        |Key name.                        |
-|`columns`    |`!Array<string>`|Existing column(s) in schema.    |
-
-Parameters for `lf.schema.TableBuilder.prototype.addNullable`:
-
-| Parameter   | Type           |Meaning                          |
-|:------------|:---------------|:--------------------------------|
-|`columns`    |`!Array<string>`|Existing column(s) in schema.    |
-
-Parameters for `lf.schema.TableBuilder.prototype.addIndex`:
-
-| Parameter   | Type            |Meaning                          |
-|:------------|:----------------|:--------------------------------|
-|`name`       |`string`         |Key name.                        |
-|`columns`    |`!Array<{column:string, order:lf.Order}>` or `!Array<string>`|Existing columns and their corresponding order.|
-|`opt_unique` |`boolean=`       |Optional, default to false.      |
-
-Parameters for `lf.schema.TableBuilder.prototype.getSchema`:
+`createTable` instantiates a table builder inside the schema builder, which will
+effectively construct a table when the builder is finalized.
 
 | Parameter | Type   |Meaning         |
 |:----------|:-------|:---------------|
-|`name`     |`string`|Table name      |
+|`tableName`|`string`|Table name      |
 
-Parameters for `lf.schema.TableBuilder.prototype.persistentIndex`:
+#### 1.3.3 `getInstance`
 
-| Parameter | Type    |Meaning         |
-|:----------|:--------|:---------------|
-|`value`    |`boolean`|Persistent index|
+| Function                                 | Returns          |
+|:-----------------------------------------|:-----------------|
+|`getInstance(opt_onUpgrade, opt_volatile)`|`lf.proc.Database`|
 
+Finalizes schema building and create a database instance that can be used to run
+queries. `lf.schema.Builder` is stateful: it has a building state and a
+finalized state. The schema can only be modified in building state. Once
+finalized, it will not accept any `createTable()` calls.
+
+| Parameter     | Type             |Meaning         |
+|:--------------|:-----------------|:---------------|
+|`opt_onUpgrade`|`!function(!lf.raw.BackStore):!IThenable=`|Optional DB upgrade function.|
+|`opt_volatile` |`boolean=`        |Optional volatile parameter.|
+
+The two parameters are both optional. Their detailed usage is described in
+[database upgrade](#03_life_of_db#33-database-upgrade)
+
+
+### 1.4 Class `lf.schema.TableBuilder`
+
+A table in Lovefield is similar to SQL tables. The user can specify indices and
+constraints in the table-level. All member functions of `lf.schema.TableBuilder`
+return the object itself to support chaining pattern.
+
+|Section                      |Function         |
+|:----------------------------|-----------------|
+|[1.4.1](#141-constructor)    |Constructor      |
+|[1.4.2](#142-addcolumn)      |`addColumn`      |
+|[1.4.3](#143-addprimarykey)  |`addPrimaryKey`  |
+|[1.4.4](#144-addforeignkey)  |`addForeignKey`  |
+|[1.4.5](#145-addunique)      |`addUnique`      |
+|[1.4.6](#146-addnullable)    |`addNullable`    |
+|[1.4.7](#147-addindex)       |`addIndex`       |
+|[1.4.8](#148-persistentindex)|`persistentIndex`|
+
+#### 1.4.1 Constructor
+
+User shall only instantiate this class object through
+`lf.schema.Builder.prototype.createTable`.
+
+#### 1.4.2 `addColumn`
+
+| Function              | Returns                |
+|:----------------------|:-----------------------|
+|`addColumn(name, type)`|`lf.schema.TableBuilder`|
+
+Adds a column to current table. Columns are identified by column names, and
+column names must be unique within the table. Each column must have an
+associated data type.
+
+| Parameter     | Type             |Meaning         |
+|:--------------|:-----------------|:---------------|
+|`name`         |`string`          |Column name     |
+|`type`         |`lf.Type`         |Column type     |
+
+The supported data types are listed in `lf.Type`:
+
+| Type                 | Default Value | Nullable | Description               |
+|:---------------------|:--------------|:---------|:--------------------------|
+|`lf.Type.ARRAY_BUFFER`|`null`    |Yes |JavaScript `ArrayBuffer` object       |
+|`lf.Type.BOOLEAN`     |`false`   |No  |                                      |
+|`lf.Type.DATE_TIME`   |`Date(0)` |Yes |JavaScript Date, will be converted to timestamp integer internally |
+|`lf.Type.INTEGER`     |`0`       |No  |32-bit integer                        |
+|`lf.Type.NUMBER`      |`0`       |No  |JavaScript `number` type              |
+|`lf.Type.STRING`      |`''`      |Yes |JavaScript `string` type              |
+|`lf.Type.OBJECT`      |`null`    |Yes |JavaScript `Object`, store as-is      |
+
+Although `lf.Type.STRING` and `lf.Type.DATE_TIME` can be null, the fields are
+defaulted to `NOT NULL`. This is very different from typical SQL engine
+behavior. The user needs to specifically call out these fields as nullable by
+calling [`addNullable`](#146-addnullable).
+
+Lovefield internally accepts only string or number as index key. Array buffers
+and objects are not indexable (i.e. they cannot be put as index or any of the
+constraints) nor searchable (i.e. them cannot be part of `WHERE` clause).
+Implicit conversions will be performed internally if the following types are
+used as index / primary key or being placed as a unique constraint:
+* `lf.Type.BOOLEAN`: convert to `lf.Type.STRING`
+* `lf.Type.DATE_TIME`: convert to `lf.Type.NUMBER`
+* `lf.Type.INTEGER`: convert to `lf.Type.NUMBER`
+
+
+#### 1.4.3 `addPrimaryKey`
+
+| Function                            | Returns                |
+|:------------------------------------|:-----------------------|
+|`addPrimaryKey(columns, opt_autoInc)`|`lf.schema.TableBuilder`|
+
+Adds a primary key to table. Each table can only have one primary key. Same as
+the SQL world, primary key implies unique and not null.
+
+| Parameter     | Type             |Meaning         |
+|:--------------|:-----------------|:---------------|
+|`columns`      |`!Array.<string>` or `!Array<{column:string, order:lf.Order}>`|Column(s) to be keyed|
+|`opt_autoInc`  |`boolean=`        |Optional, creates an auto-increment key |
+
+There are two overloads for parameter `columns`. The first one specifies primary
+key by given only column names with default ascending orders (`lf.Order.ASC`).
+The second one allows user to specify different ordering per-column.
+
+Valid ordering are described in `lf.Order`:
+
+| Value         | Meaning                 |
+|:--------------|:------------------------|
+|`lf.Order.ASC` |Ascending order (default)|
+|`lf.Order.DESC`|Descending order         |
+
+When `opt_autoInc` is `true`, there can be only one column in the `columns`
+parameter, its type must be `lf.Type.INTEGER`, and its order must be the default
+`lf.Order.ASC`. Auto-incremented values start from 1.
+
+#### 1.4.4 `addForeignKey`
+
+| Function                            | Returns                |
+|:------------------------------------|:-----------------------|
+|`addForeignKey(name, localColumn, remoteTable, remoteColumn, opt_cascade)`|`lf.schema.TableBuilder`|
+
+Creates a foreign key.
+
+| Parameter    | Type     |Meaning                                   |
+|:-------------|:---------|:-----------------------------------------|
+|`name`        |`string`  |Key name                                  |
+|`localColumn` |`string`  |Local column name                         |
+|`remoteTable` |`string`  |Remote table name                         |
+|`remoteColumn`|`string`  |Remote column name                        |
+|`opt_cascade` |`boolean=`|Cascade, optional, default to false       |
+
+Primary key and foreign key constraint violations will cause transaction
+rejection, just like what happens in SQL. When `opt_cascade` is true for
+a foreign key, Lovefield query engine will perform cascade delete and update
+if necessary.
+
+#### 1.4.5 `addUnique`
+
+| Function                            | Returns                |
+|:------------------------------------|:-----------------------|
+|`addUnique(name, columns)`           |`lf.schema.TableBuilder`|
+
+Adds a unique constraint on column(s). Unique constraints imply implicit
+indices. A cross-column unique constraint means the value combinations of these
+columns must be unique.
+
+| Parameter   | Type           |Meaning                         |
+|:------------|:---------------|:-------------------------------|
+|`name`       |`string`        |Key name                        |
+|`columns`    |`!Array<string>`|Existing column(s) in schema    |
+
+#### 1.4.6 `addNullable`
+
+| Function                      | Returns                |
+|:------------------------------|:-----------------------|
+|`addUnique(columns)`           |`lf.schema.TableBuilder`|
+
+Specify nullable columns by their name. *Nullable columns cannot be indexed*.
+
+| Parameter   | Type           |Meaning                         |
+|:------------|:---------------|:-------------------------------|
+|`columns`    |`!Array<string>`|Existing column(s) in schema    |
+
+#### 1.4.7 `addIndex`
+
+There are two overloads for `addIndex`, both adds an index for the table.
+The first form adds an index by column names only:
+
+| Function                                       | Returns                |
+|:-----------------------------------------------|:-----------------------|
+|`addIndex(name, columns, opt_unique, opt_order)`|`lf.schema.TableBuilder`|
+
+| Parameter  | Type            |Meaning                                    |
+|:-----------|:----------------|:------------------------------------------|
+|`name`      |`string`         |Name of the index                          |
+|`columns`   |`!Array.<string>`|Column(s) to be indexed                    |
+|`opt_unique`|`boolean=`       |Optional, values are uniquely constrainted |
+|`opt_order` |`lf.Type.Order=` |Optional, order of the column(s), default to `lf.Order.ASC`|
+
+The second form allows customization of ordering, but more complicated:
+
+| Function                                 | Returns                |
+|:-----------------------------------------|:-----------------------|
+|`addIndex(name, columns, opt_unique)`     |`lf.schema.TableBuilder`|
+
+| Parameter  | Type            |Meaning                                        |
+|:-----------|:----------------|:----------------------------------------------|
+|`name`      |`string`         |Name of the index                              |
+|`columns`   |`!Array.<{column:string, order:lf.Order}>`|Columns to be indexed |
+|`opt_unique`|`boolean=`       |Optional, values are uniquely constrainted     |
+
+Indices can be single-column or cross-column. Unlike most SQL engines, Lovefield
+has a limit that all values in indexed column must not be null. All unique
+constraint also builds implicit index, and therefore creating index with
+identical scope will yield in exceptions.
+
+Lovefield does not support custom index. Custom index means creating an index
+based on transformations. For example, reverse text of an e-mail address field.
+It's not included because it is not possible to persist JavaScript functions
+then eval due to Chrome Apps v2 constraints. Users are supposed to do the
+transformations in their own JavaScript and store the transformed data.
+
+
+#### 1.4.8 `persistentIndex`
+
+By default, Lovefield constructs table indices during loading. The indices of a
+given table will be persisted if this function is called.
+
+| Function               | Returns                |
+|:-----------------------|:-----------------------|
+|`persistentIndex(value)`|`lf.schema.TableBuilder`|
+
+| Parameter   | Type           |Meaning                   |
+|:------------|:---------------|:-------------------------|
+|`value`      |`boolean`       |                          |
+
+
+### 1.5 Static Schema Construction
+
+Lovefield ships with SPAC (Schema Parser And Code-generator) that can generate
+JavaScript source code according to provided schema YAML file. This is
+considered advanced topic and is detailed in [its own section](10_spac.md).
