@@ -27,7 +27,11 @@ affect Lovefield design are listed below:
 2. __Upgrade__: IndexedDB schema can only be changed in the handler of
    `onupgradeneeded` event. The event can only be triggered when database is
    opened. As a result, to alter schema of Lovefield database, one can only do
-   it during initialization time.
+   it during initialization time. IndexedDB does not provide a way of renaming
+   table, therefore renaming a table will require recreating a table with exact
+   contents and deleting the old table, which cannot be done safely within the
+   upgrade transaction and user is supposed to do it manually outside of the
+   `onUpgrade` function.
 
 3. __Best effort closing__: IndexedDB does not guarantee the database fully
    closed if there are connections to the database. As a result, Lovefield could

@@ -7,7 +7,7 @@ used to retrieve data from database and return them as rows. The select query
 is created by calling `select()`:
 
 ```js
-my.namespace.db.getInstance().then(function(db) {
+ds.getInstance().then(function(db) {
   var selectQuery = db.select();
 });
 ```

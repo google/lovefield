@@ -3,26 +3,25 @@
 ## 3. Life of a Lovefield Database
 
 Lovefield database is scoped per-origin, like IndexedDB, so (origin, DB name)
-uniquely identify a database. The database is stored in a persistent storage
-(actual implementation uses IndexedDB because it's the only cross-browser
-persistent storage which meets our criteria).
+uniquely identify a database. The database is stored in a
+[Data Store](02_data_store.md).
 
 ### 3.1 Lovefield Initialization
 
 The `getInstance()` method will implicitly invoke Lovefield initialization,
-which will load the DB instance from persistent store if existed. If Lovefield
+which will load the DB instance from data store if existed. If Lovefield
 detected schema version mismatch, it will do the following:
 
-* If schema version is newer than the library, throw an exception.
-* If schema version is older than the library, perform database upgrade.
+* If schema version is newer than requested, throw an exception.
+* If schema version is older than requested, perform database upgrade.
 
-The `getInstance()` method is generated per schema and the version number
-associated with the schema is forged within. `getInstance()` shall be called
-only once for each DB. In rare circumstances, one can call `close()` on the
-opened instance first, then call `getInstance()` again.
+`getInstance()` shall be called only once for each DB. In rare circumstances,
+one can call `close()` on the opened instance first, then call `getInstance()`
+again. However, this is not guaranteed to work due to IndexedDB limitations,
+see [Data Store](02_data_store.md) for details.
 
-Users are free to use two or more database instances at the same program and
-the same time.
+Users are free to use two or more database instances simultaneously at the same
+program in the same session.
 
 #### 3.1.1 Volatile Storage
 
@@ -50,12 +49,12 @@ aware of this problem and plan accordingly.
 
 In Lovefield's current status, the query engine may have inconsistent in-memory
 snapshot if there are more than one connections making write request to the
-backing store. Lovefield will pursue W3C standardization to provide lower-level
-cache layer support and solve this issue in the future.
+backing store. There are several proposals for solving this issue and they are
+under evaluations.
 
-Current best practice having a ServiceWorker or a background page that handles
-all Lovefield operations, and the other tabs/windows postMessage to that
-ServiceWork or background page to perform DB operations.
+Current best practice is to use a ServiceWorker or a background page that
+handles all Lovefield operations, and the other tabs/windows postMessage to that
+ServiceWorker or background page to perform DB operations.
 
 ### 3.3 Database Upgrade
 
@@ -64,7 +63,7 @@ Lovefield will open the database using the version specified in schema
 upgrade mechanism will be triggered.
 
 The first step of database upgrade is to create new tables. Lovefield checks the
-tables that are not in database but in the schema, and create them accordingly.
+tables that are not in database but in the schema, and creates them accordingly.
 After this is done, Lovefield will call the user-provided upgrade function.
 
 User needs to provide the custom upgrade function as a parameter of
@@ -76,13 +75,15 @@ is rejected, the `getInstance()` call will also be rejected.
 
 Users do not need to worry about new indices or altering indices, either. Query
 engine will detect index schema change and recreate all the indices when needed.
+Query engine will drop all persisted indices and recreate them in the scenario
+of database upgrade to ensure data consistency.
 
 For the case of deleting table, user is responsible to perform the deletion in
 upgrade function. Lovefield does not provide auto-drop due to data safety
 concerns. IndexedDB does not provide a way of renaming table, therefore renaming
 a table will require recreating a table with exact contents and deleting the old
 table, which cannot be done safely within the upgrade transaction and user is
-supposed to do it manually outside of the onUpgrade function.
+supposed to do it manually outside of the `onUpgrade` function.
 
 For the case of altering table, if the transformation is renaming column, adding
 a nullable/fixed value column, or deleting a column, user can use helper
@@ -97,7 +98,7 @@ Lovefield disallows altering column types directly.
 The following is a sample code snippet demonstrating database upgrades.
 
 ```js
-my.namespace.db.getInstance(onUpgrade).then(
+ds.getInstance(onUpgrade).then(
   /** @param {lf.Db} db */
   function(db) {
     // new db starts here
@@ -151,12 +152,15 @@ new and more efficient storage format). Since the database upgrade can be
 time-consuming, user is responsible for defining their own progress event and
 fire within the callback function.
 
+For more details regarding functions provided by `lf.raw.BackStore`, see
+[Data Store](02_data_store.md).
+
 ### 3.4 Query Execution
 
 If the schema version matches, or the database upgrade procedure completed, the
 resolve function of the returning promise will receive a database object. The
 database object can be used to run queries. `close()` a database object will
-reset the database object to its initial state (unopened) and is *not*
+reset the database object to its initial state (unopened) and is __not__
 mandatory.
 
 All queries must be created from the database object. All queries are not
