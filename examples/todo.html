@@ -16,7 +16,7 @@ ds.createTable('Item').
     addColumn('deadline', lf.Type.DATE_TIME).
     addColumn('done', lf.Type.BOOLEAN).
     addPrimaryKey(['id']).
-    addIndex('idxDeadline', ['deadline'], lf.Order.DESC);
+    addIndex('idxDeadline', ['deadline'], false, lf.Order.DESC);
 
 var todoDb;
 var item;

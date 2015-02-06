@@ -37939,14 +37939,14 @@ lf.schema.TableBuilder.prototype.addNullable = function(columns) {
  * Mimics SQL CREATE INDEX.
  * @param {string} name
  * @param {!Array<string> | !Array<lf.schema.IndexedColumn>} columns
+ * @param {boolean=} opt_unique Whether the index is unique, default is false.
  * @param {!lf.Order=} opt_order Order of columns, only effective when columns
  *     are array of strings.
- * @param {boolean=} opt_unique Whether the index is unique, default is false.
  * @return {!lf.schema.TableBuilder}
  * @export
  */
 lf.schema.TableBuilder.prototype.addIndex = function(
-    name, columns, opt_order, opt_unique) {
+    name, columns, opt_unique, opt_order) {
   this.checkName_(name);
   var cols = this.normalizeColumns_(columns, true, opt_order);
   if (opt_unique) {

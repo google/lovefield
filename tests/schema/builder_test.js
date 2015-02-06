@@ -35,7 +35,7 @@ function createBuilder() {
       addColumn('minSalary', lf.Type.NUMBER).
       addColumn('maxSalary', lf.Type.NUMBER).
       addPrimaryKey(['id']).
-      addIndex('idx_maxSalary', ['maxSalary'], lf.Order.DESC);
+      addIndex('idx_maxSalary', ['maxSalary'], false, lf.Order.DESC);
 
   ds.createTable('JobHistory').
       addColumn('employeeId', lf.Type.STRING).
@@ -80,8 +80,8 @@ function createBuilder() {
       addColumn('number', lf.Type.NUMBER).
       addColumn('object', lf.Type.OBJECT).
       addColumn('string', lf.Type.STRING).
-      addIndex('idx_string', ['string'], lf.Order.ASC, true).
-      addIndex('idx_number', [{'name': 'number'}], undefined, true).
+      addIndex('idx_string', ['string'], true, lf.Order.ASC).
+      addIndex('idx_number', [{'name': 'number'}], true).
       addNullable(['arraybuffer', 'object']);
 
   return ds;
