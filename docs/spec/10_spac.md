@@ -185,12 +185,12 @@ A cross-column `unique` constraint means the value combinations of these columns
 must be unique.
 
 
-#### 1.3.3 Nullable Definition
+#### 10.3.3 Nullable Definition
 
 `nullable` is an array of all nullable columns.
 
 
-#### 1.3.4 Foreign Key Definition
+#### 10.3.4 Foreign Key Definition
 
 Foreign key is defined as a YAML object
 
@@ -209,7 +209,7 @@ When the `cascade` field is true for a foreign key, Lovefield query engine will
 perform cascade delete and update. `cascade` field is optional and defaulted to
 false.
 
-### 1.4 Index Definition
+### 10.4 Index Definition
 
 An index definition is a YAML object, which accepts two different syntaxes. The
 first syntax is:
@@ -352,3 +352,99 @@ CREATE INDEX idxItag
 </pre></td>
   </tr>
 </table>
+
+### 10.5 Code Generation
+
+The schema YAML file will need to be parsed and validated by Schema Parser And
+Code-Generator (SPAC). SPAC will generate JavaScript code providing:
+
+* A static function used to create database instance.
+* A database schema class that can be used to create query conditions.
+* A database instance class that can be used to create queries.
+
+The following example is the very basic SCUD operation using SPAC generated
+code, assume the namespace passed into SPAC is `my.namespace.db`:
+
+```js
+var db;
+var infoCard;
+
+function createRows() {
+  // Method 1: use lovefield-generated functions
+  var row = infoCard.createRow();
+  row.setId('something');
+  row.setLang('en');
+  row.setItag(140);
+  row.setCountry('US');
+  row.setFileName('140-en-US');
+
+  // Method 2: directly pass in JSON object
+  var row2 = infoCard.createRow({
+    'id': 'something',
+    'lang': 'fr',
+    'itag': 145,
+    'country': 'FR',
+    'fileName': '145-fr-FR'
+  });
+  return [row, row2];
+}
+
+// <namespace>.<instanceName>.getInstance() to get DB instance
+my.namespace.db.getInstance().then(function(dbInstance) {
+  db = dbInstance;
+  infoCard = db.getSchema().getInfoCard();
+
+  // INSERT INTO InfoCard VALUES (...);
+  var rows = createRows();
+  return db.insert().into(infoCard).values(rows).exec();
+}).then(function() {
+  // SELECT id, lang, fileName FROM InfoCard
+  //   WHERE id = 'something' AND lang = 'en';
+  db.select([infoCard.id, infoCard.lang, infoCard.fileName]).
+    from(infoCard).
+    where(lf.op.and(
+        infoCard.id.eq('something'), infoCard.lang.eq('en'))).
+    exec().then(function(rows) {
+      console.log(rows[0].id, rows[0].lang, rows[0].fileName);
+    });
+
+  // UPDATE InfoCard SET lang = 'fr' WHERE id LIKE 'whatever%'
+  return db.update(infoCard).
+      set(infoCard.lang, 'fr').
+      where(infoCard.id.like(/^whatever/)).
+      exec();
+}).then(function() {
+  // DELETE FROM InfoCard WHERE lang = 'es';
+  var q = db.delete().from(infoCard).where(infoCard.lang.eq('es'));
+  return q.exec()
+});
+```
+
+### 10.5.1 Namespace and DB name
+
+The user already specified a DB name in schema, and a "namespace" is also
+required in SPAC. These two names are serving different purposes.
+
+A DB name uniquely identifies the DB persisted. It is only useful for opening
+database.
+
+A namespace is used to encapsulate Lovefield generated code for a given DB
+schema. Each namespace can have only one DB.
+
+If the users wanted to change namespace without changing DB schema, they can
+use the same schema YAML file, but give SPAC a different namespace. The
+resulting code will be opening the same database file.
+
+### 10.5.2 Automatically Generated Classes
+
+The SPAC will automatically generate following:
+
+| Classes/Functions           | Note                    |
+|:--------------------------- |:----------------------- |
+|`<namespace>.getInstance()`  | Database initialization |
+|`<namespace>.Database`       | Database class          |
+|`<namespace>.row.<table>`    | Row type of each table  |
+|`<namespace>.schema.Database`| Database Schema         |
+|`<namespace>.schema.<table>` | Schema of each table    |
+
+Each class is well annotated with Closure type definitions.

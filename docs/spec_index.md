@@ -6,7 +6,7 @@
 
 [1. Schema Definition](spec/01_schema.md)
 
-[2. Schema Parsing and Code Generation](spec/02_spac.md)
+[2. Data Store](spec/02_data_store.md)
 
 [3. Life of a Lovefield Database](spec/03_life_of_db.md)
 
@@ -21,5 +21,7 @@
 [8. Data Binding](spec/08_data_binding.md)
 
 [9. Exceptions](spec/09_exception.md)
+
+[10. SPAC](spec/10_spac.md)
 
 [Future Features and References](spec/99_postfix.md)

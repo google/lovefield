@@ -108,7 +108,7 @@ finalized, it will not accept any `createTable()` calls.
 
 | Parameter     | Type             |Meaning         |
 |:--------------|:-----------------|:---------------|
-|`opt_onUpgrade`|`!function(!lf.raw.BackStore):!IThenable=`|Optional DB upgrade function.|
+|`opt_onUpgrade`|`!function(!lf.raw.BackStore):!Promise=`|Optional DB upgrade function.|
 |`opt_volatile` |`boolean=`        |Optional volatile parameter.|
 
 The two parameters are both optional. Their detailed usage is described in
