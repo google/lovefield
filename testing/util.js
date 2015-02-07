@@ -76,7 +76,7 @@ lf.testing.util.assertThrowsSyntaxError = function(fn) {
  * cache).
  * @param {!lf.Global} global
  * @param {!lf.schema.Table} tableSchema
- * @return {!IThenable}
+ * @return {!IThenable<!Array<!lf.Row>>}
  */
 lf.testing.util.selectAll = function(global, tableSchema) {
   var backStore = global.getService(lf.service.BACK_STORE);

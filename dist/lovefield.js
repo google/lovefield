@@ -34713,9 +34713,14 @@ lf.proc.InsertStep.prototype.getScope = function() {
 
 /** @override */
 lf.proc.InsertStep.prototype.exec = function(journal) {
-  lf.proc.InsertStep.assignAutoIncrementPks_(
-      this.table_, this.values_, journal.getIndexStore());
-  journal.insert(this.table_, this.values_);
+  try {
+    lf.proc.InsertStep.assignAutoIncrementPks_(
+        this.table_, this.values_, journal.getIndexStore());
+    journal.insert(this.table_, this.values_);
+  } catch (e) {
+    return goog.Promise.reject(e);
+  }
+
   return goog.Promise.resolve(lf.proc.Relation.createEmpty());
 };
 
@@ -34783,9 +34788,14 @@ lf.proc.InsertOrReplaceStep.prototype.getScope = function() {
 
 /** @override */
 lf.proc.InsertOrReplaceStep.prototype.exec = function(journal) {
-  lf.proc.InsertStep.assignAutoIncrementPks_(
-      this.table_, this.values_, journal.getIndexStore());
-  journal.insertOrReplace(this.table_, this.values_);
+  try {
+    lf.proc.InsertStep.assignAutoIncrementPks_(
+        this.table_, this.values_, journal.getIndexStore());
+    journal.insertOrReplace(this.table_, this.values_);
+  } catch (e) {
+    return goog.Promise.reject(e);
+  }
+
   return goog.Promise.resolve(lf.proc.Relation.createEmpty());
 };
 
@@ -37085,6 +37095,172 @@ lf.Database.prototype.close;
 
 /**
  * @license
+ * Copyright 2015 Google Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+goog.provide('lf.proc.TransactionTask');
+
+goog.require('goog.Promise');
+goog.require('goog.structs.Set');
+goog.require('lf.TransactionType');
+goog.require('lf.cache.Journal');
+goog.require('lf.proc.Task');
+goog.require('lf.service');
+
+
+
+/**
+ * A TransactionTask is used when the user explicitly starts a transaction and
+ * can execute queries within this transaction at will. A TransactionTask is
+ * posted to the lf.proc.Runner to ensure that all required locks have been
+ * acquired before any queries are executed. Any queries that are performed as
+ * part of a TransactionTask will not be visible to lf.proc.Runner at all (no
+ * corresponding QueryTask will be posted). Once the transaction is finalized,
+ * it will appear to the lf.proc.Runner that this task finished and all locks
+ * will be released, exactly as is done for any type of lf.proc.Task.
+ *
+ * @implements {lf.proc.Task}
+ * @constructor
+ * @struct
+ *
+ * @param {!lf.Global} global
+ * @param {!Array<!lf.schema.Table>} scope
+ */
+lf.proc.TransactionTask = function(global, scope) {
+  /** @private {!lf.Global} */
+  this.global_ = global;
+
+  /** @private {!lf.BackStore} */
+  this.backStore_ = global.getService(lf.service.BACK_STORE);
+
+  /** @private {!lf.proc.QueryEngine} */
+  this.queryEngine_ = global.getService(lf.service.QUERY_ENGINE);
+
+  /** @private {!lf.proc.Runner} */
+  this.runner_ = global.getService(lf.service.RUNNER);
+
+  /** @private {!goog.structs.Set.<!lf.schema.Table>} */
+  this.scope_ = new goog.structs.Set(scope);
+
+  /** @private {!lf.cache.Journal} */
+  this.journal_ = new lf.cache.Journal(this.global_, this.scope_.getValues());
+
+  /** @private {!goog.promise.Resolver.<!Array.<!lf.proc.Relation>>} */
+  this.resolver_ = goog.Promise.withResolver();
+
+  /** @private {!goog.promise.Resolver.<!Array.<!lf.proc.Relation>>} */
+  this.execResolver_ = goog.Promise.withResolver();
+
+  /** @private {!goog.promise.Resolver} */
+  this.acquireScopeResolver_ = goog.Promise.withResolver();
+};
+
+
+/**
+ * @typedef {
+ *     !lf.query.SelectContext|
+ *     !lf.query.UpdateContext|
+ *     !lf.query.InsertContext|
+ *     !lf.query.DeleteContext}
+ */
+lf.proc.TransactionTask.QueryContext;
+
+
+/** @override */
+lf.proc.TransactionTask.prototype.exec = function() {
+  this.acquireScopeResolver_.resolve();
+  return this.execResolver_.promise;
+};
+
+
+/** @override */
+lf.proc.TransactionTask.prototype.getType = function() {
+  return lf.TransactionType.READ_WRITE;
+};
+
+
+/** @override */
+lf.proc.TransactionTask.prototype.getScope = function() {
+  return this.scope_;
+};
+
+
+/** @override */
+lf.proc.TransactionTask.prototype.getResolver = function() {
+  return this.resolver_;
+};
+
+
+/** @override */
+lf.proc.TransactionTask.prototype.getId = function() {
+  return goog.getUid(this);
+};
+
+
+/**
+ * Acquires all locks required such that this task can execute queries.
+ * @return {!IThenable}
+ */
+lf.proc.TransactionTask.prototype.acquireScope = function() {
+  this.runner_.scheduleTask(this);
+  return this.acquireScopeResolver_.promise;
+};
+
+
+/**
+ * Executes the given query without flushing any changes to disk yet.
+ * @param {!lf.query.Builder} queryBuilder
+ * @return {!IThenable}
+ */
+lf.proc.TransactionTask.prototype.attachQuery = function(queryBuilder) {
+  var plan = this.queryEngine_.getPlan(queryBuilder.getQuery());
+
+  return plan.getRoot().exec(this.journal_).then(
+      function(relation) {
+        return relation.getPayloads();
+      }, goog.bind(
+      function(e) {
+        this.journal_.rollback();
+        throw e;
+      }, this));
+};
+
+
+/** @return {!IThenable} */
+lf.proc.TransactionTask.prototype.commit = function() {
+  var tx = this.backStore_.createTx(this.getType(), this.journal_);
+  tx.commit().then(goog.bind(
+      function() {
+        this.execResolver_.resolve();
+      }, this), goog.bind(
+      function(e) {
+        this.journal_.rollback();
+        this.execResolver_.reject(e);
+      }, this));
+
+  return this.resolver_.promise;
+};
+
+
+/** @return {!IThenable} */
+lf.proc.TransactionTask.prototype.rollback = function() {
+  this.journal_.rollback();
+  return goog.Promise.resolve();
+};
+
+/**
+ * @license
  * Copyright 2014 Google Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -37102,8 +37278,11 @@ lf.Database.prototype.close;
 goog.provide('lf.proc.Transaction');
 
 goog.require('goog.Promise');
+goog.require('goog.structs.Map');
+goog.require('goog.structs.Set');
 goog.require('lf.Exception');
 goog.require('lf.Transaction');
+goog.require('lf.proc.TransactionTask');
 goog.require('lf.proc.UserQueryTask');
 goog.require('lf.service');
 
@@ -37122,18 +37301,102 @@ lf.proc.Transaction = function(global) {
   /** @private {!lf.proc.Runner} */
   this.runner_ = global.getService(lf.service.RUNNER);
 
-  /** @private {boolean} */
-  this.completed_ = false;
+  /** @private {?lf.proc.TransactionTask} */
+  this.transactionTask_ = null;
+
+  /** @private {!lf.proc.TransactionState_} */
+  this.state_ = lf.proc.TransactionState_.CREATED;
+};
+
+
+/**
+ * The following states represent the lifecycle of a transaction. These states
+ * are exclusive meaning that a tx can be only on one state at a given time.
+ * @enum {number}
+ * @private
+ */
+lf.proc.TransactionState_ = {
+  CREATED: 0,
+  ACQUIRING_SCOPE: 1,
+  ACQUIRED_SCOPE: 2,
+  EXECUTING_QUERY: 3,
+  EXECUTING_AND_COMMITTING: 4,
+  COMMITTING: 5,
+  ROLLING_BACK: 6,
+  FINALIZED: 7
+};
+
+
+/**
+ * The transaction lifecycle is a finite state machine. The following map holds
+ * all valid state transitions. Every state transition that does not exist in
+ * this map is invalid and should result in a lf.Exception.TRANSACTION error.
+ * @private {!goog.structs.Map<
+ *     !lf.proc.TransactionState_,
+ *     !goog.structs.Set<!lf.proc.TransactionState_>>}
+ */
+lf.proc.StateTransitions_ = new goog.structs.Map(
+    lf.proc.TransactionState_.CREATED,
+    new goog.structs.Set([
+      lf.proc.TransactionState_.ACQUIRING_SCOPE,
+      lf.proc.TransactionState_.EXECUTING_AND_COMMITTING
+    ]),
+
+    lf.proc.TransactionState_.ACQUIRING_SCOPE,
+    new goog.structs.Set([
+      lf.proc.TransactionState_.ACQUIRED_SCOPE
+    ]),
+
+    lf.proc.TransactionState_.ACQUIRED_SCOPE,
+    new goog.structs.Set([
+      lf.proc.TransactionState_.EXECUTING_QUERY,
+      lf.proc.TransactionState_.COMMITTING,
+      lf.proc.TransactionState_.ROLLING_BACK
+    ]),
+
+    lf.proc.TransactionState_.EXECUTING_QUERY,
+    new goog.structs.Set([
+      lf.proc.TransactionState_.ACQUIRED_SCOPE
+    ]),
+
+    lf.proc.TransactionState_.EXECUTING_AND_COMMITTING,
+    new goog.structs.Set([
+      lf.proc.TransactionState_.FINALIZED
+    ]),
+
+    lf.proc.TransactionState_.COMMITTING,
+    new goog.structs.Set([
+      lf.proc.TransactionState_.FINALIZED
+    ]),
+
+    lf.proc.TransactionState_.ROLLING_BACK,
+    new goog.structs.Set([
+      lf.proc.TransactionState_.FINALIZED
+    ]));
+
+
+/**
+ * Transitions this transaction from its current state to the given one.
+ * @param {!lf.proc.TransactionState_} newState
+ * @private
+ */
+lf.proc.Transaction.prototype.stateTransition_ = function(newState) {
+  var nextStates = lf.proc.StateTransitions_.get(this.state_, null);
+  if (goog.isNull(nextStates) || !nextStates.contains(newState)) {
+    throw new lf.Exception(
+        lf.Exception.Type.TRANSACTION,
+        'Invalid transaction state transition, from ' + this.state_ +
+        ' to ' + newState + '.');
+  } else {
+    this.state_ = newState;
+  }
 };
 
 
 /** @override */
 lf.proc.Transaction.prototype.exec = function(queryBuilders) {
-  if (this.completed_) {
-    throw new lf.Exception(
-        lf.Exception.Type.TRANSACTION,
-        'Transaction already commited/failed');
-  }
+  this.stateTransition_(
+      lf.proc.TransactionState_.EXECUTING_AND_COMMITTING);
 
   var queries = [];
   try {
@@ -37143,20 +37406,20 @@ lf.proc.Transaction.prototype.exec = function(queryBuilders) {
       queries.push(query);
     }, this);
   } catch (e) {
-    this.completed_ = true;
+    this.stateTransition_(lf.proc.TransactionState_.FINALIZED);
     return goog.Promise.reject(e);
   }
 
   var queryTask = new lf.proc.UserQueryTask(this.global_, queries);
   return this.runner_.scheduleTask(queryTask).then(
       goog.bind(function(results) {
-        this.completed_ = true;
+        this.stateTransition_(lf.proc.TransactionState_.FINALIZED);
         return results.map(function(relation) {
           return relation.getPayloads();
         });
       }, this),
       goog.bind(function(e) {
-        this.completed_ = true;
+        this.stateTransition_(lf.proc.TransactionState_.FINALIZED);
         throw e;
       }, this));
 };
@@ -37164,29 +37427,48 @@ lf.proc.Transaction.prototype.exec = function(queryBuilders) {
 
 /** @override */
 lf.proc.Transaction.prototype.begin = function(scope) {
-  // TODO(dpapad): Implement
-  return goog.Promise.reject();
+  this.stateTransition_(lf.proc.TransactionState_.ACQUIRING_SCOPE);
+
+  this.transactionTask_ =
+      new lf.proc.TransactionTask(this.global_, scope);
+  return this.transactionTask_.acquireScope().then(goog.bind(
+      function() {
+        this.stateTransition_(lf.proc.TransactionState_.ACQUIRED_SCOPE);
+      }, this));
 };
 
 
 /** @override */
 lf.proc.Transaction.prototype.attach = function(query) {
-  // TODO(dpapad): Implement
-  return goog.Promise.reject();
+  this.stateTransition_(lf.proc.TransactionState_.EXECUTING_QUERY);
+
+  return this.transactionTask_.attachQuery(query).then(goog.bind(
+      function(result) {
+        this.stateTransition_(lf.proc.TransactionState_.ACQUIRED_SCOPE);
+        return result;
+      }, this));
 };
 
 
 /** @override */
 lf.proc.Transaction.prototype.commit = function() {
-  // TODO(dpapad): Implement
-  return goog.Promise.reject();
+  // TODO(dpapad): Implement triggering of observers for queries that are being
+  // attached, b/19300207.
+  this.stateTransition_(lf.proc.TransactionState_.COMMITTING);
+  return this.transactionTask_.commit().then(goog.bind(
+      function() {
+        this.stateTransition_(lf.proc.TransactionState_.FINALIZED);
+      }, this));
 };
 
 
 /** @override */
 lf.proc.Transaction.prototype.rollback = function() {
-  // TODO(dpapad): Implement
-  return goog.Promise.reject();
+  this.stateTransition_(lf.proc.TransactionState_.ROLLING_BACK);
+  return this.transactionTask_.rollback().then(goog.bind(
+      function() {
+        this.stateTransition_(lf.proc.TransactionState_.FINALIZED);
+      }, this));
 };
 
 goog.provide('lf.proc.Database');

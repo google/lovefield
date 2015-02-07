@@ -887,22 +887,6 @@ function testSelect_InnerJoinOrderBy() {
 }
 
 
-function testSelect_MultipleSelectInTx() {
-  asyncTestCase.waitForAsync('testSelect_MultipleSelectInTx');
-  var tx = db.createTransaction();
-  var q1 = db.select(lf.fn.count(j.id).as('jid')).from(j);
-  var q2 = db.select(lf.fn.count(d.id).as('did')).from(d);
-  var q3 = db.delete().from(j);
-  tx.exec([q1, q2, q3, q1]).then(function(results) {
-    assertEquals(4, results.length);
-    assertEquals(50, results[0][0]['jid']);
-    assertEquals(10, results[1][0]['did']);
-    assertEquals(0, results[3][0]['jid']);
-    asyncTestCase.continueTesting();
-  });
-}
-
-
 function testSelect_ParamBinding() {
   asyncTestCase.waitForAsync('testSelect_ParamBinding');
 
