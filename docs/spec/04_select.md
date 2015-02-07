@@ -46,7 +46,7 @@ rows will prefix table name for each column. The parameters must be schema
 column object, for example:
 
 ```js
-var infoCard = db.getSchema.getInfoCard();
+var infoCard = db.getSchema().getInfoCard();
 var q1 = db.select(infoCard.id, infoCard.lang, infoCard.fileName);
 q1.exec().then(function(rows) {
   // No prefix, context involves only one table
