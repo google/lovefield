@@ -85,7 +85,7 @@ function testTableAccessFullStep_Alias() {
 function checkTableAccessFullStep(description, table) {
   asyncTestCase.waitForAsync(description);
 
-  var step = new lf.proc.TableAccessFullStep(table);
+  var step = new lf.proc.TableAccessFullStep(lf.Global.get(), table);
   var journal = new lf.cache.Journal(lf.Global.get(), [table]);
   step.exec(journal).then(
       function(relation) {
@@ -118,7 +118,7 @@ function testTableAccessByRowId_Alias() {
 function checkTableAccessByRowId(description, table) {
   asyncTestCase.waitForAsync(description);
 
-  var step = new lf.proc.TableAccessByRowIdStep(table);
+  var step = new lf.proc.TableAccessByRowIdStep(lf.Global.get(), table);
 
   // Creating a "dummy" child step that will return only two row IDs.
   var rows = [
@@ -150,7 +150,7 @@ function testTableAccessByRowId_Empty() {
   asyncTestCase.waitForAsync('testTableAccessByRowId_Empty');
 
   var table = schema.tables()[1];
-  var step = new lf.proc.TableAccessByRowIdStep(table);
+  var step = new lf.proc.TableAccessByRowIdStep(lf.Global.get(), table);
 
   // Creating a "dummy" child step that will not return any row IDs.
   step.addChild(new lf.testing.proc.DummyStep(lf.proc.Relation.createEmpty()));
@@ -188,7 +188,8 @@ function checkIndexRangeScan(order, description) {
   var keyRange = order == lf.Order.ASC ?
       new lf.index.KeyRange(5, 8, false, false) :
       new lf.index.KeyRange('dummyName' + 5, 'dummyName' + 8, false, false);
-  var step = new lf.proc.IndexRangeScanStep(index, [keyRange], order);
+  var step = new lf.proc.IndexRangeScanStep(
+      lf.Global.get(), index, [keyRange], order);
 
   var journal = new lf.cache.Journal(lf.Global.get(), [table]);
   step.exec(journal).then(

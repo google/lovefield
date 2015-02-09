@@ -73,10 +73,12 @@ function testTree1() {
   rootNodeBefore.addChild(limitNode);
   var skipNode = new lf.proc.SkipStep(200);
   limitNode.addChild(skipNode);
-  var tableAccessByRowIdNode = new lf.proc.TableAccessByRowIdStep(e);
+  var tableAccessByRowIdNode = new lf.proc.TableAccessByRowIdStep(
+      hr.db.getGlobal(), e);
   skipNode.addChild(tableAccessByRowIdNode);
   var indexRangeScanStep = new lf.proc.IndexRangeScanStep(
-      e.getIndices()[1], [lf.index.KeyRange.all()], lf.Order.ASC);
+      hr.db.getGlobal(), e.getIndices()[1], [lf.index.KeyRange.all()],
+      lf.Order.ASC);
   tableAccessByRowIdNode.addChild(indexRangeScanStep);
 
   assertEquals(treeBefore, lf.tree.toString(rootNodeBefore));
@@ -108,10 +110,12 @@ function testTree2() {
   limitNode.addChild(skipNode);
   var selectNode = new lf.proc.SelectStep(e.id.lt('300'));
   skipNode.addChild(selectNode);
-  var tableAccessByRowIdNode = new lf.proc.TableAccessByRowIdStep(e);
+  var tableAccessByRowIdNode = new lf.proc.TableAccessByRowIdStep(
+      hr.db.getGlobal(), e);
   selectNode.addChild(tableAccessByRowIdNode);
   var indexRangeScanStep = new lf.proc.IndexRangeScanStep(
-      e.getIndices()[1], [lf.index.KeyRange.all()], lf.Order.ASC);
+      hr.db.getGlobal(), e.getIndices()[1], [lf.index.KeyRange.all()],
+      lf.Order.ASC);
   tableAccessByRowIdNode.addChild(indexRangeScanStep);
 
   assertEquals(treeBefore, lf.tree.toString(rootNodeBefore));
@@ -140,9 +144,11 @@ function testTree3() {
   rootNodeBefore.addChild(limitNode);
   var skipNode = new lf.proc.SkipStep(200);
   limitNode.addChild(skipNode);
-  var tableAccessByRowIdNode = new lf.proc.TableAccessByRowIdStep(e);
+  var tableAccessByRowIdNode = new lf.proc.TableAccessByRowIdStep(
+      hr.db.getGlobal(), e);
   skipNode.addChild(tableAccessByRowIdNode);
   var indexRangeScanStep = new lf.proc.IndexRangeScanStep(
+      hr.db.getGlobal(),
       e.getIndices()[1],
       [
         lf.index.KeyRange.upperBound(1000),

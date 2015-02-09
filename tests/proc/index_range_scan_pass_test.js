@@ -101,7 +101,7 @@ function testSimpleTree() {
   var selectNode = new lf.proc.SelectStep(predicate);
   rootNodeBefore.addChild(selectNode);
 
-  var tableAccessNode = new lf.proc.TableAccessFullStep(e);
+  var tableAccessNode = new lf.proc.TableAccessFullStep(hr.db.getGlobal(), e);
   selectNode.addChild(tableAccessNode);
   assertEquals(treeBefore, lf.tree.toString(rootNodeBefore));
 
@@ -196,8 +196,9 @@ function testTree3() {
       '--table_access(Department)\n';
 
   var crossProductStep = new lf.proc.CrossProductStep();
-  var tableAccessJob = new lf.proc.TableAccessFullStep(j);
-  var tableAccessDepartment = new lf.proc.TableAccessFullStep(d);
+  var tableAccessJob = new lf.proc.TableAccessFullStep(hr.db.getGlobal(), j);
+  var tableAccessDepartment = new lf.proc.TableAccessFullStep(
+      hr.db.getGlobal(), d);
   crossProductStep.addChild(tableAccessJob);
   crossProductStep.addChild(tableAccessDepartment);
 
@@ -238,7 +239,8 @@ function constructTree1() {
   var selectNode1 = new lf.proc.SelectStep(e.id.gt('100'));
   var selectNode2 = new lf.proc.SelectStep(e.salary.eq(10000));
   selectNode1.addChild(selectNode2);
-  var tableAccessNode = new lf.proc.TableAccessFullStep(e);
+  var tableAccessNode = new lf.proc.TableAccessFullStep(
+      hr.db.getGlobal(), e);
   selectNode2.addChild(tableAccessNode);
   return selectNode1;
 }
@@ -257,7 +259,7 @@ function constructTree2() {
   var orderByNode1 = new lf.proc.OrderByStep(
       [{column: e.salary, order: lf.Order.ASC}]);
   var selectNode2 = new lf.proc.SelectStep(e.salary.eq(10000));
-  var tableAccessNode1 = new lf.proc.TableAccessFullStep(e);
+  var tableAccessNode1 = new lf.proc.TableAccessFullStep(hr.db.getGlobal(), e);
 
   selectNode1.addChild(orderByNode1);
   orderByNode1.addChild(selectNode2);
@@ -268,7 +270,7 @@ function constructTree2() {
   var orderByNode2 = new lf.proc.OrderByStep(
       [{column: j.title, order: lf.Order.ASC}]);
   var selectNode4 = new lf.proc.SelectStep(j.maxSalary.eq(1000));
-  var tableAccessNode2 = new lf.proc.TableAccessFullStep(j);
+  var tableAccessNode2 = new lf.proc.TableAccessFullStep(hr.db.getGlobal(), j);
 
   selectNode3.addChild(orderByNode2);
   orderByNode2.addChild(selectNode4);

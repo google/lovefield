@@ -23690,46 +23690,6 @@ lf.cache.Journal.prototype.getIndexScope = function() {
 
 
 /**
- * TODO(dpapad): Remove when cleaning up Journal API, see b/19280493 for
- * details.
- * @return {!lf.index.IndexStore}
- */
-lf.cache.Journal.prototype.getIndexStore = function() {
-  return this.indexStore_;
-};
-
-
-/**
- * Finds the rowIds corresponding to records within the given key ranges.
- * @param {!lf.schema.Index} indexSchema
- * @param {!Array.<!lf.index.KeyRange>} keyRanges
- * @param {boolean} reverseOrder Retrieve the results in the reverse ordering
- *     of the index's comparator.
- * @param {number=} opt_limit
- * @param {number=} opt_skip
- * @return {!Array.<number>}
- */
-lf.cache.Journal.prototype.getIndexRange = function(
-    indexSchema, keyRanges, reverseOrder, opt_limit, opt_skip) {
-  var index = this.indexStore_.get(indexSchema.getNormalizedName());
-  return index.getRange(keyRanges, reverseOrder, opt_limit, opt_skip);
-};
-
-
-/**
- * @param {!lf.schema.Table} table
- * @param {!Array.<number>=} opt_rowIds
- * @return {!Array.<?lf.Row>} Snapshot of rows of the table in this transaction.
- */
-lf.cache.Journal.prototype.getTableRows = function(table, opt_rowIds) {
-  var rowIds = goog.isDefAndNotNull(opt_rowIds) ?
-      opt_rowIds :
-      this.indexStore_.get(table.getRowIdIndexName()).getRange();
-  return this.cache_.get(rowIds);
-};
-
-
-/**
  * @param {!lf.schema.Table} table
  * @param {!Array.<!lf.Row>} rows
  * @throws {!lf.Exception}
@@ -31072,6 +31032,7 @@ goog.require('lf.Row');
 goog.require('lf.proc.PhysicalQueryPlanNode');
 goog.require('lf.proc.Relation');
 goog.require('lf.query.SelectContext');
+goog.require('lf.service');
 
 goog.forwardDeclare('lf.query.UpdateContext.Set');
 
@@ -31246,10 +31207,17 @@ lf.proc.DeleteStep.prototype.exec = function(journal) {
  * @constructor @struct
  * @extends {lf.proc.PhysicalQueryPlanNode}
  *
+ * @param {!lf.Global} global
  * @param {!lf.schema.Table} table
  */
-lf.proc.TableAccessFullStep = function(table) {
+lf.proc.TableAccessFullStep = function(global, table) {
   lf.proc.TableAccessFullStep.base(this, 'constructor');
+
+  /** @private {!lf.cache.Cache} */
+  this.cache_ = global.getService(lf.service.CACHE);
+
+  /** @private {!lf.index.IndexStore} */
+  this.indexStore_ = global.getService(lf.service.INDEX_STORE);
 
   /** @type {!lf.schema.Table} */
   this.table = table;
@@ -31276,8 +31244,10 @@ lf.proc.TableAccessFullStep.prototype.getScope = function() {
 
 /** @override */
 lf.proc.TableAccessFullStep.prototype.exec = function(journal) {
+  var rowIds = this.indexStore_.get(this.table.getRowIdIndexName()).getRange();
+
   return goog.Promise.resolve(lf.proc.Relation.fromRows(
-      journal.getTableRows(this.table), [this.table.getEffectiveName()]));
+      this.cache_.get(rowIds), [this.table.getEffectiveName()]));
 };
 
 
@@ -31286,10 +31256,14 @@ lf.proc.TableAccessFullStep.prototype.exec = function(journal) {
  * @constructor @struct
  * @extends {lf.proc.PhysicalQueryPlanNode}
  *
+ * @param {!lf.Global} global
  * @param {!lf.schema.Table} table
  */
-lf.proc.TableAccessByRowIdStep = function(table) {
+lf.proc.TableAccessByRowIdStep = function(global, table) {
   lf.proc.TableAccessByRowIdStep.base(this, 'constructor');
+
+  /** @private {!lf.cache.Cache} */
+  this.cache_ = global.getService(lf.service.CACHE);
 
   /** @private {!lf.schema.Table} */
   this.table_ = table;
@@ -31315,7 +31289,7 @@ lf.proc.TableAccessByRowIdStep.prototype.exec = function(journal) {
       this.getChildAt(0).exec(journal).then(goog.bind(
       function(relation) {
         return goog.Promise.resolve(lf.proc.Relation.fromRows(
-            journal.getTableRows(this.table_, relation.getRowIds()),
+            this.cache_.get(relation.getRowIds()),
             [this.table_.getEffectiveName()]));
       }, this)));
 };
@@ -31326,12 +31300,16 @@ lf.proc.TableAccessByRowIdStep.prototype.exec = function(journal) {
  * @constructor @struct
  * @extends {lf.proc.PhysicalQueryPlanNode}
  *
+ * @param {!lf.Global} global
  * @param {!lf.schema.Index} index
  * @param {!Array.<!lf.index.KeyRange>} keyRanges
  * @param {!lf.Order} order The order in which results will be returned.
  */
-lf.proc.IndexRangeScanStep = function(index, keyRanges, order) {
+lf.proc.IndexRangeScanStep = function(global, index, keyRanges, order) {
   lf.proc.IndexRangeScanStep.base(this, 'constructor');
+
+  /** @private {!lf.index.IndexStore} */
+  this.indexStore_ = global.getService(lf.service.INDEX_STORE);
 
   /** @type {!lf.schema.Index} */
   this.index = index;
@@ -31367,8 +31345,9 @@ lf.proc.IndexRangeScanStep.prototype.toString = function() {
 lf.proc.IndexRangeScanStep.prototype.exec = function(journal) {
   var reverseOrder = (this.order != this.index.columns[0].order);
 
-  var rowIds = journal.getIndexRange(
-      this.index, this.keyRanges,
+  var index = this.indexStore_.get(this.index.getNormalizedName());
+  var rowIds = index.getRange(
+      this.keyRanges,
       reverseOrder,
       !goog.isNull(this.limit) ? this.limit : undefined,
       !goog.isNull(this.skip) ? this.skip : undefined);
@@ -34529,6 +34508,9 @@ goog.require('lf.tree');
 lf.proc.IndexRangeScanPass = function(global) {
   lf.proc.IndexRangeScanPass.base(this, 'constructor');
 
+  /** @private {!lf.Global} */
+  this.global_ = global;
+
   /** @private {!lf.index.IndexStore} */
   this.indexStore_ = global.getService(lf.service.INDEX_STORE);
 };
@@ -34554,9 +34536,8 @@ lf.proc.IndexRangeScanPass.prototype.rewrite = function(rootNode) {
         }
 
         var chosenSelectStep = this.chooseSelectStep_(selectStepsCandidates);
-        var newSubTreeRoot =
-            lf.proc.IndexRangeScanPass.replaceWithIndexRangeScanStep_(
-                chosenSelectStep, tableAccessFullStep);
+        var newSubTreeRoot = this.replaceWithIndexRangeScanStep_(
+            chosenSelectStep, tableAccessFullStep);
         if (chosenSelectStep == this.rootNode) {
           this.rootNode = newSubTreeRoot.getRoot();
         }
@@ -34682,7 +34663,7 @@ lf.proc.IndexRangeScanPass.getIndexForPredicate_ = function(predicate) {
  *     used to start at the given SelectStep.
  * @private
  */
-lf.proc.IndexRangeScanPass.replaceWithIndexRangeScanStep_ = function(
+lf.proc.IndexRangeScanPass.prototype.replaceWithIndexRangeScanStep_ = function(
     selectStep, tableAccessFullStep) {
   var predicate = /** @type {!lf.pred.ValuePredicate} */ (
       selectStep.predicate);
@@ -34692,10 +34673,10 @@ lf.proc.IndexRangeScanPass.replaceWithIndexRangeScanStep_ = function(
   }
 
   var indexRangeScanStep = new lf.proc.IndexRangeScanStep(
-      columnIndex, predicate.toKeyRange(),
+      this.global_, columnIndex, predicate.toKeyRange(),
       columnIndex.columns[0].order);
   var tableAccessByRowIdStep = new lf.proc.TableAccessByRowIdStep(
-      tableAccessFullStep.table);
+      this.global_, tableAccessFullStep.table);
   tableAccessByRowIdStep.addChild(indexRangeScanStep);
 
   // If the SelectStep is not the parent of the tableAccessFullStep, move it so
@@ -34743,6 +34724,7 @@ goog.provide('lf.proc.InsertStep');
 goog.require('goog.Promise');
 goog.require('lf.proc.PhysicalQueryPlanNode');
 goog.require('lf.proc.Relation');
+goog.require('lf.service');
 
 
 
@@ -34750,11 +34732,15 @@ goog.require('lf.proc.Relation');
  * @constructor @struct
  * @extends {lf.proc.PhysicalQueryPlanNode}
  *
+ * @param {!lf.Global} global
  * @param {!lf.schema.Table} table
  * @param {!Array.<!lf.Row>} values
  */
-lf.proc.InsertStep = function(table, values) {
+lf.proc.InsertStep = function(global, table, values) {
   lf.proc.InsertStep.base(this, 'constructor');
+
+  /** @private {!lf.index.IndexStore} */
+  this.indexStore_ = global.getService(lf.service.INDEX_STORE);
 
   /** @private {!Array.<!lf.Row>} */
   this.values_ = values;
@@ -34781,7 +34767,7 @@ lf.proc.InsertStep.prototype.getScope = function() {
 lf.proc.InsertStep.prototype.exec = function(journal) {
   try {
     lf.proc.InsertStep.assignAutoIncrementPks_(
-        this.table_, this.values_, journal.getIndexStore());
+        this.table_, this.values_, this.indexStore_);
     journal.insert(this.table_, this.values_);
   } catch (e) {
     return goog.Promise.reject(e);
@@ -34827,11 +34813,15 @@ lf.proc.InsertStep.assignAutoIncrementPks_ = function(
  * @constructor @struct
  * @extends {lf.proc.PhysicalQueryPlanNode}
  *
+ * @param {!lf.Global} global
  * @param {!lf.schema.Table} table
  * @param {!Array.<!lf.Row>} values
  */
-lf.proc.InsertOrReplaceStep = function(table, values) {
+lf.proc.InsertOrReplaceStep = function(global, table, values) {
   lf.proc.InsertOrReplaceStep.base(this, 'constructor');
+
+  /** @private {!lf.index.IndexStore} */
+  this.indexStore_ = global.getService(lf.service.INDEX_STORE);
 
   /** @private {!Array.<!lf.Row>} */
   this.values_ = values;
@@ -34858,7 +34848,7 @@ lf.proc.InsertOrReplaceStep.prototype.getScope = function() {
 lf.proc.InsertOrReplaceStep.prototype.exec = function(journal) {
   try {
     lf.proc.InsertStep.assignAutoIncrementPks_(
-        this.table_, this.values_, journal.getIndexStore());
+        this.table_, this.values_, this.indexStore_);
     journal.insertOrReplace(this.table_, this.values_);
   } catch (e) {
     return goog.Promise.reject(e);
@@ -35232,9 +35222,14 @@ goog.require('lf.tree');
  * @constructor
  * @struct
  * @extends {lf.proc.RewritePass.<!lf.proc.PhysicalQueryPlanNode>}
+ *
+ * @param {!lf.Global} global
  */
-lf.proc.OrderByIndexPass = function() {
+lf.proc.OrderByIndexPass = function(global) {
   lf.proc.OrderByIndexPass.base(this, 'constructor');
+
+  /** @private {!lf.Global} */
+  this.global_ = global;
 };
 goog.inherits(lf.proc.OrderByIndexPass, lf.proc.RewritePass);
 
@@ -35295,9 +35290,9 @@ lf.proc.OrderByIndexPass.prototype.applyTableAccessFullOptimization_ =
     var orderBy = orderByStep.orderBy[0];
     var columnIndex = orderBy.column.getIndices()[0];
     var indexRangeScanStep = new lf.proc.IndexRangeScanStep(
-        columnIndex, [lf.index.KeyRange.all()], orderBy.order);
+        this.global_, columnIndex, [lf.index.KeyRange.all()], orderBy.order);
     var tableAccessByRowIdStep = new lf.proc.TableAccessByRowIdStep(
-        tableAccessFullStep.table);
+        this.global_, tableAccessFullStep.table);
     tableAccessByRowIdStep.addChild(indexRangeScanStep);
 
     lf.tree.removeNode(orderByStep);
@@ -36011,7 +36006,7 @@ lf.proc.PhysicalPlanFactory.prototype.create = function(
     return this.createPlan_(
         logicalQueryPlanRoot, [
           new lf.proc.IndexRangeScanPass(this.global_),
-          new lf.proc.OrderByIndexPass(),
+          new lf.proc.OrderByIndexPass(this.global_),
           new lf.proc.LimitSkipByIndexPass()
         ]);
   }
@@ -36075,15 +36070,16 @@ lf.proc.PhysicalPlanFactory.prototype.mapFn_ = function(node) {
   } else if (node instanceof lf.proc.JoinNode) {
     return new lf.proc.JoinStep(node.predicate);
   } else if (node instanceof lf.proc.TableAccessNode) {
-    return new lf.proc.TableAccessFullStep(node.table);
+    return new lf.proc.TableAccessFullStep(this.global_, node.table);
   } else if (node instanceof lf.proc.DeleteNode) {
     return new lf.proc.DeleteStep(node.table);
   } else if (node instanceof lf.proc.UpdateNode) {
     return new lf.proc.UpdateStep(node.table, node.updates);
   } else if (node instanceof lf.proc.InsertOrReplaceNode) {
-    return new lf.proc.InsertOrReplaceStep(node.table, node.values);
+    return new lf.proc.InsertOrReplaceStep(
+        this.global_, node.table, node.values);
   } else if (node instanceof lf.proc.InsertNode) {
-    return new lf.proc.InsertStep(node.table, node.values);
+    return new lf.proc.InsertStep(this.global_, node.table, node.values);
   }
 
   return new lf.proc.PhysicalQueryPlanNode();

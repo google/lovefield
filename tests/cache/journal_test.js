@@ -618,7 +618,13 @@ function testCacheMerge() {
   assertObjectEquals(payload2, results[2].payload());
 }
 
-function testIndexUpdate() {
+
+/**
+ * Tests that the indices and the cache are updated accordingly when insert,
+ * remove, update, insertOrReplace are called, even before the journal is
+ * committed.
+ */
+function testIndicesCacheUpdated() {
   var table = env.schema.tables()[3];
   var indices = table.getIndices();
   var journal = new lf.cache.Journal(lf.Global.get(), [table]);
@@ -644,38 +650,38 @@ function testIndexUpdate() {
   assertFalse(idxName.containsKey('2'));
 
   journal.insert(table, [row1, row2, row3]);
-  assertArrayEquals([row1, row2, row3], journal.getTableRows(table));
+  assertArrayEquals([row1, row2, row3], getTableRows(table));
 
   journal.remove(table, [row2]);
-  assertArrayEquals([row1, row3], journal.getTableRows(table));
+  assertArrayEquals([row1, row3], getTableRows(table));
 
   journal.update(table, [row4]);
-  assertArrayEquals([row4, row3], journal.getTableRows(table));
-  assertArrayEquals([row4], journal.getTableRows(table, [1]));
-  assertArrayEquals([], journal.getTableRows(table, []));
-  assertArrayEquals([null], journal.getTableRows(table, [8]));
+  assertArrayEquals([row4, row3], getTableRows(table));
 
   journal.insertOrReplace(table, [row5]);
-  assertArrayEquals([row5, row3], journal.getTableRows(table));
-  assertArrayEquals([row5], journal.getTableRows(table, [1]));
+  assertArrayEquals([row5, row3], getTableRows(table));
 
+  var assertIndicesUpdated = function() {
+    assertTrue(rowIdIndex.containsKey(1));
+    assertFalse(rowIdIndex.containsKey(2));
+    assertTrue(rowIdIndex.containsKey(3));
+    assertFalse(pkId.containsKey('1'));
+    assertFalse(pkId.containsKey('2'));
+    assertArrayEquals(
+        [3, 1],
+        pkId.getRange([new lf.index.KeyRange('3', '4', false, false)]));
+    assertArrayEquals([], idxName.get('1'));
+    assertArrayEquals([3], idxName.get('2'));
+    assertArrayEquals([1], idxName.get('4'));
+  };
+
+  assertIndicesUpdated();
   journal.commit();
-
-  assertTrue(rowIdIndex.containsKey(1));
-  assertFalse(rowIdIndex.containsKey(2));
-  assertTrue(rowIdIndex.containsKey(3));
-  assertFalse(pkId.containsKey('1'));
-  assertFalse(pkId.containsKey('2'));
-  assertArrayEquals(
-      [3, 1],
-      pkId.getRange([new lf.index.KeyRange('3', '4', false, false)]));
-  assertArrayEquals([], idxName.get('1'));
-  assertArrayEquals([3], idxName.get('2'));
-  assertArrayEquals([1], idxName.get('4'));
+  assertIndicesUpdated();
 }
 
 
-function testGetIndexRange() {
+function testIndicesUpdated() {
   var table = env.schema.tables()[0];
   var journal = new lf.cache.Journal(lf.Global.get(), [table]);
   var indexSchema = table.getIndices()[1];
@@ -694,7 +700,7 @@ function testGetIndexRange() {
 
   // Checking that the Journal returns row3 as a match, given that row3 has not
   // been modified within the journal itself yet.
-  rowIds = journal.getIndexRange(indexSchema, [keyRange1, keyRange2], false);
+  rowIds = index.getRange([keyRange1, keyRange2]);
   assertSameElements([row3.id()], rowIds);
 
   // Inserting new rows within this journal, where row1 and row2 are within the
@@ -703,7 +709,7 @@ function testGetIndexRange() {
   var row3Updated = new lf.testing.MockSchema.Row(
       row3.id(), {'id': 'dummyId3', 'name': 'bbba'});
   journal.insertOrReplace(table, [row1, row2, row3Updated]);
-  rowIds = journal.getIndexRange(indexSchema, [keyRange1, keyRange2], false);
+  rowIds = index.getRange([keyRange1, keyRange2]);
   assertSameElements([row1.id(), row2.id()], rowIds);
 }
 
@@ -766,4 +772,15 @@ function testRollback() {
   // initial state again.
   journal.rollback();
   assertInitialState();
+}
+
+
+/**
+ * @param {!lf.schema.Table} table
+ * @return {!Array.<!lf.Row>} The rows that exist in the given table according
+ *     to the indexStore and the cache.
+ */
+function getTableRows(table) {
+  var rowIds = env.indexStore.get(table.getRowIdIndexName()).getRange();
+  return env.cache.get(rowIds);
 }
