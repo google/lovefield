@@ -115,6 +115,30 @@ function testInsert() {
 
 
 /**
+ * Tests that insertion succeeds for tables where no primary key is specified.
+ */
+function testInsert_NoPrimaryKey() {
+  asyncTestCase.waitForAsync('testInsert_NoPrimaryKey');
+
+  var jobHistory = db.getSchema().getJobHistory();
+  assertNull(jobHistory.getConstraint().getPrimaryKey());
+  var row = jobHistory.createRow();
+
+  var queryBuilder = /** @type {!lf.query.InsertBuilder} */ (
+      db.insert().into(jobHistory).values([row]));
+
+  queryBuilder.exec().then(
+      function() {
+        return lf.testing.util.selectAll(global, jobHistory);
+      }).then(
+      function(results) {
+        assertEquals(1, results.length);
+        asyncTestCase.continueTesting();
+      }, fail);
+}
+
+
+/**
  * Tests that an INSERT query on a tabe that uses 'autoIncrement' primary key
  * does indeed automatically assign incrementing primary keys to rows being
  * inserted.

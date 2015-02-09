@@ -2520,8 +2520,8 @@ goog.addDependency('../../third_party/javascript/closure/mochikit/async/deferred
 goog.addDependency('../../third_party/javascript/closure/mochikit/async/deferredlist.js', ['goog.async.DeferredList'], ['goog.async.Deferred'], false);
 goog.addDependency('../../third_party/javascript/closure/osapi/osapi.js', ['goog.osapi'], [], false);
 goog.addDependency('../../third_party/javascript/closure/svgpan/svgpan.js', ['svgpan.SvgPan'], ['goog.Disposable', 'goog.events', 'goog.events.EventType', 'goog.events.MouseWheelHandler'], false);
-goog.addDependency('a11y/aria/announcer.js', ['goog.a11y.aria.Announcer'], ['goog.Disposable', 'goog.a11y.aria', 'goog.a11y.aria.LivePriority', 'goog.a11y.aria.State', 'goog.dom', 'goog.object'], false);
-goog.addDependency('a11y/aria/announcer_test.js', ['goog.a11y.aria.AnnouncerTest'], ['goog.a11y.aria', 'goog.a11y.aria.Announcer', 'goog.a11y.aria.LivePriority', 'goog.a11y.aria.State', 'goog.array', 'goog.dom', 'goog.dom.iframe', 'goog.testing.jsunit'], false);
+goog.addDependency('a11y/aria/announcer.js', ['goog.a11y.aria.Announcer'], ['goog.Disposable', 'goog.Timer', 'goog.a11y.aria', 'goog.a11y.aria.LivePriority', 'goog.a11y.aria.State', 'goog.dom', 'goog.object'], false);
+goog.addDependency('a11y/aria/announcer_test.js', ['goog.a11y.aria.AnnouncerTest'], ['goog.a11y.aria', 'goog.a11y.aria.Announcer', 'goog.a11y.aria.LivePriority', 'goog.a11y.aria.State', 'goog.array', 'goog.dom', 'goog.dom.iframe', 'goog.testing.MockClock', 'goog.testing.jsunit'], false);
 goog.addDependency('a11y/aria/aria.js', ['goog.a11y.aria'], ['goog.a11y.aria.Role', 'goog.a11y.aria.State', 'goog.a11y.aria.datatables', 'goog.array', 'goog.asserts', 'goog.dom', 'goog.dom.TagName', 'goog.object', 'goog.string'], false);
 goog.addDependency('a11y/aria/aria_test.js', ['goog.a11y.ariaTest'], ['goog.a11y.aria', 'goog.a11y.aria.Role', 'goog.a11y.aria.State', 'goog.dom', 'goog.dom.TagName', 'goog.testing.jsunit'], false);
 goog.addDependency('a11y/aria/attributes.js', ['goog.a11y.aria.AutoCompleteValues', 'goog.a11y.aria.CheckedValues', 'goog.a11y.aria.DropEffectValues', 'goog.a11y.aria.ExpandedValues', 'goog.a11y.aria.GrabbedValues', 'goog.a11y.aria.InvalidValues', 'goog.a11y.aria.LivePriority', 'goog.a11y.aria.OrientationValues', 'goog.a11y.aria.PressedValues', 'goog.a11y.aria.RelevantValues', 'goog.a11y.aria.SelectedValues', 'goog.a11y.aria.SortValues', 'goog.a11y.aria.State'], [], false);
@@ -9801,7 +9801,8 @@ goog.html.SafeStyle.PropertyMap;
  * Creates a new SafeStyle object from the properties specified in the map.
  * @param {goog.html.SafeStyle.PropertyMap} map Mapping of property names to
  *     their values, for example {'margin': '1px'}. Names must consist of
- *     [-_a-zA-Z0-9]. Values might be strings consisting of [-,.%_!# a-zA-Z0-9].
+ *     [-_a-zA-Z0-9]. Values might be strings consisting of
+ *     [-,.'"%_!# a-zA-Z0-9], where " and ' must be properly balanced.
  *     Other values must be wrapped in goog.string.Const. Null value causes
  *     skipping the property.
  * @return {!goog.html.SafeStyle}
@@ -9827,7 +9828,10 @@ goog.html.SafeStyle.create = function(map) {
       goog.asserts.assert(!/[{;}]/.test(value), 'Value does not allow [{;}].');
     } else if (!goog.html.SafeStyle.VALUE_RE_.test(value)) {
       goog.asserts.fail(
-          'String value allows only [-,.%_!# a-zA-Z0-9], got: ' + value);
+          'String value allows only [-,."\'%_!# a-zA-Z0-9], got: ' + value);
+      value = goog.html.SafeStyle.INNOCUOUS_STRING;
+    } else if (!goog.html.SafeStyle.hasBalancedQuotes_(value)) {
+      goog.asserts.fail('String value requires balanced quotes, got: ' + value);
       value = goog.html.SafeStyle.INNOCUOUS_STRING;
     }
     style += name + ':' + value + ';';
@@ -9841,9 +9845,37 @@ goog.html.SafeStyle.create = function(map) {
 };
 
 
+/**
+ * Checks that quotes (" and ') are properly balanced inside a string. Assumes
+ * that neither escape (\) nor any other character that could result in
+ * breaking out of a string parsing context are allowed;
+ * see http://www.w3.org/TR/css3-syntax/#string-token-diagram.
+ * @param {string} value Untrusted CSS property value.
+ * @return {boolean} True if property value is safe with respect to quote
+ *     balancedness.
+ * @private
+ */
+goog.html.SafeStyle.hasBalancedQuotes_ = function(value) {
+  var outsideSingle = true;
+  var outsideDouble = true;
+  for (var i = 0; i < value.length; i++) {
+    var c = value.charAt(i);
+    if (c == "'" && outsideDouble) {
+      outsideSingle = !outsideSingle;
+    } else if (c == '"' && outsideSingle) {
+      outsideDouble = !outsideDouble;
+    }
+  }
+  return outsideSingle && outsideDouble;
+};
+
+
 // Keep in sync with the error string in create().
 /**
  * Regular expression for safe values.
+ *
+ * Quotes (" and ') are allowed, but a check must be done elsewhere to ensure
+ * they're balanced.
  *
  * ',' allows multiple values to be assigned to the same property
  * (e.g. background-attachment or font-family) and hence could allow
@@ -9851,7 +9883,7 @@ goog.html.SafeStyle.create = function(map) {
  * @const {!RegExp}
  * @private
  */
-goog.html.SafeStyle.VALUE_RE_ = /^[-,.%_!# a-zA-Z0-9]+$/;
+goog.html.SafeStyle.VALUE_RE_ = /^[-,."'%_!# a-zA-Z0-9]+$/;
 
 
 /**
@@ -9899,7 +9931,7 @@ goog.html.SafeStyle.concat = function(var_args) {
 /**
  * @fileoverview The SafeStyleSheet type and its builders.
  *
- * TODO(user): Link to document stating type contract.
+ * TODO(xtof): Link to document stating type contract.
  */
 
 goog.provide('goog.html.SafeStyleSheet');
@@ -34726,8 +34758,9 @@ lf.proc.InsertStep.prototype.exec = function(journal) {
 
 
 /**
- * Assigns primary keys if 'autoIncrement' is specified for this table, only for
- * rows where the primary key has been left unspecified.
+ * Assigns primary keys if a primary key exists and 'autoIncrement' is specified
+ * for this table, only for rows where the primary key has been left
+ * unspecified.
  * @param {!lf.schema.Table} table The table schema.
  * @param {!Array<!lf.Row>} values
  * @param {!lf.index.IndexStore} indexStore
@@ -34736,7 +34769,8 @@ lf.proc.InsertStep.prototype.exec = function(journal) {
 lf.proc.InsertStep.assignAutoIncrementPks_ = function(
     table, values, indexStore) {
   var pkIndexSchema = table.getConstraint().getPrimaryKey();
-  var autoIncrement = pkIndexSchema.columns[0].autoIncrement;
+  var autoIncrement = goog.isNull(pkIndexSchema) ? false :
+      pkIndexSchema.columns[0].autoIncrement;
   if (autoIncrement) {
     var pkColumnName = pkIndexSchema.columns[0].name;
     var index = indexStore.get(pkIndexSchema.getNormalizedName());
