@@ -25423,9 +25423,12 @@ lf.index.BTreeNode_.prototype.getContainingLeaf = function(key) {
 
 /**
  * @param {lf.index.KeyRange=} opt_keyRange
+ * @param {!Array.<number>=} opt_results An array holding any results found from
+ *     previous calls to getRange(). If specified any new results will be
+ *     appended to this array.
  * @return {!Array.<number>}
  */
-lf.index.BTreeNode_.prototype.getRange = function(opt_keyRange) {
+lf.index.BTreeNode_.prototype.getRange = function(opt_keyRange, opt_results) {
   var start = 0;
   var end = this.keys_.length - 1;
 
@@ -25455,20 +25458,32 @@ lf.index.BTreeNode_.prototype.getRange = function(opt_keyRange) {
     }
   }
 
-  var results = [];
+  var results = opt_results || [];
   if (end == this.keys_.length - 1) {
-    results = results.concat(this.values_.slice(start));
+    this.appendResults_(results, this.values_.slice(start));
     if (this.next_) {
-      results = results.concat(this.next_.getRange(opt_keyRange));
+      this.next_.getRange(opt_keyRange, results);
     }
   } else if (end >= start) {
-    results = results.concat(this.values_.slice(start, end + 1));
+    this.appendResults_(results, this.values_.slice(start, end + 1));
   }
 
-  if (!this.tree_.isUniqueKeyOnly()) {
-    results = goog.array.flatten(results);
-  }
   return results;
+};
+
+
+/**
+ * Appends newly found results to an existing bag of results.
+ * @param {!Array.<number>} currentResults
+ * @param {!Array.<number>|!Array.<!Array.<number>>} newResults
+ * @private
+ */
+lf.index.BTreeNode_.prototype.appendResults_ = function(
+    currentResults, newResults) {
+  currentResults.push.apply(
+      currentResults,
+      this.tree_.isUniqueKeyOnly() ?
+          newResults : goog.array.flatten(newResults));
 };
 
 
