@@ -28,6 +28,10 @@ goog.require('order.db');
 var asyncTestCase = goog.testing.AsyncTestCase.createAndInstall('MultiDBTest');
 
 
+/** @type {number} */
+asyncTestCase.stepTimeout = 5 * 1000;  // 5 seconds
+
+
 /** @type {!lf.testing.SmokeTester} */
 var hrTester;
 
