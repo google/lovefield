@@ -128,6 +128,94 @@ function checkSimpleComparator_Max(c) {
   assertEquals(favor.RHS, c.max('bba', 'bbb'));
 }
 
+function testMultiKeyComparator_Min() {
+  var c1 = new lf.index.MultiKeyComparator([lf.Order.DESC, lf.Order.ASC]);
+  checkMultiKeyComparator_Min(c1);
+
+  var c2 = new lf.index.MultiKeyComparator([lf.Order.DESC, lf.Order.DESC]);
+  checkMultiKeyComparator_Min(c2);
+
+  var c3 = new lf.index.MultiKeyComparator([lf.Order.ASC, lf.Order.DESC]);
+  checkMultiKeyComparator_Min(c3);
+
+  var c4 = new lf.index.MultiKeyComparator([lf.Order.ASC, lf.Order.ASC]);
+  checkMultiKeyComparator_Min(c4);
+}
+
+function testMultiKeyComparator_Max() {
+  var c1 = new lf.index.MultiKeyComparator([lf.Order.DESC, lf.Order.ASC]);
+  checkMultiKeyComparator_Max(c1);
+
+  var c2 = new lf.index.MultiKeyComparator([lf.Order.DESC, lf.Order.DESC]);
+  checkMultiKeyComparator_Max(c2);
+
+  var c3 = new lf.index.MultiKeyComparator([lf.Order.ASC, lf.Order.DESC]);
+  checkMultiKeyComparator_Max(c3);
+
+  var c4 = new lf.index.MultiKeyComparator([lf.Order.ASC, lf.Order.ASC]);
+  checkMultiKeyComparator_Max(c4);
+}
+
+
+/**
+ * Checks the min() method of the given comparator.
+ * @param {!lf.index.MultiKeyComparator} c
+ */
+function checkMultiKeyComparator_Min(c) {
+  assertEquals(favor.TIE, c.min([0, 'A'], [0, 'A']));
+  assertEquals(favor.TIE, c.min(['', ''], ['', '']));
+  assertEquals(favor.TIE, c.min([888.88, 888.88], [888.88, 888.88]));
+  assertEquals(favor.TIE, c.min(['ab', 'ab'], ['ab', 'ab']));
+
+  assertEquals(favor.RHS, c.min([1, 'A'], [0, 'Z']));
+  assertEquals(favor.LHS, c.min([0, 999], [1, 888]));
+  assertEquals(favor.RHS, c.min([1, 1], [1, 0]));
+  assertEquals(favor.LHS, c.min(['A', 'D'], ['A', 'Z']));
+  assertEquals(favor.RHS, c.min([888.88, 999], [888.87, 1]));
+  assertEquals(favor.LHS, c.min([888.87, 999], [888.88, 1]));
+  assertEquals(favor.RHS, c.min([888.88, 999], [888.88, 1]));
+  assertEquals(favor.LHS, c.min([1, 888.87], [1, 888.88]));
+
+  assertEquals(favor.RHS, c.min(['b', 1], ['a', 999]));
+  assertEquals(favor.LHS, c.min(['a', 999], ['b', 0]));
+  assertEquals(favor.RHS, c.min(['b', 'b'], ['b', 'a']));
+  assertEquals(favor.LHS, c.min(['a', 'a'], ['a', 'b']));
+  assertEquals(favor.RHS, c.min(['bbb', 'bba'], ['bba', 'bbb']));
+  assertEquals(favor.LHS, c.min(['bba', 'bbb'], ['bbb', 'bba']));
+  assertEquals(favor.RHS, c.min(['bbb', 'bbc'], ['bbb', 'bbb']));
+  assertEquals(favor.LHS, c.min(['bba', 'bbb'], ['bba', 'bbc']));
+}
+
+
+/**
+ * Checks the max() method of the given comparator.
+ * @param {!lf.index.MultiKeyComparator} c
+ */
+function checkMultiKeyComparator_Max(c) {
+  assertEquals(favor.TIE, c.max([0, 'A'], [0, 'A']));
+  assertEquals(favor.TIE, c.max(['', ''], ['', '']));
+  assertEquals(favor.TIE, c.max([888.88, 888.88], [888.88, 888.88]));
+  assertEquals(favor.TIE, c.max(['ab', 'ab'], ['ab', 'ab']));
+
+  assertEquals(favor.LHS, c.max([1, 'A'], [0, 'Z']));
+  assertEquals(favor.RHS, c.max([0, 999], [1, 888]));
+  assertEquals(favor.LHS, c.max([1, 1], [1, 0]));
+  assertEquals(favor.RHS, c.max(['A', 'D'], ['A', 'Z']));
+  assertEquals(favor.LHS, c.max([888.88, 999], [888.87, 1]));
+  assertEquals(favor.RHS, c.max([888.87, 999], [888.88, 1]));
+  assertEquals(favor.LHS, c.max([888.88, 999], [888.88, 1]));
+  assertEquals(favor.RHS, c.max([1, 888.87], [1, 888.88]));
+
+  assertEquals(favor.LHS, c.max(['b', 1], ['a', 999]));
+  assertEquals(favor.RHS, c.max(['a', 999], ['b', 0]));
+  assertEquals(favor.LHS, c.max(['b', 'b'], ['b', 'a']));
+  assertEquals(favor.RHS, c.max(['a', 'a'], ['a', 'b']));
+  assertEquals(favor.LHS, c.max(['bbb', 'bba'], ['bba', 'bbb']));
+  assertEquals(favor.RHS, c.max(['bba', 'bbb'], ['bbb', 'bba']));
+  assertEquals(favor.LHS, c.max(['bbb', 'bbc'], ['bbb', 'bbb']));
+  assertEquals(favor.RHS, c.max(['bba', 'bbb'], ['bba', 'bbc']));
+}
+
 
 function testMultiKeyComparator_DefaultOrder() {
   var orders = lf.index.MultiKeyComparator.createOrders(2, lf.Order.ASC);

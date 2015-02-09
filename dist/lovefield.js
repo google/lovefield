@@ -25723,11 +25723,9 @@ lf.index.SimpleComparator.prototype.toString = function() {
 lf.index.MultiKeyComparator = function(orders) {
   lf.index.MultiKeyComparator.base(this, 'constructor');
 
-  /** @private {!Array<!Function>} */
+  /** @private {!Array<!lf.index.SimpleComparator>} */
   this.comparators_ = orders.map(function(order) {
-    return order == lf.Order.DESC ?
-        lf.index.SimpleComparator.compareDescending :
-        lf.index.SimpleComparator.compareAscending;
+    return new lf.index.SimpleComparator(order);
   });
 };
 goog.inherits(lf.index.MultiKeyComparator, lf.index.Comparator);
@@ -25747,27 +25745,47 @@ lf.index.MultiKeyComparator.createOrders = function(numKeys, order) {
 };
 
 
+/**
+ * @param {!lf.index.Index.MultiKey} lhs
+ * @param {!lf.index.Index.MultiKey} rhs
+ * @param {!function(!lf.index.SimpleComparator,
+ *                   !lf.index.Index.Key,
+ *                   !lf.index.Index.Key): lf.index.FAVOR} fn
+ * @return {!lf.index.FAVOR}
+ * @private
+ */
+lf.index.MultiKeyComparator.prototype.forEach_ = function(lhs, rhs, fn) {
+  var favor = lf.index.FAVOR.TIE;
+  for (var i = 0;
+      i < this.comparators_.length && favor == lf.index.FAVOR.TIE;
+      ++i) {
+    favor = fn(this.comparators_[i], lhs[i], rhs[i]);
+  }
+  return favor;
+};
+
+
 /** @override */
 lf.index.MultiKeyComparator.prototype.compare = function(lhs, rhs) {
-  var base = 0;
-  for (var i = 0; i < this.comparators_.length && base == 0; ++i) {
-    base = this.comparators_[i](lhs[i], rhs[i]);
-  }
-  return base;
+  return this.forEach_(lhs, rhs, function(c, l, r) {
+    return c.compare(l, r);
+  });
 };
 
 
 /** @override */
 lf.index.MultiKeyComparator.prototype.min = function(lhs, rhs) {
-  // TODO(dpapad): Implement
-  return lf.index.FAVOR.LHS;
+  return this.forEach_(lhs, rhs, function(c, l, r) {
+    return c.min(l, r);
+  });
 };
 
 
 /** @override */
 lf.index.MultiKeyComparator.prototype.max = function(lhs, rhs) {
-  // TODO(dpapad): Implement
-  return lf.index.FAVOR.RHS;
+  return this.forEach_(lhs, rhs, function(c, l, r) {
+    return c.max(l, r);
+  });
 };
 
 
