@@ -1,6 +1,6 @@
 {
   "name": "lovefield",
-  "version": "2.0.0",
+  "version": "2.0.4",
   "description": "Lovefield - A Data Access Library",
   "keywords": ["lovefield"],
   "homepage": "https://github.com/google/lovefield",
@@ -8,22 +8,31 @@
     "url": "https://github.com/google/lovefield/issues"
   },
   "license": "Apache-2.0",
-  "bin": {
-    "lovefield-spac": "spac/lovefield-spac"
-  },
   "repository": {
     "type": "git",
     "url": "https://github.com/google/lovefield.git"
   },
+  "files": [
+    "dist",
+    "spac/codegen.js",
+    "spac/lovefield-spac",
+    "spac/parser.js",
+    "spac/spac.js"
+  ],
+  "bin": {
+    "lovefield-spac": "spac/lovefield-spac"
+  },
   "dependencies": {
+    "js-yaml": "~3.1.0",
+    "nopt": "~2.2.1"
+  },
+  "devDependencies": {
     "closurecompiler": "*",
     "glob": "~3.2.6",
     "google-closure-library-latest": "*",
     "gulp": "~3.8.10",
     "http-server": "*",
-    "js-yaml": "~3.1.0",
     "mkdirp": "^0.3.5",
-    "nopt": "~2.2.1",
     "rimraf": "*",
     "tempfile": "*",
     "temporary": "*"
