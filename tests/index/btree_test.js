@@ -38,8 +38,13 @@ var stub;
 var c;
 
 
+/** @type {!lf.index.SimpleComparator} */
+var c2;
+
+
 function setUp() {
   c = new lf.index.SimpleComparator(lf.Order.ASC);
+  c2 = new lf.index.SimpleComparator(lf.Order.DESC);
 
   // Replace the max count of B-Tree to 5 so that we verify the tree
   // construction algorithm.
@@ -848,22 +853,33 @@ function testDelete_None() {
   assertEquals(expected, tree.toString());
 }
 
-
-function testSingleRow_NumericalKey() {
+function testSingleRow_NumericalKey_Asc() {
   var test = new lf.testing.index.TestSingleRowNumericalKey(function() {
     return new lf.index.BTree('test', c, true);
   });
   test.run();
 }
 
+function testSingleRow_NumericalKey_Desc() {
+  var test = new lf.testing.index.TestSingleRowNumericalKey(function() {
+    return new lf.index.BTree('test', c2, true);
+  }, true);
+  test.run();
+}
 
-function testSingleRow_StringKey() {
+function testSingleRow_StringKey_Asc() {
   var test = new lf.testing.index.TestSingleRowStringKey(function() {
     return new lf.index.BTree('test', c, true);
   });
   test.run();
 }
 
+function testSingleRow_StringKey_Desc() {
+  var test = new lf.testing.index.TestSingleRowStringKey(function() {
+    return new lf.index.BTree('test', c2, true);
+  }, true);
+  test.run();
+}
 
 function testMultiRow_NumericalKey() {
   var test = new lf.testing.index.TestMultiRowNumericalKey(function() {
@@ -871,7 +887,6 @@ function testMultiRow_NumericalKey() {
   });
   test.run();
 }
-
 
 function testGetRange_Numeric() {
   var tree = new lf.index.BTree('test', c, true);
@@ -939,16 +954,20 @@ function testRandomNumbers() {
   });
 
   var tree = new lf.index.BTree('test', c, true);
+  var tree2 = new lf.index.BTree('test', c2, true);
   for (var i = 0; i < ROW_COUNT; ++i) {
     tree.add(keys[i], keys[i]);
+    tree2.add(keys[i], keys[i]);
   }
 
   assertArrayEquals(keys, tree.getRange());
   for (var i = 0; i < ROW_COUNT; ++i) {
     tree.remove(keys[i]);
+    tree2.remove(keys[i]);
   }
 
   assertArrayEquals([], tree.getRange());
+  assertArrayEquals([], tree2.getRange());
 }
 
 function testDuplicateKeys_LeafNodeAsRoot() {
