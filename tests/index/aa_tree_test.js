@@ -131,7 +131,7 @@ function testAATree_Throws() {
   });
 }
 
-function testSingleRow_NumericalKey() {
+function testSingleRow_NumericalKey_Asc() {
   var test = new lf.testing.index.TestSingleRowNumericalKey(function() {
     return new lf.index.AATree(
         'test',
@@ -140,12 +140,30 @@ function testSingleRow_NumericalKey() {
   test.run();
 }
 
-function testSingleRow_StringKey() {
+function testSingleRow_NumericalKey_Desc() {
+  var test = new lf.testing.index.TestSingleRowNumericalKey(function() {
+    return new lf.index.AATree(
+        'test',
+        new lf.index.SimpleComparator(lf.Order.DESC));
+  }, true);
+  test.run();
+}
+
+function testSingleRow_StringKey_Asc() {
   var test = new lf.testing.index.TestSingleRowStringKey(function() {
     return new lf.index.AATree(
         'test',
         new lf.index.SimpleComparator(lf.Order.ASC));
   });
+  test.run();
+}
+
+function testSingleRow_StringKey_Desc() {
+  var test = new lf.testing.index.TestSingleRowStringKey(function() {
+    return new lf.index.AATree(
+        'test',
+        new lf.index.SimpleComparator(lf.Order.DESC));
+  }, true);
   test.run();
 }
 

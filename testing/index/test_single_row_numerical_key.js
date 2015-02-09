@@ -29,8 +29,10 @@ goog.require('lf.testing.index.TestIndex');
  *
  * @param {!function():!lf.index.Index} constructorFn The function to call
  *     before every test case, in order to get a newly created index.
+ * @param {boolean=} opt_reverse Range expectations shall be reversed.
  */
-lf.testing.index.TestSingleRowNumericalKey = function(constructorFn) {
+lf.testing.index.TestSingleRowNumericalKey = function(
+    constructorFn, opt_reverse) {
   lf.testing.index.TestSingleRowNumericalKey.base(
       this, 'constructor', constructorFn);
 
@@ -47,6 +49,9 @@ lf.testing.index.TestSingleRowNumericalKey = function(constructorFn) {
    * @private {?Array}
    */
   this.minKeyValuePair_ = null;
+
+  /** @private {boolean} */
+  this.reverse_ = opt_reverse || false;
 };
 goog.inherits(
     lf.testing.index.TestSingleRowNumericalKey,
@@ -76,9 +81,12 @@ lf.testing.index.TestSingleRowNumericalKey.prototype.testGetRangeCost =
       function(keyRange, counter) {
         var expectedResult = lf.testing.index.TestSingleRowNumericalKey.
             getRangeExpectations_[counter];
+        if (this.reverse_) {
+          expectedResult.reverse();
+        }
         lf.testing.index.TestIndex.assertGetRangeCost(
             index, keyRange, expectedResult);
-      });
+      }, this);
 };
 
 

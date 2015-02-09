@@ -26408,8 +26408,9 @@ lf.index.AATree.prototype.search_ = function(node, key) {
     return null;
   }
 
-  return (key == node.key) ? node :
-      (key < node.key) ? this.search_(node.left, key) :
+  var favor = this.comparator_.compare(key, node.key);
+  return (favor == lf.index.FAVOR.TIE) ? node :
+      (favor == lf.index.FAVOR.RHS) ? this.search_(node.left, key) :
       this.search_(node.right, key);
 };
 

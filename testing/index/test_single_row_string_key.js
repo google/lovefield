@@ -29,10 +29,28 @@ goog.require('lf.testing.index.TestIndex');
  *
  * @param {!function():!lf.index.Index} constructorFn The function to call
  *     before every test case, in order to get a newly created index.
+ * @param {boolean=} opt_reverse Range expectations shall be reversed.
  */
-lf.testing.index.TestSingleRowStringKey = function(constructorFn) {
+lf.testing.index.TestSingleRowStringKey = function(constructorFn, opt_reverse) {
   lf.testing.index.TestSingleRowStringKey.base(
       this, 'constructor', constructorFn);
+
+  /**
+   * Holds the max key and the corresponding values, populated in
+   * populateIndex_.
+   * @private {?Array}
+   */
+  this.maxKeyValuePair_ = null;
+
+  /**
+   * Holds the min key and the corresponding values, populated in
+   * populateIndex_.
+   * @private {?Array}
+   */
+  this.minKeyValuePair_ = null;
+
+  /** @private {boolean} */
+  this.reverse_ = opt_reverse || false;
 };
 goog.inherits(
     lf.testing.index.TestSingleRowStringKey,
@@ -62,9 +80,12 @@ lf.testing.index.TestSingleRowStringKey.prototype.testGetRangeCost =
       function(keyRange, counter) {
         var expectedResult = lf.testing.index.TestSingleRowStringKey.
             getRangeExpectations[counter];
+        if (this.reverse_) {
+          expectedResult.reverse();
+        }
         lf.testing.index.TestIndex.assertGetRangeCost(
             index, keyRange, expectedResult);
-      });
+      }, this);
 };
 
 
@@ -105,7 +126,13 @@ lf.testing.index.TestSingleRowStringKey.prototype.testSet = function(index) {
 /** @override */
 lf.testing.index.TestSingleRowStringKey.prototype.testMinMax = function(
     index) {
-  // TODO(dpapad): Implement.
+  // First try an empty index.
+  assertArrayEquals([null, null], index.min());
+  assertArrayEquals([null, null], index.max());
+
+  this.populateIndex_(index);
+  assertArrayEquals(this.minKeyValuePair_, index.min());
+  assertArrayEquals(this.maxKeyValuePair_, index.max());
 };
 
 
@@ -142,6 +169,18 @@ lf.testing.index.TestSingleRowStringKey.prototype.populateIndex_ =
     var key = 'key' + i.toString();
     var value = i;
     index.add(key, value);
+
+    // Detecting min key and corresponding value to be used later in assertions.
+    if (goog.isNull(this.minKeyValuePair_) ||
+        key < this.minKeyValuePair_[0]) {
+      this.minKeyValuePair_ = [key, [value]];
+    }
+
+    // Detecting max key and corresponding value to be used later in assertions.
+    if (goog.isNull(this.maxKeyValuePair_) ||
+        key > this.maxKeyValuePair_[0]) {
+      this.maxKeyValuePair_ = [key, [value]];
+    }
   }
 };
 
