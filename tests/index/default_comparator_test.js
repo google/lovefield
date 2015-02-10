@@ -18,13 +18,14 @@ goog.setTestOnly();
 goog.require('goog.testing.jsunit');
 goog.require('lf.Order');
 goog.require('lf.index');
+goog.require('lf.index.KeyRange');
 goog.require('lf.index.MultiKeyComparator');
 goog.require('lf.index.SimpleComparator');
 
 
 var favor = lf.index.FAVOR;
 
-function testSimpleComparator_ASC() {
+function testSimpleComparator_Asc() {
   var comparator = new lf.index.SimpleComparator(lf.Order.ASC);
   var c = goog.bind(comparator.compare, comparator);
 
@@ -44,7 +45,7 @@ function testSimpleComparator_ASC() {
   assertEquals(favor.RHS, c('bba', 'bbb'));
 }
 
-function testSimpleComparator_DESC() {
+function testSimpleComparator_Desc() {
   var comparator = new lf.index.SimpleComparator(lf.Order.DESC);
   var c = goog.bind(comparator.compare, comparator);
 
@@ -263,4 +264,98 @@ function testMultiKeyComparator_CustomOrder() {
   assertEquals(favor.LHS, c([2, 'zzz'], [2, 'zza']));
   assertEquals(favor.RHS, c(['zzz', 1], ['zzz', 2]));
   assertEquals(favor.RHS, c([2, 'zza'], [2, 'zzz']));
+}
+
+function testSimpleComparator_NormalizeKeyRange_Asc() {
+  var c = new lf.index.SimpleComparator(lf.Order.ASC);
+  assertEquals(
+      '[unbound, unbound]',
+      c.normalizeKeyRange(lf.index.KeyRange.all()).toString());
+  assertEquals(
+      '(2, unbound]',
+      c.normalizeKeyRange(lf.index.KeyRange.lowerBound(2, true)).toString());
+  assertEquals(
+      '[unbound, 2)',
+      c.normalizeKeyRange(lf.index.KeyRange.upperBound(2, true)).toString());
+  assertEquals(
+      '[2, 2]',
+      c.normalizeKeyRange(lf.index.KeyRange.only(2)).toString());
+}
+
+function testSimpleComparator_NormalizeKeyRange_Desc() {
+  var c = new lf.index.SimpleComparator(lf.Order.DESC);
+  assertEquals(
+      '[unbound, unbound]',
+      c.normalizeKeyRange(lf.index.KeyRange.all()).toString());
+  assertEquals(
+      '[unbound, 2)',
+      c.normalizeKeyRange(lf.index.KeyRange.lowerBound(2, true)).toString());
+  assertEquals(
+      '(2, unbound]',
+      c.normalizeKeyRange(lf.index.KeyRange.upperBound(2, true)).toString());
+  assertEquals(
+      '[2, 2]',
+      c.normalizeKeyRange(lf.index.KeyRange.only(2)).toString());
+}
+
+function testMultiKeyComparator_NormalizeKeyRange() {
+  var c = new lf.index.MultiKeyComparator([lf.Order.ASC, lf.Order.DESC]);
+  assertEquals(
+      '[unbound, unbound],[unbound, unbound]',
+      c.normalizeKeyRange(
+          [lf.index.KeyRange.all(), lf.index.KeyRange.all()]).toString());
+  assertEquals(
+      '(2, unbound],[unbound, 2)',
+      c.normalizeKeyRange([
+        lf.index.KeyRange.lowerBound(2, true),
+        lf.index.KeyRange.lowerBound(2, true)]).toString());
+  assertEquals(
+      '[unbound, 2),(2, unbound]',
+      c.normalizeKeyRange([
+        lf.index.KeyRange.upperBound(2, true),
+        lf.index.KeyRange.upperBound(2, true)]).toString());
+  assertEquals(
+      '[2, 2],[2, 2]',
+      c.normalizeKeyRange(
+          [lf.index.KeyRange.only(2), lf.index.KeyRange.only(2)]).toString());
+}
+
+function testSimpleComparator_isInRange() {
+  var c = new lf.index.SimpleComparator(lf.Order.ASC);
+  assertTrue(c.isInRange(2, lf.index.KeyRange.all()));
+  assertTrue(c.isInRange(2, lf.index.KeyRange.lowerBound(2)));
+  assertFalse(c.isInRange(2, lf.index.KeyRange.lowerBound(2, true)));
+  assertTrue(c.isInRange(2, lf.index.KeyRange.upperBound(2)));
+  assertFalse(c.isInRange(2, lf.index.KeyRange.upperBound(2, true)));
+  assertTrue(c.isInRange(2, lf.index.KeyRange.only(2)));
+}
+
+function testMultiKeyComparator_isInRange() {
+  // The orders do not really affect the judgement for this test, therefore
+  // two random orders are picked to make this test shorter.
+  var c = new lf.index.MultiKeyComparator([lf.Order.ASC, lf.Order.DESC]);
+  var lowerBound = lf.index.KeyRange.lowerBound(2);
+  var lowerBoundExclude = lf.index.KeyRange.lowerBound(2, true);
+  var upperBound = lf.index.KeyRange.upperBound(2);
+  var upperBoundExclude = lf.index.KeyRange.upperBound(2, true);
+
+  assertTrue(c.isInRange(
+      [2, 2],
+      [lf.index.KeyRange.all(), lf.index.KeyRange.all()]));
+  assertTrue(c.isInRange([2, 2], [lowerBound, lowerBound]));
+  assertFalse(c.isInRange([2, 2], [lowerBoundExclude, lowerBound]));
+  assertFalse(c.isInRange([2, 2], [lowerBound, lowerBoundExclude]));
+  assertFalse(c.isInRange([2, 2], [lowerBoundExclude, lowerBoundExclude]));
+  assertTrue(c.isInRange([2, 2], [upperBound, upperBound]));
+  assertFalse(c.isInRange([2, 2], [upperBoundExclude, upperBound]));
+  assertFalse(c.isInRange([2, 2], [upperBound, upperBoundExclude]));
+  assertFalse(c.isInRange([2, 2], [upperBoundExclude, upperBoundExclude]));
+  assertTrue(c.isInRange([2, 2], [lowerBound, upperBound]));
+  assertFalse(c.isInRange([2, 2], [lowerBoundExclude, upperBound]));
+  assertFalse(c.isInRange([2, 2], [lowerBound, upperBoundExclude]));
+  assertFalse(c.isInRange([2, 2], [lowerBoundExclude, upperBoundExclude]));
+  assertTrue(c.isInRange([2, 2], [upperBound, lowerBound]));
+  assertFalse(c.isInRange([2, 2], [upperBoundExclude, lowerBound]));
+  assertFalse(c.isInRange([2, 2], [upperBound, lowerBoundExclude]));
+  assertFalse(c.isInRange([2, 2], [upperBoundExclude, lowerBoundExclude]));
 }

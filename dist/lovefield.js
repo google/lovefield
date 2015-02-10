@@ -25749,15 +25749,29 @@ lf.index.MultiKeyComparator.prototype.max = function(lhs, rhs) {
 };
 
 
-/** @override */
+/**
+ * The range must have same dimensions as key.
+ * TODO(arthurhsu): relax this restriction if performance issue surfaced later.
+ * @override
+ */
 lf.index.MultiKeyComparator.prototype.isInRange = function(key, range) {
-  // TODO(arthurhsu): implement
+  var isInRange = true;
+  for (var i = 0; i < this.comparators_.length && isInRange; ++i) {
+    isInRange = this.comparators_[i].isInRange(key[i], range[i]);
+  }
+  return isInRange;
 };
 
 
-/** @override */
+/**
+ * The keyRange must have same or less dimensions as the orders given in the
+ * constructor.
+ * @override
+ */
 lf.index.MultiKeyComparator.prototype.normalizeKeyRange = function(keyRange) {
-  // TODO(dpapad): implement.
+  return keyRange.map(function(range, index) {
+    return this.comparators_[index].normalizeKeyRange(range);
+  }, this);
 };
 
 /**
