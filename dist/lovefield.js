@@ -3919,9 +3919,9 @@ goog.addDependency('useragent/keyboard.js', ['goog.userAgent.keyboard'], ['goog.
 goog.addDependency('useragent/keyboard_test.js', ['goog.userAgent.keyboardTest'], ['goog.labs.userAgent.testAgents', 'goog.labs.userAgent.util', 'goog.testing.MockUserAgent', 'goog.testing.jsunit', 'goog.userAgent.keyboard', 'goog.userAgentTestUtil'], false);
 goog.addDependency('useragent/platform.js', ['goog.userAgent.platform'], ['goog.string', 'goog.userAgent'], false);
 goog.addDependency('useragent/platform_test.js', ['goog.userAgent.platformTest'], ['goog.testing.MockUserAgent', 'goog.testing.jsunit', 'goog.userAgent', 'goog.userAgent.platform', 'goog.userAgentTestUtil'], false);
-goog.addDependency('useragent/product.js', ['goog.userAgent.product'], ['goog.userAgent'], false);
-goog.addDependency('useragent/product_isversion.js', ['goog.userAgent.product.isVersion'], ['goog.string', 'goog.userAgent', 'goog.userAgent.product'], false);
-goog.addDependency('useragent/product_test.js', ['goog.userAgent.productTest'], ['goog.array', 'goog.labs.userAgent.testAgents', 'goog.labs.userAgent.util', 'goog.testing.MockUserAgent', 'goog.testing.PropertyReplacer', 'goog.testing.jsunit', 'goog.userAgent', 'goog.userAgent.product', 'goog.userAgent.product.isVersion', 'goog.userAgentTestUtil'], false);
+goog.addDependency('useragent/product.js', ['goog.userAgent.product'], ['goog.labs.userAgent.browser', 'goog.labs.userAgent.platform', 'goog.userAgent'], false);
+goog.addDependency('useragent/product_isversion.js', ['goog.userAgent.product.isVersion'], ['goog.labs.userAgent.platform', 'goog.string', 'goog.userAgent', 'goog.userAgent.product'], false);
+goog.addDependency('useragent/product_test.js', ['goog.userAgent.productTest'], ['goog.array', 'goog.labs.userAgent.util', 'goog.testing.MockUserAgent', 'goog.testing.PropertyReplacer', 'goog.testing.jsunit', 'goog.userAgent', 'goog.userAgent.product', 'goog.userAgent.product.isVersion', 'goog.userAgentTestUtil'], false);
 goog.addDependency('useragent/useragent.js', ['goog.userAgent'], ['goog.labs.userAgent.browser', 'goog.labs.userAgent.engine', 'goog.labs.userAgent.platform', 'goog.labs.userAgent.util', 'goog.string'], false);
 goog.addDependency('useragent/useragent_quirks_test.js', ['goog.userAgentQuirksTest'], ['goog.testing.jsunit', 'goog.userAgent'], false);
 goog.addDependency('useragent/useragent_test.js', ['goog.userAgentTest'], ['goog.array', 'goog.labs.userAgent.platform', 'goog.labs.userAgent.testAgents', 'goog.labs.userAgent.util', 'goog.testing.PropertyReplacer', 'goog.testing.jsunit', 'goog.userAgent', 'goog.userAgentTestUtil'], false);
@@ -9768,9 +9768,22 @@ goog.html.SafeStyle.unwrap = function(safeStyle) {
  */
 goog.html.SafeStyle.createSafeStyleSecurityPrivateDoNotAccessOrElse =
     function(style) {
-  var safeStyle = new goog.html.SafeStyle();
-  safeStyle.privateDoNotAccessOrElseSafeStyleWrappedValue_ = style;
-  return safeStyle;
+  return new goog.html.SafeStyle().initSecurityPrivateDoNotAccessOrElse_(style);
+};
+
+
+/**
+ * Called from createSafeStyleSecurityPrivateDoNotAccessOrElse(). This
+ * method exists only so that the compiler can dead code eliminate static
+ * fields (like EMPTY) when they're not accessed.
+ * @param {string} style
+ * @return {!goog.html.SafeStyle}
+ * @private
+ */
+goog.html.SafeStyle.prototype.initSecurityPrivateDoNotAccessOrElse_ = function(
+    style) {
+  this.privateDoNotAccessOrElseSafeStyleWrappedValue_ = style;
+  return this;
 };
 
 
@@ -10163,10 +10176,23 @@ goog.html.SafeStyleSheet.unwrap = function(safeStyleSheet) {
  */
 goog.html.SafeStyleSheet.createSafeStyleSheetSecurityPrivateDoNotAccessOrElse =
     function(styleSheet) {
-  var safeStyleSheet = new goog.html.SafeStyleSheet();
-  safeStyleSheet.privateDoNotAccessOrElseSafeStyleSheetWrappedValue_ =
-      styleSheet;
-  return safeStyleSheet;
+  return new goog.html.SafeStyleSheet().initSecurityPrivateDoNotAccessOrElse_(
+      styleSheet);
+};
+
+
+/**
+ * Called from createSafeStyleSheetSecurityPrivateDoNotAccessOrElse(). This
+ * method exists only so that the compiler can dead code eliminate static
+ * fields (like EMPTY) when they're not accessed.
+ * @param {string} styleSheet
+ * @return {!goog.html.SafeStyleSheet}
+ * @private
+ */
+goog.html.SafeStyleSheet.prototype.initSecurityPrivateDoNotAccessOrElse_ =
+    function(styleSheet) {
+  this.privateDoNotAccessOrElseSafeStyleSheetWrappedValue_ = styleSheet;
+  return this;
 };
 
 
@@ -11418,10 +11444,25 @@ goog.html.SafeHtml.TYPE_MARKER_GOOG_HTML_SECURITY_PRIVATE_ = {};
  */
 goog.html.SafeHtml.createSafeHtmlSecurityPrivateDoNotAccessOrElse = function(
     html, dir) {
-  var safeHtml = new goog.html.SafeHtml();
-  safeHtml.privateDoNotAccessOrElseSafeHtmlWrappedValue_ = html;
-  safeHtml.dir_ = dir;
-  return safeHtml;
+  return new goog.html.SafeHtml().initSecurityPrivateDoNotAccessOrElse_(
+      html, dir);
+};
+
+
+/**
+ * Called from createSafeHtmlSecurityPrivateDoNotAccessOrElse(). This
+ * method exists only so that the compiler can dead code eliminate static
+ * fields (like EMPTY) when they're not accessed.
+ * @param {string} html
+ * @param {?goog.i18n.bidi.Dir} dir
+ * @return {!goog.html.SafeHtml}
+ * @private
+ */
+goog.html.SafeHtml.prototype.initSecurityPrivateDoNotAccessOrElse_ = function(
+    html, dir) {
+  this.privateDoNotAccessOrElseSafeHtmlWrappedValue_ = html;
+  this.dir_ = dir;
+  return this;
 };
 
 
@@ -11745,9 +11786,23 @@ goog.html.SafeScript.unwrap = function(safeScript) {
  */
 goog.html.SafeScript.createSafeScriptSecurityPrivateDoNotAccessOrElse =
     function(script) {
-  var safeScript = new goog.html.SafeScript();
-  safeScript.privateDoNotAccessOrElseSafeScriptWrappedValue_ = script;
-  return safeScript;
+  return new goog.html.SafeScript().initSecurityPrivateDoNotAccessOrElse_(
+      script);
+};
+
+
+/**
+ * Called from createSafeScriptSecurityPrivateDoNotAccessOrElse(). This
+ * method exists only so that the compiler can dead code eliminate static
+ * fields (like EMPTY) when they're not accessed.
+ * @param {string} script
+ * @return {!goog.html.SafeScript}
+ * @private
+ */
+goog.html.SafeScript.prototype.initSecurityPrivateDoNotAccessOrElse_ = function(
+    script) {
+  this.privateDoNotAccessOrElseSafeScriptWrappedValue_ = script;
+  return this;
 };
 
 
@@ -27217,7 +27272,7 @@ lf.proc.RelationEntry.prototype.getField = function(column) {
   // not guaranteed that setField() has been called for this instance. If not
   // found then look for it in its normal location.
   var alias = column.getAlias();
-  if (this.row.payload().hasOwnProperty(alias)) {
+  if (!goog.isNull(alias) && this.row.payload().hasOwnProperty(alias)) {
     return this.row.payload()[alias];
   }
 
