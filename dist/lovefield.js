@@ -37389,7 +37389,8 @@ lf.proc.TransactionTask.prototype.commit = function() {
 /** @return {!IThenable} */
 lf.proc.TransactionTask.prototype.rollback = function() {
   this.journal_.rollback();
-  return goog.Promise.resolve();
+  this.execResolver_.resolve();
+  return this.resolver_.promise;
 };
 
 /**

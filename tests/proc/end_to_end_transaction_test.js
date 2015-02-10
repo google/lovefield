@@ -376,6 +376,11 @@ function testRollback() {
     // Checking that the entire transaction was rolled back, and therefore that
     // Job row that had been added does not appear on disk.
     assertEquals(sampleJobs.length, results.length);
+
+    // Expecting all locks to have been released by previous transaction, which
+    // should allow the following query to complete.
+    return db.select().from(j).exec();
+  }).then(function() {
     asyncTestCase.continueTesting();
   });
 }
