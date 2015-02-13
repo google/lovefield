@@ -224,7 +224,7 @@ to its initial state (unopened) and is *__not__* mandatory nor recommended. Due
 to IndexedDB limitations, there is no guarantee that `close()` and
 `getInstance()` again will yield only one database instance in memory.
 
-### 3.5 Life of Query
+### 3.5 Life of a Query
 
 All queries are executed in a transaction context, either implicit or explicit.
 A query has following life cycle:

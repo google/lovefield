@@ -5,8 +5,8 @@
 Lovefield offered `explain()` which will evaluate the query without actually execute it.
 
 ```js
-var p = db.getSchema().getPhoto();
-var a = db.getSchema().getAlbum();
+var p = db.getSchema().table('Photo');
+var a = db.getSchema().table('Album');
 var query = db.select().
     from(p).
     innerJoin(a, p.albumId.eq(a.id)).

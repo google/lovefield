@@ -8,7 +8,7 @@ Lovefield supports data observation for SELECT quries, and the syntax is very
 similar to ES7 Array.observe(). For example:
 
 ```js
-var p = db.getSchema().getPhoto();
+var p = db.getSchema().table('Photo');
 var query = db.select().from(p).where(p.id.eq('1'));
 
 // Handler shares exactly same syntax as the handler for Array.observe.
@@ -32,7 +32,7 @@ Parameterized query are very common for RDBMS programming, and Lovefield
 supports it. For example:
 
 ```js
-var p = db.getSchema().getPhoto();
+var p = db.getSchema().table('Photo');
 var q1 = db.select().from(p).where(p.id.eq(lf.bind(0)));
 q1.bind(['id1']).exec();  // find id 1
 q1.bind(['id2']).exec();  // find id 2
@@ -62,7 +62,7 @@ scenario of updating data in MVC environment, for example:
 // populateChanges is a function that binds query results to UI display by
 // observing query changes.
 var populateChanges = function(changes) {};
-var order = db.getSchema().getOrder();
+var order = db.getSchema().table('Order');
 var query = db.
     select().
     from(order).

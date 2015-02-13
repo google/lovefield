@@ -98,8 +98,8 @@ SELECT * FROM photo
     </td>
     <td>
       <pre>
-var p = db.getSchema().getPhoto();
-var a = db.getSchema().getAlbum();
+var p = db.getSchema().table('Photo');
+var a = db.getSchema().table('Album');
 db.select().
     from(p).
     innerJoin(a, p.albumId.eq(a.id)).
@@ -119,8 +119,8 @@ SELECT * FROM photo p, album a
     </td>
     <td>
       <pre>
-var p = db.getSchema().getPhoto();
-var a = db.getSchema().getAlbum();
+var p = db.getSchema().table('Photo');
+var a = db.getSchema().table('Album');
 db.select().
     from(p, a).
     where(lf.op.and(
@@ -140,8 +140,8 @@ SELECT * FROM job j1, job j2
     </td>
     <td>
       <pre>
-var j1 = db.getSchema().getJob().as('j1');
-var j2 = db.getSchema().getJob().as('j2');
+var j1 = db.getSchema().table('Job').as('j1');
+var j2 = db.getSchema().table('Job').as('j2');
 db.select().
     from(j1, j2).
     where(j1.minSalary.eq(j2.maxSalary)).
@@ -161,8 +161,8 @@ SELECT p.id, a.id, a.name
     </td>
     <td>
       <pre>
-var p = db.getSchema().getPhoto();
-var a = db.getSchema().getAlbum();
+var p = db.getSchema().table('Photo');
+var a = db.getSchema().table('Album');
 db.select(p.id, a.id, a.name).
     from(p).
     leftOuterJoin(a, p.albumId.eq(a.id)).
@@ -329,8 +329,8 @@ Table aliases are required for executing a self table join.
 // Finds all job pairs where the min salary of the first job is equal to the
 // max salary of the second. This query is not possible without using a table
 // alias.
-var j1 = db.getSchema().getJob().as('j1');
-var j2 = db.getSchema().getJob().as('j2');
+var j1 = db.getSchema().table('Job').as('j1');
+var j2 = db.getSchema().table('Job').as('j2');
 var q = db.select(j1.title, j2.title, j1.minSalary).
     from(j1, j2).
     where(j1.minSalary.eq(j2.maxSalary));
