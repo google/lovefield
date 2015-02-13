@@ -28161,6 +28161,9 @@ goog.structs.TreeNode.prototype.removeChildren = function() {
  * limitations under the License.
  */
 goog.provide('lf.Predicate');
+goog.provide('lf.PredicateProvider');
+
+goog.forwardDeclare('lf.Binder');
 
 
 
@@ -28175,7 +28178,7 @@ lf.Predicate = function() {};
  * @return {!lf.proc.Relation} A relation that holds only the entries that
  *     satisfy the predicate.
  */
-lf.Predicate.prototype.eval = function(relation) {};
+lf.Predicate.prototype.eval;
 
 
 /**
@@ -28184,13 +28187,116 @@ lf.Predicate.prototype.eval = function(relation) {};
  *     reversed. Reversing a predicate means that the predicate evaluates to
  *     true where before it was evaluating to false, and vice versa.
  */
-lf.Predicate.prototype.setComplement = function(isComplement) {};
+lf.Predicate.prototype.setComplement;
 
 
 /**
  * @return {!lf.Predicate} A clone of this predicate.
  */
-lf.Predicate.prototype.copy = function() {};
+lf.Predicate.prototype.copy;
+
+
+
+/**
+ * @template T
+ * @interface
+ */
+lf.PredicateProvider = function() {};
+
+
+/**
+ * Returns equality test predicate.
+ * @param {(!lf.schema.Column|!lf.Binder|T)} operand
+ * @return {!lf.Predicate}
+ * @throws {!lf.Exception}
+ */
+lf.PredicateProvider.prototype.eq;
+
+
+/**
+ * Returns inequality test predicate.
+ * @param {(!lf.schema.Column|!lf.Binder|T)} operand
+ * @return {!lf.Predicate}
+ * @throws {!lf.Exception}
+ */
+lf.PredicateProvider.prototype.neq;
+
+
+/**
+ * Returns less than test predicate.
+ * @param {(!lf.schema.Column|!lf.Binder|T)} operand
+ * @return {!lf.Predicate}
+ * @throws {!lf.Exception}
+ */
+lf.PredicateProvider.prototype.lt;
+
+
+/**
+ * Returns less than or equals to test predicate.
+ * @param {(!lf.schema.Column|!lf.Binder|T)} operand
+ * @return {!lf.Predicate}
+ * @throws {!lf.Exception}
+ */
+lf.PredicateProvider.prototype.lte;
+
+
+/**
+ * Returns greater than test predicate.
+ * @param {(!lf.schema.Column|!lf.Binder|T)} operand
+ * @return {!lf.Predicate}
+ * @throws {!lf.Exception}
+ */
+lf.PredicateProvider.prototype.gt;
+
+
+/**
+ * Returns greater than or equals to test predicate.
+ * @param {(!lf.schema.Column|!lf.Binder|T)} operand
+ * @return {!lf.Predicate}
+ * @throws {!lf.Exception}
+ */
+lf.PredicateProvider.prototype.gte;
+
+
+/**
+ * Returns JavaScript regex matching test predicate.
+ * @param {(!lf.Binder|RegExp)} regex
+ * @return {!lf.Predicate}
+ * @throws {!lf.Exception}
+ */
+lf.PredicateProvider.prototype.match;
+
+
+/**
+ * Returns between test predicate.
+ * @param {(!lf.Binder|T)} from
+ * @param {(!lf.Binder|T)} to Must be greater or equals to from.
+ * @return {!lf.Predicate}
+ * @throws {!lf.Exception}
+ */
+lf.PredicateProvider.prototype.between;
+
+
+/**
+ * Returns array finding test predicate.
+ * @param {(!lf.Binder|!Array.<T>)} values
+ * @return {!lf.Predicate}
+ */
+lf.PredicateProvider.prototype.in;
+
+
+/**
+ * Returns nullity test predicate.
+ * @return {!lf.Predicate}
+ */
+lf.PredicateProvider.prototype.isNull;
+
+
+/**
+ * Returns non-nullity test predicate.
+ * @return {!lf.Predicate}
+ */
+lf.PredicateProvider.prototype.isNotNull;
 
 /**
  * @license
@@ -30794,6 +30900,9 @@ lf.query.Builder.prototype.toSql;
 
 
 /**
+ * Query Builder which constructs a SELECT query. The builder is stateful.
+ * All member functions, except orderBy(), can only be called once. Otherwise
+ * an exception will be thrown.
  * @extends {lf.query.Builder}
  * @interface
  */
@@ -30801,65 +30910,78 @@ lf.query.Select = function() {};
 
 
 /**
- * @param {...lf.schema.Table} var_args
+ * Specifies the source of the SELECT query.
+ * @param {...lf.schema.Table} var_args Tables used as source of this SELECT.
  * @return {!lf.query.Select}
- * @throws {DOMException}
+ * @throws {!lf.Exception}
  */
 lf.query.Select.prototype.from;
 
 
 /**
+ * Defines search condition of the SELECT query.
  * @param {!lf.Predicate} predicate
  * @return {!lf.query.Select}
- * @throws {DOMException}
+ * @throws {!lf.Exception}
  */
 lf.query.Select.prototype.where;
 
 
 /**
+ * Explicit inner join target table with specified search condition.
  * @param {!lf.schema.Table} table
  * @param {!lf.Predicate} predicate
  * @return {!lf.query.Select}
- * @throws {DOMException}
+ * @throws {!lf.Exception}
  */
 lf.query.Select.prototype.innerJoin;
 
 
 /**
+ * Explicit left outer join target table with specified search condition.
  * @param {!lf.schema.Table} table
+ * @param {!lf.Predicate} predicate
  * @return {!lf.query.Select}
- * @throws {DOMException}
+ * @throws {!lf.Exception}
  */
 lf.query.Select.prototype.leftOuterJoin;
 
 
 /**
+ * Limits the number of rows returned in select results. If there are fewer rows
+ * than limit, all rows will be returned.
  * @param {number} numberOfRows
  * @return {!lf.query.Select}
+ * @throws {!lf.Exception}
  */
 lf.query.Select.prototype.limit;
 
 
 /**
+ * Skips the number of rows returned in select results from the beginning. If
+ * there are fewer rows than skip, no row will be returned.
  * @param {number} numberOfRows
  * @return {!lf.query.Select}
+ * @throws {!lf.Exception}
  */
 lf.query.Select.prototype.skip;
 
 
 /**
+ * Specify sorting order of returned results.
  * @param {!lf.schema.Column} column
  * @param {lf.Order=} opt_order
  * @return {!lf.query.Select}
- * @throws {DOMException}
+ * @throws {!lf.Exception}
  */
 lf.query.Select.prototype.orderBy;
 
 
 /**
+ * Specify grouping of returned results.
  * @param {!lf.schema.Column} column
  * @return {!lf.query.Select}
- * @throws {DOMException}
+ * @throws {!lf.Exception}
  */
 lf.query.Select.prototype.groupBy;
 
@@ -33370,8 +33492,10 @@ lf.query.SelectBuilder.prototype.innerJoin = function(table, predicate) {
 
 
 /** @override */
-lf.query.SelectBuilder.prototype.leftOuterJoin = function(table) {
-  return this;
+lf.query.SelectBuilder.prototype.leftOuterJoin = function(table, predicate) {
+  throw new lf.Exception(
+      lf.Exception.Type.NOT_SUPPORTED, 'Not implemented yet'
+  );
 };
 
 
@@ -37631,17 +37755,17 @@ lf.proc.Database.prototype.close = function() {
  */
 goog.provide('lf.schema.BaseColumn');
 
+goog.require('lf.PredicateProvider');
 goog.require('lf.eval.Type');
 goog.require('lf.pred');
 goog.require('lf.schema.Column');
-
-goog.forwardDeclare('lf.Binder');
 
 
 
 /**
  * @template T
  * @implements {lf.schema.Column}
+ * @implements {lf.PredicateProvider.<T>}
  * @constructor
  * @struct
  *
@@ -37733,116 +37857,67 @@ lf.schema.BaseColumn.prototype.isUnique = function() {
 };
 
 
-/**
- * @export
- * @param {!lf.schema.BaseColumn | !lf.Binder | T} operand
- * @return {!lf.Predicate}
- * @throws {DOMException}
- */
+/** @override */
 lf.schema.BaseColumn.prototype.eq = function(operand) {
   return lf.pred.createPredicate(this, operand, lf.eval.Type.EQ);
 };
 
 
-/**
- * @export
- * @param {!lf.schema.BaseColumn | !lf.Binder | T} operand
- * @return {!lf.Predicate}
- * @throws {DOMException}
- */
+/** @override */
 lf.schema.BaseColumn.prototype.neq = function(operand) {
   return lf.pred.createPredicate(this, operand, lf.eval.Type.NEQ);
 };
 
 
-/**
- * @export
- * @param {!lf.schema.BaseColumn | !lf.Binder | T} operand
- * @return {!lf.Predicate}
- * @throws {DOMException}
- */
+/** @override */
 lf.schema.BaseColumn.prototype.lt = function(operand) {
   return lf.pred.createPredicate(this, operand, lf.eval.Type.LT);
 };
 
 
-/**
- * @export
- * @param {!lf.schema.BaseColumn | !lf.Binder | T} operand
- * @return {!lf.Predicate}
- * @throws {DOMException}
- */
+/** @override */
 lf.schema.BaseColumn.prototype.lte = function(operand) {
   return lf.pred.createPredicate(this, operand, lf.eval.Type.LTE);
 };
 
 
-/**
- * @export
- * @param {!lf.schema.BaseColumn | !lf.Binder | T} operand
- * @return {!lf.Predicate}
- * @throws {DOMException}
- */
+/** @override */
 lf.schema.BaseColumn.prototype.gt = function(operand) {
   return lf.pred.createPredicate(this, operand, lf.eval.Type.GT);
 };
 
 
-/**
- * @export
- * @param {!lf.schema.BaseColumn | !lf.Binder | T} operand
- * @return {!lf.Predicate}
- * @throws {DOMException}
- */
+/** @override */
 lf.schema.BaseColumn.prototype.gte = function(operand) {
   return lf.pred.createPredicate(this, operand, lf.eval.Type.GTE);
 };
 
 
-/**
- * @export
- * @param {!lf.Binder | RegExp} regex
- * @return {!lf.Predicate}
- */
+/** @override */
 lf.schema.BaseColumn.prototype.match = function(regex) {
   return lf.pred.createPredicate(this, regex, lf.eval.Type.MATCH);
 };
 
 
-/**
- * @export
- * @param {!lf.Binder|T} from
- * @param {!lf.Binder|T} to
- * @return {!lf.Predicate}
- */
+/** @override */
 lf.schema.BaseColumn.prototype.between = function(from, to) {
   return lf.pred.createPredicate(this, [from, to], lf.eval.Type.BETWEEN);
 };
 
 
-/**
- * @export
- * @param {!lf.Binder|!Array.<T>} values
- * @return {!lf.Predicate}
- */
+/** @override */
 lf.schema.BaseColumn.prototype.in = function(values) {
   return lf.pred.createPredicate(this, values, lf.eval.Type.IN);
 };
 
 
-/**
- * @export
- * @return {!lf.Predicate}
- */
+/** @override */
 lf.schema.BaseColumn.prototype.isNull = function() {
   return this.eq(null);
 };
 
 
-/**
- * @export
- * @return {!lf.Predicate}
- */
+/** @override */
 lf.schema.BaseColumn.prototype.isNotNull = function() {
   return this.neq(null);
 };

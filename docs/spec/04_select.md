@@ -4,18 +4,20 @@
 
 The most used query in a Lovefield database will be the select query. It is
 used to retrieve data from database and return them as rows. The select query
-is created by calling `select()`:
+builder is created by calling `select()`:
 
 ```js
 ds.getInstance().then(function(db) {
-  var selectQuery = db.select();
+  var selectQueryBuilder = db.select();
 });
 ```
 
-The select query then will accept sources, search conditions, limiters,
-sorters, and group conditions to construct a query. All functions provided by
-select query, except `orderBy()`, can only be called once, otherwise an
-exception will be raised. For example,
+The select query builder accepts sources, search conditions, limiters,
+sorters, and group conditions to construct the query. Its member function
+signatures are defined in [`lf.query.Select`](
+https://github.com/google/lovefield/blob/master/lib/query.js#L66). All functions
+provided by select query, except `orderBy()`, can only be called once, otherwise
+an exception will be raised. For example,
 
 ```js
 db.select().
@@ -41,18 +43,19 @@ db.select().from(orders).exec().then(function(rows) {
 ### 4.1 Filters
 
 Filters are provided in the form of parameters of `select`. Absence of
-parameters implies select every column. In multi-table context, the returning
-rows will prefix table name for each column. The parameters must be schema
-column object, for example:
+parameters implies select all columns (i.e. `SELECT *`). In multi-table context,
+the returning rows will prefix table name for each column. The parameters must
+be schema column object, for example:
 
 ```js
-var infoCard = db.getSchema().getInfoCard();
+var infoCard = db.getSchema().table('InfoCard');
 var q1 = db.select(infoCard.id, infoCard.lang, infoCard.fileName);
 q1.exec().then(function(rows) {
   // No prefix, context involves only one table
   // console.log(rows[0]['id'], rows[0]['lang'], rows[0]['fileName']);
 });
-var asset = db.getSchema.getAsset();
+
+var asset = db.getSchema().table('Asset');
 var q2 = db.select().
     from(infoCard).
     innerJoin(asset, asset.id.eq(infoCard.id)).
@@ -187,12 +190,15 @@ Lovefield provides following functions:
 |`lf.op.or`  |variable            |`OR`           |
 |`lf.op.not` |1                   |`NOT`          |
 
-#### 4.3.2 Auto-Generated Predicates
+Their actual function signatures is defined in [`lf.op`](
+https://github.com/google/lovefield/blob/master/lib/op.js).
 
-Lovefield autogenerates operators providing a subset of [nonparenthesized value
-expression
-primary](http://savage.net.au/SQL/sql-2003-2.bnf.html#nonparenthesized%20value%2
-0expression%20primary) in SQL grammar. These operators include
+#### 4.3.2 Predicate Provider
+
+Lovefield uses various predicates to provide a subset of
+[nonparenthesized value expression primary](
+http://savage.net.au/SQL/sql-2003-2.bnf.html#nonparenthesized%20value%20expression%20primary)
+in SQL grammar. These predicates are generated from predicate providers:
 
 |Function   |Number of parameters |SQL equivalent |
 |:--------- |:------------------- |:------------- |
@@ -208,15 +214,29 @@ primary](http://savage.net.au/SQL/sql-2003-2.bnf.html#nonparenthesized%20value%2
 |`isNull`   |0                    |`IS NULL`      |
 |`isNotNull`|0                    |`IS NOT NULL`  |
 
-All these operators are generated as a member function of a schema column,
-therefore their left-hand-side operand is the value of that column. The match
-function will take a JavaScript regular expression instead of SQL SIMILAR’s
-regular expression.
+All these operators are defined in the interface of [`lf.PredicateProvider`](
+https://github.com/google/lovefield/blob/master/lib/predicate.js#L54).
+The general idea is that the column acquired from schema object also
+implements the predicate provider interface:
+
+```js
+// This is an lf.schema.Table object
+var infoCard = db.getSchema().table('InfoCard');
+
+// infoCard.id implements both lf.schema.Column and lf.PredicateProvider,
+// therefore it can used to create a predicate.
+var pred = infoCard.id.eq('1234');
+```
+
+Since the predicate provider is implemented by the returned column schema,
+it naturally implies that the left-hand-side operand is the value of that
+column. The match function will take a JavaScript regular expression instead of
+SQL SIMILAR’s regular expression.
 
 ### 4.4 Limiters and Order
 
 Lovefield does not support cursor, therefore the paging of rows can only be
-done using `limit()` and `skip()` functions offered by select query:
+done using `limit()` and `skip()` functions offered by select query builder:
 
 ```js
 db.select().
@@ -227,10 +247,9 @@ db.select().
     exec();
 ```
 
-Same as SQL’s `LIMIT` and `SKIP`, the transaction associated with the select
-query is a key. If the select queries are not grouped within the same
-transaction, there will be no guarantee that these rows won’t overlap or skip
-if any insertion/deletion happens in between the select.
+Same as SQL’s `LIMIT` and `SKIP`, if the select queries are not grouped within
+the same transaction, there will be no guarantee that these rows won’t overlap
+or skip if any insertion/deletion happens in between the select.
 
 The `orderBy()` by default uses ascending order. The implementation needs to
 build an iterator that can be traversed in reverse direction as fast as the
@@ -250,7 +269,9 @@ Lovefield provides following aggregation functions to be used with group-by:
 |`lf.fn.stddev`  |`STDDEV`       |`number`, `integer`                      |
 |`lf.fn.sum`     |`SUM`          |`number`, `integer`                      |
 
-A `SyntaxError` is thrown if an aggregation function is used with a column of
+These functions are defined in the [`lf.fn`](
+https://github.com/google/lovefield/blob/master/lib/fn.js) namespace. A
+`SyntaxError` will be thrown if an aggregation function is used with a column of
 an invalid type. Lovefield supports only single-column group by. Multi-column
 `GROUP BY`, `ROLLUP`, and `CUBE` are not supported for now.
 
@@ -268,12 +289,11 @@ filter out the selected results.
 
 ### 4.6 Column aliases
 
-Each selected column can have alias that will affect their representation in
-selected results. All aliased columns are flattened (i.e. no prefix). For
-example:
+Each selected column can have alias for their representations in returned
+results. All aliased columns are flattened (i.e. no prefix). For example:
 
 ```js
-var infoCard = db.getSchema.getInfoCard();
+var infoCard = db.getSchema.table('InfoCard');
 var q1 = db.select(
     infoCard.id,  // No alias
     infoCard.lang.as('Language'),  // Aliased
@@ -283,7 +303,7 @@ q1.exec().then(function(rows) {
   // console.log(rows[0]['id'], rows[0]['Language'], rows[0]['File Name']);
 });
 
-var asset = db.getSchema.getAsset();
+var asset = db.getSchema.table('Asset');
 var q3 = db.select(
     infoCard.id.as('InfoCard Id'),
     infoCard.itag,
@@ -300,13 +320,13 @@ q3.exec().then(function(rows) {
 });
 ```
 
-### 4.7 Table aliases
+### 4.7 Table Aliases
 Each table can have an alias that will affect the format of the returned
 results. Table aliases have no effect if only one table is involved in a query.
 Table aliases are required for executing a self table join.
 
 ```js
-// Finds  all job pairs where the min salary of the first job is equal to the
+// Finds all job pairs where the min salary of the first job is equal to the
 // max salary of the second. This query is not possible without using a table
 // alias.
 var j1 = db.getSchema().getJob().as('j1');
