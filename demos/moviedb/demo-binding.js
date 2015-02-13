@@ -16,12 +16,6 @@
  */
 
 
-// The following two lines are here to make linter happy. They have no actual
-// effects.
-goog.require('lf.bind');
-goog.require('lf.fn');
-
-
 /** @type {?lf.Database} */
 var db = null;
 
@@ -80,7 +74,7 @@ $(function() {
 
 
 function setUpBinding() {
-  var movie = db.getSchema().getMovie();
+  var movie = db.getSchema().table('Movie');
   query = db.select(lf.fn.count(movie.id).as('num')).
       from(movie).
       where(movie.year.between(lf.bind(0), lf.bind(1)));
@@ -129,12 +123,12 @@ function populateDropdown(id, start) {
  */
 function addSampleData() {
   return Promise.all([
-    insertPersonData('actor.json', db.getSchema().getActor()),
-    insertPersonData('director.json', db.getSchema().getDirector()),
-    insertData('movie.json', db.getSchema().getMovie()),
-    insertData('movieactor.json', db.getSchema().getMovieActor()),
-    insertData('moviedirector.json', db.getSchema().getMovieDirector()),
-    insertData('moviegenre.json', db.getSchema().getMovieGenre())
+    insertPersonData('actor.json', db.getSchema().table('Actor')),
+    insertPersonData('director.json', db.getSchema().table('Director')),
+    insertData('movie.json', db.getSchema().table('Movie')),
+    insertData('movieactor.json', db.getSchema().table('MovieActor')),
+    insertData('moviedirector.json', db.getSchema().table('MovieDirector')),
+    insertData('moviegenre.json', db.getSchema().table('MovieGenre'))
   ]);
 }
 
@@ -208,7 +202,7 @@ function getSampleData(filename) {
  * sample data.
  */
 function checkForExistingData() {
-  var movie = db.getSchema().getMovie();
+  var movie = db.getSchema().table('Movie');
   var column = lf.fn.count(movie.id);
   return db.select(column).from(movie).exec().then(
       function(rows) {

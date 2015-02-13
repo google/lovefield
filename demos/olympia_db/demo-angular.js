@@ -14,11 +14,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-// goog.require is required to make linter script not complain.
-goog.require('lf.Type');
-goog.require('lf.op');
-goog.require('lf.schema');
-
 var app = angular.module('myApp', []);
 
 app.service('DbService', function($http) {

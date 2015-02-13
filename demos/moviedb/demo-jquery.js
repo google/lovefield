@@ -16,12 +16,6 @@
  */
 
 
-// The following two lines are here to make linter happy. They have no actual
-// effects.
-goog.require('lf.fn');
-goog.require('lf.op');
-
-
 /** @type {?lf.Database} */
 var db = null;
 
@@ -57,12 +51,12 @@ function main() {
  */
 function addSampleData() {
   return Promise.all([
-    insertPersonData('actor.json', db.getSchema().getActor()),
-    insertPersonData('director.json', db.getSchema().getDirector()),
-    insertData('movie.json', db.getSchema().getMovie()),
-    insertData('movieactor.json', db.getSchema().getMovieActor()),
-    insertData('moviedirector.json', db.getSchema().getMovieDirector()),
-    insertData('moviegenre.json', db.getSchema().getMovieGenre())
+    insertPersonData('actor.json', db.getSchema().table('Actor')),
+    insertPersonData('director.json', db.getSchema().table('Director')),
+    insertData('movie.json', db.getSchema().table('Movie')),
+    insertData('movieactor.json', db.getSchema().table('MovieActor')),
+    insertData('moviedirector.json', db.getSchema().table('MovieDirector')),
+    insertData('moviegenre.json', db.getSchema().table('MovieGenre'))
   ]);
 }
 
@@ -104,8 +98,8 @@ function convertDate(rawDate) {
 /**
  * Inserts data in the database.
  * @param {string} filename The name of the file holding JSON data.
- * @param {!movie.db.schema.Actor|!movie.db.schema.Director} tableSchema The
- *     schema of the table corresponding to the data.
+ * @param {!lf.schema.Table} tableSchema The schema of the table
+ *     corresponding to the data.
  * @return {!IThenable}
  */
 function insertPersonData(filename, tableSchema) {
@@ -136,7 +130,7 @@ function getSampleData(filename) {
  * sample data.
  */
 function checkForExistingData() {
-  var movie = db.getSchema().getMovie();
+  var movie = db.getSchema().table('Movie');
   var column = lf.fn.count(movie.id);
   return db.select(column).from(movie).exec().then(
       function(rows) {
@@ -149,7 +143,7 @@ function checkForExistingData() {
  * Selects all movies.
  */
 function selectAllMovies() {
-  var movie = db.getSchema().getMovie();
+  var movie = db.getSchema().table('Movie');
   db.select(movie.id, movie.title, movie.year).
       from(movie).exec().then(
       function(results) {
@@ -199,11 +193,11 @@ function createTable(rows, fields) {
  * @param {string} id
  */
 function generateDetails(id) {
-  var m = db.getSchema().getMovie();
-  var ma = db.getSchema().getMovieActor();
-  var md = db.getSchema().getMovieDirector();
-  var a = db.getSchema().getActor();
-  var d = db.getSchema().getDirector();
+  var m = db.getSchema().table('Movie');
+  var ma = db.getSchema().table('MovieActor');
+  var md = db.getSchema().table('MovieDirector');
+  var a = db.getSchema().table('Actor');
+  var d = db.getSchema().table('Director');
 
   var details = {};
   var promises = [];
