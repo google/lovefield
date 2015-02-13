@@ -47,16 +47,35 @@ generic query engines. The goal of Lovefield is to fill in that gap.
 
 ### Basic Flow
 
-Grab and use. See [Quick Start](quick_start.md).
+Grab and use. See [Quick Start](../quick_start.md).
 
 ### Advanced Flow
 
 This flow is specifically designed for the needs of Closure compiler advanced
 optimization.
 
-1. User creates table schema in a YAML file.
-2. Schema Parser And Code-Generator (SPAC) parses the YAML schema and generate
-   JavaScript source files.
-3. User writes code using the classes/functions provided by Lovefield.
-4. User compiles and combind everything together and deploys the bundled to
-   web site or as a Chrome app.
+1. Create table schema in a YAML file.
+2. Generate JavaScript source files using Schema Parser And Code-Generator
+   (SPAC), which parses the YAML schema and performs code generation.
+3. Use generated classes/functions in code.
+4. Compile and combine everything together using Closure compiler.
+
+## API Style
+
+1. All Lovefield API and source code must follow [Google JavaScript Style Guide
+   ](https://google-styleguide.googlecode.com/svn/trunk/javascriptguide.xml)
+   and pass Closure compiler compilation. This implies that all APIs and
+   source code are annotated with [Closure-style annotations](
+   https://developers.google.com/closure/compiler/docs/js-for-compiler).
+
+   One major caveat here is that Closure annotates `Promise` as `IThenable`.
+   Lovefield uses `goog.Promise` to implement cross-browser Promise support,
+   and therefore inherit the `IThenable` annotation since `goog.Promise` can be
+   polyfills for browsers that do not support Promise (e.g.
+   Internet Explorer 10).
+
+2. All asynchronous APIs are Promise-based. For more information, search on
+   Google or see [this document provided by Mozilla](
+   https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise).
+
+3. Unless necessary, APIs shall be synchronous instead of asynchronous.

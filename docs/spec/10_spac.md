@@ -60,6 +60,8 @@ syntax:
     <index1_definition>
     <index2_definition>
     ...
+  pragma:  # optional
+    persistentIndex: <value>
 ```
 
 A table must have a unique name in the database. All names in schema definition
@@ -353,7 +355,13 @@ CREATE INDEX idxItag
   </tr>
 </table>
 
-### 10.5 Code Generation
+### 10.5 Pragma
+
+Currently, only `persistentIndex` is offered as a pragma option, and it requires
+a boolean value. When set to true, all indices of this table will be stored
+on persistent store.
+
+### 10.6 Code Generation
 
 The schema YAML file will need to be parsed and validated by Schema Parser And
 Code-Generator (SPAC). SPAC will generate JavaScript code providing:
@@ -420,7 +428,7 @@ my.namespace.db.getInstance().then(function(dbInstance) {
 });
 ```
 
-### 10.5.1 Namespace and DB name
+### 10.6.1 Namespace and DB name
 
 The user already specified a DB name in schema, and a "namespace" is also
 required in SPAC. These two names are serving different purposes.

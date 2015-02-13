@@ -21,41 +21,6 @@ Bundled mode is created to workaround IndexedDB spec inefficiencies. For more
 details, see [design doc](../dd/03_backstore.md).
 
 
-### Persistent Index
-
-Currently Lovefield implementation generates all indices on-the-fly during
-initialization process. This is a naive design that needs to be polished. An
-experimental feature named persistent index is used to further polish it.
-Persistent indices can be specified in the schema:
-
-```yaml
-%YAML 1.2
----
-name: mydb
-version: 1
-table:
-  Foo:
-    column:
-      id: string
-      name: string
-      bar: string
-    constraint:
-      primaryKey: [ bar ]
-      unique:
-        uq_bar:
-          column: [ bar ]
-    index:
-      idx_Name:
-        column: [ name ]
-    pragma:
-      persistentIndex: true
-```
-
-Persistent index is specified at table level. This attribute not only affects
-the indices being stored permanently but also the algorithm to use (B-Tree vs
-AA-Tree) and table delay loading behavior.
-
-
 ## Future Features
 
 ### Advanced Grouping

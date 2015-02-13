@@ -12,7 +12,8 @@ stores:
   is useful when the user only wants to use Lovefield's query engine but still
   fetch all data from server.
 
-The data store is modeled in an interface, `lf.raw.BackStore`.
+The data store is modeled in an interface, [`lf.raw.BackStore`](
+https://github.com/google/lovefield/blob/master/lib/raw.js).
 
 ### 2.1 IndexedDB Features and Limitations
 
@@ -51,124 +52,39 @@ affect Lovefield design are listed below:
    rows in a single table, please consider use the [Bundled Mode](99_postfix.md)
    to improve app loading time.
 
-### 2.2 `lf.raw.BackStore`
 
-This interface models data store behavior __only during database upgrades__. See
-[Life of DB](03_life_of_db.md) for more details.
+### 2.2 Row
 
-|Section                        |Function            |
-|:------------------------------|--------------------|
-|[2.2.1](#221-constructor)      |Constructor         |
-|[2.2.2](#222-getrawdbinstance) |`getRawDBInstance`  |
-|[2.2.3](#223-getrawtransaction)|`getRawTransaction` |
-|[2.2.4](#224-droptable)        |`dropTable`         |
-|[2.2.5](#225-renametablecolumn)|`renameTableColumn` |
-|[2.2.6](#226-createrow)        |`createRow`         |
-|[2.2.7](#227-getversion)       |`getVersion`        |
-|[2.2.8](#228-dump)             |`dump`              |
+In Lovefield, the unit of storage is a row. A row has a unique row id
+across the whole database instance, therefore there is a theoretical limit of
+number of rows that Lovefield can hold (`Number.MAX_SAFE_INTEGER`) within a
+database instance.
 
-#### 2.2.1 Constructor
+Internally, the row is represented as [`lf.Row`](
+https://github.com/google/lovefield/blob/master/lib/row.js). This class is
+designed for Lovefield query engine. The results returned from
+[select query](04_select.md) are plain JavaScript objects,
+not `lf.Row` instances.
 
-The `lf.raw.BackStore` object can only be acquired through the `opt_onUpgrade`
-callback in `getInstance()` call of database initialization.
+On the other hand, users are supposed to use `createRow()` function to prepare
+data for `insert()` or `insertOrReplace()`, because this allows Lovefield to
+have a chance to safely convert user payload into Lovefield desired rows.
+In short, `lf.Row` abstracts how Lovefield serialize/deserialize a row from
+underlying data store. Further details will be provided in
+[Select](04_select.md) and [Insert](05_insert_update.md).
 
-#### 2.2.2 `getRawDBInstance`
+### 2.3 Persistence
 
-| Function               | Returns                |
-|:-----------------------|:-----------------------|
-|`getRawDBInstance()`    |`RawDB` template        |
+Data persistence is organized in a way that all rows of a given table will be
+stored in a grouped area. For example, all rows of a given table will be stored
+in the corresponding object store in IndexedDB by default. This allows easier
+debugging when the user needs to inspect raw data in the database.
 
-This is only effective for IndexedDB data store. It returns an `IDBDatabase`
-object as documented in [IndexedDB spec](http://www.w3.org/TR/IndexedDB).
+However, Lovefield can not guarantee that raw data will be easily inspectable
+from data store. There are cases it's not possible, for example, opting in the
+experimental feature [Bundle Mode](99_postfix.md).
 
-#### 2.2.3 `getRawTransaction`
+### 2.4 Quota Management
 
-| Function               | Returns                |
-|:-----------------------|:-----------------------|
-|`getRawTransaction()`   |`RawTx` template        |
-
-This is only effective for IndexedDB data store. It returns an `versionchange`
-transaction as documented in [IndexedDB spec](http://www.w3.org/TR/IndexedDB).
-
-#### 2.2.4 `dropTable`
-
-| Function               | Returns                |
-|:-----------------------|:-----------------------|
-|`dropTable(tableName)`  |`Promise`               |
-
-| Parameter | Type   |Meaning         |
-|:----------|:-------|:---------------|
-|`tableName`|`string`|Table name      |
-
-Removes a table from data store. Lovefield does not support automatic dropping
-table. Users must call `dropTable` manually during upgrade to purge table(s)
-that are no longer used from database.
-
-#### 2.2.5 `addTableColumn`
-
-| Function                                            | Returns |
-|:----------------------------------------------------|:--------|
-|`addTableColumn(tableName, columnName, defaultValue)`|`Promise`|
-
-| Parameter    | Type   |Meaning         |
-|:-------------|:-------|:---------------|
-|`tableName`   |`string`|Table name      |
-|`columnName`  |`string`|Column name     |
-|`defaultValue`|`*`     |Default value   |
-
-Adds a column to existing table rows. This API does not provide any consistency
-check. Callers are solely responsible for making sure the values of `columnName`
-and `defaultValue` are consistent with the new schema.
-
-#### 2.2.6 `renameTableColumn`
-
-| Function                                                   | Returns |
-|:-----------------------------------------------------------|:--------|
-|`renameTableColumn(tableName, oldColumnName, newColumnName)`|`Promise`|
-
-| Parameter     | Type   |Meaning         |
-|:--------------|:-------|:---------------|
-|`tableName`    |`string`|Table name      |
-|`oldColumnName`|`string`|Old column name |
-|`newColumnName`|`string`|New column name |
-
-Renames a column for all existing table rows.
-
-#### 2.2.7 `createRow`
-
-| Function           | Returns |
-|:-------------------|:--------|
-|`createRow(payload)`|`lf.Row` |
-
-| Parameter    | Type   |Meaning         |
-|:-------------|:-------|:---------------|
-|`payload     `|`Object`|                |
-
-Creates a Lovefield row structure that can be stored into raw DB instance via
-raw transaction.
-
-#### 2.2.8 `getVersion`
-
-| Function           | Returns |
-|:-------------------|:--------|
-|`getVersion()`      |number   |
-
-Returns version of existing DB.
-
-#### 2.2.9 `dump`
-
-| Function           | Returns |
-|:-------------------|:--------|
-|`dump()`            |`Promise`|
-
-Offers last resort for data rescue. This function dumps all rows in the database
-to one single JSON object in the following format:
-
-```json
-{
-  "table1": [ <row1>, <row2>, ..., <rowN> ],
-  "table2": [ ... ],
-  ...
-  "tableM": [ ... ]
-}
-```
+Lovefield does not do quota management. The user is responsible for allocating
+enough storage quota since it may require UI interactions.

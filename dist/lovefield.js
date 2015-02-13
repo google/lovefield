@@ -10449,33 +10449,6 @@ goog.html.SafeUrl.fromConstant = function(url) {
 
 
 /**
- * A pattern that matches Blob types that can have SafeUrls created from
- * URL.createObjectURL(blob). Only matches image types, currently.
- * @const
- * @private
- */
-goog.html.SAFE_BLOB_TYPE_PATTERN_ =
-    /^image\/(?:bmp|gif|jpeg|jpg|png|tiff|webp)$/i;
-
-
-/**
- * Creates a SafeUrl wrapping a blob URL for the given {@code blob}. The
- * blob URL is created with {@code URL.createObjectURL}. If the MIME type
- * for {@code blob} is not of a known safe image MIME type, then the
- * SafeUrl will wrap {@link #INNOCUOUS_STRING}.
- * @see http://www.w3.org/TR/FileAPI/#url
- * @param {!Blob} blob
- * @return {!goog.html.SafeUrl} The blob URL, or an innocuous string wrapped
- *   as a SafeUrl.
- */
-goog.html.SafeUrl.fromBlob = function(blob) {
-  var url = goog.html.SAFE_BLOB_TYPE_PATTERN_.test(blob.type) ?
-      URL.createObjectURL(blob) : goog.html.SafeUrl.INNOCUOUS_STRING;
-  return goog.html.SafeUrl.createSafeUrlSecurityPrivateDoNotAccessOrElse(url);
-};
-
-
-/**
  * A pattern that recognizes a commonly useful subset of URLs that satisfy
  * the SafeUrl contract.
  *
@@ -21793,6 +21766,9 @@ lf.raw.BackStore.prototype.getRawTransaction;
 
 
 /**
+ * Removes a table from data store. Lovefield does not support automatic
+ * dropping table. Users must call dropTable manually during upgrade to purge
+ * table that is no longer used from database.
  * @param {string} tableName
  * @return {!IThenable}
  */
@@ -21800,6 +21776,9 @@ lf.raw.BackStore.prototype.dropTable;
 
 
 /**
+ * Adds a column to existing table rows. This API does not provide any
+ * consistency check. Callers are solely responsible for making sure the values
+ * of `columnName` and `defaultValue` are consistent with the new schema.
  * @param {string} tableName
  * @param {string} columnName
  * @param {string|number|boolean|Date|ArrayBuffer|null} defaultValue
@@ -21817,6 +21796,7 @@ lf.raw.BackStore.prototype.dropTableColumn;
 
 
 /**
+ * Renames a column for all existing table rows.
  * @param {string} tableName
  * @param {string} oldColumnName
  * @param {string} newColumnName
@@ -21826,19 +21806,21 @@ lf.raw.BackStore.prototype.renameTableColumn;
 
 
 /**
+ * Creates a Lovefield row structure that can be stored into raw DB instance
+ * via raw transaction.
  * @param {!Object} payload
  * @return {!lf.Row}
  */
 lf.raw.BackStore.prototype.createRow;
 
 
-/**
- * @return {number} Version of existing DB.
- */
+/** @return {number} Version of existing DB. */
 lf.raw.BackStore.prototype.getVersion;
 
 
 /**
+ * Offers last resort for data rescue. This function dumps all rows in the
+ * database to one single JSON object.
  * @return {!IThenable.<!Object>} All rows in DB. The format is a JSON object of
  *     {
  *        "table1": [ <row1>, <row2>, ..., <rowN> ],
@@ -30778,25 +30760,35 @@ lf.query.Builder = function() {};
 
 
 /**
- * Executes the query, all errors will be passed to the reject function as
- * DOMException.
+ * Executes the query, all errors will be passed to the reject function.
+ * The resolve function may receive parameters as results of execution, for
+ * example, select queries will return results.
  * @return {!IThenable}
  */
 lf.query.Builder.prototype.exec;
 
 
-/** @return {?string} */
+/**
+ * Returns string representation of query execution plan. Similar to EXPLAIN
+ * in most SQL engines.
+ * @return {string}
+ */
 lf.query.Builder.prototype.explain;
 
 
 /**
+ * Bind values to parameterized queries. Callers are responsible to make sure
+ * the types of values match those specified in the query.
  * @param {!Array.<*>} values
  * @return {!lf.query.Builder}
  */
 lf.query.Builder.prototype.bind;
 
 
-/** @return {string} */
+/**
+ *
+ * @return {string}
+ */
 lf.query.Builder.prototype.toSql;
 
 
@@ -38161,6 +38153,18 @@ lf.schema.TableBuilder.prototype.addColumn = function(name, type) {
 
 
 /**
+ * Adds a primary key to table.
+ * There are two overloads of this function:
+ *
+ * case 1: (columns: !Array<string>, opt_autoInc)
+ *   specifies primary key by given only column names with default ascending
+ *   orders (lf.Order.ASC). When opt_autoInc is true, there can be only one
+ *   column in the columns, its type must be lf.Type.INTEGER, and its order
+ *   must be the default lf.Order.ASC.
+ *
+ * case 2: (columns: !Array<!lf.schema.IndexedColumn>)
+ *   allows different ordering per-column, but more verbose.
+ *
  * @param {(!Array<string>|!Array<!lf.schema.IndexedColumn>)} columns
  * @param {boolean=} opt_autoInc
  * @return {!lf.schema.TableBuilder}
@@ -38182,11 +38186,14 @@ lf.schema.TableBuilder.prototype.addPrimaryKey = function(
 
 
 /**
+ * Creates a foreign key on a given table column. The caller is responsible to
+ * make sure the local column and the referred column are of the same data type.
  * @param {string} name
  * @param {string} localColumn
  * @param {string} remoteTable
  * @param {string} remoteColumn
- * @param {boolean=} opt_cascade
+ * @param {boolean=} opt_cascade If true, deleting/updating a row on the remote
+ *     table will cause cascading deletion/update of the local table rows.
  * @return {!lf.schema.TableBuilder}
  * @export
  */
@@ -38213,7 +38220,7 @@ lf.schema.TableBuilder.prototype.addUnique = function(name, columns) {
 
 
 /**
- * @param {!Array<string>} columns
+ * @param {!Array<string>} columns Names of the columns that can be nullable.
  * @return {!lf.schema.TableBuilder}
  * @export
  */
@@ -38228,11 +38235,19 @@ lf.schema.TableBuilder.prototype.addNullable = function(columns) {
 
 /**
  * Mimics SQL CREATE INDEX.
+ * There are two overloads of this function:
+ *
+ * case 1: (name, columns: !Array<string>, opt_unique, opt_order)
+ *   adds an index by column names only. All columns have same ordering.
+ *
+ * case 2: (name, columns: !Array<!lf.schema.IndexedColumn>, opt_unique)
+ *   adds an index, allowing customization of ordering, but more verbose.
+ *
  * @param {string} name
- * @param {!Array<string> | !Array<lf.schema.IndexedColumn>} columns
+ * @param {!Array<string> | !Array<!lf.schema.IndexedColumn>} columns
  * @param {boolean=} opt_unique Whether the index is unique, default is false.
  * @param {!lf.Order=} opt_order Order of columns, only effective when columns
- *     are array of strings.
+ *     are array of strings, default to lf.Order.ASC.
  * @return {!lf.schema.TableBuilder}
  * @export
  */
@@ -38663,9 +38678,10 @@ lf.schema.DatabaseSchema_.prototype.setTable = function(table) {
 
 /**
  * Global helper to create schema builder.
- * @param {string} dbName
- * @param {number} dbVersion
- * @return {!lf.schema.Builder}
+ * @param {string} dbName Database name
+ * @param {number} dbVersion Database version
+ * @return {!lf.schema.Builder} Schema builder that can be used to create a
+ *     database schema.
  * @export
  */
 lf.schema.create = function(dbName, dbVersion) {

@@ -2,8 +2,8 @@
 
 ## 3. Life of a Lovefield Database
 
-Lovefield database is scoped per-origin, like IndexedDB, so (origin, DB name)
-uniquely identify a database. The database is stored in a
+Lovefield database is scoped per-origin, like IndexedDB, and (origin, DB name,
+DB version) uniquely identify a database instance. The database is stored in a
 [Data Store](02_data_store.md).
 
 ### 3.1 Lovefield Initialization
@@ -12,8 +12,8 @@ The `getInstance()` method will implicitly invoke Lovefield initialization,
 which will load the DB instance from data store if existed. If Lovefield
 detected schema version mismatch, it will do the following:
 
-* If schema version is newer than requested, throw an exception.
-* If schema version is older than requested, perform database upgrade.
+* If persisted schema version is newer than requested, throw an exception.
+* If persisted schema version is older than requested, perform database upgrade.
 
 `getInstance()` shall be called only once for each DB. In rare circumstances,
 one can call `close()` on the opened instance first, then call `getInstance()`
@@ -32,7 +32,7 @@ support for removing persisted data. In Lovefield, one can use a pure in-memory
 storage to make sure all data are volatile by calling
 
 ```js
-db.getInstance(onUpgrade, /* opt_volatile */ true)
+ds.getInstance(onUpgrade, /* opt_volatile */ true)
 ```
 
 to force all data are stored and retrieve data from memory cache only. The
@@ -42,19 +42,24 @@ is not applicable.
 ### 3.2 Multi-Process Connection
 
 Lovefield assumes that at a given time, there is only one Lovefield instance
-writing its corresponding database. By design the pair (origin, schema name)
-uniquely identify a database. If there are multiple pages or tabs accessing the
-same database, there can be a problem of data inconsistency. Users shall be
-aware of this problem and plan accordingly.
+writing its corresponding database. By design the tuple (origin, schema name,
+version) uniquely identify a database. If there are multiple pages or tabs
+accessing the same database, there can be a problem of data inconsistency.
+Users shall be aware of this problem and plan accordingly.
 
 In Lovefield's current status, the query engine may have inconsistent in-memory
 snapshot if there are more than one connections making write request to the
 backing store. There are several proposals for solving this issue and they are
 under evaluations.
 
-Current best practice is to use a ServiceWorker or a background page that
-handles all Lovefield operations, and the other tabs/windows postMessage to that
-ServiceWorker or background page to perform DB operations.
+Current best practice is to use a dedicated background component (in the form
+of background page, WebWorker, or ServiceWorker) to handle all Lovefield
+operations, and the other tabs/windows postMessage to that component to perform
+DB operations.
+
+If different processes attempted to open the same database with different
+versions, the behavior is currently undefined and Lovefield team will work
+on this issue once the multi-process access model settles.
 
 ### 3.3 Database Upgrade
 
@@ -73,10 +78,10 @@ schema alternation. The function must return a promise. After the promise is
 resolved, a new database instance will be created and returned. If the promise
 is rejected, the `getInstance()` call will also be rejected.
 
-Users do not need to worry about new indices or altering indices, either. Query
-engine will detect index schema change and recreate all the indices when needed.
-Query engine will drop all persisted indices and recreate them in the scenario
-of database upgrade to ensure data consistency.
+Users do not need to worry about new indices or altering indices for version
+upgrades. Query engine will detect index schema change and recreate all the
+indices when needed.  Query engine will drop all persisted indices and recreate
+them in the scenario of database upgrade to ensure data consistency.
 
 For the case of deleting table, user is responsible to perform the deletion in
 upgrade function. Lovefield does not provide auto-drop due to data safety
@@ -98,8 +103,10 @@ Lovefield disallows altering column types directly.
 The following is a sample code snippet demonstrating database upgrades.
 
 ```js
+// Open database, perform database creation or upgrade if necessary.
 ds.getInstance(onUpgrade).then(
-  /** @param {lf.Db} db */
+  // All new/upgrade related stuff has been completed.
+  /** @param {lf.Database} db */
   function(db) {
     // new db starts here
   });
@@ -118,11 +125,11 @@ function onUpgrade(rawDb) {
   // Show the version currently persisted.
   console.log(rawDb.getVersion());
 
-  // DROP TABLE Progress. This call is synchronous.
+  // DROP TABLE Progress.
+  // This call is synchronous.
   rawDb.dropTable('Progress');
 
-  // Add column agent (type string) to Purchase with default
-  // value 'Smith'.
+  // Add column agent (type string) to Purchase with default value 'Smith'.
   var p1 = rawDb.addTableColumn('Purchase', 'agent', 'Smith');
 
   // Delete column metadata from Photo.
@@ -131,15 +138,13 @@ function onUpgrade(rawDb) {
   // Rename Photo.isLocal to Photo.local.
   var p3 = rawDb.renameTableColumn('Photo', 'isLocal', 'local');
 
-  // Transformations are not supported because of IndexedDB auto-
-  // commit: Firefox immediately committed the transaction when
-  // Lovefield try to return a promise from scanning table. Users
-  // are supposed to do a dump and make the transformation outside of
-  // onUpgrade routine.
+  // Transformations are not supported because of IndexedDB auto-commit: Firefox
+  // immediately commits the transaction when Lovefield tries to return a
+  // promise from scanning existing object stores. Users are supposed to do a
+  // dump and make the transformation outside of onUpgrade routine.
 
   // DUMP the whole DB into a JS object.
   var p4 = rawDb.dump();
-
 
   return Promise.all([p1, p2, p3, p4]);
 }
@@ -152,29 +157,110 @@ new and more efficient storage format). Since the database upgrade can be
 time-consuming, user is responsible for defining their own progress event and
 fire within the callback function.
 
-For more details regarding functions provided by `lf.raw.BackStore`, see
-[Data Store](02_data_store.md).
+The interface [`lf.raw.BackStore`](
+https://github.com/google/lovefield/blob/master/lib/raw.js) contains detailed
+documentation for each of its member function.
 
-### 3.4 Query Execution
+### 3.4 Database Instance
 
 If the schema version matches, or the database upgrade procedure completed, the
-resolve function of the returning promise will receive a database object. The
-database object can be used to run queries. `close()` a database object will
-reset the database object to its initial state (unopened) and is __not__
-mandatory.
+resolve function of the returning promise will receive a database instance
+object implementing [`lf.Database`](
+https://github.com/google/lovefield/blob/master/lib/database.js) interface. The
+database object can be used to
 
-All queries must be created from the database object. All queries are not
-carried out until the `exec()` method is called. The `exec()` method will return
-a promise and will be carried out asynchronously.
+* Retrieve corresponding schema (`getSchema()`)
+* Create query builders (`select()`, `insert()`, `insertOrReplace()`,
+  `update()`, and `delete()`)
+* Create transactions (`createTransaction()`)
+* Manage observers (`observe()` and `unobserve()`)
+* Close database (`close()`)
 
-#### 3.4.1 Transactions
+#### 3.4.1 Database Schema
 
-All queries, unless called out specifically, are run in their own implicit
-transaction. Although queries return promises, and one can use it to replace
-transactions, there can be possible performance penalty since Lovefield may have
-flushed the data and have to delete them in rejection case.
+Although the schema can be retrieved from schema builder, the suggested way of
+retrieving the database schema is to get them from the database instance's
+`getSchema()` call, which will return an [`lf.schema.Database`](
+https://github.com/google/lovefield/blob/master/lib/schema/schema.js#L57) object
+that represents the schema of that instance.
 
-The simple usage of transaction is demonstrated in the following:
+The schema is used to support query building, such as providing filters and
+building blocks for search conditions. The schema is hierarchical, and the
+following table list the components of it:
+
+|Class               |Meaning                                                  |
+|:-------------------|:--------------------------------------------------------|
+|`lf.schema.Database`|Representation of the whole database, container of table.|
+|`lf.schema.Table`   |Representation of a table, container of column.          |
+|`lf.schema.Column`  |Representation of table column, used by query builders.  |
+
+#### 3.4.2 Query Builders and Transactions
+
+All query builders implement the interface [`lf.query.Builder`](
+https://github.com/google/lovefield/blob/master/lib/query.js#L28).
+Their main responsibility is to generate query objects that will be accepted and
+executed by query execution engine. A query object can be reused multiple times
+if same query is desired.
+
+All queries are executed in the context of transactions. Transactions can be
+either implicit or explicit. Explicit transactions are created by the
+`createTransaction()` call, which is equivalent to `BEGIN TRANSACTION` in SQL.
+Implicit transactions are created by the query engine when the `exec()` method
+of a query builder is called, and that query builder had not attached to any
+explicit transaction.
+
+Query execution and transactions will be detailed in [Life of a Query](
+#35-life-of-a-query).
+
+#### 3.4.3 Observers
+
+Observers are used for [Data Binding](08_data_binding.md), which is documented
+in its own section.
+
+#### 3.4.4 Closing Database
+
+Calling `close()` of a database instance will reset the database instance object
+to its initial state (unopened) and is *__not__* mandatory nor recommended. Due
+to IndexedDB limitations, there is no guarantee that `close()` and
+`getInstance()` again will yield only one database instance in memory.
+
+### 3.5 Life of Query
+
+All queries are executed in a transaction context, either implicit or explicit.
+A query has following life cycle:
+
+1. Creation: query builder creates the context of a query.
+2. (Optional) Binding: parameterized values are bound to the query context.
+3. Execution: query is executed within a transaction context.
+4. Finalize: query results are committed or rolled back.
+
+#### 3.5.1 Implicit Transactions
+
+Most of the time, queries are executed in implicit transactions due to the
+concise syntax:
+
+```js
+ds.getInstance().then(function(db) {
+  var item = db.getSchema().table('Item');
+
+  // SELECT * FROM Item;
+  var query = db.select().from(item);
+  return query.exec();
+});
+```
+
+In this simple example, a select query is built via a query builder returned
+by `db.select()`. The query builder uses various augmentation functions to
+complete the query context without risk of SQL injection, and at the end the
+`exec()` method is called and the query is dispatched to query engine. Query
+engine will create an implicit transaction for this query, execute it, and
+return the results.
+
+#### 3.5.2 Explicit Transactions
+
+Explicit transactions in Lovefield are read-write transactions. They are
+designed to atomically execute multiple queries. The simple usage of an explicit
+transaction is demonstrated in the following:
 
 ```js
 // Get a transaction object first.
@@ -196,8 +282,8 @@ var tx2 = db.createTransaction();
 tx2.exec([query7, query8]);
 ```
 
-The `exec()` function of transaction also returns a promise, just like othe
-r queries. The difference is that the transaction guarantees all queries flush
+The `exec()` function of transaction also returns a promise, just like other
+queries. The difference is that the transaction guarantees all queries flush
 to persistent store atomically. If a transaction is created for `select()`
 queries, the `select()` queries will be carried out from the same snapshot.
 
@@ -224,24 +310,20 @@ result in error.  This implies any conditional behavior must either span
 multiple transactions or be composed out of the available primitives within a
 transaction.
 
-#### 3.4.2 Attaching to a Transaction
-
-It would be useful to attach to a transaction if the queries must be executed
-in sequence, and the following queries are referencing the results from previous
-queries.
-
+In many cases, queries in the same transaction must be executed in sequence,
+and the following queries are referencing the results from previous queries.
 In Lovefield, this is done through transaction attachment, as demonstrated
 below:
 
 ```js
 var schema = db.getSchema();
 var e = schema.table('Employee');
-var v = schema.table('Vacations')
+var v = schema.table('Vacations');
 
 // Get a transaction object as usual.
 var tx = db.createTransaction();
 
-// Secure the scope of your queries so that there will be no surprise.
+// Secure the scope of queries so that there will be no surprise.
 // All tables will be exclusively locked. See Concurrency Control section.
 tx.begin([e, v]).then(function() {
   var q1 = db.select(e.id).from(e).where(e.hireDate.gt(someDate));
@@ -260,7 +342,7 @@ tx.begin([e, v]).then(function() {
   // Remember, commit() is an asynchronous call that returns a Promise.
   return tx.commit();
 }).then(function() {
-  // Your handler here.
+  // ...
 });
 
 var tx2 = db.createTransaction();
@@ -268,7 +350,7 @@ tx2.begin([e]).then(function() {
   return tx.attach(
       db.update(e).set(e.location, 'MTV').where(e.id.lt(1000)));
 }).then(function() {
-  // You can use exec() to commit the transaction, too.
+  // exec() can be used to commit the transaction, too.
   return tx.exec(
       [db.update(e).set(e.location, 'LAX').where(e.id.gte(1000))]);
 });
@@ -287,9 +369,39 @@ The `exec()`, `commit()`, and `rollback()` call will make the transaction be in
 the termination state, which means that all member functions of the transaction
 object will throw error if called after termination.
 
-### 3.5 Concurrency Control
+The transactions are defined by interface [`lf.Transaction`](
+https://github.com/google/lovefield/blob/master/lib/transaction.js).
 
-TBA
+#### 3.5.3 Concurrency Control
+
+Lovefield offers table-level locking. There are three types of locks:
+
+* Shared: a reader lock that can be granted to multiple readers.
+* Reserved: a try-writer lock. This prevents granting new Shared or Reserved
+  lock for the target table, but the target table is not modified yet.
+* Exclusive: a writer lock. This prevents granting any new lock against
+  the target table since the table is going to be modified. The table
+  can only be modified when an Exclusive lock is acquired.
+
+These locks are created in the scenarios listed below:
+
+| Functions causing lock creation        | Lock created |
+|:---------------------------------------|--------------|
+|`exec()` of a `select()` query          |Shared        |
+|`exec()` of an `insert()` query         |Reserved      |
+|`exec()` of an `insertOrReplace()` query|Reserved      |
+|`exec()` of an `update()` query         |Reserved      |
+|`exec()` of an `delete()` query         |Reserved      |
+|`begin()` or `exec()` of a transaction  |Reserved      |
+
+All reserved locks will be promoted to Exclusive locks automatically by
+the query runner. The exclusive locks promoted from locks created by `exec()`
+method will be automatically released once Lovefield has completed necessary
+data writing. Locks created by transaction's `begin()` method will not be
+promoted nor released until `rollback()` or `commit()` are called on that
+transaction. This implies the possibility of deadlock when multiple closures are
+attempting to write the database via transactions. The users are responsible for
+preventing and detecting these user code generated deadlocks.
 
 ### 3.6 Delete Database
 
