@@ -20,31 +20,6 @@ var webserver = require('gulp-webserver');
 var spawn = require('child_process').spawn;
 
 
-gulp.task('generate_db', function(done) {
-  var lovefieldSpac = spawn('./node_modules/.bin/lovefield-spac', [
-    '--schema', 'schema.yaml',
-    '--namespace', 'olympia.db',
-    '--outputdir', 'lib'
-  ]);
-
-  lovefieldSpac.stdout.on('data', function(data) {
-    console.log('stdout: ' + data);
-  });
-
-  lovefieldSpac.stderr.on('data', function(data) {
-    console.log('stderr: ' + data);
-    console.log('This is probably because lovefield-spac is not installed');
-    console.log('See: https://github.com/google/lovefield/blob/master/docs/' +
-        'quick_start.md');
-  });
-
-  lovefieldSpac.on('close', function(code) {
-    console.log('child process exited with code ' + code);
-    done();
-  });
-});
-
-
 gulp.task('copy_lovefield', function() {
   return fs.
       createReadStream('node_modules/lovefield/dist/lovefield.min.js').
@@ -67,14 +42,13 @@ gulp.task('copy_angular', function() {
 
 gulp.task(
     'default',
-    ['generate_db', 'copy_lovefield', 'copy_bootstrap', 'copy_angular']);
+    ['copy_lovefield', 'copy_bootstrap', 'copy_angular']);
 
 gulp.task('clean', function() {
   var filesToDelete = [
     'lib/angular.min.js',
     'lib/bootstrap.min.css',
-    'lib/lovefield.js',
-    'lib/olympia_db_gen.js'
+    'lib/lovefield.min.js'
   ];
 
   filesToDelete.forEach(function(file) {

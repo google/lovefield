@@ -15,13 +15,40 @@
  * limitations under the License.
  */
 // goog.require is required to make linter script not complain.
+goog.require('lf.Type');
 goog.require('lf.op');
+goog.require('lf.schema');
 
 var app = angular.module('myApp', []);
 
 app.service('DbService', function($http) {
   var db = null;
   var initialized = false;
+
+
+  /**
+   * Builds the database schema.
+   * @return {!lf.schema.Builder}
+   */
+  this.buildSchema_ = function() {
+    var schemaBuilder = lf.schema.create('olympia', 1);
+    schemaBuilder.createTable('Medal').
+        addColumn('city', lf.Type.STRING).
+        addColumn('color', lf.Type.STRING).
+        addColumn('country', lf.Type.STRING).
+        addColumn('discipline', lf.Type.STRING).
+        addColumn('eventGender', lf.Type.STRING).
+        addColumn('event', lf.Type.STRING).
+        addColumn('firstName', lf.Type.STRING).
+        addColumn('gender', lf.Type.STRING).
+        addColumn('lastName', lf.Type.STRING).
+        addColumn('sport', lf.Type.STRING).
+        addColumn('year', lf.Type.NUMBER).
+        addIndex('idx_year', ['year']).
+        addIndex('idx_lastName', ['lastName']);
+    return schemaBuilder;
+  };
+
 
   /**
    * Ensures that database is populated with data and initializes the DB
@@ -30,14 +57,17 @@ app.service('DbService', function($http) {
    * @private
    */
   this.init_ = function() {
-    return olympia.db.getInstance().then((function(database) {
-      db = database;
-      window.db = database;
-      return this.checkForExistingData_();
-    }).bind(this)).then((function(dataExist) {
-      return dataExist ? Promise.resolve() : this.insertData_();
-    }).bind(this));
+    return this.buildSchema_().getInstance().then((
+        function(database) {
+          db = database;
+          window.db = database;
+          return this.checkForExistingData_();
+        }).bind(this)).then((
+        function(dataExist) {
+          return dataExist ? Promise.resolve() : this.insertData_();
+        }).bind(this));
   };
+
 
   /**
    * Gets the db connection.
@@ -59,7 +89,7 @@ app.service('DbService', function($http) {
    * @private
    */
   this.checkForExistingData_ = function() {
-    var medal = db.getSchema().getMedal();
+    var medal = db.getSchema().table('Medal');
     return db.select().from(medal).exec().then(
         function(rows) {
           return rows.length > 0;
@@ -73,7 +103,7 @@ app.service('DbService', function($http) {
    * @private
    */
   this.insertData_ = function() {
-    var medal = db.getSchema().getMedal();
+    var medal = db.getSchema().table('Medal');
     return $http.get('data/olympic_medalists.json').then(
         function(response) {
           var rows = response.data.map(function(obj) {
@@ -153,6 +183,25 @@ app.controller(
  * @private
  */
 var ColumnDomains_;
+
+
+/**
+ * @typedef {{
+ *   city: lf.schema.Column,
+ *   color: lf.schema.Column,
+ *   country: lf.schema.Column,
+ *   discipline: lf.schema.Column,
+ *   eventGender: lf.schema.Column,
+ *   event: lf.schema.Column,
+ *   firstName: lf.schema.Column,
+ *   gender: lf.schema.Column,
+ *   lastName: lf.schema.Column,
+ *   sport: lf.schema.Column,
+ *   year: lf.schema.Column
+ * }}
+ * @private
+ */
+var MedalSchema_;
 
 
 app.controller(
@@ -235,9 +284,11 @@ app.controller(
        }).bind(this);
 
 
-       /** @return {?lf.Predicate} */
-       this.getPredicates_ = function() {
-         var medal = olympia.db.getSchema().getMedal();
+       /**
+        * @param {!MedalSchema_} medal
+        * @return {?lf.Predicate}
+        */
+       this.getPredicates_ = function(medal) {
          var predicates = [];
 
          if ($scope.countrySelection != unboundValue) {
@@ -286,8 +337,8 @@ app.controller(
        /** @return {!IThenable<!lf.query.SelectBuilder>} */
        this.buildQuery_ = function() {
          return dbService.get().then((function(db) {
-           var predicates = this.getPredicates_();
-           var medal = olympia.db.getSchema().getMedal();
+           var medal = db.getSchema().table('Medal');
+           var predicates = this.getPredicates_(medal);
            var query = predicates != null ?
                db.select().from(medal).where(predicates) :
                db.select().from(medal);
