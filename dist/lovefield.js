@@ -2702,8 +2702,8 @@ goog.addDependency('dom/fontsizemonitor_test.js', ['goog.dom.FontSizeMonitorTest
 goog.addDependency('dom/forms.js', ['goog.dom.forms'], ['goog.structs.Map'], false);
 goog.addDependency('dom/forms_test.js', ['goog.dom.formsTest'], ['goog.dom', 'goog.dom.forms', 'goog.testing.jsunit'], false);
 goog.addDependency('dom/fullscreen.js', ['goog.dom.fullscreen', 'goog.dom.fullscreen.EventType'], ['goog.dom', 'goog.userAgent'], false);
-goog.addDependency('dom/iframe.js', ['goog.dom.iframe'], ['goog.dom', 'goog.userAgent'], false);
-goog.addDependency('dom/iframe_test.js', ['goog.dom.iframeTest'], ['goog.dom', 'goog.dom.iframe', 'goog.testing.jsunit'], false);
+goog.addDependency('dom/iframe.js', ['goog.dom.iframe'], ['goog.dom', 'goog.dom.safe', 'goog.html.SafeHtml', 'goog.html.SafeStyle', 'goog.userAgent'], false);
+goog.addDependency('dom/iframe_test.js', ['goog.dom.iframeTest'], ['goog.dom', 'goog.dom.iframe', 'goog.html.SafeHtml', 'goog.html.SafeStyle', 'goog.string.Const', 'goog.testing.jsunit'], false);
 goog.addDependency('dom/iter.js', ['goog.dom.iter.AncestorIterator', 'goog.dom.iter.ChildIterator', 'goog.dom.iter.SiblingIterator'], ['goog.iter.Iterator', 'goog.iter.StopIteration'], false);
 goog.addDependency('dom/iter_test.js', ['goog.dom.iterTest'], ['goog.dom', 'goog.dom.NodeType', 'goog.dom.iter.AncestorIterator', 'goog.dom.iter.ChildIterator', 'goog.dom.iter.SiblingIterator', 'goog.testing.dom', 'goog.testing.jsunit'], false);
 goog.addDependency('dom/multirange.js', ['goog.dom.MultiRange', 'goog.dom.MultiRangeIterator'], ['goog.array', 'goog.dom.AbstractMultiRange', 'goog.dom.AbstractRange', 'goog.dom.RangeIterator', 'goog.dom.RangeType', 'goog.dom.SavedRange', 'goog.dom.TextRange', 'goog.iter.StopIteration', 'goog.log'], false);
@@ -2970,7 +2970,7 @@ goog.addDependency('history/html5history.js', ['goog.history.Html5History', 'goo
 goog.addDependency('history/html5history_test.js', ['goog.history.Html5HistoryTest'], ['goog.history.Html5History', 'goog.testing.MockControl', 'goog.testing.jsunit', 'goog.testing.mockmatchers'], false);
 goog.addDependency('html/flash.js', ['goog.html.flash'], ['goog.asserts', 'goog.html.SafeHtml'], false);
 goog.addDependency('html/flash_test.js', ['goog.html.flashTest'], ['goog.html.SafeHtml', 'goog.html.TrustedResourceUrl', 'goog.html.flash', 'goog.string.Const', 'goog.testing.jsunit'], false);
-goog.addDependency('html/legacyconversions.js', ['goog.html.legacyconversions'], ['goog.html.SafeHtml', 'goog.html.SafeUrl', 'goog.html.TrustedResourceUrl'], false);
+goog.addDependency('html/legacyconversions.js', ['goog.html.legacyconversions'], ['goog.html.SafeHtml', 'goog.html.SafeStyle', 'goog.html.SafeUrl', 'goog.html.TrustedResourceUrl'], false);
 goog.addDependency('html/legacyconversions_test.js', ['goog.html.legacyconversionsTest'], ['goog.html.SafeHtml', 'goog.html.SafeUrl', 'goog.html.TrustedResourceUrl', 'goog.html.legacyconversions', 'goog.testing.PropertyReplacer', 'goog.testing.jsunit'], false);
 goog.addDependency('html/safehtml.js', ['goog.html.SafeHtml'], ['goog.array', 'goog.asserts', 'goog.dom.tags', 'goog.html.SafeStyle', 'goog.html.SafeStyleSheet', 'goog.html.SafeUrl', 'goog.html.TrustedResourceUrl', 'goog.i18n.bidi.Dir', 'goog.i18n.bidi.DirectionalString', 'goog.object', 'goog.string', 'goog.string.Const', 'goog.string.TypedString'], false);
 goog.addDependency('html/safehtml_test.js', ['goog.html.safeHtmlTest'], ['goog.html.SafeHtml', 'goog.html.SafeStyle', 'goog.html.SafeStyleSheet', 'goog.html.SafeUrl', 'goog.html.TrustedResourceUrl', 'goog.html.testing', 'goog.i18n.bidi.Dir', 'goog.string.Const', 'goog.testing.jsunit'], false);
@@ -3126,7 +3126,7 @@ goog.addDependency('labs/testing/objectmatcher_test.js', ['goog.labs.testing.obj
 goog.addDependency('labs/testing/stringmatcher.js', ['goog.labs.testing.ContainsStringMatcher', 'goog.labs.testing.EndsWithMatcher', 'goog.labs.testing.EqualToIgnoringWhitespaceMatcher', 'goog.labs.testing.EqualsMatcher', 'goog.labs.testing.RegexMatcher', 'goog.labs.testing.StartsWithMatcher', 'goog.labs.testing.StringContainsInOrderMatcher'], ['goog.asserts', 'goog.labs.testing.Matcher', 'goog.string'], false);
 goog.addDependency('labs/testing/stringmatcher_test.js', ['goog.labs.testing.stringMatcherTest'], ['goog.labs.testing.MatcherError', 'goog.labs.testing.StringContainsInOrderMatcher', 'goog.labs.testing.assertThat', 'goog.testing.jsunit'], false);
 goog.addDependency('labs/useragent/browser.js', ['goog.labs.userAgent.browser'], ['goog.array', 'goog.labs.userAgent.util', 'goog.object', 'goog.string'], false);
-goog.addDependency('labs/useragent/browser_test.js', ['goog.labs.userAgent.browserTest'], ['goog.labs.userAgent.browser', 'goog.labs.userAgent.testAgents', 'goog.labs.userAgent.util', 'goog.testing.jsunit'], false);
+goog.addDependency('labs/useragent/browser_test.js', ['goog.labs.userAgent.browserTest'], ['goog.labs.userAgent.browser', 'goog.labs.userAgent.testAgents', 'goog.labs.userAgent.util', 'goog.object', 'goog.testing.jsunit'], false);
 goog.addDependency('labs/useragent/device.js', ['goog.labs.userAgent.device'], ['goog.labs.userAgent.util'], false);
 goog.addDependency('labs/useragent/device_test.js', ['goog.labs.userAgent.deviceTest'], ['goog.labs.userAgent.device', 'goog.labs.userAgent.testAgents', 'goog.labs.userAgent.util', 'goog.testing.jsunit'], false);
 goog.addDependency('labs/useragent/engine.js', ['goog.labs.userAgent.engine'], ['goog.array', 'goog.labs.userAgent.util', 'goog.string'], false);
@@ -3921,7 +3921,7 @@ goog.addDependency('useragent/platform.js', ['goog.userAgent.platform'], ['goog.
 goog.addDependency('useragent/platform_test.js', ['goog.userAgent.platformTest'], ['goog.testing.MockUserAgent', 'goog.testing.jsunit', 'goog.userAgent', 'goog.userAgent.platform', 'goog.userAgentTestUtil'], false);
 goog.addDependency('useragent/product.js', ['goog.userAgent.product'], ['goog.labs.userAgent.browser', 'goog.labs.userAgent.platform', 'goog.userAgent'], false);
 goog.addDependency('useragent/product_isversion.js', ['goog.userAgent.product.isVersion'], ['goog.labs.userAgent.platform', 'goog.string', 'goog.userAgent', 'goog.userAgent.product'], false);
-goog.addDependency('useragent/product_test.js', ['goog.userAgent.productTest'], ['goog.array', 'goog.labs.userAgent.util', 'goog.testing.MockUserAgent', 'goog.testing.PropertyReplacer', 'goog.testing.jsunit', 'goog.userAgent', 'goog.userAgent.product', 'goog.userAgent.product.isVersion', 'goog.userAgentTestUtil'], false);
+goog.addDependency('useragent/product_test.js', ['goog.userAgent.productTest'], ['goog.array', 'goog.labs.userAgent.testAgents', 'goog.labs.userAgent.util', 'goog.testing.MockUserAgent', 'goog.testing.PropertyReplacer', 'goog.testing.jsunit', 'goog.userAgent', 'goog.userAgent.product', 'goog.userAgent.product.isVersion', 'goog.userAgentTestUtil'], false);
 goog.addDependency('useragent/useragent.js', ['goog.userAgent'], ['goog.labs.userAgent.browser', 'goog.labs.userAgent.engine', 'goog.labs.userAgent.platform', 'goog.labs.userAgent.util', 'goog.string'], false);
 goog.addDependency('useragent/useragent_quirks_test.js', ['goog.userAgentQuirksTest'], ['goog.testing.jsunit', 'goog.userAgent'], false);
 goog.addDependency('useragent/useragent_test.js', ['goog.userAgentTest'], ['goog.array', 'goog.labs.userAgent.platform', 'goog.labs.userAgent.testAgents', 'goog.labs.userAgent.util', 'goog.testing.PropertyReplacer', 'goog.testing.jsunit', 'goog.userAgent', 'goog.userAgentTestUtil'], false);
@@ -4311,7 +4311,7 @@ goog.string.isAlphaNumeric = function(str) {
 /**
  * Checks if a character is a space character.
  * @param {string} ch Character to check.
- * @return {boolean} True if {code ch} is a space.
+ * @return {boolean} True if {@code ch} is a space.
  */
 goog.string.isSpace = function(ch) {
   return ch == ' ';
@@ -4321,7 +4321,7 @@ goog.string.isSpace = function(ch) {
 /**
  * Checks if a character is a valid unicode character.
  * @param {string} ch Character to check.
- * @return {boolean} True if {code ch} is a valid unicode character.
+ * @return {boolean} True if {@code ch} is a valid unicode character.
  */
 goog.string.isUnicodeChar = function(ch) {
   return ch.length == 1 && ch >= ' ' && ch <= '~' ||
@@ -10449,6 +10449,33 @@ goog.html.SafeUrl.fromConstant = function(url) {
 
 
 /**
+ * A pattern that matches Blob types that can have SafeUrls created from
+ * URL.createObjectURL(blob). Only matches image types, currently.
+ * @const
+ * @private
+ */
+goog.html.SAFE_BLOB_TYPE_PATTERN_ =
+    /^image\/(?:bmp|gif|jpeg|jpg|png|tiff|webp)$/i;
+
+
+/**
+ * Creates a SafeUrl wrapping a blob URL for the given {@code blob}. The
+ * blob URL is created with {@code URL.createObjectURL}. If the MIME type
+ * for {@code blob} is not of a known safe image MIME type, then the
+ * SafeUrl will wrap {@link #INNOCUOUS_STRING}.
+ * @see http://www.w3.org/TR/FileAPI/#url
+ * @param {!Blob} blob
+ * @return {!goog.html.SafeUrl} The blob URL, or an innocuous string wrapped
+ *   as a SafeUrl.
+ */
+goog.html.SafeUrl.fromBlob = function(blob) {
+  var url = goog.html.SAFE_BLOB_TYPE_PATTERN_.test(blob.type) ?
+      URL.createObjectURL(blob) : goog.html.SafeUrl.INNOCUOUS_STRING;
+  return goog.html.SafeUrl.createSafeUrlSecurityPrivateDoNotAccessOrElse(url);
+};
+
+
+/**
  * A pattern that recognizes a commonly useful subset of URLs that satisfy
  * the SafeUrl contract.
  *
@@ -15454,6 +15481,10 @@ goog.require('goog.object');
 goog.require('goog.string');
 
 
+// TODO(nnaze): Refactor to remove excessive exclusion logic in matching
+// functions.
+
+
 /**
  * @return {boolean} Whether the user's browser is Opera.
  * @private
@@ -15489,9 +15520,11 @@ goog.labs.userAgent.browser.matchFirefox_ = function() {
  */
 goog.labs.userAgent.browser.matchSafari_ = function() {
   return goog.labs.userAgent.util.matchUserAgent('Safari') &&
-      !goog.labs.userAgent.util.matchUserAgent('Chrome') &&
-      !goog.labs.userAgent.util.matchUserAgent('CriOS') &&
-      !goog.labs.userAgent.util.matchUserAgent('Android');
+      !(goog.labs.userAgent.browser.matchChrome_() ||
+        goog.labs.userAgent.browser.matchCoast_() ||
+        goog.labs.userAgent.browser.matchOpera_() ||
+        goog.labs.userAgent.browser.isSilk() ||
+        goog.labs.userAgent.util.matchUserAgent('Android'));
 };
 
 
@@ -15526,8 +15559,9 @@ goog.labs.userAgent.browser.matchIosWebview_ = function() {
  * @private
  */
 goog.labs.userAgent.browser.matchChrome_ = function() {
-  return goog.labs.userAgent.util.matchUserAgent('Chrome') ||
-      goog.labs.userAgent.util.matchUserAgent('CriOS');
+  return (goog.labs.userAgent.util.matchUserAgent('Chrome') ||
+      goog.labs.userAgent.util.matchUserAgent('CriOS')) &&
+      !goog.labs.userAgent.browser.matchOpera_();
 };
 
 
@@ -15538,9 +15572,11 @@ goog.labs.userAgent.browser.matchChrome_ = function() {
 goog.labs.userAgent.browser.matchAndroidBrowser_ = function() {
   // Android can appear in the user agent string for Chrome on Android.
   // This is not the Android standalone browser if it does.
-  return !goog.labs.userAgent.browser.isChrome() &&
-      goog.labs.userAgent.util.matchUserAgent('Android');
-
+  return goog.labs.userAgent.util.matchUserAgent('Android') &&
+      !(goog.labs.userAgent.browser.isChrome() ||
+        goog.labs.userAgent.browser.isFirefox() ||
+        goog.labs.userAgent.browser.isOpera() ||
+        goog.labs.userAgent.browser.isSilk());
 };
 
 
@@ -18881,8 +18917,13 @@ goog.async.nextTick = function(callback, opt_context, opt_useSetImmediate) {
   // to accept the possible tradeoffs of incorrectness in exchange for speed.
   // The IE fallback of readystate change is much slower.
   if (goog.isFunction(goog.global.setImmediate) &&
-      (opt_useSetImmediate || !goog.global.Window ||
-       goog.global.Window.prototype.setImmediate != goog.global.setImmediate)) {
+      // Opt in.
+      (opt_useSetImmediate ||
+      // or it isn't a browser or the environment is weird
+      !goog.global.Window || !goog.global.Window.prototype ||
+      // or something redefined setImmediate in which case we (YOLO) decide
+      // to use it (This is so that we use the mockClock setImmediate. sigh).
+      goog.global.Window.prototype.setImmediate != goog.global.setImmediate)) {
     goog.global.setImmediate(cb);
     return;
   }
@@ -23197,11 +23238,10 @@ lf.cache.ConstraintChecker.prototype.findExistingRowIdInPkIndex = function(
 lf.cache.ConstraintChecker.prototype.findExistingRowIdInIndex_ = function(
     indexSchema, row) {
   var indexName = indexSchema.getNormalizedName();
-  var indexKey = /** @type {!lf.index.Index.Key} */ (
-      row.keyOfIndex(indexName));
+  var indexKey = row.keyOfIndex(indexName);
   var index = this.indexStore_.get(indexName);
 
-  var rowIds = index.get(indexKey);
+  var rowIds = index.get(/** @type {!lf.index.Index.Key} */ (indexKey));
   return rowIds.length == 0 ? null : rowIds[0];
 };
 
@@ -24200,11 +24240,11 @@ lf.index.Index = function() {};
 
 
 /** @typedef {string|number} */
+lf.index.Index.SingleKey;
+
+
+/** @typedef {!lf.index.Index.SingleKey|!Array<!lf.index.Index.SingleKey>} */
 lf.index.Index.Key;
-
-
-/** @typedef {!Array<!lf.index.Index.Key>} */
-lf.index.Index.MultiKey;
 
 
 /** @return {string} Normalized name for this index. */
@@ -24333,7 +24373,7 @@ lf.index.Index.prototype.comparator;
  */
 goog.provide('lf.index.KeyRange');
 
-goog.forwardDeclare('lf.index.Index.Key');
+goog.forwardDeclare('lf.index.Index.SingleKey');
 
 
 
@@ -24343,20 +24383,20 @@ goog.forwardDeclare('lf.index.Index.Key');
  * @constructor
  * @struct
  *
- * @param {?lf.index.Index.Key} from The lower bound of this range. Null means
- *     that there is no lower bound.
- * @param {?lf.index.Index.Key} to The upper bound of this range. Null means
- *     that there is no upper bound.
+ * @param {?lf.index.Index.SingleKey} from The lower bound of this range. Null
+ *     means  that there is no lower bound.
+ * @param {?lf.index.Index.SingleKey} to The upper bound of this range. Null
+ *     means that there is no upper bound.
  * @param {boolean} excludeLower Whether the lower bound should be excluded.
  *     Ignored if no lower bound exists.
  * @param {boolean} excludeUpper Whether the upper bound should be excluded.
  *     Ignored if no upper bound exists.
  */
 lf.index.KeyRange = function(from, to, excludeLower, excludeUpper) {
-  /** @type {?lf.index.Index.Key} */
+  /** @type {?lf.index.Index.SingleKey} */
   this.from = from;
 
-  /** @type {?lf.index.Index.Key} */
+  /** @type {?lf.index.Index.SingleKey} */
   this.to = to;
 
   /** @type {boolean} */
@@ -24429,7 +24469,7 @@ lf.index.KeyRange.prototype.reverse = function() {
 
 
 /**
- * @param {!lf.index.Index.Key} key The upper bound.
+ * @param {!lf.index.Index.SingleKey} key The upper bound.
  * @param {boolean=} opt_shouldExclude Whether the upper bound should be
  *     excluded. Defaults to false.
  * @return {!lf.index.KeyRange}
@@ -24440,7 +24480,7 @@ lf.index.KeyRange.upperBound = function(key, opt_shouldExclude) {
 
 
 /**
- * @param {!lf.index.Index.Key} key The lower bound.
+ * @param {!lf.index.Index.SingleKey} key The lower bound.
  * @param {boolean=} opt_shouldExclude Whether the lower bound should be
  *     excluded. Defaults to false.
  * @return {!lf.index.KeyRange}
@@ -24452,7 +24492,7 @@ lf.index.KeyRange.lowerBound = function(key, opt_shouldExclude) {
 
 /**
  * Creates a range that includes a single key.
- * @param {!lf.index.Index.Key} key
+ * @param {!lf.index.Index.SingleKey} key
  * @return {!lf.index.KeyRange}
  */
 lf.index.KeyRange.only = function(key) {
@@ -24600,7 +24640,13 @@ lf.index.BTree.prototype.getRange = function(
       return this.comparator_.compare(lhs.from, rhs.from);
     }, this));
   } else {
-    normalizedKeyRanges = [new lf.index.KeyRange(min, max, false, false)];
+    // TODO(dpapad,arthurhsu): Need to address the case where getRange() is
+    // called without a specified range for a cross-column index. Currently
+    // getRange only works for a single column index.
+    normalizedKeyRanges = [new lf.index.KeyRange(
+        /** @type {!lf.index.Index.SingleKey} */ (min),
+        /** @type {!lf.index.Index.SingleKey} */ (max),
+        false, false)];
   }
 
   var results = [];
@@ -25613,7 +25659,7 @@ lf.index.ComparatorFactory.create = function(indexSchema) {
 
 
 /**
- * @extends {lf.index.Comparator.<!lf.index.Index.Key, !lf.index.KeyRange>}
+ * @extends {lf.index.Comparator.<!lf.index.Index.SingleKey, !lf.index.KeyRange>}
  * @constructor
  *
  * @param {!lf.Order} order
@@ -25637,8 +25683,8 @@ goog.inherits(lf.index.SimpleComparator, lf.index.Comparator);
 
 
 /**
- * @param {!lf.index.Index.Key} lhs
- * @param {!lf.index.Index.Key} rhs
+ * @param {!lf.index.Index.SingleKey} lhs
+ * @param {!lf.index.Index.SingleKey} rhs
  * @return {!lf.index.FAVOR}
  */
 lf.index.SimpleComparator.compareAscending = function(lhs, rhs) {
@@ -25649,8 +25695,8 @@ lf.index.SimpleComparator.compareAscending = function(lhs, rhs) {
 
 
 /**
- * @param {!lf.index.Index.Key} lhs
- * @param {!lf.index.Index.Key} rhs
+ * @param {!lf.index.Index.SingleKey} lhs
+ * @param {!lf.index.Index.SingleKey} rhs
  * @return {!lf.index.FAVOR}
  */
 lf.index.SimpleComparator.compareDescending = function(lhs, rhs) {
@@ -25661,16 +25707,16 @@ lf.index.SimpleComparator.compareDescending = function(lhs, rhs) {
 
 
 /**
- * @param {!function(!lf.index.Index.Key, !lf.index.Index.Key):
+ * @param {!function(!lf.index.Index.SingleKey, !lf.index.Index.SingleKey):
  *     !lf.index.FAVOR} fn
- * @param {!lf.index.Index.Key} key
+ * @param {!lf.index.Index.SingleKey} key
  * @param {!lf.index.KeyRange} range
  * @return {boolean}
  */
 lf.index.SimpleComparator.isInRange = function(fn, key, range) {
   var lowerBoundCheck = goog.isNull(range.from);
   if (!lowerBoundCheck) {
-    var favor = fn(key, /** @type {!lf.index.Index.Key} */ (range.from));
+    var favor = fn(key, /** @type {!lf.index.Index.SingleKey} */ (range.from));
     lowerBoundCheck = range.excludeLower ?
         favor == lf.index.FAVOR.LHS :
         favor != lf.index.FAVOR.RHS;
@@ -25678,7 +25724,7 @@ lf.index.SimpleComparator.isInRange = function(fn, key, range) {
 
   var upperBoundCheck = goog.isNull(range.to);
   if (!upperBoundCheck) {
-    var favor = fn(key, /** @type {!lf.index.Index.Key} */ (range.to));
+    var favor = fn(key, /** @type {!lf.index.Index.SingleKey} */ (range.to));
     upperBoundCheck = range.excludeUpper ?
         favor == lf.index.FAVOR.RHS :
         favor != lf.index.FAVOR.LHS;
@@ -25729,7 +25775,7 @@ lf.index.SimpleComparator.prototype.toString = function() {
 
 
 /**
- * @extends {lf.index.Comparator.<!lf.index.Index.MultiKey,
+ * @extends {lf.index.Comparator.<!lf.index.Index.Key,
  *     !Array<!lf.index.KeyRange>>}
  * @constructor
  *
@@ -25761,11 +25807,11 @@ lf.index.MultiKeyComparator.createOrders = function(numKeys, order) {
 
 
 /**
- * @param {!lf.index.Index.MultiKey} lhs
- * @param {!lf.index.Index.MultiKey} rhs
+ * @param {!lf.index.Index.Key} lhs
+ * @param {!lf.index.Index.Key} rhs
  * @param {!function(!lf.index.SimpleComparator,
- *                   !lf.index.Index.Key,
- *                   !lf.index.Index.Key): lf.index.FAVOR} fn
+ *                   !lf.index.Index.SingleKey,
+ *                   !lf.index.Index.SingleKey): lf.index.FAVOR} fn
  * @return {!lf.index.FAVOR}
  * @private
  */
@@ -25872,7 +25918,7 @@ lf.index.RowId = function(name) {
   /** @private {string} */
   this.name_ = name;
 
-  /** @private {!goog.structs.Set.<!lf.index.Index.Key>} */
+  /** @private {!goog.structs.Set.<!lf.index.Index.SingleKey>} */
   this.rows_ = new goog.structs.Set();
 
   /** @private {!lf.index.Comparator} */
@@ -25911,7 +25957,7 @@ lf.index.RowId.prototype.set = function(key, value) {
 
 /** @override */
 lf.index.RowId.prototype.remove = function(key, rowId) {
-  this.rows_.remove(key);
+  this.rows_.remove(/**  @type {!lf.index.Index.SingleKey} */ (key));
 };
 
 
@@ -25934,7 +25980,7 @@ lf.index.RowId.prototype.max = function() {
 
 
 /**
- * @param {!function(!lf.index.Index.Key, !lf.index.Index.Key):!lf.index.FAVOR}
+ * @param {!function(!lf.index.Index.SingleKey, !lf.index.Index.SingleKey):!lf.index.FAVOR}
  *     compareFn
  * @return {!Array} See lf.index.Index.min() or max() for details.
  * @private
@@ -25983,7 +26029,7 @@ lf.index.RowId.prototype.clear = function() {
 
 /** @override */
 lf.index.RowId.prototype.containsKey = function(key) {
-  return this.rows_.contains(key);
+  return this.rows_.contains(/** @type {!lf.index.Index.SingleKey} */ (key));
 };
 
 
@@ -26557,7 +26603,13 @@ lf.index.AATree.prototype.getRange = function(
   var min = this.findMin_().key;
   var max = this.findMax_().key;
   if (!goog.isDefAndNotNull(opt_keyRanges)) {
-    keyRanges = [new lf.index.KeyRange(min, max, false, false)];
+    // TODO(dpapad,arthurhsu): Need to address the case where getRange() is
+    // called without a specified range for a cross-column index. Currently
+    // getRange only works for a single column index.
+    keyRanges = [new lf.index.KeyRange(
+        /** @type {!lf.index.Index.SingleKey} */ (min),
+        /** @type {!lf.index.Index.SingleKey} */ (max),
+        false, false)];
   } else {
     keyRanges = opt_keyRanges.map(function(range) {
       var normalized = this.comparator_.normalizeKeyRange(range);
@@ -26726,185 +26778,6 @@ lf.index.IndexStore.prototype.getTableIndices;
  * @param {!lf.index.Index} index
  */
 lf.index.IndexStore.prototype.set;
-
-/**
- * @license
- * Copyright 2014 Google Inc. All Rights Reserved.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-goog.provide('lf.index.Map');
-
-goog.require('goog.asserts');
-goog.require('goog.structs.Map');
-goog.require('goog.structs.Set');
-goog.require('lf.Order');
-goog.require('lf.index');
-goog.require('lf.index.Index');
-goog.require('lf.index.KeyRange');
-goog.require('lf.index.SimpleComparator');
-
-
-
-/**
- * A key-value map index based on goog.structs.Map.
- * @param {string} name
- * @implements {lf.index.Index}
- * @constructor
- * @struct
- */
-lf.index.Map = function(name) {
-  /** @private {string} */
-  this.name_ = name;
-
-  /**
-   * @private {!goog.structs.Map.<!lf.index.Index.Key,
-   *     !goog.structs.Set.<number>>} */
-  this.map_ = new goog.structs.Map();
-
-  /** @private {!lf.index.Comparator} */
-  this.comparator_ = new lf.index.SimpleComparator(lf.Order.ASC);
-};
-
-
-/** @override */
-lf.index.Map.prototype.getName = function() {
-  return this.name_;
-};
-
-
-/** @override */
-lf.index.Map.prototype.add = function(key, value) {
-  var values = this.map_.get(key, new goog.structs.Set());
-  values.add(value);
-  this.map_.set(key, values);
-};
-
-
-/** @override */
-lf.index.Map.prototype.set = function(key, value) {
-  this.map_.set(key, new goog.structs.Set([value]));
-};
-
-
-/** @override */
-lf.index.Map.prototype.remove = function(key, opt_rowId) {
-  var set = this.map_.get(key);
-  if (goog.isDefAndNotNull(set)) {
-    if (goog.isDefAndNotNull(opt_rowId)) {
-      set.remove(opt_rowId);
-    } else {
-      set.clear();
-    }
-    if (set.getCount() == 0) {
-      this.map_.remove(key);
-    }
-  }
-};
-
-
-/** @override */
-lf.index.Map.prototype.get = function(key) {
-  var set = this.map_.get(key);
-  return goog.isDefAndNotNull(set) ? set.getValues() : [];
-};
-
-
-/** @override */
-lf.index.Map.prototype.cost = function(opt_keyRange) {
-  return goog.isDefAndNotNull(opt_keyRange) ?
-      this.getRange([opt_keyRange]).length :
-      this.getRange().length;
-};
-
-
-/** @override */
-lf.index.Map.prototype.getRange = function(
-    opt_keyRanges, opt_reverseOrder, opt_limit, opt_skip) {
-  var results = [];
-
-  var keyRanges = opt_keyRanges || [lf.index.KeyRange.all()];
-  this.map_.getKeys().sort().forEach(function(key) {
-    var toAdd = keyRanges.some(function(range) {
-      return this.comparator_.isInRange(key, range);
-    }, this);
-
-    if (toAdd) {
-      results = results.concat(this.get(key));
-    }
-  }, this);
-
-  return lf.index.slice(results, opt_reverseOrder, opt_limit, opt_skip);
-};
-
-
-/** @override */
-lf.index.Map.prototype.clear = function() {
-  return this.map_.clear();
-};
-
-
-/** @override */
-lf.index.Map.prototype.containsKey = function(key) {
-  return this.map_.containsKey(key);
-};
-
-
-/** @override */
-lf.index.Map.prototype.min = function() {
-  return this.minMax_(goog.bind(this.comparator_.min, this.comparator_));
-};
-
-
-/** @override */
-lf.index.Map.prototype.max = function() {
-  return this.minMax_(goog.bind(this.comparator_.max, this.comparator_));
-};
-
-
-/**
- * @param {!function(!lf.index.Index.Key, !lf.index.Index.Key):!lf.index.FAVOR}
- *     compareFn
- * @return {!Array} See lf.index.Index.min() or max() for details.
- * @private
- */
-lf.index.Map.prototype.minMax_ = function(compareFn) {
-  if (this.map_.isEmpty()) {
-    return [null, null];
-  }
-
-  var key = this.map_.getKeys().reduce(goog.bind(
-      function(keySoFar, key) {
-        return goog.isNull(keySoFar) ||
-            compareFn(key, keySoFar) == lf.index.FAVOR.LHS ?
-            key : keySoFar;
-      }, this), null);
-
-  return [key, this.map_.get(key).getValues()];
-};
-
-
-/** @override */
-lf.index.Map.prototype.serialize = function() {
-  goog.asserts.fail('Map index serialization is not supported.');
-  return [];
-};
-
-
-/** @override */
-lf.index.Map.prototype.comparator = function() {
-  return this.comparator_;
-};
 
 /**
  * @license
@@ -27100,7 +26973,7 @@ lf.proc.Relation.prototype.isPrefixApplied = function() {
 };
 
 
-/** @return {!Array.<!lf.Row>} */
+/** @return {!Array.<!Object>} */
 lf.proc.Relation.prototype.getPayloads = function() {
   return this.entries.map(function(entry) {
     return entry.row.payload();
@@ -32775,7 +32648,8 @@ lf.schema.Database.prototype.tables;
 
 /**
  * @param {string} tableName
- * @return {?lf.schema.Table}
+ * @return {!lf.schema.Table}
+ * @throws {!lf.Exception}
  */
 lf.schema.Database.prototype.table;
 
