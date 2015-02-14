@@ -1,12 +1,12 @@
 goog.provide('lovefield.db');
 
 goog.require('lf.Global');
-goog.require('lf.base.BackStoreType');
 /** @suppress {extraRequire} */
 goog.require('lf.fn');
 /** @suppress {extraRequire} */
 goog.require('lf.op');
 goog.require('lf.proc.Database');
+goog.require('lf.schema.DataStoreType');
 goog.require('lf.service');
 goog.require('lf.service.ServiceId');
 goog.require('lovefield.db.schema.Database');
@@ -53,6 +53,6 @@ lovefield.db.getInstance = function(opt_onUpgrade, opt_volatile) {
   var db = new lf.proc.Database(lovefield.db.getGlobal());
   return db.init(
       opt_onUpgrade,
-      opt_volatile ? lf.base.BackStoreType.MEMORY : undefined,
+      opt_volatile ? lf.schema.DataStoreType.MEMORY : undefined,
       false);
 };

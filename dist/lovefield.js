@@ -2792,8 +2792,8 @@ goog.addDependency('editor/plugins/emoticons.js', ['goog.editor.plugins.Emoticon
 goog.addDependency('editor/plugins/emoticons_test.js', ['goog.editor.plugins.EmoticonsTest'], ['goog.Uri', 'goog.array', 'goog.dom', 'goog.dom.TagName', 'goog.editor.Field', 'goog.editor.plugins.Emoticons', 'goog.testing.jsunit', 'goog.ui.emoji.Emoji', 'goog.userAgent'], false);
 goog.addDependency('editor/plugins/enterhandler.js', ['goog.editor.plugins.EnterHandler'], ['goog.dom', 'goog.dom.NodeOffset', 'goog.dom.NodeType', 'goog.dom.Range', 'goog.dom.TagName', 'goog.editor.BrowserFeature', 'goog.editor.Plugin', 'goog.editor.node', 'goog.editor.plugins.Blockquote', 'goog.editor.range', 'goog.editor.style', 'goog.events.KeyCodes', 'goog.functions', 'goog.object', 'goog.string', 'goog.userAgent'], false);
 goog.addDependency('editor/plugins/enterhandler_test.js', ['goog.editor.plugins.EnterHandlerTest'], ['goog.dom', 'goog.dom.NodeType', 'goog.dom.Range', 'goog.dom.TagName', 'goog.editor.BrowserFeature', 'goog.editor.Field', 'goog.editor.Plugin', 'goog.editor.plugins.Blockquote', 'goog.editor.plugins.EnterHandler', 'goog.editor.range', 'goog.events', 'goog.events.KeyCodes', 'goog.testing.ExpectedFailures', 'goog.testing.MockClock', 'goog.testing.dom', 'goog.testing.editor.TestHelper', 'goog.testing.events', 'goog.testing.jsunit', 'goog.userAgent'], false);
-goog.addDependency('editor/plugins/firststrong.js', ['goog.editor.plugins.FirstStrong'], ['goog.dom.NodeType', 'goog.dom.TagIterator', 'goog.dom.TagName', 'goog.editor.Command', 'goog.editor.Plugin', 'goog.editor.node', 'goog.editor.range', 'goog.i18n.bidi', 'goog.i18n.uChar', 'goog.iter', 'goog.userAgent'], false);
-goog.addDependency('editor/plugins/firststrong_test.js', ['goog.editor.plugins.FirstStrongTest'], ['goog.dom.Range', 'goog.editor.Command', 'goog.editor.Field', 'goog.editor.plugins.FirstStrong', 'goog.editor.range', 'goog.events.KeyCodes', 'goog.testing.editor.TestHelper', 'goog.testing.events', 'goog.testing.jsunit', 'goog.userAgent'], false);
+goog.addDependency('editor/plugins/firststrong.js', ['goog.editor.plugins.FirstStrong'], ['goog.dom.NodeType', 'goog.dom.TagIterator', 'goog.dom.TagName', 'goog.editor.Command', 'goog.editor.Field', 'goog.editor.Plugin', 'goog.editor.node', 'goog.editor.range', 'goog.i18n.bidi', 'goog.i18n.uChar', 'goog.iter', 'goog.userAgent'], false);
+goog.addDependency('editor/plugins/firststrong_test.js', ['goog.editor.plugins.FirstStrongTest'], ['goog.dom.Range', 'goog.editor.Command', 'goog.editor.Field', 'goog.editor.plugins.FirstStrong', 'goog.editor.range', 'goog.events.KeyCodes', 'goog.testing.MockClock', 'goog.testing.editor.TestHelper', 'goog.testing.events', 'goog.testing.jsunit', 'goog.userAgent'], false);
 goog.addDependency('editor/plugins/headerformatter.js', ['goog.editor.plugins.HeaderFormatter'], ['goog.editor.Command', 'goog.editor.Plugin', 'goog.userAgent'], false);
 goog.addDependency('editor/plugins/headerformatter_test.js', ['goog.editor.plugins.HeaderFormatterTest'], ['goog.dom', 'goog.editor.Command', 'goog.editor.plugins.BasicTextFormatter', 'goog.editor.plugins.HeaderFormatter', 'goog.events.BrowserEvent', 'goog.testing.LooseMock', 'goog.testing.editor.FieldMock', 'goog.testing.editor.TestHelper', 'goog.testing.jsunit', 'goog.userAgent'], false);
 goog.addDependency('editor/plugins/linkbubble.js', ['goog.editor.plugins.LinkBubble', 'goog.editor.plugins.LinkBubble.Action'], ['goog.array', 'goog.dom', 'goog.dom.TagName', 'goog.editor.Command', 'goog.editor.Link', 'goog.editor.plugins.AbstractBubblePlugin', 'goog.editor.range', 'goog.functions', 'goog.string', 'goog.style', 'goog.ui.editor.messages', 'goog.uri.utils', 'goog.window'], false);
@@ -32702,6 +32702,8 @@ lf.query.InsertBuilder.prototype.assertValuesPreconditions_ = function() {
  * limitations under the License.
  */
 goog.provide('lf.schema.Column');
+goog.provide('lf.schema.ConnectOptions');
+goog.provide('lf.schema.DataStoreType');
 goog.provide('lf.schema.Database');
 goog.provide('lf.schema.Index');
 goog.provide('lf.schema.IndexedColumn');
@@ -32711,6 +32713,7 @@ goog.forwardDeclare('lf.Order');
 goog.forwardDeclare('lf.Predicate');
 goog.forwardDeclare('lf.Row');
 goog.forwardDeclare('lf.Type');
+goog.forwardDeclare('lf.raw.BackStore');
 
 
 
@@ -32766,6 +32769,25 @@ lf.schema.Database.prototype.tables;
  * @throws {!lf.Exception}
  */
 lf.schema.Database.prototype.table;
+
+
+/**
+ * The available data store types.
+ * @enum {number}
+ */
+lf.schema.DataStoreType = {
+  INDEXED_DB: 0,
+  MEMORY: 1
+};
+
+
+/**
+ * @typedef {{
+ *   onUpgrade: !function(!lf.raw.BackStore):!IThenable,
+ *   storeType: !lf.schema.DataStoreType
+ * }}
+ */
+lf.schema.ConnectOptions;
 
 
 /**
@@ -37054,7 +37076,6 @@ lf.ObserverRegistry.Entry_.prototype.updateResults = function(newResults) {
  * limitations under the License.
  */
 goog.provide('lf.base');
-goog.provide('lf.base.BackStoreType');
 
 goog.require('lf.ObserverRegistry');
 goog.require('lf.backstore.IndexedDB');
@@ -37064,36 +37085,26 @@ goog.require('lf.cache.Prefetcher');
 goog.require('lf.index.MemoryIndexStore');
 goog.require('lf.proc.DefaultQueryEngine');
 goog.require('lf.proc.Runner');
+goog.require('lf.schema.DataStoreType');
 goog.require('lf.service');
 
 
 /**
- * The available backing store types.
- * @enum {number}
- */
-lf.base.BackStoreType = {
-  INDEXED_DB: 0,
-  MEMORY: 1
-};
-
-
-/**
  * @param {!lf.Global} global
- * @param {!lf.base.BackStoreType} backStoreType The type of backing store
- *     to use. Defaultsto INDEXED_DB.
+ * @param {!lf.schema.DataStoreType} dataStoreType The type of backing store
+ *     to use. Defaults to INDEXED_DB.
  * @param {!function(!lf.raw.BackStore):!IThenable=} opt_onUpgrade
  * @param {boolean=} opt_bundledMode
  * @return {!IThenable} A promise resolved after all initialization operations
  *     have finished.
  */
-lf.base.init = function(global, backStoreType, opt_onUpgrade, opt_bundledMode) {
-  var schema = /** @private {!lf.schema.Database} */ (
-      global.getService(lf.service.SCHEMA));
+lf.base.init = function(global, dataStoreType, opt_onUpgrade, opt_bundledMode) {
+  var schema = global.getService(lf.service.SCHEMA);
 
   var cache = new lf.cache.DefaultCache();
   global.registerService(lf.service.CACHE, cache);
 
-  var backStore = (backStoreType == lf.base.BackStoreType.MEMORY) ?
+  var backStore = (dataStoreType == lf.schema.DataStoreType.MEMORY) ?
       new lf.backstore.Memory(schema) :
       new lf.backstore.IndexedDB(global, schema, opt_bundledMode);
   global.registerService(lf.service.BACK_STORE, backStore);
@@ -37121,8 +37132,7 @@ lf.base.init = function(global, backStoreType, opt_onUpgrade, opt_bundledMode) {
  */
 lf.base.closeDatabase = function(global) {
   try {
-    var backstore = /** @type {!lf.BackStore} */ (
-        global.getService(lf.service.BACK_STORE));
+    var backstore = global.getService(lf.service.BACK_STORE);
     backstore.close();
   } catch (e) {
     // Swallow the exception if DB is not initialized yet.
@@ -37150,7 +37160,7 @@ goog.provide('lf.Database');
 
 
 /**
- * Models the return value of getInstance().
+ * Models the return value of connect().
  * @interface
  */
 lf.Database = function() {};
@@ -37601,12 +37611,12 @@ goog.provide('lf.proc.Database');
 goog.require('lf.Database');
 goog.require('lf.Exception');
 goog.require('lf.base');
-goog.require('lf.base.BackStoreType');
 goog.require('lf.proc.Transaction');
 goog.require('lf.query.DeleteBuilder');
 goog.require('lf.query.InsertBuilder');
 goog.require('lf.query.SelectBuilder');
 goog.require('lf.query.UpdateBuilder');
+goog.require('lf.schema.DataStoreType');
 goog.require('lf.service');
 
 
@@ -37631,7 +37641,7 @@ lf.proc.Database = function(global) {
 
 /**
  * @param {!function(!lf.raw.BackStore):!IThenable=} opt_onUpgrade
- * @param {lf.base.BackStoreType=} opt_backStoreType
+ * @param {lf.schema.DataStoreType=} opt_backStoreType
  * @param {boolean=} opt_bundledMode
  * @return {!IThenable.<!lf.proc.Database>}
  * @export
@@ -37645,7 +37655,7 @@ lf.proc.Database.prototype.init = function(
   return /** @type  {!IThenable.<!lf.proc.Database>} */ (
       lf.base.init(
           this.global_,
-          opt_backStoreType || lf.base.BackStoreType.INDEXED_DB,
+          opt_backStoreType || lf.schema.DataStoreType.INDEXED_DB,
           opt_onUpgrade,
           opt_bundledMode).then(goog.bind(function() {
         this.initialized_ = true;
@@ -38588,8 +38598,8 @@ goog.provide('lf.schema.Builder');
 goog.require('goog.structs.Map');
 goog.require('lf.Exception');
 goog.require('lf.Global');
-goog.require('lf.base.BackStoreType');
 goog.require('lf.proc.Database');
+goog.require('lf.schema.DataStoreType');
 goog.require('lf.schema.Database');
 goog.require('lf.schema.TableBuilder');
 goog.require('lf.service');
@@ -38657,6 +38667,27 @@ lf.schema.Builder.prototype.getGlobal = function() {
 
 
 /**
+ * @param {!lf.schema.ConnectOptions=} opt_options
+ * @return {!IThenable.<!lf.proc.Database>}
+ * @export
+ */
+lf.schema.Builder.prototype.connect = function(opt_options) {
+  var global = this.getGlobal();
+  if (!global.isRegistered(lf.service.SCHEMA)) {
+    global.registerService(lf.service.SCHEMA, this.getSchema());
+  }
+  var upgradeCallback = (opt_options && opt_options.onUpgrade) ?
+      opt_options.onUpgrade : undefined;
+  var backstoreType = (opt_options && opt_options.storeType) ?
+      opt_options.storeType : undefined;
+  var bundledMode = false;
+
+  var db = new lf.proc.Database(global);
+  return db.init(upgradeCallback, backstoreType, bundledMode);
+};
+
+
+/**
  * @param {!function(!lf.raw.BackStore):!IThenable=} opt_onUpgrade
  * @param {boolean=} opt_volatile Default to false
  * @return {!IThenable.<!lf.proc.Database>}
@@ -38672,7 +38703,7 @@ lf.schema.Builder.prototype.getInstance = function(
   var db = new lf.proc.Database(global);
   return db.init(
       opt_onUpgrade,
-      opt_volatile ? lf.base.BackStoreType.MEMORY : undefined,
+      opt_volatile ? lf.schema.DataStoreType.MEMORY : undefined,
       false);
 };
 
