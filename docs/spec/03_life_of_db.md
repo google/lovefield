@@ -209,8 +209,8 @@ Implicit transactions are created by the query engine when the `exec()` method
 of a query builder is called, and that query builder had not attached to any
 explicit transaction.
 
-Query execution and transactions will be detailed in [Life of a Query](
-#35-life-of-a-query).
+Query execution and transactions will be detailed in
+[Life of a Query](#35-life-of-a-query).
 
 #### 3.4.3 Observers
 
