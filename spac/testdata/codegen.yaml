@@ -51,10 +51,13 @@ table:
 
   Details:
     column:
+      id1: string
+      id2: number
       photoId: string
       albumId: string
       totalComments: integer
     constraint:
+      primaryKey: [id1, id2]
       foreignKey:
         fk_photoId:
           localColumn: photoId

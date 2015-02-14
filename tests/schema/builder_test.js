@@ -232,7 +232,11 @@ function testIllegalNameThrows() {
 }
 
 
-function testKeyOfIndex() {
+/**
+ * Tests that keyOfIndex() method returns the expected keys, for the case of
+ * single column indices.
+ */
+function testKeyOfIndex_SingleKey() {
   var ds = lf.schema.create('ki', 1);
   ds.createTable('DummyTable').
       addColumn('datetime', lf.Type.DATE_TIME).
@@ -256,4 +260,61 @@ function testKeyOfIndex() {
   assertEquals(3, row.keyOfIndex('DummyTable.idx_number'));
   assertEquals('bar', row.keyOfIndex('DummyTable.idx_string'));
   assertEquals(row.id(), row.keyOfIndex('DummyTable.#'));
+}
+
+
+/**
+ * Tests that keyOfIndex() method returns the expected keys, for the case of
+ * cross-column indices.
+ */
+function testKeyOfIndex_CrossColumnKey() {
+  var schemaBuilder = lf.schema.create('ki', 1);
+  schemaBuilder.createTable('DummyTable').
+      addColumn('datetime', lf.Type.DATE_TIME).
+      addColumn('integer', lf.Type.INTEGER).
+      addColumn('number', lf.Type.NUMBER).
+      addColumn('string', lf.Type.STRING).
+      addColumn('boolean', lf.Type.BOOLEAN).
+      addPrimaryKey(['string', 'integer']).
+      addIndex('idx_NumberInteger', ['number', 'integer']).
+      addIndex('idx_NumberIntegerString', ['number', 'integer', 'string']).
+      addIndex('idb_DateTimeString', ['datetime', 'string']).
+      addIndex('idb_BooleanString', ['boolean', 'string']);
+
+  var schema = schemaBuilder.getSchema();
+  var table = schema.table('DummyTable');
+  var row = table.createRow({
+    'boolean': true,
+    'datetime': new Date(999),
+    'integer': 2,
+    'number': 3,
+    'string': 'bar'
+  });
+  assertEquals(row.id(), row.keyOfIndex(table.getRowIdIndexName()));
+
+  var indices = table.getIndices();
+  var pkIndexSchema = indices[0];
+  assertArrayEquals(
+      ['bar', 2],
+      row.keyOfIndex(pkIndexSchema.getNormalizedName()));
+
+  var numberStringIndexSchema = indices[1];
+  assertArrayEquals(
+      [3, 2],
+      row.keyOfIndex(numberStringIndexSchema.getNormalizedName()));
+
+  var numberIntegerStringIndexSchema = indices[2];
+  assertArrayEquals(
+      [3, 2, 'bar'],
+      row.keyOfIndex(numberIntegerStringIndexSchema.getNormalizedName()));
+
+  var dateTimeStringIndexSchema = indices[3];
+  assertArrayEquals(
+      [999, 'bar'],
+      row.keyOfIndex(dateTimeStringIndexSchema.getNormalizedName()));
+
+  var booleanStringIndexSchema = indices[4];
+  assertArrayEquals(
+      [1, 'bar'],
+      row.keyOfIndex(booleanStringIndexSchema.getNormalizedName()));
 }

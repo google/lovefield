@@ -125,3 +125,22 @@ table:
           reference: Product
           remoteColumn: id
           cascade: true
+
+  DummyTable:
+    column:
+      boolean: boolean
+      datetime: datetime
+      integer: integer
+      number: number
+      string: string
+    constraint:
+      primaryKey: [string, integer]
+    index:
+      idx_numberInteger:
+        column: [number, integer]
+      idx_numberIntegerString:
+        column: [number, integer, string]
+      idx_dateTimeString:
+        column: [datetime, string]
+      idx_booleanString:
+        column: [boolean, string]

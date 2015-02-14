@@ -563,50 +563,6 @@ CodeGenerator.columnToKey_ = function(table, column) {
 
 /**
  * @param {Object} table
- * @param {string} column
- * @return {string}
- * @private
- */
-CodeGenerator.columnToKeyString_ = function(table, column) {
-  var columns = table.column;
-  var result = '';
-
-  for (var i = 0; i < columns.length; ++i) {
-    var col = columns[i];
-    if (col.name != column) {
-      continue;
-    }
-
-    switch (col.type) {
-      case 'datetime':
-        result = 'this.payload().' + column + '.getTime().toString()';
-        break;
-
-      case 'string':
-        result = 'this.payload().' + column;
-        break;
-
-      case 'integer':
-      case 'number':
-        result = 'this.payload().' + column + '.toString()';
-        break;
-
-      case 'boolean':
-        result = 'this.payload().' + column + '.toString()';
-        break;
-
-      default:
-        throw new Error();
-    }
-    break;
-  }
-
-  return result;
-};
-
-
-/**
- * @param {Object} table
  * @param {!Array.<string>} columns
  * @return {string}
  * @private
@@ -617,24 +573,16 @@ CodeGenerator.prototype.genKeyFromColumns_ = function(table, columns) {
         'Cannot generate index key for column:' + table.name + '.' + col);
   }).bind(this);
 
-  if (columns.length > 1) {
-    var strings = columns.map(function(col) {
-      try {
-        return CodeGenerator.columnToKeyString_(table, col);
-      } catch (e) {
-        doError(col);
-      }
-    });
-    var token = ' + \'_\' + ';
-    return '      return ' + strings.join(token).substring(-token.length) + ';';
-  } else {
+  var strings = columns.map(function(col) {
     try {
-      return '      return ' +
-          CodeGenerator.columnToKey_(table, columns[0]) + ';';
+      return CodeGenerator.columnToKey_(table, col);
     } catch (e) {
-      doError(columns[0]);
+      doError(col);
     }
-  }
+  });
+  return '      ' + (strings.length == 1 ?
+      'return ' + strings[0] + ';' :
+      'return [\n        ' + strings.join(',\n        ') + '\n      ];');
 };
 
 
@@ -917,70 +865,71 @@ CodeGenerator.prototype.checkMultiColumnIndex_ = function(columns) {
 
 
 /**
- * @param {!Array.<string>} columns
- * @param {string=} opt_order
+ * @param {string} tableName
+ * @param {string} indexName
+ * @param {!Array<!Object>} columns
+ * @param {boolean} isUnique
+ * @param {boolean} isPrimaryKey
+ * @param {number} indentCount
  * @return {string}
  * @private
  */
-CodeGenerator.prototype.getIndexColumnString_ = function(columns, opt_order) {
-  var body = columns.map(function(col) {
-    var colBody = '{\'name\': \'' + col + '\', \'order\': ';
-    colBody += (opt_order == 'desc') ? 'lf.Order.DESC' : 'lf.Order.ASC';
-    colBody += '}';
-    return colBody;
-  }).join(', ');
-  return '[' + body + ']';
-};
+CodeGenerator.getIndexDefinition_ = function(
+    tableName, indexName, columns, isUnique, isPrimaryKey, indentCount) {
+  var generateIndent = function(count) {
+    var indentation = '';
+    for (var i = 0; i < count; i++) {
+      indentation += ' ';
+    }
 
+    return indentation;
+  };
 
-/**
- * @param {!Array.<!Object>} columns
- * @param {boolean=} opt_primaryKey
- * @return {string}
- * @private
- */
-CodeGenerator.indexedColumnsToString_ = function(columns, opt_primaryKey) {
-  var body = columns.map(function(col) {
-    var colBody = '{\'name\': \'' + col.name + '\',';
+  var getIndent = function(relativeIndent) {
+    return generateIndent(indentCount) + generateIndent(relativeIndent);
+  };
+
+  var body =
+      'new lf.schema.Index(\'' + tableName + '\', \'' + indexName + '\', ' +
+          (isUnique ? 'true' : 'false') + ',\n' + getIndent(4);
+  var columnBodys = columns.map(function(col) {
+    var colBody = getIndent(6) + '{\'name\': \'' + col.name + '\',';
     colBody += ' \'order\': ' +
         (col.order == 'desc' ? 'lf.Order.DESC' : 'lf.Order.ASC');
-    if (opt_primaryKey) {
-      colBody += ', \'autoIncrement\': ' +
-          (col.autoIncrement ? 'true' : 'false');
+    if (isPrimaryKey) {
+      colBody +=
+          ', \'autoIncrement\': ' + (col.autoIncrement ? 'true' : 'false');
     }
     colBody += '}';
+
     return colBody;
-  }).join(', ');
-  return '[' + body + ']';
+  });
+  return getIndent(0) + body + '[\n' + columnBodys.join(',\n') + '\n' +
+      getIndent(4) + '])';
 };
 
 
 /**
  * @param {!Object} table
- * @param {string=} opt_indent
+ * @param {number} indentCount
  * @return {string}
  * @private
  */
-CodeGenerator.prototype.getPrimaryKeyIndex_ = function(table, opt_indent) {
-  var results = [];
-  var indent = '      ' + (opt_indent || '');
-
-  if (table.constraint && table.constraint.primaryKey) {
-    var pkCols = table.constraint.primaryKey;
-
-    // TODO(arthurhsu): remove this check.
-    //     https://github.com/google/lovefield/issues/15
-    this.checkMultiColumnIndex_(pkCols);
-
-    var header = 'new lf.schema.Index(\'' + table.name + '\', \'';
-    var cols = CodeGenerator.indexedColumnsToString_(pkCols, true);
-    var keyName = 'pk' + this.toPascal_(table.name);
-    results.push(header + keyName + '\', true,\n' + indent + cols + ')');
-  } else {
-    results.push('null');
+CodeGenerator.prototype.getPrimaryKeyIndex_ = function(table, indentCount) {
+  if (!table.constraint || !table.constraint.primaryKey) {
+    return 'null';
   }
 
-  return results.join(',\n');
+  var pkCols = table.constraint.primaryKey;
+  var indexDefinition = CodeGenerator.getIndexDefinition_(
+      table.name,
+      'pk' + this.toPascal_(table.name),
+      pkCols,
+      true, /* isUnique */
+      true, /* isPrimaryKey */
+      indentCount);
+
+  return indexDefinition;
 };
 
 
@@ -1004,7 +953,10 @@ CodeGenerator.prototype.getConstraint_ = function(table) {
   }).bind(this);
 
   if (table.constraint) {
-    results.push('  var pk = ' + this.getPrimaryKeyIndex_(table) + ';');
+    var pkIndexDefinition = this.getPrimaryKeyIndex_(table, 2);
+    results.push(pkIndexDefinition == 'null' ?
+        '  var pk = ' + pkIndexDefinition + ';' :
+        '  var pk = ' + pkIndexDefinition.substring(2) + ';');
     results.push(getNotNullable());
 
     // TODO(dpapad): Populate this field once foreign key indices are
@@ -1013,9 +965,9 @@ CodeGenerator.prototype.getConstraint_ = function(table) {
 
     results.push('  var unique = [');
     if (table.constraint.unique) {
-      var uniqueIndices = this.getUniqueIndices_(table);
+      var uniqueIndices = this.getUniqueIndices_(table, 4);
       uniqueIndices.forEach(function(uniqueIndex) {
-        results.push('    ' + uniqueIndex);
+        results.push(uniqueIndex);
       });
     }
     results.push('  ];');
@@ -1034,10 +986,11 @@ CodeGenerator.prototype.getConstraint_ = function(table) {
 
 /**
  * @param {!Object} table
+ * @param {number} indentCount
  * @return {!Array.<string>}
  * @private
  */
-CodeGenerator.prototype.getUniqueIndices_ = function(table) {
+CodeGenerator.prototype.getUniqueIndices_ = function(table, indentCount) {
   var uniqueIndices = [];
 
   for (var i = 0; i < table.constraint.unique.length; ++i) {
@@ -1045,10 +998,14 @@ CodeGenerator.prototype.getUniqueIndices_ = function(table) {
     // TODO(arthurhsu): remove this check.
     this.checkMultiColumnIndex_(uniqueConstraint.column);
 
-    var cols = this.getIndexColumnString_(uniqueConstraint.column);
-    var uniqueIndex = 'new lf.schema.Index(\'' + table.name + '\', \'' +
-        uniqueConstraint.name + '\', true,\n        ' + cols + ')';
-    uniqueIndices.push(uniqueIndex);
+    var indexDefinition = CodeGenerator.getIndexDefinition_(
+        table.name,
+        uniqueConstraint.name,
+        uniqueConstraint.column,
+        true, /* isUnique */
+        false, /* isPrimaryKey */
+        indentCount);
+    uniqueIndices.push(indexDefinition);
   }
 
   return uniqueIndices;
@@ -1065,26 +1022,30 @@ CodeGenerator.prototype.getIndices_ = function(table) {
 
   if (table.constraint) {
     if (table.constraint.primaryKey) {
-      results.push('    ' + this.getPrimaryKeyIndex_(table, '  '));
+      results.push(this.getPrimaryKeyIndex_(table, 4));
     }
 
     if (table.constraint.unique) {
-      var uniqueIndices = this.getUniqueIndices_(table);
+      var uniqueIndices = this.getUniqueIndices_(table, 4);
       uniqueIndices.forEach(function(uniqueIndex) {
-        results.push('    ' + uniqueIndex);
+        results.push(uniqueIndex);
       });
     }
   }
 
   if (table.index) {
-    var header = '    new lf.schema.Index(\'' + table.name + '\', \'';
     for (var i = 0; i < table.index.length; ++i) {
       var index = table.index[i];
       var isUnique = index.unique ? true : false;
 
-      results.push(header + index.name + '\', ' + isUnique.toString() +
-          ',\n        ' + CodeGenerator.indexedColumnsToString_(index.column) +
-          ')');
+      var indexDefinition = CodeGenerator.getIndexDefinition_(
+          table.name,
+          index.name,
+          index.column,
+          isUnique,
+          false, /* isPrimaryKey */
+          4);
+      results.push(indexDefinition);
     }
   }
 
