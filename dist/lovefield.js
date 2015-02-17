@@ -24685,8 +24685,15 @@ lf.index.BTree.prototype.getRange = function(
 
   var results = [];
   normalizedKeyRanges.forEach(function(range) {
+    // Although the leaf nodes are represented in a linked list, we cannot
+    // use the recursion of BTreeNode.getRange to retrieve the results.
+    // The leaf span can be big enough to cause IE running out of stack.
     var start = this.root_.getContainingLeaf(range.from);
-    results = results.concat(start.getRange(range));
+    var end = this.root_.getContainingLeaf(range.to);
+    while (start != end.next()) {
+      start.getRange(range, results);
+      start = start.next();
+    }
   }, this);
 
   return lf.index.slice(results, opt_reverseOrder, opt_limit, opt_skip);
@@ -24897,6 +24904,12 @@ lf.index.BTreeNode_.prototype.isLeaf_ = function() {
  */
 lf.index.BTreeNode_.prototype.isRoot_ = function() {
   return this.parent_ == null;
+};
+
+
+/** @return {?lf.index.BTreeNode_} */
+lf.index.BTreeNode_.prototype.next = function() {
+  return this.next_;
 };
 
 
@@ -25556,9 +25569,6 @@ lf.index.BTreeNode_.prototype.getRange = function(opt_keyRange, opt_results) {
   var results = opt_results || [];
   if (end == this.keys_.length - 1) {
     this.appendResults_(results, this.values_.slice(start));
-    if (this.next_) {
-      this.next_.getRange(opt_keyRange, results);
-    }
   } else if (end >= start) {
     this.appendResults_(results, this.values_.slice(start, end + 1));
   }
