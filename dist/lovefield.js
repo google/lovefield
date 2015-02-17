@@ -24203,7 +24203,7 @@ goog.provide('lf.index.Index');
 goog.forwardDeclare('lf.Order');
 goog.forwardDeclare('lf.Row');
 goog.forwardDeclare('lf.index.FAVOR');
-goog.forwardDeclare('lf.index.KeyRange');
+goog.forwardDeclare('lf.index.SingleKeyRange');
 
 
 
@@ -24324,8 +24324,9 @@ lf.index.Index.prototype.get;
 
 /**
  * Gets the cost of retrieving data for given range.
- * @param {!lf.index.KeyRange=} opt_keyRange The key range to search for. If not
- *     provided, the cost will be equal to the number of rows in the table.
+ * @param {!lf.index.SingleKeyRange=} opt_keyRange The key range to search for.
+ *     If not provided, the cost will be equal to the number of rows in the
+ *     table.
  * @return {number}
  */
 lf.index.Index.prototype.cost;
@@ -24333,10 +24334,13 @@ lf.index.Index.prototype.cost;
 
 /**
  * Retrieves all data within the range. Returns empty array if not found.
- * @param {!Array.<!lf.index.KeyRange>=} opt_keyRanges The key ranges to search
- *     for. When multiple key ranges are specified, the function will return the
- *     union of range query results. If none provided, all rowIds in this index
- *     will be returned. Caller must ensure the ranges do not overlap.
+ * TODO(dpapad): opt_keyRanges parameter needs to be changed to
+ * !Array<!lf.index.KeyRange>, such that cross-column ranges can be expressed.
+ * @param {!Array.<!lf.index.SingleKeyRange>=} opt_keyRanges The key ranges to
+ *     search for. When multiple key ranges are specified, the function will
+ *     return the union of range query results. If none provided, all rowIds in
+ *     this index will be returned. Caller must ensure the ranges do not
+ *     overlap.
  * @param {!boolean=} opt_reverseOrder Retrive the results in the reverse
  *     ordering of the index's comparator.
  * @param {number=} opt_limit Max number of rows to return
@@ -24406,14 +24410,15 @@ lf.index.Index.prototype.comparator;
  * limitations under the License.
  */
 goog.provide('lf.index.KeyRange');
+goog.provide('lf.index.SingleKeyRange');
 
 goog.forwardDeclare('lf.index.Index.SingleKey');
 
 
 
 /**
- * An object specifying a key range to be used for querying various indices for
- * key ranges.
+ * A SingleKeyRange represents a key range of a single column, used for querying
+ * various lf.index.Index implementations.
  * @constructor
  * @struct
  *
@@ -24426,7 +24431,7 @@ goog.forwardDeclare('lf.index.Index.SingleKey');
  * @param {boolean} excludeUpper Whether the upper bound should be excluded.
  *     Ignored if no upper bound exists.
  */
-lf.index.KeyRange = function(from, to, excludeLower, excludeUpper) {
+lf.index.SingleKeyRange = function(from, to, excludeLower, excludeUpper) {
   /** @type {?lf.index.Index.SingleKey} */
   this.from = from;
 
@@ -24442,6 +24447,17 @@ lf.index.KeyRange = function(from, to, excludeLower, excludeUpper) {
 
 
 /**
+ * A KeyRange is more generic than a SingleKeyRange since it can express a key
+ * range of a cross-column key. The SingleKeyRange instances in the array
+ * represent a key range for each dimension of the cross-column key range.
+ * Example for a lf.index.Index.Key (x, y) a KeyRange of [[0, 100], [50, 70]]
+ * represents the 2D area where 0 >= x >= 100 AND 50 <= y <=100.
+ * @typedef {!Array<!lf.index.SingleKeyRange>}
+ */
+lf.index.KeyRange;
+
+
+/**
  * A text representation of this key range, useful for tests.
  * Example: [a, b] means from a to b, with both a and be included in the range.
  * Example: (a, b] means from a to b, with a excluded, b included.
@@ -24450,7 +24466,7 @@ lf.index.KeyRange = function(from, to, excludeLower, excludeUpper) {
  * Example: [a, unbound] means anything greater than a, with a included.
  * @override
  */
-lf.index.KeyRange.prototype.toString = function() {
+lf.index.SingleKeyRange.prototype.toString = function() {
   return (this.excludeLower ? '(' : '[') +
       (goog.isNull(this.from) ? 'unbound' : this.from) + ', ' +
       (goog.isNull(this.to) ? 'unbound' : this.to) +
@@ -24462,11 +24478,11 @@ lf.index.KeyRange.prototype.toString = function() {
  * Finds the complement key range. Note that in some cases the complement is
  * composed of two disjoint key ranges. For example complementing [10, 20] would
  * result in [unbound, 10) and (20, unbound].
- * @return {!Array.<!lf.index.KeyRange>} The complement key ranges. An empty
- *     array will be returned in the case where the complement is empty.
+ * @return {!Array.<!lf.index.SingleKeyRange>} The complement key ranges. An
+ *     empty array will be returned in the case where the complement is empty.
  */
-lf.index.KeyRange.prototype.complement = function() {
-  // Complement of lf.index.KeyRange.all() is empty.
+lf.index.SingleKeyRange.prototype.complement = function() {
+  // Complement of lf.index.SingleKeyRange.all() is empty.
   if (goog.isNull(this.from) && goog.isNull(this.to)) {
     return [];
   }
@@ -24475,12 +24491,12 @@ lf.index.KeyRange.prototype.complement = function() {
   var keyRangeHigh = null;
 
   if (!goog.isNull(this.from)) {
-    keyRangeLow = new lf.index.KeyRange(
+    keyRangeLow = new lf.index.SingleKeyRange(
         null, this.from, false, !this.excludeLower);
   }
 
   if (!goog.isNull(this.to)) {
-    keyRangeHigh = new lf.index.KeyRange(
+    keyRangeHigh = new lf.index.SingleKeyRange(
         this.to, null, !this.excludeUpper, false);
   }
 
@@ -24494,10 +24510,10 @@ lf.index.KeyRange.prototype.complement = function() {
  * Reverses a keyRange such that "lower" refers to larger values and "upper"
  * refers to smaller values. Note: This is different than what complement()
  * does.
- * @return {!lf.index.KeyRange}
+ * @return {!lf.index.SingleKeyRange}
  */
-lf.index.KeyRange.prototype.reverse = function() {
-  return new lf.index.KeyRange(
+lf.index.SingleKeyRange.prototype.reverse = function() {
+  return new lf.index.SingleKeyRange(
       this.to, this.from, this.excludeUpper, this.excludeLower);
 };
 
@@ -24506,10 +24522,11 @@ lf.index.KeyRange.prototype.reverse = function() {
  * @param {!lf.index.Index.SingleKey} key The upper bound.
  * @param {boolean=} opt_shouldExclude Whether the upper bound should be
  *     excluded. Defaults to false.
- * @return {!lf.index.KeyRange}
+ * @return {!lf.index.SingleKeyRange}
  */
-lf.index.KeyRange.upperBound = function(key, opt_shouldExclude) {
-  return new lf.index.KeyRange(null, key, false, opt_shouldExclude || false);
+lf.index.SingleKeyRange.upperBound = function(key, opt_shouldExclude) {
+  return new lf.index.SingleKeyRange(
+      null, key, false, opt_shouldExclude || false);
 };
 
 
@@ -24517,29 +24534,30 @@ lf.index.KeyRange.upperBound = function(key, opt_shouldExclude) {
  * @param {!lf.index.Index.SingleKey} key The lower bound.
  * @param {boolean=} opt_shouldExclude Whether the lower bound should be
  *     excluded. Defaults to false.
- * @return {!lf.index.KeyRange}
+ * @return {!lf.index.SingleKeyRange}
  */
-lf.index.KeyRange.lowerBound = function(key, opt_shouldExclude) {
-  return new lf.index.KeyRange(key, null, opt_shouldExclude || false, false);
+lf.index.SingleKeyRange.lowerBound = function(key, opt_shouldExclude) {
+  return new lf.index.SingleKeyRange(
+      key, null, opt_shouldExclude || false, false);
 };
 
 
 /**
  * Creates a range that includes a single key.
  * @param {!lf.index.Index.SingleKey} key
- * @return {!lf.index.KeyRange}
+ * @return {!lf.index.SingleKeyRange}
  */
-lf.index.KeyRange.only = function(key) {
-  return new lf.index.KeyRange(key, key, false, false);
+lf.index.SingleKeyRange.only = function(key) {
+  return new lf.index.SingleKeyRange(key, key, false, false);
 };
 
 
 /**
  * Creates a range that includes all keys.
- * @return {!lf.index.KeyRange}
+ * @return {!lf.index.SingleKeyRange}
  */
-lf.index.KeyRange.all = function() {
-  return new lf.index.KeyRange(null, null, false, false);
+lf.index.SingleKeyRange.all = function() {
+  return new lf.index.SingleKeyRange(null, null, false, false);
 };
 
 /**
@@ -24571,7 +24589,7 @@ goog.require('lf.Exception');
 goog.require('lf.Row');
 goog.require('lf.index');
 goog.require('lf.index.Index');
-goog.require('lf.index.KeyRange');
+goog.require('lf.index.SingleKeyRange');
 
 
 
@@ -24677,7 +24695,7 @@ lf.index.BTree.prototype.getRange = function(
     // TODO(dpapad,arthurhsu): Need to address the case where getRange() is
     // called without a specified range for a cross-column index. Currently
     // getRange only works for a single column index.
-    normalizedKeyRanges = [new lf.index.KeyRange(
+    normalizedKeyRanges = [new lf.index.SingleKeyRange(
         /** @type {!lf.index.Index.SingleKey} */ (min),
         /** @type {!lf.index.Index.SingleKey} */ (max),
         false, false)];
@@ -25530,7 +25548,7 @@ lf.index.BTreeNode_.prototype.getContainingLeaf = function(key) {
 
 
 /**
- * @param {lf.index.KeyRange=} opt_keyRange
+ * @param {lf.index.SingleKeyRange=} opt_keyRange
  * @param {!Array.<number>=} opt_results An array holding any results found from
  *     previous calls to getRange(). If specified any new results will be
  *     appended to this array.
@@ -25703,7 +25721,7 @@ lf.index.ComparatorFactory.create = function(indexSchema) {
 
 
 /**
- * @extends {lf.index.Comparator.<!lf.index.Index.SingleKey, !lf.index.KeyRange>}
+ * @extends {lf.index.Comparator.<!lf.index.Index.SingleKey, !lf.index.SingleKeyRange>}
  * @constructor
  *
  * @param {!lf.Order} order
@@ -25754,7 +25772,7 @@ lf.index.SimpleComparator.compareDescending = function(lhs, rhs) {
  * @param {!function(!lf.index.Index.SingleKey, !lf.index.Index.SingleKey):
  *     !lf.index.FAVOR} fn
  * @param {!lf.index.Index.SingleKey} key
- * @param {!lf.index.KeyRange} range
+ * @param {!lf.index.SingleKeyRange} range
  * @return {boolean}
  */
 lf.index.SimpleComparator.isInRange = function(fn, key, range) {
@@ -25819,8 +25837,7 @@ lf.index.SimpleComparator.prototype.toString = function() {
 
 
 /**
- * @extends {lf.index.Comparator.<!lf.index.Index.Key,
- *     !Array<!lf.index.KeyRange>>}
+ * @extends {lf.index.Comparator.<!lf.index.Index.Key, !lf.index.KeyRange>}
  * @constructor
  *
  * @param {!Array<!lf.Order>} orders
@@ -25943,8 +25960,8 @@ goog.require('lf.Order');
 goog.require('lf.Row');
 goog.require('lf.index');
 goog.require('lf.index.Index');
-goog.require('lf.index.KeyRange');
 goog.require('lf.index.SimpleComparator');
+goog.require('lf.index.SingleKeyRange');
 
 
 
@@ -26055,7 +26072,7 @@ lf.index.RowId.prototype.cost = function(opt_keyRange) {
 /** @override */
 lf.index.RowId.prototype.getRange = function(
     opt_keyRanges, opt_reverseOrder, opt_limit, opt_skip) {
-  var keyRanges = opt_keyRanges || [lf.index.KeyRange.all()];
+  var keyRanges = opt_keyRanges || [lf.index.SingleKeyRange.all()];
   var values = this.rows_.getValues().filter(function(value) {
     return keyRanges.some(function(range) {
       return this.comparator_.isInRange(value, range);
@@ -26340,7 +26357,7 @@ goog.require('goog.asserts');
 goog.require('lf.Exception');
 goog.require('lf.index');
 goog.require('lf.index.Index');
-goog.require('lf.index.KeyRange');
+goog.require('lf.index.SingleKeyRange');
 
 
 
@@ -26610,7 +26627,7 @@ lf.index.AATree.prototype.findMax_ = function() {
 
 /**
  * @param {!lf.index.AANode_} node
- * @param {!lf.index.KeyRange} keyRange
+ * @param {!lf.index.SingleKeyRange} keyRange
  * @param {!Array.<number>} results
  * @private
  */
@@ -26650,7 +26667,7 @@ lf.index.AATree.prototype.getRange = function(
     // TODO(dpapad,arthurhsu): Need to address the case where getRange() is
     // called without a specified range for a cross-column index. Currently
     // getRange only works for a single column index.
-    keyRanges = [new lf.index.KeyRange(
+    keyRanges = [new lf.index.SingleKeyRange(
         /** @type {!lf.index.Index.SingleKey} */ (min),
         /** @type {!lf.index.Index.SingleKey} */ (max),
         false, false)];
@@ -29836,7 +29853,7 @@ goog.require('lf.Binder');
 goog.require('lf.Exception');
 goog.require('lf.eval.Registry');
 goog.require('lf.eval.Type');
-goog.require('lf.index.KeyRange');
+goog.require('lf.index.SingleKeyRange');
 goog.require('lf.pred.PredicateNode');
 goog.require('lf.proc.Relation');
 
@@ -30029,8 +30046,8 @@ lf.pred.ValuePredicate.prototype.isKeyRangeCompatible = function() {
  * Converts this predicate to a key range.
  * NOTE: Not all predicates can be converted to a key range, callers must call
  * isKeyRangeCompatible() before calling this method.
- * @return {!Array.<!lf.index.KeyRange>} The key ranges corresponding to this
- *     predicate. The length of the array is at most two.
+ * @return {!Array.<!lf.index.SingleKeyRange>} The key ranges corresponding to
+ *     this predicate. The length of the array is at most two.
  */
 lf.pred.ValuePredicate.prototype.toKeyRange = function() {
   goog.asserts.assert(
@@ -30039,19 +30056,19 @@ lf.pred.ValuePredicate.prototype.toKeyRange = function() {
 
   var keyRange = null;
   if (this.evaluatorType == lf.eval.Type.BETWEEN) {
-    keyRange = new lf.index.KeyRange(
+    keyRange = new lf.index.SingleKeyRange(
         this.value[0], this.value[1], false, false);
   } else if (this.evaluatorType == lf.eval.Type.EQ) {
-    keyRange = lf.index.KeyRange.only(this.value);
+    keyRange = lf.index.SingleKeyRange.only(this.value);
   } else if (this.evaluatorType == lf.eval.Type.GTE) {
-    keyRange = lf.index.KeyRange.lowerBound(this.value);
+    keyRange = lf.index.SingleKeyRange.lowerBound(this.value);
   } else if (this.evaluatorType == lf.eval.Type.GT) {
-    keyRange = lf.index.KeyRange.lowerBound(this.value, true);
+    keyRange = lf.index.SingleKeyRange.lowerBound(this.value, true);
   } else if (this.evaluatorType == lf.eval.Type.LTE) {
-    keyRange = lf.index.KeyRange.upperBound(this.value);
+    keyRange = lf.index.SingleKeyRange.upperBound(this.value);
   } else {
     // Must be this.evaluatorType == lf.eval.Type.LT.
-    keyRange = lf.index.KeyRange.upperBound(this.value, true);
+    keyRange = lf.index.SingleKeyRange.upperBound(this.value, true);
   }
 
   return this.isComplement_ ? keyRange.complement() : [keyRange];
@@ -31421,7 +31438,7 @@ lf.proc.TableAccessByRowIdStep.prototype.exec = function(journal) {
  *
  * @param {!lf.Global} global
  * @param {!lf.schema.Index} index
- * @param {!Array.<!lf.index.KeyRange>} keyRanges
+ * @param {!Array.<!lf.index.SingleKeyRange>} keyRanges
  * @param {!lf.Order} order The order in which results will be returned.
  */
 lf.proc.IndexRangeScanStep = function(global, index, keyRanges, order) {
@@ -31433,7 +31450,7 @@ lf.proc.IndexRangeScanStep = function(global, index, keyRanges, order) {
   /** @type {!lf.schema.Index} */
   this.index = index;
 
-  /** @type {!Array.<!lf.index.KeyRange>} */
+  /** @type {!Array.<!lf.index.SingleKeyRange>} */
   this.keyRanges = keyRanges;
 
   /** @type {!lf.Order} */
@@ -35348,7 +35365,7 @@ lf.proc.LimitSkipByIndexPass.prototype.findIndexRangeScanStep_ =
 goog.provide('lf.proc.OrderByIndexPass');
 
 goog.require('goog.asserts');
-goog.require('lf.index.KeyRange');
+goog.require('lf.index.SingleKeyRange');
 goog.require('lf.proc.IndexRangeScanStep');
 goog.require('lf.proc.OrderByStep');
 goog.require('lf.proc.RewritePass');
@@ -35434,7 +35451,8 @@ lf.proc.OrderByIndexPass.prototype.applyTableAccessFullOptimization_ =
     var orderBy = orderByStep.orderBy[0];
     var columnIndex = orderBy.column.getIndices()[0];
     var indexRangeScanStep = new lf.proc.IndexRangeScanStep(
-        this.global_, columnIndex, [lf.index.KeyRange.all()], orderBy.order);
+        this.global_, columnIndex, [lf.index.SingleKeyRange.all()],
+        orderBy.order);
     var tableAccessByRowIdStep = new lf.proc.TableAccessByRowIdStep(
         this.global_, tableAccessFullStep.table);
     tableAccessByRowIdStep.addChild(indexRangeScanStep);

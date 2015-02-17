@@ -17,7 +17,7 @@
 goog.provide('lf.testing.index.TestMultiRowNumericalKey');
 
 goog.require('goog.testing.jsunit');
-goog.require('lf.index.KeyRange');
+goog.require('lf.index.SingleKeyRange');
 goog.require('lf.testing.index.TestIndex');
 goog.require('lf.testing.index.TestSingleRowNumericalKey');
 
@@ -94,7 +94,7 @@ lf.testing.index.TestMultiRowNumericalKey.prototype.testRemove =
   index.remove(12, 22);
   index.remove(12, 32);
   assertArrayEquals([], index.get(12));
-  assertArrayEquals([], index.getRange([lf.index.KeyRange.only(12)]));
+  assertArrayEquals([], index.getRange([lf.index.SingleKeyRange.only(12)]));
 };
 
 

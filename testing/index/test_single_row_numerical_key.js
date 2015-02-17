@@ -17,7 +17,7 @@
 goog.provide('lf.testing.index.TestSingleRowNumericalKey');
 
 goog.require('goog.testing.jsunit');
-goog.require('lf.index.KeyRange');
+goog.require('lf.index.SingleKeyRange');
 goog.require('lf.testing.index.TestIndex');
 
 
@@ -98,7 +98,7 @@ lf.testing.index.TestSingleRowNumericalKey.prototype.testRemove =
   index.remove(12, 22);
   assertArrayEquals([], index.get(12));
 
-  var keyRange = lf.index.KeyRange.only(12);
+  var keyRange = lf.index.SingleKeyRange.only(12);
   assertArrayEquals([], index.getRange([keyRange]));
   assertEquals(0, index.cost(keyRange));
 };
@@ -143,8 +143,8 @@ lf.testing.index.TestSingleRowNumericalKey.prototype.testMultiRange = function(
   }
 
   // Simulate NOT(BETWEEN(2, 18))
-  var range1 = new lf.index.KeyRange(null, 2, false, true);
-  var range2 = new lf.index.KeyRange(18, null, true, false);
+  var range1 = new lf.index.SingleKeyRange(null, 2, false, true);
+  var range2 = new lf.index.SingleKeyRange(18, null, true, false);
 
   var comparator = index.comparator();
   var expected = [0, 1, 19].sort(goog.bind(comparator.compare, comparator));
@@ -186,25 +186,25 @@ lf.testing.index.TestSingleRowNumericalKey.prototype.populateIndex_ =
 
 /**
  * The key ranges to be used for testing.
- * @type {!Array.<!lf.index.KeyRange|undefined>}
+ * @type {!Array.<!lf.index.SingleKeyRange|undefined>}
  */
 lf.testing.index.TestSingleRowNumericalKey.keyRanges = [
   // get all.
   undefined,
-  lf.index.KeyRange.all(),
+  lf.index.SingleKeyRange.all(),
   // get one key
-  lf.index.KeyRange.only(15),
+  lf.index.SingleKeyRange.only(15),
   // lower bound.
-  lf.index.KeyRange.lowerBound(15),
-  lf.index.KeyRange.lowerBound(15, true),
+  lf.index.SingleKeyRange.lowerBound(15),
+  lf.index.SingleKeyRange.lowerBound(15, true),
   // upper bound.
-  lf.index.KeyRange.upperBound(15),
-  lf.index.KeyRange.upperBound(15, true),
+  lf.index.SingleKeyRange.upperBound(15),
+  lf.index.SingleKeyRange.upperBound(15, true),
   // both lower and upper bound.
-  new lf.index.KeyRange(12, 15, false, false),
-  new lf.index.KeyRange(12, 15, true, false),
-  new lf.index.KeyRange(12, 15, false, true),
-  new lf.index.KeyRange(12, 15, true, true)
+  new lf.index.SingleKeyRange(12, 15, false, false),
+  new lf.index.SingleKeyRange(12, 15, true, false),
+  new lf.index.SingleKeyRange(12, 15, false, true),
+  new lf.index.SingleKeyRange(12, 15, true, true)
 ];
 
 

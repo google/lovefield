@@ -19,7 +19,7 @@ goog.require('goog.testing.AsyncTestCase');
 goog.require('goog.testing.jsunit');
 goog.require('hr.db');
 goog.require('lf.Order');
-goog.require('lf.index.KeyRange');
+goog.require('lf.index.SingleKeyRange');
 goog.require('lf.proc.IndexRangeScanStep');
 goog.require('lf.proc.OrderByIndexPass');
 goog.require('lf.proc.OrderByStep');
@@ -101,7 +101,7 @@ function testTree2() {
       hr.db.getGlobal(), e);
   var indexRangeScanNode = new lf.proc.IndexRangeScanStep(
       hr.db.getGlobal(), e.getIndices()[1],
-      [lf.index.KeyRange.lowerBound(10000)], lf.Order.ASC);
+      [lf.index.SingleKeyRange.lowerBound(10000)], lf.Order.ASC);
   tableAccessByRowIdNode.addChild(indexRangeScanNode);
   orderByNode.addChild(tableAccessByRowIdNode);
   rootNodeBefore.addChild(orderByNode);

@@ -18,7 +18,7 @@ goog.setTestOnly();
 goog.require('goog.testing.jsunit');
 /** @suppress {extraRequire} */
 goog.require('lf.index.Index');
-goog.require('lf.index.KeyRange');
+goog.require('lf.index.SingleKeyRange');
 
 
 /**
@@ -27,28 +27,28 @@ goog.require('lf.index.KeyRange');
  */
 function testComplement_WithBounds() {
   // Testing case where both lower and upper bound are included.
-  var keyRange = new lf.index.KeyRange(10, 20, false, false);
+  var keyRange = new lf.index.SingleKeyRange(10, 20, false, false);
   var complementKeyRanges = keyRange.complement();
   assertEquals(2, complementKeyRanges.length);
   assertEquals('[unbound, 10)', complementKeyRanges[0].toString());
   assertEquals('(20, unbound]', complementKeyRanges[1].toString());
 
   // Testing case where lower bound is excluded.
-  keyRange = new lf.index.KeyRange(10, 20, true, false);
+  keyRange = new lf.index.SingleKeyRange(10, 20, true, false);
   complementKeyRanges = keyRange.complement();
   assertEquals(2, complementKeyRanges.length);
   assertEquals('[unbound, 10]', complementKeyRanges[0].toString());
   assertEquals('(20, unbound]', complementKeyRanges[1].toString());
 
   // Testing case where upper bound is excluded.
-  keyRange = new lf.index.KeyRange(10, 20, false, true);
+  keyRange = new lf.index.SingleKeyRange(10, 20, false, true);
   complementKeyRanges = keyRange.complement();
   assertEquals(2, complementKeyRanges.length);
   assertEquals('[unbound, 10)', complementKeyRanges[0].toString());
   assertEquals('[20, unbound]', complementKeyRanges[1].toString());
 
   // Testing case where both lower and upper bound are excluded.
-  keyRange = new lf.index.KeyRange(10, 20, true, true);
+  keyRange = new lf.index.SingleKeyRange(10, 20, true, true);
   complementKeyRanges = keyRange.complement();
   assertEquals(2, complementKeyRanges.length);
   assertEquals('[unbound, 10]', complementKeyRanges[0].toString());
@@ -61,12 +61,12 @@ function testComplement_WithBounds() {
  * has an upper bound.
  */
 function testComplement_UpperBoundOnly() {
-  var keyRange = new lf.index.KeyRange(null, 20, false, false);
+  var keyRange = new lf.index.SingleKeyRange(null, 20, false, false);
   var complementKeyRanges = keyRange.complement();
   assertEquals(1, complementKeyRanges.length);
   assertEquals('(20, unbound]', complementKeyRanges[0].toString());
 
-  keyRange = new lf.index.KeyRange(null, 20, false, true);
+  keyRange = new lf.index.SingleKeyRange(null, 20, false, true);
   complementKeyRanges = keyRange.complement();
   assertEquals(1, complementKeyRanges.length);
   assertEquals('[20, unbound]', complementKeyRanges[0].toString());
@@ -78,12 +78,12 @@ function testComplement_UpperBoundOnly() {
  * has an lower bound.
  */
 function testComplement_LowerBoundOnly() {
-  var keyRange = new lf.index.KeyRange(20, null, false, false);
+  var keyRange = new lf.index.SingleKeyRange(20, null, false, false);
   var complementKeyRanges = keyRange.complement();
   assertEquals(1, complementKeyRanges.length);
   assertEquals('[unbound, 20)', complementKeyRanges[0].toString());
 
-  keyRange = new lf.index.KeyRange(20, null, true, false);
+  keyRange = new lf.index.SingleKeyRange(20, null, true, false);
   complementKeyRanges = keyRange.complement();
   assertEquals(1, complementKeyRanges.length);
   assertEquals('[unbound, 20]', complementKeyRanges[0].toString());
@@ -95,7 +95,7 @@ function testComplement_LowerBoundOnly() {
  * bounded on either side.
  */
 function testComplement_NoBound() {
-  var keyRange = lf.index.KeyRange.all();
+  var keyRange = lf.index.SingleKeyRange.all();
   // The complement of a completely unbounded key range is the empty key range.
   assertEquals(0, keyRange.complement().length);
 }
@@ -106,7 +106,7 @@ function testComplement_NoBound() {
  * includes a single value.
  */
 function testComplement_OnlyOneValue() {
-  var keyRange = lf.index.KeyRange.only(20);
+  var keyRange = lf.index.SingleKeyRange.only(20);
   var complementKeyRanges = keyRange.complement();
   assertEquals(2, complementKeyRanges.length);
   assertEquals('[unbound, 20)', complementKeyRanges[0].toString());
@@ -115,23 +115,23 @@ function testComplement_OnlyOneValue() {
 
 
 function testReverse() {
-  var keyRange = lf.index.KeyRange.only(20);
+  var keyRange = lf.index.SingleKeyRange.only(20);
   assertEquals('[20, 20]' , keyRange.toString());
   assertEquals('[20, 20]', keyRange.reverse().toString());
 
-  keyRange = lf.index.KeyRange.upperBound(20);
+  keyRange = lf.index.SingleKeyRange.upperBound(20);
   assertEquals('[unbound, 20]' , keyRange.toString());
   assertEquals('[20, unbound]' , keyRange.reverse().toString());
 
-  keyRange = lf.index.KeyRange.lowerBound(20);
+  keyRange = lf.index.SingleKeyRange.lowerBound(20);
   assertEquals('[20, unbound]' , keyRange.toString());
   assertEquals('[unbound, 20]' , keyRange.reverse().toString());
 
-  keyRange = lf.index.KeyRange.all();
+  keyRange = lf.index.SingleKeyRange.all();
   assertEquals('[unbound, unbound]' , keyRange.toString());
   assertEquals('[unbound, unbound]' , keyRange.reverse().toString());
 
-  keyRange = new lf.index.KeyRange(20, 50, false, true);
+  keyRange = new lf.index.SingleKeyRange(20, 50, false, true);
   assertEquals('[20, 50)' , keyRange.toString());
   assertEquals('(50, 20]' , keyRange.reverse().toString());
 }

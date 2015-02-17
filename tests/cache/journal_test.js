@@ -21,7 +21,7 @@ goog.require('lf.Exception');
 goog.require('lf.Global');
 goog.require('lf.Row');
 goog.require('lf.cache.Journal');
-goog.require('lf.index.KeyRange');
+goog.require('lf.index.SingleKeyRange');
 goog.require('lf.testing.MockEnv');
 goog.require('lf.testing.MockSchema');
 
@@ -669,7 +669,7 @@ function testIndicesCacheUpdated() {
     assertFalse(pkId.containsKey('2'));
     assertArrayEquals(
         [3, 1],
-        pkId.getRange([new lf.index.KeyRange('3', '4', false, false)]));
+        pkId.getRange([new lf.index.SingleKeyRange('3', '4', false, false)]));
     assertArrayEquals([], idxName.get('1'));
     assertArrayEquals([3], idxName.get('2'));
     assertArrayEquals([1], idxName.get('4'));
@@ -685,8 +685,8 @@ function testIndicesUpdated() {
   var table = env.schema.tables()[0];
   var journal = new lf.cache.Journal(lf.Global.get(), [table]);
   var indexSchema = table.getIndices()[1];
-  var keyRange1 = new lf.index.KeyRange('aaa', 'bbb', false, false);
-  var keyRange2 = new lf.index.KeyRange('ccc', 'eee', false, false);
+  var keyRange1 = new lf.index.SingleKeyRange('aaa', 'bbb', false, false);
+  var keyRange2 = new lf.index.SingleKeyRange('ccc', 'eee', false, false);
 
   var row1 = table.createRow({'id': 'dummyId1', 'name': 'aba'});
   var row2 = table.createRow({'id': 'dummyId2', 'name': 'cdc'});

@@ -21,7 +21,7 @@ goog.require('lf.Global');
 goog.require('lf.Order');
 goog.require('lf.TransactionType');
 goog.require('lf.cache.Journal');
-goog.require('lf.index.KeyRange');
+goog.require('lf.index.SingleKeyRange');
 goog.require('lf.proc.IndexRangeScanStep');
 goog.require('lf.proc.Relation');
 goog.require('lf.proc.TableAccessByRowIdStep');
@@ -186,8 +186,9 @@ function checkIndexRangeScan(order, description) {
   var index = order == lf.Order.ASC ?
       table.getIndices()[0] : table.getIndices()[1];
   var keyRange = order == lf.Order.ASC ?
-      new lf.index.KeyRange(5, 8, false, false) :
-      new lf.index.KeyRange('dummyName' + 5, 'dummyName' + 8, false, false);
+      new lf.index.SingleKeyRange(5, 8, false, false) :
+      new lf.index.SingleKeyRange(
+          'dummyName' + 5, 'dummyName' + 8, false, false);
   var step = new lf.proc.IndexRangeScanStep(
       lf.Global.get(), index, [keyRange], order);
 

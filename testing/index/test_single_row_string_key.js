@@ -17,7 +17,7 @@
 goog.provide('lf.testing.index.TestSingleRowStringKey');
 
 goog.require('goog.testing.jsunit');
-goog.require('lf.index.KeyRange');
+goog.require('lf.index.SingleKeyRange');
 goog.require('lf.testing.index.TestIndex');
 
 
@@ -99,7 +99,7 @@ lf.testing.index.TestSingleRowStringKey.prototype.testRemove =
   index.remove(key);
   assertArrayEquals([], index.get(key));
 
-  var keyRange = lf.index.KeyRange.only(key);
+  var keyRange = lf.index.SingleKeyRange.only(key);
   assertArrayEquals([], index.getRange([keyRange]));
   assertEquals(0, index.cost(keyRange));
 };
@@ -144,8 +144,8 @@ lf.testing.index.TestSingleRowStringKey.prototype.testMultiRange = function(
   }
 
   // Simulate NOT(BETWEEN('k2', 'k8'))
-  var range1 = new lf.index.KeyRange(null, 'k2', false, true);
-  var range2 = new lf.index.KeyRange('k8', null, true, false);
+  var range1 = new lf.index.SingleKeyRange(null, 'k2', false, true);
+  var range2 = new lf.index.SingleKeyRange('k8', null, true, false);
 
   var comparator = index.comparator();
   var expected = [0, 1, 9].sort(goog.bind(comparator.compare, comparator));
@@ -187,25 +187,25 @@ lf.testing.index.TestSingleRowStringKey.prototype.populateIndex_ =
 
 /**
  * The key ranges to be used for testing.
- * @type {!Array.<!lf.index.KeyRange|undefined>}
+ * @type {!Array.<!lf.index.SingleKeyRange|undefined>}
  */
 lf.testing.index.TestSingleRowStringKey.keyRanges = [
   // get all.
   undefined,
-  lf.index.KeyRange.all(),
+  lf.index.SingleKeyRange.all(),
   // get one key
-  lf.index.KeyRange.only('key-3'),
+  lf.index.SingleKeyRange.only('key-3'),
   // lower bound.
-  lf.index.KeyRange.lowerBound('key0'),
-  lf.index.KeyRange.lowerBound('key0', true),
+  lf.index.SingleKeyRange.lowerBound('key0'),
+  lf.index.SingleKeyRange.lowerBound('key0', true),
   // upper bound.
-  lf.index.KeyRange.upperBound('key0'),
-  lf.index.KeyRange.upperBound('key0', true),
+  lf.index.SingleKeyRange.upperBound('key0'),
+  lf.index.SingleKeyRange.upperBound('key0', true),
   // both lower and upper bound.
-  new lf.index.KeyRange('key-1', 'key-5', false, false),
-  new lf.index.KeyRange('key-1', 'key-5', true, false),
-  new lf.index.KeyRange('key-1', 'key-5', false, true),
-  new lf.index.KeyRange('key-1', 'key-5', true, true)
+  new lf.index.SingleKeyRange('key-1', 'key-5', false, false),
+  new lf.index.SingleKeyRange('key-1', 'key-5', true, false),
+  new lf.index.SingleKeyRange('key-1', 'key-5', false, true),
+  new lf.index.SingleKeyRange('key-1', 'key-5', true, true)
 ];
 
 
