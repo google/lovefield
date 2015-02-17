@@ -24101,18 +24101,6 @@ goog.provide('lf.index');
 
 
 /**
- * The comparison result constant. This must be consistent with the constant
- * required by the sort function of Array.prototype.sort.
- * @const @enum {number}
- */
-lf.index.FAVOR = {
-  RHS: -1,  // favors right hand side, i.e. lhs < rhs
-  TIE: 0,  // no favorite, i.e. lhs == rhs
-  LHS: 1    // favors left hand side, i.e. lhs > rhs
-};
-
-
-/**
  * Java's String.hashCode method.
  *
  * for each character c in string
@@ -24198,12 +24186,24 @@ lf.index.slice = function(rawArray, opt_reverseOrder, opt_limit, opt_skip) {
  * limitations under the License.
  */
 goog.provide('lf.index.Comparator');
+goog.provide('lf.index.Favor');
 goog.provide('lf.index.Index');
 
 goog.forwardDeclare('lf.Order');
 goog.forwardDeclare('lf.Row');
-goog.forwardDeclare('lf.index.FAVOR');
 goog.forwardDeclare('lf.index.SingleKeyRange');
+
+
+/**
+ * The comparison result constant. This must be consistent with the constant
+ * required by the sort function of Array.prototype.sort.
+ * @enum {number}
+ */
+lf.index.Favor = {
+  RHS: -1,  // favors right hand side, i.e. lhs < rhs
+  TIE: 0,  // no favorite, i.e. lhs == rhs
+  LHS: 1    // favors left hand side, i.e. lhs > rhs
+};
 
 
 
@@ -24220,7 +24220,7 @@ lf.index.Comparator = function() {};
 /**
  * @param {KeyType} lhs
  * @param {KeyType} rhs
- * @return {!lf.index.FAVOR}
+ * @return {!lf.index.Favor}
  */
 lf.index.Comparator.prototype.compare;
 
@@ -24229,7 +24229,7 @@ lf.index.Comparator.prototype.compare;
  * Finds which one of the two operands is the minimum in absolute terms.
  * @param {KeyType} lhs
  * @param {KeyType} rhs
- * @return {!lf.index.FAVOR}
+ * @return {!lf.index.Favor}
  */
 lf.index.Comparator.prototype.min;
 
@@ -24238,7 +24238,7 @@ lf.index.Comparator.prototype.min;
  * Finds which one of the two operands is the maximum in absolute terms.
  * @param {KeyType} lhs
  * @param {KeyType} rhs
- * @return {!lf.index.FAVOR}
+ * @return {!lf.index.Favor}
  */
 lf.index.Comparator.prototype.max;
 
@@ -24588,6 +24588,7 @@ goog.require('goog.array');
 goog.require('lf.Exception');
 goog.require('lf.Row');
 goog.require('lf.index');
+goog.require('lf.index.Favor');
 goog.require('lf.index.Index');
 goog.require('lf.index.SingleKeyRange');
 
@@ -24743,7 +24744,7 @@ lf.index.BTree.prototype.max = function() {
 
 
 /**
- * @param {!function(!lf.index.Index.Key, !lf.index.Index.Key):!lf.index.FAVOR}
+ * @param {!function(!lf.index.Index.Key, !lf.index.Index.Key):!lf.index.Favor}
  *     compareFn
  * @return {!Array} See lf.index.Index.min() or max() for details.
  * @private
@@ -24762,7 +24763,7 @@ lf.index.BTree.prototype.minMax_ = function(compareFn) {
   var rightMostValues =
       rightMostNode.values_[rightMostNode.keys_.length - 1];
 
-  return compareFn(leftMostKey, rightMostKey) == lf.index.FAVOR.LHS ?
+  return compareFn(leftMostKey, rightMostKey) == lf.index.Favor.LHS ?
       [leftMostKey, this.uniqueKeyOnly_ ? [leftMostValues] : leftMostValues] :
       [rightMostKey, this.uniqueKeyOnly_ ? [rightMostValues] : rightMostValues];
 };
@@ -24787,7 +24788,7 @@ lf.index.BTree.prototype.comparator = function() {
  */
 lf.index.BTree.prototype.lt = function(lhs, rhs) {
   if (goog.isDefAndNotNull(lhs)) {
-    return this.comparator_.compare(lhs, rhs) == lf.index.FAVOR.RHS;
+    return this.comparator_.compare(lhs, rhs) == lf.index.Favor.RHS;
   }
   return false;
 };
@@ -24800,7 +24801,7 @@ lf.index.BTree.prototype.lt = function(lhs, rhs) {
  */
 lf.index.BTree.prototype.eq = function(lhs, rhs) {
   if (goog.isDefAndNotNull(lhs)) {
-    return this.comparator_.compare(lhs, rhs) == lf.index.FAVOR.TIE;
+    return this.comparator_.compare(lhs, rhs) == lf.index.Favor.TIE;
   }
   return false;
 };
@@ -25563,22 +25564,22 @@ lf.index.BTreeNode_.prototype.getRange = function(opt_keyRange, opt_results) {
     var c = goog.bind(comparator.compare, comparator);
 
     if (!goog.isNull(opt_keyRange.to)) {
-      if (c(this.keys_[0], opt_keyRange.to) == lf.index.FAVOR.LHS) {
+      if (c(this.keys_[0], opt_keyRange.to) == lf.index.Favor.LHS) {
         return [];
-      } else if (c(this.keys_[end], opt_keyRange.to) != lf.index.FAVOR.RHS) {
+      } else if (c(this.keys_[end], opt_keyRange.to) != lf.index.Favor.RHS) {
         end = this.searchKey_(opt_keyRange.to);
         if ((opt_keyRange.excludeUpper &&
-            c(this.keys_[end], opt_keyRange.to) == lf.index.FAVOR.TIE) ||
-            c(this.keys_[end], opt_keyRange.to) == lf.index.FAVOR.LHS) {
+            c(this.keys_[end], opt_keyRange.to) == lf.index.Favor.TIE) ||
+            c(this.keys_[end], opt_keyRange.to) == lf.index.Favor.LHS) {
           end--;
         }
       }
     }
     if (!goog.isNull(opt_keyRange.from) &&
-        c(this.keys_[0], opt_keyRange.from) != lf.index.FAVOR.LHS) {
+        c(this.keys_[0], opt_keyRange.from) != lf.index.Favor.LHS) {
       start = this.searchKey_(opt_keyRange.from);
       if (opt_keyRange.excludeLower &&
-          c(this.keys_[start], opt_keyRange.from) == lf.index.FAVOR.TIE) {
+          c(this.keys_[start], opt_keyRange.from) == lf.index.Favor.TIE) {
         start++;
       }
     }
@@ -25698,8 +25699,8 @@ goog.provide('lf.index.SimpleComparator');
 
 goog.require('goog.functions');
 goog.require('lf.Order');
-goog.require('lf.index');
 goog.require('lf.index.Comparator');
+goog.require('lf.index.Favor');
 goog.forwardDeclare('lf.schema.Index');
 
 
@@ -25747,30 +25748,30 @@ goog.inherits(lf.index.SimpleComparator, lf.index.Comparator);
 /**
  * @param {!lf.index.Index.SingleKey} lhs
  * @param {!lf.index.Index.SingleKey} rhs
- * @return {!lf.index.FAVOR}
+ * @return {!lf.index.Favor}
  */
 lf.index.SimpleComparator.compareAscending = function(lhs, rhs) {
   return lhs > rhs ?
-      lf.index.FAVOR.LHS :
-      (lhs < rhs ? lf.index.FAVOR.RHS : lf.index.FAVOR.TIE);
+      lf.index.Favor.LHS :
+      (lhs < rhs ? lf.index.Favor.RHS : lf.index.Favor.TIE);
 };
 
 
 /**
  * @param {!lf.index.Index.SingleKey} lhs
  * @param {!lf.index.Index.SingleKey} rhs
- * @return {!lf.index.FAVOR}
+ * @return {!lf.index.Favor}
  */
 lf.index.SimpleComparator.compareDescending = function(lhs, rhs) {
   return lhs > rhs ?
-      lf.index.FAVOR.RHS :
-      (lhs < rhs ? lf.index.FAVOR.LHS : lf.index.FAVOR.TIE);
+      lf.index.Favor.RHS :
+      (lhs < rhs ? lf.index.Favor.LHS : lf.index.Favor.TIE);
 };
 
 
 /**
  * @param {!function(!lf.index.Index.SingleKey, !lf.index.Index.SingleKey):
- *     !lf.index.FAVOR} fn
+ *     !lf.index.Favor} fn
  * @param {!lf.index.Index.SingleKey} key
  * @param {!lf.index.SingleKeyRange} range
  * @return {boolean}
@@ -25780,16 +25781,16 @@ lf.index.SimpleComparator.isInRange = function(fn, key, range) {
   if (!lowerBoundCheck) {
     var favor = fn(key, /** @type {!lf.index.Index.SingleKey} */ (range.from));
     lowerBoundCheck = range.excludeLower ?
-        favor == lf.index.FAVOR.LHS :
-        favor != lf.index.FAVOR.RHS;
+        favor == lf.index.Favor.LHS :
+        favor != lf.index.Favor.RHS;
   }
 
   var upperBoundCheck = goog.isNull(range.to);
   if (!upperBoundCheck) {
     var favor = fn(key, /** @type {!lf.index.Index.SingleKey} */ (range.to));
     upperBoundCheck = range.excludeUpper ?
-        favor == lf.index.FAVOR.RHS :
-        favor != lf.index.FAVOR.LHS;
+        favor == lf.index.Favor.RHS :
+        favor != lf.index.Favor.LHS;
   }
 
   return lowerBoundCheck && upperBoundCheck;
@@ -25804,15 +25805,15 @@ lf.index.SimpleComparator.prototype.compare = function(lhs, rhs) {
 
 /** @override */
 lf.index.SimpleComparator.prototype.min = function(lhs, rhs) {
-  return lhs < rhs ? lf.index.FAVOR.LHS :
-      (lhs == rhs ? lf.index.FAVOR.TIE : lf.index.FAVOR.RHS);
+  return lhs < rhs ? lf.index.Favor.LHS :
+      (lhs == rhs ? lf.index.Favor.TIE : lf.index.Favor.RHS);
 };
 
 
 /** @override */
 lf.index.SimpleComparator.prototype.max = function(lhs, rhs) {
-  return lhs > rhs ? lf.index.FAVOR.LHS :
-      (lhs == rhs ? lf.index.FAVOR.TIE : lf.index.FAVOR.RHS);
+  return lhs > rhs ? lf.index.Favor.LHS :
+      (lhs == rhs ? lf.index.Favor.TIE : lf.index.Favor.RHS);
 };
 
 
@@ -25872,14 +25873,14 @@ lf.index.MultiKeyComparator.createOrders = function(numKeys, order) {
  * @param {!lf.index.Index.Key} rhs
  * @param {!function(!lf.index.SimpleComparator,
  *                   !lf.index.Index.SingleKey,
- *                   !lf.index.Index.SingleKey): lf.index.FAVOR} fn
- * @return {!lf.index.FAVOR}
+ *                   !lf.index.Index.SingleKey): lf.index.Favor} fn
+ * @return {!lf.index.Favor}
  * @private
  */
 lf.index.MultiKeyComparator.prototype.forEach_ = function(lhs, rhs, fn) {
-  var favor = lf.index.FAVOR.TIE;
+  var favor = lf.index.Favor.TIE;
   for (var i = 0;
-      i < this.comparators_.length && favor == lf.index.FAVOR.TIE;
+      i < this.comparators_.length && favor == lf.index.Favor.TIE;
       ++i) {
     favor = fn(this.comparators_[i], lhs[i], rhs[i]);
   }
@@ -25959,6 +25960,7 @@ goog.require('lf.Exception');
 goog.require('lf.Order');
 goog.require('lf.Row');
 goog.require('lf.index');
+goog.require('lf.index.Favor');
 goog.require('lf.index.Index');
 goog.require('lf.index.SimpleComparator');
 goog.require('lf.index.SingleKeyRange');
@@ -26041,7 +26043,7 @@ lf.index.RowId.prototype.max = function() {
 
 
 /**
- * @param {!function(!lf.index.Index.SingleKey, !lf.index.Index.SingleKey):!lf.index.FAVOR}
+ * @param {!function(!lf.index.Index.SingleKey, !lf.index.Index.SingleKey):!lf.index.Favor}
  *     compareFn
  * @return {!Array} See lf.index.Index.min() or max() for details.
  * @private
@@ -26054,7 +26056,7 @@ lf.index.RowId.prototype.minMax_ = function(compareFn) {
   var key = this.rows_.getValues().reduce(goog.bind(
       function(keySoFar, key) {
         return goog.isNull(keySoFar) ||
-            compareFn(key, keySoFar) == lf.index.FAVOR.LHS ?
+            compareFn(key, keySoFar) == lf.index.Favor.LHS ?
             key : keySoFar;
       }, this), null);
 
@@ -26356,6 +26358,7 @@ goog.provide('lf.index.AATree');
 goog.require('goog.asserts');
 goog.require('lf.Exception');
 goog.require('lf.index');
+goog.require('lf.index.Favor');
 goog.require('lf.index.Index');
 goog.require('lf.index.SingleKeyRange');
 
@@ -26484,9 +26487,9 @@ lf.index.AATree.prototype.insert_ = function(node, key, value) {
   }
 
   var favor = this.comparator_.compare(key, node.key);
-  if (favor == lf.index.FAVOR.RHS) {
+  if (favor == lf.index.Favor.RHS) {
     node.left = this.insert_(node.left, key, value);
-  } else if (favor == lf.index.FAVOR.LHS) {
+  } else if (favor == lf.index.Favor.LHS) {
     node.right = this.insert_(node.right, key, value);
   } else {
     throw new lf.Exception(
@@ -26529,10 +26532,10 @@ lf.index.AATree.prototype.delete_ = function(node, key) {
   }
 
   var favor = this.comparator_.compare(key, node.key);
-  if (favor == lf.index.FAVOR.RHS) {
+  if (favor == lf.index.Favor.RHS) {
     node.left = this.delete_(node.left, key);
   } else {
-    if (favor == lf.index.FAVOR.TIE) {
+    if (favor == lf.index.Favor.TIE) {
       this.deleted_ = node;
     }
     node.right = this.delete_(node.right, key);
@@ -26578,8 +26581,8 @@ lf.index.AATree.prototype.search_ = function(node, key) {
   }
 
   var favor = this.comparator_.compare(key, node.key);
-  return (favor == lf.index.FAVOR.TIE) ? node :
-      (favor == lf.index.FAVOR.RHS) ? this.search_(node.left, key) :
+  return (favor == lf.index.Favor.TIE) ? node :
+      (favor == lf.index.Favor.RHS) ? this.search_(node.left, key) :
       this.search_(node.right, key);
 };
 
@@ -26639,7 +26642,7 @@ lf.index.AATree.prototype.traverse_ = function(node, keyRange, results) {
   if (this.comparator_.compare(
           node.key,
           /** @type {!lf.index.Index.Key} */ (keyRange.from)) ==
-      lf.index.FAVOR.LHS) {
+      lf.index.Favor.LHS) {
     this.traverse_(node.left, keyRange, results);
   }
 
@@ -26650,7 +26653,7 @@ lf.index.AATree.prototype.traverse_ = function(node, keyRange, results) {
   if (this.comparator_.compare(
           node.key,
           /** @type {!lf.index.Index.Key} */ (keyRange.to)) ==
-      lf.index.FAVOR.RHS) {
+      lf.index.Favor.RHS) {
     this.traverse_(node.right, keyRange, results);
   }
 };
@@ -26715,7 +26718,7 @@ lf.index.AATree.prototype.max = function() {
 
 
 /**
- * @param {!function(!lf.index.Index.Key, !lf.index.Index.Key):!lf.index.FAVOR}
+ * @param {!function(!lf.index.Index.Key, !lf.index.Index.Key):!lf.index.Favor}
  *     compareFn
  * @return {!Array} See lf.index.Index.min() or max() for details.
  * @private
@@ -26729,7 +26732,7 @@ lf.index.AATree.prototype.minMax_ = function(compareFn) {
     return [null, null];
   }
 
-  return compareFn(leftMostNode.key, rightMostNode.key) == lf.index.FAVOR.LHS ?
+  return compareFn(leftMostNode.key, rightMostNode.key) == lf.index.Favor.LHS ?
       [leftMostNode.key, [leftMostNode.value]] :
       [rightMostNode.key, [rightMostNode.value]];
 };

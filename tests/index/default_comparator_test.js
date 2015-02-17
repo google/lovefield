@@ -17,13 +17,13 @@
 goog.setTestOnly();
 goog.require('goog.testing.jsunit');
 goog.require('lf.Order');
-goog.require('lf.index');
+goog.require('lf.index.Favor');
 goog.require('lf.index.MultiKeyComparator');
 goog.require('lf.index.SimpleComparator');
 goog.require('lf.index.SingleKeyRange');
 
 
-var favor = lf.index.FAVOR;
+var favor = lf.index.Favor;
 
 function testSimpleComparator_Asc() {
   var comparator = new lf.index.SimpleComparator(lf.Order.ASC);
