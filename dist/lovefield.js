@@ -3231,14 +3231,14 @@ goog.addDependency('module/abstractmoduleloader.js', ['goog.module.AbstractModul
 goog.addDependency('module/basemodule.js', ['goog.module.BaseModule'], ['goog.Disposable', 'goog.module'], false);
 goog.addDependency('module/loader.js', ['goog.module.Loader'], ['goog.Timer', 'goog.array', 'goog.dom', 'goog.module', 'goog.object'], false);
 goog.addDependency('module/module.js', ['goog.module'], [], false);
-goog.addDependency('module/moduleinfo.js', ['goog.module.ModuleInfo'], ['goog.Disposable', 'goog.functions', 'goog.module', 'goog.module.BaseModule', 'goog.module.ModuleLoadCallback'], false);
-goog.addDependency('module/moduleinfo_test.js', ['goog.module.ModuleInfoTest'], ['goog.module.BaseModule', 'goog.module.ModuleInfo', 'goog.testing.jsunit'], false);
+goog.addDependency('module/moduleinfo.js', ['goog.module.ModuleInfo'], ['goog.Disposable', 'goog.async.throwException', 'goog.functions', 'goog.module', 'goog.module.BaseModule', 'goog.module.ModuleLoadCallback'], false);
+goog.addDependency('module/moduleinfo_test.js', ['goog.module.ModuleInfoTest'], ['goog.module.BaseModule', 'goog.module.ModuleInfo', 'goog.testing.MockClock', 'goog.testing.jsunit'], false);
 goog.addDependency('module/moduleloadcallback.js', ['goog.module.ModuleLoadCallback'], ['goog.debug.entryPointRegistry', 'goog.debug.errorHandlerWeakDep', 'goog.module'], false);
 goog.addDependency('module/moduleloadcallback_test.js', ['goog.module.ModuleLoadCallbackTest'], ['goog.debug.ErrorHandler', 'goog.debug.entryPointRegistry', 'goog.functions', 'goog.module.ModuleLoadCallback', 'goog.testing.jsunit', 'goog.testing.recordFunction'], false);
 goog.addDependency('module/moduleloader.js', ['goog.module.ModuleLoader'], ['goog.Timer', 'goog.array', 'goog.events', 'goog.events.Event', 'goog.events.EventHandler', 'goog.events.EventTarget', 'goog.log', 'goog.module.AbstractModuleLoader', 'goog.net.BulkLoader', 'goog.net.EventType', 'goog.net.jsloader', 'goog.userAgent', 'goog.userAgent.product'], false);
 goog.addDependency('module/moduleloader_test.js', ['goog.module.ModuleLoaderTest'], ['goog.array', 'goog.dom', 'goog.events', 'goog.functions', 'goog.module.ModuleLoader', 'goog.module.ModuleManager', 'goog.net.BulkLoader', 'goog.net.XmlHttp', 'goog.object', 'goog.testing.AsyncTestCase', 'goog.testing.PropertyReplacer', 'goog.testing.events.EventObserver', 'goog.testing.jsunit', 'goog.userAgent'], false);
 goog.addDependency('module/modulemanager.js', ['goog.module.ModuleManager', 'goog.module.ModuleManager.CallbackType', 'goog.module.ModuleManager.FailureType'], ['goog.Disposable', 'goog.array', 'goog.asserts', 'goog.async.Deferred', 'goog.debug.Trace', 'goog.dispose', 'goog.log', 'goog.module', 'goog.module.ModuleInfo', 'goog.module.ModuleLoadCallback', 'goog.object'], false);
-goog.addDependency('module/modulemanager_test.js', ['goog.module.ModuleManagerTest'], ['goog.array', 'goog.functions', 'goog.module.BaseModule', 'goog.module.ModuleManager', 'goog.testing', 'goog.testing.MockClock', 'goog.testing.jsunit', 'goog.testing.recordFunction', 'goog.userAgent'], false);
+goog.addDependency('module/modulemanager_test.js', ['goog.module.ModuleManagerTest'], ['goog.array', 'goog.functions', 'goog.module.BaseModule', 'goog.module.ModuleManager', 'goog.testing', 'goog.testing.MockClock', 'goog.testing.jsunit', 'goog.testing.recordFunction'], false);
 goog.addDependency('module/testdata/modA_1.js', ['goog.module.testdata.modA_1'], [], false);
 goog.addDependency('module/testdata/modA_2.js', ['goog.module.testdata.modA_2'], ['goog.module.ModuleManager'], false);
 goog.addDependency('module/testdata/modB_1.js', ['goog.module.testdata.modB_1'], ['goog.module.ModuleManager'], false);
@@ -3255,7 +3255,7 @@ goog.addDependency('net/cookies.js', ['goog.net.Cookies', 'goog.net.cookies'], [
 goog.addDependency('net/cookies_test.js', ['goog.net.cookiesTest'], ['goog.array', 'goog.net.cookies', 'goog.testing.PropertyReplacer', 'goog.testing.jsunit'], false);
 goog.addDependency('net/corsxmlhttpfactory.js', ['goog.net.CorsXmlHttpFactory', 'goog.net.IeCorsXhrAdapter'], ['goog.net.HttpStatus', 'goog.net.XhrLike', 'goog.net.XmlHttp', 'goog.net.XmlHttpFactory'], false);
 goog.addDependency('net/corsxmlhttpfactory_test.js', ['goog.net.CorsXmlHttpFactoryTest'], ['goog.net.CorsXmlHttpFactory', 'goog.net.IeCorsXhrAdapter', 'goog.testing.jsunit', 'goog.userAgent'], false);
-goog.addDependency('net/crossdomainrpc.js', ['goog.net.CrossDomainRpc'], ['goog.Uri', 'goog.dom', 'goog.events', 'goog.events.EventTarget', 'goog.events.EventType', 'goog.json', 'goog.log', 'goog.net.EventType', 'goog.net.HttpStatus', 'goog.string', 'goog.userAgent'], false);
+goog.addDependency('net/crossdomainrpc.js', ['goog.net.CrossDomainRpc'], ['goog.Uri', 'goog.dom', 'goog.dom.safe', 'goog.events', 'goog.events.EventTarget', 'goog.events.EventType', 'goog.html.legacyconversions', 'goog.json', 'goog.log', 'goog.net.EventType', 'goog.net.HttpStatus', 'goog.string', 'goog.userAgent'], false);
 goog.addDependency('net/crossdomainrpc_test.js', ['goog.net.CrossDomainRpcTest'], ['goog.log', 'goog.log.Level', 'goog.net.CrossDomainRpc', 'goog.testing.AsyncTestCase', 'goog.testing.jsunit', 'goog.userAgent'], false);
 goog.addDependency('net/errorcode.js', ['goog.net.ErrorCode'], [], false);
 goog.addDependency('net/eventtype.js', ['goog.net.EventType'], [], false);
@@ -3589,7 +3589,7 @@ goog.addDependency('testing/style/layoutasserts_test.js', ['goog.testing.style.l
 goog.addDependency('testing/style/style.js', ['goog.testing.style'], ['goog.dom', 'goog.math.Rect', 'goog.style'], false);
 goog.addDependency('testing/style/style_test.js', ['goog.testing.styleTest'], ['goog.dom', 'goog.style', 'goog.testing.jsunit', 'goog.testing.style'], false);
 goog.addDependency('testing/testcase.js', ['goog.testing.TestCase', 'goog.testing.TestCase.Error', 'goog.testing.TestCase.Order', 'goog.testing.TestCase.Result', 'goog.testing.TestCase.Test'], ['goog.Promise', 'goog.Thenable', 'goog.object', 'goog.testing.asserts', 'goog.testing.stacktrace'], false);
-goog.addDependency('testing/testcase_test.js', ['goog.testing.TestCaseTest'], ['goog.Promise', 'goog.testing.MockRandom', 'goog.testing.TestCase', 'goog.testing.jsunit'], false);
+goog.addDependency('testing/testcase_test.js', ['goog.testing.TestCaseTest'], ['goog.Promise', 'goog.testing.TestCase', 'goog.testing.jsunit'], false);
 goog.addDependency('testing/testqueue.js', ['goog.testing.TestQueue'], [], false);
 goog.addDependency('testing/testrunner.js', ['goog.testing.TestRunner'], ['goog.testing.TestCase'], false);
 goog.addDependency('testing/ui/rendererasserts.js', ['goog.testing.ui.rendererasserts'], ['goog.testing.asserts', 'goog.ui.ControlRenderer'], false);
@@ -3627,7 +3627,7 @@ goog.addDependency('ui/ac/renderer_test.js', ['goog.ui.ac.RendererTest'], ['goog
 goog.addDependency('ui/ac/renderoptions.js', ['goog.ui.ac.RenderOptions'], [], false);
 goog.addDependency('ui/ac/richinputhandler.js', ['goog.ui.ac.RichInputHandler'], ['goog.ui.ac.InputHandler'], false);
 goog.addDependency('ui/ac/richremote.js', ['goog.ui.ac.RichRemote'], ['goog.ui.ac.AutoComplete', 'goog.ui.ac.Remote', 'goog.ui.ac.Renderer', 'goog.ui.ac.RichInputHandler', 'goog.ui.ac.RichRemoteArrayMatcher'], false);
-goog.addDependency('ui/ac/richremotearraymatcher.js', ['goog.ui.ac.RichRemoteArrayMatcher'], ['goog.json', 'goog.ui.ac.RemoteArrayMatcher'], false);
+goog.addDependency('ui/ac/richremotearraymatcher.js', ['goog.ui.ac.RichRemoteArrayMatcher'], ['goog.dom.safe', 'goog.html.legacyconversions', 'goog.json', 'goog.ui.ac.RemoteArrayMatcher'], false);
 goog.addDependency('ui/activitymonitor.js', ['goog.ui.ActivityMonitor'], ['goog.array', 'goog.asserts', 'goog.dom', 'goog.events.EventHandler', 'goog.events.EventTarget', 'goog.events.EventType'], false);
 goog.addDependency('ui/activitymonitor_test.js', ['goog.ui.ActivityMonitorTest'], ['goog.dom', 'goog.events', 'goog.events.Event', 'goog.events.EventType', 'goog.testing.MockClock', 'goog.testing.PropertyReplacer', 'goog.testing.events', 'goog.testing.jsunit', 'goog.testing.recordFunction', 'goog.ui.ActivityMonitor'], false);
 goog.addDependency('ui/advancedtooltip.js', ['goog.ui.AdvancedTooltip'], ['goog.events', 'goog.events.EventType', 'goog.math.Box', 'goog.math.Coordinate', 'goog.style', 'goog.ui.Tooltip', 'goog.userAgent'], false);
@@ -19558,33 +19558,40 @@ goog.Promise = function(resolver, opt_context) {
     this.currentStep_ = 0;
   }
 
-  try {
-    var self = this;
-    resolver.call(
-        opt_context,
-        function(value) {
-          self.resolve_(goog.Promise.State_.FULFILLED, value);
-        },
-        function(reason) {
-          if (goog.DEBUG &&
-              !(reason instanceof goog.Promise.CancellationError)) {
-            try {
-              // Promise was rejected. Step up one call frame to see why.
-              if (reason instanceof Error) {
-                throw reason;
-              } else {
-                throw new Error('Promise rejected.');
+  if (resolver == goog.Promise.RESOLVE_FAST_PATH_) {
+    // If the special sentinel resolver value is passed (from
+    // goog.Promise.resolve) we short cut to immediately resolve the promise
+    // using the value passed as opt_context. Don't try this at home.
+    this.resolve_(goog.Promise.State_.FULFILLED, opt_context);
+  } else {
+    try {
+      var self = this;
+      resolver.call(
+          opt_context,
+          function(value) {
+            self.resolve_(goog.Promise.State_.FULFILLED, value);
+          },
+          function(reason) {
+            if (goog.DEBUG &&
+                !(reason instanceof goog.Promise.CancellationError)) {
+              try {
+                // Promise was rejected. Step up one call frame to see why.
+                if (reason instanceof Error) {
+                  throw reason;
+                } else {
+                  throw new Error('Promise rejected.');
+                }
+              } catch (e) {
+                // Only thrown so browser dev tools can catch rejections of
+                // promises when the option to break on caught exceptions is
+                // activated.
               }
-            } catch (e) {
-              // Only thrown so browser dev tools can catch rejections of
-              // promises when the option to break on caught exceptions is
-              // activated.
             }
-          }
-          self.resolve_(goog.Promise.State_.REJECTED, reason);
-        });
-  } catch (e) {
-    this.resolve_(goog.Promise.State_.REJECTED, e);
+            self.resolve_(goog.Promise.State_.REJECTED, reason);
+          });
+    } catch (e) {
+      this.resolve_(goog.Promise.State_.REJECTED, e);
+    }
   }
 };
 
@@ -19645,15 +19652,25 @@ goog.Promise.CallbackEntry_;
 
 
 /**
+ * If this passed as the first argument to the {@link goog.Promise} constructor
+ * the the opt_context is (against its primary use) used to immediately resolve
+ * the promise. This is used from  {@link goog.Promise.resolve} as an
+ * optimization to avoid allocating 3 closures that are never really needed.
+ * @private @const {!Function}
+ */
+goog.Promise.RESOLVE_FAST_PATH_ = function() {};
+
+
+/**
  * @param {(TYPE|goog.Thenable<TYPE>|Thenable)=} opt_value
  * @return {!goog.Promise<TYPE>} A new Promise that is immediately resolved
  *     with the given value.
  * @template TYPE
  */
 goog.Promise.resolve = function(opt_value) {
-  return new goog.Promise(function(resolve, reject) {
-    resolve(opt_value);
-  });
+  // Passes the value as the context, which is a special fast pass when
+  // goog.Promise.RESOLVE_FAST_PATH_ is passed as the first argument.
+  return new goog.Promise(goog.Promise.RESOLVE_FAST_PATH_, opt_value);
 };
 
 
@@ -19915,6 +19932,7 @@ goog.Promise.prototype.cancelInternal_ = function(err) {
     if (this.parent_) {
       // Cancel the Promise and remove it from the parent's child list.
       this.parent_.cancelChild_(this, err);
+      this.parent_ = null;
     } else {
       this.resolve_(goog.Promise.State_.REJECTED, err);
     }
@@ -20126,6 +20144,9 @@ goog.Promise.prototype.resolve_ = function(state, x) {
 
   this.result_ = x;
   this.state_ = state;
+  // Since we can no longer be cancelled, remove link to parent, so that the
+  // child promise does not keep the parent promise alive.
+  this.parent_ = null;
   this.scheduleCallbacks_();
 
   if (state == goog.Promise.State_.REJECTED &&
@@ -20208,7 +20229,7 @@ goog.Promise.prototype.scheduleCallbacks_ = function() {
 goog.Promise.prototype.executeCallbacks_ = function() {
   while (this.callbackEntries_ && this.callbackEntries_.length) {
     var entries = this.callbackEntries_;
-    this.callbackEntries_ = [];
+    this.callbackEntries_ = null;
 
     for (var i = 0; i < entries.length; i++) {
       if (goog.Promise.LONG_STACK_TRACES) {
@@ -21059,20 +21080,51 @@ lf.Exception = function(name, message) {
 
 /** @enum {string} */
 lf.Exception.Type = {
+  // Context is already in use and cannot be reused. For example, attempt to
+  // start observer twice.
   BLOCKING: 'BlockingError',
+
+  // Constraints specified in schema are violated.
   CONSTRAINT: 'ConstraintError',
-  CONTEXT: 'ContextError',
+
+  // Data provided to an operation does not meet requirements.
   DATA: 'DataError',
+
+  // Specified name not found.
   NOT_FOUND: 'NotFoundError',
+
+  // The feature is not supported/implemented yet.
   NOT_SUPPORTED: 'NotSupportedError',
+
+  // The operation failed because there was not enough remaining storage space,
+  // or the storage quota was reached and the user declined to give more space
+  // to the database.
   QUOTA_EXCEEDED: 'QuotaExceededError',
+
+  // Invalid syntax. For example, calling from() twice.
   SYNTAX: 'SyntaxError',
+
+  // Scope violation: attempt to access outside of specified scope. For example,
+  // accessing table not specified in transaction.begin().
   SCOPE_ERROR: 'ScopeError',
+
+  // Operation time out. (Reserved, not used in Lovefield yet.)
   TIMEOUT: 'TimeoutError',
+
+  // The index structure (B+ Tree) is not capable of handling so many rows
+  // (current limitation is 2^27 = 134217728 rows).
   TOO_MANY_ROWS: 'TooManyRowsError',
+
+  // Transaction is in an invalid state.
   TRANSACTION: 'TransactionError',
+
+  // Unknown error.
   UNKNOWN: 'UnknownError',
+
+  // The database connection has not initialized yet.
   UNINITIALIZED: 'UninitializedError',
+
+  // Lovefield library version mismatch.
   VERSION: 'VersionError'
 };
 
