@@ -56,3 +56,18 @@ lovefield.db.getInstance = function(opt_onUpgrade, opt_volatile) {
       opt_volatile ? lf.schema.DataStoreType.MEMORY : undefined,
       false);
 };
+
+
+/**
+ * @param {!lf.schema.ConnectOptions=} opt_options
+ * @return {!IThenable.<!lf.proc.Database>}
+ */
+lovefield.db.connect = function(opt_options) {
+  lovefield.db.getSchema();
+  var db = new lf.proc.Database(lovefield.db.getGlobal());
+  var upgradeCallback = (opt_options && opt_options.onUpgrade) ?
+      opt_options.onUpgrade : undefined;
+  var backstoreType = (opt_options && opt_options.storeType) ?
+      opt_options.storeType : undefined;
+  return db.init(upgradeCallback, backstoreType, false);
+};

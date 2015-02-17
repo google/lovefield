@@ -20,7 +20,7 @@ ds.createTable('Item').
 
 var todoDb;
 var item;
-ds.getInstance().then(function(db) {
+ds.connect().then(function(db) {
   todoDb = db;
   item = db.getSchema().table('Item');
   var row = item.createRow({
