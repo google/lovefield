@@ -25,6 +25,7 @@ goog.require('lf.index.SingleKeyRange');
 
 var favor = lf.index.Favor;
 
+
 function testSimpleComparator_Asc() {
   var comparator = new lf.index.SimpleComparator(lf.Order.ASC);
   var c = goog.bind(comparator.compare, comparator);
@@ -44,6 +45,7 @@ function testSimpleComparator_Asc() {
   assertEquals(favor.LHS, c('bbb', 'bba'));
   assertEquals(favor.RHS, c('bba', 'bbb'));
 }
+
 
 function testSimpleComparator_Desc() {
   var comparator = new lf.index.SimpleComparator(lf.Order.DESC);
@@ -129,6 +131,7 @@ function checkSimpleComparator_Max(c) {
   assertEquals(favor.RHS, c.max('bba', 'bbb'));
 }
 
+
 function testMultiKeyComparator_Min() {
   var c1 = new lf.index.MultiKeyComparator([lf.Order.DESC, lf.Order.ASC]);
   checkMultiKeyComparator_Min(c1);
@@ -142,6 +145,7 @@ function testMultiKeyComparator_Min() {
   var c4 = new lf.index.MultiKeyComparator([lf.Order.ASC, lf.Order.ASC]);
   checkMultiKeyComparator_Min(c4);
 }
+
 
 function testMultiKeyComparator_Max() {
   var c1 = new lf.index.MultiKeyComparator([lf.Order.DESC, lf.Order.ASC]);
@@ -266,8 +270,10 @@ function testMultiKeyComparator_CustomOrder() {
   assertEquals(favor.RHS, c([2, 'zza'], [2, 'zzz']));
 }
 
+
 function testSimpleComparator_NormalizeKeyRange_Asc() {
   var c = new lf.index.SimpleComparator(lf.Order.ASC);
+  assertEquals(null, c.normalizeKeyRange(undefined));
   assertEquals(
       '[unbound, unbound]',
       c.normalizeKeyRange(lf.index.SingleKeyRange.all()).toString());
@@ -283,9 +289,11 @@ function testSimpleComparator_NormalizeKeyRange_Asc() {
       '[2, 2]',
       c.normalizeKeyRange(lf.index.SingleKeyRange.only(2)).toString());
 }
+
 
 function testSimpleComparator_NormalizeKeyRange_Desc() {
   var c = new lf.index.SimpleComparator(lf.Order.DESC);
+  assertEquals(null, c.normalizeKeyRange(undefined));
   assertEquals(
       '[unbound, unbound]',
       c.normalizeKeyRange(lf.index.SingleKeyRange.all()).toString());
@@ -302,8 +310,10 @@ function testSimpleComparator_NormalizeKeyRange_Desc() {
       c.normalizeKeyRange(lf.index.SingleKeyRange.only(2)).toString());
 }
 
+
 function testMultiKeyComparator_NormalizeKeyRange() {
   var c = new lf.index.MultiKeyComparator([lf.Order.ASC, lf.Order.DESC]);
+  assertEquals(null, c.normalizeKeyRange(undefined));
   assertEquals(
       '[unbound, unbound],[unbound, unbound]',
       c.normalizeKeyRange([
@@ -326,6 +336,7 @@ function testMultiKeyComparator_NormalizeKeyRange() {
         lf.index.SingleKeyRange.only(2)]).toString());
 }
 
+
 function testSimpleComparator_isInRange() {
   var c = new lf.index.SimpleComparator(lf.Order.ASC);
   assertTrue(c.isInRange(2, lf.index.SingleKeyRange.all()));
@@ -335,6 +346,7 @@ function testSimpleComparator_isInRange() {
   assertFalse(c.isInRange(2, lf.index.SingleKeyRange.upperBound(2, true)));
   assertTrue(c.isInRange(2, lf.index.SingleKeyRange.only(2)));
 }
+
 
 function testMultiKeyComparator_isInRange() {
   // The orders do not really affect the judgement for this test, therefore
@@ -364,4 +376,150 @@ function testMultiKeyComparator_isInRange() {
   assertFalse(c.isInRange([2, 2], [upperBoundExclude, lowerBound]));
   assertFalse(c.isInRange([2, 2], [upperBound, lowerBoundExclude]));
   assertFalse(c.isInRange([2, 2], [upperBoundExclude, lowerBoundExclude]));
+}
+
+
+/**
+ * Tests that bindKeyRange correctly binds the unbound key ranges in the case of
+ * a SimpleComparator with ascending order.
+ */
+function testSimpleComparator_BindKeyRange_Asc() {
+  var c = new lf.index.SimpleComparator(lf.Order.ASC);
+  var leftMostKey = 1;
+  var rightMostKey = 100;
+
+  var keyRanges = [
+    undefined,
+    lf.index.SingleKeyRange.lowerBound(5, false),
+    lf.index.SingleKeyRange.upperBound(5, true),
+    lf.index.SingleKeyRange.only(5)
+  ];
+
+  var expectations = [
+    '[1, 100]',
+    '[5, 100]',
+    '[1, 5)',
+    '[5, 5]'
+  ];
+
+  checkBindKeyRange(c, leftMostKey, rightMostKey, keyRanges, expectations);
+}
+
+
+/**
+ * Tests that bindKeyRange correctly binds the unbound key ranges in the case of
+ * a SimpleComparator with descending order.
+ */
+function testSimpleComparator_BindKeyRange_Desc() {
+  var c = new lf.index.SimpleComparator(lf.Order.DESC);
+  var leftMostKey = 100;
+  var rightMostKey = 1;
+
+  var keyRanges = [
+    undefined,
+    lf.index.SingleKeyRange.lowerBound(5, false),
+    lf.index.SingleKeyRange.upperBound(5, true),
+    lf.index.SingleKeyRange.only(5)
+  ];
+
+  var expectations = [
+    '[100, 1]',
+    '[100, 5]',
+    '(5, 1]',
+    '[5, 5]'
+  ];
+
+  checkBindKeyRange(c, leftMostKey, rightMostKey, keyRanges, expectations);
+}
+
+
+/**
+ * Tests that bindKeyRange correctly binds the unbound key ranges in the case of
+ * a MultiKeyComparator with ascending order on all keys.
+ */
+function testMultiKeyComparator_BindKeyRange_Asc() {
+  var c = new lf.index.MultiKeyComparator([lf.Order.ASC, lf.Order.ASC]);
+  var leftMostKey = [1, 'A'];
+  var rightMostKey = [100, 'Z'];
+
+  var keyRanges = [
+    undefined,
+    [
+      lf.index.SingleKeyRange.lowerBound(5, false),
+      lf.index.SingleKeyRange.lowerBound('D', true)
+    ],
+    [
+      lf.index.SingleKeyRange.upperBound(90, false),
+      lf.index.SingleKeyRange.upperBound('X', true)
+    ],
+    [
+      lf.index.SingleKeyRange.only(90),
+      lf.index.SingleKeyRange.only('X')
+    ]
+  ];
+
+  var expectations = [
+    '[1, 100],[A, Z]',
+    '[5, 100],(D, Z]',
+    '[1, 90],[A, X)',
+    '[90, 90],[X, X]'
+  ];
+
+  checkBindKeyRange(c, leftMostKey, rightMostKey, keyRanges, expectations);
+}
+
+
+/**
+ * Tests that bindKeyRange correctly binds the unbound key ranges in the case of
+ * a MultiKeyComparator with ascending order on first key, and descending on the
+ * second.
+ */
+function testMultiKeyComparator_BindKeyRange_MixedOrder() {
+  var c = new lf.index.MultiKeyComparator([lf.Order.ASC, lf.Order.DESC]);
+  var leftMostKey = [1, 'Z'];
+  var rightMostKey = [100, 'A'];
+
+  var keyRanges = [
+    undefined,
+    [
+      lf.index.SingleKeyRange.lowerBound(5, false),
+      lf.index.SingleKeyRange.lowerBound('D', true)
+    ],
+    [
+      lf.index.SingleKeyRange.upperBound(90, false),
+      lf.index.SingleKeyRange.upperBound('X', true)
+    ],
+    [
+      lf.index.SingleKeyRange.only(90),
+      lf.index.SingleKeyRange.only('X')
+    ]
+  ];
+
+  var expectations = [
+    '[1, 100],[Z, A]',
+    '[5, 100],[Z, D)',
+    '[1, 90],(X, A]',
+    '[90, 90],[X, X]'
+  ];
+
+  checkBindKeyRange(c, leftMostKey, rightMostKey, keyRanges, expectations);
+}
+
+
+/**
+ * @param {!lf.index.Comparator} comparator The comparator to be checked.
+ * @param {!lf.index.Index.Key} leftMostKey
+ * @param {!lf.index.Index.Key} rightMostKey
+ * @param {!Array<!lf.index.KeyRange>} keyRanges
+ * @param {!Array<string>} expectations
+ */
+function checkBindKeyRange(
+    comparator, leftMostKey, rightMostKey, keyRanges, expectations) {
+  keyRanges.forEach(function(keyRange, i) {
+    var expectation = expectations[i];
+    var normalizeKeyRange = comparator.normalizeKeyRange(keyRange);
+    var boundKeyRange = comparator.bindKeyRange(
+        leftMostKey, rightMostKey, normalizeKeyRange);
+    assertEquals(expectation, boundKeyRange.toString());
+  });
 }
