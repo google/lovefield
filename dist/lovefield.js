@@ -24231,6 +24231,19 @@ lf.index.Comparator.prototype.compare;
 
 
 /**
+ * Returns an array of boolean which represents the relative positioning of
+ * a key to a range. The concept is to project both the key and the range onto
+ * the 1-D space. The returned array is in the form of [left, right]. If the
+ * range projection covers any value left/right of the key (including the key
+ * itself), then left/right will be set to true.
+ * @param {KeyType} key
+ * @param {RangeType} range
+ * @return {!Array<boolean>}
+ */
+lf.index.Comparator.prototype.compareRange;
+
+
+/**
  * Finds which one of the two operands is the minimum in absolute terms.
  * @param {KeyType} lhs
  * @param {KeyType} rhs
@@ -25787,36 +25800,56 @@ lf.index.SimpleComparator.compareDescending = function(lhs, rhs) {
 
 
 /**
+ * Checks if the range covers "left" or "right" of the key (inclusive).
+ * For example:
+ *
+ * key is 2, comparator ASC
+ *
+ * |-----|-----X-----|-----|
+ * 0     1     2     3     4
+ *
+ * range [0, 4] and [2, 2] cover both left and right, so return [true, true].
+ * range [0, 2) covers only left, return [true, false].
+ * range (2, 0] covers only right, return [false, true].
+ *
+ * @see {Comparator#compareRange}
  * @param {!function(!lf.index.Index.SingleKey, !lf.index.Index.SingleKey):
  *     !lf.index.Favor} fn
  * @param {!lf.index.Index.SingleKey} key
- * @param {!lf.index.SingleKeyRange} range
- * @return {boolean}
+ * @param {!lf.index.SingleKeyRange} range Normalized range.
+ * @return {!Array<boolean>}
  */
-lf.index.SimpleComparator.isInRange = function(fn, key, range) {
-  var lowerBoundCheck = goog.isNull(range.from);
-  if (!lowerBoundCheck) {
+lf.index.SimpleComparator.compareRange = function(fn, key, range) {
+  var LEFT = 0;
+  var RIGHT = 1;
+  var results = [goog.isNull(range.from), goog.isNull(range.to)];
+  if (!results[LEFT]) {
     var favor = fn(key, /** @type {!lf.index.Index.SingleKey} */ (range.from));
-    lowerBoundCheck = range.excludeLower ?
+    results[LEFT] = range.excludeLower ?
         favor == lf.index.Favor.LHS :
         favor != lf.index.Favor.RHS;
   }
 
-  var upperBoundCheck = goog.isNull(range.to);
-  if (!upperBoundCheck) {
+  if (!results[RIGHT]) {
     var favor = fn(key, /** @type {!lf.index.Index.SingleKey} */ (range.to));
-    upperBoundCheck = range.excludeUpper ?
+    results[RIGHT] = range.excludeUpper ?
         favor == lf.index.Favor.RHS :
         favor != lf.index.Favor.LHS;
   }
 
-  return lowerBoundCheck && upperBoundCheck;
+  return results;
 };
 
 
 /** @override */
 lf.index.SimpleComparator.prototype.compare = function(lhs, rhs) {
   return this.compare_(lhs, rhs);
+};
+
+
+/** @override */
+lf.index.SimpleComparator.prototype.compareRange = function(key, range) {
+  return lf.index.SimpleComparator.compareRange(this.compare_, key, range);
 };
 
 
@@ -25836,7 +25869,9 @@ lf.index.SimpleComparator.prototype.max = function(lhs, rhs) {
 
 /** @override */
 lf.index.SimpleComparator.prototype.isInRange = function(key, range) {
-  return lf.index.SimpleComparator.isInRange(this.compare_, key, range);
+  var results = lf.index.SimpleComparator.compareRange(
+      this.compare_, key, range);
+  return results[0] && results[1];
 };
 
 
@@ -25944,6 +25979,20 @@ lf.index.MultiKeyComparator.prototype.max = function(lhs, rhs) {
   return this.forEach_(lhs, rhs, function(c, l, r) {
     return c.max(l, r);
   });
+};
+
+
+/** @override */
+lf.index.MultiKeyComparator.prototype.compareRange = function(key, range) {
+  var results = [true, true];
+  for (var i = 0;
+      i < this.comparators_.length && (results[0] || results[1]);
+      ++i) {
+    var dimensionResults = this.comparators_[i].compareRange(key[i], range[i]);
+    results[0] = results[0] && dimensionResults[0];
+    results[1] = results[1] && dimensionResults[1];
+  }
+  return results;
 };
 
 
@@ -26690,21 +26739,15 @@ lf.index.AATree.prototype.traverse_ = function(node, keyRange, results) {
     return;
   }
 
-  if (this.comparator_.compare(
-          node.key,
-          /** @type {!lf.index.Index.Key} */ (keyRange.from)) ==
-      lf.index.Favor.LHS) {
+  var coverage = this.comparator_.compareRange(node.key, keyRange);
+  if (coverage[0]) {
     this.traverse_(node.left, keyRange, results);
+    if (coverage[1]) {
+      results.push(node.value);
+    }
   }
 
-  if (this.comparator_.isInRange(node.key, keyRange)) {
-    results.push(node.value);
-  }
-
-  if (this.comparator_.compare(
-          node.key,
-          /** @type {!lf.index.Index.Key} */ (keyRange.to)) ==
-      lf.index.Favor.RHS) {
+  if (coverage[1]) {
     this.traverse_(node.right, keyRange, results);
   }
 };

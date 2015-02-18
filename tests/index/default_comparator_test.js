@@ -345,6 +345,7 @@ function testSimpleComparator_isInRange() {
   assertTrue(c.isInRange(2, lf.index.SingleKeyRange.upperBound(2)));
   assertFalse(c.isInRange(2, lf.index.SingleKeyRange.upperBound(2, true)));
   assertTrue(c.isInRange(2, lf.index.SingleKeyRange.only(2)));
+  assertFalse(c.isInRange(2, lf.index.SingleKeyRange.only(3)));
 }
 
 
@@ -522,4 +523,71 @@ function checkBindKeyRange(
         leftMostKey, rightMostKey, normalizeKeyRange);
     assertEquals(expectation, boundKeyRange.toString());
   });
+}
+
+
+function testSimpleComparator_compareRange() {
+  var c = new lf.index.SimpleComparator(lf.Order.ASC);
+  assertArrayEquals([true, true],
+      c.compareRange(2, lf.index.SingleKeyRange.all()));
+  assertArrayEquals([true, true],
+      c.compareRange(2, lf.index.SingleKeyRange.only(2)));
+  assertArrayEquals([false, true],
+      c.compareRange(2, lf.index.SingleKeyRange.only(3)));
+  assertArrayEquals([true, false],
+      c.compareRange(2, lf.index.SingleKeyRange.only(1)));
+  assertArrayEquals([true, true],
+      c.compareRange(2, lf.index.SingleKeyRange.lowerBound(2)));
+  assertArrayEquals([false, true],
+      c.compareRange(2, lf.index.SingleKeyRange.lowerBound(2, true)));
+  assertArrayEquals([true, true],
+      c.compareRange(2, lf.index.SingleKeyRange.upperBound(2)));
+  assertArrayEquals([true, false],
+      c.compareRange(2, lf.index.SingleKeyRange.upperBound(2, true)));
+}
+
+
+function testMultiKeyComparator_compareRange() {
+  var c = new lf.index.MultiKeyComparator([lf.Order.ASC, lf.Order.DESC]);
+  var lowerBound = lf.index.SingleKeyRange.lowerBound(2);
+  var lowerBoundExclude = lf.index.SingleKeyRange.lowerBound(2, true);
+  var upperBound = lf.index.SingleKeyRange.upperBound(2);
+  var upperBoundExclude = lf.index.SingleKeyRange.upperBound(2, true);
+  var all = lf.index.SingleKeyRange.all();
+  var only1 = lf.index.SingleKeyRange.only(1);
+  var only2 = lf.index.SingleKeyRange.only(2);
+  var only3 = lf.index.SingleKeyRange.only(3);
+  var key = [2, 2];
+
+  // Shuffle of valid conditions shall result in covering both ends.
+  var ranges = [all, only2, lowerBound, upperBound];
+  for (var i = 0; i < ranges.length; ++i) {
+    for (var j = 0; j < ranges.length; ++j) {
+      assertArrayEquals([true, true],
+          c.compareRange(key, [ranges[i], ranges[j]]));
+    }
+  }
+
+  assertArrayEquals([true, false], c.compareRange(key, [only1, only3]));
+  assertArrayEquals([false, true], c.compareRange(key, [only3, only1]));
+  assertArrayEquals([false, false], c.compareRange(key, [only1, only1]));
+  assertArrayEquals([false, false], c.compareRange(key, [only3, only3]));
+
+  assertArrayEquals([false, true],
+      c.compareRange(key, [lowerBoundExclude, lowerBound]));
+  assertArrayEquals([false, true],
+      c.compareRange(key, [lowerBoundExclude, lowerBoundExclude]));
+  assertArrayEquals([false, true],
+      c.compareRange(key, [lowerBoundExclude, upperBound]));
+  assertArrayEquals([false, false],
+      c.compareRange(key, [lowerBoundExclude, upperBoundExclude]));
+
+  assertArrayEquals([true, false],
+      c.compareRange(key, [upperBoundExclude, lowerBound]));
+  assertArrayEquals([false, false],
+      c.compareRange(key, [upperBoundExclude, lowerBoundExclude]));
+  assertArrayEquals([true, false],
+      c.compareRange(key, [upperBoundExclude, upperBound]));
+  assertArrayEquals([true, false],
+      c.compareRange(key, [upperBoundExclude, upperBoundExclude]));
 }
