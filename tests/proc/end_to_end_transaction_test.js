@@ -387,6 +387,54 @@ function testRollback() {
 
 
 /**
+ * Tests the case where an attached query modifiess the results of an observed
+ * query and ensures that observers are triggered.
+ */
+function testAttach_WithObservers() {
+  asyncTestCase.waitForAsync('testAttach_WithObservers');
+  var scope = [j];
+
+  var initialJobCount = sampleJobs.length;
+  var additionalJobCount = 2;
+
+  dataGenerator.generate(
+      /* jobCount */ additionalJobCount,
+      /* employeeCount */ 1,
+      /* departmentCount */ 1);
+  var newJobs = dataGenerator.sampleJobs;
+  newJobs.forEach(function(job, index) {
+    job.setId('SomeUniqueId' + index.toString());
+  });
+
+  var observeCallback = function(changeEvents) {
+    assertEquals(
+        initialJobCount + additionalJobCount,
+        changeEvents.length);
+    assertEquals(
+        initialJobCount + additionalJobCount,
+        changeEvents[0]['object'].length);
+
+    asyncTestCase.continueTesting();
+  };
+
+  var q = db.select().from(j);
+  db.observe(q, observeCallback);
+
+  tx.begin(scope).then(function() {
+    // Adding a new job row.
+    var q1 = db.insert().into(j).values([newJobs[0]]);
+    return tx.attach(q1);
+  }).then(function(results) {
+    // Adding another new job row.
+    var q2 = db.insert().into(j).values([newJobs[1]]);
+    return tx.attach(q2);
+  }).then(function() {
+    return tx.commit();
+  }, fail);
+}
+
+
+/**
  * Asserts that an lf.Exception.Type.SYNTAX error is thrown.
  * @param {!function()} fn The function to be checked.
  * TODO(dpapad): Modify lf.testing.util.assertThrowsSyntaxError, to be more

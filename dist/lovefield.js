@@ -37637,6 +37637,7 @@ goog.require('goog.Promise');
 goog.require('goog.structs.Set');
 goog.require('lf.TransactionType');
 goog.require('lf.cache.Journal');
+goog.require('lf.proc.ObserverQueryTask');
 goog.require('lf.proc.Task');
 goog.require('lf.service');
 
@@ -37671,6 +37672,9 @@ lf.proc.TransactionTask = function(global, scope) {
 
   /** @private {!lf.proc.Runner} */
   this.runner_ = global.getService(lf.service.RUNNER);
+
+  /** @private {!lf.ObserverRegistry} */
+  this.observerRegistry_ = global.getService(lf.service.OBSERVER_REGISTRY);
 
   /** @private {!goog.structs.Set.<!lf.schema.Table>} */
   this.scope_ = new goog.structs.Set(scope);
@@ -37764,6 +37768,7 @@ lf.proc.TransactionTask.prototype.commit = function() {
   var tx = this.backStore_.createTx(this.getType(), this.journal_);
   tx.commit().then(goog.bind(
       function() {
+        this.scheduleObserverTask_();
         this.execResolver_.resolve();
       }, this), goog.bind(
       function(e) {
@@ -37780,6 +37785,21 @@ lf.proc.TransactionTask.prototype.rollback = function() {
   this.journal_.rollback();
   this.execResolver_.resolve();
   return this.resolver_.promise;
+};
+
+
+/**
+ * Schedules an ObserverTask for any observed queries that need to be
+ * re-executed, if any.
+ * @private
+ */
+lf.proc.TransactionTask.prototype.scheduleObserverTask_ = function() {
+  var queries = this.observerRegistry_.getQueriesForTables(
+      this.scope_.getValues());
+  if (queries.length != 0) {
+    var observerTask = new lf.proc.ObserverQueryTask(this.global_, queries);
+    this.runner_.scheduleTask(observerTask, /* opt_prioritize */ true);
+  }
 };
 
 /**
