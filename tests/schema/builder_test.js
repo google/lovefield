@@ -88,7 +88,7 @@ function createBuilder() {
 }
 
 
-function testDuplicateTableThrows() {
+function testThrows_DuplicateTable() {
   var ds = createBuilder();
   lf.testing.util.assertThrowsSyntaxError(function() {
     ds.createTable('DummyTable');
@@ -96,7 +96,7 @@ function testDuplicateTableThrows() {
 }
 
 
-function testDuplicateColumnThrows() {
+function testThrows_DuplicateColumn() {
   var ds = createBuilder();
   lf.testing.util.assertThrowsSyntaxError(function() {
     ds.createTable('Table2').
@@ -106,7 +106,7 @@ function testDuplicateColumnThrows() {
 }
 
 
-function testModificationAfterFinalizationThrows() {
+function testThrows_ModificationAfterFinalization() {
   var ds = createBuilder();
   ds.getSchema();
   lf.testing.util.assertThrowsSyntaxError(function() {
@@ -115,7 +115,7 @@ function testModificationAfterFinalizationThrows() {
 }
 
 
-function testCrossColumnPkWithAutoIncThrows() {
+function testThrows_CrossColumnPkWithAutoInc() {
   var ds = lf.schema.create('hr', 1);
   lf.testing.util.assertThrowsSyntaxError(function() {
     ds.createTable('Employee').
@@ -129,12 +129,23 @@ function testCrossColumnPkWithAutoIncThrows() {
 }
 
 
-function testNonIntegerPkWithAutoIncThrows() {
+function testThrows_NonIntegerPkWithAutoInc() {
   var ds = lf.schema.create('hr', 1);
   lf.testing.util.assertThrowsSyntaxError(function() {
     ds.createTable('Employee').
         addColumn('id', lf.Type.STRING).
         addPrimaryKey([{'name': 'id', 'autoIncrement': true}]);
+  });
+}
+
+
+function testThrows_InvalidNullableType() {
+  var schemaBuilder = lf.schema.create('hr', 1);
+  lf.testing.util.assertThrowsSyntaxError(function() {
+    schemaBuilder.createTable('Employee').
+        addColumn('string', lf.Type.STRING).
+        addColumn('number', lf.Type.NUMBER).
+        addNullable(['number']);
   });
 }
 
@@ -181,7 +192,7 @@ function testSchemaCorrectness() {
 }
 
 
-function testNonIndexableColumnsThrows() {
+function testThrows_NonIndexableColumns() {
   lf.testing.util.assertThrowsSyntaxError(function() {
     var ds = lf.schema.create('d1', 1);
     ds.createTable('NewTable').
@@ -198,7 +209,7 @@ function testNonIndexableColumnsThrows() {
 }
 
 
-function testIllegalNameThrows() {
+function testThrows_IllegalName() {
   lf.testing.util.assertThrowsSyntaxError(function() {
     var ds = lf.schema.create('d1', 1);
     ds.createTable('#NewTable');

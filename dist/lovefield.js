@@ -3702,7 +3702,7 @@ goog.addDependency('ui/dimensionpicker_test.js', ['goog.ui.DimensionPickerTest']
 goog.addDependency('ui/dimensionpickerrenderer.js', ['goog.ui.DimensionPickerRenderer'], ['goog.a11y.aria.Announcer', 'goog.a11y.aria.LivePriority', 'goog.dom', 'goog.dom.TagName', 'goog.i18n.bidi', 'goog.style', 'goog.ui.ControlRenderer', 'goog.userAgent'], false);
 goog.addDependency('ui/dimensionpickerrenderer_test.js', ['goog.ui.DimensionPickerRendererTest'], ['goog.a11y.aria.LivePriority', 'goog.array', 'goog.testing.jsunit', 'goog.testing.recordFunction', 'goog.ui.DimensionPicker', 'goog.ui.DimensionPickerRenderer'], false);
 goog.addDependency('ui/dragdropdetector.js', ['goog.ui.DragDropDetector', 'goog.ui.DragDropDetector.EventType', 'goog.ui.DragDropDetector.ImageDropEvent', 'goog.ui.DragDropDetector.LinkDropEvent'], ['goog.dom', 'goog.dom.TagName', 'goog.events.Event', 'goog.events.EventHandler', 'goog.events.EventTarget', 'goog.events.EventType', 'goog.math.Coordinate', 'goog.string', 'goog.style', 'goog.userAgent'], false);
-goog.addDependency('ui/drilldownrow.js', ['goog.ui.DrilldownRow'], ['goog.asserts', 'goog.dom', 'goog.dom.classlist', 'goog.html.SafeHtml', 'goog.html.legacyconversions', 'goog.ui.Component'], false);
+goog.addDependency('ui/drilldownrow.js', ['goog.ui.DrilldownRow'], ['goog.asserts', 'goog.dom', 'goog.dom.classlist', 'goog.ui.Component'], false);
 goog.addDependency('ui/drilldownrow_test.js', ['goog.ui.DrilldownRowTest'], ['goog.dom', 'goog.testing.jsunit', 'goog.ui.DrilldownRow'], false);
 goog.addDependency('ui/editor/abstractdialog.js', ['goog.ui.editor.AbstractDialog', 'goog.ui.editor.AbstractDialog.Builder', 'goog.ui.editor.AbstractDialog.EventType'], ['goog.asserts', 'goog.dom', 'goog.dom.classlist', 'goog.events.EventTarget', 'goog.string', 'goog.ui.Dialog', 'goog.ui.PopupBase'], false);
 goog.addDependency('ui/editor/abstractdialog_test.js', ['goog.ui.editor.AbstractDialogTest'], ['goog.dom', 'goog.dom.DomHelper', 'goog.dom.classlist', 'goog.events.Event', 'goog.events.EventHandler', 'goog.events.KeyCodes', 'goog.testing.MockControl', 'goog.testing.events', 'goog.testing.jsunit', 'goog.testing.mockmatchers.ArgumentMatcher', 'goog.ui.editor.AbstractDialog', 'goog.userAgent'], false);
@@ -38580,6 +38580,18 @@ lf.schema.TableBuilder = function(tableName) {
 
 
 /**
+ * A set of types that are allowed to be declared as nullable.
+ * @type {!goog.structs.Set<!lf.Type>}
+ */
+lf.schema.TableBuilder.NULLABLE_TYPES = new goog.structs.Set([
+  lf.Type.ARRAY_BUFFER,
+  lf.Type.DATE_TIME,
+  lf.Type.OBJECT,
+  lf.Type.STRING
+]);
+
+
+/**
  * @param {string} name
  * @return {string}
  * @private
@@ -38720,6 +38732,13 @@ lf.schema.TableBuilder.prototype.addUnique = function(name, columns) {
 lf.schema.TableBuilder.prototype.addNullable = function(columns) {
   var cols = this.normalizeColumns_(columns, false);
   cols.forEach(function(col) {
+    var columnType = this.columns_.get(col.name);
+    if (!lf.schema.TableBuilder.NULLABLE_TYPES.contains(columnType)) {
+      throw new lf.Exception(
+          lf.Exception.Type.SYNTAX,
+          'Column ' + col.name + ' can\'t be declared as nullable.');
+    }
+
     this.nullable_.add(col.name);
   }, this);
   return this;
