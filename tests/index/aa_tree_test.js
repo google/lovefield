@@ -25,7 +25,9 @@ goog.require('goog.structs.Set');
 goog.require('goog.testing.jsunit');
 goog.require('lf.Order');
 goog.require('lf.index.AATree');
+goog.require('lf.index.MultiKeyComparator');
 goog.require('lf.index.SimpleComparator');
+goog.require('lf.testing.index.TestMultiKeyIndex');
 goog.require('lf.testing.index.TestSingleRowNumericalKey');
 goog.require('lf.testing.index.TestSingleRowStringKey');
 
@@ -164,6 +166,15 @@ function testSingleRow_StringKey_Desc() {
         'test',
         new lf.index.SimpleComparator(lf.Order.DESC));
   }, true);
+  test.run();
+}
+
+function testMultiKeyIndex() {
+  var test = new lf.testing.index.TestMultiKeyIndex(function() {
+    return new lf.index.AATree(
+        'test',
+        new lf.index.MultiKeyComparator([lf.Order.ASC, lf.Order.DESC]));
+  });
   test.run();
 }
 

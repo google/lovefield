@@ -26,6 +26,7 @@ goog.require('lf.index.BTree');
 goog.require('lf.index.MultiKeyComparator');
 goog.require('lf.index.SimpleComparator');
 goog.require('lf.index.SingleKeyRange');
+goog.require('lf.testing.index.TestMultiKeyIndex');
 goog.require('lf.testing.index.TestMultiRowNumericalKey');
 goog.require('lf.testing.index.TestSingleRowNumericalKey');
 goog.require('lf.testing.index.TestSingleRowStringKey');
@@ -80,6 +81,19 @@ var SEQUENCE = [
   10, 12, 16];
 
 
+/** @const {!Array.<!Array.<number, string>>} */
+var SEQUENCE2 = [
+  [13, '13'], [9, '09'], [21, '21'], [17, '17'],
+  [5, '05'],
+  [11, '11'], [3, '03'], [25, '25'], [27, '27'],
+  [14, '14'], [15, '15'], [31, '31'], [29, '29'], [22, '22'],
+  [23, '23'], [38, '38'], [45, '45'], [47, '47'],
+  [49, '49'],
+  [1, '1'],
+  [10, '10'], [12, '12'], [16, '16']
+];
+
+
 /**
  * @param {number} index
  * @param {boolean=} opt_duplicate
@@ -93,6 +107,27 @@ function insertToTree(index, opt_duplicate) {
     tree.add(SEQUENCE[i], SEQUENCE[i]);
     if (opt_duplicate) {
       tree.add(SEQUENCE[i], SEQUENCE[i] * 1000);
+    }
+    i++;
+  }
+  return tree;
+}
+
+
+/**
+ * @param {number} index
+ * @param {!lf.index.Comparator} comparator
+ * @param {boolean=} opt_duplicate
+ * @return {!lf.index.BTree} The tree generated
+ */
+function insertToTree2(index, comparator, opt_duplicate) {
+  var unique = !opt_duplicate;
+  var tree = new lf.index.BTree('test', comparator, unique);
+  var i = 0;
+  while (i < index) {
+    tree.add(SEQUENCE2[i], SEQUENCE2[i][0]);
+    if (opt_duplicate) {
+      tree.add(SEQUENCE[i], SEQUENCE[i][0] * 1000);
     }
     i++;
   }
@@ -882,6 +917,16 @@ function testSingleRow_StringKey_Desc() {
   test.run();
 }
 
+function testMultiKeyIndex() {
+  var test = new lf.testing.index.TestMultiKeyIndex(function() {
+    return new lf.index.BTree(
+        'test',
+        new lf.index.MultiKeyComparator([lf.Order.ASC, lf.Order.DESC]),
+        true);
+  });
+  test.run();
+}
+
 function testMultiRow_NumericalKey() {
   var test = new lf.testing.index.TestMultiRowNumericalKey(function() {
     return new lf.index.BTree('test', c, false);
@@ -1091,6 +1136,51 @@ function testDuplicateKeys_SmokeTest() {
   tree.clear();
   assertEquals(0, tree.cost(lf.index.SingleKeyRange.all()));
 }
+
+function testMultiKeyGet() {
+  var comparator = new lf.index.MultiKeyComparator(
+      lf.index.MultiKeyComparator.createOrders(2, lf.Order.ASC));
+  var tree = insertToTree2(23, comparator);
+  for (var i = 0; i < 23; i++) {
+    var key = SEQUENCE2[i];
+    assertArrayEquals([key[0]], tree.get(key));
+  }
+  assertArrayEquals([], tree.get([0, '00']));
+  assertArrayEquals([], tree.get([18, '18']));
+  assertArrayEquals([], tree.get([50, '50']));
+}
+
+function testMultiKeyRandomNumbers() {
+  stub.reset();
+  var ROW_COUNT = 5000;
+  var set = new goog.structs.Set();
+  while (set.getCount() < ROW_COUNT) {
+    set.add(Math.floor(Math.random() * ROW_COUNT * 100));
+  }
+
+  var numbers = set.getValues().sort(function(a, b) {
+    return a - b;
+  });
+
+  var keys = numbers.map(function(n) {
+    return [n, -n];
+  });
+
+  var comparator = new lf.index.MultiKeyComparator(
+      [lf.Order.ASC, lf.Order.DESC]);
+  var tree = new lf.index.BTree('test', comparator, true);
+  for (var i = 0; i < ROW_COUNT; ++i) {
+    tree.add(keys[i], keys[i][0]);
+  }
+
+  assertArrayEquals(numbers, tree.getRange());
+  for (var i = 0; i < ROW_COUNT; ++i) {
+    tree.remove(keys[i]);
+  }
+
+  assertArrayEquals([], tree.getRange());
+}
+
 
 function manualTestBenchmark() {
   var log = goog.bind(console['log'], console);

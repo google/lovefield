@@ -24511,6 +24511,14 @@ lf.index.Comparator.prototype.normalizeKeyRange;
 lf.index.Comparator.prototype.bindKeyRange;
 
 
+/**
+ * Converts key range to keys.
+ * @param {!RangeType} range Normalized key range.
+ * @return {!Array<!KeyType>} An array of two keys, [left-most, right-most]
+ */
+lf.index.Comparator.prototype.rangeToKeys;
+
+
 
 /**
  * Single key to row id(s) index.
@@ -24783,8 +24791,9 @@ lf.index.BTree.prototype.getRange = function(
     // Although the leaf nodes are represented in a linked list, we cannot
     // use the recursion of BTreeNode.getRange to retrieve the results.
     // The leaf span can be big enough to cause IE running out of stack.
-    var start = this.root_.getContainingLeaf(range.from);
-    var end = this.root_.getContainingLeaf(range.to);
+    var keys = this.comparator_.rangeToKeys(range);
+    var start = this.root_.getContainingLeaf(keys[0]);
+    var end = this.root_.getContainingLeaf(keys[1]);
     while (start != end.next()) {
       start.getRange(range, results);
       start = start.next();
@@ -25625,43 +25634,47 @@ lf.index.BTreeNode_.prototype.getContainingLeaf = function(key) {
 
 
 /**
- * @param {lf.index.SingleKeyRange=} opt_keyRange
+ * @param {!lf.index.KeyRange|!lf.index.SingleKeyRange} keyRange
  * @param {!Array.<number>=} opt_results An array holding any results found from
  *     previous calls to getRange(). If specified any new results will be
  *     appended to this array.
  * @return {!Array.<number>}
  */
-lf.index.BTreeNode_.prototype.getRange = function(opt_keyRange, opt_results) {
-  var start = 0;
+lf.index.BTreeNode_.prototype.getRange = function(keyRange, opt_results) {
+  var start = -1;
   var end = this.keys_.length - 1;
+  var c = this.tree_.comparator();
 
-  if (goog.isDefAndNotNull(opt_keyRange)) {
-    var comparator = this.tree_.comparator();
-    var c = goog.bind(comparator.compare, comparator);
-
-    if (!goog.isNull(opt_keyRange.to)) {
-      if (c(this.keys_[0], opt_keyRange.to) == lf.index.Favor.LHS) {
-        return [];
-      } else if (c(this.keys_[end], opt_keyRange.to) != lf.index.Favor.RHS) {
-        end = this.searchKey_(opt_keyRange.to);
-        if ((opt_keyRange.excludeUpper &&
-            c(this.keys_[end], opt_keyRange.to) == lf.index.Favor.TIE) ||
-            c(this.keys_[end], opt_keyRange.to) == lf.index.Favor.LHS) {
-          end--;
+  /** @param {number} initPos */
+  var scanPos = goog.bind(function(initPos) {
+    for (var i = initPos; i < this.keys_.length; ++i) {
+      var inRange = c.isInRange(this.keys_[i], keyRange);
+      if (start != -1) {
+        if (!inRange) {
+          end = i - 1;
+          break;
         }
+      } else if (inRange) {
+        start = i;
       }
     }
-    if (!goog.isNull(opt_keyRange.from) &&
-        c(this.keys_[0], opt_keyRange.from) != lf.index.Favor.LHS) {
-      start = this.searchKey_(opt_keyRange.from);
-      if (opt_keyRange.excludeLower &&
-          c(this.keys_[start], opt_keyRange.from) == lf.index.Favor.TIE) {
-        start++;
-      }
-    }
+  }, this);
+
+  if (c.isInRange(this.keys_[0], keyRange)) {
+    start = 0;
+  } else {
+    scanPos(1);
+  }
+
+  if (!c.isInRange(this.keys_[end], keyRange)) {
+    scanPos(start);
   }
 
   var results = opt_results || [];
+  if (start == -1) {
+    return results;
+  }
+
   if (end == this.keys_.length - 1) {
     this.appendResults_(results, this.values_.slice(start));
   } else if (end >= start) {
@@ -26117,6 +26130,12 @@ lf.index.SimpleComparator.prototype.bindKeyRange = function(
 
 
 /** @override */
+lf.index.SimpleComparator.prototype.rangeToKeys = function(range) {
+  return [range.from, range.to];
+};
+
+
+/** @override */
 lf.index.SimpleComparator.prototype.toString = function() {
   return this.compare_ == lf.index.SimpleComparator.compareDescending ?
       'SimpleComparator_DESC' : 'SimpleComparator_ASC';
@@ -26253,6 +26272,18 @@ lf.index.MultiKeyComparator.prototype.bindKeyRange = function(
             c.bindKeyRange(leftMostKey[i], rightMostKey[i], opt_keyRange[i]) :
             c.bindKeyRange(leftMostKey[i], rightMostKey[i], undefined);
       }, this);
+};
+
+
+/** @override */
+lf.index.MultiKeyComparator.prototype.rangeToKeys = function(keyRange) {
+  var startKey = keyRange.map(function(range) {
+    return range.from;
+  });
+  var endKey = keyRange.map(function(range) {
+    return range.to;
+  });
+  return [startKey, endKey];
 };
 
 /**
@@ -26947,7 +26978,7 @@ lf.index.AATree.prototype.getRightMostNode_ = function() {
 
 /**
  * @param {!lf.index.AANode_} node
- * @param {!lf.index.SingleKeyRange} keyRange
+ * @param {!lf.index.KeyRange} keyRange
  * @param {!Array.<number>} results
  * @private
  */
