@@ -2537,12 +2537,16 @@ goog.addDependency('async/conditionaldelay.js', ['goog.async.ConditionalDelay'],
 goog.addDependency('async/conditionaldelay_test.js', ['goog.async.ConditionalDelayTest'], ['goog.async.ConditionalDelay', 'goog.testing.MockClock', 'goog.testing.jsunit'], false);
 goog.addDependency('async/delay.js', ['goog.Delay', 'goog.async.Delay'], ['goog.Disposable', 'goog.Timer'], false);
 goog.addDependency('async/delay_test.js', ['goog.async.DelayTest'], ['goog.async.Delay', 'goog.testing.MockClock', 'goog.testing.jsunit'], false);
+goog.addDependency('async/freelist.js', ['goog.async.FreeList'], [], false);
+goog.addDependency('async/freelist_test.js', ['goog.async.FreeListTest'], ['goog.async.FreeList', 'goog.testing.jsunit'], false);
 goog.addDependency('async/nexttick.js', ['goog.async.nextTick', 'goog.async.throwException'], ['goog.debug.entryPointRegistry', 'goog.functions', 'goog.labs.userAgent.browser', 'goog.labs.userAgent.engine'], false);
 goog.addDependency('async/nexttick_test.js', ['goog.async.nextTickTest'], ['goog.async.nextTick', 'goog.debug.ErrorHandler', 'goog.debug.entryPointRegistry', 'goog.dom', 'goog.labs.userAgent.browser', 'goog.testing.AsyncTestCase', 'goog.testing.MockClock', 'goog.testing.PropertyReplacer', 'goog.testing.jsunit'], false);
-goog.addDependency('async/run.js', ['goog.async.run'], ['goog.async.nextTick', 'goog.async.throwException', 'goog.testing.watchers'], false);
+goog.addDependency('async/run.js', ['goog.async.run'], ['goog.async.WorkItem', 'goog.async.WorkQueue', 'goog.async.nextTick', 'goog.async.throwException', 'goog.testing.watchers'], false);
 goog.addDependency('async/run_test.js', ['goog.async.runTest'], ['goog.async.run', 'goog.testing.MockClock', 'goog.testing.jsunit', 'goog.testing.recordFunction'], false);
 goog.addDependency('async/throttle.js', ['goog.Throttle', 'goog.async.Throttle'], ['goog.Disposable', 'goog.Timer'], false);
 goog.addDependency('async/throttle_test.js', ['goog.async.ThrottleTest'], ['goog.async.Throttle', 'goog.testing.MockClock', 'goog.testing.jsunit'], false);
+goog.addDependency('async/workqueue.js', ['goog.async.WorkItem', 'goog.async.WorkQueue'], ['goog.asserts', 'goog.async.FreeList'], false);
+goog.addDependency('async/workqueue_test.js', ['goog.async.WorkQueueTest'], ['goog.async.WorkQueue', 'goog.testing.jsunit'], false);
 goog.addDependency('base.js', ['goog'], [], false);
 goog.addDependency('base_module_test.js', ['goog.baseModuleTest'], ['goog.Timer', 'goog.test_module', 'goog.testing.PropertyReplacer', 'goog.testing.jsunit'], true);
 goog.addDependency('base_test.js', ['an.existing.path', 'dup.base', 'far.out', 'goog.baseTest', 'goog.explicit', 'goog.implicit.explicit', 'goog.test', 'goog.test.name', 'goog.test.name.space', 'goog.xy', 'goog.xy.z', 'ns', 'testDep.bar'], ['goog.Timer', 'goog.functions', 'goog.test_module', 'goog.testing.PropertyReplacer', 'goog.testing.jsunit', 'goog.testing.recordFunction', 'goog.userAgent'], false);
@@ -3698,7 +3702,7 @@ goog.addDependency('ui/dimensionpicker_test.js', ['goog.ui.DimensionPickerTest']
 goog.addDependency('ui/dimensionpickerrenderer.js', ['goog.ui.DimensionPickerRenderer'], ['goog.a11y.aria.Announcer', 'goog.a11y.aria.LivePriority', 'goog.dom', 'goog.dom.TagName', 'goog.i18n.bidi', 'goog.style', 'goog.ui.ControlRenderer', 'goog.userAgent'], false);
 goog.addDependency('ui/dimensionpickerrenderer_test.js', ['goog.ui.DimensionPickerRendererTest'], ['goog.a11y.aria.LivePriority', 'goog.array', 'goog.testing.jsunit', 'goog.testing.recordFunction', 'goog.ui.DimensionPicker', 'goog.ui.DimensionPickerRenderer'], false);
 goog.addDependency('ui/dragdropdetector.js', ['goog.ui.DragDropDetector', 'goog.ui.DragDropDetector.EventType', 'goog.ui.DragDropDetector.ImageDropEvent', 'goog.ui.DragDropDetector.LinkDropEvent'], ['goog.dom', 'goog.dom.TagName', 'goog.events.Event', 'goog.events.EventHandler', 'goog.events.EventTarget', 'goog.events.EventType', 'goog.math.Coordinate', 'goog.string', 'goog.style', 'goog.userAgent'], false);
-goog.addDependency('ui/drilldownrow.js', ['goog.ui.DrilldownRow'], ['goog.asserts', 'goog.dom', 'goog.dom.classlist', 'goog.ui.Component'], false);
+goog.addDependency('ui/drilldownrow.js', ['goog.ui.DrilldownRow'], ['goog.asserts', 'goog.dom', 'goog.dom.classlist', 'goog.html.SafeHtml', 'goog.html.legacyconversions', 'goog.ui.Component'], false);
 goog.addDependency('ui/drilldownrow_test.js', ['goog.ui.DrilldownRowTest'], ['goog.dom', 'goog.testing.jsunit', 'goog.ui.DrilldownRow'], false);
 goog.addDependency('ui/editor/abstractdialog.js', ['goog.ui.editor.AbstractDialog', 'goog.ui.editor.AbstractDialog.Builder', 'goog.ui.editor.AbstractDialog.EventType'], ['goog.asserts', 'goog.dom', 'goog.dom.classlist', 'goog.events.EventTarget', 'goog.string', 'goog.ui.Dialog', 'goog.ui.PopupBase'], false);
 goog.addDependency('ui/editor/abstractdialog_test.js', ['goog.ui.editor.AbstractDialogTest'], ['goog.dom', 'goog.dom.DomHelper', 'goog.dom.classlist', 'goog.events.Event', 'goog.events.EventHandler', 'goog.events.KeyCodes', 'goog.testing.MockControl', 'goog.testing.events', 'goog.testing.jsunit', 'goog.testing.mockmatchers.ArgumentMatcher', 'goog.ui.editor.AbstractDialog', 'goog.userAgent'], false);
@@ -19098,6 +19102,235 @@ goog.testing.watchers.watchClockReset = function(fn) {
 };
 
 
+// Copyright 2015 The Closure Library Authors. All Rights Reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS-IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+/**
+ * @fileoverview Simple freelist.
+ *
+ * An anterative to goog.structs.SimplePool, it imposes the requirement that the
+ * objects in the list contain a "next" property that can be used to maintain
+ * the pool.
+ */
+
+goog.provide('goog.async.FreeList');
+
+
+/**
+ * @template ITEM
+ */
+goog.async.FreeList = goog.defineClass(null, {
+  /**
+   * @param {function():ITEM} create
+   * @param {function(ITEM):void} reset
+   * @param {number} limit
+   */
+  constructor: function(create, reset, limit) {
+    /** @const {number} */
+    this.limit_ = limit;
+    /** @const {function()} */
+    this.create_ = create;
+    /** @const {function(ITEM):void} */
+    this.reset_ = reset;
+
+    /** @type {number} */
+    this.occupants_ = 0;
+    /** @type {ITEM} */
+    this.head_ = null;
+  },
+
+  /**
+   * @return {ITEM}
+   */
+  get: function() {
+    var item;
+    if (this.occupants_ > 0) {
+      this.occupants_--;
+      item = this.head_;
+      this.head_ = item.next;
+      item.next = null;
+    } else {
+      item = this.create_();
+    }
+    return item;
+  },
+
+  /**
+   * @param {ITEM} item An item available for possible future reuse.
+   */
+  put: function(item) {
+    this.reset_(item);
+    if (this.occupants_ < this.limit_) {
+      this.occupants_++;
+      item.next = this.head_;
+      this.head_ = item;
+    }
+  },
+
+  /**
+   * Visible for testing.
+   * @package
+   * @return {number}
+   */
+  occupants: function() {
+    return this.occupants_;
+  }
+});
+
+
+
+
+// Copyright 2015 The Closure Library Authors. All Rights Reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS-IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+goog.provide('goog.async.WorkItem');
+goog.provide('goog.async.WorkQueue');
+
+goog.require('goog.asserts');
+goog.require('goog.async.FreeList');
+
+
+// TODO(johnlenz): generalize the WorkQueue if this is used by more
+// than goog.async.run.
+
+
+
+/**
+ * A low GC workqueue. The key elements of this design:
+ *   - avoids the need for goog.bind or equivalent by carrying scope
+ *   - avoids the need for array reallocation by using a linked list
+ *   - minimizes work entry objects allocation by recycling objects
+ * @constructor
+ * @final
+ * @struct
+ */
+goog.async.WorkQueue = function() {
+  this.workHead_ = null;
+  this.workTail_ = null;
+};
+
+
+/** @define {number} The maximum number of entries to keep for recycling. */
+goog.define('goog.async.WorkQueue.DEFAULT_MAX_UNUSED', 100);
+
+
+/** @const @private {goog.async.FreeList<goog.async.WorkItem>} */
+goog.async.WorkQueue.freelist_ = new goog.async.FreeList(
+    function() {return new goog.async.WorkItem(); },
+    function(item) {item.reset()},
+    goog.async.WorkQueue.DEFAULT_MAX_UNUSED);
+
+
+/**
+ * @param {function()} fn
+ * @param {Object|null|undefined} scope
+ */
+goog.async.WorkQueue.prototype.add = function(fn, scope) {
+  var item = this.getUnusedItem_();
+  item.set(fn, scope);
+
+  if (this.workTail_) {
+    this.workTail_.next = item;
+    this.workTail_ = item;
+  } else {
+    goog.asserts.assert(!this.workHead_);
+    this.workHead_ = item;
+    this.workTail_ = item;
+  }
+};
+
+
+/**
+ * @return {goog.async.WorkItem}
+ */
+goog.async.WorkQueue.prototype.remove = function() {
+  var item = null;
+
+  if (this.workHead_) {
+    item = this.workHead_;
+    this.workHead_ = this.workHead_.next;
+    if (!this.workHead_) {
+      this.workTail_ = null;
+    }
+    item.next = null;
+  }
+  return item;
+};
+
+
+/**
+ * @param {goog.async.WorkItem} item
+ */
+goog.async.WorkQueue.prototype.returnUnused = function(item) {
+  goog.async.WorkQueue.freelist_.put(item);
+};
+
+
+/**
+ * @return {goog.async.WorkItem}
+ * @private
+ */
+goog.async.WorkQueue.prototype.getUnusedItem_ = function() {
+  return goog.async.WorkQueue.freelist_.get();
+};
+
+
+
+/**
+ * @constructor
+ * @final
+ * @struct
+ */
+goog.async.WorkItem = function() {
+  /** @type {?function()} */
+  this.fn = null;
+  /** @type {Object|null|undefined} */
+  this.scope = null;
+  /** @type {?goog.async.WorkItem} */
+  this.next = null;
+};
+
+
+/**
+ * @param {function()} fn
+ * @param {Object|null|undefined} scope
+ */
+goog.async.WorkItem.prototype.set = function(fn, scope) {
+  this.fn = fn;
+  this.scope = scope;
+  this.next = null;
+};
+
+
+/** Reset the work item so they don't prevent GC before reuse */
+goog.async.WorkItem.prototype.reset = function() {
+  this.fn = null;
+  this.scope = null;
+  this.next = null;
+};
+
 // Copyright 2013 The Closure Library Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -19114,6 +19347,7 @@ goog.testing.watchers.watchClockReset = function(fn) {
 
 goog.provide('goog.async.run');
 
+goog.require('goog.async.WorkQueue');
 goog.require('goog.async.nextTick');
 goog.require('goog.async.throwException');
 goog.require('goog.testing.watchers');
@@ -19137,8 +19371,7 @@ goog.async.run = function(callback, opt_context) {
     goog.async.run.workQueueScheduled_ = true;
   }
 
-  goog.async.run.workQueue_.push(
-      new goog.async.run.WorkItem_(callback, opt_context));
+  goog.async.run.workQueue_.add(callback, opt_context);
 };
 
 
@@ -19188,18 +19421,18 @@ goog.async.run.schedule_;
 goog.async.run.workQueueScheduled_ = false;
 
 
-/** @private {!Array<!goog.async.run.WorkItem_>} */
-goog.async.run.workQueue_ = [];
+/** @private {!goog.async.WorkQueue} */
+goog.async.run.workQueue_ = new goog.async.WorkQueue();
 
 
 if (goog.DEBUG) {
   /**
-   * Reset the event queue.
+   * Reset the work queue.
    * @private
    */
   goog.async.run.resetQueue_ = function() {
     goog.async.run.workQueueScheduled_ = false;
-    goog.async.run.workQueue_ = [];
+    goog.async.run.workQueue_ = new goog.async.WorkQueue();
   };
 
   // If there is a clock implemenation in use for testing
@@ -19214,39 +19447,19 @@ if (goog.DEBUG) {
  * goog.async.nextTick.
  */
 goog.async.run.processWorkQueue = function() {
-  // NOTE: additional work queue items may be pushed while processing.
-  while (goog.async.run.workQueue_.length) {
-    // Don't let the work queue grow indefinitely.
-    var workItems = goog.async.run.workQueue_;
-    goog.async.run.workQueue_ = [];
-    for (var i = 0; i < workItems.length; i++) {
-      var workItem = workItems[i];
-      try {
-        workItem.fn.call(workItem.scope);
-      } catch (e) {
-        goog.async.throwException(e);
-      }
+  // NOTE: additional work queue items may be added while processing.
+  var item = null;
+  while (item = goog.async.run.workQueue_.remove()) {
+    try {
+      item.fn.call(item.scope);
+    } catch (e) {
+      goog.async.throwException(e);
     }
+    goog.async.run.workQueue_.returnUnused(item);
   }
 
-  // There are no more work items, reset the work queue.
+  // There are no more work items, allow processing to be scheduled again.
   goog.async.run.workQueueScheduled_ = false;
-};
-
-
-
-/**
- * @constructor
- * @final
- * @struct
- * @private
- *
- * @param {function()} fn
- * @param {Object|null|undefined} scope
- */
-goog.async.run.WorkItem_ = function(fn, scope) {
-  /** @const */ this.fn = fn;
-  /** @const */ this.scope = scope;
 };
 
 // Copyright 2013 The Closure Library Authors. All Rights Reserved.
