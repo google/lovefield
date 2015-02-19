@@ -24546,6 +24546,10 @@ lf.index.BTree.prototype.getRange = function(
     opt_keyRanges, opt_reverseOrder, opt_limit, opt_skip) {
   var normalizedKeyRanges;
   var min = this.root_.getLeftMostNode().keys_[0];
+  if (!goog.isDef(min)) {  // Tree is empty.
+    return [];
+  }
+
   var rightMostKeys = this.root_.getRightMostNode().keys_;
   var max = rightMostKeys[rightMostKeys.length - 1];
   if (goog.isDefAndNotNull(opt_keyRanges)) {

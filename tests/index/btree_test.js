@@ -23,6 +23,7 @@ goog.require('goog.testing.jsunit');
 goog.require('lf.Order');
 goog.require('lf.Row');
 goog.require('lf.index.BTree');
+goog.require('lf.index.MultiKeyComparator');
 goog.require('lf.index.SimpleComparator');
 goog.require('lf.index.SingleKeyRange');
 goog.require('lf.testing.index.TestMultiRowNumericalKey');
@@ -931,6 +932,14 @@ function testGetRange_Numeric() {
   tree.remove(7);
   results = tree.getRange([lf.index.SingleKeyRange.only(7)]);
   assertEquals(0, results.length);
+}
+
+function testGetRange_EmptyTree() {
+  var tree = new lf.index.BTree(
+      'test',
+      new lf.index.MultiKeyComparator([lf.Order.ASC, lf.Order.DESC]),
+      true);
+  assertArrayEquals([], tree.getRange());
 }
 
 function testUniqueConstraint() {
