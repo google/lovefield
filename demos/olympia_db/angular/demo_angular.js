@@ -147,7 +147,7 @@ DbService.prototype.checkForExistingData_ = function() {
  */
 DbService.prototype.insertData_ = function() {
   var medal = this.db.getSchema().table('Medal');
-  return this.http_.get('data/olympic_medalists.json').then(
+  return this.http_.get('../data/olympic_medalists.json').then(
       function(response) {
         var rows = response.data.map(function(obj) {
           return medal.createRow(obj);
@@ -266,7 +266,7 @@ QueryBuilderController.prototype.clear = function() {
  * @private
  */
 QueryBuilderController.prototype.populateUi_ = function() {
-  return this.http_.get('data/column_domains.json').then(
+  return this.http_.get('../data/column_domains.json').then(
       (function(response) {
         var domains = /** @type {!ColumnDomains_} */ (
             response.data);

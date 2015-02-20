@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Polymer Lovefield Demo</title>
+
+  <link rel="import" href="../bower_components/core-ajax/core-ajax.html">
+  <link rel="import" href="olympia_query.html">
+
+</head>
+<body>
+
+  <polymer-element name="lovefield-demo">
+    <template>
+
+      <style>
+        .options {
+          width: 200px;
+        }
+        .options > * {
+          width: 100%;
+        }
+      </style>
+
+      <core-ajax auto url="../data/column_domains.json" response="{{columns}}"></core-ajax>
+
+      <olympia-query id="query"
+          results="{{results}}"
+          cities="{{cities}}"
+          fromYear="{{fromYear}}"
+          toYear="{{toYear}}"
+          countries="{{countries}}"
+          disciplines="{{disciplines}}"
+          events="{{events}}"
+          sports="{{sports}}"
+          genders="{{genders}}"
+          colors="{{colors}}"
+          limit="{{limit}}">
+      </olympia-query>
+
+      <div layout horizontal fit>
+
+        <div class="options">
+          <div>Limit</div>
+          <input type="number" value="{{limit}}">
+
+          <template repeat="{{columnsArray}}">
+            <div>{{name}}</div>
+            <select on-change="{{updatePredicate}}" name="{{name}}">
+              <template repeat="{{options as name}}">
+                <option>{{name}}</option>
+              </template>
+            </select>
+          </template>
+          <br><br>
+          <button on-tap="{{search}}">Search!</button>
+        </div>
+
+        <div flex>
+
+          <template repeat="{{results as result}}">
+            <div>
+              <template repeat="{{ columnNames as field }}">
+                {{result[field]}} | 
+              </template>
+            </div>
+          </template>
+
+
+        </div>
+
+      </div>
+
+    </template>
+
+    <script>
+      Polymer({
+        columnsChanged: function() {
+          var columns = [];
+          Object.keys(this.columns).forEach(function(name) {
+            options = this.columns[name];
+            options.unshift('');
+            if (name == 'years') {
+              columns.push({name: 'fromYear', options: options});
+              columns.push({name: 'toYear', options: options});
+            } else {
+              columns.push({name: name, options: options});
+            }
+          }, this);
+          this.columnsArray = columns;
+        },
+        resultsChanged: function() {
+          this.columnNames = Object.keys(this.results && this.results[0] || {});
+        },
+        updatePredicate: function(e) {
+          this[e.target.name] = e.target.value;
+        },
+        search: function() {
+          this.$.query.search();
+        }
+      });
+    </script>
+
+  </polymer-element>
+
+  <lovefield-demo></lovefield-demo>
+
+</body>
+</html>

@@ -2,7 +2,7 @@
   "name": "olympia-db",
   "version": "0.0.1",
   "description": "A demo of te Lovefield library using a database of Olympic medals.",
-  "main": "demo-angular.js",
+  "main": "demo-angular.html",
   "repository": {
     "type": "git",
     "url": "https://github.com/google/lovefield"
@@ -16,6 +16,7 @@
   "devDependencies": {
     "gulp": "^3.8.10",
     "gulp-webserver": "^0.9.0",
-    "lovefield": "git://github.com/google/lovefield"
+    "lovefield": "git://github.com/google/lovefield",
+    "rimraf": "*"
   }
 }

@@ -1,0 +1,20 @@
+{
+  "name": "olympia-db",
+  "version": "0.0.1",
+  "homepage": "https://github.com/google/lovefield",
+  "authors": [
+    "Demetrios Papadopoulos"
+  ],
+  "description": "A demo of te Lovefield library using a DB of olympic medals.",
+  "main": "demo-angular.js",
+  "license": "http://www.apache.org/licenses/LICENSE-2.0",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components"
+  ],
+  "dependencies": {
+    "polymer": "Polymer/polymer#~0.5.5",
+    "core-ajax": "Polymer/core-ajax#~0.5.5"
+  }
+}

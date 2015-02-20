@@ -17,43 +17,29 @@
 var fs = require('fs');
 var gulp = require('gulp');
 var webserver = require('gulp-webserver');
-var spawn = require('child_process').spawn;
+var rmdir = require('rimraf').sync;
 
 
-gulp.task('copy_lovefield', function() {
-  return fs.
-      createReadStream('node_modules/lovefield/dist/lovefield.min.js').
-      pipe(fs.createWriteStream('lib/lovefield.min.js'));
+gulp.task('copy_dependencies', function() {
+  if (!fs.existsSync('data')) { fs.mkdirSync('data'); }
+  fs.createReadStream('../data/olympic_medalists.json').
+      pipe(fs.createWriteStream('data/olympic_medalists.json'));
+  fs.createReadStream('../data/column_domains.json').
+      pipe(fs.createWriteStream('data/column_domains.json'));
 });
 
 
-gulp.task('copy_bootstrap', function() {
-  return fs.
-      createReadStream('bower_components/bootstrap/dist/css/bootstrap.min.css').
-      pipe(fs.createWriteStream('lib/bootstrap.min.css'));
-});
+gulp.task('default', ['copy_dependencies']);
 
-
-gulp.task('copy_angular', function() {
-  return fs.
-      createReadStream('bower_components/angular/angular.min.js').
-      pipe(fs.createWriteStream('lib/angular.min.js'));
-});
-
-gulp.task(
-    'default',
-    ['copy_lovefield', 'copy_bootstrap', 'copy_angular']);
 
 gulp.task('clean', function() {
-  var filesToDelete = [
-    'lib/angular.min.js',
-    'lib/bootstrap.min.css',
-    'lib/lovefield.min.js'
+  var foldersToDelete = [
+    'data'
   ];
 
-  filesToDelete.forEach(function(file) {
-    if (fs.existsSync(file)) {
-      fs.unlinkSync(file);
+  foldersToDelete.forEach(function(folder) {
+    if (fs.existsSync(folder)) {
+      rmdir(folder);
     }
   });
 });
