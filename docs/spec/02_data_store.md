@@ -63,7 +63,7 @@ database instance.
 Internally, the row is represented as [`lf.Row`](
 https://github.com/google/lovefield/blob/master/lib/row.js). This class is
 designed for Lovefield query engine. The results returned from
-[select query](04_select.md) are plain JavaScript objects,
+[select query](04_query.md) are plain JavaScript objects,
 not `lf.Row` instances.
 
 On the other hand, users are supposed to use `createRow()` function to prepare
@@ -71,7 +71,7 @@ data for `insert()` or `insertOrReplace()`, because this allows Lovefield to
 have a chance to safely convert user payload into Lovefield desired rows.
 In short, `lf.Row` abstracts how Lovefield serialize/deserialize a row from
 underlying data store. Further details will be provided in
-[Select](04_select.md) and [Insert](05_insert_update.md).
+[Select and Insert](04_query.md).
 
 ### 2.3 Persistence
 

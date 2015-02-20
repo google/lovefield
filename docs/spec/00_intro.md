@@ -7,7 +7,7 @@ both web and Chrome app developers to re-create their own domain-specific or
 generic query engines. The goal of Lovefield is to fill in that gap.
 
 ## Basic Assumptions
-* Lovefield is designed to handle database whose dataset is smaller than X
+* Lovefield is designed to handle database whose data set is smaller than X
 (current bound is 2GB) but large enough to need a structural query engine.
 * Lovefield will be delivered in the form of JavaScript initially.
 * Lovefield will polyfill features that require browser support when possible.

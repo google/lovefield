@@ -1,6 +1,6 @@
 # Lovefield Specification
 
-## 10. SPAC
+## 7. SPAC
 
 Lovefield provides two different ways of defining database schema: static and
 dynamic. The static way of schema definition is to use a YAML file to describe
@@ -43,7 +43,7 @@ to do data migration using
 [database upgrade](03_life_of_db.md#33-database-upgrade) mechanism described
 below.
 
-### 10.1 Table Definition
+### 7.1 Table Definition
 
 A table definition is a [YAML](http://www.yaml.org) object using following
 syntax:
@@ -76,7 +76,7 @@ errors if it is not able to generate unique names for them. For example, if you
 have two tables, one named “hd” and the other named “Hd”, SPAC will not be able
 to auto-generate code for that and will reject the schema.
 
-### 10.2 Column Definition
+### 7.2 Column Definition
 
 A column definition is a YAML field:
 
@@ -109,14 +109,14 @@ index / primary key or being placed as a unique constraint:
 * `datetime`: convert to number
 * `integer`: convert to number
 
-Array buffers may be converted to hex strings when stored into the backstore
+Array buffers may be converted to hex strings when stored into the data store
 since some browser implementations disallow direct blob storage. Users need to
 be aware of the performance impact of blob conversion.
 
 Lovefield assumes all columns are `NOT NULL` by default, which is a different
 behavior from SQL and the user shall be aware of it.
 
-### 10.3 Constraint Definition
+### 7.3 Constraint Definition
 
 Constraints are optional. There are four different constraints supported by
 Lovefield: primary key, foreign key, nullable, and unique. Constraints are
@@ -142,7 +142,7 @@ All properties of the constraint object are optional.
 `primaryKey` can contain one or more columns. Primary key implies not null and
 unique, and conflicting definitions will cause SPAC to reject this schema.
 
-#### 10.3.1 Primary Key Definition
+#### 7.3.1 Primary Key Definition
 There are two types of primary key definition:
 
 ```yaml
@@ -173,7 +173,7 @@ primaryKey:
   ...
 ```
 
-#### 10.3.2 Uniqueness Definition
+#### 7.3.2 Uniqueness Definition
 
 `unique` can be defined on a single column or cross column, and each will imply
 an implicit index. The uniqueness definition is a YAML object
@@ -187,12 +187,12 @@ A cross-column `unique` constraint means the value combinations of these columns
 must be unique.
 
 
-#### 10.3.3 Nullable Definition
+#### 7.3.3 Nullable Definition
 
 `nullable` is an array of all nullable columns.
 
 
-#### 10.3.4 Foreign Key Definition
+#### 7.3.4 Foreign Key Definition
 
 Foreign key is defined as a YAML object
 
@@ -211,7 +211,7 @@ When the `cascade` field is true for a foreign key, Lovefield query engine will
 perform cascade delete and update. `cascade` field is optional and defaulted to
 false.
 
-### 10.4 Index Definition
+### 7.4 Index Definition
 
 An index definition is a YAML object, which accepts two different syntaxes. The
 first syntax is:
@@ -355,13 +355,13 @@ CREATE INDEX idxItag
   </tr>
 </table>
 
-### 10.5 Pragma
+### 7.5 Pragma
 
 Currently, only `persistentIndex` is offered as a pragma option, and it requires
 a boolean value. When set to true, all indices of this table will be stored
 on persistent store.
 
-### 10.6 Code Generation
+### 7.6 Code Generation
 
 The schema YAML file will need to be parsed and validated by Schema Parser And
 Code-Generator (SPAC). SPAC will generate JavaScript code providing:
@@ -397,8 +397,8 @@ function createRows() {
   return [row, row2];
 }
 
-// <namespace>.<instanceName>.getInstance() to get DB instance
-my.namespace.db.getInstance().then(function(dbInstance) {
+// <namespace>.<instanceName>.connect() to connect to DB instance
+my.namespace.db.connect().then(function(dbInstance) {
   db = dbInstance;
   infoCard = db.getSchema().getInfoCard();
 
@@ -428,7 +428,7 @@ my.namespace.db.getInstance().then(function(dbInstance) {
 });
 ```
 
-### 10.6.1 Namespace and DB name
+### 7.6.1 Namespace and DB name
 
 The user already specified a DB name in schema, and a "namespace" is also
 required in SPAC. These two names are serving different purposes.
@@ -443,13 +443,13 @@ If the users wanted to change namespace without changing DB schema, they can
 use the same schema YAML file, but give SPAC a different namespace. The
 resulting code will be opening the same database file.
 
-### 10.5.2 Automatically Generated Classes
+### 7.6.2 Automatically Generated Classes
 
 The SPAC will automatically generate following:
 
 | Classes/Functions           | Note                    |
 |:--------------------------- |:----------------------- |
-|`<namespace>.getInstance()`  | Database initialization |
+|`<namespace>.connect()`      | Database initialization |
 |`<namespace>.Database`       | Database class          |
 |`<namespace>.row.<table>`    | Row type of each table  |
 |`<namespace>.schema.Database`| Database Schema         |

@@ -17,9 +17,9 @@
   <body>
     <script>
 
-var ds = lf.schema.create('todo', 1);
+var schemaBuilder = lf.schema.create('todo', 1);
 
-ds.createTable('Item').
+schemaBuilder.createTable('Item').
     addColumn('id', lf.Type.INTEGER).
     addColumn('description', lf.Type.STRING).
     addColumn('deadline', lf.Type.DATE_TIME).
@@ -29,7 +29,7 @@ ds.createTable('Item').
 
 var todoDb;
 var item;
-ds.getInstance().then(function(db) {
+schemaBuilder.connect().then(function(db) {
   todoDb = db;
   item = db.getSchema().table('Item');
   var row = item.createRow({
@@ -101,12 +101,12 @@ the corresponding instance:
 
 ```js
 // Promise-based API to get the instance.
-schemaBuilder.getInstance().then(function(db) {
+schemaBuilder.connect().then(function(db) {
   // ...
 });
 ```
 
-From this point on, the schema cannot be altered. Both the `getInstance()` and
+From this point on, the schema cannot be altered. Both the `connect()` and
 Lovefield offered query APIs are asynchronous Promise-based APIs. This design
 is to prevent Lovefield from blocking main thread since the queries can be
 long running and demanding quite some CPU and I/O cycles.
@@ -115,8 +115,8 @@ Lovefield also uses Promise chaining pattern extensively:
 
 ```js
 // Start of the Promise chaining
-ds.getInstance().then(function(db) {
-  // Asynchronous call getInstance() returned object: db
+schemaBuilder.connect().then(function(db) {
+  // Asynchronous call connect() returned object: db
   todoDb = db;
 
   // Get the schema representation of table Item.

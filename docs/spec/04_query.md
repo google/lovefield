@@ -1,20 +1,32 @@
 # Lovefield Specification
 
-## 4. Select Query
+## 4. Query
 
-The most used query in a Lovefield database will be the select query. It is
-used to retrieve data from database and return them as rows. The select query
-builder is created by calling `select()`:
+All queries are executed in a transaction context, either implicit or explicit.
+A query has following life cycle:
+
+1. Creation: query builder creates the context of a query.
+2. (Optional) Binding: parameterized values are bound to the query context.
+3. Execution: query is executed within a transaction context.
+4. Finalize: query results are committed or rolled back.
+
+In this section, the query creation and binding will be covered.
+
+### 4.1 SELECT Query Builder
+
+The most used query in a Lovefield database is the select query. It is used to
+retrieve data from database and return them as rows. The select query builder is
+created by calling `lf.Database#select`:
 
 ```js
-ds.getInstance().then(function(db) {
+ds.connect().then(function(db) {
   var selectQueryBuilder = db.select();
 });
 ```
 
-The select query builder accepts sources, search conditions, limiters,
-sorters, and group conditions to construct the query. Its member function
-signatures are defined in [`lf.query.Select`](
+The select query builder accepts sources, search conditions, limiters, sorters,
+and group conditions to construct the query. Its member function signatures are
+defined in [`lf.query.Select`](
 https://github.com/google/lovefield/blob/master/lib/query.js#L66). All functions
 provided by select query, except `orderBy()`, can only be called once, otherwise
 an exception will be raised. For example,
@@ -40,7 +52,7 @@ db.select().from(orders).exec().then(function(rows) {
 });
 ```
 
-### 4.1 Filters
+#### 4.1.1 Filters
 
 Filters are provided in the form of parameters of `select`. Absence of
 parameters implies select all columns (i.e. `SELECT *`). In multi-table context,
@@ -77,7 +89,7 @@ q3.exec().then(function(rows) {
 });
 ```
 
-### 4.2 Sources and Joins
+#### 4.1.2 Sources and Joins
 
 Sources are provided by the `from()` function of select query. The `from()`
 function can take one or more parameters, each must be a table schema. If
@@ -172,7 +184,10 @@ db.select(p.id, a.id, a.name).
   </tr>
 </table>
 
-### 4.3 Search Conditions
+* Note: left outer join is not implemented yet, see [the tracking bug](
+https://github.com/google/lovefield/issues/10).
+
+#### 4.1.3 Search Conditions
 
 Search conditions is the condition combinations used inside `where()`. In SQL,
 it’s actually a boolean value expression, whose grammar can be found
@@ -180,23 +195,8 @@ it’s actually a boolean value expression, whose grammar can be found
 ). Lovefield provides following building blocks to help users construct their
 search conditions.
 
-#### 4.3.1 Global Boolean Expression Operators
-
-Lovefield provides following functions:
-
-|Function    |Number of parameters|SQL equivalent |
-|:---------- |--------------------|:------------- |
-|`lf.op.and` |variable            |`AND`          |
-|`lf.op.or`  |variable            |`OR`           |
-|`lf.op.not` |1                   |`NOT`          |
-
-Their actual function signatures is defined in [`lf.op`](
-https://github.com/google/lovefield/blob/master/lib/op.js).
-
-#### 4.3.2 Predicate Provider
-
-Lovefield uses various predicates to provide a subset of
-[nonparenthesized value expression primary](
+Search conditions are orchestrated by predicates. Lovefield uses various
+predicates to provide a subset of [nonparenthesized value expression primary](
 http://savage.net.au/SQL/sql-2003-2.bnf.html#nonparenthesized%20value%20expression%20primary)
 in SQL grammar. These predicates are generated from predicate providers:
 
@@ -233,7 +233,20 @@ it naturally implies that the left-hand-side operand is the value of that
 column. The match function will take a JavaScript regular expression instead of
 SQL SIMILAR’s regular expression.
 
-### 4.4 Limiters and Order
+Many times the predicates need to be combined to implement complex search
+conditions. Lovefield provides following functions for combining predicates:
+
+|Function    |Number of parameters|SQL equivalent |
+|:---------- |--------------------|:------------- |
+|`lf.op.and` |variable            |`AND`          |
+|`lf.op.or`  |variable            |`OR`           |
+|`lf.op.not` |1                   |`NOT`          |
+
+Their actual function signatures is defined in [`lf.op`](
+https://github.com/google/lovefield/blob/master/lib/op.js).
+
+
+#### 4.1.4 Limiters and Order
 
 Lovefield does not support cursor, therefore the paging of rows can only be
 done using `limit()` and `skip()` functions offered by select query builder:
@@ -255,7 +268,7 @@ The `orderBy()` by default uses ascending order. The implementation needs to
 build an iterator that can be traversed in reverse direction as fast as the
 designated direction.
 
-### 4.5 Group By and Aggregators
+#### 4.1.5 Group By and Aggregators
 
 Lovefield provides following aggregation functions to be used with group-by:
 
@@ -287,7 +300,7 @@ Lovefield does not support `HAVING`. The users can do two queries or simply
 filter out the selected results.
 
 
-### 4.6 Column aliases
+#### 4.1.6 Column aliases
 
 Each selected column can have alias for their representations in returned
 results. All aliased columns are flattened (i.e. no prefix). For example:
@@ -320,7 +333,7 @@ q3.exec().then(function(rows) {
 });
 ```
 
-### 4.7 Table Aliases
+#### 4.1.7 Table Aliases
 Each table can have an alias that will affect the format of the returned
 results. Table aliases have no effect if only one table is involved in a query.
 Table aliases are required for executing a self table join.
@@ -336,11 +349,181 @@ var q = db.select(j1.title, j2.title, j1.minSalary).
     where(j1.minSalary.eq(j2.maxSalary));
 
 q1.exec().then(function(rows) {
-  rows.forEach(fuction(row) {
+  rows.forEach(function(row) {
     console.log(
         row['j1']['title'],
         row['j2']['title'],
         row['j1']['minSalary']);
   };
 });
+```
+
+### 4.2 INSERT Query Builder
+
+There are two different insert builders: `lf.Database#insert` and
+`lf.Database#insertOrReplace`. The former allows insertion of new rows only (
+based on primary key), while the latter will overwrite any existing row.
+
+Both builders implement the interface [`lf.query.Insert`](
+https://github.com/google/lovefield/blob/master/lib/query.js#L154).
+
+#### 4.2.1 Prepare Rows for Insertion
+
+Users must use `lf.schema.Table#createRow` to create a row. For example:
+
+```js
+var infoCard = db.getSchema().table('InfoCard');
+var row = infoCard.createRow({
+  'id': 'something',
+  'lang': 140
+});
+```
+
+All insert queries assume multiple rows will be inserted at the same time,
+therefore the user must wrap their row in an array even if there is only one.
+
+```js
+db.insertOrReplace().into(infoCard).values([row]).exec();
+```
+
+All functions provided by insert query builder can only be called once,
+otherwise an exception will be raised.
+
+### 4.3 UPDATE Query Builder
+
+Update query builders are acquired from `lf.DataBase#update`, and the user must
+pass in the target table as its parameter, as documented in the
+[`lf.query.Update`](
+https://github.com/google/lovefield/blob/master/lib/query.js#L177) interface.
+The updated values are provided by the `set()` clause, as shown below:
+
+```js
+// UPDATE order SET amount = 51, currency = 'EUR'
+//   WHERE currency = 'DEM' AND amount = 100;
+db.update(order).
+    set(order.amount, 51).
+    set(order.currency, 'EUR').
+    where(lf.op.and(
+        order.currency.eq('DEM'), order.amount.eq(100)));
+```
+
+The `where()` function is shared with select query since they are both search
+conditions. All functions provided by update query builder, except the `set()`
+function, can only be called once.
+
+### 4.4 DELETE Query Builder
+
+The delete query builder is provided by `lf.Database#delete` and can be used
+to delete one or more rows with or without search conditions. It implements
+[`lf.query.Delete`](
+https://github.com/google/lovefield/blob/master/lib/query.js#L202) interface.
+
+```js
+// DELETE FROM infoCard WHERE lang = 'es';
+db.delete().from(infoCard).where(infoCard.lang.eq('es')).exec();
+db.delete().from(infoCard).exec();  // Delete everything in infoCard
+```
+
+All functions provided by delete query builder can only be called once,
+otherwise an exception will be raised.
+
+### 4.5 Parameterized Query
+
+Parameterized query are very common for RDBMS programming, and Lovefield
+supports it. For example:
+
+```js
+var p = db.getSchema().table('Photo');
+
+// SELECT FROM Photo WHERE id = ?0;
+var q1 = db.select().from(p).where(p.id.eq(lf.bind(0)));
+q1.bind(['id1']).exec();  // find id 1
+q1.bind(['id2']).exec();  // find id 2
+
+// UPDATE Photo SET timestamp = ?1, local = ?2 WHERE id = ?0;
+var q2 = db.
+    update(p).
+    set(p.timestamp, lf.bind(1)).
+    set(p.local, lf.bind(2)).
+    where(p.id.eq(lf.bind(0)));
+q2.bind(['id3', 345, false]).exec();  // update without reconstructing query.
+q2.bind(['id4', 2222, true]).exec();
+```
+
+The function [`lf.bind()`](
+https://github.com/google/lovefield/blob/master/lib/bind.js#L21) creates a
+placeholder in query context. When `lf.query.Builder#bind` is called, the
+placeholder will be replaced with the value provided in the binding array.
+For performance reasons, the `bind()` function unfortunately does not provide
+type checking. Users are responsible for making sure the bound values are of
+their correct type.
+
+The bind index is 0-based. The `bind()` call does not care if the array is
+bigger than actually needed. The user just needs to make sure the specified
+index has data of the correct type.
+
+Currently parameterized queries can only exist in search conditions
+(i.e. `where()`) of `select()`/`update()`/`delete()`, and the `set()` clauses
+for `update()` query. For example:
+
+```js
+db.select().from(order).where(order.date.eq(lf.bind(0)));
+db.update(order).
+    set(order.date, lf.bind(1)).
+    where(order.id.eq(lf.bind(0)));
+db.delete().from(order).where(order.id.eq(lf.bind(1)));
+```
+
+The `insert()` query does not support parameterized query. It makes little sense
+to bind `values()` since users has to call `createRow()` before calling
+`values()` anyway.
+
+### 4.6 Observers
+
+Lovefield supports data observation for select queries, and the syntax is very
+similar to ES7 Array.observe(). The observers are created using
+`lf.Database#observe`, For example:
+
+```js
+var p = db.getSchema().table('Photo');
+var query = db.select().from(p).where(p.id.eq('1'));
+
+// Handler shares exactly same syntax as the handler for Array.observe.
+var handler = function(changes) {
+  // Will be called every time there is a change until db.unobserve is called.
+};
+db.observe(query, handler);
+
+// The call below will trigger changes to the observed select. Internally
+// Lovefield will run the query again if the scope overlaps, therefore please
+// be aware of performance consequences of complex SELECT.
+db.update(p).set(p.title, 'New Title').where(p.id.eq('1')).exec();
+
+// Remember to release observer to avoid leaking.
+db.unobserve(query, handler);
+```
+
+Combining parameterized query with Observers can be used to handle a common
+scenario of updating data in MVC environment, for example:
+
+```js
+// populateChanges is a function that binds query results to UI display by
+// observing query changes.
+var populateChanges = function(changes) {};
+var order = db.getSchema().table('Order');
+var query = db.
+    select().
+    from(order).
+    where(order.date.between(lf.bind(0), lf.bind(1)));
+db.observe(query, populateChanges);
+
+// Say we have two text boxes on screen, whose values are bound to an in-memory
+// object named dataRange. When the dataRange changes, we want to update the
+// query binding so that the query results are updated.
+var handler = function(changes) {
+  // Update query binding and run query. Since the query results are already
+  // bound to UI, the UI will reflect the new data.
+  query.bind([changes.object.dateFrom, changes.object.dateTo]).exec();
+};
+Object.observe(dataRange, handler);
 ```

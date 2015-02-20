@@ -10,18 +10,12 @@
 
 [3. Life of a Lovefield Database](spec/03_life_of_db.md)
 
-[4. Select Query](spec/04_select.md)
+[4. Query](spec/04_query.md)
 
-[5. Insert and Update Queries](spec/05_insert_update.md)
+[5. Transaction](spec/05_transaction.md)
 
-[6. Deletion Queries](spec/06_delete.md)
+[6. Library Facilities](spec/06_library.md)
 
-[7. Execution Plan](spec/07_exec_plan.md)
-
-[8. Data Binding](spec/08_data_binding.md)
-
-[9. Exceptions](spec/09_exception.md)
-
-[10. SPAC](spec/10_spac.md)
+[7. SPAC](spec/07_spac.md)
 
 [Future Features and References](spec/99_postfix.md)

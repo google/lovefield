@@ -19,18 +19,18 @@ a database schema.
 
 ```js
 // Begin schema creation.
-var ds = lf.schema.create('crdb', 1);
+var schemaBuilder = lf.schema.create('crdb', 1);
 
-ds.createTable('Asset').
+schemaBuilder.createTable('Asset').
     addColumn('id', lf.Type.STRING).
     addColumn('asset', lf.Type.STRING).
     addColumn('timestamp', lf.Type.INTEGER).
     addPrimaryKey(['id']);
 
-// Schema is defined, now get an instance based on this schema.
-ds.getInstance(/* opt_onUpgrade */ undefined, /* opt_volatile */ true).then(
+// Schema is defined, now connect to the database instance.
+schemaBuilder.connect().then(
     function(db) {
-      // Schema is not changable once the connection to DB has established.
+      // Schema is not mutable once the connection to DB has established.
     });
 ```
 
@@ -50,7 +50,7 @@ the static function [`lf.schema.create()`](
 https://github.com/google/lovefield/blob/master/lib/schema/builder.js#L186).
 Lovefield provides detailed documentation in the source code, and therefore the
 specification will only provide links to corresponding source code. This also
-enforces single point of truth and prevent the documents from outdating.
+enforces single point of truth and prevents the documents from being outdated.
 
 Lovefield APIs are grouped inside the `lf` namespace to avoid polluting the
 global namespace. All schema creations start from instantiating a schema
@@ -59,13 +59,13 @@ builder.
 The `lf.schema.create()` will create an instance of [`lf.schema.Builder`](
 https://github.com/google/lovefield/blob/master/lib/schema/builder.js#L32),
 which offers two functions: [`createTable()`](
-https://github.com/google/lovefield/blob/master/lib/schema/builder.js#L112) and
-[`getInstance()`](
-https://github.com/google/lovefield/blob/master/lib/schema/builder.js#L91).
+https://github.com/google/lovefield/blob/master/lib/schema/builder.js#L138) and
+[`connect()`](
+https://github.com/google/lovefield/blob/master/lib/schema/builder.js#L96).
 `createTable()` instantiates a table builder inside the schema builder, which
 will effectively construct a table when the builder is finalized.
-`getInstance()` finalizes schema building and create a database instance that
-can be used to run queries.
+`connect()` finalizes schema building and connects to the database instance on
+the data store.
 
 The `lf.schema.Builder` class object is stateful: it has a building state and a
 finalized state. The schema can only be modified in building state. Once
@@ -190,4 +190,4 @@ And Code-generator) to generate JavaScript source code from the YAML file, then
 use Lovefield core library along with generated code. This approach makes more
 sense when all involving JavaScript files are compiled and bundled via Closure
 compiler. As a result, this approach is considered advanced topic and is
-detailed in [its own section](10_spac.md).
+detailed in [its own section](07_spac.md).

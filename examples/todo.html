@@ -8,9 +8,9 @@
   <body>
     <script>
 
-var ds = lf.schema.create('todo', 1);
+var schemaBuilder = lf.schema.create('todo', 1);
 
-ds.createTable('Item').
+schemaBuilder.createTable('Item').
     addColumn('id', lf.Type.INTEGER).
     addColumn('description', lf.Type.STRING).
     addColumn('deadline', lf.Type.DATE_TIME).
@@ -20,7 +20,7 @@ ds.createTable('Item').
 
 var todoDb;
 var item;
-ds.connect().then(function(db) {
+schemaBuilder.connect().then(function(db) {
   todoDb = db;
   item = db.getSchema().table('Item');
   var row = item.createRow({
