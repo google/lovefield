@@ -17,6 +17,6 @@
     "gulp": "^3.8.10",
     "gulp-webserver": "^0.9.0",
     "jquery": "^2.1.3",
-    "lovefield": "^2.0.41"
+    "lovefield": "git://github.com/google/lovefield"
   }
 }

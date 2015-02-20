@@ -34,9 +34,7 @@ $(function() {
 
 
 function main() {
-  return movie.db.getInstance(
-      /* opt_onUpgrade */ undefined,
-      /* opt_volatile */ false).then(function(database) {
+  return movie.db.connect().then(function(database) {
     db = database;
     return checkForExistingData();
   }).then(function(dataExist) {

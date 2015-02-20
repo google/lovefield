@@ -77,11 +77,7 @@ movie.db.createSchema_ = function() {
 };
 
 
-/**
- * @param {!function(!lf.raw.BackStore):!IThenable=} opt_onUpgrade
- * @param {boolean=} opt_volatile Default to false
- * @return {!IThenable.<!lf.Database>}
- */
-movie.db.getInstance = function(opt_onUpgrade, opt_volatile) {
-  return movie.db.createSchema_().getInstance();
+/** @return {!IThenable.<!lf.Database>} */
+movie.db.connect = function() {
+  return movie.db.createSchema_().connect();
 };

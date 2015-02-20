@@ -90,7 +90,7 @@ function setUpBinding() {
 
 
 function main() {
-  return movie.db.getInstance().then(function(database) {
+  return movie.db.connect().then(function(database) {
     db = database;
     return checkForExistingData();
   }).then(function(dataExist) {
