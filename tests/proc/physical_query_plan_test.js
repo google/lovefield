@@ -27,7 +27,6 @@ goog.require('lf.proc.Relation');
 goog.require('lf.proc.TableAccessByRowIdStep');
 goog.require('lf.proc.TableAccessFullStep');
 goog.require('lf.testing.MockEnv');
-goog.require('lf.testing.MockSchema');
 goog.require('lf.testing.proc.DummyStep');
 
 
@@ -122,9 +121,11 @@ function checkTableAccessByRowId(description, table) {
 
   // Creating a "dummy" child step that will return only two row IDs.
   var rows = [
-    new lf.testing.MockSchema.Row(0, {id: 1, name: 'a'}),
-    new lf.testing.MockSchema.Row(1, {id: 2, name: 'b'})
+    table.createRow({id: 1, name: 'a'}),
+    table.createRow({id: 2, name: 'b'})
   ];
+  rows[0].assignRowId(0);
+  rows[1].assignRowId(1);
   step.addChild(new lf.testing.proc.DummyStep(
       lf.proc.Relation.fromRows(rows, [table.getName()])));
 
@@ -218,16 +219,17 @@ function checkIndexRangeScan(order, description) {
  * @return {!IThenable} A signal that sample data have been added.
  */
 function addSampleData() {
+  var table = schema.tables()[0];
   var sampleDataCount = 9;
   var rows = new Array(sampleDataCount);
   for (var i = 0; i < sampleDataCount; i++) {
-    rows[i] = new lf.testing.MockSchema.Row(i, {
+    rows[i] = table.createRow({
       'id': i.toString(),
       'name': 'dummyName' + i.toString()
     });
+    rows[i].assignRowId(i);
   }
 
-  var table = schema.tables()[0];
   var tx = backStore.createTx(
       lf.TransactionType.READ_WRITE,
       new lf.cache.Journal(lf.Global.get(), [table]));

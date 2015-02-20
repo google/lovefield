@@ -23,7 +23,6 @@ goog.require('lf.Row');
 goog.require('lf.cache.Journal');
 goog.require('lf.index.SingleKeyRange');
 goog.require('lf.testing.MockEnv');
-goog.require('lf.testing.MockSchema');
 
 
 /** @type {!goog.testing.AsyncTestCase} */
@@ -188,7 +187,7 @@ function testInsert_PrimaryKeyViolation3() {
  */
 function testInsert_UniqueKeyViolation() {
   var table = env.schema.tables()[4];
-  var emailIndexSchema = table.getConstraint().getUnique()[0];
+  var emailIndexSchema = table.getConstraint().getUnique()[1];
   var emailIndex = env.indexStore.get(emailIndexSchema.getNormalizedName());
   var rowIdIndex = env.indexStore.get(table.getRowIdIndexName());
 
@@ -278,16 +277,17 @@ function testUpdate_NotNullableKeyViolation() {
   assertEquals(1, env.cache.getCount());
 
   journal = new lf.cache.Journal(lf.Global.get(), [table]);
-  var rowUpdatedInvalid = new lf.testing.MockSchema.Row(
-      row.id(), {'id': 'pk1', 'email': null});
+  var rowUpdatedInvalid = table.createRow({'id': 'pk1', 'email': null});
+  rowUpdatedInvalid.assignRowId(row.id());
   assertThrowsException(
       journal.update.bind(journal, table, [rowUpdatedInvalid]),
       lf.Exception.Type.CONSTRAINT);
   journal.rollback();
 
   journal = new lf.cache.Journal(lf.Global.get(), [table]);
-  var rowUpdatedValid = new lf.testing.MockSchema.Row(
-      row.id(), {'id': 'pk1', 'email': 'otherEmailAddress'});
+  var rowUpdatedValid = table.createRow(
+      {'id': 'pk1', 'email': 'otherEmailAddress'});
+  rowUpdatedValid.assignRowId(row.id());
   assertNotThrows(function() {
     journal.update(table, [rowUpdatedValid]);
   });
@@ -312,16 +312,22 @@ function testUpdate_NoPrimaryKeyViolation() {
   assertTrue(rowIdIndex.containsKey(row.id()));
 
   // Attempting to update a column that is not the primary key.
-  var rowUpdated1 = new lf.testing.MockSchema.Row(
-      row.id(), {'id': row.payload()['id'], 'name': 'OtherDummyName'});
+  var rowUpdated1 = table.createRow({
+    'id': row.payload()['id'],
+    'name': 'OtherDummyName'
+  });
+  rowUpdated1.assignRowId(row.id());
 
   journal = new lf.cache.Journal(lf.Global.get(), [table]);
   journal.update(table, [rowUpdated1]);
   journal.commit();
 
   // Attempting to update the primary key column.
-  var rowUpdated2 = new lf.testing.MockSchema.Row(
-      row.id(), {'id': 'otherPk', 'name': 'OtherDummyName'});
+  var rowUpdated2 = table.createRow({
+    'id': 'otherPk',
+    'name': 'OtherDummyName'
+  });
+  rowUpdated2.assignRowId(row.id());
   journal = new lf.cache.Journal(lf.Global.get(), [table]);
   journal.update(table, [rowUpdated2]);
   journal.commit();
@@ -351,8 +357,11 @@ function testUpdate_PrimaryKeyViolation1() {
   assertTrue(pkIndex.containsKey(row2.payload()['id']));
 
   // Attempting to update row2 to have the same primary key as row1.
-  var row2Updated = new lf.testing.MockSchema.Row(
-      row2.id(), {'id': row1.payload()['id'], 'name': 'OtherDummyName'});
+  var row2Updated = table.createRow({
+    'id': row1.payload()['id'],
+    'name': 'OtherDummyName'
+  });
+  row2Updated.assignRowId(row2.id());
 
   journal = new lf.cache.Journal(lf.Global.get(), [table]);
   assertThrowsException(
@@ -381,8 +390,11 @@ function testUpdate_PrimaryKeyViolation2() {
   assertTrue(pkIndex.containsKey(row2.payload()['id']));
 
   // Attempting to update row2 to have the same primary key as row1.
-  var row2Updated = new lf.testing.MockSchema.Row(
-      row2.id(), {'id': row1.payload()['id'], 'name': 'OtherDummyName'});
+  var row2Updated = table.createRow({
+    'id': row1.payload()['id'],
+    'name': 'OtherDummyName'
+  });
+  row2Updated.assignRowId(row2.id());
   assertThrowsException(
       journal.update.bind(journal, table, [row2Updated]),
       lf.Exception.Type.CONSTRAINT);
@@ -414,8 +426,9 @@ function testUpdate_PrimaryKeyViolation3() {
   });
 
   var rowsUpdated = rows.map(function(row) {
-    return new lf.testing.MockSchema.Row(
-        row.id(), {'id': 'somePk', 'name': 'DummyName'});
+    var updatedRow = table.createRow({'id': 'somePk', 'name': 'DummyName'});
+    updatedRow.assignRowId(row.id());
+    return updatedRow;
   });
 
   journal = new lf.cache.Journal(lf.Global.get(), [table]);
@@ -516,7 +529,7 @@ function testInsertOrReplace() {
 
 function testInsertOrReplace_UniqueKeyViolation() {
   var table = env.schema.tables()[4];
-  var emailIndexSchema = table.getConstraint().getUnique()[0];
+  var emailIndexSchema = table.getConstraint().getUnique()[1];
   var emailIndex = env.indexStore.get(emailIndexSchema.getNormalizedName());
 
   var row1 = table.createRow({'id': 'pk1', 'email': 'emailAddress1'});
@@ -552,11 +565,11 @@ function testInsertOrReplace_UniqueKeyViolation() {
 
   // Attempting to update existing row1 to have the same 'email' as existing
   // row2.
-  var row1Updated = new lf.testing.MockSchema.Row(
-      row1.id(), {
-        'id': row1.payload()['id'],
-        'email': row2.payload()['email']
-      });
+  var row1Updated = table.createRow({
+    'id': row1.payload()['id'],
+    'email': row2.payload()['email']
+  });
+  row1Updated.assignRowId(row1.id());
   journal = new lf.cache.Journal(lf.Global.get(), [table]);
   assertThrowsException(
       journal.insertOrReplace.bind(journal, table, [row1Updated]),
@@ -567,8 +580,11 @@ function testInsertOrReplace_UniqueKeyViolation() {
 
   // Finally attempting to update existing row1 to have a new unused 'email'
   // field.
-  var row2Updated = new lf.testing.MockSchema.Row(
-      row2.id(), {'id': row2.payload()['id'], 'email': 'unusedEmailAddress'});
+  var row2Updated = table.createRow({
+    'id': row2.payload()['id'],
+    'email': 'unusedEmailAddress'
+  });
+  row2Updated.assignRowId(row2.id());
   journal = new lf.cache.Journal(lf.Global.get(), [table]);
   assertNotThrows(function() {
     journal.insertOrReplace(table, [row2Updated]);
@@ -629,11 +645,16 @@ function testIndicesCacheUpdated() {
   var indices = table.getIndices();
   var journal = new lf.cache.Journal(lf.Global.get(), [table]);
 
-  var row1 = new lf.testing.MockSchema.Row(1, {'id': '1', 'name': '1'});
-  var row2 = new lf.testing.MockSchema.Row(2, {'id': '2', 'name': '2'});
-  var row3 = new lf.testing.MockSchema.Row(3, {'id': '3', 'name': '2'});
-  var row4 = new lf.testing.MockSchema.Row(1, {'id': '4', 'name': '1'});
-  var row5 = new lf.testing.MockSchema.Row(1, {'id': '4', 'name': '4'});
+  var row1 = table.createRow({'id': '1', 'name': '1'});
+  row1.assignRowId(1);
+  var row2 = table.createRow({'id': '2', 'name': '2'});
+  row2.assignRowId(2);
+  var row3 = table.createRow({'id': '3', 'name': '2'});
+  row3.assignRowId(3);
+  var row4 = table.createRow({'id': '4', 'name': '1'});
+  row4.assignRowId(1);
+  var row5 = table.createRow({'id': '4', 'name': '4'});
+  row5.assignRowId(1);
 
   var pkId = env.indexStore.get(indices[0].getNormalizedName());
   var idxName = env.indexStore.get(indices[1].getNormalizedName());
@@ -706,8 +727,7 @@ function testIndicesUpdated() {
   // Inserting new rows within this journal, where row1 and row2 are within the
   // specified range, and modifying row3 such that it is not within range
   // anymore.
-  var row3Updated = new lf.testing.MockSchema.Row(
-      row3.id(), {'id': 'dummyId3', 'name': 'bbba'});
+  var row3Updated = table.createRow({'id': 'dummyId3', 'name': 'bbba'});
   journal.insertOrReplace(table, [row1, row2, row3Updated]);
   rowIds = index.getRange([keyRange1, keyRange2]);
   assertSameElements([row1.id(), row2.id()], rowIds);
@@ -724,8 +744,9 @@ function testRollback() {
       {'id': 'add', 'name': 'DummyName'});
   var rowToModifyOld = table.createRow(
       {'id': 'modify', 'name': 'DummyName'});
-  var rowToModifyNew = new lf.testing.MockSchema.Row(
-      rowToModifyOld.id(), {'id': 'modify', 'name': 'UpdatedDummyName'});
+  var rowToModifyNew = table.createRow(
+      {'id': 'modify', 'name': 'UpdatedDummyName'});
+  rowToModifyNew.assignRowId(rowToModifyOld.id());
   var rowToRemove = table.createRow(
       {'id': 'delete', 'name': 'DummyName'});
 

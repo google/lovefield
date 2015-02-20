@@ -16,17 +16,12 @@
  */
 goog.setTestOnly();
 goog.provide('lf.testing.MockSchema');
-goog.provide('lf.testing.MockSchema.Row');
 
 goog.require('goog.string');
 goog.require('lf.Order');
-goog.require('lf.Row');
 goog.require('lf.Type');
-goog.require('lf.schema.BaseColumn');
-goog.require('lf.schema.Constraint');
 goog.require('lf.schema.Database');
-goog.require('lf.schema.Index');
-goog.require('lf.schema.Table');
+goog.require('lf.schema.TableBuilder');
 
 
 
@@ -36,23 +31,44 @@ goog.require('lf.schema.Table');
  * @constructor
  */
 lf.testing.MockSchema = function() {
-  /** @private {!lf.schema.Table} */
-  this.tableA_ = new Table_('tableA');
+
+  var createTable = function(tableName) {
+    return new lf.schema.TableBuilder(tableName).
+        addColumn('id', lf.Type.STRING).
+        addColumn('name', lf.Type.STRING).
+        addPrimaryKey(['id']).
+        addIndex('idxName', [{'name': 'name', 'order': lf.Order.DESC}]).
+        getSchema();
+  };
 
   /** @private {!lf.schema.Table} */
-  this.tableB_ = new Table_('tableB');
+  this.tableA_ = createTable('tableA');
 
   /** @private {!lf.schema.Table} */
-  this.tableC_ = new TableWithNoIndex_('tableC');
+  this.tableB_ = createTable('tableB');
+
+  /**
+   * A table with no indices.
+   * @private {!lf.schema.Table}
+   */
+  this.tableC_ = new lf.schema.TableBuilder('tableC').
+      addColumn('id', lf.Type.STRING).
+      addColumn('name', lf.Type.STRING).
+      getSchema();
 
   /** @private {!lf.schema.Table} */
-  this.tableD_ = new Table_('tableD');
+  this.tableD_ = createTable('tableD');
 
   /** @private {!lf.schema.Table} */
-  this.tableE_ = new TableWithUnique_('tableE');
+  this.tableE_ = new lf.schema.TableBuilder('tableE').
+      addColumn('id', lf.Type.STRING).
+      addColumn('email', lf.Type.STRING).
+      addPrimaryKey(['id']).
+      addUnique('uq_email', ['email']).
+      getSchema();
 
   /** @private {!lf.schema.Table} */
-  this.tablePlusOne_ = new Table_('tablePlusOne');
+  this.tablePlusOne_ = createTable('tablePlusOne');
 
   /** @private {string} */
   this.name_ = 'mock_schema';
@@ -112,184 +128,4 @@ lf.testing.MockSchema.prototype.setName = function(name) {
 /** @param {number} version */
 lf.testing.MockSchema.prototype.setVersion = function(version) {
   this.version_ = version;
-};
-
-
-
-/**
- * Dummy row implementation to be used in tests.
- * @param {number} id
- * @param {!Object} payload
- * @extends {lf.Row}
- * @constructor
- */
-lf.testing.MockSchema.Row = function(id, payload) {
-  lf.testing.MockSchema.Row.base(this, 'constructor', id, payload);
-};
-goog.inherits(lf.testing.MockSchema.Row, lf.Row);
-
-
-/** @override */
-lf.testing.MockSchema.Row.prototype.keyOfIndex = function(indexName) {
-  if (indexName.substr(-1) == '#') {
-    return /** @type {lf.index.Index.Key} */ (this.id());
-  } else if (goog.string.endsWith(indexName, 'pkId')) {
-    return this.payload()['id'];
-  } else if (goog.string.endsWith(indexName, 'idxName')) {
-    return this.payload()['name'];
-  } else if (goog.string.endsWith(indexName, 'uq_email')) {
-    return this.payload()['email'];
-  }
-  return null;
-};
-
-
-
-/**
- * Dummy table implementation to be used in tests.
- * @extends {lf.schema.Table}
- * @constructor
- * @private
- *
- * @param {string} tableName The name of this table.
- */
-var Table_ = function(tableName) {
-  /** @type {!lf.schema.Column.<string>} */
-  this.id = new lf.schema.BaseColumn(this, 'id', true, lf.Type.STRING);
-
-  /** @type {!lf.schema.Column.<string>} */
-  this.name = new lf.schema.BaseColumn(this, 'name', false, lf.Type.STRING);
-
-  var indices = [
-    new lf.schema.Index(tableName, 'pkId', true,
-        [{'name': 'id', 'order': lf.Order.ASC, 'autoIncrement': false}]),
-    new lf.schema.Index(tableName, 'idxName', false,
-        [{'name': 'name', 'order': lf.Order.DESC}])
-  ];
-
-  Table_.base(this, 'constructor',
-      tableName, [this.id, this.name], indices, false);
-};
-goog.inherits(Table_, lf.schema.Table);
-
-
-/** @override */
-Table_.prototype.createRow = function(value) {
-  return new lf.testing.MockSchema.Row(
-      lf.Row.getNextId(),
-      {
-        'id': value['id'],
-        'name': value['name']
-      });
-};
-
-
-/** @override */
-Table_.prototype.deserializeRow = function(dbPayload) {
-  return lf.Row.deserialize(dbPayload);
-};
-
-
-/** @override */
-Table_.prototype.getConstraint = function() {
-  return new lf.schema.Constraint(
-      new lf.schema.Index(this.getName(), 'pkId', true,
-          [{'name': 'id', 'order': lf.Order.ASC, 'autoIncrement': false}]),
-      [this.id, this.name] /* notNullable */,
-      [], []);
-};
-
-
-
-/**
- * Dummy table implementation to be used in tests.
- * @extends {lf.schema.Table}
- * @constructor
- * @private
- *
- * @param {string} tableName The name of this table.
- */
-var TableWithNoIndex_ = function(tableName) {
-  /** @type {!lf.schema.Column.<string>} */
-  this.id = new lf.schema.BaseColumn(this, 'id', false, lf.Type.STRING);
-
-  /** @type {!lf.schema.Column.<string>} */
-  this.name = new lf.schema.BaseColumn(this, 'name', false, lf.Type.STRING);
-
-  TableWithNoIndex_.base(this, 'constructor',
-      tableName, [this.id, this.name], [], false);
-};
-goog.inherits(TableWithNoIndex_, lf.schema.Table);
-
-
-/** @override */
-TableWithNoIndex_.prototype.createRow = function(value) {
-  return lf.Row.create({
-    'id': value['id'],
-    'name': value['name']
-  });
-};
-
-
-/** @override */
-TableWithNoIndex_.prototype.deserializeRow = function(dbPayload) {
-  return lf.Row.deserialize(dbPayload);
-};
-
-
-/** @override */
-TableWithNoIndex_.prototype.getConstraint = function() {
-  return new lf.schema.Constraint(
-      null, [this.id, this.name] /* notNullable */, [], []);
-};
-
-
-
-/**
- * Dummy table implementation with a uniqueness constraint to be used in tests.
- * @extends {lf.schema.Table}
- * @constructor
- * @private
- *
- * @param {string} tableName The name of this table.
- */
-var TableWithUnique_ = function(tableName) {
-  /** @type {!lf.schema.Column.<string>} */
-  this.id = new lf.schema.BaseColumn(this, 'id', true, lf.Type.STRING);
-
-  /** @type {!lf.schema.Column.<string>} */
-  this.email = new lf.schema.BaseColumn(this, 'email', true, lf.Type.STRING);
-
-  var indices = [
-    new lf.schema.Index(tableName, 'pkId', true,
-        [{'name': 'id', 'order': lf.Order.ASC, 'autoIncrement': false}]),
-    new lf.schema.Index(tableName, 'uq_email', true,
-        [{'name': 'email', 'order': lf.Order.ASC}])
-  ];
-  TableWithUnique_.base(this, 'constructor',
-      tableName, [this.id, this.email], indices, false);
-};
-goog.inherits(TableWithUnique_, lf.schema.Table);
-
-
-/** @override */
-TableWithUnique_.prototype.createRow = function(payload) {
-  return new lf.testing.MockSchema.Row(lf.Row.getNextId(), payload);
-};
-
-
-/** @override */
-TableWithUnique_.prototype.deserializeRow = function(dbPayload) {
-  return lf.Row.deserialize(dbPayload);
-};
-
-
-/** @override */
-TableWithUnique_.prototype.getConstraint = function() {
-  return new lf.schema.Constraint(
-      new lf.schema.Index(this.getName(), 'pkId', true,
-          [{'name': 'id', 'order': lf.Order.ASC, 'autoIncrement': false}]),
-      [this.id, this.email] /* notNullable */, [],
-      [new lf.schema.Index(this.getName(), 'uq_email', true,
-       [{'name': 'email', 'order': lf.Order.ASC}])]);
 };

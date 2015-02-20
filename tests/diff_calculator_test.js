@@ -67,7 +67,7 @@ function generateSamlpeRows() {
 function testDiffCalculation_ExplicitColumns() {
   var table = schema.tables()[0];
   var builder = new lf.query.SelectBuilder(
-      lf.Global.get(), [table.id, table.name]);
+      lf.Global.get(), [table['id'], table['name']]);
   builder.from(table);
   var query = builder.getQuery();
   checkDiffCalculation(query, 'ExplicitColumns');

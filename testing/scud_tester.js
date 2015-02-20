@@ -58,7 +58,8 @@ lf.testing.backstore.ScudTester.prototype.insert_ = function(rows) {
       lf.TransactionType.READ_WRITE,
       new lf.cache.Journal(this.global_, [this.tableSchema_]));
   var store = /** @type {!lf.Stream} */ (tx.getTable(
-      this.tableSchema_.getName(), this.tableSchema_.deserializeRow));
+      this.tableSchema_.getName(),
+      this.tableSchema_.deserializeRow.bind(this.tableSchema_)));
 
   store.put(rows);
   return tx.commit();
@@ -75,7 +76,8 @@ lf.testing.backstore.ScudTester.prototype.remove_ = function(rowIds) {
       lf.TransactionType.READ_WRITE,
       new lf.cache.Journal(this.global_, [this.tableSchema_]));
   var store = /** @type {!lf.Stream} */ (tx.getTable(
-      this.tableSchema_.getName(), this.tableSchema_.deserializeRow));
+      this.tableSchema_.getName(),
+      this.tableSchema_.deserializeRow.bind(this.tableSchema_)));
 
   store.remove(rowIds);
   return tx.commit();
@@ -101,7 +103,8 @@ lf.testing.backstore.ScudTester.prototype.select_ = function(rowIds) {
       lf.TransactionType.READ_ONLY,
       new lf.cache.Journal(this.global_, [this.tableSchema_]));
   var store = /** @type {!lf.Stream} */ (tx.getTable(
-      this.tableSchema_.getName(), this.tableSchema_.deserializeRow));
+      this.tableSchema_.getName(),
+      this.tableSchema_.deserializeRow.bind(this.tableSchema_)));
 
   return store.get(rowIds);
 };

@@ -58,19 +58,23 @@ function checkGetSetValue_MultipleTables(tables) {
 
     // Tests setting the value when no previous value is specified.
     var field1 = 'Hello';
-    entry.setField(tables[0].name, field1);
+    entry.setField(tables[0]['name'], field1);
     var field2 = 'World';
-    entry.setField(tables[1].name, field2);
-    assertPopulated(entry, tables[0].name, field1, /* isPrefixApplied */ true);
-    assertPopulated(entry, tables[1].name, field2, /* isPrefixApplied */ true);
+    entry.setField(tables[1]['name'], field2);
+    assertPopulated(
+        entry, tables[0]['name'], field1, /* isPrefixApplied */ true);
+    assertPopulated(
+        entry, tables[1]['name'], field2, /* isPrefixApplied */ true);
 
     // Tests setting the value when a previous value is specified.
     var field3 = 'olleH';
-    entry.setField(tables[0].name, field3);
+    entry.setField(tables[0]['name'], field3);
     var field4 = 'dlroW';
-    entry.setField(tables[1].name, field4);
-    assertPopulated(entry, tables[0].name, field3, /* isPrefixApplied */ true);
-    assertPopulated(entry, tables[1].name, field4, /* isPrefixApplied */ true);
+    entry.setField(tables[1]['name'], field4);
+    assertPopulated(
+        entry, tables[0]['name'], field3, /* isPrefixApplied */ true);
+    assertPopulated(
+        entry, tables[1]['name'], field4, /* isPrefixApplied */ true);
   });
 }
 
@@ -104,12 +108,12 @@ function testGetSetValue_SingleTable() {
     assertTrue(goog.object.isEmpty(entry.row.payload()));
 
     var field1 = 'HelloWorld';
-    entry.setField(table.name, field1);
-    assertPopulated(entry, table.name, field1, /* isPrefixApplied */ false);
+    entry.setField(table['name'], field1);
+    assertPopulated(entry, table['name'], field1, /* isPrefixApplied */ false);
 
     var field2 = 'dlroWolleH';
-    entry.setField(table.name, field2);
-    assertPopulated(entry, table.name, field2, /* isPrefixApplied */ false);
+    entry.setField(table['name'], field2);
+    assertPopulated(entry, table['name'], field2, /* isPrefixApplied */ false);
   });
 }
 
@@ -122,7 +126,7 @@ function testSetField_WithAlias() {
 
   var schema = new lf.testing.MockSchema();
   var table = schema.tables()[0];
-  var col = table.name.as('nickName');
+  var col = table['name'].as('nickName');
 
   var relation = lf.proc.Relation.fromRows(rows, [table.getName()]);
   relation.entries.forEach(function(entry) {

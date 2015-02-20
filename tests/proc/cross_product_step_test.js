@@ -85,10 +85,10 @@ function testCrossProduct() {
   step.exec(journal).then(function(relation) {
     assertEquals(leftRowCount * rightRowCount, relation.entries.length);
     relation.entries.forEach(function(entry) {
-      assertTrue(goog.isDefAndNotNull(entry.getField(leftTable.id)));
-      assertTrue(goog.isDefAndNotNull(entry.getField(leftTable.name)));
-      assertTrue(goog.isDefAndNotNull(entry.getField(rightTable.id)));
-      assertTrue(goog.isDefAndNotNull(entry.getField(rightTable.email)));
+      assertTrue(goog.isDefAndNotNull(entry.getField(leftTable['id'])));
+      assertTrue(goog.isDefAndNotNull(entry.getField(leftTable['name'])));
+      assertTrue(goog.isDefAndNotNull(entry.getField(rightTable['id'])));
+      assertTrue(goog.isDefAndNotNull(entry.getField(rightTable['email'])));
     });
     asyncTestCase.continueTesting();
   }, fail);
@@ -156,12 +156,12 @@ function testCrossProduct_PreviousJoins() {
         relation1Count * relation2Count * relation3Count,
         result.entries.length);
     result.entries.forEach(function(entry) {
-      assertTrue(goog.isDefAndNotNull(entry.getField(table1.id)));
-      assertTrue(goog.isDefAndNotNull(entry.getField(table1.name)));
-      assertTrue(goog.isDefAndNotNull(entry.getField(table2.id)));
-      assertTrue(goog.isDefAndNotNull(entry.getField(table2.name)));
-      assertTrue(goog.isDefAndNotNull(entry.getField(table3.id)));
-      assertTrue(goog.isDefAndNotNull(entry.getField(table3.email)));
+      assertTrue(goog.isDefAndNotNull(entry.getField(table1['id'])));
+      assertTrue(goog.isDefAndNotNull(entry.getField(table1['name'])));
+      assertTrue(goog.isDefAndNotNull(entry.getField(table2['id'])));
+      assertTrue(goog.isDefAndNotNull(entry.getField(table2['name'])));
+      assertTrue(goog.isDefAndNotNull(entry.getField(table3['id'])));
+      assertTrue(goog.isDefAndNotNull(entry.getField(table3['email'])));
     });
     asyncTestCase.continueTesting();
   }, fail);

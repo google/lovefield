@@ -5,6 +5,16 @@ goog.require('lf.cache.TableDiff');
 goog.require('lf.testing.MockSchema');
 
 
+/** @type {!lf.schema.Table} */
+var table;
+
+
+function setUp() {
+  var schema = new lf.testing.MockSchema();
+  table = schema.tables()[0];
+}
+
+
 /**
  * Tests the behavior of the TableDiff class under mulitple
  * additions, modifications and deletions.
@@ -14,24 +24,32 @@ function testMultipleOperations() {
 
   // Assuming that 1 and 2 are the only row IDs that reside in the table prior
   // to this diff.
-  var row1Old = new lf.testing.MockSchema.Row(
-      1, {'id': 'pk1', 'name': 'DummyName'});
-  var row1New = new lf.testing.MockSchema.Row(
-      1, {'id': 'pk1', 'name': 'UpdatedDummyName'});
+  var row1Old = table.createRow(
+      {'id': 'pk1', 'name': 'DummyName'});
+  row1Old.assignRowId(1);
+  var row1New = table.createRow(
+      {'id': 'pk1', 'name': 'UpdatedDummyName'});
+  row1New.assignRowId(1);
 
-  var row2Old = new lf.testing.MockSchema.Row(
-      2, {'id': 'pk2', 'name': 'DummyName'});
-  var row2New = new lf.testing.MockSchema.Row(
-      2, {'id': 'pk2', 'name': 'UpdatedDummyName'});
+  var row2Old = table.createRow(
+      {'id': 'pk2', 'name': 'DummyName'});
+  row2Old.assignRowId(2);
+  var row2New = table.createRow(
+      {'id': 'pk2', 'name': 'UpdatedDummyName'});
+  row2New.assignRowId(2);
 
-  var row3 = new lf.testing.MockSchema.Row(
-      3, {'id': 'pk3', 'name': 'DummyName'});
-  var row4 = new lf.testing.MockSchema.Row(
-      4, {'id': 'pk4', 'name': 'DummyName'});
-  var row5Old = new lf.testing.MockSchema.Row(
-      5, {'id': 'pk5', 'name': 'DummyName'});
-  var row5New = new lf.testing.MockSchema.Row(
-      5, {'id': 'pk5', 'name': 'UpdatedDummyName'});
+  var row3 = table.createRow(
+      {'id': 'pk3', 'name': 'DummyName'});
+  row3.assignRowId(3);
+  var row4 = table.createRow(
+      {'id': 'pk4', 'name': 'DummyName'});
+  row4.assignRowId(4);
+  var row5Old = table.createRow(
+      {'id': 'pk5', 'name': 'DummyName'});
+  row5Old.assignRowId(5);
+  var row5New = table.createRow(
+      {'id': 'pk5', 'name': 'UpdatedDummyName'});
+  row5New.assignRowId(5);
 
   // No changes have happened yet.
   assertEquals('[], [], []', diff.toString());
@@ -102,10 +120,10 @@ function testGetReversed_Empty() {
  */
 function testGetReversed_Add() {
   var original = new lf.cache.TableDiff();
-  var row1 = new lf.testing.MockSchema.Row(
-      1, {'id': 'pk1', 'name': 'DummyName'});
-  var row2 = new lf.testing.MockSchema.Row(
-      2, {'id': 'pk2', 'name': 'DummyName'});
+  var row1 = table.createRow({'id': 'pk1', 'name': 'DummyName'});
+  row1.assignRowId(1);
+  var row2 = table.createRow({'id': 'pk2', 'name': 'DummyName'});
+  row2.assignRowId(2);
   original.add(row1);
   original.add(row2);
 
@@ -129,10 +147,10 @@ function testGetReversed_Add() {
  */
 function testGetReversed_Delete() {
   var original = new lf.cache.TableDiff();
-  var row1 = new lf.testing.MockSchema.Row(
-      1, {'id': 'pk1', 'name': 'DummyName'});
-  var row2 = new lf.testing.MockSchema.Row(
-      2, {'id': 'pk2', 'name': 'DummyName'});
+  var row1 = table.createRow({'id': 'pk1', 'name': 'DummyName'});
+  row1.assignRowId(1);
+  var row2 = table.createRow({'id': 'pk2', 'name': 'DummyName'});
+  row2.assignRowId(2);
   original.delete(row1);
   original.delete(row2);
 
@@ -156,10 +174,10 @@ function testGetReversed_Delete() {
  */
 function testGetReversed_Modify() {
   var original = new lf.cache.TableDiff();
-  var rowOld = new lf.testing.MockSchema.Row(
-      1, {'id': 'pk1', 'name': 'DummyName'});
-  var rowNew = new lf.testing.MockSchema.Row(
-      1, {'id': 'pk1', 'name': 'OtherDummyName'});
+  var rowOld = table.createRow({'id': 'pk1', 'name': 'DummyName'});
+  rowOld.assignRowId(1);
+  var rowNew = table.createRow({'id': 'pk1', 'name': 'OtherDummyName'});
+  rowNew.assignRowId(1);
   original.modify([rowOld, rowNew]);
 
   assertEquals(0, original.getAdded().getCount());
@@ -189,14 +207,14 @@ function testGetReversed_Modify() {
 function testGetAsModifications() {
   var diff = new lf.cache.TableDiff();
 
-  var row1 = new lf.testing.MockSchema.Row(
-      1, {'id': 'pk1', 'name': 'DummyName'});
-  var row2 = new lf.testing.MockSchema.Row(
-      2, {'id': 'pk2', 'name': 'DummyName'});
-  var row3Before = new lf.testing.MockSchema.Row(
-      3, {'id': 'pk3', 'name': 'DummyName'});
-  var row3After = new lf.testing.MockSchema.Row(
-      3, {'id': 'pk3', 'name': 'OtherDummyName'});
+  var row1 = table.createRow({'id': 'pk1', 'name': 'DummyName'});
+  row1.assignRowId(1);
+  var row2 = table.createRow({'id': 'pk2', 'name': 'DummyName'});
+  row2.assignRowId(2);
+  var row3Before = table.createRow({'id': 'pk3', 'name': 'DummyName'});
+  row3Before.assignRowId(3);
+  var row3After = table.createRow({'id': 'pk3', 'name': 'OtherDummyName'});
+  row3After.assignRowId(3);
 
   diff.add(row1);
   diff.modify([row3Before, row3After]);

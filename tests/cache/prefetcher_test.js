@@ -27,7 +27,6 @@ goog.require('lf.index.IndexMetadataRow');
 goog.require('lf.index.MemoryIndexStore');
 goog.require('lf.index.RowId');
 goog.require('lf.testing.MockEnv');
-goog.require('lf.testing.MockSchema');
 
 
 /** @type {!goog.testing.AsyncTestCase} */
@@ -65,17 +64,18 @@ function setUp() {
 
 
 function testPrefetcher() {
-  // Setup some data first.
-  var rows = getSampleRows(19);
+  asyncTestCase.waitForAsync('testPrefetcher');
 
-  var table = env.store.getTableInternal(env.schema.tables()[3].getName());
-  var indices = env.indexStore.getTableIndices(
-      env.schema.tables()[3].getName());
+  // Setup some data first.
+  var tableSchema = env.schema.tables()[3];
+  var rows = getSampleRows(tableSchema, 19);
+
+  var indices = env.indexStore.getTableIndices(tableSchema.getName());
   var rowIdIndex = indices[0];
   var pkIndex = indices[1];
   var nameIndex = indices[2];
+  var table = env.store.getTableInternal(tableSchema.getName());
 
-  asyncTestCase.waitForAsync('testPrefetcher');
   table.put(rows).then(function() {
     assertEquals(0, env.cache.getCount());
     assertArrayEquals([], rowIdIndex.get(1001));
@@ -106,9 +106,8 @@ function testPrefetcher() {
 function testInit_PersistentIndices() {
   asyncTestCase.waitForAsync('testInit_PersistentIndices');
 
-
-  var rows = getSampleRows(10);
   var tableSchema = env.schema.tables()[0];
+  var rows = getSampleRows(tableSchema, 10);
   propertyReplacer.replace(tableSchema, 'persistentIndex', goog.functions.TRUE);
 
   simulatePersistedIndices(tableSchema, rows).then(
@@ -136,28 +135,33 @@ function testInit_PersistentIndices() {
 
 
 /**
+ * @param {!lf.schema.Table} tableSchema
  * @param {number} rowCount The number of sample rows to generate.
  * @return {!Array<!lf.Row>}
  */
-function getSampleRows(rowCount) {
+function getSampleRows(tableSchema, rowCount) {
   var rows = [];
 
   var rowCountFirstHalf = Math.floor(rowCount / 2);
   for (var i = 0; i < rowCountFirstHalf; i++) {
-    rows.push(new lf.testing.MockSchema.Row(i + 2, {
+    var row = tableSchema.createRow({
       'id': 1000 + i,
       'name': 'name' + i
-    }));
+    });
+    row.assignRowId(i + 2);
+    rows.push(row);
   }
 
   // Generating a few rows with non-unique values for the "name" field. This
   // allows tests in this file to trigger the case where an index corresponding
   // to a non-unique field is initialized.
   for (var i = rowCountFirstHalf; i < rowCount; i++) {
-    rows.push(new lf.testing.MockSchema.Row(i + 2, {
+    var row = tableSchema.createRow({
       'id': 1000 + i,
       'name': 'nonUniqueName'
-    }));
+    });
+    row.assignRowId(i + 2);
+    rows.push(row);
   }
 
   return rows;

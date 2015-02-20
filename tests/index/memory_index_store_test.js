@@ -64,12 +64,12 @@ function testMemoryIndexStore() {
 
   indexStore.init(schema).then(function() {
     // Table A index names.
-    var tableAPkIndex = 'tableA.pkId';
+    var tableAPkIndex = 'tableA.pkTableA';
     var tableANameIndex = 'tableA.idxName';
     var tableARowIdIndex = 'tableA.#';
 
     // Table B index names.
-    var tableBPkIndex = 'tableB.pkId';
+    var tableBPkIndex = 'tableB.pkTableB';
     var tableBNameIndex = 'tableB.idxName';
     var tableBRowIdIndex = 'tableB.#';
 

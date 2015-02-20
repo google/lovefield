@@ -64,7 +64,7 @@ function testCreate_DeletePlan() {
   var queryBuilder = new lf.query.DeleteBuilder(lf.Global.get());
   queryBuilder.
       from(table).
-      where(lf.op.and(table.id.eq('id'), table.name.eq('name')));
+      where(lf.op.and(table['id'].eq('id'), table['name'].eq('name')));
 
   var query = queryBuilder.query;
   assertEquals(
@@ -97,7 +97,7 @@ function testCreate_SelectPlan() {
   var queryBuilder = new lf.query.SelectBuilder(lf.Global.get(), []);
   queryBuilder.
       from(table).
-      where(lf.op.and(table.id.eq('id'), table.name.eq('name')));
+      where(lf.op.and(table['id'].eq('id'), table['name'].eq('name')));
 
   var query = queryBuilder.query;
   assertEquals(
@@ -170,8 +170,8 @@ function testCreate_UpdatePlan() {
 
   var queryBuilder = new lf.query.UpdateBuilder(lf.Global.get(), table);
   queryBuilder.
-      set(table.name, 'NewName').
-      where(lf.op.and(table.id.eq('id'), table.name.eq('name')));
+      set(table['name'], 'NewName').
+      where(lf.op.and(table['id'].eq('id'), table['name'].eq('name')));
 
   var query = queryBuilder.query;
   assertEquals(

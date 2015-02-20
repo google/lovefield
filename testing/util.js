@@ -84,6 +84,8 @@ lf.testing.util.selectAll = function(global, tableSchema) {
   var tx = backStore.createTx(
       lf.TransactionType.READ_ONLY,
       new lf.cache.Journal(global, [tableSchema]));
-  var table = tx.getTable(tableSchema.getName(), tableSchema.deserializeRow);
+  var table = tx.getTable(
+      tableSchema.getName(),
+      tableSchema.deserializeRow.bind(tableSchema));
   return table.get([]);
 };

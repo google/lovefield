@@ -70,9 +70,9 @@ function testCreate_DeletePlan() {
 
   var table = env.schema.tables()[0];
   var deleteNode = new lf.proc.DeleteNode(table);
-  var selectNode1 = new lf.proc.SelectNode(table.id.eq('id'));
+  var selectNode1 = new lf.proc.SelectNode(table['id'].eq('id'));
   deleteNode.addChild(selectNode1);
-  var selectNode2 = new lf.proc.SelectNode(table.name.eq('name'));
+  var selectNode2 = new lf.proc.SelectNode(table['name'].eq('name'));
   selectNode1.addChild(selectNode2);
   var tableAccessNode = new lf.proc.TableAccessNode(table);
   selectNode2.addChild(tableAccessNode);
