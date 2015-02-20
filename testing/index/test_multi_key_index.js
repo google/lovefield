@@ -16,6 +16,7 @@
  */
 goog.provide('lf.testing.index.TestMultiKeyIndex');
 
+goog.require('lf.index.SingleKeyRange');
 goog.require('lf.testing.index.TestIndex');
 
 
@@ -100,7 +101,23 @@ lf.testing.index.TestMultiKeyIndex.prototype.testMinMax = function(index) {
 
 /** @override */
 lf.testing.index.TestMultiKeyIndex.prototype.testMultiRange = function(index) {
-  // TODO(arthurhsu): implement
+  this.populateIndex_(index);
+
+  // Simulate NOT(BETWEEN([2, 'X'], [24, 'B']))
+  // The optimizer already handles the range order.
+  var range1 = [
+    new lf.index.SingleKeyRange(null, 2, false, true),
+    new lf.index.SingleKeyRange('X', null, true, false)
+  ];
+  var range2 = [
+    new lf.index.SingleKeyRange(24, null, true, false),
+    new lf.index.SingleKeyRange(null, 'B', false, true)
+  ];
+
+  var expected = [2000, 2001, 2025];
+
+  assertArrayEquals(expected, index.getRange([range1, range2]));
+  assertArrayEquals(expected, index.getRange([range2, range1]));
 };
 
 
