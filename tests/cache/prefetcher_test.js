@@ -67,7 +67,7 @@ function testPrefetcher() {
   asyncTestCase.waitForAsync('testPrefetcher');
 
   // Setup some data first.
-  var tableSchema = env.schema.tables()[3];
+  var tableSchema = env.schema.tables()[1];
   var rows = getSampleRows(tableSchema, 19);
 
   var indices = env.indexStore.getTableIndices(tableSchema.getName());

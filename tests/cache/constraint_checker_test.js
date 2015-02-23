@@ -17,10 +17,10 @@
 goog.setTestOnly();
 goog.require('goog.testing.AsyncTestCase');
 goog.require('goog.testing.jsunit');
-goog.require('lf.Exception');
 goog.require('lf.Global');
 goog.require('lf.cache.ConstraintChecker');
 goog.require('lf.testing.MockEnv');
+goog.require('lf.testing.util');
 
 
 /** @type {!goog.testing.AsyncTestCase} */
@@ -81,10 +81,10 @@ function testCheckNotNullable() {
     return table.createRow({'id': primaryKey.toString(), 'email': null});
   });
 
-  assertThrowsException(
+  lf.testing.util.assertThrowsConstraintError(
       function() {
         checker.checkNotNullable(table, invalidRows);
-      }, lf.Exception.Type.CONSTRAINT);
+      });
 
   // Attempting to insert rows that don't violate the constraint.
   var validRows = [1, 2, 3].map(function(primaryKey) {
@@ -94,24 +94,4 @@ function testCheckNotNullable() {
   assertNotThrows(function() {
     checker.checkNotNullable(table, validRows);
   });
-}
-
-
-/**
- * Asserts that calling the given function throws the given exception.
- * @param {!function()} fn The function to call.
- * @param {string} exceptionName The expected name of the exception.
- *
- * TODO(dpapad): Put this method in a shared location, it is being used by other
- * tests too.
- */
-function assertThrowsException(fn, exceptionName) {
-  var exceptionThrown = false;
-  try {
-    fn();
-  } catch (error) {
-    exceptionThrown = true;
-    assertEquals(exceptionName, error.name);
-  }
-  assertTrue(exceptionThrown);
 }

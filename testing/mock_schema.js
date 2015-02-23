@@ -56,8 +56,17 @@ lf.testing.MockSchema = function() {
       addColumn('name', lf.Type.STRING).
       getSchema();
 
-  /** @private {!lf.schema.Table} */
-  this.tableD_ = createTable('tableD');
+  /**
+   * A table with a composite primary key.
+   * @private {!lf.schema.Table}
+   */
+  this.tableD_ = new lf.schema.TableBuilder('tableD').
+      addColumn('id1', lf.Type.STRING).
+      addColumn('id2', lf.Type.NUMBER).
+      addColumn('name', lf.Type.STRING).
+      addPrimaryKey(['id1', 'id2']).
+      addIndex('idxName', [{'name': 'name', 'order': lf.Order.ASC}]).
+      getSchema();
 
   /** @private {!lf.schema.Table} */
   this.tableE_ = new lf.schema.TableBuilder('tableE').

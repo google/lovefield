@@ -152,4 +152,4 @@ table:
       number: number
       string: string
     constraint:
-      primaryKey: [ string ]
+      primaryKey: [ string, number ]

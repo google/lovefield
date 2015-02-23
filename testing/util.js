@@ -56,18 +56,37 @@ lf.testing.util.sequentiallyRun = function(functions) {
 
 
 /**
- * Asserts that an lf.Exception.Type.SYNTAX error is thrown.
+ * Asserts that the given exception type is thrown.
  * @param {!function()} fn The function to be checked.
+ * @param {lf.Exception.Type} exceptionType The expected exception type.
  */
-lf.testing.util.assertThrowsSyntaxError = function(fn) {
+lf.testing.util.assertThrowsError = function(fn, exceptionType) {
   var thrown = false;
   try {
     fn.call();
   } catch (e) {
     thrown = true;
-    assertEquals(e.name, lf.Exception.Type.SYNTAX);
+    assertEquals(e.name, exceptionType);
   }
   assertTrue(thrown);
+};
+
+
+/**
+ * Asserts that an lf.Exception.Type.SYNTAX error is thrown.
+ * @param {!function()} fn The function to be checked.
+ */
+lf.testing.util.assertThrowsSyntaxError = function(fn) {
+  lf.testing.util.assertThrowsError(fn, lf.Exception.Type.SYNTAX);
+};
+
+
+/**
+ * Asserts that an lf.Exception.Type.CONTSTRAINT error is thrown.
+ * @param {!function()} fn The function to be checked.
+ */
+lf.testing.util.assertThrowsConstraintError = function(fn) {
+  lf.testing.util.assertThrowsError(fn, lf.Exception.Type.CONSTRAINT);
 };
 
 

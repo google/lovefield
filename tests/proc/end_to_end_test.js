@@ -138,6 +138,26 @@ function testInsert_NoPrimaryKey() {
 }
 
 
+function testInsert_CrossColumnPrimaryKey() {
+  asyncTestCase.waitForAsync('testInsert_CrossColumnPrimaryKey');
+  var table = db.getSchema().getDummyTable();
+
+  var q1 = /** @type {!lf.query.InsertBuilder} */ (
+      db.insert().into(table).values([table.createRow()]));
+  var q2 = /** @type {!lf.query.InsertBuilder} */ (
+      db.insert().into(table).values([table.createRow()]));
+
+  q1.exec().then(
+      function() {
+        return q2.exec();
+      }).thenCatch(
+      function(e) {
+        assertEquals(lf.Exception.Type.CONSTRAINT, e.name);
+        asyncTestCase.continueTesting();
+      });
+}
+
+
 /**
  * Tests that an INSERT query on a tabe that uses 'autoIncrement' primary key
  * does indeed automatically assign incrementing primary keys to rows being
