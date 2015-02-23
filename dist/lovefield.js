@@ -15613,7 +15613,8 @@ goog.labs.userAgent.browser.matchOpera_ = function() {
  * @private
  */
 goog.labs.userAgent.browser.matchIE_ = function() {
-  return goog.labs.userAgent.util.matchUserAgent('Trident') ||
+  return goog.labs.userAgent.util.matchUserAgent('Edge') ||
+      goog.labs.userAgent.util.matchUserAgent('Trident') ||
       goog.labs.userAgent.util.matchUserAgent('MSIE');
 };
 
@@ -15636,6 +15637,7 @@ goog.labs.userAgent.browser.matchSafari_ = function() {
       !(goog.labs.userAgent.browser.matchChrome_() ||
         goog.labs.userAgent.browser.matchCoast_() ||
         goog.labs.userAgent.browser.matchOpera_() ||
+        goog.labs.userAgent.browser.matchIE_() ||
         goog.labs.userAgent.browser.isSilk() ||
         goog.labs.userAgent.util.matchUserAgent('Android'));
 };
@@ -15674,7 +15676,8 @@ goog.labs.userAgent.browser.matchIosWebview_ = function() {
 goog.labs.userAgent.browser.matchChrome_ = function() {
   return (goog.labs.userAgent.util.matchUserAgent('Chrome') ||
       goog.labs.userAgent.util.matchUserAgent('CriOS')) &&
-      !goog.labs.userAgent.browser.matchOpera_();
+      !goog.labs.userAgent.browser.matchOpera_() &&
+      !goog.labs.userAgent.browser.matchIE_();
 };
 
 
@@ -15849,6 +15852,11 @@ goog.labs.userAgent.browser.getIEVersion_ = function(userAgent) {
     return rv[1];
   }
 
+  var edge = /Edge\/([\d\.]+)/.exec(userAgent);
+  if (edge) {
+    return edge[1];
+  }
+
   var version = '';
   var msie = /MSIE +([\d\.]+)/.exec(userAgent);
   if (msie && msie[1]) {
@@ -15930,10 +15938,19 @@ goog.labs.userAgent.engine.isTrident = function() {
 
 
 /**
+ * @return {boolean} Whether the rendering engine is Edge.
+ */
+goog.labs.userAgent.engine.isEdge = function() {
+  return goog.labs.userAgent.util.matchUserAgent('Edge');
+};
+
+
+/**
  * @return {boolean} Whether the rendering engine is WebKit.
  */
 goog.labs.userAgent.engine.isWebKit = function() {
-  return goog.labs.userAgent.util.matchUserAgentIgnoreCase('WebKit');
+  return goog.labs.userAgent.util.matchUserAgentIgnoreCase('WebKit') &&
+      !goog.labs.userAgent.engine.isEdge();
 };
 
 
@@ -15943,7 +15960,8 @@ goog.labs.userAgent.engine.isWebKit = function() {
 goog.labs.userAgent.engine.isGecko = function() {
   return goog.labs.userAgent.util.matchUserAgent('Gecko') &&
       !goog.labs.userAgent.engine.isWebKit() &&
-      !goog.labs.userAgent.engine.isTrident();
+      !goog.labs.userAgent.engine.isTrident() &&
+      !goog.labs.userAgent.engine.isEdge();
 };
 
 
@@ -15957,7 +15975,7 @@ goog.labs.userAgent.engine.getVersion = function() {
     var tuples = goog.labs.userAgent.util.extractVersionTuples(
         userAgentString);
 
-    var engineTuple = tuples[1];
+    var engineTuple = goog.labs.userAgent.engine.getEngineTuple_(tuples);
     if (engineTuple) {
       // In Gecko, the version string is either in the browser info or the
       // Firefox version.  See Gecko user agent string reference:
@@ -15970,8 +15988,9 @@ goog.labs.userAgent.engine.getVersion = function() {
       return engineTuple[1];
     }
 
-    // IE has only one version identifier, and the Trident version is
-    // specified in the parenthetical.
+    // MSIE has only one version identifier, and the Trident version is
+    // specified in the parenthetical. IE Edge is covered in the engine tuple
+    // detection.
     var browserTuple = tuples[0];
     var info;
     if (browserTuple && (info = browserTuple[2])) {
@@ -15982,6 +16001,25 @@ goog.labs.userAgent.engine.getVersion = function() {
     }
   }
   return '';
+};
+
+
+/**
+ * @param {!Array.<!Array.<string>>} tuples Extracted version tuples.
+ * @return {!Array.<string>|undefined} The engine tuple or undefined if not
+ *     found.
+ * @private
+ */
+goog.labs.userAgent.engine.getEngineTuple_ = function(tuples) {
+  if (!goog.labs.userAgent.engine.isEdge()) {
+    return tuples[1];
+  }
+  for (var i = 0; i < tuples.length; i++) {
+    var tuple = tuples[i];
+    if (tuple[0] == 'Edge') {
+      return tuple;
+    }
+  }
 };
 
 
@@ -16536,30 +16574,20 @@ goog.userAgent.determineVersion_ = function() {
   // All browsers have different ways to detect the version and they all have
   // different naming schemes.
 
-  // version is a string rather than a number because it may contain 'b', 'a',
-  // and so on.
-  var version = '', re;
-
   if (goog.userAgent.OPERA && goog.global['opera']) {
     var operaVersion = goog.global['opera'].version;
     return goog.isFunction(operaVersion) ? operaVersion() : operaVersion;
   }
 
-  if (goog.userAgent.GECKO) {
-    re = /rv\:([^\);]+)(\)|;)/;
-  } else if (goog.userAgent.IE) {
-    re = /\b(?:MSIE|rv)[: ]([^\);]+)(\)|;)/;
-  } else if (goog.userAgent.WEBKIT) {
-    // WebKit/125.4
-    re = /WebKit\/(\S+)/;
-  }
-
-  if (re) {
-    var arr = re.exec(goog.userAgent.getUserAgentString());
+  // version is a string rather than a number because it may contain 'b', 'a',
+  // and so on.
+  var version = '';
+  var arr = goog.userAgent.getVersionRegexResult_();
+  if (arr) {
     version = arr ? arr[1] : '';
   }
 
-  if (goog.userAgent.IE) {
+  if (goog.userAgent.IE && !goog.labs.userAgent.engine.isEdge()) {
     // IE9 can be in document mode 9 but be reporting an inconsistent user agent
     // version.  If it is identifying as a version lower than 9 we take the
     // documentMode as the version instead.  IE8 has similar behavior.
@@ -16572,6 +16600,31 @@ goog.userAgent.determineVersion_ = function() {
   }
 
   return version;
+};
+
+
+/**
+ * @return {Array|undefined} The version regex matches from parsing the user
+ *     agent string. These regex statements must be executed inline so they can
+ *     be compiled out by the closure compiler with the rest of the useragent
+ *     detection logic when ASSUME_* is specified.
+ * @private
+ */
+goog.userAgent.getVersionRegexResult_ = function() {
+  var userAgent = goog.userAgent.getUserAgentString();
+  if (goog.userAgent.GECKO) {
+    return /rv\:([^\);]+)(\)|;)/.exec(userAgent);
+  }
+  if (goog.userAgent.IE && goog.labs.userAgent.engine.isEdge()) {
+    return /Edge\/([\d\.]+)/.exec(userAgent);
+  }
+  if (goog.userAgent.IE) {
+    return /\b(?:MSIE|rv)[: ]([^\);]+)(\)|;)/.exec(userAgent);
+  }
+  if (goog.userAgent.WEBKIT) {
+    // WebKit/125.4
+    return /WebKit\/(\S+)/.exec(userAgent);
+  }
 };
 
 
@@ -16677,19 +16730,20 @@ goog.userAgent.isDocumentMode = goog.userAgent.isDocumentModeOrHigher;
 
 
 /**
- * For IE version < 7, documentMode is undefined, so attempt to use the
- * CSS1Compat property to see if we are in standards mode. If we are in
- * standards mode, treat the browser version as the document mode. Otherwise,
- * IE is emulating version 5.
+ * For IE version < 7 and IE Edge browsers, documentMode is undefined. For
+ * non-Edge browsers attempt to use the CSS1Compat property to see if we are in
+ * standards mode. If we are in standards mode, treat the browser version as the
+ * document mode. Otherwise, IE is emulating version 5.
  * @type {number|undefined}
  * @const
  */
 goog.userAgent.DOCUMENT_MODE = (function() {
   var doc = goog.global['document'];
-  if (!doc || !goog.userAgent.IE) {
+  var mode = goog.userAgent.getDocumentMode_();
+  if (!doc || !goog.userAgent.IE ||
+      (!mode && goog.labs.userAgent.engine.isEdge())) {
     return undefined;
   }
-  var mode = goog.userAgent.getDocumentMode_();
   return mode || (doc['compatMode'] == 'CSS1Compat' ?
       parseInt(goog.userAgent.VERSION, 10) : 5);
 })();

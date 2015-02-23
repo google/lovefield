@@ -153,3 +153,6 @@ table:
       string: string
     constraint:
       primaryKey: [ string, number ]
+      unique:
+        uq_constraint:
+          column: [integer, boolean]

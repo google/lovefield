@@ -854,17 +854,6 @@ CodeGenerator.prototype.processRepeatTable_ = function(lines) {
 
 
 /**
- * @param {!Array.<*>} columns
- * @private
- */
-CodeGenerator.prototype.checkMultiColumnIndex_ = function(columns) {
-  if (columns.length > 1) {
-    this.error('Lovefield does not fully support cross-column index yet');
-  }
-};
-
-
-/**
  * @param {string} tableName
  * @param {string} indexName
  * @param {!Array<!Object>} columns
@@ -995,9 +984,6 @@ CodeGenerator.prototype.getUniqueIndices_ = function(table, indentCount) {
 
   for (var i = 0; i < table.constraint.unique.length; ++i) {
     var uniqueConstraint = table.constraint.unique[i];
-    // TODO(arthurhsu): remove this check.
-    this.checkMultiColumnIndex_(uniqueConstraint.column);
-
     var indexDefinition = CodeGenerator.getIndexDefinition_(
         table.name,
         uniqueConstraint.name,

@@ -95,7 +95,7 @@ function testInsert_PrimaryKeyViolation_SingleColumn() {
   var primaryKey = '100';
   var row = table.createRow({'id': primaryKey, 'name': 'DummyName'});
   var otherRow = table.createRow({'id': primaryKey, 'name': 'OtherDummyName'});
-  checkInsert_PrimaryKeyViolation(table, [row], [otherRow]);
+  checkInsert_UniqueConstraintViolation(table, [row], [otherRow]);
 }
 
 
@@ -108,40 +108,35 @@ function testInsert_PrimaryKeyViolation_CrossColumn() {
   var table = env.schema.tables()[3];
   var id1 = 'DummyId';
   var id2 = 100;
-  var row = table.createRow({'id1': id1, 'id2': id2, 'name': 'DummyName'});
+  var row = table.createRow({
+    'id1': id1, 'id2': id2,
+    'firstName': 'DummyFirstName', 'lastName': 'DummylastName'
+  });
   var otherRow = table.createRow(
       {'id1': id1, 'id2': id2, 'name': 'OtherDummyName'});
-  checkInsert_PrimaryKeyViolation(table, [row], [otherRow]);
+  checkInsert_UniqueConstraintViolation(table, [row], [otherRow]);
 }
 
 
 /**
- * Checks that a primary key violation occurs when rows that have existing
- * primary keys (by a previous journal) are inserted.
+ * Checks that a constraint violation occurs when rows are inserted that have
+ * declared unique keys that already exist in the database via a previously
+ * committed journal.
  * @param {!lf.schema.Table} table
  * @param {!Array<lf.Row>} rows1 The rows to be inserted in the first journal.
  * @param {!Array<lf.Row>} rows2 The rows to be inserted in the second journal.
  */
-function checkInsert_PrimaryKeyViolation(table, rows1, rows2) {
-  var rowIdIndex = env.indexStore.get(table.getRowIdIndexName());
-
+function checkInsert_UniqueConstraintViolation(table, rows1, rows2) {
   // Inserting the row into the journal and committing.
   var journal = new lf.cache.Journal(lf.Global.get(), [table]);
   journal.insert(table, rows1);
   journal.commit();
-  rows1.forEach(function(row) {
-    assertTrue(rowIdIndex.containsKey(row.id()));
-  });
 
   // Now re-inserting a row with the same primary key that already exists.
   journal = new lf.cache.Journal(lf.Global.get(), [table]);
 
   lf.testing.util.assertThrowsConstraintError(
       journal.insert.bind(journal, table, rows2));
-  journal.rollback();
-  rows2.forEach(function(row) {
-    assertFalse(rowIdIndex.containsKey(row.id()));
-  });
 }
 
 
@@ -211,9 +206,10 @@ function testInsert_PrimaryKeyViolation3() {
 
 /**
  * Tests the case where a unique key violation occurs because a row with the
- * same unique key already exists via a previous committed journal.
+ * same single-column unique key already exists via a previous committed
+ * journal.
  */
-function testInsert_UniqueKeyViolation() {
+function testInsert_UniqueKeyViolation_SingleColumn() {
   var table = env.schema.tables()[4];
   var emailIndexSchema = table.getConstraint().getUnique()[1];
   var emailIndex = env.indexStore.get(emailIndexSchema.getNormalizedName());
@@ -236,6 +232,26 @@ function testInsert_UniqueKeyViolation() {
   assertEquals(row1.id(), emailIndex.get(row1.payload()['email'])[0]);
   assertTrue(rowIdIndex.containsKey(row1.id()));
   assertEquals(1, env.cache.getCount());
+}
+
+
+/**
+ * Tests the case where a unique key violation occurs because a row with the
+ * same cross-column unique key already exists via a previous committed journal.
+ */
+function testInsert_UniqueKeyViolation_CrossColumn() {
+  var table = env.schema.tables()[3];
+  var row = table.createRow({
+    'id1': 'id_0', 'id2': 'id_1',
+    'firstName': 'DummyFirstName', 'lastName': 'DummylastName'
+  });
+
+  var otherRow = table.createRow({
+    'id1': 'id_2', 'id2': 'id_3',
+    'firstName': 'DummyFirstName', 'lastName': 'DummylastName'
+  });
+
+  checkInsert_UniqueConstraintViolation(table, [row], [otherRow]);
 }
 
 

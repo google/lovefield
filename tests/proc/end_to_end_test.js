@@ -150,7 +150,41 @@ function testInsert_CrossColumnPrimaryKey() {
   q1.exec().then(
       function() {
         return q2.exec();
-      }).thenCatch(
+      }).then(
+      fail,
+      function(e) {
+        assertEquals(lf.Exception.Type.CONSTRAINT, e.name);
+        asyncTestCase.continueTesting();
+      });
+}
+
+
+function testInsert_CrossColumnUniqueKey() {
+  asyncTestCase.waitForAsync('testInsert_CrossColumnUniqueKey');
+  var table = db.getSchema().getDummyTable();
+
+  // Creating two rows where 'uq_constraint' is violated.
+  var row1 = table.createRow().
+      setString('string1').
+      setNumber('1').
+      setInteger(100).
+      setBoolean(false);
+  var row2 = table.createRow().
+      setString('string2').
+      setNumber('2').
+      setInteger(100).
+      setBoolean(false);
+
+  var q1 = /** @type {!lf.query.InsertBuilder} */ (
+      db.insert().into(table).values([row1]));
+  var q2 = /** @type {!lf.query.InsertBuilder} */ (
+      db.insert().into(table).values([row2]));
+
+  q1.exec().then(
+      function() {
+        return q2.exec();
+      }).then(
+      fail,
       function(e) {
         assertEquals(lf.Exception.Type.CONSTRAINT, e.name);
         asyncTestCase.continueTesting();

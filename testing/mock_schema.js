@@ -63,9 +63,10 @@ lf.testing.MockSchema = function() {
   this.tableD_ = new lf.schema.TableBuilder('tableD').
       addColumn('id1', lf.Type.STRING).
       addColumn('id2', lf.Type.NUMBER).
-      addColumn('name', lf.Type.STRING).
+      addColumn('firstName', lf.Type.STRING).
+      addColumn('lastName', lf.Type.STRING).
       addPrimaryKey(['id1', 'id2']).
-      addIndex('idxName', [{'name': 'name', 'order': lf.Order.ASC}]).
+      addUnique('uq_name', ['firstName', 'lastName']).
       getSchema();
 
   /** @private {!lf.schema.Table} */
