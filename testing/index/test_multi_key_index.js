@@ -48,10 +48,97 @@ lf.testing.index.TestMultiKeyIndex.prototype.testAddGet = function(index) {
 };
 
 
+/** @private {!Array<!Array<!lf.index.SingleKeyRange>|undefined>} */
+lf.testing.index.TestMultiKeyIndex.keyRanges_ = [
+  // Get all.
+  undefined,
+  [lf.index.SingleKeyRange.all(), lf.index.SingleKeyRange.all()],
+
+  // Get one key.
+  [lf.index.SingleKeyRange.only(8), lf.index.SingleKeyRange.only('R')],
+
+  // Lower bound.
+  [lf.index.SingleKeyRange.lowerBound(8),
+   lf.index.SingleKeyRange.upperBound('R')],
+  [lf.index.SingleKeyRange.lowerBound(8, true),
+   lf.index.SingleKeyRange.upperBound('R')],
+  [lf.index.SingleKeyRange.lowerBound(8),
+   lf.index.SingleKeyRange.upperBound('R', true)],
+  [lf.index.SingleKeyRange.lowerBound(8, true),
+   lf.index.SingleKeyRange.upperBound('R', true)],
+
+  // Upper bound.
+  [lf.index.SingleKeyRange.upperBound(2),
+   lf.index.SingleKeyRange.lowerBound('X')],
+  [lf.index.SingleKeyRange.upperBound(2, true),
+   lf.index.SingleKeyRange.lowerBound('X')],
+  [lf.index.SingleKeyRange.upperBound(2),
+   lf.index.SingleKeyRange.lowerBound('X', true)],
+  [lf.index.SingleKeyRange.upperBound(2, true),
+   lf.index.SingleKeyRange.lowerBound('X', true)],
+
+  // Between.
+  [new lf.index.SingleKeyRange(2, 8, false, false),
+   new lf.index.SingleKeyRange('R', 'X', false, false)],
+  [new lf.index.SingleKeyRange(2, 8, false, true),
+   new lf.index.SingleKeyRange('R', 'X', false, false)],
+  [new lf.index.SingleKeyRange(2, 8, false, false),
+   new lf.index.SingleKeyRange('R', 'X', true, false)],
+  [new lf.index.SingleKeyRange(2, 8, false, true),
+   new lf.index.SingleKeyRange('R', 'X', true, false)],
+  [new lf.index.SingleKeyRange(2, 8, true, false),
+   new lf.index.SingleKeyRange('R', 'X', false, false)],
+  [new lf.index.SingleKeyRange(2, 8, false, false),
+   new lf.index.SingleKeyRange('R', 'X', false, true)],
+  [new lf.index.SingleKeyRange(2, 8, true, false),
+   new lf.index.SingleKeyRange('R', 'X', false, true)]
+];
+
+
+/** @private {!Array<!Array<number>>} */
+lf.testing.index.TestMultiKeyIndex.rangeExpectations_ = [
+  // Get all.
+  [2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009],
+  [2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009],
+
+  // Get one key.
+  [2008],
+
+  // Lower bound.
+  [2008, 2009],
+  [2009],
+  [2009],
+  [2009],
+
+  // Upper bound.
+  [2000, 2001, 2002],
+  [2000, 2001],
+  [2000, 2001],
+  [2000, 2001],
+
+  // Between.
+  [2002, 2003, 2004, 2005, 2006, 2007, 2008],
+  [2002, 2003, 2004, 2005, 2006, 2007],
+  [2002, 2003, 2004, 2005, 2006, 2007],
+  [2002, 2003, 2004, 2005, 2006, 2007],
+  [2003, 2004, 2005, 2006, 2007, 2008],
+  [2003, 2004, 2005, 2006, 2007, 2008],
+  [2003, 2004, 2005, 2006, 2007, 2008]
+];
+
+
 /** @override */
 lf.testing.index.TestMultiKeyIndex.prototype.testGetRangeCost =
     function(index) {
-  // TODO(arthurhsu): implement
+  this.populateIndex_(index, 10);
+
+  var keyRanges = lf.testing.index.TestMultiKeyIndex.keyRanges_;
+  var expectations = lf.testing.index.TestMultiKeyIndex.rangeExpectations_;
+
+  keyRanges.forEach(function(range, i) {
+    var expected = expectations[i];
+    lf.testing.index.TestIndex.assertGetRangeCost(index, range, expected);
+  });
 };
 
 
@@ -124,10 +211,13 @@ lf.testing.index.TestMultiKeyIndex.prototype.testMultiRange = function(index) {
 /**
  * Populates the index with dummy data to be used for all tests.
  * @param {!lf.index.Index} index
+ * @param {number=} opt_number
  * @private
  */
-lf.testing.index.TestMultiKeyIndex.prototype.populateIndex_ = function(index) {
-  for (var i = 0; i < 26; ++i) {
+lf.testing.index.TestMultiKeyIndex.prototype.populateIndex_ = function(
+    index, opt_number) {
+  var count = opt_number || 26;
+  for (var i = 0; i < count; ++i) {
     var key = [i, String.fromCharCode('Z'.charCodeAt(0) - i)];
     var value = 2000 + i;
     index.add(key, value);

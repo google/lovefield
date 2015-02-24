@@ -81,7 +81,8 @@ lf.testing.index.TestIndex.prototype.testMultiRange = goog.abstractMethod;
  * Asserts that the return values of getRange() and cost() are as expected for
  * the given index, for the given key range.
  * @param {!lf.index.Index} index
- * @param {!lf.index.SingleKeyRange|undefined} keyRange
+ * @param {!lf.index.SingleKeyRange|!lf.index.KeyRange|undefined}
+ *     keyRange
  * @param {!Array} expectedResult
  */
 lf.testing.index.TestIndex.assertGetRangeCost =
