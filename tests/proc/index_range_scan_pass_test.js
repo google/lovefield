@@ -25,6 +25,7 @@ goog.require('lf.pred.ValuePredicate');
 goog.require('lf.proc.CrossProductStep');
 goog.require('lf.proc.IndexRangeScanPass');
 goog.require('lf.proc.JoinStep');
+goog.require('lf.proc.LimitStep');
 goog.require('lf.proc.OrderByStep');
 goog.require('lf.proc.ProjectStep');
 goog.require('lf.proc.SelectStep');
@@ -85,24 +86,29 @@ function tearDown() {
  */
 function testSimpleTree() {
   var treeBefore =
-      'project()\n' +
-      '-select(value_pred(Employee.id gt 100))\n' +
-      '--table_access(Employee)\n';
+      'limit(20)\n' +
+      '-project()\n' +
+      '--select(value_pred(Employee.id gt 100))\n' +
+      '---table_access(Employee)\n';
 
   var treeAfter =
-      'project()\n' +
-      '-table_access_by_row_id(Employee)\n' +
-      '--index_range_scan(Employee.pkEmployee, (100, unbound], ASC)\n';
+      'limit(20)\n' +
+      '-project()\n' +
+      '--table_access_by_row_id(Employee)\n' +
+      '---index_range_scan(Employee.pkEmployee, (100, unbound], ASC)\n';
 
   // Generating a simple tree that has just one SelectNode corresponding to an
   // AND predicate.
-  var rootNodeBefore = new lf.proc.ProjectStep([], null);
+  var limitNode = new lf.proc.LimitStep(20);
+  var projectNode = new lf.proc.ProjectStep([], null);
+  limitNode.addChild(projectNode);
   var predicate = e.id.gt('100');
   var selectNode = new lf.proc.SelectStep(predicate);
-  rootNodeBefore.addChild(selectNode);
-
+  projectNode.addChild(selectNode);
   var tableAccessNode = new lf.proc.TableAccessFullStep(hr.db.getGlobal(), e);
   selectNode.addChild(tableAccessNode);
+
+  var rootNodeBefore = limitNode;
   assertEquals(treeBefore, lf.tree.toString(rootNodeBefore));
 
   var pass = new lf.proc.IndexRangeScanPass(hr.db.getGlobal());

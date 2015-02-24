@@ -643,22 +643,53 @@ function testSelect_GroupBy() {
         var expectedResultCount = mockDataGenerator.employeeGroundTruth.
             employeesPerJob.getKeys().length;
         assertEquals(expectedResultCount, results.length);
-        results.forEach(function(obj) {
-          assertEquals(3, goog.object.getCount(obj));
-          assertTrue(goog.isDefAndNotNull(obj[e.jobId.getName()]));
-          assertTrue(goog.isDefAndNotNull(
-              obj[lf.fn.avg(e.salary).getName()]));
-
-          // Verifying that each group has the correct count of employees.
-          var employeesPerJobCount = obj[lf.fn.count(e.id).getName()];
-          var expectedEmployeesPerJobCount = mockDataGenerator.
-              employeeGroundTruth.employeesPerJob.get(
-                  obj[e.jobId.getName()]).length;
-          assertEquals(expectedEmployeesPerJobCount, employeesPerJobCount);
-        });
-
+        assertGroupByResults(results);
         asyncTestCase.continueTesting();
       }, fail);
+}
+
+
+/**
+ * Tests that GROUP_BY is executed before LIMIT.
+ */
+function testSelect_GroupByWithLimit() {
+  asyncTestCase.waitForAsync('testSelect_GroupByWithLimit');
+
+  var limit = 2;
+  var queryBuilder = /** @type {!lf.query.SelectBuilder} */ (
+      db.select(e.jobId, lf.fn.avg(e.salary), lf.fn.count(e.id)).
+      from(e).
+      limit(limit).
+      groupBy(e.jobId));
+
+  queryBuilder.exec().then(
+      function(results) {
+        assertEquals(limit, results.length);
+        assertGroupByResults(results);
+        asyncTestCase.continueTesting();
+      }, fail);
+}
+
+
+/**
+ * Helper function for performing assertions an the results of
+ * testSelect_GroupBy and testSelect_GroupByWithLimit.
+ * @param {!Array.<Object>} results
+ */
+function assertGroupByResults(results) {
+  results.forEach(function(obj) {
+    assertEquals(3, goog.object.getCount(obj));
+    assertTrue(goog.isDefAndNotNull(obj[e.jobId.getName()]));
+    assertTrue(goog.isDefAndNotNull(
+        obj[lf.fn.avg(e.salary).getName()]));
+
+    // Verifying that each group has the correct count of employees.
+    var employeesPerJobCount = obj[lf.fn.count(e.id).getName()];
+    var expectedEmployeesPerJobCount = mockDataGenerator.
+        employeeGroundTruth.employeesPerJob.get(
+            obj[e.jobId.getName()]).length;
+    assertEquals(expectedEmployeesPerJobCount, employeesPerJobCount);
+  });
 }
 
 

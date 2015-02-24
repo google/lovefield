@@ -151,8 +151,8 @@ function testCreate_SelectPlan_LimitZero() {
   var query = queryBuilder.query;
 
   var expectedTree =
-      'project()\n' +
-      '-limit(0)\n' +
+      'limit(0)\n' +
+      '-project()\n' +
       '--table_access(tableA)\n';
 
   var logicalPlan = logicalPlanFactory.create(query);

@@ -56,9 +56,9 @@ function setUp() {
  */
 function testTree1() {
   var treeBefore =
-      'project()\n' +
-      '-limit(100)\n' +
-      '--skip(200)\n' +
+      'limit(100)\n' +
+      '-skip(200)\n' +
+      '--project()\n' +
       '---table_access_by_row_id(Employee)\n' +
       '----index_range_scan(Employee.idx_salary, [unbound, unbound], ASC)\n';
 
@@ -68,19 +68,20 @@ function testTree1() {
       '--index_range_scan(Employee.idx_salary, ' +
           '[unbound, unbound], ASC, limit:100, skip:200)\n';
 
-  var rootNodeBefore = new lf.proc.ProjectStep([], null);
   var limitNode = new lf.proc.LimitStep(100);
-  rootNodeBefore.addChild(limitNode);
   var skipNode = new lf.proc.SkipStep(200);
   limitNode.addChild(skipNode);
+  var projectNode = new lf.proc.ProjectStep([], null);
+  skipNode.addChild(projectNode);
   var tableAccessByRowIdNode = new lf.proc.TableAccessByRowIdStep(
       hr.db.getGlobal(), e);
-  skipNode.addChild(tableAccessByRowIdNode);
+  projectNode.addChild(tableAccessByRowIdNode);
   var indexRangeScanStep = new lf.proc.IndexRangeScanStep(
       hr.db.getGlobal(), e.getIndices()[1], [lf.index.SingleKeyRange.all()],
       lf.Order.ASC);
   tableAccessByRowIdNode.addChild(indexRangeScanStep);
 
+  var rootNodeBefore = limitNode;
   assertEquals(treeBefore, lf.tree.toString(rootNodeBefore));
 
   var pass = new lf.proc.LimitSkipByIndexPass();
@@ -96,20 +97,20 @@ function testTree1() {
  */
 function testTree2() {
   var treeBefore =
-      'project()\n' +
-      '-limit(100)\n' +
-      '--skip(200)\n' +
+      'limit(100)\n' +
+      '-skip(200)\n' +
+      '--project()\n' +
       '---select(value_pred(Employee.id lt 300))\n' +
       '----table_access_by_row_id(Employee)\n' +
       '-----index_range_scan(Employee.idx_salary, [unbound, unbound], ASC)\n';
 
-  var rootNodeBefore = new lf.proc.ProjectStep([], null);
   var limitNode = new lf.proc.LimitStep(100);
-  rootNodeBefore.addChild(limitNode);
   var skipNode = new lf.proc.SkipStep(200);
   limitNode.addChild(skipNode);
+  var projectNode = new lf.proc.ProjectStep([], null);
+  skipNode.addChild(projectNode);
   var selectNode = new lf.proc.SelectStep(e.id.lt('300'));
-  skipNode.addChild(selectNode);
+  projectNode.addChild(selectNode);
   var tableAccessByRowIdNode = new lf.proc.TableAccessByRowIdStep(
       hr.db.getGlobal(), e);
   selectNode.addChild(tableAccessByRowIdNode);
@@ -118,6 +119,7 @@ function testTree2() {
       lf.Order.ASC);
   tableAccessByRowIdNode.addChild(indexRangeScanStep);
 
+  var rootNodeBefore = limitNode;
   assertEquals(treeBefore, lf.tree.toString(rootNodeBefore));
 
   var pass = new lf.proc.LimitSkipByIndexPass();
@@ -132,21 +134,21 @@ function testTree2() {
  */
 function testTree3() {
   var treeBefore =
-      'project()\n' +
-      '-limit(100)\n' +
-      '--skip(200)\n' +
+      'limit(100)\n' +
+      '-skip(200)\n' +
+      '--project()\n' +
       '---table_access_by_row_id(Employee)\n' +
       '----index_range_scan(Employee.idx_salary, ' +
           '[unbound, 1000],[2000, unbound], ASC)\n';
 
-  var rootNodeBefore = new lf.proc.ProjectStep([], null);
   var limitNode = new lf.proc.LimitStep(100);
-  rootNodeBefore.addChild(limitNode);
   var skipNode = new lf.proc.SkipStep(200);
   limitNode.addChild(skipNode);
+  var projectNode = new lf.proc.ProjectStep([], null);
+  skipNode.addChild(projectNode);
   var tableAccessByRowIdNode = new lf.proc.TableAccessByRowIdStep(
       hr.db.getGlobal(), e);
-  skipNode.addChild(tableAccessByRowIdNode);
+  projectNode.addChild(tableAccessByRowIdNode);
   var indexRangeScanStep = new lf.proc.IndexRangeScanStep(
       hr.db.getGlobal(),
       e.getIndices()[1],
@@ -157,6 +159,42 @@ function testTree3() {
       lf.Order.ASC);
   tableAccessByRowIdNode.addChild(indexRangeScanStep);
 
+  var rootNodeBefore = limitNode;
+  assertEquals(treeBefore, lf.tree.toString(rootNodeBefore));
+
+  var pass = new lf.proc.LimitSkipByIndexPass();
+  var rootNodeAfter = pass.rewrite(rootNodeBefore);
+  assertEquals(treeBefore, lf.tree.toString(rootNodeAfter));
+}
+
+
+/**
+ * Tests a tree where an existing IndexRangeScanStep exists, but it can't be
+ * leveraged for limiting and skipping results, because a GROUP_BY operation
+ * exists.
+ */
+function testTree4() {
+  var treeBefore =
+      'limit(100)\n' +
+      '-skip(200)\n' +
+      '--project(Employee.id, groupBy(Employee.jobId))\n' +
+      '---table_access_by_row_id(Employee)\n' +
+      '----index_range_scan(Employee.idx_salary, [unbound, unbound], ASC)\n';
+
+  var limitNode = new lf.proc.LimitStep(100);
+  var skipNode = new lf.proc.SkipStep(200);
+  limitNode.addChild(skipNode);
+  var projectNode = new lf.proc.ProjectStep([e.id], e.jobId);
+  skipNode.addChild(projectNode);
+  var tableAccessByRowIdNode = new lf.proc.TableAccessByRowIdStep(
+      hr.db.getGlobal(), e);
+  projectNode.addChild(tableAccessByRowIdNode);
+  var indexRangeScanStep = new lf.proc.IndexRangeScanStep(
+      hr.db.getGlobal(), e.getIndices()[1], [lf.index.SingleKeyRange.all()],
+      lf.Order.ASC);
+  tableAccessByRowIdNode.addChild(indexRangeScanStep);
+
+  var rootNodeBefore = limitNode;
   assertEquals(treeBefore, lf.tree.toString(rootNodeBefore));
 
   var pass = new lf.proc.LimitSkipByIndexPass();

@@ -417,8 +417,8 @@ function checkAggregators(invalidAggregators, validAggregators, table) {
 function testExplain() {
   var query = db.select().from(db.getSchema().getEmployee()).skip(1);
   var expected =
-      'project()\n' +
-      '-skip(1)\n' +
+      'skip(1)\n' +
+      '-project()\n' +
       '--table_access(Employee)\n';
   assertEquals(expected, query.explain());
 }
