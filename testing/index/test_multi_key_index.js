@@ -107,11 +107,11 @@ lf.testing.index.TestMultiKeyIndex.prototype.testMultiRange = function(index) {
   // The optimizer already handles the range order.
   var range1 = [
     new lf.index.SingleKeyRange(null, 2, false, true),
-    new lf.index.SingleKeyRange('X', null, true, false)
+    new lf.index.SingleKeyRange(null, 'B', false, true)
   ];
   var range2 = [
     new lf.index.SingleKeyRange(24, null, true, false),
-    new lf.index.SingleKeyRange(null, 'B', false, true)
+    new lf.index.SingleKeyRange('X', null, true, false)
   ];
 
   var expected = [2000, 2001, 2025];
