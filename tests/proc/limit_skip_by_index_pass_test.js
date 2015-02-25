@@ -19,10 +19,12 @@ goog.require('goog.testing.AsyncTestCase');
 goog.require('goog.testing.jsunit');
 goog.require('hr.db');
 goog.require('lf.Order');
+goog.require('lf.fn');
 goog.require('lf.index.SingleKeyRange');
 goog.require('lf.proc.IndexRangeScanStep');
 goog.require('lf.proc.LimitSkipByIndexPass');
 goog.require('lf.proc.LimitStep');
+goog.require('lf.proc.OrderByStep');
 goog.require('lf.proc.ProjectStep');
 goog.require('lf.proc.SelectStep');
 goog.require('lf.proc.SkipStep');
@@ -189,6 +191,84 @@ function testTree4() {
   var tableAccessByRowIdNode = new lf.proc.TableAccessByRowIdStep(
       hr.db.getGlobal(), e);
   projectNode.addChild(tableAccessByRowIdNode);
+  var indexRangeScanStep = new lf.proc.IndexRangeScanStep(
+      hr.db.getGlobal(), e.getIndices()[1], [lf.index.SingleKeyRange.all()],
+      lf.Order.ASC);
+  tableAccessByRowIdNode.addChild(indexRangeScanStep);
+
+  var rootNodeBefore = limitNode;
+  assertEquals(treeBefore, lf.tree.toString(rootNodeBefore));
+
+  var pass = new lf.proc.LimitSkipByIndexPass();
+  var rootNodeAfter = pass.rewrite(rootNodeBefore);
+  assertEquals(treeBefore, lf.tree.toString(rootNodeAfter));
+}
+
+
+/**
+ * Tests a tree where an existing IndexRangeScanStep exists, but it can't be
+ * leveraged for limiting and skipping results, because a project step that
+ * includes aggregators exists.
+ */
+function testTree5() {
+  var treeBefore =
+      'limit(100)\n' +
+      '-skip(200)\n' +
+      '--project(MAX(Employee.salary),MIN(Employee.salary))\n' +
+      '---table_access_by_row_id(Employee)\n' +
+      '----index_range_scan(Employee.idx_salary, [unbound, unbound], ASC)\n';
+
+  var limitNode = new lf.proc.LimitStep(100);
+  var skipNode = new lf.proc.SkipStep(200);
+  limitNode.addChild(skipNode);
+  var projectNode = new lf.proc.ProjectStep([
+    lf.fn.max(e.salary),
+    lf.fn.min(e.salary)
+  ], null);
+  skipNode.addChild(projectNode);
+  var tableAccessByRowIdNode = new lf.proc.TableAccessByRowIdStep(
+      hr.db.getGlobal(), e);
+  projectNode.addChild(tableAccessByRowIdNode);
+  var indexRangeScanStep = new lf.proc.IndexRangeScanStep(
+      hr.db.getGlobal(), e.getIndices()[1], [lf.index.SingleKeyRange.all()],
+      lf.Order.ASC);
+  tableAccessByRowIdNode.addChild(indexRangeScanStep);
+
+  var rootNodeBefore = limitNode;
+  assertEquals(treeBefore, lf.tree.toString(rootNodeBefore));
+
+  var pass = new lf.proc.LimitSkipByIndexPass();
+  var rootNodeAfter = pass.rewrite(rootNodeBefore);
+  assertEquals(treeBefore, lf.tree.toString(rootNodeAfter));
+}
+
+
+/**
+ * Tests a tree where an existing IndexRangeScanStep exists, but it can't be
+ * leveraged for limiting and skipping results, because an ORDER BY step exists.
+ */
+function testTree6() {
+  var treeBefore =
+      'limit(100)\n' +
+      '-skip(200)\n' +
+      '--project()\n' +
+      '---order_by(Employee.salary)\n' +
+      '----table_access_by_row_id(Employee)\n' +
+      '-----index_range_scan(Employee.idx_salary, [unbound, unbound], ASC)\n';
+
+  var limitNode = new lf.proc.LimitStep(100);
+  var skipNode = new lf.proc.SkipStep(200);
+  limitNode.addChild(skipNode);
+  var projectNode = new lf.proc.ProjectStep([], null);
+  skipNode.addChild(projectNode);
+  var orderByNode = new lf.proc.OrderByStep([{
+    column: e.salary,
+    order: lf.Order.DESC
+  }]);
+  projectNode.addChild(orderByNode);
+  var tableAccessByRowIdNode = new lf.proc.TableAccessByRowIdStep(
+      hr.db.getGlobal(), e);
+  orderByNode.addChild(tableAccessByRowIdNode);
   var indexRangeScanStep = new lf.proc.IndexRangeScanStep(
       hr.db.getGlobal(), e.getIndices()[1], [lf.index.SingleKeyRange.all()],
       lf.Order.ASC);

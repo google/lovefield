@@ -36171,6 +36171,7 @@ lf.proc.RelationTransformer.transformMany = function(
 goog.provide('lf.proc.ProjectStep');
 
 goog.require('goog.labs.structs.Multimap');
+goog.require('lf.fn.AggregatedColumn');
 goog.require('lf.proc.PhysicalQueryPlanNode');
 goog.require('lf.proc.Relation');
 goog.require('lf.proc.RelationTransformer');
@@ -36219,6 +36220,18 @@ lf.proc.ProjectStep.prototype.exec = function(journal) {
             this.execNonGroupByProjection_(relation) :
             this.execGroupByProjection_(relation);
       }, this));
+};
+
+
+/**
+ * @return {boolean} Whether any aggregators (either columns or groupBy)
+ *     have been specified.
+ */
+lf.proc.ProjectStep.prototype.hasAggregators = function() {
+  var hasAggregators = this.columns.some(function(column) {
+    return column instanceof lf.fn.AggregatedColumn;
+  });
+  return hasAggregators || !goog.isNull(this.groupByColumn);
 };
 
 
@@ -36362,6 +36375,7 @@ goog.provide('lf.proc.LimitSkipByIndexPass');
 goog.require('goog.asserts');
 goog.require('lf.proc.IndexRangeScanStep');
 goog.require('lf.proc.LimitStep');
+goog.require('lf.proc.OrderByStep');
 goog.require('lf.proc.ProjectStep');
 goog.require('lf.proc.RewritePass');
 goog.require('lf.proc.SelectStep');
@@ -36472,16 +36486,21 @@ lf.proc.LimitSkipByIndexPass.prototype.findIndexRangeScanStep_ =
         node.keyRanges.length == 1;
   };
 
-  // LIMIT and SKIP needs to be executed after joins, cross-products,
-  // selections, ordering and projections (with either groupBy or aggregators)
-  // have been calculated. Therefore if such nodes
-  // exist this optimization can not be applied.
+  /*
+   * LIMIT and SKIP needs to be executed after
+   *  - projections that include either groupBy or aggregators,
+   *  - joins/cross-products,
+   *  - selections,
+   *  - sorting
+   * have been calculated. Therefore if such nodes exist this optimization can
+   * not be applied.
+   */
   var stopFn = function(node) {
-    // TODO(dpapad): Modify this logic to also prevent the optimization from
-    // happening if any aggregators exist, or OrderBy exists.
-    var groupByExists = node instanceof lf.proc.ProjectStep &&
-        !goog.isNull(node.groupByColumn);
-    return groupByExists || node.getChildCount() != 1 ||
+    var hasAggregators = node instanceof lf.proc.ProjectStep &&
+        node.hasAggregators();
+    return hasAggregators ||
+        node instanceof lf.proc.OrderByStep ||
+        node.getChildCount() != 1 ||
         node instanceof lf.proc.SelectStep;
   };
 
