@@ -26094,6 +26094,60 @@ lf.index.SingleKeyRange.all = function() {
   return new lf.index.SingleKeyRange(null, null, false, false);
 };
 
+
+/**
+ * Returns if the range is all.
+ * @return {boolean}
+ */
+lf.index.SingleKeyRange.prototype.isAll = function() {
+  return goog.isNull(this.from) && goog.isNull(this.to);
+};
+
+
+/**
+ * @param {!lf.index.Index.SingleKey} key
+ * @return {boolean}
+ */
+lf.index.SingleKeyRange.prototype.contains = function(key) {
+  var left = goog.isNull(this.from) || (key > this.from) ||
+      (key == this.from && !this.excludeLower);
+  var right = goog.isNull(this.to) || (key < this.to) ||
+      (key == this.to && !this.excludeUpper);
+  return left && right;
+};
+
+
+/**
+ * Bound the range with [min, max] and return the newly bounded range.
+ * @param {!lf.index.Index.SingleKey} min
+ * @param {!lf.index.Index.SingleKey} max
+ * @return {?lf.index.SingleKeyRange} When the given bound has no intersection
+ *     with this range, or the range/bound is reversed, return null.
+ */
+lf.index.SingleKeyRange.prototype.getBounded = function(min, max) {
+  // Eliminate out of range scenarios.
+  if ((goog.isNull(this.from) && !this.contains(min)) ||
+      (goog.isNull(this.to) && !this.contains(max))) {
+    return null;
+  }
+
+  var range = new lf.index.SingleKeyRange(min, max, false, false);
+  if (!goog.isNull(this.from) && this.from >= min) {
+    range.from = this.from;
+    range.excludeLower = this.excludeLower;
+  }
+  if (!goog.isNull(this.to) && this.to <= max) {
+    range.to = this.to;
+    range.excludeUpper = this.excludeUpper;
+  }
+
+  if (range.from > range.to ||
+      (range.from == range.to && (range.excludeUpper || range.excludeLower))) {
+    return null;
+  }
+  return range;
+};
+
 /**
  * @license
  * Copyright 2015 Google Inc. All Rights Reserved.
@@ -26335,25 +26389,21 @@ lf.index.SimpleComparator.getMinMaxKeys = function(c, left, right) {
  * @param {!lf.index.Index.SingleKey} leftMostKey
  * @param {!lf.index.Index.SingleKey} rightMostKey
  * @param {!lf.index.SingleKeyRange=} opt_keyRange
- * @return {!lf.index.SingleKeyRange}
+ * @return {?lf.index.SingleKeyRange} Returns null if provided key range is out
+ *     of bound.
  */
 lf.index.SimpleComparator.prototype.bindKeyRange = function(
     leftMostKey, rightMostKey, opt_keyRange) {
   var keys = /** @type {!Array<!lf.index.Index.SingleKey>} */ (
       lf.index.SimpleComparator.getMinMaxKeys(this, leftMostKey, rightMostKey));
+  var range = new lf.index.SingleKeyRange(keys[0], keys[1], false, false);
 
-  if (goog.isDefAndNotNull(opt_keyRange)) {
-    if (goog.isNull(opt_keyRange.from)) {
-      opt_keyRange.from = keys[0];
-    }
-    if (goog.isNull(opt_keyRange.to)) {
-      opt_keyRange.to = keys[1];
-    }
-
-    return opt_keyRange;
+  // Shortcut the undefined and all() case.
+  if (!goog.isDef(opt_keyRange) || opt_keyRange.isAll()) {
+    return range;
   }
 
-  return new lf.index.SingleKeyRange(keys[0], keys[1], false, false);
+  return opt_keyRange.getBounded(keys[0], keys[1]);
 };
 
 
@@ -26378,7 +26428,9 @@ lf.index.SimpleComparator.prototype.bindAndSortKeyRanges = function(
     outputKeyRanges = opt_keyRanges.map(function(range) {
       var boundKeyRange = this.bindKeyRange(keys[0], keys[1], range);
       return boundKeyRange;
-    }, this).sort(goog.bind(function(lhs, rhs) {
+    }, this).filter(function(range) {
+      return !goog.isNull(range);
+    }).sort(goog.bind(function(lhs, rhs) {
       return this.orderRange_(lhs, rhs);
     }, this));
   } else {
@@ -26508,7 +26560,7 @@ lf.index.MultiKeyComparator.prototype.isInRange = function(key, range) {
 
 
 /**
- * @param {!Array<!lf.index.Index.SingleKey>} leftMostKey
+ * @param {Array<!lf.index.Index.SingleKey>} leftMostKey
  * @param {!Array<!lf.index.Index.SingleKey>} rightMostKey
  * @param {!Array<!lf.index.SingleKeyRange>=} opt_keyRange
  * @return {!Array<!lf.index.SingleKeyRange>}
@@ -26538,7 +26590,9 @@ lf.index.MultiKeyComparator.prototype.bindAndSortKeyRanges = function(
     var outputKeyRanges = opt_keyRanges.map(function(range) {
       var boundKeyRange = this.bindKeyRange_(minKey, maxKey, range);
       return boundKeyRange;
-    }, this);
+    }, this).filter(function(range) {
+      return range.every(goog.isDefAndNotNull);
+    });
 
     // Ranges are in the format of
     // [[dim0_range0, dim1_range0, ...], [dim0_range1, dim1_range1, ...], ...]

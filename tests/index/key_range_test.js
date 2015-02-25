@@ -135,3 +135,37 @@ function testReverse() {
   assertEquals('[20, 50)' , keyRange.toString());
   assertEquals('(50, 20]' , keyRange.reverse().toString());
 }
+
+
+function testContains() {
+  var range = new lf.index.SingleKeyRange(0, 10, true, true);
+  assertFalse(range.contains(-1));
+  assertFalse(range.contains(0));
+  assertTrue(range.contains(5));
+  assertFalse(range.contains(10));
+  assertFalse(range.contains(11));
+
+  range = new lf.index.SingleKeyRange('B', 'D', false, false);
+  assertFalse(range.contains('A'));
+  assertTrue(range.contains('B'));
+  assertTrue(range.contains('C'));
+  assertTrue(range.contains('D'));
+  assertFalse(range.contains('E'));
+}
+
+
+function testGetBounded() {
+  var range = new lf.index.SingleKeyRange(1, 10, true, true);
+  var bound = function(min, max) {
+    var r = range.getBounded(min, max);
+    return goog.isNull(r) ? 'null' : r.toString();
+  };
+
+  assertEquals('(1, 10)', bound(0, 11));
+  assertEquals('(1, 10)', bound(1, 10));
+  assertEquals('(1, 2]', bound(0, 2));
+  assertEquals('[2, 10)', bound(2, 11));
+  assertEquals('[2, 3]', bound(2, 3));
+  assertEquals('null', bound(-1, 0));
+  assertEquals('null', bound(11, 12));
+}
