@@ -31,19 +31,19 @@ goog.require('lf.testing.hrSchema.JobDataGenerator');
  * data for the generated rows.
  * @constructor
  *
- * @param {!hr.db.schema.Database} schema
+ * @param {!lf.schema.Database} schema
  */
 lf.testing.hrSchema.MockDataGenerator = function(schema) {
-  /** @private {!hr.db.schema.Database} */
+  /** @private {!lf.schema.Database} */
   this.schema_ = schema;
 
-  /** @type {!Array<!hr.db.row.Job>} */
+  /** @type {!Array<!lf.Row>} */
   this.sampleJobs = [];
 
-  /** @type {!Array<!hr.db.row.Employee>} */
+  /** @type {!Array<!lf.Row>} */
   this.sampleEmployees = [];
 
-  /** @type {!Array<!hr.db.row.Department>} */
+  /** @type {!Array<!lf.Row>} */
   this.sampleDepartments = [];
 
   /** @type {!lf.testing.hrSchema.MockDataGenerator.JobGroundTruth} */
@@ -84,7 +84,7 @@ lf.testing.hrSchema.MockDataGenerator.EmployeeGroundTruth;
  *   countDistinctMaxSalary: number,
  *   avgDistinctMaxSalary: number,
  *   stddevDistinctMaxSalary: number,
- *   selfJoinSalary: !Array<!Array<!hr.db.row.Job>>
+ *   selfJoinSalary: !Array<!Array<!lf.Row>>
  * }}
  */
 lf.testing.hrSchema.MockDataGenerator.JobGroundTruth;
@@ -124,8 +124,8 @@ lf.testing.hrSchema.MockDataGenerator.prototype.generate = function(
  */
 lf.testing.hrSchema.MockDataGenerator.prototype.extractJobGroundTruth_ =
     function() {
-  var minSalary = function(job) { return job.getMinSalary(); };
-  var maxSalary = function(job) { return job.getMaxSalary(); };
+  var minSalary = function(job) { return job.payload()['minSalary']; };
+  var maxSalary = function(job) { return job.payload()['maxSalary']; };
 
   return {
     minMinSalary: this.findJobMin_(minSalary),
@@ -161,7 +161,7 @@ lf.testing.hrSchema.MockDataGenerator.prototype.extractEmployeeGroundTruth_ =
     function() {
   // TODO(dpapad): Calculate ground truth data, and migrate select_benchmark.js
   // to use this generator.
-  var salary = function(employee) { return employee.getSalary(); };
+  var salary = function(employee) { return employee.payload()['salary']; };
 
   return {
     employeesPerJob: this.findEmployeesPerJob_(),
@@ -181,7 +181,7 @@ lf.testing.hrSchema.MockDataGenerator.prototype.extractEmployeeGroundTruth_ =
 
 /**
  * Finds the MIN of a given attribute in the Job table.
- * @param {!function(!hr.db.row.Job): number} getterFn The function to call for
+ * @param {!function(!lf.Row): number} getterFn The function to call for
  *     accessing the attribute of interest.
  * @return {number} The min value.
  * @private
@@ -196,7 +196,7 @@ lf.testing.hrSchema.MockDataGenerator.prototype.findJobMin_ = function(
 
 /**
  * Finds the MAX of a given attribute in the Job table.
- * @param {!function(!hr.db.row.Job): number} getterFn The function to call for
+ * @param {!function(!lf.Row): number} getterFn The function to call for
  *     accessing the attribute of interest.
  * @return {number} The max value.
  * @private
@@ -211,7 +211,7 @@ lf.testing.hrSchema.MockDataGenerator.prototype.findJobMax_ = function(
 
 /**
  * Finds the DISTINCT of a given attribute in the Job table.
- * @param {!function(!hr.db.row.Job): number} getterFn The function to call for
+ * @param {!function(!lf.Row): number} getterFn The function to call for
  *     accessing the attribute of interest.
  * @return {!Array<number>} The distinct values.
  * @private
@@ -228,7 +228,7 @@ lf.testing.hrSchema.MockDataGenerator.prototype.findJobDistinct_ = function(
 
 /**
  * Finds all job pairs where j1.minSalary == j2.maxSalary.
- * @return {!Array<!Array<!hr.db.row.Job>>}
+ * @return {!Array<!Array<!lf.Row>>}
  * @private
  */
 lf.testing.hrSchema.MockDataGenerator.prototype.findSelfJoinSalary_ =
@@ -239,7 +239,7 @@ lf.testing.hrSchema.MockDataGenerator.prototype.findSelfJoinSalary_ =
     var job1 = this.sampleJobs[i];
     for (var j = 0; j < this.sampleJobs.length; j++) {
       var job2 = this.sampleJobs[j];
-      if (job1.getMinSalary() == job2.getMaxSalary()) {
+      if (job1.payload()['minSalary'] == job2.payload()['maxSalary']) {
         result.push([job1, job2]);
       }
     }
@@ -248,14 +248,14 @@ lf.testing.hrSchema.MockDataGenerator.prototype.findSelfJoinSalary_ =
   // Sorting results to be in deterministic order such that they can be usefuld
   // for assertions.
   result.sort(function(jobPair1, jobPair2) {
-    if (jobPair1[0].getId() < jobPair2[0].getId()) {
+    if (jobPair1[0].payload()['id'] < jobPair2[0].payload()['id']) {
       return -1;
-    } else if (jobPair1[0].getId() > jobPair2[0].getId()) {
+    } else if (jobPair1[0].payload()['id'] > jobPair2[0].payload()['id']) {
       return 1;
     } else {
-      if (jobPair1[1].getId() < jobPair2[1].getId()) {
+      if (jobPair1[1].payload()['id'] < jobPair2[1].payload()['id']) {
         return -1;
-      } else if (jobPair1[1].getId() > jobPair2[1].getId()) {
+      } else if (jobPair1[1].payload()['id'] > jobPair2[1].payload()['id']) {
         return 1;
       }
       return 0;
@@ -276,7 +276,7 @@ lf.testing.hrSchema.MockDataGenerator.prototype.findEmployeesPerJob_ =
     function() {
   var employeesPerJob = new goog.labs.structs.Multimap();
   this.sampleEmployees.forEach(function(employee) {
-    employeesPerJob.add(employee.getJobId(), employee.getId());
+    employeesPerJob.add(employee.payload()['jobId'], employee.payload()['id']);
   });
   return employeesPerJob;
 };
@@ -291,9 +291,10 @@ lf.testing.hrSchema.MockDataGenerator.prototype.findEmployeeMinDate_ =
     function() {
   var employeesSorted = this.sampleEmployees.slice().sort(
       function(employee1, employee2) {
-        return employee1.getHireDate() - employee2.getHireDate();
+        return employee1.payload()['hireDate'] -
+            employee2.payload()['hireDate'];
       });
-  return employeesSorted[0].getHireDate();
+  return employeesSorted[0].payload()['hireDate'];
 };
 
 
@@ -306,9 +307,10 @@ lf.testing.hrSchema.MockDataGenerator.prototype.findEmployeeMaxDate_ =
     function() {
   var employeesSorted = this.sampleEmployees.slice().sort(
       function(employee1, employee2) {
-        return employee2.getHireDate() - employee1.getHireDate();
+        return employee2.payload()['hireDate'] -
+            employee1.payload()['hireDate'];
       });
-  return employeesSorted[0].getHireDate();
+  return employeesSorted[0].payload()['hireDate'];
 };
 
 
@@ -328,9 +330,9 @@ lf.testing.hrSchema.MockDataGenerator.prototype.findThetaJoinSalaryIds_ =
     for (var j = 0; j < this.sampleJobs.length; j++) {
       var employee = this.sampleEmployees[i];
       var job = this.sampleJobs[j];
-      if (employee.getJobId() == job.getId() &&
-          employee.getSalary() > job.getMaxSalary()) {
-        employeeIds.push(employee.getId());
+      if (employee.payload()['jobId'] == job.payload()['id'] &&
+          employee.payload()['salary'] > job.payload()['maxSalary']) {
+        employeeIds.push(employee.payload()['id']);
       }
     }
   }
@@ -380,7 +382,7 @@ lf.testing.hrSchema.MockDataGenerator.prototype.exportData = function() {
 
 /**
  * Creates a MockDataGenerator with a fixed set of data.
- * @param {!hr.db.schema.Database} schema
+ * @param {!lf.schema.Database} schema
  * @param {!lf.testing.hrSchema.MockDataGenerator.ExportData} data
  * @return {!lf.testing.hrSchema.MockDataGenerator}
  */

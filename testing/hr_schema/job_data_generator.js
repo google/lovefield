@@ -27,10 +27,10 @@ goog.require('lf.testing.hrSchema.samples');
  * @constructor
  * @struct
  *
- * @param {!hr.db.schema.Database} schema
+ * @param {!lf.schema.Database} schema
  */
 lf.testing.hrSchema.JobDataGenerator = function(schema) {
-  /** @private {!hr.db.schema.Database} */
+  /** @private {!lf.schema.Database} */
   this.schema_ = schema;
 
   /** @private {!Array.<string>} */
@@ -74,13 +74,13 @@ lf.testing.hrSchema.JobDataGenerator.prototype.generateRaw_ = function(count) {
 
 /**
  * @param {number} count The number of rows to generate.
- * @return {!Array.<!hr.db.row.Job>}
+ * @return {!Array.<!lf.Row>}
  */
 lf.testing.hrSchema.JobDataGenerator.prototype.generate = function(count) {
   var rawData = this.generateRaw_(count);
 
   return rawData.map(function(object) {
-    return this.schema_.getJob().createRow(object);
+    return this.schema_.table('Job').createRow(object);
   }, this);
 };
 

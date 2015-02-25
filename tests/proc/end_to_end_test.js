@@ -453,7 +453,7 @@ function testObserve_MultipleObservers() {
   /**
    * @param {number} id A suffix to apply to the ID (to avoid triggering
    * constraint violations).
-   * @return {!hr.db.row.Job}
+   * @return {!lf.Row}
    */
   var createNewRow = function(id) {
     var sampleJob = jobGenerator.generate(1)[0];

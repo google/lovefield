@@ -27,10 +27,10 @@ goog.require('lf.testing.hrSchema.samples');
  * @constructor
  * @struct
  *
- * @param {!hr.db.schema.Database} schema
+ * @param {!lf.schema.Database} schema
  */
 lf.testing.hrSchema.DepartmentDataGenerator = function(schema) {
-  /** @private {!hr.db.schema.Database} */
+  /** @private {!lf.schema.Database} */
   this.schema_ = schema;
 
   /** @private {!Array.<string>} */
@@ -73,6 +73,6 @@ lf.testing.hrSchema.DepartmentDataGenerator.prototype.generate =
   var rawData = this.generateRaw_(count);
 
   return rawData.map(function(object) {
-    return this.schema_.getDepartment().createRow(object);
+    return this.schema_.table('Department').createRow(object);
   }, this);
 };

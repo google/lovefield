@@ -27,10 +27,10 @@ goog.require('lf.testing.hrSchema.samples');
  * Generates sample data for the Employee table.
  * @constructor
  *
- * @param {!hr.db.schema.Database} schema
+ * @param {!lf.schema.Database} schema
  */
 lf.testing.hrSchema.EmployeeDataGenerator = function(schema) {
-  /** @private {!hr.db.schema.Database} */
+  /** @private {!lf.schema.Database} */
   this.schema_ = schema;
 
   /**
@@ -112,13 +112,13 @@ lf.testing.hrSchema.EmployeeDataGenerator.prototype.setMaxDepartmentId =
 
 /**
  * @param {number} count The number of rows to generate.
- * @return {!Array.<!hr.db.row.Employee>}
+ * @return {!Array.<!lf.Row>}
  */
 lf.testing.hrSchema.EmployeeDataGenerator.prototype.generate = function(count) {
   var rawData = this.generateRaw_(count);
 
   return rawData.map(function(object) {
-    return this.schema_.getEmployee().createRow(object);
+    return this.schema_.table('Employee').createRow(object);
   }, this);
 };
 
