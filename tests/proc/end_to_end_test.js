@@ -104,7 +104,10 @@ function testInsert() {
       db.insert().into(j).values([row]));
 
   queryBuilder.exec().then(
-      function() {
+      function(results) {
+        assertEquals(1, results.length);
+        assertEquals(row.getId(), results[0]['id']);
+
         return lf.testing.util.selectAll(global, j);
       }).then(
       function(results) {
@@ -128,7 +131,8 @@ function testInsert_NoPrimaryKey() {
       db.insert().into(jobHistory).values([row]));
 
   queryBuilder.exec().then(
-      function() {
+      function(results) {
+        assertEquals(1, results.length);
         return lf.testing.util.selectAll(global, jobHistory);
       }).then(
       function(results) {
@@ -148,7 +152,8 @@ function testInsert_CrossColumnPrimaryKey() {
       db.insert().into(table).values([table.createRow()]));
 
   q1.exec().then(
-      function() {
+      function(results) {
+        assertEquals(1, results.length);
         return q2.exec();
       }).then(
       fail,
@@ -181,7 +186,8 @@ function testInsert_CrossColumnUniqueKey() {
       db.insert().into(table).values([row2]));
 
   q1.exec().then(
-      function() {
+      function(results) {
+        assertEquals(1, results.length);
         return q2.exec();
       }).then(
       fail,
@@ -243,11 +249,15 @@ function checkAutoIncrement(builderFn, description) {
   rows[rows.length - 1] = c.createRow();
   rows[rows.length - 1].setId(manuallyAssignedId);
 
-  builderFn().into(c).values(rows.slice(0, 5)).exec().then(
-      function() {
-        return builderFn().into(c).values(rows.slice(5)).exec();
+  var firstBatch = rows.slice(0, 5);
+  var secondBatch = rows.slice(5);
+  builderFn().into(c).values(firstBatch).exec().then(
+      function(results) {
+        assertEquals(firstBatch.length, results.length);
+        return builderFn().into(c).values(secondBatch).exec();
       }).then(
-      function() {
+      function(results) {
+        assertEquals(secondBatch.length, results.length);
         return lf.testing.util.selectAll(global, c);
       }).then(
       function(results) {
