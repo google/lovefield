@@ -235,22 +235,41 @@ function checkAutoIncrement(builderFn, description) {
 
   var c = db.getSchema().getCountry();
 
-  var rows = new Array(11);
-  for (var i = 0; i < rows.length - 1; i++) {
-    rows[i] = c.createRow();
+  var firstBatch = new Array(3);
+  for (var i = 0; i < firstBatch.length; i++) {
+    firstBatch[i] = c.createRow();
     // Default value of the primary key column is set to 0 within createRow
     // (since only integer keys are allowed to be marked as auto-incrementing),
     // which will trigger an automatically assigned primary key.
   }
 
+  var secondBatch = new Array(4);
+  for (var i = 0; i < secondBatch.length; i++) {
+    secondBatch[i] = c.createRow({
+      'name': 'holiday' + i.toString(),
+      'regionId': 'region' + i.toString()
+    });
+    // 'id' is not specified in the 2nd batch, which should also trigger
+    // automatically assigned primary keys.
+  }
+
+  var thirdBatch = new Array(5);
+  for (var i = 0; i < thirdBatch.length; i++) {
+    thirdBatch[i] = c.createRow({
+      'name': 'holiday' + i.toString(),
+      'regionId': 'region' + i.toString(),
+      'id': null
+    });
+    // 'id' is set to null in the 3rd batch, which should also trigger
+    // automatically assigned primary keys.
+  }
+
   // Adding a row with a manually assigned primary key. This ID should not be
   // replaced by an automatically assigned ID.
   var manuallyAssignedId = 1000;
-  rows[rows.length - 1] = c.createRow();
-  rows[rows.length - 1].setId(manuallyAssignedId);
+  var manualRow = c.createRow();
+  manualRow.setId(manuallyAssignedId);
 
-  var firstBatch = rows.slice(0, 5);
-  var secondBatch = rows.slice(5);
   builderFn().into(c).values(firstBatch).exec().then(
       function(results) {
         assertEquals(firstBatch.length, results.length);
@@ -258,6 +277,14 @@ function checkAutoIncrement(builderFn, description) {
       }).then(
       function(results) {
         assertEquals(secondBatch.length, results.length);
+        return builderFn().into(c).values(thirdBatch).exec();
+      }).then(
+      function(results) {
+        assertEquals(thirdBatch.length, results.length);
+        return builderFn().into(c).values([manualRow]).exec();
+      }).then(
+      function(results) {
+        assertEquals(1, results.length);
         return lf.testing.util.selectAll(global, c);
       }).then(
       function(results) {
