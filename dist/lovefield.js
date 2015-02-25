@@ -29232,11 +29232,9 @@ lf.pred.CombinedPredicate.prototype.eval = function(relation) {
 lf.pred.CombinedPredicate.prototype.combineResults_ = function(results) {
   if (this.operator == lf.pred.Operator.AND) {
     return lf.proc.Relation.intersect(results);
-  } else if (this.operator == lf.pred.Operator.OR) {
-    return lf.proc.Relation.union(results);
   } else {
-    // TODO(dpapad): Implement lf.pred.Operator.NOT case here.
-    return lf.proc.Relation.createEmpty();
+    // Must be the case where this.operator == lf.pred.Operator.OR.
+    return lf.proc.Relation.union(results);
   }
 };
 
@@ -38420,8 +38418,6 @@ lf.proc.Transaction.prototype.attach = function(query) {
 
 /** @override */
 lf.proc.Transaction.prototype.commit = function() {
-  // TODO(dpapad): Implement triggering of observers for queries that are being
-  // attached, b/19300207.
   this.stateTransition_(lf.proc.TransactionState_.COMMITTING);
   return this.transactionTask_.commit().then(goog.bind(
       function() {
