@@ -16707,7 +16707,9 @@ goog.userAgent.isVersion = goog.userAgent.isVersionOrHigher;
 
 /**
  * Whether the IE effective document mode is higher or the same as the given
- * document mode version.
+ * document mode version. Because document modes were deprecated with the launch
+ * of IE's new Edge engine, Edge browsers will always return true for this
+ * function.
  * NOTE: Only for IE, return false for another browser.
  *
  * @param {number} documentMode The document mode version to check.
@@ -16715,7 +16717,8 @@ goog.userAgent.isVersion = goog.userAgent.isVersionOrHigher;
  *     same as the given version.
  */
 goog.userAgent.isDocumentModeOrHigher = function(documentMode) {
-  return goog.userAgent.IE && goog.userAgent.DOCUMENT_MODE >= documentMode;
+  return goog.userAgent.IE && (goog.labs.userAgent.engine.isEdge() ||
+      goog.userAgent.DOCUMENT_MODE >= documentMode);
 };
 
 
@@ -24026,13 +24029,11 @@ lf.index.Index.prototype.cost;
 
 /**
  * Retrieves all data within the range. Returns empty array if not found.
- * TODO(dpapad): opt_keyRanges parameter needs to be changed to
- * !Array<!lf.index.KeyRange>, such that cross-column ranges can be expressed.
- * @param {!Array.<!lf.index.SingleKeyRange>=} opt_keyRanges The key ranges to
- *     search for. When multiple key ranges are specified, the function will
- *     return the union of range query results. If none provided, all rowIds in
- *     this index will be returned. Caller must ensure the ranges do not
- *     overlap.
+ * @param {(!Array<!lf.index.SingleKeyRange>|!Array<!lf.index.KeyRange>)=}
+ *     opt_keyRanges The key ranges to search for. When multiple key ranges are
+ *     specified, the function will return the union of range query results.
+ *     If none provided, all rowIds in this index will be returned. Caller must
+ *     ensure the ranges do not overlap.
  * @param {!boolean=} opt_reverseOrder Retrive the results in the reverse
  *     ordering of the index's comparator.
  * @param {number=} opt_limit Max number of rows to return
@@ -32126,7 +32127,7 @@ lf.proc.TableAccessByRowIdStep.prototype.exec = function(journal) {
  *
  * @param {!lf.Global} global
  * @param {!lf.schema.Index} index
- * @param {!Array.<!lf.index.SingleKeyRange>} keyRanges
+ * @param {!Array<!lf.index.KeyRange|!lf.index.SingleKeyRange>} keyRanges
  * @param {!lf.Order} order The order in which results will be returned.
  */
 lf.proc.IndexRangeScanStep = function(global, index, keyRanges, order) {
@@ -32138,7 +32139,7 @@ lf.proc.IndexRangeScanStep = function(global, index, keyRanges, order) {
   /** @type {!lf.schema.Index} */
   this.index = index;
 
-  /** @type {!Array.<!lf.index.SingleKeyRange>} */
+  /** @type {!Array<!lf.index.KeyRange|!lf.index.SingleKeyRange>} */
   this.keyRanges = keyRanges;
 
   /** @type {!lf.Order} */
