@@ -35349,6 +35349,163 @@ lf.proc.LogicalPlanFactory.prototype.create = function(query) {
 
 /**
  * @license
+ * Copyright 2015 Google Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+goog.provide('lf.proc.IndexCostEstimator');
+
+goog.require('goog.array');
+goog.require('lf.pred.ValuePredicate');
+goog.require('lf.service');
+
+
+
+/**
+ * @constructor
+ * @struct
+ *
+ * @param {!lf.Global} global
+ * @param {!lf.schema.Table} tableSchema
+ */
+lf.proc.IndexCostEstimator = function(global, tableSchema) {
+  /** @private {!lf.schema.Table} */
+  this.tableSchema_ = tableSchema;
+
+  /** @private {!lf.index.IndexStore} */
+  this.indexStore_ = global.getService(lf.service.INDEX_STORE);
+};
+
+
+/**
+ * The result of chooseIndexFor() method. index holds the index to be leveraged,
+ * predicate holds the predicate to be converted to an IndexRangeScan.
+ *
+ * TODO(dpapad): Currently candidate predicates are considered individually.
+ * In later revisions of this class, they should be grouped in two ways,
+ * 1) group predicates that refer to the same column together.
+ * 2) group predicate in such a way that cross-column indices are considered.
+ *
+ * @typedef {{
+ *   index: !lf.schema.Index,
+ *   predicate: !lf.Predicate
+ * }}
+ */
+lf.proc.IndexCostEstimator.Result;
+
+
+/**
+ * @param {!Array<!lf.Predicate>} predicates
+ * @return {?lf.proc.IndexCostEstimator.Result}
+ */
+lf.proc.IndexCostEstimator.prototype.chooseIndexFor = function(predicates) {
+  var candidatePredicates = /** @type {!Array<!lf.pred.ValuePredicate>} */ (
+      predicates.filter(this.isCandidate_.bind(this)));
+
+  if (candidatePredicates.length == 0) {
+    return null;
+  }
+
+  // If there is only one candidate there is no need to evaluate the cost.
+  if (candidatePredicates.length == 1) {
+    var predicate = candidatePredicates[0];
+    var index = /** @type {!lf.schema.Index} */ (
+        lf.proc.IndexCostEstimator.getIndexForPredicate_(predicate));
+    return {
+      index: index,
+      predicate: predicate
+    };
+  }
+
+  var minCost = null;
+  var chosenIndex = null;
+  var chosenPredicate = null;
+  candidatePredicates.forEach(function(predicate) {
+    // NOTE: Predicates that are passed in this function are guaranteed to have
+    // at least one candidate indexSchema.
+    var indexSchema = /** @type {!lf.schema.Index} */ (
+        lf.proc.IndexCostEstimator.getIndexForPredicate_(predicate));
+    var cost = this.calculateCostFor_(predicate, indexSchema);
+    if (goog.isNull(minCost) || cost < minCost) {
+      minCost = cost;
+      chosenIndex = indexSchema;
+      chosenPredicate = predicate;
+    }
+  }, this);
+
+  return {
+    index: /** @type {!lf.schema.Index} */ (chosenIndex),
+    predicate: /** @type {!lf.Predicate} */ (chosenPredicate)
+  };
+};
+
+
+/**
+ * @param {!lf.pred.ValuePredicate} predicate
+ * @param {!lf.schema.Index} indexSchema
+ * @return {number}
+ * @private
+ */
+lf.proc.IndexCostEstimator.prototype.calculateCostFor_ = function(
+    predicate, indexSchema) {
+  var indexData = this.indexStore_.get(indexSchema.getNormalizedName());
+  return predicate.toKeyRange().reduce(
+      function(soFar, keyRange) {
+        return soFar + indexData.cost(keyRange);
+      }, 0);
+};
+
+
+/**
+ * @param {!lf.pred.ValuePredicate} predicate
+ * @return {?lf.schema.Index}
+ * @private
+ */
+lf.proc.IndexCostEstimator.getIndexForPredicate_ = function(predicate) {
+  var indices = /** @type {!lf.schema.BaseColumn} */ (
+      predicate.column).getIndices();
+  // TODO(dpapad): Currently only single-column indices are considered. Address
+  // this as part of leveraging cross-column indices.
+  return goog.array.find(
+      indices,
+      function(index) {
+        return index.columns.length == 1;
+      });
+};
+
+
+/**
+ * @param {!lf.Predicate} predicate The predicate to examine.
+ * @return {boolean} Whether the given predicate is a candidate for being
+ *     replaced by using an IndexRangeScan.
+ * @private
+ */
+lf.proc.IndexCostEstimator.prototype.isCandidate_ = function(predicate) {
+  if (!(predicate instanceof lf.pred.ValuePredicate) ||
+      !predicate.isKeyRangeCompatible()) {
+    return false;
+  }
+
+  if (predicate.column.getTable() == this.tableSchema_) {
+    var index = lf.proc.IndexCostEstimator.getIndexForPredicate_(predicate);
+    return !goog.isNull(index);
+  }
+
+  return false;
+};
+
+/**
+ * @license
  * Copyright 2014 Google Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -35365,15 +35522,14 @@ lf.proc.LogicalPlanFactory.prototype.create = function(query) {
  */
 goog.provide('lf.proc.IndexRangeScanPass');
 
-goog.require('goog.array');
 goog.require('goog.asserts');
-goog.require('lf.pred.ValuePredicate');
+goog.require('goog.structs.Map');
+goog.require('lf.proc.IndexCostEstimator');
 goog.require('lf.proc.IndexRangeScanStep');
 goog.require('lf.proc.RewritePass');
 goog.require('lf.proc.SelectStep');
 goog.require('lf.proc.TableAccessByRowIdStep');
 goog.require('lf.proc.TableAccessFullStep');
-goog.require('lf.service');
 goog.require('lf.tree');
 
 
@@ -35393,9 +35549,6 @@ lf.proc.IndexRangeScanPass = function(global) {
 
   /** @private {!lf.Global} */
   this.global_ = global;
-
-  /** @private {!lf.index.IndexStore} */
-  this.indexStore_ = global.getService(lf.service.INDEX_STORE);
 };
 goog.inherits(lf.proc.IndexRangeScanPass, lf.proc.RewritePass);
 
@@ -35412,15 +35565,32 @@ lf.proc.IndexRangeScanPass.prototype.rewrite = function(rootNode) {
           }));
   tableAccessFullSteps.forEach(
       function(tableAccessFullStep) {
-        var selectStepsCandidates = this.findSelectStepCandidates_(
-            tableAccessFullStep);
+        var selectStepsCandidates = this.findSelectSteps_(tableAccessFullStep);
         if (selectStepsCandidates.length == 0) {
           return;
         }
 
-        var chosenSelectStep = this.chooseSelectStep_(selectStepsCandidates);
+        var costEstimator = new lf.proc.IndexCostEstimator(
+            this.global_, tableAccessFullStep.table);
+
+        var predicateMap = new goog.structs.Map();
+        selectStepsCandidates.forEach(function(selectStep) {
+          predicateMap.set(
+              goog.getUid(selectStep.predicate),
+              selectStep);
+        }, this);
+        var result = costEstimator.chooseIndexFor(
+            selectStepsCandidates.map(function(c) {
+              return c.predicate;
+            }));
+        if (goog.isNull(result)) {
+          // No SelectStep could be optimized for this table.
+          return;
+        }
+
+        var chosenSelectStep = predicateMap.get(goog.getUid(result.predicate));
         var newSubTreeRoot = this.replaceWithIndexRangeScanStep_(
-            chosenSelectStep, tableAccessFullStep);
+            chosenSelectStep, tableAccessFullStep, result.index);
         if (chosenSelectStep == this.rootNode) {
           this.rootNode = newSubTreeRoot.getRoot();
         }
@@ -35431,106 +35601,24 @@ lf.proc.IndexRangeScanPass.prototype.rewrite = function(rootNode) {
 
 
 /**
- * Finds all the SelectStep instances that are candidates for this optimization
- * pass. See isCandidate_() for a definition of a candidate.
- * @param {!lf.proc.TableAccessFullStep} tableAccessFullStep The table access
- *     step to find candidates for.
- * @return {!Array.<!lf.proc.SelectStep>} The detected candidate steps.
+ * Finds all the SelectStep instances that exist in the tree above the given
+ * node.
+ * @param {!lf.proc.PhysicalQueryPlanNode} startNode The node to start searching
+ *     from.
+ * @return {!Array.<!lf.proc.SelectStep>} The SelectSteps that were found.
  * @private
  */
-lf.proc.IndexRangeScanPass.prototype.findSelectStepCandidates_ = function(
-    tableAccessFullStep) {
+lf.proc.IndexRangeScanPass.prototype.findSelectSteps_ = function(startNode) {
   var selectSteps = [];
-  var node = tableAccessFullStep.getParent();
+  var node = startNode.getParent();
   while (node) {
-    if (lf.proc.IndexRangeScanPass.isCandidate_(
-        /** @type {!lf.proc.PhysicalQueryPlanNode} */ (node),
-        tableAccessFullStep)) {
+    if (node instanceof lf.proc.SelectStep) {
       selectSteps.push(node);
     }
     node = node.getParent();
   }
 
   return selectSteps;
-};
-
-
-/**
- * Finds the select step, that is the most selective among a list of candidate
- * steps.
- * @param {!Array.<!lf.proc.SelectStep>} selectSteps The candidate selection
- *     steps.
- * @return {!lf.proc.SelectStep} The most selective select step.
- * @private
- */
-lf.proc.IndexRangeScanPass.prototype.chooseSelectStep_ = function(selectSteps) {
-  goog.asserts.assert(selectSteps.length > 0);
-
-  // If there is only one candidate there is no need to evaluate the cost.
-  if (selectSteps.length == 1) {
-    return selectSteps[0];
-  }
-
-  var chosenStep = null;
-  var minCost = null;
-  selectSteps.forEach(
-      function(selectStep, counter) {
-        var predicate = /** @type {!lf.pred.ValuePredicate} */ (
-            selectStep.predicate);
-        var index = lf.proc.IndexRangeScanPass.getIndexForPredicate_(predicate);
-        var indexData = this.indexStore_.get(index.getNormalizedName());
-        var cost = predicate.toKeyRange().reduce(
-            function(soFar, keyRange) {
-              return soFar + indexData.cost(keyRange);
-            }, 0);
-
-        if (goog.isNull(minCost) || cost < minCost) {
-          minCost = cost;
-          chosenStep = selectStep;
-        }
-      }, this);
-
-  return /** @type {!lf.proc.SelectStep} */ (chosenStep);
-};
-
-
-/**
- * @param {!lf.proc.PhysicalQueryPlanNode} node The node to examine.
- * @param {!lf.proc.TableAccessFullStep} tableAccessFullStep
- * @return {boolean} Whether the given node is a candidate for using an
- *     IndexRangeScan.
- * @private
- */
-lf.proc.IndexRangeScanPass.isCandidate_ = function(node, tableAccessFullStep) {
-  if (!(node instanceof lf.proc.SelectStep)) {
-    return false;
-  }
-
-  if (!(node.predicate instanceof lf.pred.ValuePredicate) ||
-      !node.predicate.isKeyRangeCompatible()) {
-    return false;
-  }
-
-  if (node.predicate.column.getTable() == tableAccessFullStep.table) {
-    return node.predicate.column.getIndices().length > 0;
-  }
-
-  return false;
-};
-
-
-/**
- * @param {!lf.pred.ValuePredicate} predicate
- * @return {?lf.schema.Index}
- * @private
- */
-lf.proc.IndexRangeScanPass.getIndexForPredicate_ = function(predicate) {
-  var indices = predicate.column.getIndices();
-  return goog.array.find(
-      indices,
-      function(index) {
-        return index.columns.length == 1;
-      });
 };
 
 
@@ -35542,22 +35630,19 @@ lf.proc.IndexRangeScanPass.getIndexForPredicate_ = function(predicate) {
  * @param {!lf.proc.SelectStep} selectStep The SelectStep to be replaced.
  * @param {!lf.proc.TableAccessFullStep} tableAccessFullStep The table access
  *     step to be replaced.
+ * @param {!lf.schema.Index} indexSchema The schema of the index to be used.
  * @return {!lf.proc.PhysicalQueryPlanNode} The new root of the sub-tree that
  *     used to start at the given SelectStep.
  * @private
  */
 lf.proc.IndexRangeScanPass.prototype.replaceWithIndexRangeScanStep_ = function(
-    selectStep, tableAccessFullStep) {
+    selectStep, tableAccessFullStep, indexSchema) {
   var predicate = /** @type {!lf.pred.ValuePredicate} */ (
       selectStep.predicate);
-  var columnIndex = lf.proc.IndexRangeScanPass.getIndexForPredicate_(predicate);
-  if (goog.isNull(columnIndex)) {
-    return selectStep;
-  }
 
   var indexRangeScanStep = new lf.proc.IndexRangeScanStep(
-      this.global_, columnIndex, predicate.toKeyRange(),
-      columnIndex.columns[0].order);
+      this.global_, indexSchema, predicate.toKeyRange(),
+      indexSchema.columns[0].order);
   var tableAccessByRowIdStep = new lf.proc.TableAccessByRowIdStep(
       this.global_, tableAccessFullStep.table);
   tableAccessByRowIdStep.addChild(indexRangeScanStep);
