@@ -25,15 +25,6 @@ goog.require('lf.index.SingleKeyRange');
 
 var favor = lf.index.Favor;
 
-function testXor() {
-  var xor = lf.index.SimpleComparator.xor;
-  assertFalse(xor(true, true));
-  assertTrue(xor(true, false));
-  assertTrue(xor(false, true));
-  assertFalse(xor(false, false));
-}
-
-
 function testSimpleComparator_Asc() {
   var comparator = new lf.index.SimpleComparator(lf.Order.ASC);
   var c = goog.bind(comparator.compare, comparator);

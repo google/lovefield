@@ -16,8 +16,7 @@
  */
 goog.setTestOnly();
 goog.require('goog.testing.jsunit');
-/** @suppress {extraRequire} */
-goog.require('lf.index.Index');
+goog.require('lf.index.Favor');
 goog.require('lf.index.SingleKeyRange');
 
 
@@ -168,4 +167,70 @@ function testGetBounded() {
   assertEquals('[2, 3]', bound(2, 3));
   assertEquals('null', bound(-1, 0));
   assertEquals('null', bound(11, 12));
+}
+
+
+function testXor() {
+  var xor = lf.index.SingleKeyRange.xor;
+  assertFalse(xor(true, true));
+  assertTrue(xor(true, false));
+  assertTrue(xor(false, true));
+  assertFalse(xor(false, false));
+}
+
+
+function testCompare() {
+  var c = lf.index.SingleKeyRange.compare;
+  var winner = lf.index.Favor;
+
+  var all = lf.index.SingleKeyRange.all();
+  var upTo1 = lf.index.SingleKeyRange.upperBound(1);
+  var upTo1Ex = lf.index.SingleKeyRange.upperBound(1, true);
+  var upTo2 = lf.index.SingleKeyRange.upperBound(2);
+  var atLeast1 = lf.index.SingleKeyRange.lowerBound(1);
+  var atLeast1Ex = lf.index.SingleKeyRange.lowerBound(1, true);
+  var atLeast2 = lf.index.SingleKeyRange.lowerBound(2);
+  var only1 = lf.index.SingleKeyRange.only(1);
+  var only2 = lf.index.SingleKeyRange.only(2);
+
+  var r1 = new lf.index.SingleKeyRange(5, 10, false, false);
+  var r2 = new lf.index.SingleKeyRange(5, 10, true, false);
+  var r3 = new lf.index.SingleKeyRange(5, 10, false, true);
+  var r4 = new lf.index.SingleKeyRange(5, 10, true, true);
+  var r5 = new lf.index.SingleKeyRange(10, 11, false, false);
+  var r6 = new lf.index.SingleKeyRange(1, 5, false, false);
+
+  var cases = [
+    all,
+    upTo1, upTo1Ex,
+    atLeast1, atLeast1Ex,
+    only1,
+    r1, r2, r3, r4
+  ];
+  cases.forEach(function(r) {
+    assertEquals(winner.TIE, c(r, r));
+  });
+
+  // Test pairs that RHS always wins.
+  var pairs = [
+    [all, upTo1],
+    [all, atLeast1],
+    [all, only1],
+    [atLeast1, atLeast2],
+    [upTo1, upTo2],
+    [atLeast1, atLeast1Ex],
+    [upTo1Ex, upTo1],
+    [r1, r2],
+    [r3, r1],
+    [r1, r4],
+    [r3, r2],
+    [r1, r5],
+    [r6, r1],
+    [only1, only2]
+  ];
+
+  pairs.forEach(function(pair) {
+    assertEquals(winner.RHS, c(pair[0], pair[1]));
+    assertEquals(winner.LHS, c(pair[1], pair[0]));
+  });
 }

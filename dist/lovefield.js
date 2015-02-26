@@ -25947,6 +25947,8 @@ lf.Order = {
 goog.provide('lf.index.KeyRange');
 goog.provide('lf.index.SingleKeyRange');
 
+goog.require('lf.index.Favor');
+
 goog.forwardDeclare('lf.index.Index.SingleKey');
 
 
@@ -26149,6 +26151,57 @@ lf.index.SingleKeyRange.prototype.getBounded = function(min, max) {
   return range;
 };
 
+
+/**
+ * @param {boolean} a
+ * @param {boolean} b
+ * @return {boolean}
+ */
+lf.index.SingleKeyRange.xor = function(a, b) {
+  return a ? !b : b;
+};
+
+
+/**
+ * Compares two ranges, meant to be used in Array#sort.
+ * @param {!lf.index.SingleKeyRange} lhs
+ * @param {!lf.index.SingleKeyRange} rhs
+ * @return {!lf.index.Favor}
+ */
+lf.index.SingleKeyRange.compare = function(lhs, rhs) {
+  var xor = lf.index.SingleKeyRange.xor;
+  var winner = lf.index.Favor;
+
+  /**
+   * @param {?lf.index.Index.SingleKey} l
+   * @param {?lf.index.Index.SingleKey} r
+   * @return {!lf.index.Favor}
+   */
+  var test = function(l, r) {
+    if (goog.isNull(l)) {
+      return goog.isNull(r) ? winner.TIE : winner.RHS;
+    }
+    return goog.isNull(r) ? winner.LHS :
+        (l < r) ? winner.RHS :
+        (l == r) ? winner.TIE : winner.LHS;
+  };
+
+  var result = test(lhs.from, rhs.from);
+  if (result == winner.TIE) {
+    if (xor(lhs.excludeLower, rhs.excludeLower)) {
+      result = lhs.excludeLower ? winner.LHS :
+          (!rhs.excludeLower ? winner.TIE : winner.RHS);
+    } else {
+      result = test(lhs.to, rhs.to);
+      if (result == winner.TIE && xor(lhs.excludeUpper, rhs.excludeUpper)) {
+        result = lhs.excludeUpper ? winner.RHS :
+            (!rhs.excludeUpper ? winner.TIE : winner.LHS);
+      }
+    }
+  }
+  return result;
+};
+
 /**
  * @license
  * Copyright 2015 Google Inc. All Rights Reserved.
@@ -26255,39 +26308,12 @@ lf.index.SimpleComparator.compareDescending = function(lhs, rhs) {
 
 
 /**
- * @param {boolean} a
- * @param {boolean} b
- * @return {boolean}
- */
-lf.index.SimpleComparator.xor = function(a, b) {
-  return a ? !b : b;
-};
-
-
-/**
  * @param {!lf.index.SingleKeyRange} lhs
  * @param {!lf.index.SingleKeyRange} rhs Shall not overlap with lhs.
  * @return {!lf.index.Favor}
  */
 lf.index.SimpleComparator.orderRangeAscending = function(lhs, rhs) {
-  var xor = lf.index.SimpleComparator.xor;
-  var favor = lf.index.SimpleComparator.compareAscending(
-      /** @type {!lf.index.Index.SingleKey} */ (lhs.from),
-      /** @type {!lf.index.Index.SingleKey} */ (rhs.from));
-  if (favor == lf.index.Favor.TIE) {
-    if (xor(lhs.excludeLower, rhs.excludeLower)) {
-      favor = lhs.excludeLower ? lf.index.Favor.LHS : lf.index.Favor.RHS;
-    } else {
-      favor = lf.index.SimpleComparator.compareAscending(
-          /** @type {!lf.index.Index.SingleKey} */ (lhs.to),
-          /** @type {!lf.index.Index.SingleKey} */ (rhs.to));
-      if (favor == lf.index.Favor.TIE &&
-          !xor(lhs.excludeUpper, rhs.excludeUpper)) {
-        favor = lhs.excludeUpper ? lf.index.Favor.LHS : lf.index.Favor.RHS;
-      }
-    }
-  }
-  return favor;
+  return lf.index.SingleKeyRange.compare(lhs, rhs);
 };
 
 
@@ -26297,7 +26323,7 @@ lf.index.SimpleComparator.orderRangeAscending = function(lhs, rhs) {
  * @return {!lf.index.Favor}
  */
 lf.index.SimpleComparator.orderRangeDescending = function(lhs, rhs) {
-  return lf.index.SimpleComparator.orderRangeAscending(rhs, lhs);
+  return lf.index.SingleKeyRange.compare(rhs, lhs);
 };
 
 
