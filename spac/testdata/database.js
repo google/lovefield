@@ -47,6 +47,7 @@ lovefield.db.getSchema = function() {
  * @param {!function(!lf.raw.BackStore):!IThenable=} opt_onUpgrade
  * @param {boolean=} opt_volatile Default to false
  * @return {!IThenable.<!lf.proc.Database>}
+ * @deprecated Use connect().
  */
 lovefield.db.getInstance = function(opt_onUpgrade, opt_volatile) {
   lovefield.db.getSchema();

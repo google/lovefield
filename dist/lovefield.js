@@ -39577,6 +39577,7 @@ lf.schema.Builder.prototype.connect = function(opt_options) {
  * @param {boolean=} opt_volatile Default to false
  * @return {!IThenable.<!lf.proc.Database>}
  * @export
+ * @deprecated Use connect().
  */
 lf.schema.Builder.prototype.getInstance = function(
     opt_onUpgrade, opt_volatile) {
