@@ -23,6 +23,7 @@ goog.require('goog.testing.jsunit');
 goog.require('hr.db');
 goog.require('lf.Exception');
 goog.require('lf.fn');
+goog.require('lf.schema.DataStoreType');
 goog.require('lf.testing.hrSchema.MockDataGenerator');
 goog.require('lf.testing.util');
 
@@ -78,20 +79,19 @@ var tx;
 
 function setUp() {
   asyncTestCase.waitForAsync('setUp');
-  hr.db.getInstance(
-      /* opt_onUpgrade */ undefined,
-      /* opt_volatile */ true).then(function(database) {
-    db = database;
-    j = db.getSchema().getJob();
-    e = db.getSchema().getEmployee();
-    d = db.getSchema().getDepartment();
-    global = hr.db.getGlobal();
-    dataGenerator = new lf.testing.hrSchema.MockDataGenerator(
-        /** @type {!hr.db.schema.Database} */ (db.getSchema()));
+  hr.db.connect({storeType: lf.schema.DataStoreType.MEMORY}).then(function(
+      database) {
+        db = database;
+        j = db.getSchema().getJob();
+        e = db.getSchema().getEmployee();
+        d = db.getSchema().getDepartment();
+        global = hr.db.getGlobal();
+        dataGenerator = new lf.testing.hrSchema.MockDataGenerator(
+            /** @type {!hr.db.schema.Database} */ (db.getSchema()));
 
-    tx = db.createTransaction();
-    return addSampleData();
-  }).then(function() {
+        tx = db.createTransaction();
+        return addSampleData();
+      }).then(function() {
     asyncTestCase.continueTesting();
   }, fail);
 }

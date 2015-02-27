@@ -23,6 +23,7 @@ goog.require('lf.Exception');
 goog.require('lf.bind');
 goog.require('lf.fn');
 goog.require('lf.query.SelectBuilder');
+goog.require('lf.schema.DataStoreType');
 goog.require('lf.testing.util');
 
 
@@ -36,12 +37,11 @@ var db;
 
 function setUp() {
   asyncTestCase.waitForAsync('setUp');
-  hr.db.getInstance(
-      /* opt_onUpgrade*/ undefined,
-      /* opt_volatile */ true).then(function(database) {
-    db = database;
-    asyncTestCase.continueTesting();
-  }, fail);
+  hr.db.connect({storeType: lf.schema.DataStoreType.MEMORY}).then(function(
+      database) {
+        db = database;
+        asyncTestCase.continueTesting();
+      }, fail);
 }
 
 

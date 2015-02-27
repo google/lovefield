@@ -38,7 +38,7 @@ function setUp() {
   }
 
   asyncTestCase.waitForAsync('setUp');
-  hr.bdb.getInstance().then(function(database) {
+  hr.bdb.connect().then(function(database) {
     tester = new lf.testing.SmokeTester(hr.bdb.getGlobal(), database);
     return tester.clearDb();
   }).then(function() {

@@ -31,7 +31,7 @@ function testClose() {
   }
 
   asyncTestCase.waitForAsync('testClose');
-  hr.db.getInstance().then(function(database) {
+  hr.db.connect().then(function(database) {
     // Test that all queries after closing are throwing.
     database.close();
     var thrower = function() {
@@ -40,7 +40,7 @@ function testClose() {
     assertThrows(thrower);
 
     // Test that db can be opened again.
-    return hr.db.getInstance();
+    return hr.db.connect();
   }, fail).then(function(database) {
     assertNotNull(database);
     asyncTestCase.continueTesting();

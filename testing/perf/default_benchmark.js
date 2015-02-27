@@ -21,6 +21,7 @@ goog.require('goog.Promise');
 goog.require('goog.net.XhrIo');
 goog.require('hr.db');
 goog.require('lf.Row');
+goog.require('lf.schema.DataStoreType');
 goog.require('lf.testing.hrSchema.EmployeeDataGenerator');
 
 
@@ -50,7 +51,11 @@ lf.testing.perf.DefaultBenchmark = function(opt_volatile) {
 
 /** @return {!IThenable} */
 lf.testing.perf.DefaultBenchmark.prototype.init = function() {
-  return hr.db.getInstance(undefined, this.volatile_).then(goog.bind(
+  var options = {
+    storeType: this.volatile_ ? lf.schema.DataStoreType.MEMORY :
+        lf.schema.DataStoreType.INDEXED_DB
+  };
+  return hr.db.connect(options).then(goog.bind(
       function(db) {
         this.db_ = db;
         this.e_ = db.getSchema().getEmployee();

@@ -27,6 +27,7 @@ goog.require('lf.index.BTree');
 goog.require('lf.index.ComparatorFactory');
 goog.require('lf.index.IndexMetadata');
 goog.require('lf.index.RowId');
+goog.require('lf.schema.DataStoreType');
 goog.require('lf.service');
 
 
@@ -79,7 +80,7 @@ function setUp() {
 
   instrumentBTree();
 
-  hr.db.getInstance(undefined, true).then(
+  hr.db.connect({storeType: lf.schema.DataStoreType.MEMORY}).then(
       function(database) {
         db = database;
         backStore = hr.db.getGlobal().getService(lf.service.BACK_STORE);

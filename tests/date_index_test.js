@@ -19,6 +19,7 @@ goog.require('goog.testing.AsyncTestCase');
 goog.require('goog.testing.jsunit');
 goog.require('hr.db');
 goog.require('lf.Order');
+goog.require('lf.schema.DataStoreType');
 
 
 /** @type {!goog.testing.AsyncTestCase} */
@@ -36,13 +37,12 @@ var holiday;
 
 function setUp() {
   asyncTestCase.waitForAsync('setUp');
-  hr.db.getInstance(
-      /* opt_onUpgrade */ undefined,
-      /* opt_volatile */ true).then(function(database) {
-    db = database;
-    holiday = db.getSchema().getHoliday();
-    asyncTestCase.continueTesting();
-  });
+  hr.db.connect({storeType: lf.schema.DataStoreType.MEMORY}).then(
+      function(database) {
+        db = database;
+        holiday = db.getSchema().getHoliday();
+        asyncTestCase.continueTesting();
+      });
 }
 
 

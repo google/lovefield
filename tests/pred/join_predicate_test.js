@@ -21,6 +21,7 @@ goog.require('hr.db');
 goog.require('lf.pred.JoinPredicate');
 goog.require('lf.proc.Relation');
 goog.require('lf.proc.RelationEntry');
+goog.require('lf.schema.DataStoreType');
 goog.require('lf.testing.hrSchemaSampleData');
 
 
@@ -47,14 +48,14 @@ var d;
 
 function setUp() {
   asyncTestCase.waitForAsync('setUp');
-  hr.db.getInstance(
-      undefined, /* opt_volatile */ true).then(function(database) {
-    db = database;
-    d = db.getSchema().getDepartment();
-    e = db.getSchema().getEmployee();
-    j = db.getSchema().getJob();
-    asyncTestCase.continueTesting();
-  }, fail);
+  hr.db.connect({storeType: lf.schema.DataStoreType.MEMORY}).then(
+      function(database) {
+        db = database;
+        d = db.getSchema().getDepartment();
+        e = db.getSchema().getEmployee();
+        j = db.getSchema().getJob();
+        asyncTestCase.continueTesting();
+      }, fail);
 }
 
 

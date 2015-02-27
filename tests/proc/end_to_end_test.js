@@ -23,6 +23,7 @@ goog.require('goog.testing.jsunit');
 goog.require('hr.db');
 goog.require('lf.Exception');
 goog.require('lf.bind');
+goog.require('lf.schema.DataStoreType');
 goog.require('lf.testing.hrSchema.JobDataGenerator');
 goog.require('lf.testing.util');
 
@@ -62,15 +63,14 @@ var global;
 
 function setUp() {
   asyncTestCase.waitForAsync('setUp');
-  hr.db.getInstance(
-      /* opt_onUpgrade */ undefined,
-      /* opt_volatile */ true).then(function(database) {
-    db = database;
-    j = db.getSchema().getJob();
-    e = db.getSchema().getEmployee();
-    global = hr.db.getGlobal();
-    return addSampleData(50);
-  }).then(function() {
+  hr.db.connect({storeType: lf.schema.DataStoreType.MEMORY}).then(
+      function(database) {
+        db = database;
+        j = db.getSchema().getJob();
+        e = db.getSchema().getEmployee();
+        global = hr.db.getGlobal();
+        return addSampleData(50);
+      }).then(function() {
     asyncTestCase.continueTesting();
   }, fail);
 }

@@ -21,6 +21,7 @@ goog.require('goog.testing.jsunit');
 goog.require('goog.userAgent.product');
 goog.require('lf.Type');
 goog.require('lf.schema');
+goog.require('lf.schema.DataStoreType');
 goog.require('lf.testing.SmokeTester');
 
 
@@ -56,11 +57,14 @@ function createSchemaBuilders() {
 
 function setUp() {
   asyncTestCase.waitForAsync('setUp');
-  var volatile = goog.userAgent.product.SAFARI;
+  var options = {
+    storeType: goog.userAgent.product.SAFARI ? lf.schema.DataStoreType.MEMORY :
+        lf.schema.DataStoreType.INDEXED_DB
+  };
   var builders = createSchemaBuilders();
   goog.Promise.all([
-    builders[0].getInstance(undefined, volatile),
-    builders[1].getInstance(undefined, volatile)
+    builders[0].connect(options),
+    builders[1].connect(options)
   ]).then(function(dbs) {
     hrTester = new lf.testing.SmokeTester(builders[0].getGlobal(), dbs[0]);
     orderTester = new lf.testing.SmokeTester(builders[1].getGlobal(), dbs[1]);

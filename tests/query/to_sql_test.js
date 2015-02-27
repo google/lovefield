@@ -24,6 +24,7 @@ goog.require('lf.fn');
 goog.require('lf.op');
 goog.require('lf.query.DeleteBuilder');
 goog.require('lf.query.InsertBuilder');
+goog.require('lf.schema.DataStoreType');
 goog.require('lf.testing.hrSchemaSampleData');
 
 
@@ -41,13 +42,12 @@ var j;
 
 function setUp() {
   asyncTestCase.waitForAsync('setUp');
-  hr.db.getInstance(
-      /* opt_onUpgrade*/ undefined,
-      /* opt_volatile */ true).then(function(database) {
-    db = database;
-    j = db.getSchema().getJob();
-    asyncTestCase.continueTesting();
-  }, fail);
+  hr.db.connect({storeType: lf.schema.DataStoreType.MEMORY}).then(function(
+      database) {
+        db = database;
+        j = db.getSchema().getJob();
+        asyncTestCase.continueTesting();
+      }, fail);
 }
 
 

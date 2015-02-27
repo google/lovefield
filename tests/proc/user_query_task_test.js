@@ -22,6 +22,7 @@ goog.require('hr.db');
 goog.require('lf.Exception');
 goog.require('lf.bind');
 goog.require('lf.proc.UserQueryTask');
+goog.require('lf.schema.DataStoreType');
 goog.require('lf.service');
 goog.require('lf.testing.hrSchemaSampleData');
 goog.require('lf.testing.util');
@@ -58,12 +59,13 @@ var ROW_COUNT = 5;
 
 function setUp() {
   asyncTestCase.waitForAsync('setUp');
-  hr.db.getInstance(undefined, true).then(function(database) {
-    db = database;
-    global = hr.db.getGlobal();
-    cache = hr.db.getGlobal().getService(lf.service.CACHE);
-    j = db.getSchema().getJob();
-  }).then(function() {
+  hr.db.connect({storeType: lf.schema.DataStoreType.MEMORY}).then(function(
+      database) {
+        db = database;
+        global = hr.db.getGlobal();
+        cache = hr.db.getGlobal().getService(lf.service.CACHE);
+        j = db.getSchema().getJob();
+      }).then(function() {
     asyncTestCase.continueTesting();
   }, fail);
 }

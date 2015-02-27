@@ -23,6 +23,7 @@ goog.require('hr.db');
 goog.require('lf.Row');
 goog.require('lf.TransactionType');
 goog.require('lf.cache.Journal');
+goog.require('lf.schema.DataStoreType');
 goog.require('lf.service');
 goog.require('lf.testing.hrSchemaSampleData');
 
@@ -38,8 +39,11 @@ var db;
 
 function setUp() {
   asyncTestCase.waitForAsync('setUp');
-  var volatile = goog.userAgent.product.SAFARI;
-  hr.db.getInstance(undefined, volatile).then(
+  var options = {
+    storeType: goog.userAgent.product.SAFARI ? lf.schema.DataStoreType.MEMORY :
+        lf.schema.DataStoreType.INDEXED_DB
+  };
+  hr.db.connect(options).then(
       function(database) {
         db = database;
 

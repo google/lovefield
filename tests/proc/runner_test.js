@@ -20,6 +20,7 @@ goog.require('goog.testing.AsyncTestCase');
 goog.require('goog.testing.jsunit');
 goog.require('hr.db');
 goog.require('lf.TransactionType');
+goog.require('lf.schema.DataStoreType');
 goog.require('lf.service');
 goog.require('lf.testing.MockTask');
 
@@ -42,11 +43,12 @@ var j;
 
 function setUp() {
   asyncTestCase.waitForAsync('setUp');
-  hr.db.getInstance(undefined, true).then(function(database) {
-    db = database;
-    runner = hr.db.getGlobal().getService(lf.service.RUNNER);
-    j = db.getSchema().getJob();
-  }).then(function() {
+  hr.db.connect({storeType: lf.schema.DataStoreType.MEMORY}).then(function(
+      database) {
+        db = database;
+        runner = hr.db.getGlobal().getService(lf.service.RUNNER);
+        j = db.getSchema().getJob();
+      }).then(function() {
     asyncTestCase.continueTesting();
   }, fail);
 }

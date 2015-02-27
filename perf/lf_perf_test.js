@@ -21,6 +21,7 @@ goog.require('goog.testing.AsyncTestCase');
 goog.require('goog.testing.jsunit');
 goog.require('goog.userAgent.product');
 goog.require('hr.db');
+goog.require('lf.schema.DataStoreType');
 goog.require('lf.testing.Benchmark');
 goog.require('lf.testing.hrSchema.MockDataGenerator');
 goog.require('lf.testing.perf.DefaultBenchmark');
@@ -324,7 +325,7 @@ function test4Select() {
   asyncTestCase.waitForAsync('test4_Select');
 
   benchmarkSetUp().then(function() {
-    return hr.db.getInstance();
+    return hr.db.connect();
   }).then(function(database) {
     return selectRunner('SelectBenchmark', database);
   }).then(function() {
@@ -336,7 +337,7 @@ function test4Select_Mem() {
   asyncTestCase.waitForAsync('test4_Select_Mem');
 
   benchmarkSetUp().then(function() {
-    return hr.db.getInstance(undefined, true);
+    return hr.db.connect({storeType: lf.schema.DataStoreType.MEMORY});
   }).then(function(database) {
     return selectRunner('SelectBenchmark Mem', database);
   }).then(function() {

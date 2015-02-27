@@ -20,6 +20,7 @@ goog.require('goog.testing.jsunit');
 goog.require('hr.db');
 goog.require('lf.bind');
 goog.require('lf.query.UpdateBuilder');
+goog.require('lf.schema.DataStoreType');
 
 
 /** @type {!goog.testing.AsyncTestCase} */
@@ -32,12 +33,11 @@ var db;
 
 function setUp() {
   asyncTestCase.waitForAsync('setUp');
-  hr.db.getInstance(
-      /* opt_onUpgrade*/ undefined,
-      /* opt_volatile */ true).then(function(database) {
-    db = database;
-    asyncTestCase.continueTesting();
-  }, fail);
+  hr.db.connect({storeType: lf.schema.DataStoreType.MEMORY}).then(function(
+      database) {
+        db = database;
+        asyncTestCase.continueTesting();
+      }, fail);
 }
 
 

@@ -24,6 +24,7 @@ goog.require('lf.fn');
 goog.require('lf.pred.JoinPredicate');
 goog.require('lf.proc.Relation');
 goog.require('lf.proc.RelationTransformer');
+goog.require('lf.schema.DataStoreType');
 goog.require('lf.testing.hrSchema.EmployeeDataGenerator');
 goog.require('lf.testing.hrSchema.JobDataGenerator');
 
@@ -58,9 +59,7 @@ var groundTruth;
 
 function setUp() {
   asyncTestCase.waitForAsync('setUp');
-  hr.db.getInstance(
-      /* opt_onUpgrade */ undefined,
-      /* opt_volatile */ true).then(function(db) {
+  hr.db.connect({storeType: lf.schema.DataStoreType.MEMORY}).then(function(db) {
     j = db.getSchema().getJob();
     e = db.getSchema().getEmployee();
     generateSampleJobData(db);

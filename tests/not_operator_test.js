@@ -20,6 +20,7 @@ goog.require('goog.testing.AsyncTestCase');
 goog.require('goog.testing.jsunit');
 goog.require('hr.db');
 goog.require('lf.op');
+goog.require('lf.schema.DataStoreType');
 goog.require('lf.testing.hrSchemaSampleData');
 
 
@@ -38,7 +39,7 @@ var rowCount = 8;
 
 function setUp() {
   asyncTestCase.waitForAsync('setUp');
-  hr.db.getInstance(undefined, true).then(
+  hr.db.connect({storeType: lf.schema.DataStoreType.MEMORY}).then(
       function(database) {
         db = database;
 

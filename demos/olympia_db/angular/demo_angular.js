@@ -62,7 +62,6 @@ var DbService = function($http) {
   // Trigger DB initialization.
   this.init_().then(function() {
     this.initialized = true;
-    console.log('DB connection ready.');
   }.bind(this));
 };
 
@@ -99,7 +98,7 @@ DbService.prototype.buildSchema_ = function() {
  * @private
  */
 DbService.prototype.init_ = function() {
-  return this.buildSchema_().getInstance().then((
+  return this.buildSchema_().connect().then((
       function(database) {
         this.db = database;
         window.db = database;

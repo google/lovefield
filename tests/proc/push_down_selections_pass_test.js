@@ -24,6 +24,7 @@ goog.require('lf.proc.OrderByNode');
 goog.require('lf.proc.PushDownSelectionsPass');
 goog.require('lf.proc.SelectNode');
 goog.require('lf.proc.TableAccessNode');
+goog.require('lf.schema.DataStoreType');
 goog.require('lf.tree');
 
 
@@ -38,9 +39,8 @@ var schema;
 
 function setUp() {
   asyncTestCase.waitForAsync('setUp');
-  hr.db.getInstance(
-      undefined, true).then(function(database) {
-    schema = database.getSchema();
+  hr.db.connect({storeType: lf.schema.DataStoreType.MEMORY}).then(function(db) {
+    schema = db.getSchema();
   }).then(function() {
     asyncTestCase.continueTesting();
   }, fail);

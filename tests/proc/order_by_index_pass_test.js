@@ -27,6 +27,7 @@ goog.require('lf.proc.ProjectStep');
 goog.require('lf.proc.SelectStep');
 goog.require('lf.proc.TableAccessByRowIdStep');
 goog.require('lf.proc.TableAccessFullStep');
+goog.require('lf.schema.DataStoreType');
 goog.require('lf.tree');
 
 
@@ -41,10 +42,10 @@ var e;
 
 function setUp() {
   asyncTestCase.waitForAsync('setUp');
-  hr.db.getInstance(
-      undefined, /* opt_volatile */ true).then(function(database) {
-    e = database.getSchema().getEmployee();
-  }).then(function() {
+  hr.db.connect({storeType: lf.schema.DataStoreType.MEMORY}).then(function(
+      database) {
+        e = database.getSchema().getEmployee();
+      }).then(function() {
     asyncTestCase.continueTesting();
   }, fail);
 }

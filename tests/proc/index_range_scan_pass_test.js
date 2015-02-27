@@ -30,6 +30,7 @@ goog.require('lf.proc.OrderByStep');
 goog.require('lf.proc.ProjectStep');
 goog.require('lf.proc.SelectStep');
 goog.require('lf.proc.TableAccessFullStep');
+goog.require('lf.schema.DataStoreType');
 goog.require('lf.service');
 goog.require('lf.tree');
 
@@ -63,11 +64,10 @@ function setUp() {
   asyncTestCase.waitForAsync('setUp');
   propertyReplacer = new goog.testing.PropertyReplacer();
 
-  hr.db.getInstance(
-      undefined, true).then(function(database) {
-    e = database.getSchema().getEmployee();
-    j = database.getSchema().getJob();
-    d = database.getSchema().getDepartment();
+  hr.db.connect({storeType: lf.schema.DataStoreType.MEMORY}).then(function(db) {
+    e = db.getSchema().getEmployee();
+    j = db.getSchema().getJob();
+    d = db.getSchema().getDepartment();
     indexStore =  /** @type {!lf.index.IndexStore} */ (
         hr.db.getGlobal().getService(lf.service.INDEX_STORE));
   }).then(function() {
