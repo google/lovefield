@@ -29061,6 +29061,17 @@ lf.Predicate.prototype.setComplement;
 lf.Predicate.prototype.copy;
 
 
+/**
+ * @param {!Array<!lf.schema.Column>=} opt_results An optional array holding
+ *     previous results, given that this function is called recursively. If
+ *     provided any columns will be added on that array. If not provided a new
+ *     array will be allocated.
+ * @return {!Array<!lf.schema.Column>} An array of all columns involved in this
+ *     predicate.
+ */
+lf.Predicate.prototype.getColumns;
+
+
 
 /**
  * @template T
@@ -29210,6 +29221,10 @@ lf.pred.PredicateNode.prototype.setComplement = goog.abstractMethod;
 /** @override */
 lf.pred.PredicateNode.prototype.copy = goog.abstractMethod;
 
+
+/** @override */
+lf.pred.PredicateNode.prototype.getColumns = goog.abstractMethod;
+
 /**
  * @license
  * Copyright 2014 Google Inc. All Rights Reserved.
@@ -29281,6 +29296,21 @@ lf.pred.CombinedPredicate.prototype.copy = function() {
           }).bind(this)));
 
   return copy;
+};
+
+
+/** @override */
+lf.pred.CombinedPredicate.prototype.getColumns = function(opt_results) {
+  var columns = opt_results || [];
+  this.traverse(function(child) {
+    if (child == this) {
+      return;
+    }
+    child.getColumns(columns);
+  }.bind(this));
+
+  var columnSet = new goog.structs.Set(columns);
+  return columnSet.getValues();
 };
 
 
@@ -30358,6 +30388,18 @@ lf.pred.JoinPredicate.prototype.copy = function() {
 
 
 /** @override */
+lf.pred.JoinPredicate.prototype.getColumns = function(opt_results) {
+  if (goog.isDefAndNotNull(opt_results)) {
+    opt_results.push(this.leftColumn);
+    opt_results.push(this.rightColumn);
+    return opt_results;
+  } else {
+    return [this.leftColumn, this.rightColumn];
+  }
+};
+
+
+/** @override */
 lf.pred.JoinPredicate.prototype.eval = function(relation) {
   var entries = relation.entries.filter(function(entry) {
     var leftValue = entry.getField(this.leftColumn);
@@ -30691,6 +30733,17 @@ lf.pred.ValuePredicate.prototype.copy = function() {
   clone.setBinder(this.binder_);
   clone.setComplement(this.isComplement_);
   return clone;
+};
+
+
+/** @override */
+lf.pred.ValuePredicate.prototype.getColumns = function(opt_results) {
+  if (goog.isDefAndNotNull(opt_results)) {
+    opt_results.push(this.column);
+    return opt_results;
+  } else {
+    return [this.column];
+  }
 };
 
 

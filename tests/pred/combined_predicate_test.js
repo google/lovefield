@@ -146,6 +146,38 @@ function assertTreesIdentical(expectedTree, original, copy) {
 
 
 /**
+ * Tests that Predicate#getColumns() returns all involved columns for various
+ * predicates.
+ */
+function testGetColumns() {
+  var p1 = /** @type {!lf.pred.PredicateNode} */ (
+      lf.op.and(e.salary.gte(200), e.salary.lte(600)));
+  var expectedColumns = [e.salary];
+  assertSameElements(expectedColumns, p1.getColumns());
+
+  var p2 = /** @type {!lf.pred.PredicateNode} */ (
+      lf.op.and(
+          e.salary.gte(200),
+          e.salary.lte(600),
+          e.commissionPercent.lt(0.15),
+          e.commissionPercent.gt(0.1)));
+  expectedColumns = [e.salary, e.commissionPercent];
+  assertSameElements(expectedColumns, p2.getColumns());
+
+  var p3 = /** @type {!lf.pred.PredicateNode} */ (lf.op.and(
+      e.salary.gte(200),
+      lf.op.and(
+          e.jobId.eq(j.id),
+          e.departmentId.eq(d.id))));
+  expectedColumns = [
+    e.salary, e.jobId, e.departmentId,
+    j.id, d.id
+  ];
+  assertSameElements(expectedColumns, p3.getColumns());
+}
+
+
+/**
  * Tests the setComplement() method for the case of an AND predicate.
  */
 function testSetComplement_And() {

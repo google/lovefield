@@ -62,6 +62,14 @@ function testCopy() {
 }
 
 
+function testGetColumns() {
+  var table = schema.tables()[0];
+  var p = new lf.pred.ValuePredicate(
+      table['id'], 'myId', lf.eval.Type.EQ);
+  assertSameElements([table['id']], p.getColumns());
+}
+
+
 function testEval_Eq() {
   checkEval_Eq(schema.tables()[0]);
 }

@@ -70,6 +70,12 @@ function testCopy() {
 }
 
 
+function testGetColumns() {
+  var p = e.jobId.eq(j.id);
+  assertSameElements([e.jobId, j.id], p.getColumns());
+}
+
+
 function testJoinPredicate_Eval_True() {
   var leftEntry = new lf.proc.RelationEntry(
       lf.testing.hrSchemaSampleData.generateSampleEmployeeData(db),
