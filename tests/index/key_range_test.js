@@ -304,58 +304,58 @@ function testOverlaps() {
 }
 
 
-function testJoin() {
-  var j = lf.index.SingleKeyRange.join;
+function testUnion() {
+  var u = lf.index.SingleKeyRange.union;
   var r = generateTestRanges();
 
   // Empty
-  assertArrayEquals([], j([]));
+  assertArrayEquals([], u([]));
 
   // Self
-  assertArrayEquals([r.all], j([r.all]));
-  assertArrayEquals([r.upTo1], j([r.upTo1]));
-  assertArrayEquals([r.atLeast1], j([r.atLeast1]));
-  assertArrayEquals([r.only1], j([r.only1]));
-  assertArrayEquals([r.r1], j([r.r1]));
-  assertArrayEquals([r.r2], j([r.r2, r.r2]));
-  assertArrayEquals([r.r3], j([r.r3, r.r3]));
-  assertArrayEquals([r.r4], j([r.r4, r.r4]));
+  assertArrayEquals([r.all], u([r.all]));
+  assertArrayEquals([r.upTo1], u([r.upTo1]));
+  assertArrayEquals([r.atLeast1], u([r.atLeast1]));
+  assertArrayEquals([r.only1], u([r.only1]));
+  assertArrayEquals([r.r1], u([r.r1]));
+  assertArrayEquals([r.r2], u([r.r2, r.r2]));
+  assertArrayEquals([r.r3], u([r.r3, r.r3]));
+  assertArrayEquals([r.r4], u([r.r4, r.r4]));
 
   // Merge to r.all
-  assertArrayEquals([r.all], j([r.all, r.upTo1]));
-  assertArrayEquals([r.all], j([r.all, r.r1, r.r5]));
-  assertArrayEquals([r.all], j([r.only2, r.only1, r.all]));
-  assertArrayEquals([r.all], j([r.r1, r.only2, r.atLeast1Ex, r.all]));
+  assertArrayEquals([r.all], u([r.all, r.upTo1]));
+  assertArrayEquals([r.all], u([r.all, r.r1, r.r5]));
+  assertArrayEquals([r.all], u([r.only2, r.only1, r.all]));
+  assertArrayEquals([r.all], u([r.r1, r.only2, r.atLeast1Ex, r.all]));
 
   // Overlapping test cases.
-  assertArrayEquals([r.upTo1], j([r.upTo1, r.upTo1Ex]));
-  assertArrayEquals([r.upTo2], j([r.upTo1, r.upTo2]));
-  assertArrayEquals([r.upTo1], j([r.upTo1, r.only1]));
-  assertArrayEquals([r.all], j([r.upTo1, r.atLeast1]));
+  assertArrayEquals([r.upTo1], u([r.upTo1, r.upTo1Ex]));
+  assertArrayEquals([r.upTo2], u([r.upTo1, r.upTo2]));
+  assertArrayEquals([r.upTo1], u([r.upTo1, r.only1]));
+  assertArrayEquals([r.all], u([r.upTo1, r.atLeast1]));
   assertArrayEquals(
-      [lf.index.SingleKeyRange.upperBound(5)], j([r.upTo1, r.r6]));
-  assertArrayEquals([r.upTo2], j([r.upTo1Ex, r.upTo2]));
-  assertArrayEquals([r.atLeast1], j([r.atLeast1, r.only1]));
-  assertArrayEquals([r.atLeast1], j([r.atLeast1, r.only2]));
-  assertArrayEquals([r.atLeast1], j([r.atLeast1, r.r1]));
-  assertArrayEquals([r.atLeast1], j([r.atLeast1, r.r6]));
-  assertArrayEquals([r.r1], j([r.r1, r.r2]));
-  assertArrayEquals([r.r1], j([r.r1, r.r3]));
-  assertArrayEquals([r.r1], j([r.r1, r.r4]));
+      [lf.index.SingleKeyRange.upperBound(5)], u([r.upTo1, r.r6]));
+  assertArrayEquals([r.upTo2], u([r.upTo1Ex, r.upTo2]));
+  assertArrayEquals([r.atLeast1], u([r.atLeast1, r.only1]));
+  assertArrayEquals([r.atLeast1], u([r.atLeast1, r.only2]));
+  assertArrayEquals([r.atLeast1], u([r.atLeast1, r.r1]));
+  assertArrayEquals([r.atLeast1], u([r.atLeast1, r.r6]));
+  assertArrayEquals([r.r1], u([r.r1, r.r2]));
+  assertArrayEquals([r.r1], u([r.r1, r.r3]));
+  assertArrayEquals([r.r1], u([r.r1, r.r4]));
   assertArrayEquals(
       [new lf.index.SingleKeyRange(5, 11, false, false)],
-      j([r.r1, r.r5]));
+      u([r.r1, r.r5]));
   assertArrayEquals(
       [new lf.index.SingleKeyRange(1, 10, false, false)],
-      j([r.r1, r.r6]));
-  assertArrayEquals([r.r1], j([r.r2, r.r3]));
-  assertArrayEquals([r.r2], j([r.r2, r.r4]));
-  assertArrayEquals([r.r1], j([r.r1, r.r2, r.r3, r.r4]));
+      u([r.r1, r.r6]));
+  assertArrayEquals([r.r1], u([r.r2, r.r3]));
+  assertArrayEquals([r.r2], u([r.r2, r.r4]));
+  assertArrayEquals([r.r1], u([r.r1, r.r2, r.r3, r.r4]));
   assertArrayEquals(
       [new lf.index.SingleKeyRange(1, 11, false, false)],
-      j([r.r1, r.r2, r.r3, r.r4, r.r5, r.r6]));
+      u([r.r1, r.r2, r.r3, r.r4, r.r5, r.r6]));
   assertArrayEquals([r.all],
-      j([r.atLeast1, r.r1, r.r5, r.r6, r.upTo1]));
+      u([r.atLeast1, r.r1, r.r5, r.r6, r.upTo1]));
 
 
   var excluding = [
@@ -373,7 +373,73 @@ function testJoin() {
     [r.r6, r.r4]
   ];
   excluding.forEach(function(pair) {
-    assertArrayEquals(pair, j(pair));
+    assertArrayEquals(pair, u(pair));
   });
-  assertArrayEquals([r.r7, r.r6, r.r5], j([r.r5, r.r7, r.r7, r.r6]));
+  assertArrayEquals([r.r7, r.r6, r.r5], u([r.r5, r.r7, r.r7, r.r6]));
+}
+
+
+function testIntersect() {
+  var i = lf.index.SingleKeyRange.intersect;
+  var r = generateTestRanges();
+
+  // Empty
+  assertNull(i([]));
+
+  // Self
+  assertObjectEquals(r.all, i([r.all]));
+  assertObjectEquals(r.upTo1, i([r.upTo1]));
+  assertObjectEquals(r.atLeast1, i([r.atLeast1]));
+  assertObjectEquals(r.only1, i([r.only1]));
+  assertObjectEquals(r.r1, i([r.r1]));
+  assertObjectEquals(r.r2, i([r.r2, r.r2]));
+  assertObjectEquals(r.r3, i([r.r3, r.r3]));
+  assertObjectEquals(r.r4, i([r.r4, r.r4]));
+
+  // Intersect with r.all should be self
+  assertObjectEquals(r.upTo1, i([r.all, r.upTo1]));
+  assertObjectEquals(r.r1, i([r.all, r.r1]));
+  assertObjectEquals(r.only1, i([r.only1, r.all]));
+  assertObjectEquals(r.atLeast1Ex, i([r.atLeast1Ex, r.all]));
+
+  // Excluding shall return null.
+  var excluding = [
+    [r.upTo1, r.only2],
+    [r.upTo1Ex, r.r6],
+    [r.upTo1, r.atLeast1Ex],
+    [r.upTo1, r.atLeast2],
+    [r.upTo1Ex, r.only1],
+    [r.upTo1Ex, r.only2],
+    [r.only1, r.atLeast1Ex],
+    [r.only1, r.atLeast2],
+    [r.r3, r.r5],
+    [r.r4, r.r5],
+    [r.r6, r.r2],
+    [r.r6, r.r4]
+  ];
+  excluding.forEach(function(pair) {
+    assertNull(i(pair));
+  });
+  assertNull(i([r.r1, r.r2, r.r3, r.r4, r.r5]));
+  assertNull(i([r.atLeast1, r.r1, r.r5, r.r6, r.upTo1]));
+
+  // Overlapping test cases.
+  assertObjectEquals(r.upTo1Ex, i([r.upTo1, r.upTo1Ex]));
+  assertObjectEquals(r.upTo1, i([r.upTo1, r.upTo2]));
+  assertObjectEquals(r.only1, i([r.upTo1, r.only1]));
+  assertObjectEquals(r.only1, i([r.upTo1, r.atLeast1]));
+  assertObjectEquals(r.only1, i([r.upTo1, r.r6]));
+  assertObjectEquals(r.upTo1Ex, i([r.upTo1Ex, r.upTo2]));
+  assertObjectEquals(r.only1, i([r.atLeast1, r.only1]));
+  assertObjectEquals(r.only2, i([r.atLeast1, r.only2]));
+  assertObjectEquals(r.r1, i([r.atLeast1, r.r1]));
+  assertObjectEquals(r.r6, i([r.atLeast1, r.r6]));
+  assertObjectEquals(r.r2, i([r.r1, r.r2]));
+  assertObjectEquals(r.r3, i([r.r1, r.r3]));
+  assertObjectEquals(r.r4, i([r.r1, r.r4]));
+  assertObjectEquals(lf.index.SingleKeyRange.only(10), i([r.r1, r.r5]));
+  assertObjectEquals(lf.index.SingleKeyRange.only(5), i([r.r1, r.r6]));
+  assertObjectEquals(r.r4, i([r.r2, r.r3]));
+  assertObjectEquals(r.r4, i([r.r1, r.r2, r.r3, r.r4]));
+  assertObjectEquals(lf.index.SingleKeyRange.only(10), i([r.r1, r.r2, r.r5]));
 }
