@@ -179,33 +179,40 @@ function testXor() {
 }
 
 
+function generateTestRanges() {
+  return {
+    all: lf.index.SingleKeyRange.all(),
+    upTo1: lf.index.SingleKeyRange.upperBound(1),
+    upTo1Ex: lf.index.SingleKeyRange.upperBound(1, true),
+    upTo2: lf.index.SingleKeyRange.upperBound(2),
+    atLeast1: lf.index.SingleKeyRange.lowerBound(1),
+    atLeast1Ex: lf.index.SingleKeyRange.lowerBound(1, true),
+    atLeast2: lf.index.SingleKeyRange.lowerBound(2),
+    only1: lf.index.SingleKeyRange.only(1),
+    only2: lf.index.SingleKeyRange.only(2),
+    r1: new lf.index.SingleKeyRange(5, 10, false, false),
+    r2: new lf.index.SingleKeyRange(5, 10, true, false),
+    r3: new lf.index.SingleKeyRange(5, 10, false, true),
+    r4: new lf.index.SingleKeyRange(5, 10, true, true),
+    r5: new lf.index.SingleKeyRange(10, 11, false, false),
+    r6: new lf.index.SingleKeyRange(1, 5, false, false),
+    r7: new lf.index.SingleKeyRange(-1, 0, false, false)
+  };
+}
+
+
 function testCompare() {
   var c = lf.index.SingleKeyRange.compare;
   var winner = lf.index.Favor;
 
-  var all = lf.index.SingleKeyRange.all();
-  var upTo1 = lf.index.SingleKeyRange.upperBound(1);
-  var upTo1Ex = lf.index.SingleKeyRange.upperBound(1, true);
-  var upTo2 = lf.index.SingleKeyRange.upperBound(2);
-  var atLeast1 = lf.index.SingleKeyRange.lowerBound(1);
-  var atLeast1Ex = lf.index.SingleKeyRange.lowerBound(1, true);
-  var atLeast2 = lf.index.SingleKeyRange.lowerBound(2);
-  var only1 = lf.index.SingleKeyRange.only(1);
-  var only2 = lf.index.SingleKeyRange.only(2);
-
-  var r1 = new lf.index.SingleKeyRange(5, 10, false, false);
-  var r2 = new lf.index.SingleKeyRange(5, 10, true, false);
-  var r3 = new lf.index.SingleKeyRange(5, 10, false, true);
-  var r4 = new lf.index.SingleKeyRange(5, 10, true, true);
-  var r5 = new lf.index.SingleKeyRange(10, 11, false, false);
-  var r6 = new lf.index.SingleKeyRange(1, 5, false, false);
+  var r = generateTestRanges();
 
   var cases = [
-    all,
-    upTo1, upTo1Ex,
-    atLeast1, atLeast1Ex,
-    only1,
-    r1, r2, r3, r4
+    r.all,
+    r.upTo1, r.upTo1Ex,
+    r.atLeast1, r.atLeast1Ex,
+    r.only1,
+    r.r1, r.r2, r.r3, r.r4
   ];
   cases.forEach(function(r) {
     assertEquals(winner.TIE, c(r, r));
@@ -213,24 +220,160 @@ function testCompare() {
 
   // Test pairs that RHS always wins.
   var pairs = [
-    [all, upTo1],
-    [all, atLeast1],
-    [all, only1],
-    [atLeast1, atLeast2],
-    [upTo1, upTo2],
-    [atLeast1, atLeast1Ex],
-    [upTo1Ex, upTo1],
-    [r1, r2],
-    [r3, r1],
-    [r1, r4],
-    [r3, r2],
-    [r1, r5],
-    [r6, r1],
-    [only1, only2]
+    [r.all, r.upTo1],
+    [r.all, r.atLeast1],
+    [r.all, r.only1],
+    [r.atLeast1, r.atLeast2],
+    [r.upTo1, r.upTo2],
+    [r.atLeast1, r.atLeast1Ex],
+    [r.upTo1Ex, r.upTo1],
+    [r.r1, r.r2],
+    [r.r3, r.r1],
+    [r.r1, r.r4],
+    [r.r3, r.r2],
+    [r.r1, r.r5],
+    [r.r6, r.r1],
+    [r.only1, r.only2]
   ];
 
   pairs.forEach(function(pair) {
     assertEquals(winner.RHS, c(pair[0], pair[1]));
     assertEquals(winner.LHS, c(pair[1], pair[0]));
   });
+}
+
+
+function testOverlaps() {
+  var r = generateTestRanges();
+
+  var cases = [
+    r.all,
+    r.upTo1, r.upTo1Ex,
+    r.atLeast1, r.atLeast1Ex,
+    r.only1,
+    r.r1, r.r2, r.r3, r.r4
+  ];
+  cases.forEach(function(range) {
+    assertTrue(range.overlaps(range));
+    assertTrue(range.overlaps(r.all));
+    assertTrue(r.all.overlaps(range));
+  });
+
+  var overlapping = [
+    [r.upTo1, r.upTo1Ex],
+    [r.upTo1, r.upTo2],
+    [r.upTo1, r.only1],
+    [r.upTo1, r.atLeast1],
+    [r.upTo1, r.r6],
+    [r.upTo1Ex, r.upTo2],
+    [r.atLeast1, r.only1],
+    [r.atLeast1, r.only2],
+    [r.atLeast1, r.r1],
+    [r.atLeast1, r.r6],
+    [r.r1, r.r2],
+    [r.r1, r.r3],
+    [r.r1, r.r4],
+    [r.r1, r.r5],
+    [r.r1, r.r6],
+    [r.r2, r.r3],
+    [r.r2, r.r4]
+  ];
+  overlapping.forEach(function(pair) {
+    assertTrue(pair[0].overlaps(pair[1]));
+    assertTrue(pair[1].overlaps(pair[0]));
+  });
+
+  var excluding = [
+    [r.upTo1, r.only2],
+    [r.upTo1Ex, r.r6],
+    [r.upTo1, r.atLeast1Ex],
+    [r.upTo1, r.atLeast2],
+    [r.upTo1Ex, r.only1],
+    [r.upTo1Ex, r.only2],
+    [r.only1, r.atLeast1Ex],
+    [r.only1, r.atLeast2],
+    [r.r3, r.r5],
+    [r.r4, r.r5],
+    [r.r2, r.r6],
+    [r.r4, r.r6]
+  ];
+  excluding.forEach(function(pair) {
+    assertFalse(pair[0].overlaps(pair[1]));
+    assertFalse(pair[1].overlaps(pair[0]));
+  });
+}
+
+
+function testJoin() {
+  var j = lf.index.SingleKeyRange.join;
+  var r = generateTestRanges();
+
+  // Empty
+  assertArrayEquals([], j([]));
+
+  // Self
+  assertArrayEquals([r.all], j([r.all]));
+  assertArrayEquals([r.upTo1], j([r.upTo1]));
+  assertArrayEquals([r.atLeast1], j([r.atLeast1]));
+  assertArrayEquals([r.only1], j([r.only1]));
+  assertArrayEquals([r.r1], j([r.r1]));
+  assertArrayEquals([r.r2], j([r.r2, r.r2]));
+  assertArrayEquals([r.r3], j([r.r3, r.r3]));
+  assertArrayEquals([r.r4], j([r.r4, r.r4]));
+
+  // Merge to r.all
+  assertArrayEquals([r.all], j([r.all, r.upTo1]));
+  assertArrayEquals([r.all], j([r.all, r.r1, r.r5]));
+  assertArrayEquals([r.all], j([r.only2, r.only1, r.all]));
+  assertArrayEquals([r.all], j([r.r1, r.only2, r.atLeast1Ex, r.all]));
+
+  // Overlapping test cases.
+  assertArrayEquals([r.upTo1], j([r.upTo1, r.upTo1Ex]));
+  assertArrayEquals([r.upTo2], j([r.upTo1, r.upTo2]));
+  assertArrayEquals([r.upTo1], j([r.upTo1, r.only1]));
+  assertArrayEquals([r.all], j([r.upTo1, r.atLeast1]));
+  assertArrayEquals(
+      [lf.index.SingleKeyRange.upperBound(5)], j([r.upTo1, r.r6]));
+  assertArrayEquals([r.upTo2], j([r.upTo1Ex, r.upTo2]));
+  assertArrayEquals([r.atLeast1], j([r.atLeast1, r.only1]));
+  assertArrayEquals([r.atLeast1], j([r.atLeast1, r.only2]));
+  assertArrayEquals([r.atLeast1], j([r.atLeast1, r.r1]));
+  assertArrayEquals([r.atLeast1], j([r.atLeast1, r.r6]));
+  assertArrayEquals([r.r1], j([r.r1, r.r2]));
+  assertArrayEquals([r.r1], j([r.r1, r.r3]));
+  assertArrayEquals([r.r1], j([r.r1, r.r4]));
+  assertArrayEquals(
+      [new lf.index.SingleKeyRange(5, 11, false, false)],
+      j([r.r1, r.r5]));
+  assertArrayEquals(
+      [new lf.index.SingleKeyRange(1, 10, false, false)],
+      j([r.r1, r.r6]));
+  assertArrayEquals([r.r1], j([r.r2, r.r3]));
+  assertArrayEquals([r.r2], j([r.r2, r.r4]));
+  assertArrayEquals([r.r1], j([r.r1, r.r2, r.r3, r.r4]));
+  assertArrayEquals(
+      [new lf.index.SingleKeyRange(1, 11, false, false)],
+      j([r.r1, r.r2, r.r3, r.r4, r.r5, r.r6]));
+  assertArrayEquals([r.all],
+      j([r.atLeast1, r.r1, r.r5, r.r6, r.upTo1]));
+
+
+  var excluding = [
+    [r.upTo1, r.only2],
+    [r.upTo1Ex, r.r6],
+    [r.upTo1, r.atLeast1Ex],
+    [r.upTo1, r.atLeast2],
+    [r.upTo1Ex, r.only1],
+    [r.upTo1Ex, r.only2],
+    [r.only1, r.atLeast1Ex],
+    [r.only1, r.atLeast2],
+    [r.r3, r.r5],
+    [r.r4, r.r5],
+    [r.r6, r.r2],
+    [r.r6, r.r4]
+  ];
+  excluding.forEach(function(pair) {
+    assertArrayEquals(pair, j(pair));
+  });
+  assertArrayEquals([r.r7, r.r6, r.r5], j([r.r5, r.r7, r.r7, r.r6]));
 }
