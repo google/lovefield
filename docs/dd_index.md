@@ -1,6 +1,6 @@
 # Lovefield Design Documents
 
-The design documents listed below are still working drafts and may change significantly.
+The design documents listed below are still work in progress.
 
 ## Table of Contents
 
@@ -8,18 +8,12 @@ The design documents listed below are still working drafts and may change signif
 
 [1. Database Schema](dd/01_schema.md)
 
-[2. SPAC](dd/02_spac.md)
+[2. Data Store](dd/02_data_store.md)
 
-[3. Backstore and Upgrade](dd/03_backstore.md)
+[3. Life of Database](dd/03_life_of_db.md)
 
-[4. Cache and Prefetcher](dd/04_cache.md)
+[4. Query Engine](dd/04_query_engine.md)
 
-[5. Query Engine](dd/05_query_engine.md)
+[5. Transaction](dd/05_transaction.md)
 
-[6. Transaction Management](dd/06_tx.md)
-
-[7. Indices](dd/07_indices.md)
-
-[8. Data Binding](dd/08_data_binding.md)
-
-[9. Constraint Enforcement](dd/09_constraint.md)
+[6. Indices](dd/06_indices.md)

@@ -21720,31 +21720,52 @@ lf.service.ServiceId.prototype.toString = function() {
 };
 
 
-/** @const {!lf.service.ServiceId.<!lf.BackStore>} */
+/**
+ * The backing data store used by this connection.
+ * @const {!lf.service.ServiceId.<!lf.BackStore>}
+ */
 lf.service.BACK_STORE = new lf.service.ServiceId('backstore');
 
 
-/** @const {!lf.service.ServiceId.<!lf.cache.Cache>} */
+/**
+ * The shared row cache used by this connection.
+ * @const {!lf.service.ServiceId.<!lf.cache.Cache>}
+ */
 lf.service.CACHE = new lf.service.ServiceId('cache');
 
 
-/** @const {!lf.service.ServiceId.<!lf.index.IndexStore>} */
+/**
+ * The shared store of all indices defined.
+ * @const {!lf.service.ServiceId.<!lf.index.IndexStore>}
+ */
 lf.service.INDEX_STORE = new lf.service.ServiceId('indexstore');
 
 
-/** @const {!lf.service.ServiceId.<!lf.proc.QueryEngine>} */
+/**
+ * Query engine used for generating execution plan.
+ * @const {!lf.service.ServiceId.<!lf.proc.QueryEngine>}
+ */
 lf.service.QUERY_ENGINE = new lf.service.ServiceId('engine');
 
 
-/** @const {!lf.service.ServiceId.<!lf.proc.Runner>} */
+/**
+ * Query runner which executes transactions.
+ * @const {!lf.service.ServiceId.<!lf.proc.Runner>}
+ */
 lf.service.RUNNER = new lf.service.ServiceId('runner');
 
 
-/** @const {!lf.service.ServiceId.<!lf.ObserverRegistry>} */
+/**
+ * Observer registry storing all observing queries.
+ * @const {!lf.service.ServiceId.<!lf.ObserverRegistry>}
+ */
 lf.service.OBSERVER_REGISTRY = new lf.service.ServiceId('observerregistry');
 
 
-/** @const {!lf.service.ServiceId.<!lf.schema.Database>} */
+/**
+ * Finalized schema associated with this connection.
+ * @const {!lf.service.ServiceId.<!lf.schema.Database>}
+ */
 lf.service.SCHEMA = new lf.service.ServiceId('schema');
 
 /**

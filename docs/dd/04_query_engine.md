@@ -58,7 +58,7 @@ so it is easier to use an example database schema throughout those sections, as
 well as an example database query
 ### Example database schema
 ```
-Employee(id, firstName, lastName, salary, age, jobId)
+Employee(id, festoon, Liston, salary, age, jobId)
 Job(id, title, minSalary, maxSalary)
 ```
 ### Example query

@@ -1,12 +1,13 @@
-#Lovefield Design Document
-## Backstore
+# Lovefield Design Document
+
+## 2. Data Store
 
 In the beginning of Lovefield design, it was identified that two different
-backstore needs to exist: a persistent backstore for applications that need
+data stores need to exist: a persistent backstore for applications that need
 persistence, and a volatile in-memory backstore for remaining applications and
-for testing purposes. By defining the interface of backstore, we hope that the
-need to use persistent backstore in tests can be vastly reduced, and backstores
-can be swapped for better testability.
+for testing purposes. By defining the interface of `lf.raw.BackStore`, the
+need to use persistent backstore in tests is vastly reduced, and data stores
+can be swapped for better test-ability.
 
 > #### Why not persistent storage in testing?
 > One cruel fact of testing is that tests can fail, which is the reason why
@@ -15,38 +16,42 @@ can be swapped for better testability.
 > when a test is failed by a JavaScript exception. Moreover, most tests shall
 > not involve persistent storage anyway.
 
-As a result, there are two different backstores being created: IndexedDB as
-the persistent store, and Memory as the temporary/volatile store.
+As a result, there are two different data store implementations created:
+IndexedDB as the persistent store, and Memory as the temporary/volatile store.
 
-### Common Nominator
-A backstore has three methods:
+### 2.1 Common Nominator
 
-* `init`: indicate the initialization of a backstore, which typically means
-  establishing connection to backstore. The database upgrade process is also
-  initiated here. The initialization also identifies maximum row id to-date
-  and continue row id generation from there.
+A data store has three methods:
 
-* `createTx`: indicate the backstore shall return a transaction object, also
-  hint the backstore that an atomic writing operation is going to happen. The
-  transaction will be associated with a unique journal which will guarantee
-  all the changes are flushed at once.
+* `init`: indicate the initialization of a data store, which typically means
+  establishing connection to persisted instance. The database upgrade process
+  is also initiated here. The initialization also identifies maximum row id
+  to-date and continue row id generation from there.
 
-* `close`: closes the connection to backstore. This is a best-efforts call.
+* `createTx`: return a transaction object from data store, and hint the data
+  store that an atomic writing operation is going to happen. The transaction
+  will be associated with a unique journal which will guarantee all the changes
+  are flushed at once. Lovefield only requires the data store to support atomic
+  writes. Lovefield manages its own transactions and will group all writes
+  of a transaction into one single flush.
 
-All backstores have to support these methods.
+* `close`: closes the connection to persisted instance. This call is
+  best-effort due to IndexedDB limitations.
 
-### Memory Store
+### 2.2 Memory Store
+
 Memory store internally is a goog.structs.Map which maps table name to table.
 The table is also a goog.structs.Map that maps row id to the lf.Row object of
 that table. The memory store transaction is a naive Promise that will resolve
 on commit and reject on abort.
 
-### IndexedDB Store
+### 2.3 IndexedDB Store
+
 Lovefield wraps IndexedDB objects in different classes:
 
 | IndexedDB objects | Wrapper                                           |
 |-------------------|---------------------------------------------------|
-|`IDBDatabase`      |`lf.backstore.IndexedDB` and `lf.backstore.IndexedDBRawBackstore` (for onupgrade helpers). |
+|`IDBDatabase`      |`lf.backstore.IndexedDB` and `lf.backstore.IndexedDBRawBackstore` (for `onupgrade` helpers). |
 |`IDBTransaction`   |`lf.backstore.IndexedDBTx`                         |
 |`IDBObjectStore`   |`lf.backstore.ObjectStore` and `lf.backstore.BundledObjectStore` (for bundled mode). |
 
@@ -54,31 +59,33 @@ Lovefield wraps IndexedDB objects in different classes:
 The goals of the wrapper:
 
 * Provide a cross-browser shim that minimize browser-dependent code.
-* Handle trappy auto-commit for users.
+* Handle transaction auto-commit for users.
 * Use best practice to obtain best performance.
 * Handle upgrade process in a more elegant way.
 
 Each IndexedDB transaction is associated with a `Journal` object. The `Journal`
 object will carry all changes performed in a logical `lf.Transaction` object,
 and flush them all at once via the physical IndexedDB transaction object when
-the logical transaction is commited. As a result, the IndexedDB transaction
+the logical transaction is committed. As a result, the IndexedDB transaction
 object is named `Tx` throughout the code to distinguish from the logical
 transaction object.
 
+### 2.4 Database Upgrade
 
-### Database Upgrade
 The upgrade process is triggered by bumping up the schema version. Lovefield
 will open the database using updated number, and in turn IndexedDB will fire the
 `onupgradeneeded` event. In that event, Lovefield will
 
-1. create tables (i.e. objectstores) which exist in schema but not in IndexedDB
-2. wrap the database instance into `lf.backstore.IndexedDBRawBackstore`
+1. create tables (i.e. `objectstores`) which exist in schema but not in
+   IndexedDB
+2. wrap the database connection into `lf.backstore.IndexedDBRawBackstore`
 3. call user-provided `onUpgrade` function with the wrapped instance
 
 This design still exposes the user under the risk of accidentally auto-commit.
-However, we could not find a better alternative that works cross-browser.
+However, there existed no known better alternative that works cross-browser.
 
-### Bundled Mode Experiment
+### 2.5 Bundled Mode Experiment
+
 In bundled mode, Lovefield will store rows differently. Internally Lovefield
 assigns a unique row id to each logical row. In bundled mode, Lovefield will
 bundle multiple (up to 512) logical rows into one physical row in IndexedDB.
@@ -109,7 +116,10 @@ is marked as experimental.
 
 Users who enabled bundled mode needs to keep the following facts in mind:
 
-* Bundled mode is designed mainly for data tables with 50K+ rows. Smaller
+* Writing or updating a row for bundled mode is slower, because it needs
+  to pay the tax of extra grouping. Benchmark shows that updating 10K rows is
+  about 300-500 ms slower. In exchange, the bulk load is many seconds faster.
+* Bundled mode is designed mainly for data tables with 10K+ rows. Smaller
   database may experience slower performance by enabling bundle mode. User is
   supposed to benchmark and determine if bundled mode is feasible.
 * There is no support for converting non-bundled to bundled database, and vice
