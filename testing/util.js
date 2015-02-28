@@ -108,3 +108,18 @@ lf.testing.util.selectAll = function(global, tableSchema) {
       tableSchema.deserializeRow.bind(tableSchema));
   return table.get([]);
 };
+
+
+/**
+ * Instruments the return value of lf.index.Index#cost().
+ * @param {!goog.testing.PropertyReplacer} propertyReplacer
+ * @param {!lf.index.IndexStore} indexStore
+ * @param {!lf.schema.Index} indexSchema
+ * @param {number} cost The cost to be used.
+ */
+lf.testing.util.simulateIndexCost = function(
+    propertyReplacer, indexStore, indexSchema, cost) {
+  var index = indexStore.get(indexSchema.getNormalizedName());
+  propertyReplacer.replace(
+      index, 'cost', function() { return cost; });
+};

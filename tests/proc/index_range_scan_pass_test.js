@@ -32,6 +32,7 @@ goog.require('lf.proc.SelectStep');
 goog.require('lf.proc.TableAccessFullStep');
 goog.require('lf.schema.DataStoreType');
 goog.require('lf.service');
+goog.require('lf.testing.util');
 goog.require('lf.tree');
 
 
@@ -128,8 +129,10 @@ function testTree1() {
       '-table_access_by_row_id(Employee)\n' +
       '--index_range_scan(Employee.pkEmployee, (100, unbound], ASC)\n';
 
-  simulateIndexCost(e.salary.getIndices()[0], 100);
-  simulateIndexCost(e.id.getIndices()[0], 5);
+  lf.testing.util.simulateIndexCost(
+      propertyReplacer, indexStore, e.salary.getIndices()[0], 100);
+  lf.testing.util.simulateIndexCost(
+      propertyReplacer, indexStore, e.id.getIndices()[0], 5);
 
   var rootNodeBefore = constructTree1();
   assertEquals(treeBefore, lf.tree.toString(rootNodeBefore));
@@ -167,10 +170,14 @@ function testTree2() {
       '-----table_access_by_row_id(Job)\n' +
       '------index_range_scan(Job.pkJob, (100, unbound], ASC)\n';
 
-  simulateIndexCost(e.salary.getIndices()[0], 100);
-  simulateIndexCost(e.id.getIndices()[0], 5);
-  simulateIndexCost(j.maxSalary.getIndices()[0], 100);
-  simulateIndexCost(j.id.getIndices()[0], 5);
+  lf.testing.util.simulateIndexCost(
+      propertyReplacer, indexStore, e.salary.getIndices()[0], 100);
+  lf.testing.util.simulateIndexCost(
+      propertyReplacer, indexStore, e.id.getIndices()[0], 5);
+  lf.testing.util.simulateIndexCost(
+      propertyReplacer, indexStore, j.maxSalary.getIndices()[0], 100);
+  lf.testing.util.simulateIndexCost(
+      propertyReplacer, indexStore, j.id.getIndices()[0], 5);
 
   var rootNodeBefore = constructTree2();
   assertEquals(treeBefore, lf.tree.toString(rootNodeBefore));
@@ -220,18 +227,6 @@ function testTree3() {
   var rootNodeAfter = pass.rewrite(rootNodeBefore);
 
   assertEquals(treeAfter, lf.tree.toString(rootNodeAfter));
-}
-
-
-/**
- * Instruments the return value of lf.index.Index#cost().
- * @param {!lf.schema.Index} indexSchema
- * @param {number} cost The cost to be used.
- */
-function simulateIndexCost(indexSchema, cost) {
-  var index = indexStore.get(indexSchema.getNormalizedName());
-  propertyReplacer.replace(
-      index, 'cost', function() { return cost; });
 }
 
 

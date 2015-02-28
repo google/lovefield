@@ -16,6 +16,7 @@
  */
 goog.setTestOnly();
 goog.require('goog.testing.AsyncTestCase');
+goog.require('goog.testing.PropertyReplacer');
 goog.require('goog.testing.jsunit');
 goog.require('lf.Global');
 goog.require('lf.proc.DeleteNode');
@@ -23,6 +24,7 @@ goog.require('lf.proc.PhysicalPlanFactory');
 goog.require('lf.proc.SelectNode');
 goog.require('lf.proc.TableAccessNode');
 goog.require('lf.testing.MockEnv');
+goog.require('lf.testing.util');
 goog.require('lf.tree');
 
 
@@ -39,13 +41,24 @@ var physicalPlanFactory;
 var env;
 
 
+/** @type {!goog.testing.PropertyReplacer} */
+var propertyReplacer;
+
+
 function setUp() {
   asyncTestCase.waitForAsync('setUp');
+  propertyReplacer = new goog.testing.PropertyReplacer();
+
   env = new lf.testing.MockEnv();
   env.init().then(function() {
     physicalPlanFactory = new lf.proc.PhysicalPlanFactory(lf.Global.get());
     asyncTestCase.continueTesting();
   }, fail);
+}
+
+
+function tearDown() {
+  propertyReplacer.reset();
 }
 
 
@@ -69,6 +82,11 @@ function testCreate_DeletePlan() {
       '---index_range_scan(tableA.idxName, [name, name], DESC)\n';
 
   var table = env.schema.tables()[0];
+  lf.testing.util.simulateIndexCost(
+      propertyReplacer, env.indexStore, table['id'].getIndices()[0], 100);
+  lf.testing.util.simulateIndexCost(
+      propertyReplacer, env.indexStore, table['name'].getIndices()[0], 1);
+
   var deleteNode = new lf.proc.DeleteNode(table);
   var selectNode1 = new lf.proc.SelectNode(table['id'].eq('id'));
   deleteNode.addChild(selectNode1);
