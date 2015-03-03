@@ -19,7 +19,6 @@ goog.require('goog.Promise');
 goog.require('goog.testing.AsyncTestCase');
 goog.require('goog.testing.jsunit');
 goog.require('goog.testing.recordFunction');
-goog.require('goog.userAgent.product');
 goog.require('lf.Global');
 goog.require('lf.Row');
 goog.require('lf.Type');
@@ -32,6 +31,7 @@ goog.require('lf.schema.Constraint');
 goog.require('lf.schema.Database');
 goog.require('lf.schema.Table');
 goog.require('lf.service');
+goog.require('lf.testing.Capability');
 
 
 /** @type {!goog.testing.AsyncTestCase} */
@@ -54,8 +54,17 @@ var CONTENTS2 = {'id': 'hello2', 'name': 'world2'};
 var MAGIC = Math.pow(2, lf.backstore.Page.BUNDLE_EXPONENT);
 
 
+/** @type {!lf.testing.Capability} */
+var capability;
+
+
+function setUpPage() {
+  capability = lf.testing.Capability.get();
+}
+
+
 function setUp() {
-  if (goog.userAgent.product.SAFARI) {
+  if (capability.memoryDbOnly) {
     return;
   }
 
@@ -64,10 +73,11 @@ function setUp() {
   var global = lf.Global.get();
   var cache = new lf.cache.DefaultCache();
   global.registerService(lf.service.CACHE, cache);
+  capability = lf.testing.Capability.get();
 }
 
 function testConvert() {
-  if (goog.userAgent.product.SAFARI) {
+  if (capability.memoryDbOnly) {
     return;
   }
 
@@ -92,7 +102,7 @@ function testConvert() {
 // Tests that onUpgrade function is still called with version 0 for a new DB
 // instance.
 function testNewDBInstance() {
-  if (goog.userAgent.product.SAFARI) {
+  if (capability.memoryDbOnly) {
     return;
   }
 
@@ -216,7 +226,7 @@ function prepareBundledTxForTableA(db) {
 
 
 function testAddTableColumn() {
-  if (goog.userAgent.product.SAFARI) {
+  if (capability.memoryDbOnly) {
     return;
   }
 
@@ -245,7 +255,7 @@ function testAddTableColumn() {
 
 
 function testAddTableColumn_Bundled() {
-  if (goog.userAgent.product.SAFARI) {
+  if (capability.memoryDbOnly) {
     return;
   }
 
@@ -288,7 +298,7 @@ function upgradeDropTableColumn(dbInterface) {
 
 
 function testDropTableColumn() {
-  if (goog.userAgent.product.SAFARI) {
+  if (capability.memoryDbOnly) {
     return;
   }
 
@@ -315,7 +325,7 @@ function testDropTableColumn() {
 
 
 function testDropTableColumn_Bundled() {
-  if (goog.userAgent.product.SAFARI) {
+  if (capability.memoryDbOnly) {
     return;
   }
 
@@ -356,7 +366,7 @@ function upgradeRenameTableColumn(dbInterface) {
 
 
 function testRenameTableColumn() {
-  if (goog.userAgent.product.SAFARI) {
+  if (capability.memoryDbOnly) {
     return;
   }
 
@@ -385,7 +395,7 @@ function testRenameTableColumn() {
 
 
 function testRenameTableColumn_Bundled() {
-  if (goog.userAgent.product.SAFARI) {
+  if (capability.memoryDbOnly) {
     return;
   }
 
@@ -428,7 +438,7 @@ function upgradeDropTable(dbInterface) {
 
 
 function testDropTable() {
-  if (goog.userAgent.product.SAFARI) {
+  if (capability.memoryDbOnly) {
     return;
   }
 
@@ -465,7 +475,7 @@ function upgradeDumping(dbInterface) {
 
 
 function testDump() {
-  if (goog.userAgent.product.SAFARI) {
+  if (capability.memoryDbOnly) {
     return;
   }
 
@@ -487,7 +497,7 @@ function testDump() {
 
 
 function testDump_Bundled() {
-  if (goog.userAgent.product.SAFARI) {
+  if (capability.memoryDbOnly) {
     return;
   }
 

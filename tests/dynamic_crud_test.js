@@ -17,10 +17,10 @@
 goog.setTestOnly();
 goog.require('goog.testing.AsyncTestCase');
 goog.require('goog.testing.jsunit');
-goog.require('goog.userAgent.product');
 goog.require('lf.Type');
 goog.require('lf.schema');
 goog.require('lf.schema.DataStoreType');
+goog.require('lf.testing.Capability');
 goog.require('lf.testing.SmokeTester');
 
 
@@ -30,6 +30,10 @@ var asyncTestCase = goog.testing.AsyncTestCase.createAndInstall('CRUDTest');
 
 /** @type {!lf.testing.SmokeTester} */
 var tester;
+
+
+/** @type {!lf.testing.Capability} */
+var capability;
 
 
 /** @return {!lf.schema.Builder} */
@@ -44,9 +48,11 @@ function createSchemaBuilder() {
 
 
 function setUp() {
+  capability = lf.testing.Capability.get();
+
   asyncTestCase.waitForAsync('setUp');
   var options = {
-    storeType: goog.userAgent.product.SAFARI ? lf.schema.DataStoreType.MEMORY :
+    storeType: capability.memoryDbOnly ? lf.schema.DataStoreType.MEMORY :
         lf.schema.DataStoreType.INDEXED_DB
   };
   var builder = createSchemaBuilder();

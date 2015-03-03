@@ -20,7 +20,6 @@ goog.require('goog.structs.Set');
 goog.require('goog.testing.AsyncTestCase');
 goog.require('goog.testing.PropertyReplacer');
 goog.require('goog.testing.jsunit');
-goog.require('goog.userAgent.product');
 goog.require('hr.bdb');
 goog.require('hr.db');
 goog.require('lf.Row');
@@ -33,6 +32,7 @@ goog.require('lf.cache.DefaultCache');
 goog.require('lf.index.IndexMetadata');
 goog.require('lf.index.IndexMetadataRow');
 goog.require('lf.service');
+goog.require('lf.testing.Capability');
 
 
 /** @type {!goog.testing.AsyncTestCase} */
@@ -43,7 +43,12 @@ var asyncTestCase = goog.testing.AsyncTestCase.createAndInstall('IndexedDB');
 var propertyReplacer;
 
 
+/** @type {!lf.testing.Capability} */
+var capability;
+
+
 function setUp() {
+  capability = lf.testing.Capability.get();
   propertyReplacer = new goog.testing.PropertyReplacer();
 }
 
@@ -93,7 +98,7 @@ function testInit_IndexedDB_Bundled() {
  * @param {boolean} bundledMode Whether to initialize the DB in BUNDLED mode.
  */
 function checkInit_IndexedDB(schema, global, bundledMode)  {
-  if (goog.userAgent.product.SAFARI) {
+  if (capability.memoryDbOnly) {
     return;
   }
 

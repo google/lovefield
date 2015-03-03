@@ -18,8 +18,8 @@ goog.setTestOnly();
 goog.require('goog.Promise');
 goog.require('goog.testing.AsyncTestCase');
 goog.require('goog.testing.jsunit');
-goog.require('goog.userAgent.product');
 goog.require('hr.bdb');
+goog.require('lf.testing.Capability');
 goog.require('lf.testing.SmokeTester');
 
 
@@ -32,8 +32,17 @@ var asyncTestCase =
 var tester;
 
 
+/** @type {!lf.testing.Capability} */
+var capability;
+
+
+function setUpPage() {
+  capability = lf.testing.Capability.get();
+}
+
+
 function setUp() {
-  if (goog.userAgent.product.SAFARI) {
+  if (capability.memoryDbOnly) {
     return;
   }
 
@@ -48,7 +57,7 @@ function setUp() {
 
 
 function testCRUD() {
-  if (goog.userAgent.product.SAFARI) {
+  if (capability.memoryDbOnly) {
     return;
   }
 
@@ -60,7 +69,7 @@ function testCRUD() {
 
 
 function testOverlappingScope_MultipleInserts() {
-  if (goog.userAgent.product.SAFARI) {
+  if (capability.memoryDbOnly) {
     return;
   }
 
@@ -72,7 +81,7 @@ function testOverlappingScope_MultipleInserts() {
 
 
 function testTransaction() {
-  if (goog.userAgent.product.SAFARI) {
+  if (capability.memoryDbOnly) {
     return;
   }
 

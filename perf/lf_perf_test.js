@@ -19,10 +19,10 @@ goog.require('goog.Promise');
 goog.require('goog.net.XhrIo');
 goog.require('goog.testing.AsyncTestCase');
 goog.require('goog.testing.jsunit');
-goog.require('goog.userAgent.product');
 goog.require('hr.db');
 goog.require('lf.schema.DataStoreType');
 goog.require('lf.testing.Benchmark');
+goog.require('lf.testing.Capability');
 goog.require('lf.testing.hrSchema.MockDataGenerator');
 goog.require('lf.testing.perf.DefaultBenchmark');
 goog.require('lf.testing.perf.SelectBenchmark');
@@ -38,6 +38,16 @@ asyncTestCase.stepTimeout = 30 * 60 * 1000;  // 30 minutes
 
 /** @const {number} */
 var REPETITIONS = 5;
+
+
+/** @type {!lf.testing.Capability} */
+var capability;
+
+
+function setUpPage() {
+  capability = lf.testing.Capability.get();
+}
+
 
 function benchmarkSetUp() {
   var resolver = goog.Promise.withResolver();
@@ -58,7 +68,7 @@ function benchmarkSetUp() {
 }
 
 function test1LoadingEmptyDB() {
-  if (goog.userAgent.product.SAFARI) {
+  if (capability.memoryDbOnly) {
     return;
   }
 
@@ -116,7 +126,7 @@ function fullTableOps(test2, benchmark) {
 }
 
 function test2FullTableOps() {
-  if (goog.userAgent.product.SAFARI) {
+  if (capability.memoryDbOnly) {
     return;
   }
 
@@ -198,7 +208,7 @@ function pkTableOps(test3, benchmark) {
 }
 
 function test3PKTableOps() {
-  if (goog.userAgent.product.SAFARI) {
+  if (capability.memoryDbOnly) {
     return;
   }
 
@@ -318,7 +328,7 @@ function selectRunner(name, db) {
 }
 
 function test4Select() {
-  if (goog.userAgent.product.SAFARI) {
+  if (capability.memoryDbOnly) {
     return;
   }
 
@@ -346,7 +356,7 @@ function test4Select_Mem() {
 }
 
 function test5LoadingPopulatedDB() {
-  if (goog.userAgent.product.SAFARI) {
+  if (capability.memoryDbOnly) {
     return;
   }
 

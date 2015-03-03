@@ -19,7 +19,6 @@ goog.require('goog.Promise');
 goog.require('goog.testing.AsyncTestCase');
 goog.require('goog.testing.PropertyReplacer');
 goog.require('goog.testing.jsunit');
-goog.require('goog.userAgent.product');
 goog.require('lf.Global');
 goog.require('lf.Row');
 goog.require('lf.TransactionType');
@@ -28,6 +27,7 @@ goog.require('lf.cache.DefaultCache');
 goog.require('lf.cache.Journal');
 goog.require('lf.index.MemoryIndexStore');
 goog.require('lf.service');
+goog.require('lf.testing.Capability');
 goog.require('lf.testing.MockSchema');
 goog.require('lf.testing.backstore.ScudTester');
 goog.require('lf.testing.util');
@@ -57,12 +57,17 @@ var schema;
 var db;
 
 
+/** @type {!lf.testing.Capability} */
+var capability;
+
+
 function setUpPage() {
   propertyReplacer = new goog.testing.PropertyReplacer();
+  capability = lf.testing.Capability.get();
 }
 
 function setUp() {
-  if (goog.userAgent.product.SAFARI) {
+  if (capability.memoryDbOnly) {
     return;
   }
 
@@ -77,7 +82,7 @@ function setUp() {
 
 
 function tearDown() {
-  if (goog.userAgent.product.SAFARI) {
+  if (capability.memoryDbOnly) {
     return;
   }
 
@@ -105,7 +110,7 @@ function tearDown() {
 
 
 function testSCUD() {
-  if (goog.userAgent.product.SAFARI) {
+  if (capability.memoryDbOnly) {
     return;
   }
 
@@ -121,7 +126,7 @@ function testSCUD() {
 
 
 function testSCUD_Bundled() {
-  if (goog.userAgent.product.SAFARI) {
+  if (capability.memoryDbOnly) {
     return;
   }
 
@@ -138,7 +143,7 @@ function testSCUD_Bundled() {
 
 
 function testTwoTableInserts_Bundled() {
-  if (goog.userAgent.product.SAFARI) {
+  if (capability.memoryDbOnly) {
     return;
   }
 
@@ -237,7 +242,7 @@ function testTwoTableInserts_Bundled() {
 
 /** @suppress {accessControls} */
 function testScanRowId() {
-  if (goog.userAgent.product.SAFARI) {
+  if (capability.memoryDbOnly) {
     return;
   }
 
@@ -293,7 +298,7 @@ function testScanRowId() {
  * @suppress {accessControls}
  */
 function testScanRowId_Empty() {
-  if (goog.userAgent.product.SAFARI) {
+  if (capability.memoryDbOnly) {
     return;
   }
 
@@ -309,7 +314,7 @@ function testScanRowId_Empty() {
 
 /** @suppress {accessControls} */
 function testScanRowId_BundledDB() {
-  if (goog.userAgent.product.SAFARI) {
+  if (capability.memoryDbOnly) {
     return;
   }
 
@@ -363,7 +368,7 @@ function filterTableA() {
 }
 
 function testUpgrade() {
-  if (goog.userAgent.product.SAFARI) {
+  if (capability.memoryDbOnly) {
     return;
   }
 

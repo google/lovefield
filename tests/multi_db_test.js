@@ -18,9 +18,9 @@ goog.setTestOnly();
 goog.require('goog.Promise');
 goog.require('goog.testing.AsyncTestCase');
 goog.require('goog.testing.jsunit');
-goog.require('goog.userAgent.product');
 goog.require('hr.db');
 goog.require('lf.schema.DataStoreType');
+goog.require('lf.testing.Capability');
 goog.require('lf.testing.SmokeTester');
 goog.require('order.db');
 
@@ -41,10 +41,16 @@ var hrTester;
 var orderTester;
 
 
+/** @type {!lf.testing.Capability} */
+var capability;
+
+
 function setUp() {
+  capability = lf.testing.Capability.get();
+
   asyncTestCase.waitForAsync('setUp');
   var options = {
-    storeType: goog.userAgent.product.SAFARI ? lf.schema.DataStoreType.MEMORY :
+    storeType: capability.memoryDbOnly ? lf.schema.DataStoreType.MEMORY :
         lf.schema.DataStoreType.INDEXED_DB
   };
   goog.Promise.all([

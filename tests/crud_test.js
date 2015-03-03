@@ -17,9 +17,9 @@
 goog.setTestOnly();
 goog.require('goog.testing.AsyncTestCase');
 goog.require('goog.testing.jsunit');
-goog.require('goog.userAgent.product');
 goog.require('hr.db');
 goog.require('lf.schema.DataStoreType');
+goog.require('lf.testing.Capability');
 goog.require('lf.testing.SmokeTester');
 
 
@@ -31,12 +31,16 @@ var asyncTestCase = goog.testing.AsyncTestCase.createAndInstall('CRUDTest');
 var tester;
 
 
-function setUp() {
-  asyncTestCase.waitForAsync('setUp');
-  var volatile = goog.userAgent.product.SAFARI;
+/** @type {!lf.testing.Capability} */
+var capability;
 
+
+function setUp() {
+  capability = lf.testing.Capability.get();
+
+  asyncTestCase.waitForAsync('setUp');
   var options = {
-    'storeType': volatile ? lf.schema.DataStoreType.MEMORY :
+    'storeType': capability.memoryDbOnly ? lf.schema.DataStoreType.MEMORY :
         lf.schema.DataStoreType.INDEXED_DB
   };
   hr.db.connect(options).then(function(database) {

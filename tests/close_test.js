@@ -17,16 +17,25 @@
 goog.setTestOnly();
 goog.require('goog.testing.AsyncTestCase');
 goog.require('goog.testing.jsunit');
-goog.require('goog.userAgent.product');
 goog.require('hr.db');
+goog.require('lf.testing.Capability');
 
 
 /** @type {!goog.testing.AsyncTestCase} */
 var asyncTestCase = goog.testing.AsyncTestCase.createAndInstall('CloseTest');
 
 
+/** @type {!lf.testing.Capability} */
+var capability;
+
+
+function setUpPage() {
+  capability = lf.testing.Capability.get();
+}
+
+
 function testClose() {
-  if (goog.userAgent.product.SAFARI) {
+  if (capability.memoryDbOnly) {
     return;
   }
 
