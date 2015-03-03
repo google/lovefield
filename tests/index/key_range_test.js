@@ -170,6 +170,18 @@ function testGetBounded() {
 }
 
 
+function testEquals() {
+  assertTrue(lf.index.SingleKeyRange.all().equals(
+      lf.index.SingleKeyRange.all()));
+  assertTrue(lf.index.SingleKeyRange.only(1).equals(
+      lf.index.SingleKeyRange.only(1)));
+  assertTrue(new lf.index.SingleKeyRange(1, 2, true, false).equals(
+      new lf.index.SingleKeyRange(1, 2, true, false)));
+  assertFalse(new lf.index.SingleKeyRange(1, 2, false, false).equals(
+      new lf.index.SingleKeyRange(1, 2, true, false)));
+}
+
+
 function testXor() {
   var xor = lf.index.SingleKeyRange.xor;
   assertFalse(xor(true, true));
@@ -185,9 +197,11 @@ function generateTestRanges() {
     upTo1: lf.index.SingleKeyRange.upperBound(1),
     upTo1Ex: lf.index.SingleKeyRange.upperBound(1, true),
     upTo2: lf.index.SingleKeyRange.upperBound(2),
+    upTo2Ex: lf.index.SingleKeyRange.upperBound(2, true),
     atLeast1: lf.index.SingleKeyRange.lowerBound(1),
     atLeast1Ex: lf.index.SingleKeyRange.lowerBound(1, true),
     atLeast2: lf.index.SingleKeyRange.lowerBound(2),
+    atLeast2Ex: lf.index.SingleKeyRange.lowerBound(2, true),
     only1: lf.index.SingleKeyRange.only(1),
     only2: lf.index.SingleKeyRange.only(2),
     r1: new lf.index.SingleKeyRange(5, 10, false, false),
@@ -303,29 +317,106 @@ function testOverlaps() {
   });
 }
 
-
-function testIntersect() {
-  var i = lf.index.SingleKeyRange.intersect;
+function testGetBoundingRange() {
   var r = generateTestRanges();
+  var check = function(expected, r1, r2) {
+    assertTrue(expected.equals(
+        lf.index.SingleKeyRange.getBoundingRange(r1, r2)));
+    assertTrue(expected.equals(
+        lf.index.SingleKeyRange.getBoundingRange(r2, r1)));
+  };
 
-  // Empty
-  assertNull(i([]));
+  // Self and or with r.all.
+  check(r.all, r.all, r.all);
+  var cases = [
+    r.upTo1,
+    r.upTo1Ex,
+    r.atLeast1,
+    r.atLeast1Ex,
+    r.only1,
+    r.r1,
+    r.r2,
+    r.r3,
+    r.r4
+  ];
+  cases.forEach(function(range) {
+    check(range, range, range);
+    check(r.all, range, r.all);
+  });
 
-  // Self
-  assertObjectEquals(r.all, i([r.all]));
-  assertObjectEquals(r.upTo1, i([r.upTo1]));
-  assertObjectEquals(r.atLeast1, i([r.atLeast1]));
-  assertObjectEquals(r.only1, i([r.only1]));
-  assertObjectEquals(r.r1, i([r.r1]));
-  assertObjectEquals(r.r2, i([r.r2, r.r2]));
-  assertObjectEquals(r.r3, i([r.r3, r.r3]));
-  assertObjectEquals(r.r4, i([r.r4, r.r4]));
+  // Overlapping test cases.
+  check(r.upTo1, r.upTo1, r.upTo1Ex);
+  check(r.upTo2, r.upTo1, r.upTo2);
+  check(r.upTo1, r.upTo1, r.only1);
+  check(r.upTo2Ex, r.upTo1, r.upTo2Ex);
+  check(r.all, r.upTo1, r.atLeast1);
+  check(lf.index.SingleKeyRange.upperBound(5), r.upTo1, r.r6);
+  check(r.upTo2, r.upTo1Ex, r.upTo2);
+  check(r.atLeast1, r.atLeast1, r.only1);
+  check(r.atLeast1, r.atLeast1, r.only2);
+  check(r.atLeast1, r.atLeast1, r.r1);
+  check(r.atLeast1, r.atLeast1, r.r6);
+  check(r.atLeast1Ex, r.atLeast1Ex, r.atLeast2);
+  check(r.r1, r.r1, r.r2);
+  check(r.r1, r.r1, r.r3);
+  check(r.r1, r.r1, r.r4);
+  check(new lf.index.SingleKeyRange(5, 11, false, false), r.r1, r.r5);
+  check(new lf.index.SingleKeyRange(1, 10, false, false), r.r1, r.r6);
+  check(r.r1, r.r2, r.r3);
+  check(r.r2, r.r2, r.r4);
 
-  // Intersect with r.all should be self
-  assertObjectEquals(r.upTo1, i([r.all, r.upTo1]));
-  assertObjectEquals(r.r1, i([r.all, r.r1]));
-  assertObjectEquals(r.only1, i([r.only1, r.all]));
-  assertObjectEquals(r.atLeast1Ex, i([r.atLeast1Ex, r.all]));
+  // Non-overlapping test cases.
+  check(r.all, r.upTo1Ex, r.atLeast1Ex);
+  check(r.upTo1, r.upTo1Ex, r.only1);
+  check(r.atLeast1, r.atLeast1Ex, r.only1);
+  check(new lf.index.SingleKeyRange(-1, 10, false, true), r.r7, r.r3);
+}
+
+
+function testAnd() {
+  var r = generateTestRanges();
+  var check = function(expected, r1, r2) {
+    assertTrue(expected.equals(lf.index.SingleKeyRange.and(r1, r2)));
+    assertTrue(expected.equals(lf.index.SingleKeyRange.and(r2, r1)));
+  };
+
+  // Self and or with r.all.
+  check(r.all, r.all, r.all);
+  var cases = [
+    r.upTo1,
+    r.upTo1Ex,
+    r.atLeast1,
+    r.atLeast1Ex,
+    r.only1,
+    r.r1,
+    r.r2,
+    r.r3,
+    r.r4
+  ];
+  cases.forEach(function(range) {
+    check(range, range, range);
+    check(range, range, r.all);
+  });
+
+  // Overlapping test cases.
+  check(r.upTo1Ex, r.upTo1, r.upTo1Ex);
+  check(r.upTo1, r.upTo1, r.upTo2);
+  check(r.only1, r.upTo1, r.only1);
+  check(r.upTo1, r.upTo1, r.upTo2Ex);
+  check(r.only1, r.upTo1, r.atLeast1);
+  check(r.only1, r.upTo1, r.r6);
+  check(r.upTo1Ex, r.upTo1Ex, r.upTo2);
+  check(r.only1, r.atLeast1, r.only1);
+  check(r.r1, r.atLeast1, r.r1);
+  check(r.r6, r.atLeast1, r.r6);
+  check(r.atLeast2, r.atLeast1Ex, r.atLeast2);
+  check(r.r2, r.r1, r.r2);
+  check(r.r3, r.r1, r.r3);
+  check(r.r4, r.r1, r.r4);
+  check(lf.index.SingleKeyRange.only(10), r.r1, r.r5);
+  check(lf.index.SingleKeyRange.only(5), r.r1, r.r6);
+  check(r.r4, r.r2, r.r3);
+  check(r.r4, r.r2, r.r4);
 
   // Excluding shall return null.
   var excluding = [
@@ -343,28 +434,76 @@ function testIntersect() {
     [r.r6, r.r4]
   ];
   excluding.forEach(function(pair) {
-    assertNull(i(pair));
+    assertNull(lf.index.SingleKeyRange.and(pair[0], pair[1]));
+    assertNull(lf.index.SingleKeyRange.and(pair[1], pair[0]));
   });
-  assertNull(i([r.r1, r.r2, r.r3, r.r4, r.r5]));
-  assertNull(i([r.atLeast1, r.r1, r.r5, r.r6, r.upTo1]));
+}
+
+
+function testIntersect() {
+  var check = function(expected, ranges) {
+    assertTrue(expected.equals(lf.index.SingleKeyRange.intersect(ranges)));
+  };
+  var r = generateTestRanges();
+
+  // Empty
+  assertNull(lf.index.SingleKeyRange.intersect([]));
+
+  // Self
+  check(r.all, [r.all]);
+  check(r.upTo1, [r.upTo1]);
+  check(r.atLeast1, [r.atLeast1]);
+  check(r.only1, [r.only1]);
+  check(r.r1, [r.r1]);
+  check(r.r2, [r.r2, r.r2]);
+  check(r.r3, [r.r3, r.r3]);
+  check(r.r4, [r.r4, r.r4]);
+
+  // Intersect with r.all should be self
+  check(r.upTo1, [r.all, r.upTo1]);
+  check(r.r1, [r.all, r.r1]);
+  check(r.only1, [r.only1, r.all]);
+  check(r.atLeast1Ex, [r.atLeast1Ex, r.all]);
+
+  // Excluding shall return null.
+  var excluding = [
+    [r.upTo1, r.only2],
+    [r.upTo1Ex, r.r6],
+    [r.upTo1, r.atLeast1Ex],
+    [r.upTo1, r.atLeast2],
+    [r.upTo1Ex, r.only1],
+    [r.upTo1Ex, r.only2],
+    [r.only1, r.atLeast1Ex],
+    [r.only1, r.atLeast2],
+    [r.r3, r.r5],
+    [r.r4, r.r5],
+    [r.r6, r.r2],
+    [r.r6, r.r4]
+  ];
+  excluding.forEach(function(pair) {
+    assertNull(lf.index.SingleKeyRange.intersect(pair));
+  });
+  assertNull(lf.index.SingleKeyRange.intersect([r.r1, r.r2, r.r3, r.r4, r.r5]));
+  assertNull(lf.index.SingleKeyRange.intersect(
+      [r.atLeast1, r.r1, r.r5, r.r6, r.upTo1]));
 
   // Overlapping test cases.
-  assertObjectEquals(r.upTo1Ex, i([r.upTo1, r.upTo1Ex]));
-  assertObjectEquals(r.upTo1, i([r.upTo1, r.upTo2]));
-  assertObjectEquals(r.only1, i([r.upTo1, r.only1]));
-  assertObjectEquals(r.only1, i([r.upTo1, r.atLeast1]));
-  assertObjectEquals(r.only1, i([r.upTo1, r.r6]));
-  assertObjectEquals(r.upTo1Ex, i([r.upTo1Ex, r.upTo2]));
-  assertObjectEquals(r.only1, i([r.atLeast1, r.only1]));
-  assertObjectEquals(r.only2, i([r.atLeast1, r.only2]));
-  assertObjectEquals(r.r1, i([r.atLeast1, r.r1]));
-  assertObjectEquals(r.r6, i([r.atLeast1, r.r6]));
-  assertObjectEquals(r.r2, i([r.r1, r.r2]));
-  assertObjectEquals(r.r3, i([r.r1, r.r3]));
-  assertObjectEquals(r.r4, i([r.r1, r.r4]));
-  assertObjectEquals(lf.index.SingleKeyRange.only(10), i([r.r1, r.r5]));
-  assertObjectEquals(lf.index.SingleKeyRange.only(5), i([r.r1, r.r6]));
-  assertObjectEquals(r.r4, i([r.r2, r.r3]));
-  assertObjectEquals(r.r4, i([r.r1, r.r2, r.r3, r.r4]));
-  assertObjectEquals(lf.index.SingleKeyRange.only(10), i([r.r1, r.r2, r.r5]));
+  check(r.upTo1Ex, [r.upTo1, r.upTo1Ex]);
+  check(r.upTo1, [r.upTo1, r.upTo2]);
+  check(r.only1, [r.upTo1, r.only1]);
+  check(r.only1, [r.upTo1, r.atLeast1]);
+  check(r.only1, [r.upTo1, r.r6]);
+  check(r.upTo1Ex, [r.upTo1Ex, r.upTo2]);
+  check(r.only1, [r.atLeast1, r.only1]);
+  check(r.only2, [r.atLeast1, r.only2]);
+  check(r.r1, [r.atLeast1, r.r1]);
+  check(r.r6, [r.atLeast1, r.r6]);
+  check(r.r2, [r.r1, r.r2]);
+  check(r.r3, [r.r1, r.r3]);
+  check(r.r4, [r.r1, r.r4]);
+  check(lf.index.SingleKeyRange.only(10), [r.r1, r.r5]);
+  check(lf.index.SingleKeyRange.only(5), [r.r1, r.r6]);
+  check(r.r4, [r.r2, r.r3]);
+  check(r.r4, [r.r1, r.r2, r.r3, r.r4]);
+  check(lf.index.SingleKeyRange.only(10), [r.r1, r.r2, r.r5]);
 }
