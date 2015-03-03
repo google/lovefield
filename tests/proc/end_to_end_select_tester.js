@@ -82,6 +82,7 @@ lf.testing.EndToEndSelectTester = function(connectFn) {
     this.testGroupByWithLimit.bind(this),
     this.testAggregatorsOnly.bind(this),
     this.testCount_Empty.bind(this),
+    this.testCount_Star.bind(this),
     this.testCount_Distinct.bind(this),
     this.testSum_Distinct.bind(this),
     this.testAvg_Distinct.bind(this),
@@ -795,6 +796,27 @@ lf.testing.EndToEndSelectTester.prototype.testCount_Empty = function() {
         assertEquals(1, goog.object.getCount(results[0]));
         assertEquals(0, results[0][aggregatedColumn.getName()]);
       });
+};
+
+
+/**
+ * Tests the case where a COUNT(*) aggregator is used.
+ * @return {!IThenable}
+ */
+lf.testing.EndToEndSelectTester.prototype.testCount_Star = function() {
+  var e = this.db_.getSchema().table('Employee');
+  var aggregatedColumn = lf.fn.count();
+  var queryBuilder = /** @type {!lf.query.SelectBuilder} */ (
+      this.db_.select(aggregatedColumn).from(e));
+
+  return queryBuilder.exec().then(
+      function(results) {
+        assertEquals(1, results.length);
+        assertEquals(1, goog.object.getCount(results[0]));
+        assertEquals(
+            this.dataGenerator_.sampleEmployees.length,
+            results[0][aggregatedColumn.getName()]);
+      }.bind(this));
 };
 
 

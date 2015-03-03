@@ -34289,8 +34289,11 @@ lf.schema.Table.prototype.getRowIdIndexName = function() {
  * limitations under the License.
  */
 goog.provide('lf.fn.AggregatedColumn');
+goog.provide('lf.fn.StarColumn');
 
+goog.require('lf.Type');
 goog.require('lf.schema.Column');
+goog.require('lf.schema.Table');
 
 
 
@@ -34375,6 +34378,67 @@ lf.fn.AggregatedColumn.prototype.getColumnChain = function() {
   return columnChain;
 };
 
+
+
+/**
+ * A dummy lf.schema.Column implementation to be used as a substitute for '*',
+ * for example in COUNT(*).
+ * @implements {lf.schema.Column}
+ * @constructor
+ * @struct
+ *
+ * @param {string=} opt_alias Alias of this column.
+ */
+lf.fn.StarColumn = function(opt_alias) {
+  /** @private {?string} */
+  this.alias_ = opt_alias || null;
+
+  /** @private {!lf.schema.Table} */
+  this.table_ = new lf.schema.Table('#UnknownTable', [], [], false);
+};
+
+
+/** @override */
+lf.fn.StarColumn.prototype.getName = function() {
+  return '*';
+};
+
+
+/** @override */
+lf.fn.StarColumn.prototype.getNormalizedName = function() {
+  return this.getName();
+};
+
+
+/** @override */
+lf.fn.StarColumn.prototype.toString = function() {
+  return this.getNormalizedName();
+};
+
+
+/** @override */
+lf.fn.StarColumn.prototype.getTable = function() {
+  // NOTE: The table here does not have a useful meaning, since the StarColumn
+  // represents all columns that are available, which could be the result of a
+  // join, therefore a dummy Table instance is used.
+  return this.table_;
+};
+
+
+/** @override */
+lf.fn.StarColumn.prototype.getType = function() {
+  // NOTE: The type here does not have a useful meaning, since the notion of a
+  // type does not apply to a collection of all columns (which is what this
+  // class represents).
+  return lf.Type.NUMBER;
+};
+
+
+/** @override */
+lf.fn.StarColumn.prototype.getAlias = function() {
+  return this.alias_;
+};
+
 /**
  * @license
  * Copyright 2014 Google Inc. All Rights Reserved.
@@ -34395,6 +34459,7 @@ goog.provide('lf.fn');
 goog.provide('lf.fn.Type');
 
 goog.require('lf.fn.AggregatedColumn');
+goog.require('lf.fn.StarColumn');
 
 
 /**
@@ -34424,10 +34489,11 @@ lf.fn.avg = function(col) {
 
 /**
  * @export
- * @param {!lf.schema.Column} col
+ * @param {!lf.schema.Column=} opt_col
  * @return {!lf.schema.Column}
  */
-lf.fn.count = function(col) {
+lf.fn.count = function(opt_col) {
+  var col = opt_col || new lf.fn.StarColumn();
   return new lf.fn.AggregatedColumn(col, lf.fn.Type.COUNT);
 };
 
