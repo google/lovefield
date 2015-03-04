@@ -26293,24 +26293,17 @@ lf.index.SingleKeyRange.prototype.reverse = function() {
  * @return {boolean}
  */
 lf.index.SingleKeyRange.prototype.overlaps = function(range) {
-  // Checks if value1 is on the left of value2.
-  var onTheLeftOrOverlap = function(value1, exclude1, value2, exclude2) {
-    if (goog.isNull(value1) || goog.isNull(value2)) {
-      return true;
-    }
+  var favor = lf.index.SingleKeyRange.compareKey_(
+      this.from, range.from, true, this.excludeLower, range.excludeLower);
+  if (favor == lf.index.Favor.TIE) {
+    return true;
+  }
+  var left = (favor == lf.index.Favor.RHS) ? this : range;
+  var right = (favor == lf.index.Favor.LHS) ? this : range;
 
-    if (value1 == value2) {
-      return (exclude1 == exclude2);
-    }
-    return value1 < value2;
-  };
-
-  var left = onTheLeftOrOverlap(
-      range.from, range.excludeLower, this.to, this.excludeUpper);
-  var right = onTheLeftOrOverlap(
-      this.from, this.excludeLower, range.to, range.excludeUpper);
-
-  return left && right;
+  return goog.isNull(left.to) ||
+      left.to > right.from ||
+      (left.to == right.from && !left.excludeUpper && !right.excludeLower);
 };
 
 
@@ -26434,20 +26427,41 @@ lf.index.SingleKeyRange.xor = function(a, b) {
 
 
 /**
+ * Directionally compare two keys.
+ * Left hand side key comparison logic: null is considered left, exclusion
+ * is considered right.
+ * Right hand side key comparison logic: null is considered right, exclusion
+ * is considered left.
  * @param {?lf.index.Index.SingleKey} l
  * @param {?lf.index.Index.SingleKey} r
+ * @param {boolean} isLeftHandSide
+ * @param {boolean=} opt_excludeL
+ * @param {boolean=} opt_excludeR
  * @return {!lf.index.Favor}
  * @private
  */
-lf.index.SingleKeyRange.compareKey_ = function(l, r) {
-  var winner = lf.index.Favor;
+lf.index.SingleKeyRange.compareKey_ = function(
+    l, r, isLeftHandSide, opt_excludeL, opt_excludeR) {
+  var Favor = lf.index.Favor;
+  var excludeL = opt_excludeL || false;
+  var excludeR = opt_excludeR || false;
+  var flip = function(favor) {
+    return isLeftHandSide ? favor :
+        (favor == Favor.LHS) ? Favor.RHS : Favor.LHS;
+  };
+
+  // The following logic is implemented for LHS. RHS is achieved using flip().
+  var tieLogic = function() {
+    return !lf.index.SingleKeyRange.xor(excludeL, excludeR) ? Favor.TIE :
+        excludeL ? flip(Favor.LHS) : flip(Favor.RHS);
+  };
 
   if (goog.isNull(l)) {
-    return goog.isNull(r) ? winner.TIE : winner.RHS;
+    return !goog.isNull(r) ? flip(Favor.RHS) : tieLogic();
   }
-  return goog.isNull(r) ? winner.LHS :
-      (l < r) ? winner.RHS :
-      (l == r) ? winner.TIE : winner.LHS;
+  return goog.isNull(r) ? flip(Favor.LHS) :
+      (l < r) ? Favor.RHS :
+      (l == r) ? tieLogic() : Favor.LHS;
 };
 
 
@@ -26458,21 +26472,11 @@ lf.index.SingleKeyRange.compareKey_ = function(l, r) {
  * @return {!lf.index.Favor}
  */
 lf.index.SingleKeyRange.compare = function(lhs, rhs) {
-  var xor = lf.index.SingleKeyRange.xor;
-  var winner = lf.index.Favor;
-
-  var result = lf.index.SingleKeyRange.compareKey_(lhs.from, rhs.from);
-  if (result == winner.TIE) {
-    if (xor(lhs.excludeLower, rhs.excludeLower)) {
-      result = lhs.excludeLower ? winner.LHS :
-          (!rhs.excludeLower ? winner.TIE : winner.RHS);
-    } else {
-      result = lf.index.SingleKeyRange.compareKey_(lhs.to, rhs.to);
-      if (result == winner.TIE && xor(lhs.excludeUpper, rhs.excludeUpper)) {
-        result = lhs.excludeUpper ? winner.RHS :
-            (!rhs.excludeUpper ? winner.TIE : winner.LHS);
-      }
-    }
+  var result = lf.index.SingleKeyRange.compareKey_(
+      lhs.from, rhs.from, true, lhs.excludeLower, rhs.excludeLower);
+  if (result == lf.index.Favor.TIE) {
+    result = lf.index.SingleKeyRange.compareKey_(
+        lhs.to, rhs.to, false, lhs.excludeUpper, rhs.excludeUpper);
   }
   return result;
 };
@@ -26487,7 +26491,7 @@ lf.index.SingleKeyRange.compare = function(lhs, rhs) {
 lf.index.SingleKeyRange.getBoundingRange = function(r1, r2) {
   var r = lf.index.SingleKeyRange.all();
   if (!goog.isNull(r1.from) && !goog.isNull(r2.from)) {
-    var favor = lf.index.SingleKeyRange.compareKey_(r1.from, r2.from);
+    var favor = lf.index.SingleKeyRange.compareKey_(r1.from, r2.from, true);
     if (favor != lf.index.Favor.LHS) {
       r.from = r1.from;
       r.excludeLower = (favor != lf.index.Favor.TIE) ? r1.excludeLower :
@@ -26498,7 +26502,7 @@ lf.index.SingleKeyRange.getBoundingRange = function(r1, r2) {
     }
   }
   if (!goog.isNull(r1.to) && !goog.isNull(r2.to)) {
-    var favor = lf.index.SingleKeyRange.compareKey_(r1.to, r2.to);
+    var favor = lf.index.SingleKeyRange.compareKey_(r1.to, r2.to, false);
     if (favor != lf.index.Favor.RHS) {
       r.to = r1.to;
       r.excludeUpper = (favor != lf.index.Favor.TIE) ? r1.excludeUpper :
@@ -26524,7 +26528,7 @@ lf.index.SingleKeyRange.and = function(r1, r2) {
   }
 
   var r = lf.index.SingleKeyRange.all();
-  var favor = lf.index.SingleKeyRange.compareKey_(r1.from, r2.from);
+  var favor = lf.index.SingleKeyRange.compareKey_(r1.from, r2.from, true);
   var left = (favor == lf.index.Favor.TIE) ? (r1.excludeLower ? r1 : r2) :
       (favor != lf.index.Favor.RHS) ? r1 : r2;
   r.from = left.from;
@@ -26535,34 +26539,13 @@ lf.index.SingleKeyRange.and = function(r1, r2) {
   if (goog.isNull(r1.to) || goog.isNull(r2.to)) {
     right = goog.isNull(r1.to) ? r2 : r1;
   } else {
-    favor = lf.index.SingleKeyRange.compareKey_(r1.to, r2.to);
+    favor = lf.index.SingleKeyRange.compareKey_(r1.to, r2.to, false);
     right = (favor == lf.index.Favor.TIE) ? (r1.excludeUpper ? r1 : r2) :
         (favor == lf.index.Favor.RHS) ? r1 : r2;
   }
   r.to = right.to;
   r.excludeUpper = right.excludeUpper;
   return r;
-};
-
-
-/**
- * Intersects multiple ranges into one.
- * @param {!Array<!lf.index.SingleKeyRange>} keyRanges
- * @return {?lf.index.SingleKeyRange} Merged ranges, null if no overlapping.
- */
-lf.index.SingleKeyRange.intersect = function(keyRanges) {
-  if (keyRanges.length <= 1) {
-    return keyRanges.length == 0 ? null : keyRanges[0];
-  }
-
-  var ranges = keyRanges.slice();
-  ranges.sort(lf.index.SingleKeyRange.compare);
-  return ranges.reduce(function(prev, cur) {
-    if (!goog.isNull(prev)) {
-      return lf.index.SingleKeyRange.and(prev, cur);
-    }
-    return null;
-  }, lf.index.SingleKeyRange.all());
 };
 
 /**
@@ -28051,13 +28034,23 @@ goog.require('lf.index.SingleKeyRange');
  * @constructor
  * @struct
  *
- * @param {!Array<!lf.index.SingleKeyRange>} ranges
+ * @param {!Array<!lf.index.SingleKeyRange>=} opt_ranges
  */
-lf.index.SingleKeyRangeSet = function(ranges) {
+lf.index.SingleKeyRangeSet = function(opt_ranges) {
   /** @private {!Array<!lf.index.SingleKeyRange>} */
   this.ranges_ = [];
 
-  this.join_(ranges);
+  if (goog.isDef(opt_ranges)) {
+    this.add(opt_ranges);
+  }
+};
+
+
+/** @override */
+lf.index.SingleKeyRangeSet.prototype.toString = function() {
+  return this.ranges_.map(function(r) {
+    return r.toString();
+  }).join(',');
 };
 
 
@@ -28079,24 +28072,10 @@ lf.index.SingleKeyRangeSet.prototype.getValues = function() {
 
 
 /**
- * Unions multiple ranges and minimizes the number of ranges returned, i.e.
- * overlapping ranges will be merged into one range.
- * @param {!lf.index.SingleKeyRangeSet|!lf.index.SingleKeyRange} value
- */
-lf.index.SingleKeyRangeSet.prototype.union = function(value) {
-  if (value instanceof lf.index.SingleKeyRange) {
-    this.join_([value]);
-  } else {
-    this.join_(value.getValues());
-  }
-};
-
-
-/**
+ * Adds ranges to current set. Overlapping ranges will be merged.
  * @param {!Array<!lf.index.SingleKeyRange>} keyRanges
- * @private
  */
-lf.index.SingleKeyRangeSet.prototype.join_ = function(keyRanges) {
+lf.index.SingleKeyRangeSet.prototype.add = function(keyRanges) {
   if (keyRanges.length == 0) {
     return;
   }
@@ -28124,18 +28103,57 @@ lf.index.SingleKeyRangeSet.prototype.join_ = function(keyRanges) {
 
 
 /**
+ * @param {!lf.index.SingleKeyRangeSet} set
+ * @return {boolean}
+ */
+lf.index.SingleKeyRangeSet.prototype.equals = function(set) {
+  if (this.ranges_.length == set.ranges_.length) {
+    return this.ranges_.length == 0 ||
+        this.ranges_.every(function(r, index) {
+          return r.equals(set.ranges_[index]);
+        });
+  }
+
+  return false;
+};
+
+
+/**
  * Returns the boundary of this set.
  * @return {?lf.index.SingleKeyRange} Null if range set is empty.
  */
-lf.index.SingleKeyRangeSet.prototype.getBoundary = function() {
+lf.index.SingleKeyRangeSet.prototype.getBoundingRange = function() {
   if (this.ranges_.length <= 1) {
     return this.ranges_.length == 0 ? null : this.ranges_[0];
   }
 
   var last = this.ranges_.length - 1;
-  return new lf.index.SingleKeyRange(
-      this.ranges_[0].from, this.ranges_[last].to,
-      this.ranges_[0].excludeLower, this.ranges_[last].excludeUpper);
+  return lf.index.SingleKeyRange.getBoundingRange(
+      this.ranges_[0], this.ranges_[last]);
+};
+
+
+/**
+ * Intersection of two range sets.
+ * @param {!lf.index.SingleKeyRangeSet} s0
+ * @param {!lf.index.SingleKeyRangeSet} s1
+ * @return {!lf.index.SingleKeyRangeSet}
+ */
+lf.index.SingleKeyRangeSet.intersect = function(s0, s1) {
+  var ranges = s0.getValues().map(function(r0) {
+    return s1.getValues().map(function(r1) {
+      return lf.index.SingleKeyRange.and(r0, r1);
+    });
+  });
+
+  var results = [];
+  ranges.forEach(function(dimension) {
+    results = results.concat(dimension);
+  });
+
+  return new lf.index.SingleKeyRangeSet(results.filter(function(r) {
+    return !goog.isNull(r);
+  }));
 };
 
 /**
