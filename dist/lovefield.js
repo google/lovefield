@@ -34077,6 +34077,10 @@ lf.schema.Column.prototype.getType;
 lf.schema.Column.prototype.getAlias;
 
 
+/** @return {!Array.<!lf.schema.Index>} */
+lf.schema.Column.prototype.getIndices;
+
+
 
 /**
  * Models the return value of Database.getSchema().
@@ -34362,6 +34366,12 @@ lf.fn.AggregatedColumn.prototype.getAlias = function() {
 };
 
 
+/** @override */
+lf.fn.AggregatedColumn.prototype.getIndices = function() {
+  return [];
+};
+
+
 /**
  * @export
  * @param {string} name
@@ -34446,6 +34456,12 @@ lf.fn.StarColumn.prototype.getType = function() {
 /** @override */
 lf.fn.StarColumn.prototype.getAlias = function() {
   return this.alias_;
+};
+
+
+/** @override */
+lf.fn.StarColumn.prototype.getIndices = function() {
+  return [];
 };
 
 /**
@@ -39389,7 +39405,7 @@ lf.schema.BaseColumn.prototype.getAlias = function() {
 };
 
 
-/** @return {!Array.<!lf.schema.Index>} */
+/** @override */
 lf.schema.BaseColumn.prototype.getIndices = function() {
   if (!goog.isDefAndNotNull(this.indices_)) {
     this.indices_ = [];
