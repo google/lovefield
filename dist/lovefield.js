@@ -40293,7 +40293,7 @@ lf.schema.Builder.prototype.connect = function(opt_options) {
       opt_options.onUpgrade : undefined;
   var backstoreType = (opt_options && opt_options.storeType) ?
       opt_options.storeType : undefined;
-  var bundledMode = false;
+  var bundledMode = this.schema_.getBundledMode();
 
   var db = new lf.proc.Database(global);
   return db.init(upgradeCallback, backstoreType, bundledMode);
@@ -40338,6 +40338,17 @@ lf.schema.Builder.prototype.createTable = function(tableName) {
 };
 
 
+/**
+ * @param {string} pragmaName
+ * @param {*} value
+ */
+lf.schema.Builder.prototype.setPragma = function(pragmaName, value) {
+  if (pragmaName == 'bundledMode' && typeof(value) == 'boolean') {
+    this.schema_.setBundledMode(value);
+  }
+};
+
+
 
 /**
  * @implements {lf.schema.Database}
@@ -40354,8 +40365,11 @@ lf.schema.DatabaseSchema_ = function(name, version) {
   /** @private {number} */
   this.version_ = version;
 
-  /** @private !goog.structs.Map.<string, !lf.schema.Table>} */
+  /** @private {!goog.structs.Map.<string, !lf.schema.Table>} */
   this.tables_ = new goog.structs.Map();
+
+  /** @private {boolean} */
+  this.bundledMode_ = false;
 };
 
 
@@ -40388,11 +40402,21 @@ lf.schema.DatabaseSchema_.prototype.table = function(tableName) {
 };
 
 
-/**
- * @param {!lf.schema.Table} table
- */
+/** @param {!lf.schema.Table} table */
 lf.schema.DatabaseSchema_.prototype.setTable = function(table) {
   this.tables_.set(table.getName(), table);
+};
+
+
+/** @return {boolean} */
+lf.schema.DatabaseSchema_.prototype.getBundledMode = function() {
+  return this.bundledMode_;
+};
+
+
+/** @param {boolean} value */
+lf.schema.DatabaseSchema_.prototype.setBundledMode = function(value) {
+  this.bundledMode_ = value;
 };
 
 
