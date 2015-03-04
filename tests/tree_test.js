@@ -166,8 +166,11 @@ function testRemoveNode_Intermediate() {
       '-[10,null]\n';
 
   // Removing node n1.
-  var parentNode = lf.tree.removeNode(nodes[1]);
-  assertEquals(nodes[0], parentNode);
+  var removeResult = lf.tree.removeNode(nodes[1]);
+  assertEquals(nodes[0], removeResult.parent);
+  assertArrayEquals(
+      [nodes[2], nodes[3], nodes[4]],
+      removeResult.children);
   assertEquals(treeAfter, lf.tree.toString(nodes[0], stringFn));
 }
 
@@ -191,9 +194,44 @@ function testRemoveNode_Leaf() {
       '-[10,null]\n';
 
   // Removing node n2.
-  var parentNode = lf.tree.removeNode(nodes[2]);
-  assertEquals(nodes[1], parentNode);
+  var removeResult = lf.tree.removeNode(nodes[2]);
+  assertEquals(nodes[1], removeResult.parent);
+  assertArrayEquals([], removeResult.children);
   assertEquals(treeAfter, lf.tree.toString(nodes[0], stringFn));
+}
+
+
+/**
+ * Testing case where the root node is removed.
+ */
+function testRemoveNode_Root() {
+  var nodes = createTestTree1();
+
+  var subTree1After =
+      '[1,null]\n' +
+      '-[2,null]\n' +
+      '-[3,null]\n' +
+      '-[4,null]\n';
+
+  var subTree2After =
+      '[5,null]\n' +
+      '-[6,null]\n' +
+      '--[7,null]\n' +
+      '---[8,null]\n' +
+      '---[9,null]\n';
+
+  var subTree3After = '[10,null]\n';
+
+  // Removing node n0.
+  var removeResult = lf.tree.removeNode(nodes[0]);
+  assertNull(removeResult.parent);
+  assertArrayEquals([nodes[1], nodes[5], nodes[10]], removeResult.children);
+  assertEquals(
+      subTree1After, lf.tree.toString(removeResult.children[0], stringFn));
+  assertEquals(
+      subTree2After, lf.tree.toString(removeResult.children[1], stringFn));
+  assertEquals(
+      subTree3After, lf.tree.toString(removeResult.children[2], stringFn));
 }
 
 

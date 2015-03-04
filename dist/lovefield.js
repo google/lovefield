@@ -28575,7 +28575,11 @@ lf.tree.getLeafNodes = function(node) {
  * Removes a node from a tree. It takes care of re-parenting the children of the
  * removed node with its parent (if any).
  * @param {!goog.structs.TreeNode} node The node to be removed.
- * @return {goog.structs.TreeNode}
+ * @return {{
+ *   parent: ?goog.structs.TreeNode,
+ *   children: !Array<!goog.structs.TreeNode>
+ * }} An object holding the parent of the node prior to removal (if any), and
+ * the children of the node prior to removal.
  */
 lf.tree.removeNode = function(node) {
   var parentNode = node.getParent();
@@ -28585,14 +28589,19 @@ lf.tree.removeNode = function(node) {
     parentNode.removeChild(node);
   }
 
-  node.getChildren().slice().forEach(
+  var children = node.getChildren().slice();
+  children.forEach(
       function(child, index) {
         node.removeChild(child);
         if (!goog.isNull(parentNode)) {
           parentNode.addChildAt(child, originalIndex + index);
         }
       });
-  return parentNode;
+
+  return {
+    parent: parentNode,
+    children: children
+  };
 };
 
 
@@ -37226,7 +37235,7 @@ lf.proc.LimitSkipByIndexPass.prototype.mergeToIndexRangeScanStep_ = function(
   }
 
   return /** @type {!lf.proc.PhysicalQueryPlanNode} */ (
-      lf.tree.removeNode(node));
+      lf.tree.removeNode(node).parent);
 };
 
 
@@ -37413,7 +37422,7 @@ lf.proc.OrderByIndexPass.prototype.applyIndexRangeScanStepOptimization_ =
   if (!goog.isNull(indexRangeScanStep)) {
     indexRangeScanStep.order = orderByStep.orderBy[0].order;
     rootNode = /** @type {!lf.proc.PhysicalQueryPlanNode} */ (
-        lf.tree.removeNode(orderByStep));
+        lf.tree.removeNode(orderByStep).parent);
   }
 
   return rootNode;
