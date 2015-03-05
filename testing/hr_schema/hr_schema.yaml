@@ -151,6 +151,7 @@ table:
       integer: integer
       number: number
       string: string
+      string2: string
     constraint:
       primaryKey: [ string, number ]
       unique:

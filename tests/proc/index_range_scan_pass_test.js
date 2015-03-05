@@ -53,6 +53,10 @@ var j;
 var d;
 
 
+/** @type {!hr.db.schema.DummyTable} */
+var dt;
+
+
 /** @type {!lf.index.IndexStore} */
 var indexStore;
 
@@ -69,6 +73,7 @@ function setUp() {
     e = db.getSchema().getEmployee();
     j = db.getSchema().getJob();
     d = db.getSchema().getDepartment();
+    dt = db.getSchema().getDummyTable();
     indexStore =  /** @type {!lf.index.IndexStore} */ (
         hr.db.getGlobal().getService(lf.service.INDEX_STORE));
   }).then(function() {
@@ -262,6 +267,88 @@ function testTree_MultiplePredicates_SingleColumnIndices() {
   var pass = new lf.proc.IndexRangeScanPass(hr.db.getGlobal());
   var rootNodeAfter = pass.rewrite(rootNodeBefore);
   assertEquals(treeAfter, lf.tree.toString(rootNodeAfter));
+}
+
+
+/**
+ * Tests a tree where
+ *  - two cross-column indices exist, each index is indexing two columns.
+ *  - two predicates exist for the first cross-column index.
+ *  - two predicates exist for the second cross-column index.
+ *
+ *  It ensures that the most selective index is chosen by the optimizer and that
+ *  the predicates are correctly replaced by an IndexRangeScanStep in the tree.
+ */
+function testTree_MultipleCrossColumnIndices() {
+  var treeBefore =
+      'select(value_pred(DummyTable.string eq StringValue))\n' +
+      '-select(value_pred(DummyTable.integer gt 100))\n' +
+      '--select(value_pred(DummyTable.number gte 400))\n' +
+      '---select(value_pred(DummyTable.boolean eq true))\n' +
+      '----table_access(DummyTable)\n';
+
+  var treeAfter =
+      'select(value_pred(DummyTable.string eq StringValue))\n' +
+      '-select(value_pred(DummyTable.number gte 400))\n' +
+      '--table_access_by_row_id(DummyTable)\n' +
+      '---index_range_scan(DummyTable.uq_constraint, ' +
+          '(100, unbound],[true, true], ASC)\n';
+
+  var indices = dt.getIndices();
+  lf.testing.util.simulateIndexCost(
+      propertyReplacer, indexStore, indices[0], 100);
+  lf.testing.util.simulateIndexCost(
+      propertyReplacer, indexStore, indices[1], 10);
+
+  var selectNode1 = new lf.proc.SelectStep(dt.string.eq('StringValue'));
+  var selectNode2 = new lf.proc.SelectStep(dt.integer.gt(100));
+  var selectNode3 = new lf.proc.SelectStep(dt.number.gte(400));
+  var selectNode4 = new lf.proc.SelectStep(dt.boolean.eq(true));
+  var tableAccessNode = new lf.proc.TableAccessFullStep(hr.db.getGlobal(), dt);
+  selectNode1.addChild(selectNode2);
+  selectNode2.addChild(selectNode3);
+  selectNode3.addChild(selectNode4);
+  selectNode4.addChild(tableAccessNode);
+
+  var rootNodeBefore = selectNode1;
+  assertEquals(treeBefore, lf.tree.toString(rootNodeBefore));
+
+  var pass = new lf.proc.IndexRangeScanPass(hr.db.getGlobal());
+  var rootNodeAfter = pass.rewrite(rootNodeBefore);
+  assertEquals(treeAfter, lf.tree.toString(rootNodeAfter));
+}
+
+
+/**
+ * Tests a tree where
+ *  - two cross-column indices exist, each index is indexing two columns.
+ *  - a predicate that refers to a subset of the cross column index's columns
+ *    exists.
+ *  - a predicate that refers to a non-indexed column exists.
+ *
+ *  It ensures that the tree remains unaffected since no index can be leveraged.
+ */
+function testTree_Unaffected() {
+  var treeBefore =
+      'select(value_pred(DummyTable.string eq StringValue))\n' +
+      '-select(value_pred(DummyTable.integer gt 100))\n' +
+      '--select(value_pred(DummyTable.string2 eq OtherStringValue))\n' +
+      '---table_access(DummyTable)\n';
+
+  var selectNode1 = new lf.proc.SelectStep(dt.string.eq('StringValue'));
+  var selectNode2 = new lf.proc.SelectStep(dt.integer.gt(100));
+  var selectNode3 = new lf.proc.SelectStep(dt.string2.eq('OtherStringValue'));
+  var tableAccessNode = new lf.proc.TableAccessFullStep(hr.db.getGlobal(), dt);
+  selectNode1.addChild(selectNode2);
+  selectNode2.addChild(selectNode3);
+  selectNode3.addChild(tableAccessNode);
+
+  var rootNodeBefore = selectNode1;
+  assertEquals(treeBefore, lf.tree.toString(rootNodeBefore));
+
+  var pass = new lf.proc.IndexRangeScanPass(hr.db.getGlobal());
+  var rootNodeAfter = pass.rewrite(rootNodeBefore);
+  assertEquals(treeBefore, lf.tree.toString(rootNodeAfter));
 }
 
 
