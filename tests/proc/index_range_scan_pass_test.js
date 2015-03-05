@@ -231,6 +231,41 @@ function testTree3() {
 
 
 /**
+ * Tests a tree where
+ *  - 2 predicates for 'salary' column exist.
+ *  - 1 predicate for 'id' column exists.
+ *  - 2 indices exist, one for each colmn.
+ * This test checks that two separate predicates can be replaced by an
+ * IndexRangeScanPass if they refer to the same colmun in the case where that
+ * column's index is chosen to be used for optimization.
+ */
+function testTree_MultiplePredicates_SingleColumnIndices() {
+  var treeBefore =
+      'select(value_pred(Employee.salary lte 200))\n' +
+      '-select(value_pred(Employee.id gt 100))\n' +
+      '--select(value_pred(Employee.salary gte 100))\n' +
+      '---table_access(Employee)\n';
+
+  var treeAfter =
+      'select(value_pred(Employee.id gt 100))\n' +
+      '-table_access_by_row_id(Employee)\n' +
+      '--index_range_scan(Employee.idx_salary, [100, 200], DESC)\n';
+
+  lf.testing.util.simulateIndexCost(
+      propertyReplacer, indexStore, e.salary.getIndices()[0], 10);
+  lf.testing.util.simulateIndexCost(
+      propertyReplacer, indexStore, e.id.getIndices()[0], 500);
+
+  var rootNodeBefore = constructTree3();
+  assertEquals(treeBefore, lf.tree.toString(rootNodeBefore));
+
+  var pass = new lf.proc.IndexRangeScanPass(hr.db.getGlobal());
+  var rootNodeAfter = pass.rewrite(rootNodeBefore);
+  assertEquals(treeAfter, lf.tree.toString(rootNodeAfter));
+}
+
+
+/**
  * Constructs a tree where:
  *  - One TableAccessFullStep node exists.
  *  - Multiple SelectStep nodes exist without any nodes in-between them.
@@ -289,4 +324,21 @@ function constructTree2() {
   joinNode.addChild(selectNode3);
 
   return rootNode;
+}
+
+
+/**
+ * @return {!lf.proc.PhysicalQueryPlanNode} The root of the constructed tree.
+ */
+function constructTree3() {
+  var selectNode1 = new lf.proc.SelectStep(e.salary.lte(200));
+  var selectNode2 = new lf.proc.SelectStep(e.id.gt('100'));
+  var selectNode3 = new lf.proc.SelectStep(e.salary.gte(100));
+  var tableAccessNode = new lf.proc.TableAccessFullStep(
+      hr.db.getGlobal(), e);
+
+  selectNode1.addChild(selectNode2);
+  selectNode2.addChild(selectNode3);
+  selectNode3.addChild(tableAccessNode);
+  return selectNode1;
 }
