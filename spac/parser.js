@@ -281,7 +281,7 @@ function checkAutoIncrement(table) {
  * @param {!Array.<string>} unique Known unique columns.
  * @return {!Array.<string>} Columns associated.
  */
-function checkUnique(tableName, tableSchema, colNames, names, unique) {
+function convertUnique(tableName, tableSchema, colNames, names, unique) {
   var notNullable = [];
   var schema = tableSchema.constraint.unique;
 
@@ -302,8 +302,13 @@ function checkUnique(tableName, tableSchema, colNames, names, unique) {
       }
     });
 
-    names.push(item);
     notNullable = notNullable.concat(schema[item].column);
+    var newCol = schema[item].column.map(function(col) {
+      return {name: col};
+    });
+    schema[item].column = newCol;
+
+    names.push(item);
   }
   return notNullable;
 }
@@ -437,7 +442,7 @@ function checkConstraint(tableName, schemas, colNames, names) {
 
   if (schema.hasOwnProperty('unique')) {
     notNullable = notNullable.concat(
-        checkUnique(
+        convertUnique(
             tableName, schemas[tableName], colNames, names, notNullable));
   }
 

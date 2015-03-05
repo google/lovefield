@@ -94,7 +94,7 @@ foo.db.schema.Foo = function() {
         ]),
     new lf.schema.Index('Foo', 'uq_bar', true,
         [
-          {'name': 'undefined', 'order': lf.Order.ASC}
+          {'name': 'bar', 'order': lf.Order.ASC}
         ]),
     new lf.schema.Index('Foo', 'idx_Name', false,
         [
@@ -136,7 +136,7 @@ foo.db.schema.Foo.prototype.getConstraint = function() {
   var unique = [
     new lf.schema.Index('Foo', 'uq_bar', true,
         [
-          {'name': 'undefined', 'order': lf.Order.ASC}
+          {'name': 'bar', 'order': lf.Order.ASC}
         ])
   ];
   return new lf.schema.Constraint(pk, notNullable, foreignKeys, unique);

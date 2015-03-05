@@ -55,7 +55,9 @@
  *   nullable: !Array.<string>,
  *   unique: !Array.<{
  *     name: string,
- *     column: !Array.<string>
+ *     column: !Array.<{
+ *       name: string
+ *     }>
  *   }>,
  *   foreignKey: !Array.<{
  *     name: string,
@@ -563,7 +565,7 @@ CodeGenerator.columnToKey_ = function(table, column) {
 
 /**
  * @param {Object} table
- * @param {!Array.<string>} columns
+ * @param {!Array.<!Object>} columns
  * @return {string}
  * @private
  */
@@ -573,7 +575,11 @@ CodeGenerator.prototype.genKeyFromColumns_ = function(table, columns) {
         'Cannot generate index key for column:' + table.name + '.' + col);
   }).bind(this);
 
-  var strings = columns.map(function(col) {
+  var colNames = columns.map(function(col) {
+    return col.name;
+  });
+
+  var strings = colNames.map(function(col) {
     try {
       return CodeGenerator.columnToKey_(table, col);
     } catch (e) {
@@ -601,11 +607,8 @@ CodeGenerator.prototype.genKeyOfIndex_ = function(table, prefix) {
 
   if (table.constraint) {
     if (table.constraint.primaryKey) {
-      var colNames = table.constraint.primaryKey.map(function(keyCol) {
-        return keyCol.name;
-      });
       genCase('pk' + this.toPascal_(table.name));
-      body.push(this.genKeyFromColumns_(table, colNames));
+      body.push(this.genKeyFromColumns_(table, table.constraint.primaryKey));
     }
 
     if (table.constraint.unique) {
@@ -621,10 +624,7 @@ CodeGenerator.prototype.genKeyOfIndex_ = function(table, prefix) {
     for (var i = 0; i < table.index.length; ++i) {
       var index = table.index[i];
       genCase(index.name);
-      var colNames = index.column.map(function(col) {
-        return col.name;
-      });
-      body.push(this.genKeyFromColumns_(table, colNames));
+      body.push(this.genKeyFromColumns_(table, index.column));
     }
   }
 
@@ -1110,7 +1110,7 @@ CodeGenerator.prototype.getUniqueColumns_ = function(table) {
     if (constraint.hasOwnProperty('unique')) {
       constraint.unique.forEach(function(unq) {
         if (unq.column.length == 1) {
-          ret.push(unq.column[0]);
+          ret.push(unq.column[0].name);
         }
       });
     }
@@ -1119,7 +1119,7 @@ CodeGenerator.prototype.getUniqueColumns_ = function(table) {
   if (table.hasOwnProperty('index')) {
     table.index.forEach(function(idx) {
       if (idx.unique && idx.column.length == 1) {
-        ret.push(idx.column[0]);
+        ret.push(idx.column[0].name);
       }
     });
   }

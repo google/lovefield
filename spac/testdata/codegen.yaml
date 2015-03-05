@@ -37,6 +37,11 @@ table:
           - name: timestamp
             order: desc
         unique: false
+      idx_imageHash:
+        column:
+          - name: imageHash
+            order: desc
+        unique: true
     constraint:
       primaryKey:
         - column: id
@@ -47,7 +52,7 @@ table:
           reference: Album
           remoteColumn: id
           cascade: true
-      nullable: [ proto, tacotownJspb, accessTimestamp, imageHash ]
+      nullable: [ proto, tacotownJspb, accessTimestamp ]
 
   Details:
     column:
@@ -74,13 +79,14 @@ table:
     column:
       id: integer
       name: string
+      timestamp: integer
     constraint:
       primaryKey:
         - column: id
           autoIncrement: true
       unique:
-        uq_name:
-          column: [ name ]
+        uq_creation:
+          column: [ name, timestamp ]
 
   PhotoCurator:
     column:

@@ -432,7 +432,7 @@ lovefield.db.schema.Photo = function() {
 
   /** @type {!lf.schema.BaseColumn.<string>} */
   this.imageHash = new lf.schema.BaseColumn(
-      this, 'imageHash', false, lf.Type.STRING);
+      this, 'imageHash', true, lf.Type.STRING);
   cols.push(this.imageHash);
 
   /** @type {!lf.schema.BaseColumn.<boolean>} */
@@ -483,6 +483,10 @@ lovefield.db.schema.Photo = function() {
     new lf.schema.Index('Photo', 'idx_timestamp', false,
         [
           {'name': 'timestamp', 'order': lf.Order.DESC}
+        ]),
+    new lf.schema.Index('Photo', 'idx_imageHash', true,
+        [
+          {'name': 'imageHash', 'order': lf.Order.DESC}
         ])
   ];
 
@@ -517,6 +521,7 @@ lovefield.db.schema.Photo.prototype.getConstraint = function() {
       ]);
   var notNullable = [
     this.id,
+    this.imageHash,
     this.isLocal,
     this.createdByAction,
     this.timestamp,
@@ -540,7 +545,7 @@ lovefield.db.schema.Photo.prototype.getConstraint = function() {
 lovefield.db.row.PhotoType = function() {
   /** @export @type {string} */
   this.id;
-  /** @export @type {?string} */
+  /** @export @type {string} */
   this.imageHash;
   /** @export @type {boolean} */
   this.isLocal;
@@ -571,7 +576,7 @@ lovefield.db.row.PhotoType = function() {
 lovefield.db.row.PhotoDbType = function() {
   /** @export @type {string} */
   this.id;
-  /** @export @type {?string} */
+  /** @export @type {string} */
   this.imageHash;
   /** @export @type {boolean} */
   this.isLocal;
@@ -612,7 +617,7 @@ goog.inherits(lovefield.db.row.Photo, lf.Row);
 lovefield.db.row.Photo.prototype.defaultPayload = function() {
   var payload = new lovefield.db.row.PhotoType();
   payload.id = '';
-  payload.imageHash = null;
+  payload.imageHash = '';
   payload.isLocal = false;
   payload.createdByAction = false;
   payload.timestamp = new Date(0);
@@ -650,6 +655,8 @@ lovefield.db.row.Photo.prototype.keyOfIndex = function(indexName) {
       return this.payload().id;
     case 'Photo.idx_timestamp':
       return this.payload().timestamp.getTime();
+    case 'Photo.idx_imageHash':
+      return this.payload().imageHash;
     case 'Photo.#':
       return this.id();
     default:
@@ -675,14 +682,14 @@ lovefield.db.row.Photo.prototype.setId = function(value) {
 };
 
 
-/** @return {?string} */
+/** @return {string} */
 lovefield.db.row.Photo.prototype.getImageHash = function() {
   return this.payload().imageHash;
 };
 
 
 /**
- * @param {?string} value
+ * @param {string} value
  * @return {!lovefield.db.row.Photo}
 */
 lovefield.db.row.Photo.prototype.setImageHash = function(value) {
@@ -1096,17 +1103,23 @@ lovefield.db.schema.Curator = function() {
 
   /** @type {!lf.schema.BaseColumn.<string>} */
   this.name = new lf.schema.BaseColumn(
-      this, 'name', true, lf.Type.STRING);
+      this, 'name', false, lf.Type.STRING);
   cols.push(this.name);
+
+  /** @type {!lf.schema.BaseColumn.<number>} */
+  this.timestamp = new lf.schema.BaseColumn(
+      this, 'timestamp', false, lf.Type.INTEGER);
+  cols.push(this.timestamp);
 
   var indices = [
     new lf.schema.Index('Curator', 'pkCurator', true,
         [
           {'name': 'id', 'order': lf.Order.ASC, 'autoIncrement': true}
         ]),
-    new lf.schema.Index('Curator', 'uq_name', true,
+    new lf.schema.Index('Curator', 'uq_creation', true,
         [
-          {'name': 'undefined', 'order': lf.Order.ASC}
+          {'name': 'name', 'order': lf.Order.ASC},
+          {'name': 'timestamp', 'order': lf.Order.ASC}
         ])
   ];
 
@@ -1137,13 +1150,15 @@ lovefield.db.schema.Curator.prototype.getConstraint = function() {
       ]);
   var notNullable = [
     this.id,
-    this.name
+    this.name,
+    this.timestamp
   ];
   var foreignKeys = [];
   var unique = [
-    new lf.schema.Index('Curator', 'uq_name', true,
+    new lf.schema.Index('Curator', 'uq_creation', true,
         [
-          {'name': 'undefined', 'order': lf.Order.ASC}
+          {'name': 'name', 'order': lf.Order.ASC},
+          {'name': 'timestamp', 'order': lf.Order.ASC}
         ])
   ];
   return new lf.schema.Constraint(pk, notNullable, foreignKeys, unique);
@@ -1162,6 +1177,8 @@ lovefield.db.row.CuratorType = function() {
   this.id;
   /** @export @type {string} */
   this.name;
+  /** @export @type {number} */
+  this.timestamp;
 };
 
 
@@ -1177,6 +1194,8 @@ lovefield.db.row.CuratorDbType = function() {
   this.id;
   /** @export @type {string} */
   this.name;
+  /** @export @type {number} */
+  this.timestamp;
 };
 
 
@@ -1201,6 +1220,7 @@ lovefield.db.row.Curator.prototype.defaultPayload = function() {
   var payload = new lovefield.db.row.CuratorType();
   payload.id = 0;
   payload.name = '';
+  payload.timestamp = 0;
   return payload;
 };
 
@@ -1210,6 +1230,7 @@ lovefield.db.row.Curator.prototype.toDbPayload = function() {
   var payload = new lovefield.db.row.CuratorDbType();
   payload.id = this.payload().id;
   payload.name = this.payload().name;
+  payload.timestamp = this.payload().timestamp;
   return payload;
 };
 
@@ -1219,8 +1240,11 @@ lovefield.db.row.Curator.prototype.keyOfIndex = function(indexName) {
   switch (indexName) {
     case 'Curator.pkCurator':
       return this.payload().id;
-    case 'Curator.uq_name':
-      return this.payload().name;
+    case 'Curator.uq_creation':
+      return [
+        this.payload().name,
+        this.payload().timestamp
+      ];
     case 'Curator.#':
       return this.id();
     default:
@@ -1262,6 +1286,22 @@ lovefield.db.row.Curator.prototype.setName = function(value) {
 };
 
 
+/** @return {number} */
+lovefield.db.row.Curator.prototype.getTimestamp = function() {
+  return this.payload().timestamp;
+};
+
+
+/**
+ * @param {number} value
+ * @return {!lovefield.db.row.Curator}
+*/
+lovefield.db.row.Curator.prototype.setTimestamp = function(value) {
+  this.payload().timestamp = value;
+  return this;
+};
+
+
 
 /**
  * @extends {lf.schema.Table.<!lovefield.db.row.PhotoCuratorType,
@@ -1289,7 +1329,7 @@ lovefield.db.schema.PhotoCurator = function() {
   var indices = [
     new lf.schema.Index('PhotoCurator', 'uq_topic', true,
         [
-          {'name': 'undefined', 'order': lf.Order.ASC}
+          {'name': 'topic', 'order': lf.Order.ASC}
         ])
   ];
 
@@ -1324,7 +1364,7 @@ lovefield.db.schema.PhotoCurator.prototype.getConstraint = function() {
   var unique = [
     new lf.schema.Index('PhotoCurator', 'uq_topic', true,
         [
-          {'name': 'undefined', 'order': lf.Order.ASC}
+          {'name': 'topic', 'order': lf.Order.ASC}
         ])
   ];
   return new lf.schema.Constraint(pk, notNullable, foreignKeys, unique);
