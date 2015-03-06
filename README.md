@@ -11,3 +11,5 @@ Please visit our [public forum](https://groups.google.com/forum/#!forum/lovefiel
 [Developer Setup](docs/dev_setup.md)
 
 [Design Documents](docs/dd_index.md)
+
+Live 30min overview presentation at JS.LA: Watch on [YouTube](https://www.youtube.com/watch?v=wRiI4p5Uk4E) or [Vimeo](https://vimeo.com/118934273).
