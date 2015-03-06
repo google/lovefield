@@ -1,0 +1,116 @@
+/**
+ * @license
+ * Copyright 2015 Google Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+goog.setTestOnly();
+goog.require('goog.testing.AsyncTestCase');
+goog.require('goog.testing.jsunit');
+goog.require('lf.Global');
+goog.require('lf.cache.Journal');
+goog.require('lf.proc.Relation');
+goog.require('lf.proc.TableAccessByRowIdStep');
+goog.require('lf.testing.MockEnv');
+goog.require('lf.testing.proc.DummyStep');
+
+
+/** @type {!goog.testing.AsyncTestCase} */
+var asyncTestCase = goog.testing.AsyncTestCase.createAndInstall(
+    'TableAccessByRowIdStepTest');
+
+
+/** @type {!lf.schema.Database} */
+var schema;
+
+
+function setUp() {
+  asyncTestCase.waitForAsync('setUp');
+
+  var env = new lf.testing.MockEnv();
+  env.init().then(function() {
+    schema = env.schema;
+    return env.addSampleData();
+  }).then(function() {
+    asyncTestCase.continueTesting();
+  }, fail);
+}
+
+
+function testTableAccessByRowId() {
+  checkTableAccessByRowId('testTableAccessByRowId', schema.tables()[0]);
+}
+
+
+function testTableAccessByRowId_Alias() {
+  checkTableAccessByRowId(
+      'testTableAccessByRowId_Alias',
+      schema.tables()[0].as('SomeTableAlias'));
+}
+
+
+/**
+ * Checks that a TableAccessByRowIdStep that refers to the given table produces
+ * the expected results.
+ * @param {string} description
+ * @param {!lf.schema.Table} table
+ */
+function checkTableAccessByRowId(description, table) {
+  asyncTestCase.waitForAsync(description);
+
+  var step = new lf.proc.TableAccessByRowIdStep(lf.Global.get(), table);
+
+  // Creating a "dummy" child step that will return only two row IDs.
+  var rows = [
+    table.createRow({id: 1, name: 'a'}),
+    table.createRow({id: 2, name: 'b'})
+  ];
+  rows[0].assignRowId(0);
+  rows[1].assignRowId(1);
+  step.addChild(new lf.testing.proc.DummyStep(
+      lf.proc.Relation.fromRows(rows, [table.getName()])));
+
+  var journal = new lf.cache.Journal(lf.Global.get(), [table]);
+  step.exec(journal).then(
+      function(relation) {
+        assertFalse(relation.isPrefixApplied());
+        assertArrayEquals([table.getEffectiveName()], relation.getTables());
+
+        assertEquals(rows.length, relation.entries.length);
+        relation.entries.forEach(function(entry, index) {
+          var rowId = rows[index].id();
+          assertEquals(rowId, entry.row.id());
+          assertEquals('dummyName' + rowId, entry.row.payload().name);
+        });
+
+        asyncTestCase.continueTesting();
+      }, fail);
+}
+
+
+function testTableAccessByRowId_Empty() {
+  asyncTestCase.waitForAsync('testTableAccessByRowId_Empty');
+
+  var table = schema.tables()[1];
+  var step = new lf.proc.TableAccessByRowIdStep(lf.Global.get(), table);
+
+  // Creating a "dummy" child step that will not return any row IDs.
+  step.addChild(new lf.testing.proc.DummyStep(lf.proc.Relation.createEmpty()));
+
+  var journal = new lf.cache.Journal(lf.Global.get(), [table]);
+  step.exec(journal).then(
+      function(relation) {
+        assertEquals(0, relation.entries.length);
+        asyncTestCase.continueTesting();
+      }, fail);
+}

@@ -19,8 +19,10 @@ goog.provide('lf.testing.MockEnv');
 
 goog.require('lf.Global');
 goog.require('lf.ObserverRegistry');
+goog.require('lf.TransactionType');
 goog.require('lf.backstore.Memory');
 goog.require('lf.cache.DefaultCache');
+goog.require('lf.cache.Journal');
 goog.require('lf.index.MemoryIndexStore');
 goog.require('lf.proc.DefaultQueryEngine');
 goog.require('lf.proc.Runner');
@@ -74,4 +76,30 @@ lf.testing.MockEnv.prototype.init = function() {
     global.registerService(lf.service.OBSERVER_REGISTRY, this.observerRegistry);
     return this.indexStore.init(this.schema);
   }, this));
+};
+
+
+/** @return {!IThenable} */
+lf.testing.MockEnv.prototype.addSampleData = function() {
+  var table = this.schema.tables()[0];
+  var sampleDataCount = 9;
+  var rows = new Array(sampleDataCount);
+  for (var i = 0; i < sampleDataCount; i++) {
+    rows[i] = table.createRow({
+      'id': i.toString(),
+      'name': 'dummyName' + i.toString()
+    });
+    rows[i].assignRowId(i);
+  }
+
+  var tx = this.store.createTx(
+      lf.TransactionType.READ_WRITE,
+      new lf.cache.Journal(lf.Global.get(), [table]));
+  var store = tx.getTable(table.getName(), table.deserializeRow);
+  store.put(rows);
+
+  // Updating journals, which will automatically update indices.
+  tx.getJournal().insert(table, rows);
+
+  return tx.commit();
 };
