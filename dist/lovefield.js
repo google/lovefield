@@ -28182,6 +28182,7 @@ lf.index.SingleKeyRangeSet.intersect = function(s0, s1) {
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+goog.provide('lf.proc.AggregationResult');
 goog.provide('lf.proc.Relation');
 goog.provide('lf.proc.RelationEntry');
 
@@ -28213,7 +28214,22 @@ lf.proc.Relation = function(entries, tables) {
 
   /** @private {!goog.structs.Set.<string>} */
   this.tables_ = new goog.structs.Set(tables);
+
+  /**
+   * A map holding any aggregations that have been calculated for this relation.
+   * Null if no aggregations have been calculated. The keys of the map
+   * correspond to the normalized name of the aggregated column, for example
+   * 'COUNT(*)' or 'MIN(Employee.salary)'.
+   * @private {?goog.structs.Map<string, !lf.proc.AggregationResult>}
+   */
+  this.aggregationResults_ = null;
 };
+
+
+/**
+ * @typedef {(!lf.proc.Relation|string|number)}
+ */
+lf.proc.AggregationResult;
 
 
 /**
@@ -28270,6 +28286,41 @@ lf.proc.Relation.prototype.getRowIds = function() {
   return this.entries.map(function(entry) {
     return entry.row.id();
   });
+};
+
+
+/**
+ * Adds an aggregated result to this relation.
+ * @param {!lf.schema.Column} column The aggregated column.
+ * @param {!lf.proc.AggregationResult} result The result of the aggregated
+ *     column.
+ */
+lf.proc.Relation.prototype.setAggregationResult = function(column, result) {
+  if (goog.isNull(this.aggregationResults_)) {
+    this.aggregationResults_ = new goog.structs.Map();
+  }
+
+  this.aggregationResults_.set(column.getNormalizedName(), result);
+};
+
+
+/**
+ * Gets an already calculated aggregated result for this relation.
+ * @param {!lf.schema.Column} column The aggregated column.
+ * @return {!lf.proc.AggregationResult}
+ */
+lf.proc.Relation.prototype.getAggregationResult = function(column) {
+  goog.asserts.assert(
+      !goog.isNull(this.aggregationResults_),
+      'getAggregationResult called before any results have been calculated.');
+
+  var result = this.aggregationResults_.get(
+      column.getNormalizedName(), undefined);
+  goog.asserts.assert(
+      goog.isDef(result),
+      'Could not find result for ' + column.getNormalizedName());
+
+  return result;
 };
 
 
@@ -36791,20 +36842,13 @@ lf.proc.RelationTransformer = function(relation, columns) {
 
 
 /**
- * @typedef {(!lf.proc.Relation|string|number)}
- * @private
- */
-lf.proc.AggregationResult_;
-
-
-/**
  * Calculates a transformed Relation based on the columns that are requested.
  * The type of the requested columns affect the output (non-aggregate only VS
  * aggregate and non-aggregate mixed up).
  * @return {!lf.proc.Relation} The transformed relation.
  */
 lf.proc.RelationTransformer.prototype.getTransformed = function() {
-  var aggregationResults = this.calculateAggregators_();
+  this.calculateAggregators_();
 
   // Determine whether any aggregated columns have been requested.
   var aggregatedColumnsExist = this.columns_.some(
@@ -36813,7 +36857,7 @@ lf.proc.RelationTransformer.prototype.getTransformed = function() {
       }, this);
 
   return aggregatedColumnsExist ?
-      this.handleAggregatedColumns_(aggregationResults) :
+      this.handleAggregatedColumns_() :
       this.handleNonAggregatedColumns_();
 };
 
@@ -36821,19 +36865,16 @@ lf.proc.RelationTransformer.prototype.getTransformed = function() {
 /**
  * Generates the transformed relation for the case where the requested columns
  * include any aggregated columns.
- * @param {!goog.structs.Map.<string, !lf.proc.AggregationResult_>}
- *     aggregationResults The results of all involved aggregations.
  * @return {!lf.proc.Relation} The transformed relation.
  * @private
  */
-lf.proc.RelationTransformer.prototype.handleAggregatedColumns_ = function(
-    aggregationResults) {
+lf.proc.RelationTransformer.prototype.handleAggregatedColumns_ = function() {
   // If the only aggregator that was used was DISTINCT, return the relation
   // corresponding to it.
   if (this.columns_.length == 1 &&
       this.columns_[0].aggregatorType == lf.fn.Type.DISTINCT) {
     var distinctRelation = /** @type {!lf.proc.Relation} */ (
-        aggregationResults.get(this.columns_[0].getNormalizedName(), null));
+        this.relation_.getAggregationResult(this.columns_[0]));
     var newEntries = distinctRelation.entries.map(function(entry) {
       var newEntry = new lf.proc.RelationEntry(
           new lf.Row(lf.Row.DUMMY_ID, {}), this.relation_.isPrefixApplied());
@@ -36851,7 +36892,7 @@ lf.proc.RelationTransformer.prototype.handleAggregatedColumns_ = function(
       new lf.Row(lf.Row.DUMMY_ID, {}), this.relation_.isPrefixApplied());
   this.columns_.forEach(function(column) {
     var value = column instanceof lf.fn.AggregatedColumn ?
-        aggregationResults.get(column.getNormalizedName(), null) :
+        this.relation_.getAggregationResult(column) :
         this.relation_.entries[0].getField(column);
     entry.setField(column, value);
   }, this);
@@ -36886,13 +36927,11 @@ lf.proc.RelationTransformer.prototype.handleNonAggregatedColumns_ = function() {
 
 
 /**
- * Calculates aggregations.
- * @return {!goog.structs.Map.<string, !lf.proc.AggregationResult_>}
+ * Calculates all requested aggregations. Results are stored within
+ * this.relation_.
  * @private
  */
 lf.proc.RelationTransformer.prototype.calculateAggregators_ = function() {
-  var aggregationResults = new goog.structs.Map();
-
   this.columns_.forEach(function(column) {
     if (!(column instanceof lf.fn.AggregatedColumn)) {
       return;
@@ -36902,39 +36941,27 @@ lf.proc.RelationTransformer.prototype.calculateAggregators_ = function() {
     for (var i = 1; i < reverseColumnChain.length; i++) {
       var currentColumn = reverseColumnChain[i];
       var leafColumn = currentColumn.getColumnChain().slice(-1)[0];
-      var inputRelation = this.getInputRelationFor_(
-          currentColumn, aggregationResults);
+      var inputRelation = this.getInputRelationFor_(currentColumn);
 
       var result = lf.proc.RelationTransformer.evalAggregation_(
           currentColumn.aggregatorType, inputRelation, leafColumn);
-      aggregationResults.set(currentColumn.getNormalizedName(), result);
+      this.relation_.setAggregationResult(currentColumn, result);
     }
   }, this);
-
-  return aggregationResults;
 };
 
 
 /**
  * @param {!lf.fn.AggregatedColumn} column The aggregated column.
- * @param {!goog.structs.Map.<string, !lf.proc.AggregationResult_>}
- *     aggregationResults A map intermediate aggregation results.
- * @return {!lf.proc.Relation} The relation that should be used as input for the
- *     given aggregated column.
+ * @return {!lf.proc.Relation} The relation that should be used as input for
+ *     calculating the given aggregated column.
  * @private
  */
-lf.proc.RelationTransformer.prototype.getInputRelationFor_ = function(
-    column, aggregationResults) {
-  if (column.child instanceof lf.fn.AggregatedColumn) {
-    var inputRelation = /** @type {!lf.proc.Relation} */ (
-        aggregationResults.get(column.child.getNormalizedName(), null));
-    goog.asserts.assert(
-        !goog.isNull(inputRelation),
-        'Could not find input relation for ' + column.getNormalizedName());
-    return inputRelation;
-  }
-
-  return this.relation_;
+lf.proc.RelationTransformer.prototype.getInputRelationFor_ = function(column) {
+  return column.child instanceof lf.fn.AggregatedColumn ?
+      /** @type {!lf.proc.Relation} */ (
+          this.relation_.getAggregationResult(column.child)) :
+      this.relation_;
 };
 
 
@@ -36944,7 +36971,7 @@ lf.proc.RelationTransformer.prototype.getInputRelationFor_ = function(
  *     will be evaluated.
  * @param {!lf.schema.Column} column The column on which the aggregation will be
  *     performed.
- * @return {!lf.proc.AggregationResult_}
+ * @return {!lf.proc.AggregationResult}
  * @private
  */
 lf.proc.RelationTransformer.evalAggregation_ = function(
@@ -36976,7 +37003,7 @@ lf.proc.RelationTransformer.evalAggregation_ = function(
       result = lf.proc.RelationTransformer.stddev_(relation, column);
   }
 
-  return /** @type {!lf.proc.AggregationResult_} */ (result);
+  return /** @type {!lf.proc.AggregationResult} */ (result);
 };
 
 
