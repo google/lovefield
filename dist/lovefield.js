@@ -21600,6 +21600,7 @@ lf.backstore.BaseTx.prototype.mergeTableChanges_ = function() {
        * @this {lf.backstore.BaseTx}
        */
       function(tableName) {
+        /** @type {!lf.schema.Table} */
         var tableSchema = this.journal_.getScope().get(tableName);
         var table = this.getTable(
             tableSchema.getName(),
@@ -21637,12 +21638,16 @@ lf.backstore.BaseTx.prototype.mergeIndexChanges_ = function() {
        * @this {lf.backstore.BaseTx}
        */
       function(index) {
+        /** @type {!lf.Stream} */
         var indexTable = this.getTable(index.getName(), lf.Row.deserialize);
-        // Since there is no index diff implemented yet, the entire index needs
-        // to be overwritten on disk. The 1st row holds index metadata and needs
-        // to be preserved. Subsequent rows hold index contents and need to be
-        // overwritten.
-        var metadataRows = null;
+        /**
+         * Since there is no index diff implemented yet, the entire index needs
+         * to be overwritten on disk. The 1st row holds index metadata and needs
+         * to be preserved. Subsequent rows hold index contents and need to be
+         * overwritten.
+         * @type {!Array<!lf.Row>}
+         */
+        var metadataRows;
         indexTable.get([lf.index.IndexMetadataRow.ROW_ID]).then(
             function(rows) {
               metadataRows = rows;
@@ -21657,11 +21662,15 @@ lf.backstore.BaseTx.prototype.mergeIndexChanges_ = function() {
 
 
 /**
- * @param {!Error} e
+ * @param {*} e
  * @private
  */
 lf.backstore.BaseTx.prototype.handleError_ = function(e) {
-  goog.log.error(this.getLogger(), 'DB error', e);
+  if (e instanceof Error) {
+    goog.log.error(this.getLogger(), 'DB error', e);
+  } else {
+    goog.log.error(this.getLogger(), 'Unknown DB error');
+  }
   this.resolver.reject(e);
 };
 
@@ -22124,6 +22133,7 @@ lf.backstore.BundledObjectStore.prototype.get = function(ids) {
     return this.getAll_();
   }
   return this.getPagesByRowIds_(ids).then(goog.bind(
+      /** @param {!goog.structs.Map.<number, !lf.backstore.Page>} pages */
       function(pages) {
         return ids.map(function(id) {
           var page = pages.get(lf.backstore.Page.toPageId(id));
@@ -28537,7 +28547,7 @@ lf.tree.map = function(original, mapFn) {
   /**
    * Removes a node from the parent stack, if that node has already reached its
    * target number of children.
-   * @param {!goog.structs.TreeNode} original The original node.
+   * @param {?goog.structs.TreeNode} original The original node.
    * @param {!goog.structs.TreeNode} clone The corresponding cloned node.
    */
   var cleanUpParentStack = function(original, clone) {
@@ -28558,22 +28568,24 @@ lf.tree.map = function(original, mapFn) {
   var nextParent = null;
   var copyRoot = null;
 
-  original.traverse(function(node) {
-    var newNode = mapFn(node);
+  original.traverse(
+      /** @param {!goog.structs.TreeNode} node */
+      function(node) {
+        var newNode = mapFn(node);
 
-    if (node.getParent() == null) {
-      copyRoot = newNode;
-    } else {
-      nextParent.addChild(newNode);
-    }
+        if (node.getParent() == null) {
+          copyRoot = newNode;
+        } else {
+          nextParent.addChild(newNode);
+        }
 
-    cleanUpParentStack(node.getParent(), nextParent);
-    if (node.getChildCount() > 1) {
-      copyParentStack.push(newNode);
-    }
-    nextParent = node.isLeaf() ?
-        copyParentStack[copyParentStack.length - 1] : newNode;
-  });
+        cleanUpParentStack(node.getParent(), nextParent);
+        if (node.getChildCount() > 1) {
+          copyParentStack.push(newNode);
+        }
+        nextParent = node.isLeaf() ?
+            copyParentStack[copyParentStack.length - 1] : newNode;
+      });
 
   return copyRoot;
 };
@@ -28848,6 +28860,7 @@ lf.tree.replaceChainWithNode = function(head, tail, node) {
 lf.tree.find = function(root, filterFn, opt_stopFn) {
   var results = [];
 
+  /** @param {!goog.structs.TreeNode} node */
   var filterRec = function(node) {
     if (filterFn(node)) {
       results.push(node);
