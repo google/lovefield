@@ -6510,32 +6510,31 @@ lf.index.BTree.prototype.cost = function(opt_keyRange) {
 lf.index.BTree.prototype.stats = function() {
   return this.stats_;
 };
-lf.index.BTree.prototype.getAll_ = function(reverseOrder, limit, skip) {
-  var count = Math.min(Math.max(this.stats_.totalRows - skip, 0), limit);
-  if (0 == count) {
-    return [];
-  }
-  var offset = reverseOrder ? this.stats_.totalRows - count - skip : skip, results = Array(count), params = {offset:offset, count:count, startIndex:0};
+lf.index.BTree.prototype.getAll_ = function(maxCount, reverse, limit, skip) {
+  var offset = reverse ? this.stats_.totalRows - maxCount - skip : skip, results = Array(maxCount), params = {offset:offset, count:maxCount, startIndex:0};
   this.root_.fill(params, results);
-  return reverseOrder ? results.reverse() : results;
+  return reverse ? results.reverse() : results;
 };
 lf.index.BTree.prototype.getRange = function(opt_keyRanges, opt_reverseOrder, opt_limit, opt_skip) {
   var leftMostKey = this.root_.getLeftMostNode().keys_[0];
   if (!goog.isDef(leftMostKey) || 0 == opt_limit) {
     return lf.index.BTree.EMPTY;
   }
-  if (!goog.isDef(opt_keyRanges) || 1 == opt_keyRanges.length && opt_keyRanges[0] instanceof lf.index.SingleKeyRange && opt_keyRanges[0].isAll()) {
-    return this.getAll_(opt_reverseOrder || !1, opt_limit || this.stats_.totalRows, opt_skip || 0);
+  var reverse = opt_reverseOrder || !1, limit = goog.isDefAndNotNull(opt_limit) ? Math.min(opt_limit, this.stats_.totalRows) : this.stats_.totalRows, skip = opt_skip || 0, maxCount = Math.min(Math.max(this.stats_.totalRows - skip, 0), limit);
+  if (0 == maxCount) {
+    return lf.index.BTree.EMPTY;
   }
-  var maxNumResults = (opt_limit || 0) + (opt_skip || 0), maxNumResults = 0 < maxNumResults && !opt_reverseOrder ? maxNumResults : Number.POSITIVE_INFINITY, sortedKeyRanges = this.comparator_.sortKeyRanges(opt_keyRanges), results = [];
+  if (!goog.isDef(opt_keyRanges) || 1 == opt_keyRanges.length && opt_keyRanges[0] instanceof lf.index.SingleKeyRange && opt_keyRanges[0].isAll()) {
+    return this.getAll_(maxCount, reverse, limit, skip);
+  }
+  var sortedKeyRanges = this.comparator_.sortKeyRanges(opt_keyRanges), results = Array(reverse ? this.stats_.totalRows : maxCount), params = {count:0, limit:results.length, reverse:reverse, skip:skip};
   sortedKeyRanges.forEach(function(range) {
-    for (var keys = this.comparator_.rangeToKeys(range), key = this.comparator_.isLeftOpen(range) ? leftMostKey : keys[0], start = this.root_.getContainingLeaf(key), strikeCount = 0;goog.isDefAndNotNull(start) && results.length < maxNumResults;) {
-      var length = start.getRange(range, results);
-      0 != length ? strikeCount = 0 : strikeCount++;
-      start = 2 == strikeCount ? null : start.next();
+    for (var keys = this.comparator_.rangeToKeys(range), key = this.comparator_.isLeftOpen(range) ? leftMostKey : keys[0], start = this.root_.getContainingLeaf(key), oldCount = params.count, strikeCount = 0;goog.isDefAndNotNull(start) && params.count < params.limit;) {
+      start.getRange(range, params, results), params.count != oldCount ? (strikeCount = 0, oldCount = params.count) : strikeCount++, start = 2 == strikeCount ? null : start.next();
     }
   }, this);
-  return lf.index.slice(results, opt_reverseOrder, opt_limit, opt_skip);
+  results.splice(params.count, maxCount - params.count);
+  return reverse ? lf.index.slice(results, reverse, limit, skip) : results;
 };
 lf.index.BTree.prototype.clear = function() {
   this.root_ = lf.index.BTreeNode_.create(this);
@@ -6861,62 +6860,63 @@ lf.index.BTreeNode_.prototype.getContainingLeaf = function(key) {
   }
   return this;
 };
-lf.index.BTreeNode_.prototype.getRange = function(keyRange, results) {
+lf.index.BTreeNode_.prototype.getRange = function(keyRange, params, results) {
   var c = this.tree_.comparator(), left = 0, right = this.keys_.length - 1, compare = function(coverage) {
     return coverage[0] ? coverage[1] ? lf.index.Favor.TIE : lf.index.Favor.LHS : lf.index.Favor.RHS;
   }, keys = this.keys_, favorLeft = compare(c.compareRange(keys[left], keyRange)), favorRight = compare(c.compareRange(keys[right], keyRange));
-  if (favorLeft == lf.index.Favor.LHS || favorLeft == lf.index.Favor.RHS && favorRight == lf.index.Favor.RHS) {
-    return 0;
+  if (favorLeft != lf.index.Favor.LHS && (favorLeft != lf.index.Favor.RHS || favorRight != lf.index.Favor.RHS)) {
+    var getMidPoint = function(l, r) {
+      var mid = l + r >> 1;
+      return mid == l ? mid + 1 : mid;
+    }, findFirstKey = function(l, r, favorR) {
+      if (l >= r) {
+        return favorR == lf.index.Favor.TIE ? r : -1;
+      }
+      var favorL = compare(c.compareRange(keys[l], keyRange));
+      if (favorL == lf.index.Favor.TIE) {
+        return l;
+      }
+      if (favorL == lf.index.Favor.LHS) {
+        return -1;
+      }
+      var mid = getMidPoint(l, r);
+      if (mid == r) {
+        return favorR == lf.index.Favor.TIE ? r : -1;
+      }
+      var favorM = compare(c.compareRange(keys[mid], keyRange));
+      return favorM == lf.index.Favor.TIE ? findFirstKey(l, mid, favorM) : favorM == lf.index.Favor.RHS ? findFirstKey(mid + 1, r, favorR) : findFirstKey(l + 1, mid, favorM);
+    }, findLastKey = function(l, r) {
+      if (l >= r) {
+        return l;
+      }
+      var favorR = compare(c.compareRange(keys[r], keyRange));
+      if (favorR == lf.index.Favor.TIE) {
+        return r;
+      }
+      if (favorR == lf.index.Favor.RHS) {
+        return l;
+      }
+      var mid = getMidPoint(l, r);
+      if (mid == r) {
+        return l;
+      }
+      var favorM = compare(c.compareRange(keys[mid], keyRange));
+      return favorM == lf.index.Favor.TIE ? findLastKey(mid, r) : favorM == lf.index.Favor.LHS ? findLastKey(l, mid - 1) : -1;
+    };
+    favorLeft != lf.index.Favor.TIE && (left = findFirstKey(left + 1, right, favorRight));
+    -1 != left && (right = findLastKey(left, right), -1 != right && right >= left && this.appendResults_(params, results, left, right + 1));
   }
-  var getMidPoint = function(l, r) {
-    var mid = l + r >> 1;
-    return mid == l ? mid + 1 : mid;
-  }, findFirstKey = function(l, r, favorR) {
-    if (l >= r) {
-      return favorR == lf.index.Favor.TIE ? r : -1;
-    }
-    var favorL = compare(c.compareRange(keys[l], keyRange));
-    if (favorL == lf.index.Favor.TIE) {
-      return l;
-    }
-    if (favorL == lf.index.Favor.LHS) {
-      return -1;
-    }
-    var mid = getMidPoint(l, r);
-    if (mid == r) {
-      return favorR == lf.index.Favor.TIE ? r : -1;
-    }
-    var favorM = compare(c.compareRange(keys[mid], keyRange));
-    return favorM == lf.index.Favor.TIE ? findFirstKey(l, mid, favorM) : favorM == lf.index.Favor.RHS ? findFirstKey(mid + 1, r, favorR) : findFirstKey(l + 1, mid, favorM);
-  }, findLastKey = function(l, r) {
-    if (l >= r) {
-      return l;
-    }
-    var favorR = compare(c.compareRange(keys[r], keyRange));
-    if (favorR == lf.index.Favor.TIE) {
-      return r;
-    }
-    if (favorR == lf.index.Favor.RHS) {
-      return l;
-    }
-    var mid = getMidPoint(l, r);
-    if (mid == r) {
-      return l;
-    }
-    var favorM = compare(c.compareRange(keys[mid], keyRange));
-    return favorM == lf.index.Favor.TIE ? findLastKey(mid, r) : favorM == lf.index.Favor.LHS ? findLastKey(l, mid - 1) : -1;
-  };
-  favorLeft != lf.index.Favor.TIE && (left = findFirstKey(left + 1, right, favorRight));
-  if (-1 == left) {
-    return 0;
-  }
-  right = findLastKey(left, right);
-  return -1 == right || right < left ? 0 : this.appendResults_(results, this.values_.slice(left, right + 1));
 };
-lf.index.BTreeNode_.prototype.appendResults_ = function(currentResults, newResults) {
-  var toAppend = this.tree_.isUniqueKey() ? newResults : goog.array.flatten(newResults);
-  currentResults.push.apply(currentResults, toAppend);
-  return toAppend.length;
+lf.index.BTreeNode_.prototype.appendResults_ = function(params, results, from, to) {
+  for (var i = from;i < to && (params.reverse || !(params.count >= params.limit));++i) {
+    if (this.tree_.isUniqueKey()) {
+      !params.reverse && params.skip ? params.skip-- : results[params.count++] = this.values_[i];
+    } else {
+      for (var j = 0;j < this.values_[i].length && params.count < results.length;++j) {
+        !params.reverse && params.skip ? params.skip-- : results[params.count++] = this.values_[i][j];
+      }
+    }
+  }
 };
 lf.index.BTreeNode_.prototype.fill = function(params, results) {
   if (this.isLeaf_()) {
