@@ -156,4 +156,4 @@ table:
       primaryKey: [ string, number ]
       unique:
         uq_constraint:
-          column: [integer, boolean]
+          column: [integer, string2]

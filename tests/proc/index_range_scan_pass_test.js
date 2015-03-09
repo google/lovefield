@@ -284,7 +284,7 @@ function testTree_MultipleCrossColumnIndices() {
       'select(value_pred(DummyTable.string eq StringValue))\n' +
       '-select(value_pred(DummyTable.integer gt 100))\n' +
       '--select(value_pred(DummyTable.number gte 400))\n' +
-      '---select(value_pred(DummyTable.boolean eq true))\n' +
+      '---select(value_pred(DummyTable.string2 eq StringValue2))\n' +
       '----table_access(DummyTable)\n';
 
   var treeAfter =
@@ -292,7 +292,7 @@ function testTree_MultipleCrossColumnIndices() {
       '-select(value_pred(DummyTable.number gte 400))\n' +
       '--table_access_by_row_id(DummyTable)\n' +
       '---index_range_scan(DummyTable.uq_constraint, ' +
-          '(100, unbound],[true, true], ASC)\n';
+          '(100, unbound],[StringValue2, StringValue2], ASC)\n';
 
   var indices = dt.getIndices();
   lf.testing.util.simulateIndexCost(
@@ -303,7 +303,7 @@ function testTree_MultipleCrossColumnIndices() {
   var selectNode1 = new lf.proc.SelectStep(dt.string.eq('StringValue'));
   var selectNode2 = new lf.proc.SelectStep(dt.integer.gt(100));
   var selectNode3 = new lf.proc.SelectStep(dt.number.gte(400));
-  var selectNode4 = new lf.proc.SelectStep(dt.boolean.eq(true));
+  var selectNode4 = new lf.proc.SelectStep(dt.string2.eq('StringValue2'));
   var tableAccessNode = new lf.proc.TableAccessFullStep(hr.db.getGlobal(), dt);
   selectNode1.addChild(selectNode2);
   selectNode2.addChild(selectNode3);
@@ -323,20 +323,66 @@ function testTree_MultipleCrossColumnIndices() {
  * Tests a tree where
  *  - two cross-column indices exist, each index is indexing two columns.
  *  - a predicate that refers to a subset of the cross column index's columns
- *    exists.
- *  - a predicate that refers to a non-indexed column exists.
+ *    exists. The referred columns are enough to leverage the index, since
+ *    they do form a prefix. Cross-column indices exist on
+ *    ['string', 'number'] and ['integer', 'string2'], and the predicates refer
+ *    to 'string', and 'integer', therefore both indices are valid candidates
+ *    and the most selective one should be leveraged.
+ */
+function testTree_MultipleCrossColumnIndices_PartialMatching() {
+  var treeBefore =
+      'select(value_pred(DummyTable.string eq StringValue))\n' +
+      '-select(value_pred(DummyTable.integer gt 100))\n' +
+      '--table_access(DummyTable)\n';
+
+  var treeAfter =
+      'select(value_pred(DummyTable.integer gt 100))\n' +
+      '-table_access_by_row_id(DummyTable)\n' +
+      '--index_range_scan(DummyTable.pkDummyTable, ' +
+          '[StringValue, StringValue],[unbound, unbound], ASC)\n';
+
+  var indices = dt.getIndices();
+  lf.testing.util.simulateIndexCost(
+      propertyReplacer, indexStore, indices[0], 10);
+  lf.testing.util.simulateIndexCost(
+      propertyReplacer, indexStore, indices[1], 100);
+
+  var selectNode1 = new lf.proc.SelectStep(dt.string.eq('StringValue'));
+  var selectNode2 = new lf.proc.SelectStep(dt.integer.gt(100));
+  var tableAccessNode = new lf.proc.TableAccessFullStep(hr.db.getGlobal(), dt);
+  selectNode1.addChild(selectNode2);
+  selectNode2.addChild(tableAccessNode);
+
+  var rootNodeBefore = selectNode1;
+  assertEquals(treeBefore, lf.tree.toString(rootNodeBefore));
+
+  var pass = new lf.proc.IndexRangeScanPass(hr.db.getGlobal());
+  var rootNodeAfter = pass.rewrite(rootNodeBefore);
+  assertEquals(treeAfter, lf.tree.toString(rootNodeAfter));
+}
+
+
+/**
+ * Tests a tree where
+ *  - two cross-column indices exist, each index is indexing two columns.
+ *  - a predicate that refers to a subset of the cross column index's columns
+ *    exists. The referred columns are not enough to leverage the index, since
+ *    they don't form a prefix. Cross-column indices exist on
+ *    ['string', 'number'] and ['integer', 'string2'], but only 'number' and
+ *    'string2' are bound with a predicate.
+ *  - a predicate that refers to a non-indexed column ('boolean') exists.
  *
  *  It ensures that the tree remains unaffected since no index can be leveraged.
  */
 function testTree_Unaffected() {
   var treeBefore =
-      'select(value_pred(DummyTable.string eq StringValue))\n' +
-      '-select(value_pred(DummyTable.integer gt 100))\n' +
+      'select(value_pred(DummyTable.boolean eq false))\n' +
+      '-select(value_pred(DummyTable.number gt 100))\n' +
       '--select(value_pred(DummyTable.string2 eq OtherStringValue))\n' +
       '---table_access(DummyTable)\n';
 
-  var selectNode1 = new lf.proc.SelectStep(dt.string.eq('StringValue'));
-  var selectNode2 = new lf.proc.SelectStep(dt.integer.gt(100));
+  var selectNode1 = new lf.proc.SelectStep(dt.boolean.eq(false));
+  var selectNode2 = new lf.proc.SelectStep(dt.number.gt(100));
   var selectNode3 = new lf.proc.SelectStep(dt.string2.eq('OtherStringValue'));
   var tableAccessNode = new lf.proc.TableAccessFullStep(hr.db.getGlobal(), dt);
   selectNode1.addChild(selectNode2);
