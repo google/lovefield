@@ -78,7 +78,8 @@ function checkIndexRangeScan(order, description) {
 
   var journal = new lf.cache.Journal(lf.Global.get(), [table]);
   step.exec(journal).then(
-      function(relation) {
+      function(relations) {
+        var relation = relations[0];
         assertEquals(4, relation.entries.length);
         relation.entries.forEach(function(entry, j) {
           if (j == 0) {

@@ -73,16 +73,17 @@ function testCrossProduct() {
   }
 
   var leftChild = new lf.testing.proc.DummyStep(
-      lf.proc.Relation.fromRows(leftRows, [leftTable.getName()]));
+      [lf.proc.Relation.fromRows(leftRows, [leftTable.getName()])]);
   var rightChild = new lf.testing.proc.DummyStep(
-      lf.proc.Relation.fromRows(rightRows, [rightTable.getName()]));
+      [lf.proc.Relation.fromRows(rightRows, [rightTable.getName()])]);
 
   var step = new lf.proc.CrossProductStep();
   step.addChild(leftChild);
   step.addChild(rightChild);
 
   var journal = new lf.cache.Journal(lf.Global.get(), []);
-  step.exec(journal).then(function(relation) {
+  step.exec(journal).then(function(relations) {
+    var relation = relations[0];
     assertEquals(leftRowCount * rightRowCount, relation.entries.length);
     relation.entries.forEach(function(entry) {
       assertTrue(goog.isDefAndNotNull(entry.getField(leftTable['id'])));
@@ -136,9 +137,9 @@ function testCrossProduct_PreviousJoins() {
   var relation2 = lf.proc.Relation.fromRows(relation2Rows, [table2.getName()]);
   var relation3 = lf.proc.Relation.fromRows(relation3Rows, [table3.getName()]);
 
-  var relation1Step = new lf.testing.proc.DummyStep(relation1);
-  var relation2Step = new lf.testing.proc.DummyStep(relation2);
-  var relation3Step = new lf.testing.proc.DummyStep(relation3);
+  var relation1Step = new lf.testing.proc.DummyStep([relation1]);
+  var relation2Step = new lf.testing.proc.DummyStep([relation2]);
+  var relation3Step = new lf.testing.proc.DummyStep([relation3]);
 
   // Creating a tree structure composed of two cross product steps.
   var crossProductStep12 = new lf.proc.CrossProductStep();
@@ -150,7 +151,9 @@ function testCrossProduct_PreviousJoins() {
   crossProductStep123.addChild(relation3Step);
 
   var journal = new lf.cache.Journal(lf.Global.get(), []);
-  crossProductStep123.exec(journal).then(function(result) {
+  crossProductStep123.exec(journal).then(function(results) {
+    var result = results[0];
+
     // Expecting the final result to be a cross product of all 3 tables.
     assertEquals(
         relation1Count * relation2Count * relation3Count,

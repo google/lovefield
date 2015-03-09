@@ -78,11 +78,12 @@ function checkTableAccessByRowId(description, table) {
   rows[0].assignRowId(0);
   rows[1].assignRowId(1);
   step.addChild(new lf.testing.proc.DummyStep(
-      lf.proc.Relation.fromRows(rows, [table.getName()])));
+      [lf.proc.Relation.fromRows(rows, [table.getName()])]));
 
   var journal = new lf.cache.Journal(lf.Global.get(), [table]);
   step.exec(journal).then(
-      function(relation) {
+      function(relations) {
+        var relation = relations[0];
         assertFalse(relation.isPrefixApplied());
         assertArrayEquals([table.getEffectiveName()], relation.getTables());
 
@@ -105,12 +106,13 @@ function testTableAccessByRowId_Empty() {
   var step = new lf.proc.TableAccessByRowIdStep(lf.Global.get(), table);
 
   // Creating a "dummy" child step that will not return any row IDs.
-  step.addChild(new lf.testing.proc.DummyStep(lf.proc.Relation.createEmpty()));
+  step.addChild(
+      new lf.testing.proc.DummyStep([lf.proc.Relation.createEmpty()]));
 
   var journal = new lf.cache.Journal(lf.Global.get(), [table]);
   step.exec(journal).then(
-      function(relation) {
-        assertEquals(0, relation.entries.length);
+      function(relations) {
+        assertEquals(0, relations[0].entries.length);
         asyncTestCase.continueTesting();
       }, fail);
 }

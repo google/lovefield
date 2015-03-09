@@ -69,7 +69,8 @@ function checkTableAccessFullStep(description, table) {
   var step = new lf.proc.TableAccessFullStep(lf.Global.get(), table);
   var journal = new lf.cache.Journal(lf.Global.get(), [table]);
   step.exec(journal).then(
-      function(relation) {
+      function(relations) {
+        var relation = relations[0];
         assertFalse(relation.isPrefixApplied());
         assertArrayEquals([table.getEffectiveName()], relation.getTables());
         assertTrue(relation.entries.length > 0);

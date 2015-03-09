@@ -70,14 +70,15 @@ function checkExec(sampleDataCount, skip) {
   asyncTestCase.waitForAsync('testExec' + sampleDataCount + skip);
   var rows = generateSampleRows(sampleDataCount);
   var tableName = 'dummyTable';
-  var childStep = new lf.testing.proc.DummyStep(
-      lf.proc.Relation.fromRows(rows, [tableName]));
+  var childStep = new lf.testing.proc.DummyStep([
+    lf.proc.Relation.fromRows(rows, [tableName])]);
 
   var step = new lf.proc.SkipStep(skip);
   step.addChild(childStep);
 
   var journal = new lf.cache.Journal(lf.Global.get(), []);
-  step.exec(journal).then(function(relation) {
+  step.exec(journal).then(function(relations) {
+    var relation = relations[0];
     var expectedResults = Math.max(sampleDataCount - skip, 0);
     assertEquals(expectedResults, relation.entries.length);
     if (expectedResults > 0) {

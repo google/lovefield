@@ -71,16 +71,16 @@ function checkExec(sampleDataCount, limit) {
   var rows = generateSampleRows(sampleDataCount);
   var tableName = 'dummyTable';
   var childStep = new lf.testing.proc.DummyStep(
-      lf.proc.Relation.fromRows(rows, [tableName]));
+      [lf.proc.Relation.fromRows(rows, [tableName])]);
 
   var step = new lf.proc.LimitStep(limit);
   step.addChild(childStep);
 
   var journal = new lf.cache.Journal(lf.Global.get(), []);
-  step.exec(journal).then(function(relation) {
+  step.exec(journal).then(function(relations) {
     assertEquals(
         Math.min(limit, sampleDataCount),
-        relation.entries.length);
+        relations[0].entries.length);
     asyncTestCase.continueTesting();
   }, fail);
 }

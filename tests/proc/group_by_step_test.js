@@ -55,7 +55,7 @@ function setUp() {
 function testExec_SingleColumn() {
   var inputRelation = lf.proc.Relation.fromRows(
       dataGenerator.sampleEmployees, [e.getName()]);
-  var childStep = new lf.testing.proc.DummyStep(inputRelation);
+  var childStep = new lf.testing.proc.DummyStep([inputRelation]);
   var groupByStep = new lf.proc.GroupByStep([e.jobId]);
   groupByStep.addChild(childStep);
 
@@ -65,7 +65,7 @@ function testExec_SingleColumn() {
     var jobIds = employeesPerJob.getKeys();
     assertEquals(jobIds.length, relations.length);
     relations.forEach(function(relation) {
-      var jobId = relation.entries[0].getField(e.jobId);
+      var jobId = /** @type {string} */ (relation.entries[0].getField(e.jobId));
       var expectedRows = employeesPerJob.get(jobId);
       assertEquals(expectedRows.length, relation.entries.length);
       relation.entries.forEach(function(entry) {
@@ -84,7 +84,7 @@ function testExec_SingleColumn() {
 function testExec_MultiColumn() {
   var inputRelation = lf.proc.Relation.fromRows(
       dataGenerator.sampleJobs, [j.getName()]);
-  var childStep = new lf.testing.proc.DummyStep(inputRelation);
+  var childStep = new lf.testing.proc.DummyStep([inputRelation]);
   var groupByStep = new lf.proc.GroupByStep([j.minSalary, j.maxSalary]);
   groupByStep.addChild(childStep);
 

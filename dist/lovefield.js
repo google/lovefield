@@ -32125,7 +32125,6 @@ goog.provide('lf.proc.PhysicalQueryPlanNode');
 goog.require('goog.Promise');
 goog.require('goog.asserts');
 goog.require('goog.structs.TreeNode');
-goog.require('lf.proc.Relation');
 
 goog.forwardDeclare('lf.cache.Journal');
 goog.forwardDeclare('lf.schema.Table');
@@ -32137,17 +32136,18 @@ goog.forwardDeclare('lf.schema.Table');
  * @suppress {checkStructDictInheritance}
  * @extends {goog.structs.TreeNode}
  *
+ * @param {number} numRelations Number of relations expected for input. Accepts
+ *     ANY (i.e. -1), zero, or positive numbers.
  * @param {!lf.proc.PhysicalQueryPlanNode.ExecType} type
- * @param {!lf.proc.PhysicalQueryPlanNode.InputRelationType} inputType
  */
-lf.proc.PhysicalQueryPlanNode = function(type, inputType) {
+lf.proc.PhysicalQueryPlanNode = function(numRelations, type) {
   lf.proc.PhysicalQueryPlanNode.base(this, 'constructor', '', '');
 
   /** @private {!lf.proc.PhysicalQueryPlanNode.ExecType} */
   this.execType_ = type;
 
-  /** @private {!lf.proc.PhysicalQueryPlanNode.InputRelationType} */
-  this.inputType_ = inputType;
+  /** @private {!number} */
+  this.numRelations_ = numRelations;
 };
 goog.inherits(lf.proc.PhysicalQueryPlanNode, goog.structs.TreeNode);
 
@@ -32163,15 +32163,8 @@ lf.proc.PhysicalQueryPlanNode.ExecType = {
 };
 
 
-/**
- * When execInternal() is overriden, what input type should it expect.
- * @enum {number}
- */
-lf.proc.PhysicalQueryPlanNode.InputRelationType = {
-  NONE: -1,  // execInternal expect no relation.
-  ARRAY: 0,  // execInternal shall expect array of relations.
-  SINGLE: 1  // execInternal shall expect single relation.
-};
+/** @const {number} */
+lf.proc.PhysicalQueryPlanNode.ANY = -1;
 
 
 /**
@@ -32184,9 +32177,12 @@ lf.proc.PhysicalQueryPlanNode.prototype.getScope = function() {
 
 
 /**
+ * The core logic of this node.
  * @param {!lf.cache.Journal} journal
- * @param {!lf.proc.Relation|!Array<!lf.proc.Relation>} results
- * @return {!lf.proc.Relation|!Array<!lf.proc.Relation>}
+ * @param {!Array<!lf.proc.Relation>} relations Array of input relations. The
+ *     length of relations is guaranteed to be consistent with what is specified
+ *     in the constructor.
+ * @return {!Array<!lf.proc.Relation>}
  * @protected
  */
 lf.proc.PhysicalQueryPlanNode.prototype.execInternal = goog.abstractMethod;
@@ -32194,8 +32190,7 @@ lf.proc.PhysicalQueryPlanNode.prototype.execInternal = goog.abstractMethod;
 
 /**
  * @param {!lf.cache.Journal} journal
- * @return {(!IThenable<!lf.proc.Relation>|
- *     !IThenable<!Array<!lf.proc.Relation>>)}
+ * @return {!IThenable<!Array<!lf.proc.Relation>>}
  * @final
  */
 lf.proc.PhysicalQueryPlanNode.prototype.exec = function(journal) {
@@ -32219,24 +32214,19 @@ lf.proc.PhysicalQueryPlanNode.prototype.toString = function() {
 
 
 /**
- * @param {!lf.proc.Relation|!Array<!lf.proc.Relation>} results
+ * @param {!Array<!lf.proc.Relation>} relations
  * @private
  */
-lf.proc.PhysicalQueryPlanNode.prototype.assertInput_ = function(results) {
+lf.proc.PhysicalQueryPlanNode.prototype.assertInput_ = function(relations) {
   goog.asserts.assert(
-      (this.inputType_ ==
-       lf.proc.PhysicalQueryPlanNode.InputRelationType.SINGLE &&
-       results instanceof lf.proc.Relation) ||
-      (this.inputType_ ==
-       lf.proc.PhysicalQueryPlanNode.InputRelationType.ARRAY &&
-       results instanceof Array));
+      this.numRelations_ == lf.proc.PhysicalQueryPlanNode.ANY ||
+      relations.length == this.numRelations_);
 };
 
 
 /**
  * @param {!lf.cache.Journal} journal
- * @return {(!IThenable<!lf.proc.Relation>|
- *     !IThenable<!Array<!lf.proc.Relation>>)}
+ * @return {!IThenable<!Array<!lf.proc.Relation>>}
  * @private
  */
 lf.proc.PhysicalQueryPlanNode.prototype.execNoChild_ = function(journal) {
@@ -32252,8 +32242,7 @@ lf.proc.PhysicalQueryPlanNode.prototype.execNoChild_ = function(journal) {
 
 /**
  * @param {!lf.cache.Journal} journal
- * @return {(!IThenable<!lf.proc.Relation>|
- *     !IThenable<!Array<!lf.proc.Relation>>)}
+ * @return {!IThenable<!Array<!lf.proc.Relation>>}
  * @private
  */
 lf.proc.PhysicalQueryPlanNode.prototype.execFirstChild_ = function(journal) {
@@ -32266,8 +32255,7 @@ lf.proc.PhysicalQueryPlanNode.prototype.execFirstChild_ = function(journal) {
 
 /**
  * @param {!lf.cache.Journal} journal
- * @return {(!IThenable<!lf.proc.Relation>|
- *     !IThenable<!Array<!lf.proc.Relation>>)}
+ * @return {!IThenable<!Array<!lf.proc.Relation>>}
  * @private
  */
 lf.proc.PhysicalQueryPlanNode.prototype.execAllChildren_ = function(journal) {
@@ -32276,8 +32264,15 @@ lf.proc.PhysicalQueryPlanNode.prototype.execAllChildren_ = function(journal) {
   });
 
   return goog.Promise.all(promises).then(goog.bind(function(results) {
-    this.assertInput_(results);
-    return this.execInternal(journal, results);
+    // Flatten the results array.
+    var relations = [];
+    results.forEach(function(result) {
+      for (var i = 0; i < result.length; ++i) {
+        relations.push(result[i]);
+      }
+    });
+    this.assertInput_(relations);
+    return this.execInternal(journal, relations);
   }, this));
 };
 
@@ -32313,8 +32308,8 @@ goog.require('lf.proc.RelationEntry');
  */
 lf.proc.CrossProductStep = function() {
   lf.proc.CrossProductStep.base(this, 'constructor',
-      lf.proc.PhysicalQueryPlanNode.ExecType.ALL,
-      lf.proc.PhysicalQueryPlanNode.InputRelationType.ARRAY);
+      2,
+      lf.proc.PhysicalQueryPlanNode.ExecType.ALL);
 };
 goog.inherits(lf.proc.CrossProductStep, lf.proc.PhysicalQueryPlanNode);
 
@@ -32327,11 +32322,7 @@ lf.proc.CrossProductStep.prototype.toString = function() {
 
 /** @override */
 lf.proc.CrossProductStep.prototype.execInternal = function(journal, relations) {
-  var results = /** @type {!Array<!lf.proc.Relation>} */ (relations);
-  goog.asserts.assert(
-      results.length == 2,
-      'Only cross-products of 2 relations are currently supported.');
-  return lf.proc.CrossProductStep.crossProduct_(results[0], results[1]);
+  return lf.proc.CrossProductStep.crossProduct_(relations[0], relations[1]);
 };
 
 
@@ -32339,7 +32330,7 @@ lf.proc.CrossProductStep.prototype.execInternal = function(journal, relations) {
  * Calculates the cross product of two relations.
  * @param {!lf.proc.Relation} leftRelation The first relation.
  * @param {!lf.proc.Relation} rightRelation The second relation.
- * @return {!lf.proc.Relation} The combined relation.
+ * @return {!Array.<lf.proc.Relation>} The combined relation.
  * @private
  */
 lf.proc.CrossProductStep.crossProduct_ = function(
@@ -32358,7 +32349,7 @@ lf.proc.CrossProductStep.crossProduct_ = function(
   }
 
   var srcTables = leftRelation.getTables().concat(rightRelation.getTables());
-  return new lf.proc.Relation(combinedEntries, srcTables);
+  return [new lf.proc.Relation(combinedEntries, srcTables)];
 };
 
 /**
@@ -32828,8 +32819,8 @@ lf.proc.QueryTask.prototype.exec = function() {
   var sequentiallyExec = goog.bind(function() {
     var plan = remainingPlans.shift();
     if (plan) {
-      return plan.getRoot().exec(journal).then(function(relation) {
-        results.push(relation);
+      return plan.getRoot().exec(journal).then(function(relations) {
+        results.push(relations[0]);
         return sequentiallyExec();
       });
     }
@@ -35805,8 +35796,8 @@ goog.require('lf.proc.Relation');
  */
 lf.proc.DeleteStep = function(table) {
   lf.proc.DeleteStep.base(this, 'constructor',
-      lf.proc.PhysicalQueryPlanNode.ExecType.FIRST_CHILD,
-      lf.proc.PhysicalQueryPlanNode.InputRelationType.SINGLE);
+      1,
+      lf.proc.PhysicalQueryPlanNode.ExecType.FIRST_CHILD);
 
   /** @private {!lf.schema.Table} table */
   this.table_ = table;
@@ -35827,12 +35818,12 @@ lf.proc.DeleteStep.prototype.getScope = function() {
 
 
 /** @override */
-lf.proc.DeleteStep.prototype.execInternal = function(journal, relation) {
-  var rows = relation.entries.map(function(entry) {
+lf.proc.DeleteStep.prototype.execInternal = function(journal, relations) {
+  var rows = relations[0].entries.map(function(entry) {
     return entry.row;
   });
   journal.remove(this.table_, rows);
-  return lf.proc.Relation.createEmpty();
+  return [lf.proc.Relation.createEmpty()];
 };
 
 /**
@@ -36246,8 +36237,8 @@ goog.require('lf.service');
  */
 lf.proc.IndexRangeScanStep = function(global, index, keyRanges, order) {
   lf.proc.IndexRangeScanStep.base(this, 'constructor',
-      lf.proc.PhysicalQueryPlanNode.ExecType.NO_CHILD,
-      lf.proc.PhysicalQueryPlanNode.InputRelationType.NONE);
+      0,
+      lf.proc.PhysicalQueryPlanNode.ExecType.NO_CHILD);
 
   /** @private {!lf.index.IndexStore} */
   this.indexStore_ = global.getService(lf.service.INDEX_STORE);
@@ -36283,7 +36274,8 @@ lf.proc.IndexRangeScanStep.prototype.toString = function() {
 
 
 /** @override */
-lf.proc.IndexRangeScanStep.prototype.execInternal = function(journal) {
+lf.proc.IndexRangeScanStep.prototype.execInternal = function(
+    journal, relations) {
   var reverseOrder = (this.order != this.index.columns[0].order);
 
   var index = this.indexStore_.get(this.index.getNormalizedName());
@@ -36297,7 +36289,7 @@ lf.proc.IndexRangeScanStep.prototype.execInternal = function(journal) {
     return new lf.Row(rowId, {});
   }, this);
 
-  return lf.proc.Relation.fromRows(rows, [this.index.tableName]);
+  return [lf.proc.Relation.fromRows(rows, [this.index.tableName])];
 };
 
 /**
@@ -36330,8 +36322,8 @@ goog.require('lf.proc.PhysicalQueryPlanNode');
  */
 lf.proc.SelectStep = function(predicate) {
   lf.proc.SelectStep.base(this, 'constructor',
-      lf.proc.PhysicalQueryPlanNode.ExecType.FIRST_CHILD,
-      lf.proc.PhysicalQueryPlanNode.InputRelationType.SINGLE);
+      1,
+      lf.proc.PhysicalQueryPlanNode.ExecType.FIRST_CHILD);
 
   /** @type {lf.Predicate} */
   this.predicate = predicate;
@@ -36346,8 +36338,8 @@ lf.proc.SelectStep.prototype.toString = function() {
 
 
 /** @override */
-lf.proc.SelectStep.prototype.execInternal = function(journal, relation) {
-  return this.predicate.eval(/** @type {!lf.proc.Relation} */ (relation));
+lf.proc.SelectStep.prototype.execInternal = function(journal, relations) {
+  return [this.predicate.eval(relations[0])];
 };
 
 /**
@@ -36384,8 +36376,8 @@ goog.require('lf.service');
  */
 lf.proc.TableAccessByRowIdStep = function(global, table) {
   lf.proc.TableAccessByRowIdStep.base(this, 'constructor',
-      lf.proc.PhysicalQueryPlanNode.ExecType.FIRST_CHILD,
-      lf.proc.PhysicalQueryPlanNode.InputRelationType.SINGLE);
+      1,
+      lf.proc.PhysicalQueryPlanNode.ExecType.FIRST_CHILD);
 
   /** @private {!lf.cache.Cache} */
   this.cache_ = global.getService(lf.service.CACHE);
@@ -36410,10 +36402,10 @@ lf.proc.TableAccessByRowIdStep.prototype.getScope = function() {
 
 /** @override */
 lf.proc.TableAccessByRowIdStep.prototype.execInternal = function(
-    journal, relation) {
-  return lf.proc.Relation.fromRows(
-      this.cache_.get(relation.getRowIds()),
-      [this.table_.getEffectiveName()]);
+    journal, relations) {
+  return [lf.proc.Relation.fromRows(
+      this.cache_.get(relations[0].getRowIds()),
+      [this.table_.getEffectiveName()])];
 };
 
 /**
@@ -36450,8 +36442,8 @@ goog.require('lf.service');
  */
 lf.proc.TableAccessFullStep = function(global, table) {
   lf.proc.TableAccessFullStep.base(this, 'constructor',
-      lf.proc.PhysicalQueryPlanNode.ExecType.NO_CHILD,
-      lf.proc.PhysicalQueryPlanNode.InputRelationType.NONE);
+      0,
+      lf.proc.PhysicalQueryPlanNode.ExecType.NO_CHILD);
 
   /** @private {!lf.cache.Cache} */
   this.cache_ = global.getService(lf.service.CACHE);
@@ -36486,8 +36478,8 @@ lf.proc.TableAccessFullStep.prototype.getScope = function() {
 lf.proc.TableAccessFullStep.prototype.execInternal = function(journal) {
   var rowIds = this.indexStore_.get(this.table.getRowIdIndexName()).getRange();
 
-  return lf.proc.Relation.fromRows(
-      this.cache_.get(rowIds), [this.table.getEffectiveName()]);
+  return [lf.proc.Relation.fromRows(
+      this.cache_.get(rowIds), [this.table.getEffectiveName()])];
 };
 
 /**
@@ -36675,8 +36667,8 @@ goog.require('lf.service');
  */
 lf.proc.InsertStep = function(global, table, values) {
   lf.proc.InsertStep.base(this, 'constructor',
-      lf.proc.PhysicalQueryPlanNode.ExecType.NO_CHILD,
-      lf.proc.PhysicalQueryPlanNode.InputRelationType.NONE);
+      0,
+      lf.proc.PhysicalQueryPlanNode.ExecType.NO_CHILD);
 
   /** @private {!lf.index.IndexStore} */
   this.indexStore_ = global.getService(lf.service.INDEX_STORE);
@@ -36703,12 +36695,12 @@ lf.proc.InsertStep.prototype.getScope = function() {
 
 
 /** @override */
-lf.proc.InsertStep.prototype.execInternal = function(journal) {
+lf.proc.InsertStep.prototype.execInternal = function(journal, relations) {
   lf.proc.InsertStep.assignAutoIncrementPks_(
       this.table_, this.values_, this.indexStore_);
   journal.insert(this.table_, this.values_);
 
-  return lf.proc.Relation.fromRows(this.values_, [this.table_.getName()]);
+  return [lf.proc.Relation.fromRows(this.values_, [this.table_.getName()])];
 };
 
 
@@ -36755,8 +36747,8 @@ lf.proc.InsertStep.assignAutoIncrementPks_ = function(
  */
 lf.proc.InsertOrReplaceStep = function(global, table, values) {
   lf.proc.InsertOrReplaceStep.base(this, 'constructor',
-      lf.proc.PhysicalQueryPlanNode.ExecType.NO_CHILD,
-      lf.proc.PhysicalQueryPlanNode.InputRelationType.NONE);
+      0,
+      lf.proc.PhysicalQueryPlanNode.ExecType.NO_CHILD);
 
   /** @private {!lf.index.IndexStore} */
   this.indexStore_ = global.getService(lf.service.INDEX_STORE);
@@ -36783,12 +36775,13 @@ lf.proc.InsertOrReplaceStep.prototype.getScope = function() {
 
 
 /** @override */
-lf.proc.InsertOrReplaceStep.prototype.execInternal = function(journal) {
+lf.proc.InsertOrReplaceStep.prototype.execInternal = function(
+    journal, relations) {
   lf.proc.InsertStep.assignAutoIncrementPks_(
       this.table_, this.values_, this.indexStore_);
   journal.insertOrReplace(this.table_, this.values_);
 
-  return lf.proc.Relation.fromRows(this.values_, [this.table_.getName()]);
+  return [lf.proc.Relation.fromRows(this.values_, [this.table_.getName()])];
 };
 
 /**
@@ -36823,8 +36816,8 @@ goog.require('lf.proc.PhysicalQueryPlanNode');
  */
 lf.proc.JoinStep = function(predicate) {
   lf.proc.JoinStep.base(this, 'constructor',
-      lf.proc.PhysicalQueryPlanNode.ExecType.ALL,
-      lf.proc.PhysicalQueryPlanNode.InputRelationType.ARRAY);
+      2,
+      lf.proc.PhysicalQueryPlanNode.ExecType.ALL);
 
   /** @private {!lf.Predicate} */
   this.predicate_ = predicate;
@@ -36840,11 +36833,7 @@ lf.proc.JoinStep.prototype.toString = function() {
 
 /** @override */
 lf.proc.JoinStep.prototype.execInternal = function(journal, relations) {
-  var results = /** @type {!Array<lf.proc.Relation>} */ (relations);
-  goog.asserts.assert(
-      results.length == 2,
-      'Join execInternal must have exactly 2 children.');
-  return this.predicate_.evalRelations(results[0], results[1]);
+  return [this.predicate_.evalRelations(relations[0], relations[1])];
 };
 
 /**
@@ -36877,8 +36866,8 @@ goog.require('lf.proc.PhysicalQueryPlanNode');
  */
 lf.proc.LimitStep = function(limit) {
   lf.proc.LimitStep.base(this, 'constructor',
-      lf.proc.PhysicalQueryPlanNode.ExecType.FIRST_CHILD,
-      lf.proc.PhysicalQueryPlanNode.InputRelationType.SINGLE);
+      1,
+      lf.proc.PhysicalQueryPlanNode.ExecType.FIRST_CHILD);
 
   /** @type {number} */
   this.limit = limit;
@@ -36893,9 +36882,9 @@ lf.proc.LimitStep.prototype.toString = function() {
 
 
 /** @override */
-lf.proc.LimitStep.prototype.execInternal = function(journal, relation) {
-  relation.entries.splice(this.limit);
-  return relation;
+lf.proc.LimitStep.prototype.execInternal = function(journal, relations) {
+  relations[0].entries.splice(this.limit);
+  return relations;
 };
 
 /**
@@ -36930,8 +36919,8 @@ goog.require('lf.query.SelectContext');
  */
 lf.proc.OrderByStep = function(orderBy) {
   lf.proc.OrderByStep.base(this, 'constructor',
-      lf.proc.PhysicalQueryPlanNode.ExecType.FIRST_CHILD,
-      lf.proc.PhysicalQueryPlanNode.InputRelationType.SINGLE);
+      1,
+      lf.proc.PhysicalQueryPlanNode.ExecType.FIRST_CHILD);
 
   /** @type {!Array.<!lf.query.SelectContext.OrderBy>} */
   this.orderBy = orderBy;
@@ -36947,10 +36936,10 @@ lf.proc.OrderByStep.prototype.toString = function() {
 
 
 /** @override */
-lf.proc.OrderByStep.prototype.execInternal = function(journal, relation) {
-  var useNormalizedNames = relation.isPrefixApplied();
-  relation.entries.sort(this.comparatorFn_.bind(this, useNormalizedNames));
-  return relation;
+lf.proc.OrderByStep.prototype.execInternal = function(journal, relations) {
+  var useNormalizedNames = relations[0].isPrefixApplied();
+  relations[0].entries.sort(this.comparatorFn_.bind(this, useNormalizedNames));
+  return relations;
 };
 
 
@@ -37361,15 +37350,15 @@ goog.require('lf.proc.RelationTransformer');
  * @constructor @struct
  * @extends {lf.proc.PhysicalQueryPlanNode}
  *
- * @param {!Array.<!lf.schema.Column>} columns
+ * @param {!Array<!lf.schema.Column>} columns
  * @param {?lf.schema.Column} groupByColumn
  */
 lf.proc.ProjectStep = function(columns, groupByColumn) {
   lf.proc.ProjectStep.base(this, 'constructor',
-      lf.proc.PhysicalQueryPlanNode.ExecType.FIRST_CHILD,
-      lf.proc.PhysicalQueryPlanNode.InputRelationType.SINGLE);
+      1,
+      lf.proc.PhysicalQueryPlanNode.ExecType.FIRST_CHILD);
 
-  /** @type {!Array.<!lf.schema.Column>} */
+  /** @type {!Array<!lf.schema.Column>} */
   this.columns = columns;
 
   /** @type {?lf.schema.Column} */
@@ -37391,7 +37380,7 @@ lf.proc.ProjectStep.prototype.toString = function() {
 
 /** @override */
 lf.proc.ProjectStep.prototype.execInternal = function(journal, results) {
-  var relation = /** @type {!lf.proc.Relation} */ (results);
+  var relation = results[0];
   return goog.isNull(this.groupByColumn) ?
       this.execNonGroupByProjection_(relation) :
       this.execGroupByProjection_(relation);
@@ -37413,34 +37402,34 @@ lf.proc.ProjectStep.prototype.hasAggregators = function() {
 /**
  * Calculates the final relation for the case where GROUP_BY exists.
  * @param {!lf.proc.Relation} relation The input relation.
- * @return {!lf.proc.Relation} The output relation.
+ * @return {!Array<!lf.proc.Relation>} The output relation.
  * @private
  */
 lf.proc.ProjectStep.prototype.execGroupByProjection_ = function(relation) {
   if (relation.entries == 0) {
-    return relation;
+    return [relation];
   }
 
   var groupedRelations = this.calculateGroupedRelations_(relation);
-  return lf.proc.RelationTransformer.transformMany(
-      groupedRelations, this.columns);
+  return [lf.proc.RelationTransformer.transformMany(
+      groupedRelations, this.columns)];
 };
 
 
 /**
  * Calculates the final relation for the case where no GROUP_BY exists.
  * @param {!lf.proc.Relation} relation The input relation.
- * @return {!lf.proc.Relation} The output relation.
+ * @return {!Array<!lf.proc.Relation>} The output relation.
  * @private
  */
 lf.proc.ProjectStep.prototype.execNonGroupByProjection_ = function(relation) {
   if (this.columns.length == 0) {
-    return relation;
+    return [relation];
   }
 
   var relationTransformer = new lf.proc.RelationTransformer(
       relation, this.columns);
-  return relationTransformer.getTransformed();
+  return [relationTransformer.getTransformed()];
 };
 
 
@@ -37448,7 +37437,7 @@ lf.proc.ProjectStep.prototype.execNonGroupByProjection_ = function(relation) {
  * Breaks down a single relation to mulitple relations by grouping rows based on
  * the specified groupBy column.
  * @param {!lf.proc.Relation} relation
- * @return {!Array.<!lf.proc.Relation>}
+ * @return {!Array<!lf.proc.Relation>}
  * @private
  */
 lf.proc.ProjectStep.prototype.calculateGroupedRelations_ = function(relation) {
@@ -37497,8 +37486,8 @@ goog.require('lf.proc.Relation');
  */
 lf.proc.SkipStep = function(skip) {
   lf.proc.SkipStep.base(this, 'constructor',
-      lf.proc.PhysicalQueryPlanNode.ExecType.FIRST_CHILD,
-      lf.proc.PhysicalQueryPlanNode.InputRelationType.SINGLE);
+      1,
+      lf.proc.PhysicalQueryPlanNode.ExecType.FIRST_CHILD);
 
   /** @type {number} */
   this.skip = skip;
@@ -37513,9 +37502,9 @@ lf.proc.SkipStep.prototype.toString = function() {
 
 
 /** @override */
-lf.proc.SkipStep.prototype.execInternal = function(journal, relation) {
-  return new lf.proc.Relation(
-      relation.entries.slice(this.skip), relation.getTables());
+lf.proc.SkipStep.prototype.execInternal = function(journal, relations) {
+  return [new lf.proc.Relation(
+      relations[0].entries.slice(this.skip), relations[0].getTables())];
 };
 
 /**
@@ -37937,8 +37926,8 @@ goog.require('lf.proc.Relation');
  */
 lf.proc.UpdateStep = function(table, updates) {
   lf.proc.UpdateStep.base(this, 'constructor',
-      lf.proc.PhysicalQueryPlanNode.ExecType.FIRST_CHILD,
-      lf.proc.PhysicalQueryPlanNode.InputRelationType.SINGLE);
+      1,
+      lf.proc.PhysicalQueryPlanNode.ExecType.FIRST_CHILD);
 
   /** @private {!lf.schema.Table} table */
   this.table_ = table;
@@ -37962,8 +37951,8 @@ lf.proc.UpdateStep.prototype.getScope = function() {
 
 
 /** @override */
-lf.proc.UpdateStep.prototype.execInternal = function(journal, relation) {
-  var rows = relation.entries.map(function(entry) {
+lf.proc.UpdateStep.prototype.execInternal = function(journal, relations) {
+  var rows = relations[0].entries.map(function(entry) {
     // Need to clone the row here before modifying it, because it is a
     // direct reference to the cache's contents.
     var clone = this.table_.deserializeRow(entry.row.serialize());
@@ -37974,7 +37963,7 @@ lf.proc.UpdateStep.prototype.execInternal = function(journal, relation) {
     return clone;
   }, this);
   journal.update(this.table_, rows);
-  return lf.proc.Relation.createEmpty();
+  return [lf.proc.Relation.createEmpty()];
 };
 
 /**
@@ -39332,8 +39321,8 @@ lf.proc.TransactionTask.prototype.attachQuery = function(queryBuilder) {
   var plan = this.queryEngine_.getPlan(queryBuilder.getQuery());
 
   return plan.getRoot().exec(this.journal_).then(
-      function(relation) {
-        return relation.getPayloads();
+      function(relations) {
+        return relations[0].getPayloads();
       }, goog.bind(
       function(e) {
         this.journal_.rollback();
@@ -39764,8 +39753,8 @@ goog.require('lf.proc.Relation');
  */
 lf.proc.GroupByStep = function(groupByColumns) {
   lf.proc.GroupByStep.base(this, 'constructor',
-      lf.proc.PhysicalQueryPlanNode.ExecType.FIRST_CHILD,
-      lf.proc.PhysicalQueryPlanNode.InputRelationType.SINGLE);
+      1,
+      lf.proc.PhysicalQueryPlanNode.ExecType.FIRST_CHILD);
 
   /** @private {!Array<!lf.schema.Column>} */
   this.groupByColumns_ = groupByColumns;
@@ -39784,9 +39773,8 @@ lf.proc.GroupByStep.prototype.toString = function() {
 
 
 /** @override */
-lf.proc.GroupByStep.prototype.execInternal = function(journal, relation) {
-  return this.calculateGroupedRelations_(
-      /** @type {!lf.proc.Relation} */ (relation));
+lf.proc.GroupByStep.prototype.execInternal = function(journal, relations) {
+  return this.calculateGroupedRelations_(relations[0]);
 };
 
 
