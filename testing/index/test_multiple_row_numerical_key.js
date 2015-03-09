@@ -168,7 +168,7 @@ lf.testing.index.TestMultiRowNumericalKey.prototype.populateIndex_ =
 /**
  * An array holding all the values that are added in the index in
  * populateIndex().
- * @private {!Array.<number>}
+ * @private {!Array<number>}
  */
 lf.testing.index.TestMultiRowNumericalKey.allValues_ =
     [20, 30, 21, 31, 22, 32, 23, 33, 24, 34, 25, 35, 26, 36, 27, 37, 28,
@@ -178,7 +178,7 @@ lf.testing.index.TestMultiRowNumericalKey.allValues_ =
 /**
  * The expected results for all key ranges in
  * lf.testing.index.TestSingleRowNumericalKey.keyRanges.
- * @type {!Array.<!Array.<number>>}
+ * @type {!Array.<!Array<number>>}
  */
 lf.testing.index.TestMultiRowNumericalKey.getRangeExpectations = [
   // get all.

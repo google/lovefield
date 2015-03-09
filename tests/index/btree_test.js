@@ -70,7 +70,7 @@ function setUp() {
 }
 
 
-/** @const {!Array.<number>} */
+/** @const {!Array<number>} */
 var SEQUENCE = [
   13, 9, 21, 17,
   5,
@@ -81,7 +81,7 @@ var SEQUENCE = [
   10, 12, 16];
 
 
-/** @const {!Array.<!Array.<number, string>>} */
+/** @const {!Array.<!Array<number, string>>} */
 var SEQUENCE2 = [
   [13, '13'], [9, '09'], [21, '21'], [17, '17'],
   [5, '05'],

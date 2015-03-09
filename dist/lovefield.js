@@ -3955,8 +3955,8 @@ goog.addDependency('vec/vec4.js', ['goog.vec.Vec4'], ['goog.vec'], false);
 goog.addDependency('vec/vec4d.js', ['goog.vec.vec4d', 'goog.vec.vec4d.Type'], ['goog.vec'], false);
 goog.addDependency('vec/vec4f.js', ['goog.vec.vec4f', 'goog.vec.vec4f.Type'], ['goog.vec'], false);
 goog.addDependency('webgl/webgl.js', ['goog.webgl'], [], false);
-goog.addDependency('window/window.js', ['goog.window'], ['goog.string', 'goog.userAgent'], false);
-goog.addDependency('window/window_test.js', ['goog.windowTest'], ['goog.dom', 'goog.events', 'goog.string', 'goog.testing.AsyncTestCase', 'goog.testing.jsunit', 'goog.window'], false);
+goog.addDependency('window/window.js', ['goog.window'], ['goog.labs.userAgent.platform', 'goog.string', 'goog.userAgent'], false);
+goog.addDependency('window/window_test.js', ['goog.windowTest'], ['goog.dom', 'goog.events', 'goog.functions', 'goog.labs.userAgent.platform', 'goog.string', 'goog.testing.AsyncTestCase', 'goog.testing.PropertyReplacer', 'goog.testing.jsunit', 'goog.userAgent', 'goog.window'], false);
 
 // Copyright 2009 The Closure Library Authors. All Rights Reserved.
 //
@@ -21882,7 +21882,7 @@ lf.Stream = function() {};
 
 /**
  * Get from the stream.
- * @param {!Array.<number>} ids
+ * @param {!Array<number>} ids
  * @return {!IThenable.<!Array.<!lf.Row>>}
  */
 lf.Stream.prototype.get;
@@ -21898,7 +21898,7 @@ lf.Stream.prototype.put;
 
 /**
  * Remove from the stream.
- * @param {!Array.<number>} ids
+ * @param {!Array<number>} ids
  * @return {!IThenable}
  */
 lf.Stream.prototype.remove;
@@ -21960,8 +21960,8 @@ lf.backstore.Page.BUNDLE_EXPONENT = 9;
 
 /**
  * Returns distinct page ids containing given row ids.
- * @param {!Array.<number>} rowIds
- * @return {!Array.<number>} pageIds
+ * @param {!Array<number>} rowIds
+ * @return {!Array<number>} pageIds
  */
 lf.backstore.Page.toPageIds = function(rowIds) {
   var pageIds = new goog.structs.Set();
@@ -21983,7 +21983,7 @@ lf.backstore.Page.toPageId = function(rowId) {
 
 /**
  * @param {number} pageId
- * @return {!Array.<number>} Range of page's row id [from, to].
+ * @return {!Array<number>} Range of page's row id [from, to].
  */
 lf.backstore.Page.getPageRange = function(pageId) {
   return [
@@ -22133,7 +22133,7 @@ lf.backstore.BundledObjectStore.prototype.get = function(ids) {
     return this.getAll_();
   }
   return this.getPagesByRowIds_(ids).then(goog.bind(
-      /** @param {!goog.structs.Map.<number, !lf.backstore.Page>} pages */
+      /** @param {!goog.structs.Map<number, !lf.backstore.Page>} pages */
       function(pages) {
         return ids.map(function(id) {
           var page = pages.get(lf.backstore.Page.toPageId(id));
@@ -22145,8 +22145,8 @@ lf.backstore.BundledObjectStore.prototype.get = function(ids) {
 
 
 /**
- * @param {!Array.<number>} rowIds
- * @return {!IThenable.<!goog.structs.Map.<number, !lf.backstore.Page>>} Fetched
+ * @param {!Array<number>} rowIds
+ * @return {!IThenable.<!goog.structs.Map<number, !lf.backstore.Page>>} Fetched
  *     pages.
  * @private
  */
@@ -23389,7 +23389,7 @@ lf.backstore.IndexedDB.prototype.createTx = function(
 /**
  * Scans existing database and find the maximum row id.
  * @param {!IDBTransaction=} opt_tx
- * @return {!IThenable.<number>}
+ * @return {!IThenable<number>}
  * @private
  */
 lf.backstore.IndexedDB.prototype.scanRowId_ = function(opt_tx) {
@@ -23500,7 +23500,7 @@ goog.forwardDeclare('lf.Row');
  */
 lf.backstore.MemoryTable = function() {
   /**
-   * @private {!goog.structs.Map.<number, !lf.Row>}
+   * @private {!goog.structs.Map<number, !lf.Row>}
    */
   this.data_ = new goog.structs.Map();
 };
@@ -23683,7 +23683,7 @@ lf.backstore.Memory = function(schema) {
   /** @private {!lf.schema.Database} */
   this.schema_ = schema;
 
-  /** @private {!goog.structs.Map.<string, !lf.backstore.MemoryTable>} */
+  /** @private {!goog.structs.Map<string, !lf.backstore.MemoryTable>} */
   this.tables_ = new goog.structs.Map();
 };
 
@@ -23827,7 +23827,7 @@ lf.cache.Cache.prototype.set;
 
 /**
  * Returns contents from the cache.
- * @param {!Array.<number>} ids
+ * @param {!Array<number>} ids
  * @return {!Array.<?lf.Row>} The requested cache entries or null if not found.
  */
 lf.cache.Cache.prototype.get;
@@ -23847,7 +23847,7 @@ lf.cache.Cache.prototype.getRange;
 /**
  * Removes entries from the cache.
  * @param {string} tableName
- * @param {!Array.<number>} rowIds
+ * @param {!Array<number>} rowIds
  */
 lf.cache.Cache.prototype.remove;
 
@@ -23986,10 +23986,10 @@ goog.require('lf.cache.Cache');
  * @constructor @struct
  */
 lf.cache.DefaultCache = function(opt_maxRows) {
-  /** @private {!goog.structs.Map.<number, lf.Row>} */
+  /** @private {!goog.structs.Map<number, lf.Row>} */
   this.map_ = new goog.structs.Map();
 
-  /** @private {!goog.structs.Map<string, !goog.structs.Set.<number>>} */
+  /** @private {!goog.structs.Map<string, !goog.structs.Set<number>>} */
   this.tableRows_ = new goog.structs.Map();
 
   /** @private {number} */
@@ -23999,7 +23999,7 @@ lf.cache.DefaultCache = function(opt_maxRows) {
 
 /**
  * @param {string} tableName
- * @return {!goog.structs.Set.<number>} Row id set of that table.
+ * @return {!goog.structs.Set<number>} Row id set of that table.
  * @private
  */
 lf.cache.DefaultCache.prototype.getTableSet_ = function(tableName) {
@@ -24254,7 +24254,7 @@ lf.index.Index.prototype.remove;
 /**
  * Gets values from index. Returns empty array if not found.
  * @param {!lf.index.Index.Key} key
- * @return {!Array.<number>}
+ * @return {!Array<number>}
  */
 lf.index.Index.prototype.get;
 
@@ -24280,7 +24280,7 @@ lf.index.Index.prototype.cost;
  *     ordering of the index's comparator.
  * @param {number=} opt_limit Max number of rows to return
  * @param {number=} opt_skip Skip first N rows
- * @return {!Array.<number>}
+ * @return {!Array<number>}
  */
 lf.index.Index.prototype.getRange;
 
@@ -24363,30 +24363,30 @@ goog.forwardDeclare('lf.Row');
  * @struct
  */
 lf.cache.TableDiff = function() {
-  /** @private {!goog.structs.Map.<number, !lf.Row>} */
+  /** @private {!goog.structs.Map<number, !lf.Row>} */
   this.added_ = new goog.structs.Map();
 
-  /** @private {!goog.structs.Map.<number, !Array.<!lf.Row>>} */
+  /** @private {!goog.structs.Map<number, !Array.<!lf.Row>>} */
   this.modified_ = new goog.structs.Map();
 
-  /** @private {!goog.structs.Map.<number, !lf.Row>} */
+  /** @private {!goog.structs.Map<number, !lf.Row>} */
   this.deleted_ = new goog.structs.Map();
 };
 
 
-/** @return {!goog.structs.Map.<number, !lf.Row>} */
+/** @return {!goog.structs.Map<number, !lf.Row>} */
 lf.cache.TableDiff.prototype.getAdded = function() {
   return this.added_;
 };
 
 
-/** @return {!goog.structs.Map.<number, !Array.<!lf.Row>>} */
+/** @return {!goog.structs.Map<number, !Array.<!lf.Row>>} */
 lf.cache.TableDiff.prototype.getModified = function() {
   return this.modified_;
 };
 
 
-/** @return {!goog.structs.Map.<number, !lf.Row>} */
+/** @return {!goog.structs.Map<number, !lf.Row>} */
 lf.cache.TableDiff.prototype.getDeleted = function() {
   return this.deleted_;
 };
@@ -24593,7 +24593,7 @@ goog.forwardDeclare('lf.schema.Index');
 lf.cache.Journal = function(global, scope) {
   /**
    * Scope of this transaction in the form of table schema.
-   * @private {!goog.structs.Map.<string, !lf.schema.Table>}
+   * @private {!goog.structs.Map<string, !lf.schema.Table>}
    */
   this.scope_ = new goog.structs.Map();
   scope.forEach(function(tableSchema) {
@@ -24631,14 +24631,14 @@ lf.cache.Journal = function(global, scope) {
    * The changes that have been applied since the start of this journal. The
    * keys are table names, and the values are changes that have happened per
    * table.
-   * @private {!goog.structs.Map.<string, !lf.cache.TableDiff>}
+   * @private {!goog.structs.Map<string, !lf.cache.TableDiff>}
    */
   this.tableDiffs_ = new goog.structs.Map();
 };
 
 
 /**
- * @return {!goog.structs.Map.<string, !lf.cache.TableDiff>}
+ * @return {!goog.structs.Map<string, !lf.cache.TableDiff>}
  */
 lf.cache.Journal.prototype.getDiff = function() {
   return this.tableDiffs_;
@@ -24684,7 +24684,7 @@ lf.cache.Journal.prototype.getIndexDiff = function() {
 
 
 /**
- * @return {!goog.structs.Map.<string, !lf.schema.Table>}
+ * @return {!goog.structs.Map<string, !lf.schema.Table>}
  */
 lf.cache.Journal.prototype.getScope = function() {
   return this.scope_;
@@ -25019,7 +25019,7 @@ lf.index.hashCode = function(value) {
 
 /**
  * Compute hash key for an array.
- * @param {!Array.<Object>} values
+ * @param {!Array<Object>} values
  * @return {string}
  */
 lf.index.hashArray = function(values) {
@@ -25036,11 +25036,11 @@ lf.index.hashArray = function(values) {
  * Slice result array by limit and skip.
  * Note: For performance reasons the input array might be modified in place.
  *
- * @param {!Array.<number>} rawArray
+ * @param {!Array<number>} rawArray
  * @param {boolean=} opt_reverseOrder
  * @param {number=} opt_limit
  * @param {number=} opt_skip
- * @return {!Array.<number>}
+ * @return {!Array<number>}
  */
 lf.index.slice = function(rawArray, opt_reverseOrder, opt_limit, opt_skip) {
   var array = opt_reverseOrder ? rawArray.reverse() : rawArray;
@@ -25358,7 +25358,7 @@ lf.index.BTreeNode_ = function(id, tree) {
   /** @private {!Array.<!lf.index.Index.Key>} */
   this.keys_ = [];
 
-  /** @private {!Array.<number|!Array.<number>>} */
+  /** @private {!Array<number|!Array<number>>} */
   this.values_ = [];
 
   /** @private {!Array.<!lf.index.BTreeNode_>} */
@@ -25429,7 +25429,7 @@ lf.index.BTreeNode_.prototype.next = function() {
 /**
  * Dump the contents of node of the same depth.
  * @param {!lf.index.BTreeNode_} node Left-most node in the level.
- * @return {!Array.<string>} Key and contents string in pair.
+ * @return {!Array<string>} Key and contents string in pair.
  * @private
  */
 lf.index.BTreeNode_.dumpLevel_ = function(node) {
@@ -25591,7 +25591,7 @@ lf.index.BTreeNode_.createLeaves_ = function(tree, data) {
 
 /**
  * Creates parent node from children nodes.
- * @param {!Array.<lf.index.BTreeNode_>} nodes
+ * @param {!Array<lf.index.BTreeNode_>} nodes
  * @return {!lf.index.BTreeNode_}
  * @private
  */
@@ -25675,7 +25675,7 @@ lf.index.BTreeNode_.fromData = function(tree, data) {
 /**
  * Returns an element.
  * @param {!lf.index.Index.Key} key
- * @return {!Array.<number>}
+ * @return {!Array<number>}
  */
 lf.index.BTreeNode_.prototype.get = function(key) {
   var pos = this.searchKey_(key);
@@ -25791,7 +25791,7 @@ lf.index.BTreeNode_.prototype.delete_ = function(key, parentPos, opt_value) {
         !this.tree_.isUniqueKeyOnly() &&
         this.isLeaf_()) {
       goog.array.binaryRemove(
-          /** @type {!Array.<number>} */ (this.values_[pos]), opt_value);
+          /** @type {!Array<number>} */ (this.values_[pos]), opt_value);
       if (this.values_[pos].length) {
         return false;  // No need to fix.
       }
@@ -25917,7 +25917,7 @@ lf.index.BTreeNode_.prototype.insert = function(key, value, opt_replace) {
       } else {
         if (this.values_[pos]) {
           goog.array.binaryInsert(
-              /** @type {!Array.<number>} */ (this.values_[pos]), value);
+              /** @type {!Array<number>} */ (this.values_[pos]), value);
           return this;
         } else {
           this.values_[pos] = [value];
@@ -26044,10 +26044,10 @@ lf.index.BTreeNode_.prototype.getContainingLeaf = function(key) {
 
 /**
  * @param {!lf.index.KeyRange|!lf.index.SingleKeyRange} keyRange
- * @param {!Array.<number>=} opt_results An array holding any results found from
+ * @param {!Array<number>=} opt_results An array holding any results found from
  *     previous calls to getRange(). If specified any new results will be
  *     appended to this array.
- * @return {!Array.<number>}
+ * @return {!Array<number>}
  */
 lf.index.BTreeNode_.prototype.getRange = function(keyRange, opt_results) {
   var start = -1;
@@ -26096,8 +26096,8 @@ lf.index.BTreeNode_.prototype.getRange = function(keyRange, opt_results) {
 
 /**
  * Appends newly found results to an existing bag of results.
- * @param {!Array.<number>} currentResults
- * @param {!Array.<number>|!Array.<!Array.<number>>} newResults
+ * @param {!Array<number>} currentResults
+ * @param {!Array<number>|!Array.<!Array<number>>} newResults
  * @private
  */
 lf.index.BTreeNode_.prototype.appendResults_ = function(
@@ -27725,7 +27725,7 @@ lf.index.AATree.prototype.getRightMostNode_ = function() {
 /**
  * @param {!lf.index.AANode_} node
  * @param {!lf.index.KeyRange} keyRange
- * @param {!Array.<number>} results
+ * @param {!Array<number>} results
  * @private
  */
 lf.index.AATree.prototype.traverse_ = function(node, keyRange, results) {
@@ -27823,7 +27823,7 @@ lf.index.AATree.prototype.comparator = function() {
 
 /**
  * @param {!lf.index.AANode_} node
- * @param {!Array.<!Array.<string>>} buffer
+ * @param {!Array.<!Array<string>>} buffer
  * @private
  */
 lf.index.AATree.prototype.dump_ = function(node, buffer) {
@@ -27946,7 +27946,7 @@ goog.require('lf.index.RowId');
  * @constructor @struct
  */
 lf.index.MemoryIndexStore = function() {
-  /** @private {!goog.structs.Map.<string, lf.index.Index>} */
+  /** @private {!goog.structs.Map<string, lf.index.Index>} */
   this.store_ = new goog.structs.Map();
 };
 
@@ -28202,7 +28202,7 @@ goog.forwardDeclare('lf.schema.Column');
  * @struct
  *
  * @param {!Array.<!lf.proc.RelationEntry>} entries
- * @param {!Array.<string>} tables The names of the source tables of this
+ * @param {!Array<string>} tables The names of the source tables of this
  *     relation.
  */
 lf.proc.Relation = function(entries, tables) {
@@ -28212,7 +28212,7 @@ lf.proc.Relation = function(entries, tables) {
    */
   this.entries = entries;
 
-  /** @private {!goog.structs.Set.<string>} */
+  /** @private {!goog.structs.Set<string>} */
   this.tables_ = new goog.structs.Set(tables);
 
   /**
@@ -28257,7 +28257,7 @@ lf.proc.Relation.assertCompatible_ = function(lhs, rhs) {
 
 
 /**
- * @return {!Array.<string>} The names of all source tables of this relation.
+ * @return {!Array<string>} The names of all source tables of this relation.
  */
 lf.proc.Relation.prototype.getTables = function() {
   return this.tables_.getValues();
@@ -28281,7 +28281,7 @@ lf.proc.Relation.prototype.getPayloads = function() {
 };
 
 
-/** @return {!Array.<number>} */
+/** @return {!Array<number>} */
 lf.proc.Relation.prototype.getRowIds = function() {
   return this.entries.map(function(entry) {
     return entry.row.id();
@@ -28416,7 +28416,7 @@ lf.proc.Relation.union = function(relations) {
 /**
  * Creates an lf.proc.Relation instance from a set of lf.Row instances.
  * @param {!Array.<!lf.Row>} rows
- * @param {!Array.<string>} tables The names of the tables where these rows
+ * @param {!Array<string>} tables The names of the tables where these rows
  *     belong.
  * @return {!lf.proc.Relation}
  */
@@ -28522,10 +28522,10 @@ lf.proc.RelationEntry.prototype.setField = function(column, value) {
 /**
  * Combines two entries into a single entry.
  * @param {!lf.proc.RelationEntry} leftEntry
- * @param {!Array.<string>} leftEntryTables The names of all source tables for
+ * @param {!Array<string>} leftEntryTables The names of all source tables for
  *     the attributes in leftEntry.
  * @param {!lf.proc.RelationEntry} rightEntry
- * @param {!Array.<string>} rightEntryTables The names of all source tables for
+ * @param {!Array<string>} rightEntryTables The names of all source tables for
  *     the attributes in rightEntry.
  * @return {!lf.proc.RelationEntry} The combined entry.
  */
@@ -29655,7 +29655,7 @@ lf.PredicateProvider.prototype.between;
 
 /**
  * Returns array finding test predicate.
- * @param {(!lf.Binder|!Array.<T>)} values
+ * @param {(!lf.Binder|!Array<T>)} values
  * @return {!lf.Predicate}
  */
 lf.PredicateProvider.prototype.in;
@@ -35348,7 +35348,7 @@ lf.proc.PushDownSelectionsPass.prototype.pushDownJoinPredNodeRec_ =
 
 /**
  * @param {!lf.proc.LogicalQueryPlanNode} root
- * @param {!goog.structs.Set.<string>} tables
+ * @param {!goog.structs.Set<string>} tables
  * @return {boolean} Whether the subtree that starts at root refers to all
  *     tables in the given list.
  * @private
@@ -38728,7 +38728,7 @@ goog.forwardDeclare('lf.query.SelectBuilder');
 lf.ObserverRegistry = function() {
   /**
    * A map where each entry represents an observed query.
-   * @private {!goog.structs.Map.<string, !lf.ObserverRegistry.Entry_>}
+   * @private {!goog.structs.Map<string, !lf.ObserverRegistry.Entry_>}
    */
   this.entries_ = new goog.structs.Map();
 };
@@ -39843,7 +39843,7 @@ goog.require('lf.Exception');
  * @constructor @struct
  */
 lf.Global = function() {
-  /** @private {!goog.structs.Map.<string, !Object>} */
+  /** @private {!goog.structs.Map<string, !Object>} */
   this.services_ = new goog.structs.Map();
 };
 
@@ -40018,22 +40018,22 @@ lf.schema.TableBuilder = function(tableName) {
   /** @private {string} */
   this.name_ = tableName;
 
-  /** @private {!goog.structs.Map.<string, !lf.Type>} */
+  /** @private {!goog.structs.Map<string, !lf.Type>} */
   this.columns_ = new goog.structs.Map();
 
-  /** @private {!goog.structs.Set.<string>} */
+  /** @private {!goog.structs.Set<string>} */
   this.uniqueColumns_ = new goog.structs.Set();
 
-  /** @private {!goog.structs.Set.<string>} */
+  /** @private {!goog.structs.Set<string>} */
   this.uniqueIndices_ = new goog.structs.Set();
 
-  /** @private {!goog.structs.Set.<string>} */
+  /** @private {!goog.structs.Set<string>} */
   this.nullable_ = new goog.structs.Set();
 
   /** @private {string} */
   this.pkName_ = 'pk' + lf.schema.TableBuilder.toPascal_(this.name_);
 
-  /** @private {!goog.structs.Map.<string, !Array<!lf.schema.IndexedColumn>>} */
+  /** @private {!goog.structs.Map<string, !Array<!lf.schema.IndexedColumn>>} */
   this.indices_ = new goog.structs.Map();
 
   /** @private {boolean} */
@@ -40545,7 +40545,7 @@ lf.schema.Builder = function(dbName, dbVersion) {
   /** @private {!lf.schema.DatabaseSchema_} */
   this.schema_ = new lf.schema.DatabaseSchema_(dbName, dbVersion);
 
-  /** @private {!goog.structs.Map.<string, !lf.schema.TableBuilder>} */
+  /** @private {!goog.structs.Map<string, !lf.schema.TableBuilder>} */
   this.tableBuilders_ = new goog.structs.Map();
 
   /** @private {boolean} */
@@ -40679,7 +40679,7 @@ lf.schema.DatabaseSchema_ = function(name, version) {
   /** @private {number} */
   this.version_ = version;
 
-  /** @private {!goog.structs.Map.<string, !lf.schema.Table>} */
+  /** @private {!goog.structs.Map<string, !lf.schema.Table>} */
   this.tables_ = new goog.structs.Map();
 
   /** @private {boolean} */

@@ -30,7 +30,7 @@ goog.require('lf.testing.util');
  *
  * @param {string} testName
  * @param {!function(): !IThenable} tester
- * @param {!function(*): !IThenable.<boolean>} validator
+ * @param {!function(*): !IThenable<boolean>} validator
  * @param {boolean} skipRecording Whether time data for this test should be
  *     recorded.
  */
@@ -42,7 +42,7 @@ lf.testing.BenchmarkTest_ = function(
   /** @type {!function(): !IThenable} */
   this.tester = tester;
 
-  /** @type {!function(*): !IThenable.<boolean>} */
+  /** @type {!function(*): !IThenable<boolean>} */
   this.validator = validator;
 
   /** @type {boolean} */
@@ -66,7 +66,7 @@ lf.testing.Benchmark = function(name, opt_setUp, opt_tearDown) {
   /** @private {string} */
   this.name_ = name;
 
-  /** @private {!goog.structs.Map.<string, !Array.<number>>} */
+  /** @private {!goog.structs.Map<string, !Array<number>>} */
   this.results_ = new goog.structs.Map();
 
   /** @private {!Array.<!lf.testing.BenchmarkTest_>} */
@@ -100,7 +100,7 @@ lf.testing.Benchmark.LogLevel = {
 /**
  * @param {string} testName
  * @param {!function(): !IThenable} tester Test function.
- * @param {!function(*): !IThenable.<boolean>=} opt_validator Test validator.
+ * @param {!function(*): !IThenable<boolean>=} opt_validator Test validator.
  * @param {boolean=} opt_skipRecording
  */
 lf.testing.Benchmark.prototype.schedule = function(

@@ -36,7 +36,7 @@ lf.testing.hrSchema.EmployeeDataGenerator = function(schema) {
   /**
    * A bag of salary values used to assign unique salaries to all generated
    * employees.
-   * @private {!goog.structs.Set.<number>}
+   * @private {!goog.structs.Set<number>}
    */
   this.assignedSalaries_ = new goog.structs.Set();
 

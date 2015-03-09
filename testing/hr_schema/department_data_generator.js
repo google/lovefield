@@ -33,7 +33,7 @@ lf.testing.hrSchema.DepartmentDataGenerator = function(schema) {
   /** @private {!lf.schema.Database} */
   this.schema_ = schema;
 
-  /** @private {!Array.<string>} */
+  /** @private {!Array<string>} */
   this.names_ = lf.testing.hrSchema.samples.DEPARTMENT_NAMES.slice();
   goog.array.shuffle(this.names_);
 };

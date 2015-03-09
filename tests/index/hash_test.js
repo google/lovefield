@@ -56,9 +56,9 @@ function testSlice_Desc() {
 
 /** @param {boolean} reverseOrder */
 function checkSlice(reverseOrder) {
-  /** @const {!Array.<number>} */
+  /** @const {!Array<number>} */
   var ARRAY = [0, 1, 2, 3, 4];
-  /** @const {!Array.<number>} */
+  /** @const {!Array<number>} */
   var REVERSE_ARRAY = ARRAY.slice().reverse();
 
   assertArrayEquals(

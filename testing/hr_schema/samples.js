@@ -18,7 +18,7 @@ goog.provide('lf.testing.hrSchema.samples');
 
 
 /**
- * @type {!Array.<string>}
+ * @type {!Array<string>}
  * @const
  */
 lf.testing.hrSchema.samples.FIRST_NAMES = [
@@ -226,7 +226,7 @@ lf.testing.hrSchema.samples.FIRST_NAMES = [
 
 
 /**
- * @type {!Array.<string>}
+ * @type {!Array<string>}
  * @const
  */
 lf.testing.hrSchema.samples.LAST_NAMES = [
@@ -334,7 +334,7 @@ lf.testing.hrSchema.samples.LAST_NAMES = [
 
 
 /**
- * @type {!Array.<string>}
+ * @type {!Array<string>}
  * @const
  */
 lf.testing.hrSchema.samples.JOB_TITLES = [
@@ -444,7 +444,7 @@ lf.testing.hrSchema.samples.JOB_TITLES = [
 
 
 /**
- * @type {!Array.<string>}
+ * @type {!Array<string>}
  * @const
  */
 lf.testing.hrSchema.samples.DEPARTMENT_NAMES = [

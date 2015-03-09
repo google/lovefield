@@ -212,7 +212,7 @@ lf.testing.index.TestSingleRowStringKey.keyRanges = [
 /**
  * The expected results for all key ranges in
  * lf.testing.index.TestSingleRowStringKeyCases.keyRanges.
- * @type {!Array.<!Array.<number>>}
+ * @type {!Array.<!Array<number>>}
  */
 lf.testing.index.TestSingleRowStringKey.getRangeExpectations = [
   // get all.

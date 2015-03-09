@@ -33,7 +33,7 @@ lf.testing.hrSchema.JobDataGenerator = function(schema) {
   /** @private {!lf.schema.Database} */
   this.schema_ = schema;
 
-  /** @private {!Array.<string>} */
+  /** @private {!Array<string>} */
   this.titles_ = lf.testing.hrSchema.samples.JOB_TITLES.slice();
   goog.array.shuffle(this.titles_);
 };
@@ -41,7 +41,7 @@ lf.testing.hrSchema.JobDataGenerator = function(schema) {
 
 /**
  * A pool of possible values for the minSalary/maxSalary fields.
- * @private {!Array.<number>}
+ * @private {!Array<number>}
  */
 lf.testing.hrSchema.JobDataGenerator.SALARY_POOL_ =
     [100000, 200000, 300000, 400000, 500000, 600000];
@@ -86,7 +86,7 @@ lf.testing.hrSchema.JobDataGenerator.prototype.generate = function(count) {
 
 
 /**
- * @return {!Array.<number>}
+ * @return {!Array<number>}
  * @private
  */
 lf.testing.hrSchema.JobDataGenerator.prototype.genSalaries_ = function() {

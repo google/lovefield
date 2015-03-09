@@ -103,7 +103,7 @@ lf.testing.SmokeTester.prototype.testCRUD = function() {
 
   /**
    * Selects some records from the databse.
-   * @param {!Array.<string>} ids
+   * @param {!Array<string>} ids
    * @return {!IThenable}
    */
   var selectFn = goog.bind(function(ids) {

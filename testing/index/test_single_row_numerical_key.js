@@ -211,7 +211,7 @@ lf.testing.index.TestSingleRowNumericalKey.keyRanges = [
 /**
  * The expected results for all key ranges in
  * lf.testing.index.TestSingleRowNumericalKeyCases.keyRanges.
- * @private {!Array.<!Array.<number>>}
+ * @private {!Array.<!Array<number>>}
  */
 lf.testing.index.TestSingleRowNumericalKey.getRangeExpectations_ = [
   // get all.

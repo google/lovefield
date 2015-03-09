@@ -353,7 +353,7 @@ function testScanRowId_BundledDB() {
 
 /**
  * @suppress {accessControls}
- * @return {!Array.<string>}
+ * @return {!Array<string>}
  */
 function filterTableA() {
   var list = db.db_.objectStoreNames;

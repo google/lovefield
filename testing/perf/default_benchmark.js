@@ -217,7 +217,7 @@ lf.testing.perf.DefaultBenchmark.prototype.selectPartial = function(rowCount) {
 
 /**
  * @param {number} rowCount
- * @return {!IThenable.<boolean>}
+ * @return {!IThenable<boolean>}
  */
 lf.testing.perf.DefaultBenchmark.prototype.validateInsert = function(rowCount) {
   return this.select().then(goog.bind(function(results) {
@@ -239,7 +239,7 @@ lf.testing.perf.DefaultBenchmark.prototype.validateInsert = function(rowCount) {
 
 /**
  * @param {number} rowCount
- * @return {!IThenable.<boolean>}
+ * @return {!IThenable<boolean>}
  */
 lf.testing.perf.DefaultBenchmark.prototype.validateUpdateAll = function(
     rowCount) {
@@ -260,7 +260,7 @@ lf.testing.perf.DefaultBenchmark.prototype.validateUpdateAll = function(
 };
 
 
-/** @return {!IThenable.<boolean>} */
+/** @return {!IThenable<boolean>} */
 lf.testing.perf.DefaultBenchmark.prototype.validateEmpty = function() {
   return this.select().then(function(results) {
     return results.length == 0;
@@ -270,7 +270,7 @@ lf.testing.perf.DefaultBenchmark.prototype.validateEmpty = function() {
 
 /**
  * @param {number} rowCount
- * @return {!IThenable.<boolean>}
+ * @return {!IThenable<boolean>}
  */
 lf.testing.perf.DefaultBenchmark.prototype.validateDeletePartial = function(
     rowCount) {
@@ -283,7 +283,7 @@ lf.testing.perf.DefaultBenchmark.prototype.validateDeletePartial = function(
 /**
  * @param {number} rowCount
  * @param {*} rows
- * @return {!IThenable.<boolean>}
+ * @return {!IThenable<boolean>}
  */
 lf.testing.perf.DefaultBenchmark.prototype.validateUpdatePartial = function(
     rowCount, rows) {

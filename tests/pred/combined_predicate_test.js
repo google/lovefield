@@ -209,9 +209,9 @@ function testSetComplement_Or() {
  * @param {!lf.Predicate} predicate The combined predicate to be tested.
  * @param {number} sampleRowCount The number of sample Employee rows to be used
  *     during testing.
- * @param {!Array.<number>} expectedSalariesOriginal The expected salaries
+ * @param {!Array<number>} expectedSalariesOriginal The expected salaries
  *     returned by the original predicate.
- * @param {!Array.<number>} expectedSalariesComplement The expected salaries
+ * @param {!Array<number>} expectedSalariesComplement The expected salaries
  *     returned by the complement predicate.
  */
 function checkSetComplement(

@@ -710,7 +710,7 @@ lf.testing.EndToEndSelectTester.prototype.testGroupByWithLimit = function() {
 /**
  * Helper function for performing assertions an the results of
  * testSelect_GroupBy and testSelect_GroupByWithLimit.
- * @param {!Array.<Object>} results
+ * @param {!Array<Object>} results
  * @private
  */
 lf.testing.EndToEndSelectTester.prototype.assertGroupByResults_ =
