@@ -98,6 +98,24 @@ function testExec_ThrowsInvalidProjectionList_GroupBy() {
 
 
 /**
+ * Tests that groupBy on non-indexable fields will fail.
+ */
+function testExec_ThrowsGroupByNonIndexableColumn() {
+  asyncTestCase.waitForAsync('testExec_ThrowsGroupByNonIndexableColumn');
+
+  var e = db.getSchema().getEmployee();
+  var query = new lf.query.SelectBuilder(
+      hr.db.getGlobal(), [e.email, e.salary, e.photo]);
+  query.from(e).groupBy(e.photo).exec().then(
+      fail,
+      function(e) {
+        assertEquals(e.name, lf.Exception.Type.SYNTAX);
+        asyncTestCase.continueTesting();
+      });
+}
+
+
+/**
  * Tests that constructing a query succeeds if a valid projection list is
  * requested (and if no other violation occurs).
  */
