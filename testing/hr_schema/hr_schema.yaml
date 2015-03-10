@@ -83,7 +83,7 @@ table:
           localColumn: managerId
           reference: Employee
           remoteColumn: id
-          cascade: true
+          cascade: false
         fk_LocationId:
           localColumn: locationId
           reference: Location

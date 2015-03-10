@@ -18,10 +18,8 @@ goog.setTestOnly();
 goog.require('goog.testing.AsyncTestCase');
 goog.require('goog.testing.jsunit');
 goog.require('hr.db');
-goog.require('lf.Order');
-goog.require('lf.Type');
-goog.require('lf.schema');
 goog.require('lf.testing.EndToEndSelectTester');
+goog.require('lf.testing.hrSchema.getSchemaBuilder');
 
 
 /** @type {!goog.testing.AsyncTestCase} */
@@ -45,58 +43,10 @@ function testEndToEnd_StaticSchema() {
 
 function testEndToEnd_DynamicSchema() {
   asyncTestCase.waitForAsync('testEndToEnd_DynamicSchema');
-  var schemaBuilder = getSchemaBuilder();
+  var schemaBuilder = lf.testing.hrSchema.getSchemaBuilder();
   var selectTester = new lf.testing.EndToEndSelectTester(
       schemaBuilder.connect.bind(schemaBuilder));
   selectTester.run().then(function() {
     asyncTestCase.continueTesting();
   });
-}
-
-
-/**
- * @return {!lf.schema.Builder}
- */
-function getSchemaBuilder() {
-  var schemaBuilder = lf.schema.create('hr' + goog.now(), 1);
-  schemaBuilder.createTable('Job').
-      addColumn('id', lf.Type.STRING).
-      addColumn('title', lf.Type.STRING).
-      addColumn('minSalary', lf.Type.NUMBER).
-      addColumn('maxSalary', lf.Type.NUMBER).
-      addPrimaryKey(['id']).
-      addIndex('idx_maxSalary', ['maxSalary'], false, lf.Order.DESC);
-
-  schemaBuilder.createTable('Employee').
-      addColumn('id', lf.Type.STRING).
-      addColumn('firstName', lf.Type.STRING).
-      addColumn('lastName', lf.Type.STRING).
-      addColumn('email', lf.Type.STRING).
-      addColumn('phoneNumber', lf.Type.STRING).
-      addColumn('hireDate', lf.Type.DATE_TIME).
-      addColumn('jobId', lf.Type.STRING).
-      addColumn('salary', lf.Type.NUMBER).
-      addColumn('commissionPercent', lf.Type.NUMBER).
-      addColumn('managerId', lf.Type.STRING).
-      addColumn('departmentId', lf.Type.STRING).
-      addColumn('photo', lf.Type.ARRAY_BUFFER).
-      addPrimaryKey(['id']).
-      addIndex('idx_salary', ['salary'], false, lf.Order.DESC).
-      addNullable(['hireDate']);
-
-  schemaBuilder.createTable('Department').
-      addColumn('id', lf.Type.STRING).
-      addColumn('name', lf.Type.STRING).
-      addColumn('managerId', lf.Type.STRING).
-      addColumn('locationId', lf.Type.STRING).
-      addPrimaryKey(['id']);
-
-  schemaBuilder.createTable('Holiday').
-      addColumn('name', lf.Type.STRING).
-      addColumn('begin', lf.Type.DATE_TIME).
-      addColumn('end', lf.Type.DATE_TIME).
-      addIndex('idx_begin', ['begin'], false, lf.Order.ASC).
-      addPrimaryKey(['name']);
-
-  return schemaBuilder;
 }
