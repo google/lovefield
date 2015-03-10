@@ -78,6 +78,8 @@ lf.testing.EndToEndSelectTester = function(connectFn) {
     this.testOrderBy_Descending.bind(this),
     this.testOrderBy_Ascending.bind(this),
     this.testOrderBy_Multiple.bind(this),
+    this.testOrderBy_Aggregate.bind(this),
+    this.testOrderBy_NonProjectedAggregate.bind(this),
     this.testGroupBy.bind(this),
     this.testGroupByWithLimit.bind(this),
     this.testAggregatorsOnly.bind(this),
@@ -668,6 +670,72 @@ lf.testing.EndToEndSelectTester.prototype.testOrderBy_Multiple =
           this.assertOrder_(partialResults, j.minSalary, lf.Order.ASC);
         }, this);
       }.bind(this));
+};
+
+
+/**
+ * Tests the case where the results are ordered by an aggregate column (in
+ * combination with GROUP_BY).
+ * @return {!IThenable}
+ */
+lf.testing.EndToEndSelectTester.prototype.testOrderBy_Aggregate =
+    function() {
+  var e = this.e_;
+  var aggregatedColumn = lf.fn.min(e.salary);
+  var order = lf.Order.ASC;
+  var queryBuilder = /** @type {!lf.query.SelectBuilder} */ (
+      this.db_.select(e.jobId, aggregatedColumn).
+      from(e).
+      orderBy(aggregatedColumn, order).
+      groupBy(e.jobId));
+
+  return queryBuilder.exec().then(
+      function(results) {
+        this.assertOrder_(results, aggregatedColumn, order);
+      }.bind(this));
+};
+
+
+/**
+ * Tests the case where the results are ordered by an aggregate column (in
+ * combination with GROUP_BY), but that aggregate column is not present in the
+ * projection list.
+ * @return {!IThenable}
+ */
+lf.testing.EndToEndSelectTester.prototype.testOrderBy_NonProjectedAggregate =
+    function() {
+  var e = this.e_;
+  var aggregatedColumn = lf.fn.min(e.salary);
+  var order = lf.Order.ASC;
+  var queryBuilder1 = /** @type {!lf.query.SelectBuilder} */ (
+      this.db_.select(e.jobId, aggregatedColumn).
+      from(e).
+      orderBy(aggregatedColumn, order).
+      groupBy(e.jobId));
+
+  var queryBuilder2 = /** @type {!lf.query.SelectBuilder} */ (
+      this.db_.select(e.jobId).
+      from(e).
+      orderBy(aggregatedColumn, order).
+      groupBy(e.jobId));
+
+  var expectedJobIdOrder = null;
+  // First executing the query with the aggregated column in the projected list,
+  // to get the expected jobId ordering.
+  return queryBuilder1.exec().then(function(results) {
+    this.assertOrder_(results, aggregatedColumn, order);
+    expectedJobIdOrder = results.map(function(obj) {
+      return obj[e.jobId.getName()];
+    });
+    // Then executing the same query without the aggregated column in the
+    // projected list.
+    return queryBuilder2.exec();
+  }.bind(this)).then(function(results) {
+    var actualJobIdOrder = results.map(function(obj) {
+      return obj[e.jobId.getName()];
+    });
+    assertArrayEquals(expectedJobIdOrder, actualJobIdOrder);
+  }.bind(this));
 };
 
 
