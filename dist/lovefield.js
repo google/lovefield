@@ -2703,7 +2703,7 @@ goog.addDependency('dom/dom.js', ['goog.dom', 'goog.dom.Appendable', 'goog.dom.D
 goog.addDependency('dom/dom_test.js', ['goog.dom.dom_test'], ['goog.dom', 'goog.dom.BrowserFeature', 'goog.dom.DomHelper', 'goog.dom.InputType', 'goog.dom.NodeType', 'goog.dom.TagName', 'goog.functions', 'goog.html.testing', 'goog.object', 'goog.string.Unicode', 'goog.testing.PropertyReplacer', 'goog.testing.asserts', 'goog.userAgent', 'goog.userAgent.product', 'goog.userAgent.product.isVersion'], false);
 goog.addDependency('dom/fontsizemonitor.js', ['goog.dom.FontSizeMonitor', 'goog.dom.FontSizeMonitor.EventType'], ['goog.dom', 'goog.events', 'goog.events.EventTarget', 'goog.events.EventType', 'goog.userAgent'], false);
 goog.addDependency('dom/fontsizemonitor_test.js', ['goog.dom.FontSizeMonitorTest'], ['goog.dom', 'goog.dom.FontSizeMonitor', 'goog.events', 'goog.events.Event', 'goog.testing.PropertyReplacer', 'goog.testing.events', 'goog.testing.jsunit', 'goog.userAgent'], false);
-goog.addDependency('dom/forms.js', ['goog.dom.forms'], ['goog.dom.InputType', 'goog.structs.Map'], false);
+goog.addDependency('dom/forms.js', ['goog.dom.forms'], ['goog.dom.InputType', 'goog.dom.TagName', 'goog.structs.Map'], false);
 goog.addDependency('dom/forms_test.js', ['goog.dom.formsTest'], ['goog.dom', 'goog.dom.forms', 'goog.testing.jsunit'], false);
 goog.addDependency('dom/fullscreen.js', ['goog.dom.fullscreen', 'goog.dom.fullscreen.EventType'], ['goog.dom', 'goog.userAgent'], false);
 goog.addDependency('dom/iframe.js', ['goog.dom.iframe'], ['goog.dom', 'goog.dom.safe', 'goog.html.SafeHtml', 'goog.html.SafeStyle', 'goog.userAgent'], false);
@@ -2885,7 +2885,7 @@ goog.addDependency('format/emailaddress.js', ['goog.format.EmailAddress'], ['goo
 goog.addDependency('format/emailaddress_test.js', ['goog.format.EmailAddressTest'], ['goog.array', 'goog.format.EmailAddress', 'goog.testing.jsunit'], false);
 goog.addDependency('format/format.js', ['goog.format'], ['goog.i18n.GraphemeBreak', 'goog.string', 'goog.userAgent'], false);
 goog.addDependency('format/format_test.js', ['goog.formatTest'], ['goog.dom', 'goog.format', 'goog.string', 'goog.testing.PropertyReplacer', 'goog.testing.jsunit'], false);
-goog.addDependency('format/htmlprettyprinter.js', ['goog.format.HtmlPrettyPrinter', 'goog.format.HtmlPrettyPrinter.Buffer'], ['goog.object', 'goog.string.StringBuffer'], false);
+goog.addDependency('format/htmlprettyprinter.js', ['goog.format.HtmlPrettyPrinter', 'goog.format.HtmlPrettyPrinter.Buffer'], ['goog.dom.TagName', 'goog.object', 'goog.string.StringBuffer'], false);
 goog.addDependency('format/htmlprettyprinter_test.js', ['goog.format.HtmlPrettyPrinterTest'], ['goog.format.HtmlPrettyPrinter', 'goog.testing.MockClock', 'goog.testing.jsunit'], false);
 goog.addDependency('format/internationalizedemailaddress.js', ['goog.format.InternationalizedEmailAddress'], ['goog.format.EmailAddress', 'goog.string'], false);
 goog.addDependency('format/internationalizedemailaddress_test.js', ['goog.format.InternationalizedEmailAddressTest'], ['goog.array', 'goog.format.InternationalizedEmailAddress', 'goog.testing.jsunit'], false);
@@ -2923,7 +2923,7 @@ goog.addDependency('fx/dom.js', ['goog.fx.dom', 'goog.fx.dom.BgColorTransform', 
 goog.addDependency('fx/dragdrop.js', ['goog.fx.DragDrop'], ['goog.fx.AbstractDragDrop', 'goog.fx.DragDropItem'], false);
 goog.addDependency('fx/dragdropgroup.js', ['goog.fx.DragDropGroup'], ['goog.dom', 'goog.fx.AbstractDragDrop', 'goog.fx.DragDropItem'], false);
 goog.addDependency('fx/dragdropgroup_test.js', ['goog.fx.DragDropGroupTest'], ['goog.events', 'goog.fx.DragDropGroup', 'goog.testing.jsunit'], false);
-goog.addDependency('fx/dragger.js', ['goog.fx.DragEvent', 'goog.fx.Dragger', 'goog.fx.Dragger.EventType'], ['goog.dom', 'goog.events', 'goog.events.Event', 'goog.events.EventHandler', 'goog.events.EventTarget', 'goog.events.EventType', 'goog.math.Coordinate', 'goog.math.Rect', 'goog.style', 'goog.style.bidi', 'goog.userAgent'], false);
+goog.addDependency('fx/dragger.js', ['goog.fx.DragEvent', 'goog.fx.Dragger', 'goog.fx.Dragger.EventType'], ['goog.dom', 'goog.dom.TagName', 'goog.events', 'goog.events.Event', 'goog.events.EventHandler', 'goog.events.EventTarget', 'goog.events.EventType', 'goog.math.Coordinate', 'goog.math.Rect', 'goog.style', 'goog.style.bidi', 'goog.userAgent'], false);
 goog.addDependency('fx/dragger_test.js', ['goog.fx.DraggerTest'], ['goog.dom', 'goog.events', 'goog.events.BrowserEvent', 'goog.events.Event', 'goog.events.EventType', 'goog.fx.Dragger', 'goog.math.Rect', 'goog.style.bidi', 'goog.testing.StrictMock', 'goog.testing.events', 'goog.testing.jsunit', 'goog.userAgent'], false);
 goog.addDependency('fx/draglistgroup.js', ['goog.fx.DragListDirection', 'goog.fx.DragListGroup', 'goog.fx.DragListGroup.EventType', 'goog.fx.DragListGroupEvent'], ['goog.array', 'goog.asserts', 'goog.dom', 'goog.dom.classlist', 'goog.events', 'goog.events.Event', 'goog.events.EventHandler', 'goog.events.EventTarget', 'goog.events.EventType', 'goog.fx.Dragger', 'goog.math.Coordinate', 'goog.string', 'goog.style'], false);
 goog.addDependency('fx/draglistgroup_test.js', ['goog.fx.DragListGroupTest'], ['goog.array', 'goog.dom', 'goog.dom.classlist', 'goog.events', 'goog.events.BrowserEvent', 'goog.events.BrowserFeature', 'goog.events.Event', 'goog.events.EventType', 'goog.fx.DragEvent', 'goog.fx.DragListDirection', 'goog.fx.DragListGroup', 'goog.fx.Dragger', 'goog.math.Coordinate', 'goog.object', 'goog.testing.events', 'goog.testing.jsunit'], false);
@@ -2980,7 +2980,7 @@ goog.addDependency('html/flash.js', ['goog.html.flash'], ['goog.asserts', 'goog.
 goog.addDependency('html/flash_test.js', ['goog.html.flashTest'], ['goog.html.SafeHtml', 'goog.html.TrustedResourceUrl', 'goog.html.flash', 'goog.string.Const', 'goog.testing.jsunit'], false);
 goog.addDependency('html/legacyconversions.js', ['goog.html.legacyconversions'], ['goog.html.SafeHtml', 'goog.html.SafeStyle', 'goog.html.SafeUrl', 'goog.html.TrustedResourceUrl'], false);
 goog.addDependency('html/legacyconversions_test.js', ['goog.html.legacyconversionsTest'], ['goog.html.SafeHtml', 'goog.html.SafeUrl', 'goog.html.TrustedResourceUrl', 'goog.html.legacyconversions', 'goog.testing.PropertyReplacer', 'goog.testing.jsunit'], false);
-goog.addDependency('html/safehtml.js', ['goog.html.SafeHtml'], ['goog.array', 'goog.asserts', 'goog.dom.tags', 'goog.html.SafeStyle', 'goog.html.SafeStyleSheet', 'goog.html.SafeUrl', 'goog.html.TrustedResourceUrl', 'goog.i18n.bidi.Dir', 'goog.i18n.bidi.DirectionalString', 'goog.object', 'goog.string', 'goog.string.Const', 'goog.string.TypedString'], false);
+goog.addDependency('html/safehtml.js', ['goog.html.SafeHtml'], ['goog.array', 'goog.asserts', 'goog.dom.TagName', 'goog.dom.tags', 'goog.html.SafeStyle', 'goog.html.SafeStyleSheet', 'goog.html.SafeUrl', 'goog.html.TrustedResourceUrl', 'goog.i18n.bidi.Dir', 'goog.i18n.bidi.DirectionalString', 'goog.object', 'goog.string', 'goog.string.Const', 'goog.string.TypedString'], false);
 goog.addDependency('html/safehtml_test.js', ['goog.html.safeHtmlTest'], ['goog.html.SafeHtml', 'goog.html.SafeStyle', 'goog.html.SafeStyleSheet', 'goog.html.SafeUrl', 'goog.html.TrustedResourceUrl', 'goog.html.testing', 'goog.i18n.bidi.Dir', 'goog.string.Const', 'goog.testing.jsunit'], false);
 goog.addDependency('html/safescript.js', ['goog.html.SafeScript'], ['goog.asserts', 'goog.string.Const', 'goog.string.TypedString'], false);
 goog.addDependency('html/safescript_test.js', ['goog.html.safeScriptTest'], ['goog.html.SafeScript', 'goog.string.Const', 'goog.testing.jsunit'], false);
@@ -3243,7 +3243,7 @@ goog.addDependency('module/moduleinfo.js', ['goog.module.ModuleInfo'], ['goog.Di
 goog.addDependency('module/moduleinfo_test.js', ['goog.module.ModuleInfoTest'], ['goog.module.BaseModule', 'goog.module.ModuleInfo', 'goog.testing.MockClock', 'goog.testing.jsunit'], false);
 goog.addDependency('module/moduleloadcallback.js', ['goog.module.ModuleLoadCallback'], ['goog.debug.entryPointRegistry', 'goog.debug.errorHandlerWeakDep', 'goog.module'], false);
 goog.addDependency('module/moduleloadcallback_test.js', ['goog.module.ModuleLoadCallbackTest'], ['goog.debug.ErrorHandler', 'goog.debug.entryPointRegistry', 'goog.functions', 'goog.module.ModuleLoadCallback', 'goog.testing.jsunit', 'goog.testing.recordFunction'], false);
-goog.addDependency('module/moduleloader.js', ['goog.module.ModuleLoader'], ['goog.Timer', 'goog.array', 'goog.events', 'goog.events.Event', 'goog.events.EventHandler', 'goog.events.EventTarget', 'goog.log', 'goog.module.AbstractModuleLoader', 'goog.net.BulkLoader', 'goog.net.EventType', 'goog.net.jsloader', 'goog.userAgent', 'goog.userAgent.product'], false);
+goog.addDependency('module/moduleloader.js', ['goog.module.ModuleLoader'], ['goog.Timer', 'goog.array', 'goog.events', 'goog.events.Event', 'goog.events.EventHandler', 'goog.events.EventTarget', 'goog.labs.userAgent.browser', 'goog.log', 'goog.module.AbstractModuleLoader', 'goog.net.BulkLoader', 'goog.net.EventType', 'goog.net.jsloader', 'goog.userAgent', 'goog.userAgent.product'], false);
 goog.addDependency('module/moduleloader_test.js', ['goog.module.ModuleLoaderTest'], ['goog.array', 'goog.dom', 'goog.events', 'goog.functions', 'goog.module.ModuleLoader', 'goog.module.ModuleManager', 'goog.net.BulkLoader', 'goog.net.XmlHttp', 'goog.object', 'goog.testing.AsyncTestCase', 'goog.testing.PropertyReplacer', 'goog.testing.events.EventObserver', 'goog.testing.jsunit', 'goog.userAgent'], false);
 goog.addDependency('module/modulemanager.js', ['goog.module.ModuleManager', 'goog.module.ModuleManager.CallbackType', 'goog.module.ModuleManager.FailureType'], ['goog.Disposable', 'goog.array', 'goog.asserts', 'goog.async.Deferred', 'goog.debug.Trace', 'goog.dispose', 'goog.log', 'goog.module', 'goog.module.ModuleInfo', 'goog.module.ModuleLoadCallback', 'goog.object'], false);
 goog.addDependency('module/modulemanager_test.js', ['goog.module.ModuleManagerTest'], ['goog.array', 'goog.functions', 'goog.module.BaseModule', 'goog.module.ModuleManager', 'goog.testing', 'goog.testing.MockClock', 'goog.testing.jsunit', 'goog.testing.recordFunction'], false);
@@ -3600,6 +3600,7 @@ goog.addDependency('testing/testcase.js', ['goog.testing.TestCase', 'goog.testin
 goog.addDependency('testing/testcase_test.js', ['goog.testing.TestCaseTest'], ['goog.Promise', 'goog.testing.MockRandom', 'goog.testing.TestCase', 'goog.testing.jsunit'], false);
 goog.addDependency('testing/testqueue.js', ['goog.testing.TestQueue'], [], false);
 goog.addDependency('testing/testrunner.js', ['goog.testing.TestRunner'], ['goog.testing.TestCase'], false);
+goog.addDependency('testing/testsuite.js', ['goog.testing.testSuite'], ['goog.testing.TestCase'], false);
 goog.addDependency('testing/ui/rendererasserts.js', ['goog.testing.ui.rendererasserts'], ['goog.testing.asserts', 'goog.ui.ControlRenderer'], false);
 goog.addDependency('testing/ui/rendererasserts_test.js', ['goog.testing.ui.rendererassertsTest'], ['goog.testing.asserts', 'goog.testing.jsunit', 'goog.testing.ui.rendererasserts', 'goog.ui.ControlRenderer'], false);
 goog.addDependency('testing/ui/rendererharness.js', ['goog.testing.ui.RendererHarness'], ['goog.Disposable', 'goog.dom.NodeType', 'goog.testing.asserts', 'goog.testing.dom'], false);
@@ -3827,7 +3828,7 @@ goog.addDependency('ui/popupdatepicker_test.js', ['goog.ui.PopupDatePickerTest']
 goog.addDependency('ui/popupmenu.js', ['goog.ui.PopupMenu'], ['goog.events.EventType', 'goog.positioning.AnchoredViewportPosition', 'goog.positioning.Corner', 'goog.positioning.MenuAnchoredPosition', 'goog.positioning.Overflow', 'goog.positioning.ViewportClientPosition', 'goog.structs.Map', 'goog.style', 'goog.ui.Component', 'goog.ui.Menu', 'goog.ui.PopupBase', 'goog.userAgent'], false);
 goog.addDependency('ui/popupmenu_test.js', ['goog.ui.PopupMenuTest'], ['goog.dom', 'goog.events.EventHandler', 'goog.events.EventType', 'goog.math.Box', 'goog.math.Coordinate', 'goog.positioning.Corner', 'goog.style', 'goog.testing.jsunit', 'goog.ui.Menu', 'goog.ui.MenuItem', 'goog.ui.PopupMenu'], false);
 goog.addDependency('ui/progressbar.js', ['goog.ui.ProgressBar', 'goog.ui.ProgressBar.Orientation'], ['goog.a11y.aria', 'goog.asserts', 'goog.dom', 'goog.dom.classlist', 'goog.events', 'goog.events.EventType', 'goog.ui.Component', 'goog.ui.RangeModel', 'goog.userAgent'], false);
-goog.addDependency('ui/prompt.js', ['goog.ui.Prompt'], ['goog.Timer', 'goog.dom', 'goog.dom.InputType', 'goog.events', 'goog.events.EventType', 'goog.functions', 'goog.html.SafeHtml', 'goog.html.legacyconversions', 'goog.ui.Component', 'goog.ui.Dialog', 'goog.userAgent'], false);
+goog.addDependency('ui/prompt.js', ['goog.ui.Prompt'], ['goog.Timer', 'goog.dom', 'goog.dom.InputType', 'goog.dom.TagName', 'goog.events', 'goog.events.EventType', 'goog.functions', 'goog.html.SafeHtml', 'goog.html.legacyconversions', 'goog.ui.Component', 'goog.ui.Dialog', 'goog.userAgent'], false);
 goog.addDependency('ui/prompt_test.js', ['goog.ui.PromptTest'], ['goog.dom.selection', 'goog.events.InputHandler', 'goog.events.KeyCodes', 'goog.functions', 'goog.string', 'goog.testing.events', 'goog.testing.jsunit', 'goog.ui.BidiInput', 'goog.ui.Dialog', 'goog.ui.Prompt', 'goog.userAgent', 'goog.userAgent.product'], false);
 goog.addDependency('ui/rangemodel.js', ['goog.ui.RangeModel'], ['goog.events.EventTarget', 'goog.ui.Component'], false);
 goog.addDependency('ui/rangemodel_test.js', ['goog.ui.RangeModelTest'], ['goog.testing.jsunit', 'goog.ui.RangeModel'], false);
@@ -7652,6 +7653,167 @@ goog.array.copyByIndex = function(arr, index_arr) {
   return result;
 };
 
+// Copyright 2007 The Closure Library Authors. All Rights Reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS-IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+/**
+ * @fileoverview Defines the goog.dom.TagName enum.  This enumerates
+ * all HTML tag names specified in either the the W3C HTML 4.01 index of
+ * elements or the HTML5 draft specification.
+ *
+ * References:
+ * http://www.w3.org/TR/html401/index/elements.html
+ * http://dev.w3.org/html5/spec/section-index.html
+ *
+ */
+goog.provide('goog.dom.TagName');
+
+
+/**
+ * Enum of all html tag names specified by the W3C HTML4.01 and HTML5
+ * specifications.
+ * @enum {string}
+ */
+goog.dom.TagName = {
+  A: 'A',
+  ABBR: 'ABBR',
+  ACRONYM: 'ACRONYM',
+  ADDRESS: 'ADDRESS',
+  APPLET: 'APPLET',
+  AREA: 'AREA',
+  ARTICLE: 'ARTICLE',
+  ASIDE: 'ASIDE',
+  AUDIO: 'AUDIO',
+  B: 'B',
+  BASE: 'BASE',
+  BASEFONT: 'BASEFONT',
+  BDI: 'BDI',
+  BDO: 'BDO',
+  BIG: 'BIG',
+  BLOCKQUOTE: 'BLOCKQUOTE',
+  BODY: 'BODY',
+  BR: 'BR',
+  BUTTON: 'BUTTON',
+  CANVAS: 'CANVAS',
+  CAPTION: 'CAPTION',
+  CENTER: 'CENTER',
+  CITE: 'CITE',
+  CODE: 'CODE',
+  COL: 'COL',
+  COLGROUP: 'COLGROUP',
+  COMMAND: 'COMMAND',
+  DATA: 'DATA',
+  DATALIST: 'DATALIST',
+  DD: 'DD',
+  DEL: 'DEL',
+  DETAILS: 'DETAILS',
+  DFN: 'DFN',
+  DIALOG: 'DIALOG',
+  DIR: 'DIR',
+  DIV: 'DIV',
+  DL: 'DL',
+  DT: 'DT',
+  EM: 'EM',
+  EMBED: 'EMBED',
+  FIELDSET: 'FIELDSET',
+  FIGCAPTION: 'FIGCAPTION',
+  FIGURE: 'FIGURE',
+  FONT: 'FONT',
+  FOOTER: 'FOOTER',
+  FORM: 'FORM',
+  FRAME: 'FRAME',
+  FRAMESET: 'FRAMESET',
+  H1: 'H1',
+  H2: 'H2',
+  H3: 'H3',
+  H4: 'H4',
+  H5: 'H5',
+  H6: 'H6',
+  HEAD: 'HEAD',
+  HEADER: 'HEADER',
+  HGROUP: 'HGROUP',
+  HR: 'HR',
+  HTML: 'HTML',
+  I: 'I',
+  IFRAME: 'IFRAME',
+  IMG: 'IMG',
+  INPUT: 'INPUT',
+  INS: 'INS',
+  ISINDEX: 'ISINDEX',
+  KBD: 'KBD',
+  KEYGEN: 'KEYGEN',
+  LABEL: 'LABEL',
+  LEGEND: 'LEGEND',
+  LI: 'LI',
+  LINK: 'LINK',
+  MAP: 'MAP',
+  MARK: 'MARK',
+  MATH: 'MATH',
+  MENU: 'MENU',
+  META: 'META',
+  METER: 'METER',
+  NAV: 'NAV',
+  NOFRAMES: 'NOFRAMES',
+  NOSCRIPT: 'NOSCRIPT',
+  OBJECT: 'OBJECT',
+  OL: 'OL',
+  OPTGROUP: 'OPTGROUP',
+  OPTION: 'OPTION',
+  OUTPUT: 'OUTPUT',
+  P: 'P',
+  PARAM: 'PARAM',
+  PRE: 'PRE',
+  PROGRESS: 'PROGRESS',
+  Q: 'Q',
+  RP: 'RP',
+  RT: 'RT',
+  RUBY: 'RUBY',
+  S: 'S',
+  SAMP: 'SAMP',
+  SCRIPT: 'SCRIPT',
+  SECTION: 'SECTION',
+  SELECT: 'SELECT',
+  SMALL: 'SMALL',
+  SOURCE: 'SOURCE',
+  SPAN: 'SPAN',
+  STRIKE: 'STRIKE',
+  STRONG: 'STRONG',
+  STYLE: 'STYLE',
+  SUB: 'SUB',
+  SUMMARY: 'SUMMARY',
+  SUP: 'SUP',
+  SVG: 'SVG',
+  TABLE: 'TABLE',
+  TBODY: 'TBODY',
+  TD: 'TD',
+  TEMPLATE: 'TEMPLATE',
+  TEXTAREA: 'TEXTAREA',
+  TFOOT: 'TFOOT',
+  TH: 'TH',
+  THEAD: 'THEAD',
+  TIME: 'TIME',
+  TITLE: 'TITLE',
+  TR: 'TR',
+  TRACK: 'TRACK',
+  TT: 'TT',
+  U: 'U',
+  UL: 'UL',
+  VAR: 'VAR',
+  VIDEO: 'VIDEO',
+  WBR: 'WBR'
+};
+
 // Copyright 2006 The Closure Library Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -11000,6 +11162,7 @@ goog.provide('goog.html.SafeHtml');
 
 goog.require('goog.array');
 goog.require('goog.asserts');
+goog.require('goog.dom.TagName');
 goog.require('goog.dom.tags');
 goog.require('goog.html.SafeStyle');
 goog.require('goog.html.SafeStyleSheet');
@@ -11285,7 +11448,9 @@ goog.html.SafeHtml.URL_ATTRIBUTES_ = goog.object.createSet('action', 'cite',
  * @private @const {!Object<string,boolean>}
  */
 goog.html.SafeHtml.NOT_ALLOWED_TAG_NAMES_ = goog.object.createSet(
-    'embed', 'iframe', 'link', 'object', 'script', 'style', 'template');
+    goog.dom.TagName.EMBED, goog.dom.TagName.IFRAME, goog.dom.TagName.LINK,
+    goog.dom.TagName.OBJECT, goog.dom.TagName.SCRIPT, goog.dom.TagName.STYLE,
+    goog.dom.TagName.TEMPLATE);
 
 
 /**
@@ -11349,7 +11514,7 @@ goog.html.SafeHtml.create = function(tagName, opt_attributes, opt_content) {
   if (!goog.html.SafeHtml.VALID_NAMES_IN_TAG_.test(tagName)) {
     throw Error('Invalid tag name <' + tagName + '>.');
   }
-  if (tagName.toLowerCase() in goog.html.SafeHtml.NOT_ALLOWED_TAG_NAMES_) {
+  if (tagName.toUpperCase() in goog.html.SafeHtml.NOT_ALLOWED_TAG_NAMES_) {
     throw Error('Tag name <' + tagName + '> is not allowed for SafeHtml.');
   }
   return goog.html.SafeHtml.createSafeHtmlTagSecurityPrivateDoNotAccessOrElse(
@@ -31476,6 +31641,988 @@ lf.pred.createPredicate = function(
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+goog.provide('lf.schema.Column');
+goog.provide('lf.schema.ConnectOptions');
+goog.provide('lf.schema.DataStoreType');
+goog.provide('lf.schema.Database');
+goog.provide('lf.schema.Index');
+goog.provide('lf.schema.IndexedColumn');
+goog.provide('lf.schema.Table');
+
+goog.forwardDeclare('lf.Order');
+goog.forwardDeclare('lf.Predicate');
+goog.forwardDeclare('lf.Row');
+goog.forwardDeclare('lf.Type');
+goog.forwardDeclare('lf.raw.BackStore');
+
+
+
+/**
+ * @interface
+ */
+lf.schema.Column = function() {};
+
+
+/** @return {string} */
+lf.schema.Column.prototype.getName;
+
+
+/** @return {string} */
+lf.schema.Column.prototype.getNormalizedName;
+
+
+/** @return {!lf.schema.Table} */
+lf.schema.Column.prototype.getTable;
+
+
+/** @return {!lf.Type} */
+lf.schema.Column.prototype.getType;
+
+
+/** @return {?string} */
+lf.schema.Column.prototype.getAlias;
+
+
+/** @return {!Array.<!lf.schema.Index>} */
+lf.schema.Column.prototype.getIndices;
+
+
+
+/**
+ * Models the return value of Database.getSchema().
+ * @interface
+ */
+lf.schema.Database = function() {};
+
+
+/** @return {string} */
+lf.schema.Database.prototype.name;
+
+
+/** @return {number} */
+lf.schema.Database.prototype.version;
+
+
+/** @return {!Array.<!lf.schema.Table>} */
+lf.schema.Database.prototype.tables;
+
+
+/**
+ * @param {string} tableName
+ * @return {!lf.schema.Table}
+ * @throws {!lf.Exception}
+ */
+lf.schema.Database.prototype.table;
+
+
+/**
+ * The available data store types.
+ * @enum {number}
+ */
+lf.schema.DataStoreType = {
+  INDEXED_DB: 0,
+  MEMORY: 1
+};
+
+
+/**
+ * @typedef {{
+ *   onUpgrade: (undefined|!function(!lf.raw.BackStore):!IThenable),
+ *   storeType: (undefined|!lf.schema.DataStoreType)
+ * }}
+ */
+lf.schema.ConnectOptions;
+
+
+/**
+ * @typedef {{
+ *   name: string,
+ *   order: !lf.Order,
+ *   autoIncrement: boolean
+ * }}
+ */
+lf.schema.IndexedColumn;
+
+
+
+/**
+ * @param {string} tableName
+ * @param {string} name
+ * @param {boolean} isUnique
+ * @param {!Array.<!lf.schema.IndexedColumn>} columns
+ * @constructor @struct
+ */
+lf.schema.Index = function(tableName, name, isUnique, columns) {
+  /** @type {string} */
+  this.tableName = tableName;
+
+  /** @type {string} */
+  this.name = name;
+
+  /** @type {boolean} */
+  this.isUnique = isUnique;
+
+  /** @type {!Array.<!lf.schema.IndexedColumn>} */
+  this.columns = columns;
+};
+
+
+/** @return {string} */
+lf.schema.Index.prototype.getNormalizedName = function() {
+  return this.tableName + '.' + this.name;
+};
+
+
+
+/**
+ * Models the return value of Database.getSchema().getTable().
+ * @param {string} name
+ * @param {!Array.<!lf.schema.Column>} cols
+ * @param {!Array.<!lf.schema.Index>} indices
+ * @param {boolean} persistentIndex
+ *
+ * @template UserType, StoredType
+ * @constructor
+ */
+lf.schema.Table = function(name, cols, indices, persistentIndex) {
+  /** @private */
+  this.name_ = name;
+
+  /** @private {!Array.<!lf.schema.Index>} */
+  this.indices_ = indices;
+
+  /** @private {!Array.<!lf.schema.Column>} */
+  this.columns_ = cols;
+
+  /** @private {boolean} */
+  this.persistentIndex_ = persistentIndex;
+
+  /** @private {?string} */
+  this.alias_ = null;
+};
+
+
+/** @return {string} */
+lf.schema.Table.prototype.getName = function() {
+  return this.name_;
+};
+
+
+/** @return {?string} */
+lf.schema.Table.prototype.getAlias = function() {
+  return this.alias_;
+};
+
+
+/** @return {string} */
+lf.schema.Table.prototype.getEffectiveName = function() {
+  return this.alias_ || this.name_;
+};
+
+
+/**
+ * @param {string} name
+ * @return {!lf.schema.Table}
+ */
+lf.schema.Table.prototype.as = function(name) {
+  // Note1: Can't use lf.schema.Table constructor directly here, because the
+  // clone will be missing any auto-generated properties the original object
+  // has.
+
+  // Note2: Auto-generated subclasses have a no-arg constructor. The name_
+  // parameter is passed to the constructor only for the purposes of
+  // lf.testing.MockSchema tables which don't have a no-arg constructor and
+  // otherwise would not work with as() in tests.
+  var clone = new this.constructor(this.name_);
+  clone.alias_ = name;
+  return clone;
+};
+
+
+/**
+ * @param {UserType=} opt_value
+ * @return {!lf.Row.<UserType, StoredType>}
+ * @throws {lf.Exception}
+ * @export
+ */
+lf.schema.Table.prototype.createRow = goog.abstractMethod;
+
+
+/**
+ * @param {{id: number, value: *}} dbRecord
+ * @return {!lf.Row.<UserType, StoredType>}
+ * @export
+ */
+lf.schema.Table.prototype.deserializeRow = goog.abstractMethod;
+
+
+/** @return {!Array.<!lf.schema.Index>} */
+lf.schema.Table.prototype.getIndices = function() {
+  return this.indices_;
+};
+
+
+/** @return {!Array.<!lf.schema.Column>} */
+lf.schema.Table.prototype.getColumns = function() {
+  return this.columns_;
+};
+
+
+/** @export @return {!lf.schema.Constraint} */
+lf.schema.Table.prototype.getConstraint = goog.abstractMethod;
+
+
+/** @return {boolean} */
+lf.schema.Table.prototype.persistentIndex = function() {
+  return this.persistentIndex_;
+};
+
+
+/**
+ * Row id index is named <tableName>.#, which is an invalid name for JS vars
+ * and therefore user-defined indices can never collide with it.
+ * @const {string}
+ */
+lf.schema.Table.ROW_ID_INDEX_PATTERN = '#';
+
+
+/** @return {string} */
+lf.schema.Table.prototype.getRowIdIndexName = function() {
+  return this.name_ + '.' + lf.schema.Table.ROW_ID_INDEX_PATTERN;
+};
+
+/**
+ * @license
+ * Copyright 2014 Google Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+goog.provide('lf.fn.AggregatedColumn');
+goog.provide('lf.fn.StarColumn');
+
+goog.require('lf.Type');
+goog.require('lf.schema.Column');
+goog.require('lf.schema.Table');
+
+
+
+/**
+ * @implements {lf.schema.Column}
+ * @constructor
+ * @struct
+ *
+ * @param {!lf.schema.Column} col The column to be aggregated.
+ * @param {!lf.fn.Type} aggregatorType The type of the aggregation.
+ */
+lf.fn.AggregatedColumn = function(col, aggregatorType) {
+  /** @type {!lf.schema.Column} */
+  this.child = col;
+
+  /** @type {lf.fn.Type} */
+  this.aggregatorType = aggregatorType;
+
+  /** @private {?string} */
+  this.alias_ = null;
+};
+
+
+/** @override */
+lf.fn.AggregatedColumn.prototype.getName = function() {
+  return this.aggregatorType + '(' + this.child.getName() + ')';
+};
+
+
+/** @override */
+lf.fn.AggregatedColumn.prototype.getNormalizedName = function() {
+  return this.aggregatorType + '(' + this.child.getNormalizedName() + ')';
+};
+
+
+/** @override */
+lf.fn.AggregatedColumn.prototype.getTable = function() {
+  return this.child.getTable();
+};
+
+
+/** @override */
+lf.fn.AggregatedColumn.prototype.toString = function() {
+  return this.getNormalizedName();
+};
+
+
+/** @override */
+lf.fn.AggregatedColumn.prototype.getType = function() {
+  return this.child.getType();
+};
+
+
+/** @override */
+lf.fn.AggregatedColumn.prototype.getAlias = function() {
+  return this.alias_;
+};
+
+
+/** @override */
+lf.fn.AggregatedColumn.prototype.getIndices = function() {
+  return [];
+};
+
+
+/**
+ * @export
+ * @param {string} name
+ * @return {!lf.fn.AggregatedColumn}
+ */
+lf.fn.AggregatedColumn.prototype.as = function(name) {
+  this.alias_ = name;
+  return this;
+};
+
+
+/**
+ * @return {!Array.<!lf.schema.Column>} The chain of Column instances that
+ *     starts from this Column.
+ */
+lf.fn.AggregatedColumn.prototype.getColumnChain = function() {
+  var columnChain = [this];
+  var currentColumn = this;
+  while (currentColumn instanceof lf.fn.AggregatedColumn) {
+    columnChain.push(currentColumn.child);
+    currentColumn = currentColumn.child;
+  }
+  return columnChain;
+};
+
+
+
+/**
+ * A dummy lf.schema.Column implementation to be used as a substitute for '*',
+ * for example in COUNT(*).
+ * @implements {lf.schema.Column}
+ * @constructor
+ * @struct
+ *
+ * @param {string=} opt_alias Alias of this column.
+ */
+lf.fn.StarColumn = function(opt_alias) {
+  /** @private {?string} */
+  this.alias_ = opt_alias || null;
+
+  /** @private {!lf.schema.Table} */
+  this.table_ = new lf.schema.Table('#UnknownTable', [], [], false);
+};
+
+
+/** @override */
+lf.fn.StarColumn.prototype.getName = function() {
+  return '*';
+};
+
+
+/** @override */
+lf.fn.StarColumn.prototype.getNormalizedName = function() {
+  return this.getName();
+};
+
+
+/** @override */
+lf.fn.StarColumn.prototype.toString = function() {
+  return this.getNormalizedName();
+};
+
+
+/** @override */
+lf.fn.StarColumn.prototype.getTable = function() {
+  // NOTE: The table here does not have a useful meaning, since the StarColumn
+  // represents all columns that are available, which could be the result of a
+  // join, therefore a dummy Table instance is used.
+  return this.table_;
+};
+
+
+/** @override */
+lf.fn.StarColumn.prototype.getType = function() {
+  // NOTE: The type here does not have a useful meaning, since the notion of a
+  // type does not apply to a collection of all columns (which is what this
+  // class represents).
+  return lf.Type.NUMBER;
+};
+
+
+/** @override */
+lf.fn.StarColumn.prototype.getAlias = function() {
+  return this.alias_;
+};
+
+
+/** @override */
+lf.fn.StarColumn.prototype.getIndices = function() {
+  return [];
+};
+
+/**
+ * @license
+ * Copyright 2014 Google Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+goog.provide('lf.fn');
+goog.provide('lf.fn.Type');
+
+goog.require('lf.fn.AggregatedColumn');
+goog.require('lf.fn.StarColumn');
+
+
+/**
+ * An enum holding all function types.
+ * @enum {string}
+ */
+lf.fn.Type = {
+  AVG: 'AVG',
+  COUNT: 'COUNT',
+  DISTINCT: 'DISTINCT',
+  MAX: 'MAX',
+  MIN: 'MIN',
+  STDDEV: 'STDDEV',
+  SUM: 'SUM'
+};
+
+
+/**
+ * @export
+ * @param {!lf.schema.Column} col
+ * @return {!lf.schema.Column}
+ */
+lf.fn.avg = function(col) {
+  return new lf.fn.AggregatedColumn(col, lf.fn.Type.AVG);
+};
+
+
+/**
+ * @export
+ * @param {!lf.schema.Column=} opt_col
+ * @return {!lf.schema.Column}
+ */
+lf.fn.count = function(opt_col) {
+  var col = opt_col || new lf.fn.StarColumn();
+  return new lf.fn.AggregatedColumn(col, lf.fn.Type.COUNT);
+};
+
+
+/**
+ * @export
+ * @param {!lf.schema.BaseColumn} col
+ * @return {!lf.schema.Column}
+ */
+lf.fn.distinct = function(col) {
+  return new lf.fn.AggregatedColumn(col, lf.fn.Type.DISTINCT);
+};
+
+
+/**
+ * @export
+ * @param {!lf.schema.Column} col
+ * @return {!lf.schema.Column}
+ */
+lf.fn.max = function(col) {
+  return new lf.fn.AggregatedColumn(col, lf.fn.Type.MAX);
+};
+
+
+/**
+ * @export
+ * @param {!lf.schema.Column} col
+ * @return {!lf.schema.Column}
+ */
+lf.fn.min = function(col) {
+  return new lf.fn.AggregatedColumn(col, lf.fn.Type.MIN);
+};
+
+
+/**
+ * @export
+ * @param {!lf.schema.Column} col
+ * @return {!lf.schema.Column}
+ */
+lf.fn.stddev = function(col) {
+  return new lf.fn.AggregatedColumn(col, lf.fn.Type.STDDEV);
+};
+
+
+/**
+ * @export
+ * @param {!lf.schema.Column} col
+ * @return {!lf.schema.Column}
+ */
+lf.fn.sum = function(col) {
+  return new lf.fn.AggregatedColumn(col, lf.fn.Type.SUM);
+};
+
+/**
+ * @license
+ * Copyright 2014 Google Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+goog.provide('lf.proc.PhysicalQueryPlanNode');
+
+goog.require('goog.Promise');
+goog.require('goog.asserts');
+goog.require('goog.structs.TreeNode');
+
+goog.forwardDeclare('lf.cache.Journal');
+goog.forwardDeclare('lf.schema.Table');
+
+
+
+/**
+ * @constructor @struct
+ * @suppress {checkStructDictInheritance}
+ * @extends {goog.structs.TreeNode}
+ *
+ * @param {number} numRelations Number of relations expected for input. Accepts
+ *     ANY (i.e. -1), zero, or positive numbers.
+ * @param {!lf.proc.PhysicalQueryPlanNode.ExecType} type
+ */
+lf.proc.PhysicalQueryPlanNode = function(numRelations, type) {
+  lf.proc.PhysicalQueryPlanNode.base(this, 'constructor', '', '');
+
+  /** @private {!lf.proc.PhysicalQueryPlanNode.ExecType} */
+  this.execType_ = type;
+
+  /** @private {!number} */
+  this.numRelations_ = numRelations;
+};
+goog.inherits(lf.proc.PhysicalQueryPlanNode, goog.structs.TreeNode);
+
+
+/**
+ * The way a physical query plan node exec().
+ * @enum {number}
+ */
+lf.proc.PhysicalQueryPlanNode.ExecType = {
+  NO_CHILD: -1,  // Will not call any of its children's exec().
+  ALL: 0,  // Will invoke all children nodes' exec().
+  FIRST_CHILD: 1  // Will invoke only the first child's exec().
+};
+
+
+/** @const {number} */
+lf.proc.PhysicalQueryPlanNode.ANY = -1;
+
+
+/**
+ * @return {?lf.schema.Table} The table for accessing in this node, or null if
+ *     this node has no direct access.
+ */
+lf.proc.PhysicalQueryPlanNode.prototype.getScope = function() {
+  return null;
+};
+
+
+/**
+ * The core logic of this node.
+ * @param {!lf.cache.Journal} journal
+ * @param {!Array<!lf.proc.Relation>} relations Array of input relations. The
+ *     length of relations is guaranteed to be consistent with what is specified
+ *     in the constructor.
+ * @return {!Array<!lf.proc.Relation>}
+ * @protected
+ */
+lf.proc.PhysicalQueryPlanNode.prototype.execInternal = goog.abstractMethod;
+
+
+/**
+ * @param {!lf.cache.Journal} journal
+ * @return {!IThenable<!Array<!lf.proc.Relation>>}
+ * @final
+ */
+lf.proc.PhysicalQueryPlanNode.prototype.exec = function(journal) {
+  switch (this.execType_) {
+    case lf.proc.PhysicalQueryPlanNode.ExecType.FIRST_CHILD:
+      return this.execFirstChild_(journal);
+
+    case lf.proc.PhysicalQueryPlanNode.ExecType.ALL:
+      return this.execAllChildren_(journal);
+
+    default:  // NO_CHILD
+      return this.execNoChild_(journal);
+  }
+};
+
+
+/** @override */
+lf.proc.PhysicalQueryPlanNode.prototype.toString = function() {
+  return 'dummy_node';
+};
+
+
+/**
+ * @param {!Array<!lf.proc.Relation>} relations
+ * @private
+ */
+lf.proc.PhysicalQueryPlanNode.prototype.assertInput_ = function(relations) {
+  goog.asserts.assert(
+      this.numRelations_ == lf.proc.PhysicalQueryPlanNode.ANY ||
+      relations.length == this.numRelations_);
+};
+
+
+/**
+ * @param {!lf.cache.Journal} journal
+ * @return {!IThenable<!Array<!lf.proc.Relation>>}
+ * @private
+ */
+lf.proc.PhysicalQueryPlanNode.prototype.execNoChild_ = function(journal) {
+  var results;
+  try {
+    results = this.execInternal(journal, []);
+  } catch (e) {
+    return goog.Promise.reject(e);
+  }
+  return goog.Promise.resolve(results);
+};
+
+
+/**
+ * @param {!lf.cache.Journal} journal
+ * @return {!IThenable<!Array<!lf.proc.Relation>>}
+ * @private
+ */
+lf.proc.PhysicalQueryPlanNode.prototype.execFirstChild_ = function(journal) {
+  return this.getChildAt(0).exec(journal).then(goog.bind(function(results) {
+    this.assertInput_(results);
+    return this.execInternal(journal, results);
+  }, this));
+};
+
+
+/**
+ * @param {!lf.cache.Journal} journal
+ * @return {!IThenable<!Array<!lf.proc.Relation>>}
+ * @private
+ */
+lf.proc.PhysicalQueryPlanNode.prototype.execAllChildren_ = function(journal) {
+  var promises = this.getChildren().map(function(child) {
+    return child.exec(journal);
+  });
+
+  return goog.Promise.all(promises).then(goog.bind(function(results) {
+    // Flatten the results array.
+    var relations = [];
+    results.forEach(function(result) {
+      for (var i = 0; i < result.length; ++i) {
+        relations.push(result[i]);
+      }
+    });
+    this.assertInput_(relations);
+    return this.execInternal(journal, relations);
+  }, this));
+};
+
+/**
+ * @license
+ * Copyright 2015 Google Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+goog.provide('lf.proc.AggregationStep');
+
+goog.require('lf.fn.AggregatedColumn');
+goog.require('lf.fn.Type');
+goog.require('lf.proc.PhysicalQueryPlanNode');
+goog.require('lf.proc.Relation');
+
+
+
+/**
+ * @constructor @struct
+ * @extends {lf.proc.PhysicalQueryPlanNode}
+ *
+ * @param {!Array.<!lf.schema.Column>} aggregatedColumns
+ */
+lf.proc.AggregationStep = function(aggregatedColumns) {
+  lf.proc.AggregationStep.base(this, 'constructor',
+      lf.proc.PhysicalQueryPlanNode.ANY,
+      lf.proc.PhysicalQueryPlanNode.ExecType.FIRST_CHILD);
+
+  /** @type {!Array.<!lf.schema.Column>} */
+  this.aggregatedColumns = aggregatedColumns;
+};
+goog.inherits(lf.proc.AggregationStep, lf.proc.PhysicalQueryPlanNode);
+
+
+/** @override */
+lf.proc.AggregationStep.prototype.toString = function() {
+  var columnNames = this.aggregatedColumns.map(
+      function(column) {
+        return column.getNormalizedName();
+      });
+
+  return 'aggregation(' + columnNames.toString() + ')';
+};
+
+
+/** @override */
+lf.proc.AggregationStep.prototype.execInternal = function(journal, relations) {
+  relations.forEach(function(relation) {
+    var calculator = new lf.proc.AggregationStep.Calculator_(
+        relation, this.aggregatedColumns);
+    calculator.calculate();
+  }, this);
+  return relations;
+};
+
+
+
+/**
+ * @constructor
+ * @private
+ *
+ * @param {!lf.proc.Relation} relation The relation to be transformed.
+ * @param {!Array.<!lf.fn.AggregatedColumn>} columns The columns to calculate.
+ */
+lf.proc.AggregationStep.Calculator_ = function(relation, columns) {
+  this.relation_ = relation;
+  this.columns_ = columns;
+};
+
+
+/**
+ * Calculates all requested aggregations. Results are stored within
+ * this.relation_.
+ */
+lf.proc.AggregationStep.Calculator_.prototype.calculate = function() {
+  this.columns_.forEach(function(column) {
+    var reverseColumnChain = column.getColumnChain().reverse();
+    for (var i = 1; i < reverseColumnChain.length; i++) {
+      var currentColumn = reverseColumnChain[i];
+      var leafColumn = currentColumn.getColumnChain().slice(-1)[0];
+      var inputRelation = this.getInputRelationFor_(currentColumn);
+
+      var result = lf.proc.AggregationStep.Calculator_.evalAggregation_(
+          currentColumn.aggregatorType, inputRelation, leafColumn);
+      this.relation_.setAggregationResult(currentColumn, result);
+    }
+  }, this);
+};
+
+
+/**
+ * @param {!lf.fn.AggregatedColumn} column The aggregated column.
+ * @return {!lf.proc.Relation} The relation that should be used as input for
+ *     calculating the given aggregated column.
+ * @private
+ */
+lf.proc.AggregationStep.Calculator_.prototype.getInputRelationFor_ =
+    function(column) {
+  return column.child instanceof lf.fn.AggregatedColumn ?
+      /** @type {!lf.proc.Relation} */ (
+          this.relation_.getAggregationResult(column.child)) :
+      this.relation_;
+};
+
+
+/**
+ * @param {!lf.fn.Type} aggregatorType The type of the aggregation.
+ * @param {!lf.proc.Relation} relation The relation on which the aggregation
+ *     will be evaluated.
+ * @param {!lf.schema.Column} column The column on which the aggregation will be
+ *     performed.
+ * @return {!lf.proc.AggregationResult}
+ * @private
+ */
+lf.proc.AggregationStep.Calculator_.evalAggregation_ = function(
+    aggregatorType, relation, column) {
+  var result = null;
+  var Calculator = lf.proc.AggregationStep.Calculator_;
+
+  switch (aggregatorType) {
+    case lf.fn.Type.MIN:
+      result = Calculator.min_(relation, column);
+      break;
+    case lf.fn.Type.MAX:
+      result = Calculator.max_(relation, column);
+      break;
+    case lf.fn.Type.DISTINCT:
+      result = Calculator.distinct_(relation, column);
+      break;
+    case lf.fn.Type.COUNT:
+      result = relation.entries.length;
+      break;
+    case lf.fn.Type.SUM:
+      result = Calculator.sum_(relation, column);
+      break;
+    case lf.fn.Type.AVG:
+      result = Calculator.sum_(relation, column) /
+          relation.entries.length;
+      break;
+    default:
+      // Must be case of lf.fn.Type.STDDEV.
+      result = Calculator.stddev_(relation, column);
+  }
+
+  return /** @type {!lf.proc.AggregationResult} */ (result);
+};
+
+
+/**
+ * Calculates the minimum value of the given column for the given relation.
+ * @param {!lf.proc.Relation} relation The relation on which to calculate
+ *     the aggregation.
+ * @param {!lf.schema.Column} column The column for which to calculate the
+ *     minimum.
+ * @return {number|string|!Date} The maximum.
+ * @private
+ */
+lf.proc.AggregationStep.Calculator_.min_ = function(relation, column) {
+  var min = null;
+
+  relation.entries.forEach(function(entry) {
+    var value = entry.getField(column);
+    if (goog.isNull(min) || value < min) {
+      min = value;
+    }
+  });
+
+  return /** @type {number|string|!Date} */ (min);
+};
+
+
+/**
+ * Calculates the maximum value of the given column for the given relation.
+ * @param {!lf.proc.Relation} relation The relation on which to calculate
+ *     the aggregation.
+ * @param {!lf.schema.Column} column The column for which to calculate the
+ *     maximum.
+ * @return {number|string|!Date} The maximum.
+ * @private
+ */
+lf.proc.AggregationStep.Calculator_.max_ = function(relation, column) {
+  var max = null;
+
+  relation.entries.forEach(function(entry) {
+    var value = entry.getField(column);
+    if (goog.isNull(max) || value > max) {
+      max = value;
+    }
+  });
+
+  return /** @type {number|string|!Date} */ (max);
+};
+
+
+/**
+ * Calculates the sum of the given column for the given relation.
+ * @param {!lf.proc.Relation} relation The relation on which to calculate
+ *     the aggregation.
+ * @param {!lf.schema.Column} column The column for which to calculate the
+ *     sum.
+ * @return {number|string} The maximum.
+ * @private
+ */
+lf.proc.AggregationStep.Calculator_.sum_ = function(relation, column) {
+  return relation.entries.reduce(function(soFar, entry) {
+    return soFar + entry.getField(column);
+  }, 0);
+};
+
+
+/**
+ * Calculates the standard deviation of the given column for the given relation.
+ * @param {!lf.proc.Relation} relation The relation on which to calculate
+ *     the aggregation.
+ * @param {!lf.schema.Column} column The column for which to calculate the
+ *     standard deviation.
+ * @return {number} The maximum.
+ * @private
+ */
+lf.proc.AggregationStep.Calculator_.stddev_ = function(relation, column) {
+
+  var values = relation.entries.map(function(entry) {
+    return entry.getField(column);
+  });
+
+  return goog.math.standardDeviation.apply(null, values);
+};
+
+
+/**
+ * Keeps only distinct entries with regards to the given column.
+ * @param {!lf.proc.Relation} relation The relation on which to calculate the
+ *     aggregation.
+ * @param {!lf.schema.Column} column The column for which to remove duplicates.
+ * @return {!lf.proc.Relation} A relation containing entries that have different
+ *     values for the specified column.
+ * @private
+ */
+lf.proc.AggregationStep.Calculator_.distinct_ = function(relation, column) {
+  var distinctMap = new goog.structs.Map();
+
+  relation.entries.forEach(function(entry) {
+    var value = entry.getField(column);
+    distinctMap.set(value, entry);
+  });
+
+  return new lf.proc.Relation(distinctMap.getValues(), relation.getTables());
+};
+
+/**
+ * @license
+ * Copyright 2014 Google Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 goog.provide('lf.query.SelectContext');
 goog.provide('lf.query.SelectContext.OrderBy');
 
@@ -31550,8 +32697,10 @@ lf.query.SelectContext.orderByToString = function(orderBy) {
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+goog.provide('lf.proc.AggregationNode');
 goog.provide('lf.proc.CrossProductNode');
 goog.provide('lf.proc.DeleteNode');
+goog.provide('lf.proc.GroupByNode');
 goog.provide('lf.proc.InsertNode');
 goog.provide('lf.proc.InsertOrReplaceNode');
 goog.provide('lf.proc.JoinNode');
@@ -31785,6 +32934,50 @@ goog.inherits(lf.proc.OrderByNode, lf.proc.LogicalQueryPlanNode);
 lf.proc.OrderByNode.prototype.toString = function() {
   return 'order_by(' +
       lf.query.SelectContext.orderByToString(this.orderBy) + ')';
+};
+
+
+
+/**
+ * @constructor @struct
+ * @extends {lf.proc.LogicalQueryPlanNode}
+ *
+ * @param {!Array<!lf.fn.AggregatedColumn>} columns
+ */
+lf.proc.AggregationNode = function(columns) {
+  lf.proc.AggregationNode.base(this, 'constructor');
+
+  /** @type {!Array<!lf.fn.AggregatedColumn>} */
+  this.columns = columns;
+};
+goog.inherits(lf.proc.AggregationNode, lf.proc.LogicalQueryPlanNode);
+
+
+/** @override */
+lf.proc.AggregationNode.prototype.toString = function() {
+  return 'aggregation(' + this.columns.toString() + ')';
+};
+
+
+
+/**
+ * @constructor @struct
+ * @extends {lf.proc.LogicalQueryPlanNode}
+ *
+ * @param {!Array<!lf.schema.Column>} columns
+ */
+lf.proc.GroupByNode = function(columns) {
+  lf.proc.GroupByNode.base(this, 'constructor');
+
+  /** @type {!Array<!lf.schema.Column>} */
+  this.columns = columns;
+};
+goog.inherits(lf.proc.GroupByNode, lf.proc.LogicalQueryPlanNode);
+
+
+/** @override */
+lf.proc.GroupByNode.prototype.toString = function() {
+  return 'group_by(' + this.columns.toString() + ')';
 };
 
 
@@ -32102,178 +33295,6 @@ lf.proc.CrossProductPass.prototype.traverse_ = function(rootNode) {
         this.traverse_(
             /** @type {!lf.proc.LogicalQueryPlanNode} */ (child));
       }, this);
-};
-
-/**
- * @license
- * Copyright 2014 Google Inc. All Rights Reserved.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-goog.provide('lf.proc.PhysicalQueryPlanNode');
-
-goog.require('goog.Promise');
-goog.require('goog.asserts');
-goog.require('goog.structs.TreeNode');
-
-goog.forwardDeclare('lf.cache.Journal');
-goog.forwardDeclare('lf.schema.Table');
-
-
-
-/**
- * @constructor @struct
- * @suppress {checkStructDictInheritance}
- * @extends {goog.structs.TreeNode}
- *
- * @param {number} numRelations Number of relations expected for input. Accepts
- *     ANY (i.e. -1), zero, or positive numbers.
- * @param {!lf.proc.PhysicalQueryPlanNode.ExecType} type
- */
-lf.proc.PhysicalQueryPlanNode = function(numRelations, type) {
-  lf.proc.PhysicalQueryPlanNode.base(this, 'constructor', '', '');
-
-  /** @private {!lf.proc.PhysicalQueryPlanNode.ExecType} */
-  this.execType_ = type;
-
-  /** @private {!number} */
-  this.numRelations_ = numRelations;
-};
-goog.inherits(lf.proc.PhysicalQueryPlanNode, goog.structs.TreeNode);
-
-
-/**
- * The way a physical query plan node exec().
- * @enum {number}
- */
-lf.proc.PhysicalQueryPlanNode.ExecType = {
-  NO_CHILD: -1,  // Will not call any of its children's exec().
-  ALL: 0,  // Will invoke all children nodes' exec().
-  FIRST_CHILD: 1  // Will invoke only the first child's exec().
-};
-
-
-/** @const {number} */
-lf.proc.PhysicalQueryPlanNode.ANY = -1;
-
-
-/**
- * @return {?lf.schema.Table} The table for accessing in this node, or null if
- *     this node has no direct access.
- */
-lf.proc.PhysicalQueryPlanNode.prototype.getScope = function() {
-  return null;
-};
-
-
-/**
- * The core logic of this node.
- * @param {!lf.cache.Journal} journal
- * @param {!Array<!lf.proc.Relation>} relations Array of input relations. The
- *     length of relations is guaranteed to be consistent with what is specified
- *     in the constructor.
- * @return {!Array<!lf.proc.Relation>}
- * @protected
- */
-lf.proc.PhysicalQueryPlanNode.prototype.execInternal = goog.abstractMethod;
-
-
-/**
- * @param {!lf.cache.Journal} journal
- * @return {!IThenable<!Array<!lf.proc.Relation>>}
- * @final
- */
-lf.proc.PhysicalQueryPlanNode.prototype.exec = function(journal) {
-  switch (this.execType_) {
-    case lf.proc.PhysicalQueryPlanNode.ExecType.FIRST_CHILD:
-      return this.execFirstChild_(journal);
-
-    case lf.proc.PhysicalQueryPlanNode.ExecType.ALL:
-      return this.execAllChildren_(journal);
-
-    default:  // NO_CHILD
-      return this.execNoChild_(journal);
-  }
-};
-
-
-/** @override */
-lf.proc.PhysicalQueryPlanNode.prototype.toString = function() {
-  return 'dummy_node';
-};
-
-
-/**
- * @param {!Array<!lf.proc.Relation>} relations
- * @private
- */
-lf.proc.PhysicalQueryPlanNode.prototype.assertInput_ = function(relations) {
-  goog.asserts.assert(
-      this.numRelations_ == lf.proc.PhysicalQueryPlanNode.ANY ||
-      relations.length == this.numRelations_);
-};
-
-
-/**
- * @param {!lf.cache.Journal} journal
- * @return {!IThenable<!Array<!lf.proc.Relation>>}
- * @private
- */
-lf.proc.PhysicalQueryPlanNode.prototype.execNoChild_ = function(journal) {
-  var results;
-  try {
-    results = this.execInternal(journal, []);
-  } catch (e) {
-    return goog.Promise.reject(e);
-  }
-  return goog.Promise.resolve(results);
-};
-
-
-/**
- * @param {!lf.cache.Journal} journal
- * @return {!IThenable<!Array<!lf.proc.Relation>>}
- * @private
- */
-lf.proc.PhysicalQueryPlanNode.prototype.execFirstChild_ = function(journal) {
-  return this.getChildAt(0).exec(journal).then(goog.bind(function(results) {
-    this.assertInput_(results);
-    return this.execInternal(journal, results);
-  }, this));
-};
-
-
-/**
- * @param {!lf.cache.Journal} journal
- * @return {!IThenable<!Array<!lf.proc.Relation>>}
- * @private
- */
-lf.proc.PhysicalQueryPlanNode.prototype.execAllChildren_ = function(journal) {
-  var promises = this.getChildren().map(function(child) {
-    return child.exec(journal);
-  });
-
-  return goog.Promise.all(promises).then(goog.bind(function(results) {
-    // Flatten the results array.
-    var relations = [];
-    results.forEach(function(result) {
-      for (var i = 0; i < result.length; ++i) {
-        relations.push(result[i]);
-      }
-    });
-    this.assertInput_(relations);
-    return this.execInternal(journal, relations);
-  }, this));
 };
 
 /**
@@ -33830,559 +34851,6 @@ lf.query.InsertBuilder.prototype.assertValuesPreconditions_ = function() {
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-goog.provide('lf.schema.Column');
-goog.provide('lf.schema.ConnectOptions');
-goog.provide('lf.schema.DataStoreType');
-goog.provide('lf.schema.Database');
-goog.provide('lf.schema.Index');
-goog.provide('lf.schema.IndexedColumn');
-goog.provide('lf.schema.Table');
-
-goog.forwardDeclare('lf.Order');
-goog.forwardDeclare('lf.Predicate');
-goog.forwardDeclare('lf.Row');
-goog.forwardDeclare('lf.Type');
-goog.forwardDeclare('lf.raw.BackStore');
-
-
-
-/**
- * @interface
- */
-lf.schema.Column = function() {};
-
-
-/** @return {string} */
-lf.schema.Column.prototype.getName;
-
-
-/** @return {string} */
-lf.schema.Column.prototype.getNormalizedName;
-
-
-/** @return {!lf.schema.Table} */
-lf.schema.Column.prototype.getTable;
-
-
-/** @return {!lf.Type} */
-lf.schema.Column.prototype.getType;
-
-
-/** @return {?string} */
-lf.schema.Column.prototype.getAlias;
-
-
-/** @return {!Array.<!lf.schema.Index>} */
-lf.schema.Column.prototype.getIndices;
-
-
-
-/**
- * Models the return value of Database.getSchema().
- * @interface
- */
-lf.schema.Database = function() {};
-
-
-/** @return {string} */
-lf.schema.Database.prototype.name;
-
-
-/** @return {number} */
-lf.schema.Database.prototype.version;
-
-
-/** @return {!Array.<!lf.schema.Table>} */
-lf.schema.Database.prototype.tables;
-
-
-/**
- * @param {string} tableName
- * @return {!lf.schema.Table}
- * @throws {!lf.Exception}
- */
-lf.schema.Database.prototype.table;
-
-
-/**
- * The available data store types.
- * @enum {number}
- */
-lf.schema.DataStoreType = {
-  INDEXED_DB: 0,
-  MEMORY: 1
-};
-
-
-/**
- * @typedef {{
- *   onUpgrade: (undefined|!function(!lf.raw.BackStore):!IThenable),
- *   storeType: (undefined|!lf.schema.DataStoreType)
- * }}
- */
-lf.schema.ConnectOptions;
-
-
-/**
- * @typedef {{
- *   name: string,
- *   order: !lf.Order,
- *   autoIncrement: boolean
- * }}
- */
-lf.schema.IndexedColumn;
-
-
-
-/**
- * @param {string} tableName
- * @param {string} name
- * @param {boolean} isUnique
- * @param {!Array.<!lf.schema.IndexedColumn>} columns
- * @constructor @struct
- */
-lf.schema.Index = function(tableName, name, isUnique, columns) {
-  /** @type {string} */
-  this.tableName = tableName;
-
-  /** @type {string} */
-  this.name = name;
-
-  /** @type {boolean} */
-  this.isUnique = isUnique;
-
-  /** @type {!Array.<!lf.schema.IndexedColumn>} */
-  this.columns = columns;
-};
-
-
-/** @return {string} */
-lf.schema.Index.prototype.getNormalizedName = function() {
-  return this.tableName + '.' + this.name;
-};
-
-
-
-/**
- * Models the return value of Database.getSchema().getTable().
- * @param {string} name
- * @param {!Array.<!lf.schema.Column>} cols
- * @param {!Array.<!lf.schema.Index>} indices
- * @param {boolean} persistentIndex
- *
- * @template UserType, StoredType
- * @constructor
- */
-lf.schema.Table = function(name, cols, indices, persistentIndex) {
-  /** @private */
-  this.name_ = name;
-
-  /** @private {!Array.<!lf.schema.Index>} */
-  this.indices_ = indices;
-
-  /** @private {!Array.<!lf.schema.Column>} */
-  this.columns_ = cols;
-
-  /** @private {boolean} */
-  this.persistentIndex_ = persistentIndex;
-
-  /** @private {?string} */
-  this.alias_ = null;
-};
-
-
-/** @return {string} */
-lf.schema.Table.prototype.getName = function() {
-  return this.name_;
-};
-
-
-/** @return {?string} */
-lf.schema.Table.prototype.getAlias = function() {
-  return this.alias_;
-};
-
-
-/** @return {string} */
-lf.schema.Table.prototype.getEffectiveName = function() {
-  return this.alias_ || this.name_;
-};
-
-
-/**
- * @param {string} name
- * @return {!lf.schema.Table}
- */
-lf.schema.Table.prototype.as = function(name) {
-  // Note1: Can't use lf.schema.Table constructor directly here, because the
-  // clone will be missing any auto-generated properties the original object
-  // has.
-
-  // Note2: Auto-generated subclasses have a no-arg constructor. The name_
-  // parameter is passed to the constructor only for the purposes of
-  // lf.testing.MockSchema tables which don't have a no-arg constructor and
-  // otherwise would not work with as() in tests.
-  var clone = new this.constructor(this.name_);
-  clone.alias_ = name;
-  return clone;
-};
-
-
-/**
- * @param {UserType=} opt_value
- * @return {!lf.Row.<UserType, StoredType>}
- * @throws {lf.Exception}
- * @export
- */
-lf.schema.Table.prototype.createRow = goog.abstractMethod;
-
-
-/**
- * @param {{id: number, value: *}} dbRecord
- * @return {!lf.Row.<UserType, StoredType>}
- * @export
- */
-lf.schema.Table.prototype.deserializeRow = goog.abstractMethod;
-
-
-/** @return {!Array.<!lf.schema.Index>} */
-lf.schema.Table.prototype.getIndices = function() {
-  return this.indices_;
-};
-
-
-/** @return {!Array.<!lf.schema.Column>} */
-lf.schema.Table.prototype.getColumns = function() {
-  return this.columns_;
-};
-
-
-/** @export @return {!lf.schema.Constraint} */
-lf.schema.Table.prototype.getConstraint = goog.abstractMethod;
-
-
-/** @return {boolean} */
-lf.schema.Table.prototype.persistentIndex = function() {
-  return this.persistentIndex_;
-};
-
-
-/**
- * Row id index is named <tableName>.#, which is an invalid name for JS vars
- * and therefore user-defined indices can never collide with it.
- * @const {string}
- */
-lf.schema.Table.ROW_ID_INDEX_PATTERN = '#';
-
-
-/** @return {string} */
-lf.schema.Table.prototype.getRowIdIndexName = function() {
-  return this.name_ + '.' + lf.schema.Table.ROW_ID_INDEX_PATTERN;
-};
-
-/**
- * @license
- * Copyright 2014 Google Inc. All Rights Reserved.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-goog.provide('lf.fn.AggregatedColumn');
-goog.provide('lf.fn.StarColumn');
-
-goog.require('lf.Type');
-goog.require('lf.schema.Column');
-goog.require('lf.schema.Table');
-
-
-
-/**
- * @implements {lf.schema.Column}
- * @constructor
- * @struct
- *
- * @param {!lf.schema.Column} col The column to be aggregated.
- * @param {!lf.fn.Type} aggregatorType The type of the aggregation.
- */
-lf.fn.AggregatedColumn = function(col, aggregatorType) {
-  /** @type {!lf.schema.Column} */
-  this.child = col;
-
-  /** @type {lf.fn.Type} */
-  this.aggregatorType = aggregatorType;
-
-  /** @private {?string} */
-  this.alias_ = null;
-};
-
-
-/** @override */
-lf.fn.AggregatedColumn.prototype.getName = function() {
-  return this.aggregatorType + '(' + this.child.getName() + ')';
-};
-
-
-/** @override */
-lf.fn.AggregatedColumn.prototype.getNormalizedName = function() {
-  return this.aggregatorType + '(' + this.child.getNormalizedName() + ')';
-};
-
-
-/** @override */
-lf.fn.AggregatedColumn.prototype.getTable = function() {
-  return this.child.getTable();
-};
-
-
-/** @override */
-lf.fn.AggregatedColumn.prototype.toString = function() {
-  return this.getNormalizedName();
-};
-
-
-/** @override */
-lf.fn.AggregatedColumn.prototype.getType = function() {
-  return this.child.getType();
-};
-
-
-/** @override */
-lf.fn.AggregatedColumn.prototype.getAlias = function() {
-  return this.alias_;
-};
-
-
-/** @override */
-lf.fn.AggregatedColumn.prototype.getIndices = function() {
-  return [];
-};
-
-
-/**
- * @export
- * @param {string} name
- * @return {!lf.fn.AggregatedColumn}
- */
-lf.fn.AggregatedColumn.prototype.as = function(name) {
-  this.alias_ = name;
-  return this;
-};
-
-
-/**
- * @return {!Array.<!lf.schema.Column>} The chain of Column instances that
- *     starts from this Column.
- */
-lf.fn.AggregatedColumn.prototype.getColumnChain = function() {
-  var columnChain = [this];
-  var currentColumn = this;
-  while (currentColumn instanceof lf.fn.AggregatedColumn) {
-    columnChain.push(currentColumn.child);
-    currentColumn = currentColumn.child;
-  }
-  return columnChain;
-};
-
-
-
-/**
- * A dummy lf.schema.Column implementation to be used as a substitute for '*',
- * for example in COUNT(*).
- * @implements {lf.schema.Column}
- * @constructor
- * @struct
- *
- * @param {string=} opt_alias Alias of this column.
- */
-lf.fn.StarColumn = function(opt_alias) {
-  /** @private {?string} */
-  this.alias_ = opt_alias || null;
-
-  /** @private {!lf.schema.Table} */
-  this.table_ = new lf.schema.Table('#UnknownTable', [], [], false);
-};
-
-
-/** @override */
-lf.fn.StarColumn.prototype.getName = function() {
-  return '*';
-};
-
-
-/** @override */
-lf.fn.StarColumn.prototype.getNormalizedName = function() {
-  return this.getName();
-};
-
-
-/** @override */
-lf.fn.StarColumn.prototype.toString = function() {
-  return this.getNormalizedName();
-};
-
-
-/** @override */
-lf.fn.StarColumn.prototype.getTable = function() {
-  // NOTE: The table here does not have a useful meaning, since the StarColumn
-  // represents all columns that are available, which could be the result of a
-  // join, therefore a dummy Table instance is used.
-  return this.table_;
-};
-
-
-/** @override */
-lf.fn.StarColumn.prototype.getType = function() {
-  // NOTE: The type here does not have a useful meaning, since the notion of a
-  // type does not apply to a collection of all columns (which is what this
-  // class represents).
-  return lf.Type.NUMBER;
-};
-
-
-/** @override */
-lf.fn.StarColumn.prototype.getAlias = function() {
-  return this.alias_;
-};
-
-
-/** @override */
-lf.fn.StarColumn.prototype.getIndices = function() {
-  return [];
-};
-
-/**
- * @license
- * Copyright 2014 Google Inc. All Rights Reserved.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-goog.provide('lf.fn');
-goog.provide('lf.fn.Type');
-
-goog.require('lf.fn.AggregatedColumn');
-goog.require('lf.fn.StarColumn');
-
-
-/**
- * An enum holding all function types.
- * @enum {string}
- */
-lf.fn.Type = {
-  AVG: 'AVG',
-  COUNT: 'COUNT',
-  DISTINCT: 'DISTINCT',
-  MAX: 'MAX',
-  MIN: 'MIN',
-  STDDEV: 'STDDEV',
-  SUM: 'SUM'
-};
-
-
-/**
- * @export
- * @param {!lf.schema.Column} col
- * @return {!lf.schema.Column}
- */
-lf.fn.avg = function(col) {
-  return new lf.fn.AggregatedColumn(col, lf.fn.Type.AVG);
-};
-
-
-/**
- * @export
- * @param {!lf.schema.Column=} opt_col
- * @return {!lf.schema.Column}
- */
-lf.fn.count = function(opt_col) {
-  var col = opt_col || new lf.fn.StarColumn();
-  return new lf.fn.AggregatedColumn(col, lf.fn.Type.COUNT);
-};
-
-
-/**
- * @export
- * @param {!lf.schema.BaseColumn} col
- * @return {!lf.schema.Column}
- */
-lf.fn.distinct = function(col) {
-  return new lf.fn.AggregatedColumn(col, lf.fn.Type.DISTINCT);
-};
-
-
-/**
- * @export
- * @param {!lf.schema.Column} col
- * @return {!lf.schema.Column}
- */
-lf.fn.max = function(col) {
-  return new lf.fn.AggregatedColumn(col, lf.fn.Type.MAX);
-};
-
-
-/**
- * @export
- * @param {!lf.schema.Column} col
- * @return {!lf.schema.Column}
- */
-lf.fn.min = function(col) {
-  return new lf.fn.AggregatedColumn(col, lf.fn.Type.MIN);
-};
-
-
-/**
- * @export
- * @param {!lf.schema.Column} col
- * @return {!lf.schema.Column}
- */
-lf.fn.stddev = function(col) {
-  return new lf.fn.AggregatedColumn(col, lf.fn.Type.STDDEV);
-};
-
-
-/**
- * @export
- * @param {!lf.schema.Column} col
- * @return {!lf.schema.Column}
- */
-lf.fn.sum = function(col) {
-  return new lf.fn.AggregatedColumn(col, lf.fn.Type.SUM);
-};
-
-/**
- * @license
- * Copyright 2014 Google Inc. All Rights Reserved.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
 goog.provide('lf.op');
 
 goog.require('lf.pred.CombinedPredicate');
@@ -35534,10 +36002,13 @@ lf.proc.PushDownSelectionsPass.prototype.shouldSwapWithChild_ = function(node) {
  */
 goog.provide('lf.proc.SelectLogicalPlanGenerator');
 
+goog.require('lf.fn.AggregatedColumn');
+goog.require('lf.proc.AggregationNode');
 goog.require('lf.proc.AndPredicatePass');
 goog.require('lf.proc.BaseLogicalPlanGenerator');
 goog.require('lf.proc.CrossProductNode');
 goog.require('lf.proc.CrossProductPass');
+goog.require('lf.proc.GroupByNode');
 goog.require('lf.proc.ImplicitJoinsPass');
 goog.require('lf.proc.LimitNode');
 goog.require('lf.proc.LogicalPlanRewriter');
@@ -35568,6 +36039,12 @@ lf.proc.SelectLogicalPlanGenerator = function(query) {
 
   /** @private {lf.proc.LogicalQueryPlanNode} */
   this.selectNode_ = null;
+
+  /** @private {lf.proc.LogicalQueryPlanNode} */
+  this.groupByNode_ = null;
+
+  /** @private {lf.proc.LogicalQueryPlanNode} */
+  this.aggregationNode_ = null;
 
   /** @private {lf.proc.LogicalQueryPlanNode} */
   this.orderByNode_ = null;
@@ -35616,6 +36093,8 @@ lf.proc.SelectLogicalPlanGenerator.prototype.generateNodes_ = function() {
   this.generateOrderByNode_();
   this.generateSkipNode_();
   this.generateLimitNode_();
+  this.generateGroupByNode_();
+  this.generateAggregationNode_();
   this.generateProjectNode_();
 };
 
@@ -35628,7 +36107,8 @@ lf.proc.SelectLogicalPlanGenerator.prototype.generateNodes_ = function() {
 lf.proc.SelectLogicalPlanGenerator.prototype.connectNodes_ = function() {
   var parentOrder = [
     this.limitNode_, this.skipNode_, this.projectNode_, this.orderByNode_,
-    this.selectNode_, this.crossProductNode_
+    this.aggregationNode_, this.groupByNode_, this.selectNode_,
+    this.crossProductNode_
   ];
 
   var lastExistingParentIndex = null;
@@ -35698,6 +36178,29 @@ lf.proc.SelectLogicalPlanGenerator.prototype.generateLimitNode_ = function() {
 lf.proc.SelectLogicalPlanGenerator.prototype.generateSkipNode_ = function() {
   if (goog.isDefAndNotNull(this.query.skip) && this.query.skip > 0) {
     this.skipNode_ = new lf.proc.SkipNode(this.query.skip);
+  }
+};
+
+
+/** @private */
+lf.proc.SelectLogicalPlanGenerator.prototype.generateGroupByNode_ = function() {
+  if (goog.isDefAndNotNull(this.query.groupBy)) {
+    this.groupByNode_ = new lf.proc.GroupByNode([this.query.groupBy]);
+  }
+};
+
+
+/** @private */
+lf.proc.SelectLogicalPlanGenerator.prototype.generateAggregationNode_ =
+    function() {
+  var aggregatedColumns = this.query.columns.filter(
+      function(column) {
+        return column instanceof lf.fn.AggregatedColumn;
+      });
+  // TODO(dpapad): Append any aggregated columns that appear in the orderBy to
+  // the array too, as part of allowing ordering by aggregated columns.
+  if (aggregatedColumns.length > 0) {
+    this.aggregationNode_ = new lf.proc.AggregationNode(aggregatedColumns);
   }
 };
 
@@ -35831,6 +36334,90 @@ lf.proc.DeleteStep.prototype.execInternal = function(journal, relations) {
   });
   journal.remove(this.table_, rows);
   return [lf.proc.Relation.createEmpty()];
+};
+
+/**
+ * @license
+ * Copyright 2015 Google Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+goog.provide('lf.proc.GroupByStep');
+
+goog.require('goog.labs.structs.Multimap');
+goog.require('lf.proc.PhysicalQueryPlanNode');
+goog.require('lf.proc.Relation');
+
+
+
+/**
+ * @constructor @struct
+ * @extends {lf.proc.PhysicalQueryPlanNode}
+ *
+ * @param {!Array<!lf.schema.Column>} groupByColumns
+ */
+lf.proc.GroupByStep = function(groupByColumns) {
+  lf.proc.GroupByStep.base(this, 'constructor',
+      1,
+      lf.proc.PhysicalQueryPlanNode.ExecType.FIRST_CHILD);
+
+  /** @private {!Array<!lf.schema.Column>} */
+  this.groupByColumns_ = groupByColumns;
+};
+goog.inherits(lf.proc.GroupByStep, lf.proc.PhysicalQueryPlanNode);
+
+
+/** @override */
+lf.proc.GroupByStep.prototype.toString = function() {
+  var columnNames = this.groupByColumns_.map(
+      function(column) {
+        return column.getNormalizedName();
+      });
+  return 'groupBy(' + columnNames.toString() + ')';
+};
+
+
+/** @override */
+lf.proc.GroupByStep.prototype.execInternal = function(journal, relations) {
+  return this.calculateGroupedRelations_(relations[0]);
+};
+
+
+/**
+ * Breaks down a single relation to mulitple relations by grouping rows based on
+ * the specified groupBy columns.
+ * @param {!lf.proc.Relation} relation
+ * @return {!Array<!lf.proc.Relation>}
+ * @private
+ */
+lf.proc.GroupByStep.prototype.calculateGroupedRelations_ = function(relation) {
+  var groupMap = new goog.labs.structs.Multimap();
+
+  var getKey = function(entry) {
+    var keys = this.groupByColumns_.map(function(column) {
+      return entry.getField(column);
+    }, this);
+    return keys.join(',');
+  }.bind(this);
+
+  relation.entries.forEach(function(entry) {
+    groupMap.add(getKey(entry), entry);
+  }, this);
+
+  return groupMap.getKeys().map(
+      function(key) {
+        return new lf.proc.Relation(groupMap.get(key), relation.getTables());
+      }, this);
 };
 
 /**
@@ -37043,8 +37630,6 @@ lf.proc.RelationTransformer = function(relation, columns) {
  * @return {!lf.proc.Relation} The transformed relation.
  */
 lf.proc.RelationTransformer.prototype.getTransformed = function() {
-  this.calculateAggregators_();
-
   // Determine whether any aggregated columns have been requested.
   var aggregatedColumnsExist = this.columns_.some(
       function(column) {
@@ -37122,189 +37707,6 @@ lf.proc.RelationTransformer.prototype.handleNonAggregatedColumns_ = function() {
 
 
 /**
- * Calculates all requested aggregations. Results are stored within
- * this.relation_.
- * @private
- */
-lf.proc.RelationTransformer.prototype.calculateAggregators_ = function() {
-  this.columns_.forEach(function(column) {
-    if (!(column instanceof lf.fn.AggregatedColumn)) {
-      return;
-    }
-
-    var reverseColumnChain = column.getColumnChain().reverse();
-    for (var i = 1; i < reverseColumnChain.length; i++) {
-      var currentColumn = reverseColumnChain[i];
-      var leafColumn = currentColumn.getColumnChain().slice(-1)[0];
-      var inputRelation = this.getInputRelationFor_(currentColumn);
-
-      var result = lf.proc.RelationTransformer.evalAggregation_(
-          currentColumn.aggregatorType, inputRelation, leafColumn);
-      this.relation_.setAggregationResult(currentColumn, result);
-    }
-  }, this);
-};
-
-
-/**
- * @param {!lf.fn.AggregatedColumn} column The aggregated column.
- * @return {!lf.proc.Relation} The relation that should be used as input for
- *     calculating the given aggregated column.
- * @private
- */
-lf.proc.RelationTransformer.prototype.getInputRelationFor_ = function(column) {
-  return column.child instanceof lf.fn.AggregatedColumn ?
-      /** @type {!lf.proc.Relation} */ (
-          this.relation_.getAggregationResult(column.child)) :
-      this.relation_;
-};
-
-
-/**
- * @param {!lf.fn.Type} aggregatorType The type of the aggregation.
- * @param {!lf.proc.Relation} relation The relation on which the aggregation
- *     will be evaluated.
- * @param {!lf.schema.Column} column The column on which the aggregation will be
- *     performed.
- * @return {!lf.proc.AggregationResult}
- * @private
- */
-lf.proc.RelationTransformer.evalAggregation_ = function(
-    aggregatorType, relation, column) {
-  var result = null;
-
-  switch (aggregatorType) {
-    case lf.fn.Type.MIN:
-      result = lf.proc.RelationTransformer.min_(relation, column);
-      break;
-    case lf.fn.Type.MAX:
-      result = lf.proc.RelationTransformer.max_(relation, column);
-      break;
-    case lf.fn.Type.DISTINCT:
-      result = lf.proc.RelationTransformer.distinct_(relation, column);
-      break;
-    case lf.fn.Type.COUNT:
-      result = relation.entries.length;
-      break;
-    case lf.fn.Type.SUM:
-      result = lf.proc.RelationTransformer.sum_(relation, column);
-      break;
-    case lf.fn.Type.AVG:
-      result = lf.proc.RelationTransformer.sum_(relation, column) /
-          relation.entries.length;
-      break;
-    default:
-      // Must be case of lf.fn.Type.STDDEV.
-      result = lf.proc.RelationTransformer.stddev_(relation, column);
-  }
-
-  return /** @type {!lf.proc.AggregationResult} */ (result);
-};
-
-
-/**
- * Calculates the minimum value of the given column for the given relation.
- * @param {!lf.proc.Relation} relation The relation on which to calculate
- *     the aggregation.
- * @param {!lf.schema.Column} column The column for which to calculate the
- *     minimum.
- * @return {number|string|!Date} The maximum.
- * @private
- */
-lf.proc.RelationTransformer.min_ = function(relation, column) {
-  var min = null;
-
-  relation.entries.forEach(function(entry) {
-    var value = entry.getField(column);
-    if (goog.isNull(min) || value < min) {
-      min = value;
-    }
-  });
-
-  return /** @type {number|string|!Date} */ (min);
-};
-
-
-/**
- * Calculates the maximum value of the given column for the given relation.
- * @param {!lf.proc.Relation} relation The relation on which to calculate
- *     the aggregation.
- * @param {!lf.schema.Column} column The column for which to calculate the
- *     maximum.
- * @return {number|string|!Date} The maximum.
- * @private
- */
-lf.proc.RelationTransformer.max_ = function(relation, column) {
-  var max = null;
-
-  relation.entries.forEach(function(entry) {
-    var value = entry.getField(column);
-    if (goog.isNull(max) || value > max) {
-      max = value;
-    }
-  });
-
-  return /** @type {number|string|!Date} */ (max);
-};
-
-
-/**
- * Calculates the sum of the given column for the given relation.
- * @param {!lf.proc.Relation} relation The relation on which to calculate
- *     the aggregation.
- * @param {!lf.schema.Column} column The column for which to calculate the
- *     sum.
- * @return {number|string} The maximum.
- * @private
- */
-lf.proc.RelationTransformer.sum_ = function(relation, column) {
-  return relation.entries.reduce(function(soFar, entry) {
-    return soFar + entry.getField(column);
-  }, 0);
-};
-
-
-/**
- * Calculates the standard deviation of the given column for the given relation.
- * @param {!lf.proc.Relation} relation The relation on which to calculate
- *     the aggregation.
- * @param {!lf.schema.Column} column The column for which to calculate the
- *     standard deviation.
- * @return {number} The maximum.
- * @private
- */
-lf.proc.RelationTransformer.stddev_ = function(relation, column) {
-
-  var values = relation.entries.map(function(entry) {
-    return entry.getField(column);
-  });
-
-  return goog.math.standardDeviation.apply(null, values);
-};
-
-
-/**
- * Keeps only distinct entries with regards to the given column.
- * @param {!lf.proc.Relation} relation The relation on which to calculate the
- *     aggregation.
- * @param {!lf.schema.Column} column The column for which to remove duplicates.
- * @return {!lf.proc.Relation} A relation containing entries that have different
- *     values for the specified column.
- * @private
- */
-lf.proc.RelationTransformer.distinct_ = function(relation, column) {
-  var distinctMap = new goog.structs.Map();
-
-  relation.entries.forEach(function(entry) {
-    var value = entry.getField(column);
-    distinctMap.set(value, entry);
-  });
-
-  return new lf.proc.Relation(distinctMap.getValues(), relation.getTables());
-};
-
-
-/**
  * Transforms a list of relations to a single relation. Each input relation is
  * transformed to a single entry on the final relation.
  * Note: Projection columns must include at least one aggregated column.
@@ -37362,7 +37764,7 @@ goog.require('lf.proc.RelationTransformer');
  */
 lf.proc.ProjectStep = function(columns, groupByColumn) {
   lf.proc.ProjectStep.base(this, 'constructor',
-      1,
+      lf.proc.PhysicalQueryPlanNode.ANY,
       lf.proc.PhysicalQueryPlanNode.ExecType.FIRST_CHILD);
 
   /** @type {!Array<!lf.schema.Column>} */
@@ -37386,11 +37788,14 @@ lf.proc.ProjectStep.prototype.toString = function() {
 
 
 /** @override */
-lf.proc.ProjectStep.prototype.execInternal = function(journal, results) {
-  var relation = results[0];
-  return goog.isNull(this.groupByColumn) ?
-      this.execNonGroupByProjection_(relation) :
-      this.execGroupByProjection_(relation);
+lf.proc.ProjectStep.prototype.execInternal = function(journal, relations) {
+  if (relations.length == 0) {
+    return [lf.proc.Relation.createEmpty()];
+  } else if (relations.length == 1) {
+    return [this.execNonGroupByProjection_(relations[0])];
+  } else {
+    return [this.execGroupByProjection_(relations)];
+  }
 };
 
 
@@ -37408,58 +37813,29 @@ lf.proc.ProjectStep.prototype.hasAggregators = function() {
 
 /**
  * Calculates the final relation for the case where GROUP_BY exists.
- * @param {!lf.proc.Relation} relation The input relation.
- * @return {!Array<!lf.proc.Relation>} The output relation.
+ * @param {!Array<!lf.proc.Relation>} relations The input relations.
+ * @return {!lf.proc.Relation} The output relation.
  * @private
  */
-lf.proc.ProjectStep.prototype.execGroupByProjection_ = function(relation) {
-  if (relation.entries == 0) {
-    return [relation];
-  }
-
-  var groupedRelations = this.calculateGroupedRelations_(relation);
-  return [lf.proc.RelationTransformer.transformMany(
-      groupedRelations, this.columns)];
+lf.proc.ProjectStep.prototype.execGroupByProjection_ = function(relations) {
+  return lf.proc.RelationTransformer.transformMany(relations, this.columns);
 };
 
 
 /**
  * Calculates the final relation for the case where no GROUP_BY exists.
  * @param {!lf.proc.Relation} relation The input relation.
- * @return {!Array<!lf.proc.Relation>} The output relation.
+ * @return {!lf.proc.Relation} The output relation.
  * @private
  */
 lf.proc.ProjectStep.prototype.execNonGroupByProjection_ = function(relation) {
   if (this.columns.length == 0) {
-    return [relation];
+    return relation;
   }
 
   var relationTransformer = new lf.proc.RelationTransformer(
       relation, this.columns);
-  return [relationTransformer.getTransformed()];
-};
-
-
-/**
- * Breaks down a single relation to mulitple relations by grouping rows based on
- * the specified groupBy column.
- * @param {!lf.proc.Relation} relation
- * @return {!Array<!lf.proc.Relation>}
- * @private
- */
-lf.proc.ProjectStep.prototype.calculateGroupedRelations_ = function(relation) {
-  var groupMap = new goog.labs.structs.Multimap();
-  relation.entries.forEach(function(entry) {
-    // TODO(dpapad): What if groupBy of an ArrayBuffer column is requested?
-    var key = entry.getField(/** @type {!lf.schema.Column} */ (
-        this.groupByColumn));
-    groupMap.add(String(key), entry);
-  }, this);
-
-  return groupMap.getKeys().map(
-      function(key) {
-        return new lf.proc.Relation(groupMap.get(key), relation.getTables());
-      }, this);
+  return relationTransformer.getTransformed();
 };
 
 /**
@@ -37992,10 +38368,14 @@ lf.proc.UpdateStep.prototype.execInternal = function(journal, relations) {
 goog.provide('lf.proc.PhysicalPlanFactory');
 
 goog.require('lf.Exception');
+goog.require('lf.proc.AggregationNode');
+goog.require('lf.proc.AggregationStep');
 goog.require('lf.proc.CrossProductNode');
 goog.require('lf.proc.CrossProductStep');
 goog.require('lf.proc.DeleteNode');
 goog.require('lf.proc.DeleteStep');
+goog.require('lf.proc.GroupByNode');
+goog.require('lf.proc.GroupByStep');
 goog.require('lf.proc.IndexRangeScanPass');
 goog.require('lf.proc.InsertNode');
 goog.require('lf.proc.InsertOrReplaceNode');
@@ -38101,6 +38481,10 @@ lf.proc.PhysicalPlanFactory.prototype.createPlan_ = function(
 lf.proc.PhysicalPlanFactory.prototype.mapFn_ = function(node) {
   if (node instanceof lf.proc.ProjectNode) {
     return new lf.proc.ProjectStep(node.columns, node.groupByColumn);
+  } else if (node instanceof lf.proc.GroupByNode) {
+    return new lf.proc.GroupByStep(node.columns);
+  } else if (node instanceof lf.proc.AggregationNode) {
+    return new lf.proc.AggregationStep(node.columns);
   } else if (node instanceof lf.proc.OrderByNode) {
     return new lf.proc.OrderByStep(node.orderBy);
   } else if (node instanceof lf.proc.SkipNode) {
@@ -39726,90 +40110,6 @@ lf.proc.Database.prototype.close = function() {
   lf.base.closeDatabase(this.global_);
   this.global_.clear();
   this.initialized_ = false;
-};
-
-/**
- * @license
- * Copyright 2015 Google Inc. All Rights Reserved.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-goog.provide('lf.proc.GroupByStep');
-
-goog.require('goog.labs.structs.Multimap');
-goog.require('lf.proc.PhysicalQueryPlanNode');
-goog.require('lf.proc.Relation');
-
-
-
-/**
- * @constructor @struct
- * @extends {lf.proc.PhysicalQueryPlanNode}
- *
- * @param {!Array<!lf.schema.Column>} groupByColumns
- */
-lf.proc.GroupByStep = function(groupByColumns) {
-  lf.proc.GroupByStep.base(this, 'constructor',
-      1,
-      lf.proc.PhysicalQueryPlanNode.ExecType.FIRST_CHILD);
-
-  /** @private {!Array<!lf.schema.Column>} */
-  this.groupByColumns_ = groupByColumns;
-};
-goog.inherits(lf.proc.GroupByStep, lf.proc.PhysicalQueryPlanNode);
-
-
-/** @override */
-lf.proc.GroupByStep.prototype.toString = function() {
-  var columnNames = this.groupByColumns_.map(
-      function(column) {
-        return column.getNormalizedName();
-      });
-  return 'groupBy(' + columnNames.toString() + ')';
-};
-
-
-/** @override */
-lf.proc.GroupByStep.prototype.execInternal = function(journal, relations) {
-  return this.calculateGroupedRelations_(relations[0]);
-};
-
-
-/**
- * Breaks down a single relation to mulitple relations by grouping rows based on
- * the specified groupBy columns.
- * @param {!lf.proc.Relation} relation
- * @return {!Array<!lf.proc.Relation>}
- * @private
- */
-lf.proc.GroupByStep.prototype.calculateGroupedRelations_ = function(relation) {
-  var groupMap = new goog.labs.structs.Multimap();
-
-  var getKey = function(entry) {
-    var keys = this.groupByColumns_.map(function(column) {
-      return entry.getField(column);
-    }, this);
-    return keys.join(',');
-  }.bind(this);
-
-  relation.entries.forEach(function(entry) {
-    groupMap.add(getKey(entry), entry);
-  }, this);
-
-  return groupMap.getKeys().map(
-      function(key) {
-        return new lf.proc.Relation(groupMap.get(key), relation.getTables());
-      }, this);
 };
 
 /**

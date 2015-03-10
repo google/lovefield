@@ -15,14 +15,15 @@
  * limitations under the License.
  */
 goog.setTestOnly();
-goog.require('goog.math');
 goog.require('goog.testing.AsyncTestCase');
 goog.require('goog.testing.jsunit');
 goog.require('hr.db');
+goog.require('lf.Row');
 goog.require('lf.eval.Type');
 goog.require('lf.fn');
 goog.require('lf.pred.JoinPredicate');
 goog.require('lf.proc.Relation');
+goog.require('lf.proc.RelationEntry');
 goog.require('lf.proc.RelationTransformer');
 goog.require('lf.schema.DataStoreType');
 goog.require('lf.testing.hrSchema.EmployeeDataGenerator');
@@ -50,13 +51,6 @@ var sampleJobs;
 var sampleEmployees;
 
 
-/** @type {{
- *      minMaxSalary: number,
- *      maxMaxSalary: number}}
- */
-var groundTruth;
-
-
 function setUp() {
   asyncTestCase.waitForAsync('setUp');
   hr.db.connect({storeType: lf.schema.DataStoreType.MEMORY}).then(function(db) {
@@ -79,20 +73,6 @@ function generateSampleJobData(db) {
   var jobCount = 10;
   sampleJobs = jobGenerator.generate(jobCount);
 
-  // Set the maxSalary to only two possible values. This is necessary for the
-  // testSelect_OrderBy_Multiple test below.
-  var minMaxSalary = 3000;
-  sampleJobs.slice(0, Math.floor(sampleJobs.length / 2)).forEach(
-      function(job) {
-        job.setMaxSalary(minMaxSalary);
-      });
-
-  var maxMaxSalary = 4000;
-  sampleJobs.slice(Math.ceil(sampleJobs.length / 2)).forEach(
-      function(job) {
-        job.setMaxSalary(maxMaxSalary);
-      });
-
   var employeeGenerator =
       new lf.testing.hrSchema.EmployeeDataGenerator(schema);
   var employeeCount = 2 * jobCount;
@@ -104,11 +84,6 @@ function generateSampleJobData(db) {
     sampleEmployees[2 * i].setJobId(jobId);
     sampleEmployees[2 * i + 1].setJobId(jobId);
   }
-
-  groundTruth = {
-    minMaxSalary: minMaxSalary,
-    maxMaxSalary: maxMaxSalary
-  };
 }
 
 
@@ -160,15 +135,6 @@ function testGetTransformed_DistinctOnly() {
 }
 
 
-/**
- * Tests the case where a single COUNT(DISTINCT) column is requested.
- */
-function testGetTransformed_NestedAggregations() {
-  var columns = [lf.fn.count(lf.fn.distinct(j.maxSalary))];
-  checkTransformationWithoutJoin(columns, 1);
-}
-
-
 function testGetTransformed_SimpleColumnsOnly_Join() {
   var columns = [e.email, e.hireDate, j.title];
   checkTransformationWithJoin(columns, sampleEmployees.length);
@@ -199,12 +165,6 @@ function testGetTransformed_DistinctOnly_Join() {
 }
 
 
-function testGetTransformed_NestedAggregations_Join() {
-  var columns = [lf.fn.count(lf.fn.distinct(j.maxSalary))];
-  checkTransformationWithJoin(columns, 1);
-}
-
-
 function testGetTransformed_Many() {
   // Creating multiple relations where each relation holds two employees that
   // have the same "jobId" field.
@@ -213,6 +173,10 @@ function testGetTransformed_Many() {
     var relation = lf.proc.Relation.fromRows(
         [sampleEmployees[i], sampleEmployees[i + 1]],
         [e.getName()]);
+    relation.setAggregationResult(lf.fn.avg(e.salary), 50);
+    relation.setAggregationResult(lf.fn.max(e.salary), 100);
+    relation.setAggregationResult(lf.fn.min(e.salary), 0);
+
     relations.push(relation);
   }
 
@@ -230,41 +194,6 @@ function testGetTransformed_Many() {
 }
 
 
-function testGetTransformed_Min() {
-  checkTransformationAggregateOnly(
-      lf.fn.min(j.maxSalary), groundTruth.minMaxSalary);
-}
-
-
-function testGetTransformed_Max() {
-  checkTransformationAggregateOnly(
-      lf.fn.max(j.maxSalary), groundTruth.maxMaxSalary);
-}
-
-
-function testGetTransformed_Avg() {
-  checkTransformationAggregateOnly(
-      lf.fn.avg(lf.fn.distinct(j.maxSalary)),
-      (groundTruth.maxMaxSalary + groundTruth.minMaxSalary) / 2);
-}
-
-
-function testGetTransformed_Sum() {
-  checkTransformationAggregateOnly(
-      lf.fn.sum(lf.fn.distinct(j.maxSalary)),
-      groundTruth.maxMaxSalary + groundTruth.minMaxSalary);
-}
-
-
-function testGetTransformed_Stddev() {
-  var expectedStddev = goog.math.standardDeviation(
-      groundTruth.minMaxSalary, groundTruth.maxMaxSalary);
-
-  checkTransformationAggregateOnly(
-      lf.fn.stddev(lf.fn.distinct(j.maxSalary)), expectedStddev);
-}
-
-
 /**
  * Checks that performing a transformation on a relationship that is *not* the
  * result of a natural join, results in a relation with fields that are
@@ -274,9 +203,7 @@ function testGetTransformed_Stddev() {
  * @return {!lf.proc.Relation} The transformed relation.
  */
 function checkTransformationWithoutJoin(columns, expectedResultCount) {
-  var relation = lf.proc.Relation.fromRows(sampleJobs, [j.getName()]);
-  var transformer = new lf.proc.RelationTransformer(
-      relation, columns);
+  var transformer = new lf.proc.RelationTransformer(getRelation(), columns);
   var transformedRelation = transformer.getTransformed();
 
   assertEquals(expectedResultCount, transformedRelation.entries.length);
@@ -295,14 +222,8 @@ function checkTransformationWithoutJoin(columns, expectedResultCount) {
  * @return {!lf.proc.Relation} The transformed relation.
  */
 function checkTransformationWithJoin(columns, expectedResultCount) {
-  // Using a natural join between Employee and Job.
-  var relationLeft = lf.proc.Relation.fromRows(sampleEmployees, [e.getName()]);
-  var relationRight = lf.proc.Relation.fromRows(sampleJobs, [j.getName()]);
-  var joinPredicate = new lf.pred.JoinPredicate(
-      e.jobId, j.id, lf.eval.Type.EQ);
-  var joinedRelation = joinPredicate.evalRelations(relationLeft, relationRight);
-
-  var transformer = new lf.proc.RelationTransformer(joinedRelation, columns);
+  var transformer = new lf.proc.RelationTransformer(
+      getJoinedRelation(), columns);
   var transformedRelation = transformer.getTransformed();
 
   assertEquals(expectedResultCount, transformedRelation.entries.length);
@@ -330,17 +251,54 @@ function assertColumnsPopulated(columns, relation) {
 
 
 /**
- * Checks that the given aggregation is calculated and reported back as
- * expected, for both the case where a join exists and for the case where no
- * join exists.
- * @param {!lf.schema.Column} column The aggregated column.
- * @param {number} expectedValue The expected value.
+ * Generates a dummy relation, with bogus aggregation results to be used for
+ * tesing.
+ * @return {!lf.proc.Relation}
  */
-function checkTransformationAggregateOnly(column, expectedValue) {
-  var transformedRelation = checkTransformationWithoutJoin(
-      [column], 1);
-  assertEquals(expectedValue, transformedRelation.entries[0].getField(column));
+function getRelation() {
+  var relation = lf.proc.Relation.fromRows(sampleJobs, [j.getName()]);
 
-  transformedRelation = checkTransformationWithJoin([column], 1);
-  assertEquals(expectedValue, transformedRelation.entries[0].getField(column));
+  // Filling in dummy aggregation results. In a normal scenario those have been
+  // calculated before ProjectStep executes.
+  relation.setAggregationResult(lf.fn.avg(j.maxSalary), 50);
+  relation.setAggregationResult(lf.fn.max(j.maxSalary), 100);
+  relation.setAggregationResult(lf.fn.min(j.maxSalary), 0);
+
+  var entry1 = new lf.proc.RelationEntry(
+      new lf.Row(1, {'maxSalary': 1000}), false);
+  var entry2 = new lf.proc.RelationEntry(
+      new lf.Row(1, {'maxSalary': 2000}), false);
+  var distinctRelation = new lf.proc.Relation([entry1, entry2], [j.getName()]);
+  relation.setAggregationResult(lf.fn.distinct(j.maxSalary), distinctRelation);
+  return relation;
+}
+
+
+/**
+ * Generates a dummy joined relation, with bogus aggregation results to be used
+ * for tesing.
+ * @return {!lf.proc.Relation}
+ */
+function getJoinedRelation() {
+  var relationLeft = lf.proc.Relation.fromRows(sampleEmployees, [e.getName()]);
+  var relationRight = lf.proc.Relation.fromRows(sampleJobs, [j.getName()]);
+  var joinPredicate = new lf.pred.JoinPredicate(
+      e.jobId, j.id, lf.eval.Type.EQ);
+  var joinedRelation = joinPredicate.evalRelations(relationLeft, relationRight);
+
+  joinedRelation.setAggregationResult(lf.fn.avg(j.maxSalary), 50);
+  joinedRelation.setAggregationResult(lf.fn.max(j.maxSalary), 100);
+  joinedRelation.setAggregationResult(lf.fn.min(j.maxSalary), 0);
+  joinedRelation.setAggregationResult(lf.fn.min(e.hireDate), 0);
+  joinedRelation.setAggregationResult(lf.fn.max(e.hireDate), 0);
+
+  var entry1 = new lf.proc.RelationEntry(
+      new lf.Row(1, {'maxSalary': 1000}), false);
+  var entry2 = new lf.proc.RelationEntry(
+      new lf.Row(1, {'maxSalary': 2000}), false);
+  var distinctRelation = new lf.proc.Relation([entry1, entry2], [j.getName()]);
+  joinedRelation.setAggregationResult(
+      lf.fn.distinct(j.maxSalary), distinctRelation);
+
+  return joinedRelation;
 }

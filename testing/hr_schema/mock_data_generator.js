@@ -75,6 +75,7 @@ lf.testing.hrSchema.MockDataGenerator.EmployeeGroundTruth;
  *   minMinSalary: number,
  *   maxMinSalary: number,
  *   distinctMinSalary: !Array<number>,
+ *   sumDistinctMinSalary: number,
  *   countDistinctMinSalary: number,
  *   avgDistinctMinSalary: number,
  *   stddevDistinctMinSalary: number,
