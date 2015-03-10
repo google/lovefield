@@ -27,9 +27,9 @@ ds.connect().then(function(db) {
 The select query builder accepts sources, search conditions, limiters, sorters,
 and group conditions to construct the query. Its member function signatures are
 defined in [`lf.query.Select`](
-https://github.com/google/lovefield/blob/master/lib/query.js#L66). All functions
-provided by select query, except `orderBy()`, can only be called once, otherwise
-an exception will be raised. For example,
+https://github.com/google/lovefield/blob/0146b8c1a951ecc2cf282075e6653d63aac1aed9/lib/query.js#L66-150).
+All functions provided by select query, except `orderBy()`, can only be called
+once, otherwise an exception will be raised. For example,
 
 ```js
 db.select().
@@ -215,7 +215,7 @@ in SQL grammar. These predicates are generated from predicate providers:
 |`isNotNull`|0                    |`IS NOT NULL`  |
 
 All these operators are defined in the interface of [`lf.PredicateProvider`](
-https://github.com/google/lovefield/blob/master/lib/predicate.js#L54).
+https://github.com/google/lovefield/blob/0146b8c1a951ecc2cf282075e6653d63aac1aed9/lib/predicate.js#L54-153).
 The general idea is that the column acquired from schema object also
 implements the predicate provider interface:
 
@@ -365,7 +365,7 @@ There are two different insert builders: `lf.Database#insert` and
 based on primary key), while the latter will overwrite any existing row.
 
 Both builders implement the interface [`lf.query.Insert`](
-https://github.com/google/lovefield/blob/master/lib/query.js#L154).
+https://github.com/google/lovefield/blob/0146b8c1a951ecc2cf282075e6653d63aac1aed9/lib/query.js#L154-173).
 
 #### 4.2.1 Prepare Rows for Insertion
 
@@ -394,7 +394,7 @@ otherwise an exception will be raised.
 Update query builders are acquired from `lf.DataBase#update`, and the user must
 pass in the target table as its parameter, as documented in the
 [`lf.query.Update`](
-https://github.com/google/lovefield/blob/master/lib/query.js#L177) interface.
+https://github.com/google/lovefield/blob/0146b8c1a951ecc2cf282075e6653d63aac1aed9/lib/query.js#L177-198) interface.
 The updated values are provided by the `set()` clause, as shown below:
 
 ```js
@@ -416,7 +416,8 @@ function, can only be called once.
 The delete query builder is provided by `lf.Database#delete` and can be used
 to delete one or more rows with or without search conditions. It implements
 [`lf.query.Delete`](
-https://github.com/google/lovefield/blob/master/lib/query.js#L202) interface.
+https://github.com/google/lovefield/blob/0146b8c1a951ecc2cf282075e6653d63aac1aed9/lib/query.js#L202-221)
+interface.
 
 ```js
 // DELETE FROM infoCard WHERE lang = 'es';
@@ -451,9 +452,9 @@ q2.bind(['id4', 2222, true]).exec();
 ```
 
 The function [`lf.bind()`](
-https://github.com/google/lovefield/blob/master/lib/bind.js#L21) creates a
-placeholder in query context. When `lf.query.Builder#bind` is called, the
-placeholder will be replaced with the value provided in the binding array.
+https://github.com/google/lovefield/blob/e1f59b8212bbfc4867453b2623ccd55edb879311/lib/bind.js#L21-28)
+creates a placeholder in query context. When `lf.query.Builder#bind` is called,
+the placeholder will be replaced with the value provided in the binding array.
 For performance reasons, the `bind()` function unfortunately does not provide
 type checking. Users are responsible for making sure the bound values are of
 their correct type.

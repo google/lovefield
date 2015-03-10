@@ -10,7 +10,7 @@ DB version) uniquely identify a database instance. The database is stored in a
 
 Lovefield initialization is performed through [schema builder's `connect()`
 method](
-https://github.com/google/lovefield/blob/master/lib/schema/builder.js#L91).
+https://github.com/google/lovefield/blob/31f14db4995bb89fa053c99261a4b7501f87eb8d/lib/schema/builder.js#L91-109).
 The `connect()` method will implicitly invoke Lovefield initialization.
 It will do the following:
 
@@ -205,8 +205,8 @@ interface provides:
 Although the schema can be retrieved from schema builder, the suggested way of
 retrieving the database schema is to get them from `lf.Database#getSchema()`
 call, which will return an [`lf.schema.Database`](
-https://github.com/google/lovefield/blob/master/lib/schema/schema.js#L57) object
-that represents the schema of that instance.
+https://github.com/google/lovefield/blob/11e206f865b2782a0311bcc0abfd3a97acf68642/lib/schema/schema.js#L64-88)
+object that represents the schema of that instance.
 
 The schema is used to support query building, such as providing filters and
 building blocks for search conditions. The schema is hierarchical, and the
@@ -221,7 +221,7 @@ following table list the components of it:
 #### 3.4.2 Query Builders and Transactions
 
 All query builders implement the interface [`lf.query.Builder`](
-https://github.com/google/lovefield/blob/master/lib/query.js#L28).
+https://github.com/google/lovefield/blob/0146b8c1a951ecc2cf282075e6653d63aac1aed9/lib/query.js#L28-62).
 Their main responsibility is to generate query objects that will be accepted and
 executed by query execution engine. A query object can be reused multiple times
 if same query is desired.
