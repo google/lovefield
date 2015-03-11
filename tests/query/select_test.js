@@ -145,14 +145,16 @@ function testExec_ValidProjectionList() {
 
 /**
  * Tests that constructing queries involving Select#groupBy() succeed if a
- * valid combination of projection and groupBy list is requested.
+ * valid combination of projection and groupBy list is requested. This test
+ * checks that columns in groupBy() does not necessarily exist in projection
+ * list.
  */
 function testExec_ValidProjectionList_GroupBy() {
   asyncTestCase.waitForAsync('testExec_ValidProjectionList_GroupBy');
 
   var e = db.getSchema().getEmployee();
   var query = new lf.query.SelectBuilder(
-      hr.db.getGlobal(), [e.departmentId, e.jobId, lf.fn.avg(e.salary)]);
+      hr.db.getGlobal(), [e.jobId, lf.fn.avg(e.salary)]);
   query.from(e).groupBy(e.jobId, e.departmentId).exec().then(
       function(e) {
         asyncTestCase.continueTesting();
