@@ -37580,26 +37580,30 @@ lf.proc.OrderByStep.prototype.execInternal = function(journal, relations) {
 
 
 /**
- * @param {!function(!lf.schema.Column):!Array} getPayloadsFn
+ * @param {!function(!lf.schema.Column):*} getLeftPayload
+ * @param {!function(!lf.schema.Column):*} getRightPayload
  * @return {number} -1 if a should precede b, 1 if b should precede a, 0 if a
  *     and b are determined to be equal.
  * @private
  */
-lf.proc.OrderByStep.prototype.comparator_ = function(getPayloadsFn) {
+lf.proc.OrderByStep.prototype.comparator_ = function(
+    getLeftPayload, getRightPayload) {
   var order = null;
-  var payloads = [null, null];
+  var leftPayload = null;
+  var rightPayload = null;
   var comparisonIndex = -1;
 
   do {
     comparisonIndex++;
     var column = this.orderBy[comparisonIndex].column;
     order = this.orderBy[comparisonIndex].order;
-    payloads = getPayloadsFn(column);
-  } while (payloads[0] == payloads[1] &&
+    leftPayload = getLeftPayload(column);
+    rightPayload = getRightPayload(column);
+  } while (leftPayload == rightPayload &&
       comparisonIndex + 1 < this.orderBy.length);
 
-  var result = (payloads[0] < payloads[1]) ? -1 :
-      (payloads[0] > payloads[1]) ? 1 : 0;
+  var result = (leftPayload < rightPayload) ? -1 :
+      (leftPayload > rightPayload) ? 1 : 0;
   result = order == lf.Order.ASC ? result : -result;
   return result;
 };
@@ -37615,21 +37619,23 @@ lf.proc.OrderByStep.prototype.comparator_ = function(getPayloadsFn) {
  * @private
  */
 lf.proc.OrderByStep.prototype.relationComparatorFn_ = function(lhs, rhs) {
+  // NOTE: See NOTE in entryComparatorFn_ on why two separate functions are
+  // passed in this.comparator_ instead of using one method and binding to lhs
+  // and to rhs respectively.
   return this.comparator_(
       function(column) {
-        var leftPayload = null;
-        var rightPayload = null;
-        if (column instanceof lf.fn.AggregatedColumn) {
-          leftPayload = lhs.getAggregationResult(column);
-          rightPayload = rhs.getAggregationResult(column);
-        } else {
-          // If relations are sorted based on a non-aggregated column, choose
-          // the last entry of each relations as a representative row (same as
-          // SQLlite).
-          leftPayload = lhs.entries[lhs.entries.length - 1].getField(column);
-          rightPayload = rhs.entries[rhs.entries.length - 1].getField(column);
-        }
-        return [leftPayload, rightPayload];
+        // If relations are sorted based on a non-aggregated column, choose
+        // the last entry of each relation as a representative row (same as
+        // SQLlite).
+        return column instanceof lf.fn.AggregatedColumn ?
+            lhs.getAggregationResult(column) :
+            lhs.entries[lhs.entries.length - 1].getField(column);
+      },
+      function(column) {
+        return column instanceof lf.fn.AggregatedColumn ?
+            rhs.getAggregationResult(column) :
+            rhs.entries[rhs.entries.length - 1].getField(column);
+
       });
 };
 
@@ -37644,10 +37650,13 @@ lf.proc.OrderByStep.prototype.relationComparatorFn_ = function(lhs, rhs) {
  * @private
  */
 lf.proc.OrderByStep.prototype.entryComparatorFn_ = function(lhs, rhs) {
+  // NOTE: Avoiding on purpose to create a getPayload(operand, column) method
+  // here, and binding it once to lhs and once to rhs, because it turns out that
+  // Function.bind() is significantly hurting performance (measured on
+  // Chrome 40).
   return this.comparator_(
-      function(column) {
-        return [lhs.getField(column), rhs.getField(column)];
-      });
+      function(column) { return lhs.getField(column); },
+      function(column) { return rhs.getField(column); });
 };
 
 /**
