@@ -152,8 +152,8 @@ function testExec_ValidProjectionList_GroupBy() {
 
   var e = db.getSchema().getEmployee();
   var query = new lf.query.SelectBuilder(
-      hr.db.getGlobal(), [e.jobId, lf.fn.avg(e.salary)]);
-  query.from(e).groupBy(e.jobId).exec().then(
+      hr.db.getGlobal(), [e.departmentId, e.jobId, lf.fn.avg(e.salary)]);
+  query.from(e).groupBy(e.jobId, e.departmentId).exec().then(
       function(e) {
         asyncTestCase.continueTesting();
       }, fail);

@@ -152,14 +152,14 @@ function testSelectToSql_Simple() {
       from(j).
       orderBy(j.id).
       orderBy(j.maxSalary, lf.Order.DESC).
-      groupBy(j.minSalary).
+      groupBy(j.minSalary, j.maxSalary).
       limit(20).
       skip(50);
   assertEquals(
       'SELECT Job.title AS T, Job.minSalary, Job.maxSalary' +
       ' FROM Job' +
       ' ORDER BY Job.id ASC, Job.maxSalary DESC' +
-      ' GROUP BY Job.minSalary' +
+      ' GROUP BY Job.minSalary, Job.maxSalary' +
       ' LIMIT 20' +
       ' SKIP 50;',
       query.toSql());

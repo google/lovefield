@@ -186,7 +186,7 @@ function testTree4() {
   var limitNode = new lf.proc.LimitStep(100);
   var skipNode = new lf.proc.SkipStep(200);
   limitNode.addChild(skipNode);
-  var projectNode = new lf.proc.ProjectStep([e.id], e.jobId);
+  var projectNode = new lf.proc.ProjectStep([e.id], [e.jobId]);
   skipNode.addChild(projectNode);
   var tableAccessByRowIdNode = new lf.proc.TableAccessByRowIdStep(
       hr.db.getGlobal(), e);

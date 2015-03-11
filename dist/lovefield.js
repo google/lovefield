@@ -32633,10 +32633,10 @@ goog.provide('lf.query.SelectContext.OrderBy');
  * @constructor
  */
 lf.query.SelectContext = function() {
-  /** @type {!Array.<!lf.schema.Column>} */
+  /** @type {!Array<!lf.schema.Column>} */
   this.columns;
 
-  /** @type {!Array.<!lf.schema.Table>} */
+  /** @type {!Array<!lf.schema.Table>} */
   this.from;
 
   /** @type {!lf.Predicate} */
@@ -32648,10 +32648,10 @@ lf.query.SelectContext = function() {
   /** @type {number} */
   this.skip;
 
-  /** @type {!Array.<!lf.query.SelectContext.OrderBy>} */
+  /** @type {!Array<!lf.query.SelectContext.OrderBy>} */
   this.orderBy;
 
-  /** @type {!lf.schema.Column} */
+  /** @type {!Array<lf.schema.Column>} */
   this.groupBy;
 };
 
@@ -32665,7 +32665,7 @@ lf.query.SelectContext.OrderBy;
 
 
 /**
- * @param {!Array.<!lf.query.SelectContext.OrderBy>} orderBy
+ * @param {!Array<!lf.query.SelectContext.OrderBy>} orderBy
  * @return {string} A text representation of OrderBy instances, useful for
  *     testing.
  */
@@ -32735,7 +32735,7 @@ goog.inherits(lf.proc.LogicalQueryPlanNode, goog.structs.TreeNode);
  * @extends {lf.proc.LogicalQueryPlanNode}
  *
  * @param {!lf.schema.Table} table
- * @param {!Array.<!lf.Row>} values
+ * @param {!Array<!lf.Row>} values
  */
 lf.proc.InsertNode = function(table, values) {
   lf.proc.InsertNode.base(this, 'constructor');
@@ -32743,7 +32743,7 @@ lf.proc.InsertNode = function(table, values) {
   /** @type {!lf.schema.Table} */
   this.table = table;
 
-  /** @type {!Array.<!lf.Row>} */
+  /** @type {!Array<!lf.Row>} */
   this.values = values;
 };
 goog.inherits(lf.proc.InsertNode, lf.proc.LogicalQueryPlanNode);
@@ -32755,7 +32755,7 @@ goog.inherits(lf.proc.InsertNode, lf.proc.LogicalQueryPlanNode);
  * @extends {lf.proc.InsertNode}
  *
  * @param {!lf.schema.Table} table
- * @param {!Array.<!lf.Row>} values
+ * @param {!Array<!lf.Row>} values
  */
 lf.proc.InsertOrReplaceNode = function(table, values) {
   lf.proc.InsertOrReplaceNode.base(this, 'constructor', table, values);
@@ -32791,7 +32791,7 @@ lf.proc.DeleteNode.prototype.toString = function() {
  * @extends {lf.proc.LogicalQueryPlanNode}
  *
  * @param {!lf.schema.Table} table
- * @param {!Array.<!lf.query.UpdateContext.Set>} updates
+ * @param {!Array<!lf.query.UpdateContext.Set>} updates
  */
 lf.proc.UpdateNode = function(table, updates) {
   lf.proc.UpdateNode.base(this, 'constructor');
@@ -32799,7 +32799,7 @@ lf.proc.UpdateNode = function(table, updates) {
   /** @type {!lf.schema.Table} */
   this.table = table;
 
-  /** @type {!Array.<!lf.query.UpdateContext.Set>} */
+  /** @type {!Array<!lf.query.UpdateContext.Set>} */
   this.updates = updates;
 };
 goog.inherits(lf.proc.UpdateNode, lf.proc.LogicalQueryPlanNode);
@@ -32888,17 +32888,17 @@ lf.proc.CrossProductNode.prototype.toString = function() {
  * @constructor @struct
  * @extends {lf.proc.LogicalQueryPlanNode}
  *
- * @param {!Array.<!lf.schema.Column>} columns
- * @param {?lf.schema.Column} groupByColumn
+ * @param {!Array<!lf.schema.Column>} columns
+ * @param {?Array<!lf.schema.Column>} groupByColumns
  */
-lf.proc.ProjectNode = function(columns, groupByColumn) {
+lf.proc.ProjectNode = function(columns, groupByColumns) {
   lf.proc.ProjectNode.base(this, 'constructor');
 
-  /** @type {!Array.<!lf.schema.Column>} */
+  /** @type {!Array<!lf.schema.Column>} */
   this.columns = columns;
 
-  /** @type {?lf.schema.Column} */
-  this.groupByColumn = groupByColumn;
+  /** @type {?Array<lf.schema.Column>} */
+  this.groupByColumns = groupByColumns;
 };
 goog.inherits(lf.proc.ProjectNode, lf.proc.LogicalQueryPlanNode);
 
@@ -32906,8 +32906,11 @@ goog.inherits(lf.proc.ProjectNode, lf.proc.LogicalQueryPlanNode);
 /** @override */
 lf.proc.ProjectNode.prototype.toString = function() {
   var string = 'project(' + this.columns.toString();
-  if (!goog.isNull(this.groupByColumn)) {
-    string += ', groupBy(' + this.groupByColumn.getNormalizedName() + ')';
+  if (!goog.isNull(this.groupByColumns)) {
+    var groupBy = this.groupByColumns.map(function(col) {
+      return col.getNormalizedName();
+    }).join(', ');
+    string += ', groupBy(' + groupBy + ')';
   }
   string += ')';
   return string;
@@ -32919,12 +32922,12 @@ lf.proc.ProjectNode.prototype.toString = function() {
  * @constructor @struct
  * @extends {lf.proc.LogicalQueryPlanNode}
  *
- * @param {!Array.<!lf.query.SelectContext.OrderBy>} orderBy
+ * @param {!Array<!lf.query.SelectContext.OrderBy>} orderBy
  */
 lf.proc.OrderByNode = function(orderBy) {
   lf.proc.OrderByNode.base(this, 'constructor');
 
-  /** @type {!Array.<!lf.query.SelectContext.OrderBy>} */
+  /** @type {!Array<!lf.query.SelectContext.OrderBy>} */
   this.orderBy = orderBy;
 };
 goog.inherits(lf.proc.OrderByNode, lf.proc.LogicalQueryPlanNode);
@@ -33450,7 +33453,7 @@ lf.query.Select = function() {};
 
 /**
  * Specifies the source of the SELECT query.
- * @param {...lf.schema.Table} var_args Tables used as source of this SELECT.
+ * @param {...!lf.schema.Table} var_args Tables used as source of this SELECT.
  * @return {!lf.query.Select}
  * @throws {!lf.Exception}
  */
@@ -33518,7 +33521,7 @@ lf.query.Select.prototype.orderBy;
 
 /**
  * Specify grouping of returned results.
- * @param {!lf.schema.Column} column
+ * @param {...!lf.schema.Column} var_args
  * @return {!lf.query.Select}
  * @throws {!lf.Exception}
  */
@@ -34448,7 +34451,10 @@ lf.query.selectToSql_ = function(query) {
   }
 
   if (query.groupBy) {
-    sql += ' GROUP BY ' + query.groupBy.getNormalizedName();
+    var groupBy = query.groupBy.map(function(col) {
+      return col.getNormalizedName();
+    }).join(', ');
+    sql += ' GROUP BY ' + groupBy;
   }
 
   if (query.limit) {
@@ -35011,8 +35017,7 @@ lf.query.SelectBuilder.prototype.checkDistinctColumn_ = function() {
  * Checks that the combination of projection list is valid.
  * Specifically:
  * 1) If GROUP_BY is specified: Any non-aggregated column that appears in
- *    the projection list *must* also appear in the GROUP_BY list (currently
- *    GROUP_BY of only one column is allowed).
+ *    the projection list *must* also appear in the GROUP_BY list.
  * 2) If GROUP_BY is not specified: Aggregate and non-aggregated columns can't
  *    be mixed (result does not make sense).
  * @private
@@ -35020,7 +35025,7 @@ lf.query.SelectBuilder.prototype.checkDistinctColumn_ = function() {
  */
 lf.query.SelectBuilder.prototype.checkProjectionList_ = function() {
   goog.isDefAndNotNull(this.query.groupBy) ?
-      this.checkGroupedByColumns_() : this.checkProjectionListNotMixed_();
+      this.checkGroupByColumns_() : this.checkProjectionListNotMixed_();
 };
 
 
@@ -35030,30 +35035,37 @@ lf.query.SelectBuilder.prototype.checkProjectionList_ = function() {
  * @private
  * @throws {!lf.Exception}
  */
-lf.query.SelectBuilder.prototype.checkGroupedByColumns_ = function() {
+lf.query.SelectBuilder.prototype.checkGroupByColumns_ = function() {
   var nonAggregatedColumns = this.query.columns.filter(function(column) {
     return !(column instanceof lf.fn.AggregatedColumn);
+  }).map(function(column) {
+    return column.getNormalizedName();
   });
 
-  var isInvalid = nonAggregatedColumns.some(function(column) {
-    return column.getNormalizedName() != this.query.groupBy.getNormalizedName();
-  }, this);
+  var isInvalid = false;
 
   // Disallowing "SELECT *" if GROUP_BY is specified, because projection list
   // validity can't be performed.
-  isInvalid = isInvalid || this.query.columns.length == 0;
+  if (this.query.groupBy.length == 0 || this.query.columns.length == 0) {
+    isInvalid = true;
+  } else {
+    for (var i = 0; i < this.query.groupBy.length && !isInvalid; ++i) {
+      var groupColumn = this.query.groupBy[i];
+      var type = groupColumn.getType();
+      if (type == lf.Type.OBJECT || type == lf.Type.ARRAY_BUFFER) {
+        isInvalid = true;
+        break;
+      } else {
+        isInvalid = nonAggregatedColumns.indexOf(
+            groupColumn.getNormalizedName()) == -1;
+      }
+    }
+  }
 
   if (isInvalid) {
     throw new lf.Exception(
         lf.Exception.Type.SYNTAX,
-        'Invalid combination of projection list and grouped by columns');
-  } else {
-    var type = this.query.groupBy.getType();
-    if (type == lf.Type.OBJECT || type == lf.Type.ARRAY_BUFFER) {
-      throw new lf.Exception(
-          lf.Exception.Type.SYNTAX,
-          'Cannot group by non-indexable column');
-    }
+        'Invalid projection list or groupBy columns');
   }
 };
 
@@ -35243,9 +35255,16 @@ lf.query.SelectBuilder.prototype.orderBy = function(column, opt_order) {
 
 
 /** @override */
-lf.query.SelectBuilder.prototype.groupBy = function(column) {
+lf.query.SelectBuilder.prototype.groupBy = function(var_args) {
   this.assertNotAlreadyCalled_(this.query.groupBy, 'groupBy');
-  this.query.groupBy = column;
+
+  if (!goog.isDefAndNotNull(this.query.groupBy)) {
+    this.query.groupBy = [];
+  }
+
+  this.query.groupBy.push.apply(
+      this.query.groupBy,
+      Array.prototype.slice.call(arguments));
 
   return this;
 };
@@ -36185,7 +36204,7 @@ lf.proc.SelectLogicalPlanGenerator.prototype.generateSkipNode_ = function() {
 /** @private */
 lf.proc.SelectLogicalPlanGenerator.prototype.generateGroupByNode_ = function() {
   if (goog.isDefAndNotNull(this.query.groupBy)) {
-    this.groupByNode_ = new lf.proc.GroupByNode([this.query.groupBy]);
+    this.groupByNode_ = new lf.proc.GroupByNode(this.query.groupBy);
   }
 };
 
@@ -37818,9 +37837,9 @@ goog.require('lf.proc.RelationTransformer');
  * @extends {lf.proc.PhysicalQueryPlanNode}
  *
  * @param {!Array<!lf.schema.Column>} columns
- * @param {?lf.schema.Column} groupByColumn
+ * @param {?Array<!lf.schema.Column>} groupByColumns
  */
-lf.proc.ProjectStep = function(columns, groupByColumn) {
+lf.proc.ProjectStep = function(columns, groupByColumns) {
   lf.proc.ProjectStep.base(this, 'constructor',
       lf.proc.PhysicalQueryPlanNode.ANY,
       lf.proc.PhysicalQueryPlanNode.ExecType.FIRST_CHILD);
@@ -37828,8 +37847,8 @@ lf.proc.ProjectStep = function(columns, groupByColumn) {
   /** @type {!Array<!lf.schema.Column>} */
   this.columns = columns;
 
-  /** @type {?lf.schema.Column} */
-  this.groupByColumn = groupByColumn;
+  /** @type {?Array<!lf.schema.Column>} */
+  this.groupByColumns = groupByColumns;
 };
 goog.inherits(lf.proc.ProjectStep, lf.proc.PhysicalQueryPlanNode);
 
@@ -37837,8 +37856,11 @@ goog.inherits(lf.proc.ProjectStep, lf.proc.PhysicalQueryPlanNode);
 /** @override */
 lf.proc.ProjectStep.prototype.toString = function() {
   var string = 'project(' + this.columns.toString();
-  if (!goog.isNull(this.groupByColumn)) {
-    string += ', groupBy(' + this.groupByColumn.getNormalizedName() + ')';
+  if (!goog.isNull(this.groupByColumns)) {
+    var groupBy = this.groupByColumns.map(function(col) {
+      return col.getNormalizedName();
+    }).join(', ');
+    string += ', groupBy(' + groupBy + ')';
   }
   string += ')';
   return string;
@@ -37865,7 +37887,7 @@ lf.proc.ProjectStep.prototype.hasAggregators = function() {
   var hasAggregators = this.columns.some(function(column) {
     return column instanceof lf.fn.AggregatedColumn;
   });
-  return hasAggregators || !goog.isNull(this.groupByColumn);
+  return hasAggregators || !goog.isNull(this.groupByColumns);
 };
 
 
@@ -38538,7 +38560,7 @@ lf.proc.PhysicalPlanFactory.prototype.createPlan_ = function(
  */
 lf.proc.PhysicalPlanFactory.prototype.mapFn_ = function(node) {
   if (node instanceof lf.proc.ProjectNode) {
-    return new lf.proc.ProjectStep(node.columns, node.groupByColumn);
+    return new lf.proc.ProjectStep(node.columns, node.groupByColumns);
   } else if (node instanceof lf.proc.GroupByNode) {
     return new lf.proc.GroupByStep(node.columns);
   } else if (node instanceof lf.proc.AggregationNode) {
