@@ -64,7 +64,7 @@
   }
 
   function init_() {
-    return buildSchema().getInstance().then((function(database) {
+    return buildSchema().connect().then((function(database) {
       db = database;
       window.db = database;
       return checkForExistingData_();

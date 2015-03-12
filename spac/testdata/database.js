@@ -6,7 +6,6 @@ goog.require('lf.fn');
 /** @suppress {extraRequire} */
 goog.require('lf.op');
 goog.require('lf.proc.Database');
-goog.require('lf.schema.DataStoreType');
 goog.require('lf.service');
 goog.require('lf.service.ServiceId');
 goog.require('lovefield.db.schema.Database');
@@ -40,22 +39,6 @@ lovefield.db.getSchema = function() {
     global.registerService(lf.service.SCHEMA, schema);
   }
   return global.getService(lf.service.SCHEMA);
-};
-
-
-/**
- * @param {!function(!lf.raw.BackStore):!IThenable=} opt_onUpgrade
- * @param {boolean=} opt_volatile Default to false
- * @return {!IThenable.<!lf.proc.Database>}
- * @deprecated Use connect().
- */
-lovefield.db.getInstance = function(opt_onUpgrade, opt_volatile) {
-  lovefield.db.getSchema();
-  var db = new lf.proc.Database(lovefield.db.getGlobal());
-  return db.init(
-      opt_onUpgrade,
-      opt_volatile ? lf.schema.DataStoreType.MEMORY : undefined,
-      false);
 };
 
 

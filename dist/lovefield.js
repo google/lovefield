@@ -4009,6 +4009,15 @@ goog.debug.Error = function(opt_msg) {
   if (opt_msg) {
     this.message = String(opt_msg);
   }
+
+  /**
+   * Whether to report this error to the server. Setting this to false will
+   * cause the error reporter to not report the error back to the server,
+   * which can be useful if the client knows that the error has already been
+   * logged on the server.
+   * @type {boolean}
+   */
+  this.reportErrorToServer = true;
 };
 goog.inherits(goog.debug.Error, Error);
 
@@ -41116,7 +41125,6 @@ goog.require('goog.structs.Map');
 goog.require('lf.Exception');
 goog.require('lf.Global');
 goog.require('lf.proc.Database');
-goog.require('lf.schema.DataStoreType');
 goog.require('lf.schema.Database');
 goog.require('lf.schema.TableBuilder');
 goog.require('lf.service');
@@ -41201,28 +41209,6 @@ lf.schema.Builder.prototype.connect = function(opt_options) {
 
   var db = new lf.proc.Database(global);
   return db.init(upgradeCallback, backstoreType, bundledMode);
-};
-
-
-/**
- * @param {!function(!lf.raw.BackStore):!IThenable=} opt_onUpgrade
- * @param {boolean=} opt_volatile Default to false
- * @return {!IThenable.<!lf.proc.Database>}
- * @export
- * @deprecated Use connect().
- */
-lf.schema.Builder.prototype.getInstance = function(
-    opt_onUpgrade, opt_volatile) {
-  var global = this.getGlobal();
-  if (!global.isRegistered(lf.service.SCHEMA)) {
-    global.registerService(lf.service.SCHEMA, this.getSchema());
-  }
-
-  var db = new lf.proc.Database(global);
-  return db.init(
-      opt_onUpgrade,
-      opt_volatile ? lf.schema.DataStoreType.MEMORY : undefined,
-      false);
 };
 
 
