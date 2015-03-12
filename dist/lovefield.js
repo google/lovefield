@@ -36862,7 +36862,6 @@ function calculateCartesianProduct(keyRangeSets) {
 goog.provide('lf.proc.IndexRangeScanStep');
 
 goog.require('goog.Promise');
-goog.require('lf.Order');
 goog.require('lf.Row');
 goog.require('lf.proc.PhysicalQueryPlanNode');
 goog.require('lf.proc.Relation');
@@ -36877,11 +36876,10 @@ goog.require('lf.service');
  * @param {!lf.Global} global
  * @param {!lf.schema.Index} index
  * @param {!Array<!lf.index.KeyRange|!lf.index.SingleKeyRange>} keyRanges
- * @param {!lf.Order} order The order in which results will be returned.
- *     TODO(dpapad): This parameter needs to be changed to a boolean instead,
- *     either index's order or reverse order
+ * @param {boolean} reverseOrder Whether the results should be returned in
+ *     reverse index order.
  */
-lf.proc.IndexRangeScanStep = function(global, index, keyRanges, order) {
+lf.proc.IndexRangeScanStep = function(global, index, keyRanges, reverseOrder) {
   lf.proc.IndexRangeScanStep.base(this, 'constructor',
       0,
       lf.proc.PhysicalQueryPlanNode.ExecType.NO_CHILD);
@@ -36895,8 +36893,8 @@ lf.proc.IndexRangeScanStep = function(global, index, keyRanges, order) {
   /** @type {!Array<!lf.index.KeyRange|!lf.index.SingleKeyRange>} */
   this.keyRanges = keyRanges;
 
-  /** @type {!lf.Order} */
-  this.order = order;
+  /** @type {boolean} */
+  this.reverseOrder = reverseOrder;
 
   /** @type {?number} */
   this.limit = null;
@@ -36912,7 +36910,7 @@ lf.proc.IndexRangeScanStep.prototype.toString = function() {
   return 'index_range_scan(' +
       this.index.getNormalizedName() + ', ' +
       this.keyRanges.toString() + ', ' +
-      (this.order == lf.Order.ASC ? 'ASC' : 'DESC') +
+      (this.reverseOrder ? 'reverse' : 'natural') +
       (!goog.isNull(this.limit) ? ', limit:' + this.limit : '') +
       (!goog.isNull(this.skip) ? ', skip:' + this.skip : '') +
       ')';
@@ -36922,12 +36920,10 @@ lf.proc.IndexRangeScanStep.prototype.toString = function() {
 /** @override */
 lf.proc.IndexRangeScanStep.prototype.execInternal = function(
     journal, relations) {
-  var reverseOrder = (this.order != this.index.columns[0].order);
-
   var index = this.indexStore_.get(this.index.getNormalizedName());
   var rowIds = index.getRange(
       this.keyRanges,
-      reverseOrder,
+      this.reverseOrder,
       !goog.isNull(this.limit) ? this.limit : undefined,
       !goog.isNull(this.skip) ? this.skip : undefined);
 
@@ -37266,7 +37262,7 @@ lf.proc.IndexRangeScanPass.prototype.replaceWithIndexRangeScanStep_ = function(
   var indexRangeScanStep = new lf.proc.IndexRangeScanStep(
       this.global_, indexRangeCandidate.indexSchema,
       indexRangeCandidate.getKeyRangeCombinations(),
-      indexRangeCandidate.indexSchema.columns[0].order);
+      false /* reverseOrder */);
   var tableAccessByRowIdStep = new lf.proc.TableAccessByRowIdStep(
       this.global_, tableAccessFullStep.table);
   tableAccessByRowIdStep.addChild(indexRangeScanStep);
@@ -38213,7 +38209,7 @@ lf.proc.OrderByIndexPass.prototype.applyTableAccessFullOptimization_ =
     var columnIndex = orderBy.column.getIndices()[0];
     var indexRangeScanStep = new lf.proc.IndexRangeScanStep(
         this.global_, columnIndex, [lf.index.SingleKeyRange.all()],
-        orderBy.order);
+        orderBy.order != columnIndex.columns[0].order);
     var tableAccessByRowIdStep = new lf.proc.TableAccessByRowIdStep(
         this.global_, tableAccessFullStep.table);
     tableAccessByRowIdStep.addChild(indexRangeScanStep);
@@ -38243,7 +38239,9 @@ lf.proc.OrderByIndexPass.prototype.applyIndexRangeScanStepOptimization_ =
       /** @type {!lf.proc.PhysicalQueryPlanNode} */ (
           orderByStep.getChildAt(0)));
   if (!goog.isNull(indexRangeScanStep)) {
-    indexRangeScanStep.order = orderByStep.orderBy[0].order;
+    indexRangeScanStep.reverseOrder =
+        orderByStep.orderBy[0].order !=
+            indexRangeScanStep.index.columns[0].order;
     rootNode = /** @type {!lf.proc.PhysicalQueryPlanNode} */ (
         lf.tree.removeNode(orderByStep).parent);
   }

@@ -62,13 +62,14 @@ function testTree1() {
       '-skip(200)\n' +
       '--project()\n' +
       '---table_access_by_row_id(Employee)\n' +
-      '----index_range_scan(Employee.idx_salary, [unbound, unbound], ASC)\n';
+      '----index_range_scan(Employee.idx_salary, ' +
+          '[unbound, unbound], reverse)\n';
 
   var treeAfter =
       'project()\n' +
       '-table_access_by_row_id(Employee)\n' +
       '--index_range_scan(Employee.idx_salary, ' +
-          '[unbound, unbound], ASC, limit:100, skip:200)\n';
+          '[unbound, unbound], reverse, limit:100, skip:200)\n';
 
   var limitNode = new lf.proc.LimitStep(100);
   var skipNode = new lf.proc.SkipStep(200);
@@ -80,7 +81,7 @@ function testTree1() {
   projectNode.addChild(tableAccessByRowIdNode);
   var indexRangeScanStep = new lf.proc.IndexRangeScanStep(
       hr.db.getGlobal(), e.getIndices()[1], [lf.index.SingleKeyRange.all()],
-      lf.Order.ASC);
+      true);
   tableAccessByRowIdNode.addChild(indexRangeScanStep);
 
   var rootNodeBefore = limitNode;
@@ -104,7 +105,8 @@ function testTree2() {
       '--project()\n' +
       '---select(value_pred(Employee.id lt 300))\n' +
       '----table_access_by_row_id(Employee)\n' +
-      '-----index_range_scan(Employee.idx_salary, [unbound, unbound], ASC)\n';
+      '-----index_range_scan(Employee.idx_salary, ' +
+          '[unbound, unbound], reverse)\n';
 
   var limitNode = new lf.proc.LimitStep(100);
   var skipNode = new lf.proc.SkipStep(200);
@@ -118,7 +120,7 @@ function testTree2() {
   selectNode.addChild(tableAccessByRowIdNode);
   var indexRangeScanStep = new lf.proc.IndexRangeScanStep(
       hr.db.getGlobal(), e.getIndices()[1], [lf.index.SingleKeyRange.all()],
-      lf.Order.ASC);
+      true);
   tableAccessByRowIdNode.addChild(indexRangeScanStep);
 
   var rootNodeBefore = limitNode;
@@ -141,7 +143,7 @@ function testTree3() {
       '--project()\n' +
       '---table_access_by_row_id(Employee)\n' +
       '----index_range_scan(Employee.idx_salary, ' +
-          '[unbound, 1000],[2000, unbound], ASC)\n';
+          '[unbound, 1000],[2000, unbound], reverse)\n';
 
   var limitNode = new lf.proc.LimitStep(100);
   var skipNode = new lf.proc.SkipStep(200);
@@ -158,7 +160,7 @@ function testTree3() {
         lf.index.SingleKeyRange.upperBound(1000),
         lf.index.SingleKeyRange.lowerBound(2000)
       ],
-      lf.Order.ASC);
+      true);
   tableAccessByRowIdNode.addChild(indexRangeScanStep);
 
   var rootNodeBefore = limitNode;
@@ -181,7 +183,8 @@ function testTree4() {
       '-skip(200)\n' +
       '--project(Employee.id, groupBy(Employee.jobId))\n' +
       '---table_access_by_row_id(Employee)\n' +
-      '----index_range_scan(Employee.idx_salary, [unbound, unbound], ASC)\n';
+      '----index_range_scan(Employee.idx_salary, ' +
+          '[unbound, unbound], reverse)\n';
 
   var limitNode = new lf.proc.LimitStep(100);
   var skipNode = new lf.proc.SkipStep(200);
@@ -193,7 +196,7 @@ function testTree4() {
   projectNode.addChild(tableAccessByRowIdNode);
   var indexRangeScanStep = new lf.proc.IndexRangeScanStep(
       hr.db.getGlobal(), e.getIndices()[1], [lf.index.SingleKeyRange.all()],
-      lf.Order.ASC);
+      true);
   tableAccessByRowIdNode.addChild(indexRangeScanStep);
 
   var rootNodeBefore = limitNode;
@@ -216,7 +219,8 @@ function testTree5() {
       '-skip(200)\n' +
       '--project(MAX(Employee.salary),MIN(Employee.salary))\n' +
       '---table_access_by_row_id(Employee)\n' +
-      '----index_range_scan(Employee.idx_salary, [unbound, unbound], ASC)\n';
+      '----index_range_scan(Employee.idx_salary, ' +
+          '[unbound, unbound], reverse)\n';
 
   var limitNode = new lf.proc.LimitStep(100);
   var skipNode = new lf.proc.SkipStep(200);
@@ -231,7 +235,7 @@ function testTree5() {
   projectNode.addChild(tableAccessByRowIdNode);
   var indexRangeScanStep = new lf.proc.IndexRangeScanStep(
       hr.db.getGlobal(), e.getIndices()[1], [lf.index.SingleKeyRange.all()],
-      lf.Order.ASC);
+      true);
   tableAccessByRowIdNode.addChild(indexRangeScanStep);
 
   var rootNodeBefore = limitNode;
@@ -254,7 +258,8 @@ function testTree6() {
       '--project()\n' +
       '---order_by(Employee.salary DESC)\n' +
       '----table_access_by_row_id(Employee)\n' +
-      '-----index_range_scan(Employee.idx_salary, [unbound, unbound], ASC)\n';
+      '-----index_range_scan(Employee.idx_salary, ' +
+          '[unbound, unbound], reverse)\n';
 
   var limitNode = new lf.proc.LimitStep(100);
   var skipNode = new lf.proc.SkipStep(200);
@@ -271,7 +276,7 @@ function testTree6() {
   orderByNode.addChild(tableAccessByRowIdNode);
   var indexRangeScanStep = new lf.proc.IndexRangeScanStep(
       hr.db.getGlobal(), e.getIndices()[1], [lf.index.SingleKeyRange.all()],
-      lf.Order.ASC);
+      true);
   tableAccessByRowIdNode.addChild(indexRangeScanStep);
 
   var rootNodeBefore = limitNode;

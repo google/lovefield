@@ -74,7 +74,7 @@ function checkIndexRangeScan(order, description) {
       new lf.index.SingleKeyRange(
           'dummyName' + 5, 'dummyName' + 8, false, false);
   var step = new lf.proc.IndexRangeScanStep(
-      lf.Global.get(), index, [keyRange], order);
+      lf.Global.get(), index, [keyRange], false);
 
   var journal = new lf.cache.Journal(lf.Global.get(), [table]);
   step.exec(journal).then(

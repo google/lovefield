@@ -101,7 +101,7 @@ function testSimpleTree() {
       'limit(20)\n' +
       '-project()\n' +
       '--table_access_by_row_id(Employee)\n' +
-      '---index_range_scan(Employee.pkEmployee, (100, unbound], ASC)\n';
+      '---index_range_scan(Employee.pkEmployee, (100, unbound], natural)\n';
 
   // Generating a simple tree that has just one SelectNode corresponding to an
   // AND predicate.
@@ -132,7 +132,7 @@ function testTree1() {
   var treeAfter =
       'select(value_pred(Employee.salary eq 10000))\n' +
       '-table_access_by_row_id(Employee)\n' +
-      '--index_range_scan(Employee.pkEmployee, (100, unbound], ASC)\n';
+      '--index_range_scan(Employee.pkEmployee, (100, unbound], natural)\n';
 
   lf.testing.util.simulateIndexCost(
       propertyReplacer, indexStore, e.salary.getIndices()[0], 100);
@@ -169,11 +169,11 @@ function testTree2() {
       '---order_by(Employee.salary ASC)\n' +
       '----select(value_pred(Employee.salary eq 10000))\n' +
       '-----table_access_by_row_id(Employee)\n' +
-      '------index_range_scan(Employee.pkEmployee, (100, unbound], ASC)\n' +
+      '------index_range_scan(Employee.pkEmployee, (100, unbound], natural)\n' +
       '---order_by(Job.title ASC)\n' +
       '----select(value_pred(Job.maxSalary eq 1000))\n' +
       '-----table_access_by_row_id(Job)\n' +
-      '------index_range_scan(Job.pkJob, (100, unbound], ASC)\n';
+      '------index_range_scan(Job.pkJob, (100, unbound], natural)\n';
 
   lf.testing.util.simulateIndexCost(
       propertyReplacer, indexStore, e.salary.getIndices()[0], 100);
@@ -210,7 +210,7 @@ function testTree3() {
       'project()\n' +
       '-cross_product\n' +
       '--table_access_by_row_id(Job)\n' +
-      '---index_range_scan(Job.pkJob, [100, 100], ASC)\n' +
+      '---index_range_scan(Job.pkJob, [100, 100], natural)\n' +
       '--table_access(Department)\n';
 
   var crossProductStep = new lf.proc.CrossProductStep();
@@ -254,7 +254,7 @@ function testTree_MultiplePredicates_SingleColumnIndices() {
   var treeAfter =
       'select(value_pred(Employee.id gt 100))\n' +
       '-table_access_by_row_id(Employee)\n' +
-      '--index_range_scan(Employee.idx_salary, [100, 200], DESC)\n';
+      '--index_range_scan(Employee.idx_salary, [100, 200], natural)\n';
 
   lf.testing.util.simulateIndexCost(
       propertyReplacer, indexStore, e.salary.getIndices()[0], 10);
@@ -292,7 +292,7 @@ function testTree_MultipleCrossColumnIndices() {
       '-select(value_pred(DummyTable.number gte 400))\n' +
       '--table_access_by_row_id(DummyTable)\n' +
       '---index_range_scan(DummyTable.uq_constraint, ' +
-          '(100, unbound],[StringValue2, StringValue2], ASC)\n';
+          '(100, unbound],[StringValue2, StringValue2], natural)\n';
 
   var indices = dt.getIndices();
   lf.testing.util.simulateIndexCost(
@@ -339,7 +339,7 @@ function testTree_MultipleCrossColumnIndices_PartialMatching() {
       'select(value_pred(DummyTable.integer gt 100))\n' +
       '-table_access_by_row_id(DummyTable)\n' +
       '--index_range_scan(DummyTable.pkDummyTable, ' +
-          '[StringValue, StringValue],[unbound, unbound], ASC)\n';
+          '[StringValue, StringValue],[unbound, unbound], natural)\n';
 
   var indices = dt.getIndices();
   lf.testing.util.simulateIndexCost(

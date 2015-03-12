@@ -66,7 +66,7 @@ function testTree1() {
       'project()\n' +
       '-select(value_pred(Employee.id gt 100))\n' +
       '--table_access_by_row_id(Employee)\n' +
-      '---index_range_scan(Employee.idx_salary, [unbound, unbound], DESC)\n';
+      '---index_range_scan(Employee.idx_salary, [unbound, unbound], natural)\n';
 
   var rootNodeBefore = constructTree1(e.salary, lf.Order.DESC);
   assertEquals(treeBefore, lf.tree.toString(rootNodeBefore));
@@ -86,12 +86,12 @@ function testTree2() {
       'project()\n' +
       '-order_by(Employee.salary DESC)\n' +
       '--table_access_by_row_id(Employee)\n' +
-      '---index_range_scan(Employee.idx_salary, [10000, unbound], ASC)\n';
+      '---index_range_scan(Employee.idx_salary, [10000, unbound], reverse)\n';
 
   var treeAfter =
       'project()\n' +
       '-table_access_by_row_id(Employee)\n' +
-      '--index_range_scan(Employee.idx_salary, [10000, unbound], DESC)\n';
+      '--index_range_scan(Employee.idx_salary, [10000, unbound], natural)\n';
 
   var rootNodeBefore = new lf.proc.ProjectStep([], null);
   var orderByNode = new lf.proc.OrderByStep([{
@@ -102,7 +102,7 @@ function testTree2() {
       hr.db.getGlobal(), e);
   var indexRangeScanNode = new lf.proc.IndexRangeScanStep(
       hr.db.getGlobal(), e.getIndices()[1],
-      [lf.index.SingleKeyRange.lowerBound(10000)], lf.Order.ASC);
+      [lf.index.SingleKeyRange.lowerBound(10000)], true);
   tableAccessByRowIdNode.addChild(indexRangeScanNode);
   orderByNode.addChild(tableAccessByRowIdNode);
   rootNodeBefore.addChild(orderByNode);
