@@ -252,7 +252,7 @@ function testTree6() {
       'limit(100)\n' +
       '-skip(200)\n' +
       '--project()\n' +
-      '---order_by(Employee.salary)\n' +
+      '---order_by(Employee.salary DESC)\n' +
       '----table_access_by_row_id(Employee)\n' +
       '-----index_range_scan(Employee.idx_salary, [unbound, unbound], ASC)\n';
 

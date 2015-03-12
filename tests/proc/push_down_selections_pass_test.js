@@ -59,7 +59,7 @@ function testTree_ValuePredicates1() {
   var hireDate = new Date(1422667933572);
 
   var treeBefore =
-      'order_by(Employee.id)\n' +
+      'order_by(Employee.id ASC)\n' +
       '-select(value_pred(Employee.salary gt 1000))\n' +
       '--select(value_pred(Job.minSalary gt 100))\n' +
       '---select(value_pred(Employee.hireDate lt ' + hireDate.toString() +
@@ -69,7 +69,7 @@ function testTree_ValuePredicates1() {
       '-----table_access(Job)\n';
 
   var treeAfter =
-      'order_by(Employee.id)\n' +
+      'order_by(Employee.id ASC)\n' +
       '-cross_product\n' +
       '--select(value_pred(Employee.salary gt 1000))\n' +
       '---select(value_pred(Employee.hireDate lt ' + hireDate.toString() +
@@ -108,7 +108,7 @@ function testTree_ValuePredicates2() {
   var e = schema.getEmployee();
 
   var treeBefore =
-      'order_by(Employee.id)\n' +
+      'order_by(Employee.id ASC)\n' +
       '-select(value_pred(Employee.salary gt 10))\n' +
       '--select(value_pred(Employee.salary lt 20))\n' +
       '---table_access(Employee)\n';
@@ -139,14 +139,14 @@ function testTree_ValuePredicates3() {
   var j = schema.getJob();
 
   var treeBefore =
-      'order_by(Employee.id)\n' +
+      'order_by(Employee.id ASC)\n' +
       '-select(value_pred(Employee.salary gt 10))\n' +
       '--cross_product\n' +
       '---table_access(Employee)\n' +
       '---table_access(Job)\n';
 
   var treeAfter =
-      'order_by(Employee.id)\n' +
+      'order_by(Employee.id ASC)\n' +
       '-cross_product\n' +
       '--select(value_pred(Employee.salary gt 10))\n' +
       '---table_access(Employee)\n' +

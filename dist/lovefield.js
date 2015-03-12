@@ -32626,6 +32626,8 @@ lf.proc.AggregationStep.Calculator_.distinct_ = function(relation, column) {
 goog.provide('lf.query.SelectContext');
 goog.provide('lf.query.SelectContext.OrderBy');
 
+goog.require('lf.Order');
+
 
 
 /**
@@ -32672,8 +32674,9 @@ lf.query.SelectContext.OrderBy;
 lf.query.SelectContext.orderByToString = function(orderBy) {
   var out = '';
   orderBy.forEach(function(orderByEl, index) {
-    out += orderByEl.column.getNormalizedName();
-    if (index > orderBy.length - 1) {
+    out += orderByEl.column.getNormalizedName() + ' ';
+    out += orderByEl.order == lf.Order.ASC ? 'ASC' : 'DESC';
+    if (index < orderBy.length - 1) {
       out += ', ';
     }
   });
@@ -38166,40 +38169,20 @@ goog.inherits(lf.proc.OrderByIndexPass, lf.proc.RewritePass);
 
 /** @override */
 lf.proc.OrderByIndexPass.prototype.rewrite = function(rootNode) {
-  this.rootNode = rootNode;
-  this.traverse_(this.rootNode);
-  return this.rootNode;
-};
+  var orderByStep = lf.proc.OrderByIndexPass.findOrderByStep_(rootNode);
 
-
-/**
- * Traverses each node of the tree starting at the given node, rewriting the
- * tree if possible.
- * @param {!lf.proc.PhysicalQueryPlanNode} rootNode The root node of the
- *     sub-tree to be traversed.
- * @private
- */
-lf.proc.OrderByIndexPass.prototype.traverse_ = function(rootNode) {
-  var newRootNode = rootNode;
-  // TODO(dpapad): Currently only OrderByStep that sort by a single column are
-  // considered. Once multi-column indices are implemented (b/17486563), this
-  // needs to be updated such that it can optimize cases where sorting is
-  // performed by multiple columns, and a multi-column index exists for those
-  // columns.
-  if (rootNode instanceof lf.proc.OrderByStep &&
-      rootNode.orderBy.length == 1 &&
-      rootNode.orderBy[0].column.getIndices().length != 0) {
-    newRootNode = this.applyTableAccessFullOptimization_(rootNode);
-    if (newRootNode == rootNode) {
-      newRootNode = this.applyIndexRangeScanStepOptimization_(rootNode);
-    }
+  if (goog.isNull(orderByStep)) {
+    // No OrderByStep was found.
+    return rootNode;
   }
 
-  newRootNode.getChildren().forEach(
-      function(child) {
-        this.traverse_(
-            /** @type {!lf.proc.PhysicalQueryPlanNode} */ (child));
-      }, this);
+  var newSubtreeRoot = this.applyTableAccessFullOptimization_(orderByStep);
+  if (newSubtreeRoot == orderByStep) {
+    newSubtreeRoot = this.applyIndexRangeScanStepOptimization_(orderByStep);
+  }
+
+  return /** @type {!lf.proc.PhysicalQueryPlanNode} */ (
+      newSubtreeRoot.getRoot());
 };
 
 
@@ -38309,6 +38292,29 @@ lf.proc.OrderByIndexPass.findTableAccessFullStep_ = function(rootNode) {
       /** @type {!Array<lf.proc.TableAccessFullStep>} */ (
       lf.tree.find(rootNode, filterFn, stopFn));
   return tableAccessFullSteps.length > 0 ? tableAccessFullSteps[0] : null;
+};
+
+
+/**
+ * Finds the OrderByStep if it exists in the tree.
+ * @param {!lf.proc.PhysicalQueryPlanNode} rootNode
+ * @return {?lf.proc.OrderByStep} The OrderByStep or null if it was not found.
+ * @private
+ */
+lf.proc.OrderByIndexPass.findOrderByStep_ = function(rootNode) {
+  // TODO(dpapad): Currently only OrderByStep that sort by a single column are
+  // considered. Once multi-column indices are implemented, this needs to be
+  // updated such that it can optimize cases where sorting is performed by
+  // multiple columns, and a multi-column index exists for those columns.
+  var filterFn = function(node) {
+    return node instanceof lf.proc.OrderByStep &&
+        node.orderBy.length == 1 &&
+        node.orderBy[0].column.getIndices().length != 0;
+  };
+
+  var orderBySteps = lf.tree.find(rootNode, filterFn);
+  return orderBySteps.length > 0 ?
+      /** @type {lf.proc.OrderByStep} */ (orderBySteps[0]) : null;
 };
 
 /**

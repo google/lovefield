@@ -58,7 +58,7 @@ function setUp() {
 function testTree1() {
   var treeBefore =
       'project()\n' +
-      '-order_by(Employee.salary)\n' +
+      '-order_by(Employee.salary DESC)\n' +
       '--select(value_pred(Employee.id gt 100))\n' +
       '---table_access(Employee)\n';
 
@@ -84,7 +84,7 @@ function testTree1() {
 function testTree2() {
   var treeBefore =
       'project()\n' +
-      '-order_by(Employee.salary)\n' +
+      '-order_by(Employee.salary DESC)\n' +
       '--table_access_by_row_id(Employee)\n' +
       '---index_range_scan(Employee.idx_salary, [10000, unbound], ASC)\n';
 
@@ -122,7 +122,7 @@ function testTree2() {
 function testTree3() {
   var treeBefore =
       'project()\n' +
-      '-order_by(Employee.hireDate)\n' +
+      '-order_by(Employee.hireDate ASC)\n' +
       '--select(value_pred(Employee.id gt 100))\n' +
       '---table_access(Employee)\n';
 
