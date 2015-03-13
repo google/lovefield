@@ -40,11 +40,16 @@ var asyncTestCase = goog.testing.AsyncTestCase.createAndInstall(
 var e;
 
 
+/** @type {!hr.db.schema.DummyTable} */
+var dt;
+
+
 function setUp() {
   asyncTestCase.waitForAsync('setUp');
   hr.db.connect({storeType: lf.schema.DataStoreType.MEMORY}).then(function(
       database) {
         e = database.getSchema().getEmployee();
+        dt = database.getSchema().getDummyTable();
       }).then(function() {
     asyncTestCase.continueTesting();
   }, fail);
@@ -137,6 +142,82 @@ function testTree3() {
 
 
 /**
+ * Tests the case where a cross-column index can be leveraged to perform the
+ * ORDER BY, using the index's natural order.
+ */
+function testTree_TableAccess_CrossColumnIndex_Natural() {
+  var treeBefore =
+      'project()\n' +
+      '-order_by(DummyTable.string ASC, DummyTable.number ASC)\n' +
+      '--select(value_pred(DummyTable.boolean eq false))\n' +
+      '---table_access(DummyTable)\n';
+
+  var treeAfter =
+      'project()\n' +
+      '-select(value_pred(DummyTable.boolean eq false))\n' +
+      '--table_access_by_row_id(DummyTable)\n' +
+      '---index_range_scan(DummyTable.pkDummyTable, ' +
+          '[unbound, unbound],[unbound, unbound], natural)\n';
+
+  var rootNodeBefore = constructTree2(lf.Order.ASC, lf.Order.ASC);
+  assertEquals(treeBefore, lf.tree.toString(rootNodeBefore));
+
+  var pass = new lf.proc.OrderByIndexPass(hr.db.getGlobal());
+  var rootNodeAfter = pass.rewrite(rootNodeBefore);
+  assertEquals(treeAfter, lf.tree.toString(rootNodeAfter));
+}
+
+
+/**
+ * Tests the case where a cross-column index can be leveraged to perform the
+ * ORDER BY, using the index's reverse order.
+ */
+function testTree_TableAccess_CrossColumnIndex_Reverse() {
+  var treeBefore =
+      'project()\n' +
+      '-order_by(DummyTable.string DESC, DummyTable.number DESC)\n' +
+      '--select(value_pred(DummyTable.boolean eq false))\n' +
+      '---table_access(DummyTable)\n';
+
+  var treeAfter =
+      'project()\n' +
+      '-select(value_pred(DummyTable.boolean eq false))\n' +
+      '--table_access_by_row_id(DummyTable)\n' +
+      '---index_range_scan(DummyTable.pkDummyTable, ' +
+          '[unbound, unbound],[unbound, unbound], reverse)\n';
+
+  var rootNodeBefore = constructTree2(lf.Order.DESC, lf.Order.DESC);
+  assertEquals(treeBefore, lf.tree.toString(rootNodeBefore));
+
+  var pass = new lf.proc.OrderByIndexPass(hr.db.getGlobal());
+  var rootNodeAfter = pass.rewrite(rootNodeBefore);
+  assertEquals(treeAfter, lf.tree.toString(rootNodeAfter));
+}
+
+
+/**
+ * Tests the case where an existing cross-column index can't be leveraged to
+ * perform the ORDER BY, even though it refers to the same columns as the ORDER
+ * BY because the requested order does not match the index's natural or reverse
+ * order.
+ */
+function testTree_TableAccess_CrossColumnIndex_Unaffected() {
+  var treeBefore =
+      'project()\n' +
+      '-order_by(DummyTable.string DESC, DummyTable.number ASC)\n' +
+      '--select(value_pred(DummyTable.boolean eq false))\n' +
+      '---table_access(DummyTable)\n';
+
+  var rootNodeBefore = constructTree2(lf.Order.DESC, lf.Order.ASC);
+  assertEquals(treeBefore, lf.tree.toString(rootNodeBefore));
+
+  var pass = new lf.proc.OrderByIndexPass(hr.db.getGlobal());
+  var rootNodeAfter = pass.rewrite(rootNodeBefore);
+  assertEquals(treeBefore, lf.tree.toString(rootNodeAfter));
+}
+
+
+/**
  * Constructs a tree to be used for testing.
  * @param {!lf.schema.Column} sortColumn The column on which to sort.
  * @param {!lf.Order} sortOrder The sort order.
@@ -156,4 +237,32 @@ function constructTree1(sortColumn, sortOrder) {
   rootNode.addChild(orderByNode);
 
   return rootNode;
+}
+
+
+/**
+ * Constructs a tree to be used for testing.
+ * @param {!lf.Order} sortOrder1 The sort order for the 1st column.
+ * @param {!lf.Order} sortOrder2 The sort order for the 2nd column.
+ * @return {!lf.proc.PhysicalQueryPlanNode}
+ */
+function constructTree2(sortOrder1, sortOrder2) {
+  var projectNode = new lf.proc.ProjectStep([], null);
+  var orderByNode = new lf.proc.OrderByStep([
+    {
+      column: dt.string,
+      order: sortOrder1
+    }, {
+      column: dt.number,
+      order: sortOrder2
+    }
+  ]);
+  var selectNode = new lf.proc.SelectStep(dt.boolean.eq(false));
+  var tableAccessNode = new lf.proc.TableAccessFullStep(hr.db.getGlobal(), dt);
+
+  selectNode.addChild(tableAccessNode);
+  orderByNode.addChild(selectNode);
+  projectNode.addChild(orderByNode);
+
+  return projectNode;
 }
