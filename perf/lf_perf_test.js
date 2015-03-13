@@ -298,6 +298,10 @@ function selectRunner(name, db) {
         selectBenchmark.queryOrderByNonIndexed.bind(selectBenchmark),
         selectBenchmark.verifyOrderByNonIndexed.bind(selectBenchmark));
     benchmarkRunner.schedule(
+        'SelectOrderByIndexedCrossColumn',
+        selectBenchmark.queryOrderByIndexedCrossColumn.bind(selectBenchmark),
+        selectBenchmark.verifyOrderByIndexedCrossColumn.bind(selectBenchmark));
+    benchmarkRunner.schedule(
         'SelectLimitSkipIndexed',
         selectBenchmark.queryLimitSkipIndexed.bind(selectBenchmark),
         selectBenchmark.verifyLimitSkipIndexed.bind(selectBenchmark));

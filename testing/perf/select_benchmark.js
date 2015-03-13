@@ -39,6 +39,9 @@ lf.testing.perf.SelectBenchmark = function(db, dataGenerator) {
   /** @private {!hr.db.schema.Job} */
   this.j_ = this.db_.getSchema().getJob();
 
+  /** @private {!hr.db.schema.CrossColumnTable} */
+  this.cct_ = this.db_.getSchema().getCrossColumnTable();
+
   /** @private {!lf.testing.hrSchema.MockDataGenerator} */
   this.dataGenerator_ = dataGenerator;
 
@@ -161,7 +164,23 @@ lf.testing.perf.SelectBenchmark.prototype.insertSampleData = function() {
       values(this.dataGenerator_.sampleJobs).
       exec();
 
-  return goog.Promise.all([insertJobs, insertEmployees]);
+  var crossColumnTableRows = [];
+  for (var i = 0; i < 200; i++) {
+    for (var j = 0; j < 200; j++) {
+      crossColumnTableRows.push(this.cct_.createRow(
+          /** @type {!hr.db.row.CrossColumnTableType} */ ({
+            integer1: i,
+            integer2: j
+          })));
+    }
+  }
+  var insertCrossColumnTable = this.db_.
+      insert().into(this.cct_).
+      values(crossColumnTableRows).
+      exec();
+
+  return goog.Promise.all([
+    insertJobs, insertEmployees, insertCrossColumnTable]);
 };
 
 
@@ -449,6 +468,38 @@ lf.testing.perf.SelectBenchmark.prototype.verifyOrderByIndexed =
     assertTrue(goog.isDefAndNotNull(results[i - 1].salary));
     if (results[i].salary > results[i - 1].salary) {
       return goog.Promise.resolve(false);
+    }
+  }
+
+  return goog.Promise.resolve(true);
+};
+
+
+/** @return {!IThenable} */
+lf.testing.perf.SelectBenchmark.prototype.queryOrderByIndexedCrossColumn =
+    function() {
+  return this.db_.
+      select().
+      from(this.cct_).
+      orderBy(this.cct_.integer1, lf.Order.ASC).
+      orderBy(this.cct_.integer2, lf.Order.DESC).
+      exec();
+};
+
+
+/**
+ * @param {!Array.<!Object>} results
+ * @return {!IThenable<boolean>}
+ */
+lf.testing.perf.SelectBenchmark.prototype.verifyOrderByIndexedCrossColumn =
+    function(results) {
+  assertEquals(200 * 200, results.length);
+  var objCounter = 0;
+  for (var i = 0; i < 200; i++) {
+    for (var j = 199; j >= 0; j--) {
+      assertEquals(i, results[objCounter]['integer1']);
+      assertEquals(j, results[objCounter]['integer2']);
+      objCounter++;
     }
   }
 

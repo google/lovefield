@@ -157,3 +157,15 @@ table:
       unique:
         uq_constraint:
           column: [integer, string2]
+
+  CrossColumnTable:
+    column:
+      integer1: integer
+      integer2: integer
+    index:
+      idx_ascDesc:
+        column:
+          - name: integer1
+            order: asc
+          - name: integer2
+            order: desc
