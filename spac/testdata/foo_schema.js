@@ -24,6 +24,11 @@ foo.db.schema.Database = function() {
   /** @private {!Object} */
   this.tableMap_ = {};
 
+  /** @private {!lf.schema.Database.Pragma} */
+  this.pragma_ = {
+    enableBundledMode: true
+  };
+
   /** @private {!foo.db.schema.Foo} */
   this.foo_ = new foo.db.schema.Foo();
   this.tableMap_['Foo'] = this.foo_;
@@ -54,6 +59,12 @@ foo.db.schema.Database.prototype.tables = function() {
 /** @override */
 foo.db.schema.Database.prototype.table = function(tableName) {
   return this.tableMap_[tableName] || null;
+};
+
+
+/** @override */
+foo.db.schema.Database.prototype.pragma = function() {
+  return this.pragma_;
 };
 
 

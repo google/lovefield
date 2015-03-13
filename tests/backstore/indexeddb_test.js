@@ -131,7 +131,8 @@ function testSCUD_Bundled() {
   }
 
   schema.setName(schema.name() + '_bundled');
-  db = new lf.backstore.IndexedDB(lf.Global.get(), schema, true);
+  schema.setBundledMode(true);
+  db = new lf.backstore.IndexedDB(lf.Global.get(), schema);
   var scudTester = new lf.testing.backstore.ScudTester(db, lf.Global.get());
 
   scudTester.run().then(function() {
@@ -149,7 +150,8 @@ function testTwoTableInserts_Bundled() {
 
   var global = lf.Global.get();
   schema.setName(schema.name() + '_b2');
-  db = new lf.backstore.IndexedDB(global, schema, true);
+  schema.setBundledMode(true);
+  db = new lf.backstore.IndexedDB(global, schema);
   global.registerService(lf.service.BACK_STORE, db);
 
   /** @const {!Object} */
@@ -337,7 +339,8 @@ function testScanRowId_BundledDB() {
     return tx.finished();
   };
 
-  db = new lf.backstore.IndexedDB(lf.Global.get(), schema, true);
+  schema.setBundledMode(true);
+  db = new lf.backstore.IndexedDB(lf.Global.get(), schema);
   db.init().then(function() {
     return insertIntoTable();
   }).then(function() {

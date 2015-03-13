@@ -39,7 +39,10 @@ var capability;
 /** @return {!lf.schema.Builder} */
 function createSchemaBuilder() {
   var ds = lf.schema.create('hr' + goog.now(), 1);
-  ds.setPragma('bundledMode', true);
+  ds.setPragma({
+    enableBundledMode: true
+  });
+
   ds.createTable('Region').
       addColumn('id', lf.Type.STRING).
       addColumn('name', lf.Type.STRING).

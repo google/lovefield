@@ -85,6 +85,11 @@ lf.testing.MockSchema = function() {
 
   /** @private {number} */
   this.version_ = 1;
+
+  /** @private {!lf.schema.Database.Pragma} */
+  this.pragma_ = {
+    enableBundledMode: false
+  };
 };
 
 
@@ -129,6 +134,12 @@ lf.testing.MockSchema.prototype.table = function(tableName) {
 };
 
 
+/** @override */
+lf.testing.MockSchema.prototype.pragma = function() {
+  return this.pragma_;
+};
+
+
 /** @param {string} name */
 lf.testing.MockSchema.prototype.setName = function(name) {
   this.name_ = name;
@@ -138,4 +149,10 @@ lf.testing.MockSchema.prototype.setName = function(name) {
 /** @param {number} version */
 lf.testing.MockSchema.prototype.setVersion = function(version) {
   this.version_ = version;
+};
+
+
+/** @param {boolean} mode */
+lf.testing.MockSchema.prototype.setBundledMode = function(mode) {
+  this.pragma_.enableBundledMode = mode;
 };

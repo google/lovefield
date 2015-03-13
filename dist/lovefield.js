@@ -23342,9 +23342,8 @@ goog.forwardDeclare('goog.debug.Logger');
  *
  * @param {!lf.Global} global
  * @param {!lf.schema.Database} schema
- * @param {boolean=} opt_bundleMode Enable bundle mode, default to false.
  */
-lf.backstore.IndexedDB = function(global, schema, opt_bundleMode) {
+lf.backstore.IndexedDB = function(global, schema) {
   /** @private {!lf.Global} */
   this.global_ = global;
 
@@ -23358,7 +23357,8 @@ lf.backstore.IndexedDB = function(global, schema, opt_bundleMode) {
   this.logger_ = goog.log.getLogger('lf.backstore.IndexedDB');
 
   /** @private {boolean} */
-  this.bundleMode_ = opt_bundleMode || false;
+  this.bundledMode_ = /** @type {boolean} */ (
+      schema.pragma().enableBundledMode) || false;
 };
 
 
@@ -23427,7 +23427,7 @@ lf.backstore.IndexedDB.prototype.onUpgradeNeeded_ = function(onUpgrade, ev) {
   var db = ev.target.result;
   var tx = ev.target.transaction;
   var rawDb = new lf.backstore.IndexedDBRawBackStore(
-      ev.oldVersion, db, tx, this.bundleMode_);
+      ev.oldVersion, db, tx, this.bundledMode_);
   this.removeIndexTables_(db, tx);
   this.createTables_(db, tx);
   return onUpgrade(rawDb);
@@ -23527,11 +23527,11 @@ lf.backstore.IndexedDB.prototype.createIndexTable_ = function(
     db.createObjectStore(indexName, {keyPath: 'id'});
     var store = tx.objectStore(indexName);
 
-    // Need to take into account whether bundleMode_ is enabled when
+    // Need to take into account whether bundledMode_ is enabled when
     // initializing the index metadata row, therefore wrapping the native
     // IDBObjectStore with ObjectStore/BundledObjectStore, since those classes
     // already handle serializing the row appropriately.
-    var objectStore = this.bundleMode_ ?
+    var objectStore = this.bundledMode_ ?
         lf.backstore.BundledObjectStore.forTableType(
             this.global_, store, lf.Row.deserialize,
             lf.backstore.TableType.INDEX) :
@@ -23558,7 +23558,7 @@ lf.backstore.IndexedDB.prototype.createTx = function(
   var nativeTx = this.db_.transaction(scope,
       type == lf.TransactionType.READ_ONLY ? 'readonly' : 'readwrite');
   return new lf.backstore.IndexedDBTx(
-      this.global_, nativeTx, journal, type, this.bundleMode_);
+      this.global_, nativeTx, journal, type, this.bundledMode_);
 };
 
 
@@ -23581,7 +23581,7 @@ lf.backstore.IndexedDB.prototype.scanRowId_ = function(opt_tx) {
    * @return {number} Max row id
    */
   var extractRowId = goog.bind(function(cursor) {
-    if (this.bundleMode_) {
+    if (this.bundledMode_) {
       var page = lf.backstore.Page.deserialize(cursor.value);
       return goog.object.getKeys(page.getPayload()).reduce(function(prev, cur) {
         return Math.max(prev, cur);
@@ -31725,8 +31725,23 @@ lf.schema.Database.prototype.table;
 
 
 /**
+ * Retrieves pragma object.
+ * @return {!lf.schema.Database.Pragma}
+ */
+lf.schema.Database.prototype.pragma;
+
+
+/**
+ * @typedef {{
+ *   enableBundledMode: (undefined|boolean)
+ * }}
+ */
+lf.schema.Database.Pragma;
+
+
+/**
  * The available data store types.
- * @enum {number}
+ * @export @enum {number}
  */
 lf.schema.DataStoreType = {
   INDEXED_DB: 0,
@@ -39545,11 +39560,10 @@ goog.require('lf.service');
  * @param {!lf.schema.DataStoreType} dataStoreType The type of backing store
  *     to use. Defaults to INDEXED_DB.
  * @param {!function(!lf.raw.BackStore):!IThenable=} opt_onUpgrade
- * @param {boolean=} opt_bundledMode
  * @return {!IThenable} A promise resolved after all initialization operations
  *     have finished.
  */
-lf.base.init = function(global, dataStoreType, opt_onUpgrade, opt_bundledMode) {
+lf.base.init = function(global, dataStoreType, opt_onUpgrade) {
   var schema = global.getService(lf.service.SCHEMA);
 
   var cache = new lf.cache.DefaultCache();
@@ -39557,7 +39571,7 @@ lf.base.init = function(global, dataStoreType, opt_onUpgrade, opt_bundledMode) {
 
   var backStore = (dataStoreType == lf.schema.DataStoreType.MEMORY) ?
       new lf.backstore.Memory(schema) :
-      new lf.backstore.IndexedDB(global, schema, opt_bundledMode);
+      new lf.backstore.IndexedDB(global, schema);
   global.registerService(lf.service.BACK_STORE, backStore);
 
   return backStore.init(opt_onUpgrade).then(function() {
@@ -40111,12 +40125,10 @@ lf.proc.Database = function(global) {
 /**
  * @param {!function(!lf.raw.BackStore):!IThenable=} opt_onUpgrade
  * @param {lf.schema.DataStoreType=} opt_backStoreType
- * @param {boolean=} opt_bundledMode
  * @return {!IThenable.<!lf.proc.Database>}
  * @export
  */
-lf.proc.Database.prototype.init = function(
-    opt_onUpgrade, opt_backStoreType, opt_bundledMode) {
+lf.proc.Database.prototype.init = function(opt_onUpgrade, opt_backStoreType) {
   // The SCHEMA might have been removed from this.global_ in the case where
   // lf.proc.Database#close() was called, therefore it needs to be re-added.
   this.global_.registerService(lf.service.SCHEMA, this.schema_);
@@ -40125,8 +40137,7 @@ lf.proc.Database.prototype.init = function(
       lf.base.init(
           this.global_,
           opt_backStoreType || lf.schema.DataStoreType.INDEXED_DB,
-          opt_onUpgrade,
-          opt_bundledMode).then(goog.bind(function() {
+          opt_onUpgrade).then(goog.bind(function() {
         this.initialized_ = true;
         return this;
       }, this)));
@@ -41203,10 +41214,9 @@ lf.schema.Builder.prototype.connect = function(opt_options) {
       opt_options.onUpgrade : undefined;
   var backstoreType = (opt_options && opt_options.storeType) ?
       opt_options.storeType : undefined;
-  var bundledMode = this.schema_.getBundledMode();
 
   var db = new lf.proc.Database(global);
-  return db.init(upgradeCallback, backstoreType, bundledMode);
+  return db.init(upgradeCallback, backstoreType);
 };
 
 
@@ -41227,13 +41237,19 @@ lf.schema.Builder.prototype.createTable = function(tableName) {
 
 
 /**
- * @param {string} pragmaName
- * @param {*} value
+ * @param {!lf.schema.Database.Pragma} pragma
+ * @return {!lf.schema.Builder}
+ * @export
  */
-lf.schema.Builder.prototype.setPragma = function(pragmaName, value) {
-  if (pragmaName == 'bundledMode' && typeof(value) == 'boolean') {
-    this.schema_.setBundledMode(value);
+lf.schema.Builder.prototype.setPragma = function(pragma) {
+  if (this.finalized_) {
+    throw new lf.Exception(
+        lf.Exception.Type.SYNTAX,
+        'Schema is already finalized.');
   }
+
+  this.schema_.setPragma(pragma);
+  return this;
 };
 
 
@@ -41256,8 +41272,10 @@ lf.schema.DatabaseSchema_ = function(name, version) {
   /** @private {!goog.structs.Map<string, !lf.schema.Table>} */
   this.tables_ = new goog.structs.Map();
 
-  /** @private {boolean} */
-  this.bundledMode_ = false;
+  /** @private {!lf.schema.Database.Pragma} */
+  this.pragma_ = {
+    enableBundledMode: false
+  };
 };
 
 
@@ -41296,15 +41314,15 @@ lf.schema.DatabaseSchema_.prototype.setTable = function(table) {
 };
 
 
-/** @return {boolean} */
-lf.schema.DatabaseSchema_.prototype.getBundledMode = function() {
-  return this.bundledMode_;
+/** @override */
+lf.schema.DatabaseSchema_.prototype.pragma = function() {
+  return this.pragma_;
 };
 
 
-/** @param {boolean} value */
-lf.schema.DatabaseSchema_.prototype.setBundledMode = function(value) {
-  this.bundledMode_ = value;
+/** @param {!lf.schema.Database.Pragma} pragma */
+lf.schema.DatabaseSchema_.prototype.setPragma = function(pragma) {
+  this.pragma_ = pragma;
 };
 
 

@@ -40,6 +40,11 @@ lovefield.db.schema.Database = function() {
   /** @private {!Object} */
   this.tableMap_ = {};
 
+  /** @private {!lf.schema.Database.Pragma} */
+  this.pragma_ = {
+    enableBundledMode: false
+  };
+
   /** @private {!lovefield.db.schema.Album} */
   this.album_ = new lovefield.db.schema.Album();
   this.tableMap_['Album'] = this.album_;
@@ -90,6 +95,12 @@ lovefield.db.schema.Database.prototype.tables = function() {
 /** @override */
 lovefield.db.schema.Database.prototype.table = function(tableName) {
   return this.tableMap_[tableName] || null;
+};
+
+
+/** @override */
+lovefield.db.schema.Database.prototype.pragma = function() {
+  return this.pragma_;
 };
 
 

@@ -53,5 +53,5 @@ lovefield.db.connect = function(opt_options) {
       opt_options.onUpgrade : undefined;
   var backstoreType = (opt_options && opt_options.storeType) ?
       opt_options.storeType : undefined;
-  return db.init(upgradeCallback, backstoreType, false);
+  return db.init(upgradeCallback, backstoreType);
 };

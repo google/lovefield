@@ -57,5 +57,5 @@ goog.require('lf.service.ServiceId');
       opt_options.onUpgrade : undefined;
   var backstoreType = (opt_options && opt_options.storeType) ?
       opt_options.storeType : undefined;
-  return db.init(upgradeCallback, backstoreType, #bundledmode);
+  return db.init(upgradeCallback, backstoreType);
 };

@@ -75,7 +75,7 @@ function randomizeSchemaName(schema) {
 function testInit_IndexedDB_NonBundled() {
   var schema = randomizeSchemaName(hr.db.getSchema());
   var global = hr.db.getGlobal();
-  checkInit_IndexedDB(schema, global, false);
+  checkInit_IndexedDB(schema, global);
 }
 
 
@@ -85,7 +85,7 @@ function testInit_IndexedDB_Bundled() {
   var cache = new lf.cache.DefaultCache();
   global.registerService(lf.service.CACHE, cache);
 
-  checkInit_IndexedDB(schema, global, true);
+  checkInit_IndexedDB(schema, global);
 }
 
 
@@ -95,20 +95,19 @@ function testInit_IndexedDB_Bundled() {
  *
  * @param {!lf.schema.Database} schema
  * @param {!lf.Global} global
- * @param {boolean} bundledMode Whether to initialize the DB in BUNDLED mode.
  */
-function checkInit_IndexedDB(schema, global, bundledMode)  {
+function checkInit_IndexedDB(schema, global)  {
   if (capability.memoryDbOnly) {
     return;
   }
 
   var description = 'testInit_IndexedDB_' +
-      bundledMode ? 'Bundled' : 'NonBundled';
+      schema.pragma().enableBundledMode ? 'Bundled' : 'NonBundled';
   asyncTestCase.waitForAsync(description);
 
   assertTrue(schema.getHoliday().persistentIndex());
 
-  var indexedDb = new lf.backstore.IndexedDB(global, schema, bundledMode);
+  var indexedDb = new lf.backstore.IndexedDB(global, schema);
   indexedDb.init().then(
       /** @suppress {accessControls} */
       function() {
@@ -118,7 +117,7 @@ function checkInit_IndexedDB(schema, global, bundledMode)  {
         assertIndexTables(schema, createdTableNames);
 
         return checkAllIndexMetadataExist_IndexedDb(
-            indexedDb.db_, schema, global, bundledMode);
+            indexedDb.db_, schema, global);
       }).then(
       function() {
         asyncTestCase.continueTesting();
@@ -213,15 +212,13 @@ function checkIndexMetadataExist(objectStore, indexName) {
  * @param {!IDBDatabase} db
  * @param {!lf.schema.Database} schema
  * @param {!lf.Global} global
- * @param {boolean} bundledMode
  * @return {!IThenable}
  */
-function checkAllIndexMetadataExist_IndexedDb(
-    db, schema, global, bundledMode) {
+function checkAllIndexMetadataExist_IndexedDb(db, schema, global) {
   var indexNames = getPersistedIndices(schema);
 
   var getObjectStore = function(nativeObjectStore) {
-    return bundledMode ?
+    return schema.pragma().enableBundledMode ?
         lf.backstore.BundledObjectStore.forTableType(
             global, nativeObjectStore, lf.Row.deserialize,
             lf.backstore.TableType.INDEX) :

@@ -261,7 +261,8 @@ function testAddTableColumn_Bundled() {
 
   asyncTestCase.waitForAsync('testAddTableColumn_Bundled');
 
-  var db = new lf.backstore.IndexedDB(lf.Global.get(), schema, true);
+  schema.setBundledMode(true);
+  var db = new lf.backstore.IndexedDB(lf.Global.get(), schema);
   var date = new Date();
 
   db.init().then(function(rawDb) {
@@ -270,7 +271,7 @@ function testAddTableColumn_Bundled() {
     db.close();
     db = null;
     schema.setVersion(2);
-    db = new lf.backstore.IndexedDB(lf.Global.get(), schema, true);
+    db = new lf.backstore.IndexedDB(lf.Global.get(), schema);
     return db.init(goog.partial(upgradeAddTableColumn, date));
   }).then(function(newDb) {
     return dumpTableBundled(newDb, 'tableA_');
@@ -331,14 +332,15 @@ function testDropTableColumn_Bundled() {
 
   asyncTestCase.waitForAsync('testDropTableColumn_Bundled');
 
-  var db = new lf.backstore.IndexedDB(lf.Global.get(), schema, true);
+  schema.setBundledMode(true);
+  var db = new lf.backstore.IndexedDB(lf.Global.get(), schema);
   db.init().then(function(rawDb) {
     return prepareBundledTxForTableA(rawDb);
   }).then(function() {
     db.close();
     db = null;
     schema.setVersion(2);
-    db = new lf.backstore.IndexedDB(lf.Global.get(), schema, true);
+    db = new lf.backstore.IndexedDB(lf.Global.get(), schema);
     return db.init(upgradeDropTableColumn);
   }).then(function(newDb) {
     return dumpTableBundled(newDb, 'tableA_');
@@ -401,14 +403,15 @@ function testRenameTableColumn_Bundled() {
 
   asyncTestCase.waitForAsync('testRenameTableColumn_Bundled');
 
-  var db = new lf.backstore.IndexedDB(lf.Global.get(), schema, true);
+  schema.setBundledMode(true);
+  var db = new lf.backstore.IndexedDB(lf.Global.get(), schema);
   db.init().then(function(rawDb) {
     return prepareBundledTxForTableA(rawDb);
   }).then(function() {
     db.close();
     db = null;
     schema.setVersion(2);
-    db = new lf.backstore.IndexedDB(lf.Global.get(), schema, true);
+    db = new lf.backstore.IndexedDB(lf.Global.get(), schema);
     return db.init(upgradeRenameTableColumn);
   }).then(function(newDb) {
     return dumpTableBundled(newDb, 'tableA_');
@@ -503,14 +506,15 @@ function testDump_Bundled() {
 
   asyncTestCase.waitForAsync('testDump_Bundled');
 
-  var db = new lf.backstore.IndexedDB(lf.Global.get(), schema, true);
+  schema.setBundledMode(true);
+  var db = new lf.backstore.IndexedDB(lf.Global.get(), schema);
   db.init().then(function(rawDb) {
     return prepareBundledTxForTableA(rawDb);
   }, fail).then(function() {
     db.close();
     db = null;
     schema.setVersion(2);
-    db = new lf.backstore.IndexedDB(lf.Global.get(), schema, true);
+    db = new lf.backstore.IndexedDB(lf.Global.get(), schema);
     return db.init(upgradeDumping);
   }, fail).then(function() {
     asyncTestCase.continueTesting();
@@ -537,6 +541,11 @@ var Schema_ = function() {
 
   /** @private {!lf.schema.Table} */
   this.tableB_ = new Table_('tableB_');
+
+  /** @private {!lf.schema.Database.Pragma} */
+  this.pragma_ = {
+    enableBundledMode: false
+  };
 };
 
 
@@ -568,9 +577,21 @@ Schema_.prototype.table = function(tableName) {
 };
 
 
+/** @override */
+Schema_.prototype.pragma = function() {
+  return this.pragma_;
+};
+
+
 /** @param {number} version */
 Schema_.prototype.setVersion = function(version) {
   this.version_ = version;
+};
+
+
+/** @param {boolean} mode */
+Schema_.prototype.setBundledMode = function(mode) {
+  this.pragma_.enableBundledMode = mode;
 };
 
 
