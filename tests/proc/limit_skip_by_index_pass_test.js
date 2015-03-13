@@ -63,13 +63,13 @@ function testTree1() {
       '--project()\n' +
       '---table_access_by_row_id(Employee)\n' +
       '----index_range_scan(Employee.idx_salary, ' +
-          '[unbound, unbound], reverse)\n';
+          '[unbound, 1000],[2000, unbound], reverse)\n';
 
   var treeAfter =
       'project()\n' +
       '-table_access_by_row_id(Employee)\n' +
       '--index_range_scan(Employee.idx_salary, ' +
-          '[unbound, unbound], reverse, limit:100, skip:200)\n';
+          '[unbound, 1000],[2000, unbound], reverse, limit:100, skip:200)\n';
 
   var limitNode = new lf.proc.LimitStep(100);
   var skipNode = new lf.proc.SkipStep(200);
@@ -80,7 +80,12 @@ function testTree1() {
       hr.db.getGlobal(), e);
   projectNode.addChild(tableAccessByRowIdNode);
   var indexRangeScanStep = new lf.proc.IndexRangeScanStep(
-      hr.db.getGlobal(), e.getIndices()[1], [lf.index.SingleKeyRange.all()],
+      hr.db.getGlobal(),
+      e.getIndices()[1],
+      [
+        lf.index.SingleKeyRange.upperBound(1000),
+        lf.index.SingleKeyRange.lowerBound(2000)
+      ],
       true);
   tableAccessByRowIdNode.addChild(indexRangeScanStep);
 
@@ -98,7 +103,7 @@ function testTree1() {
  * leveraged for limiting and skipping results, because a SelectStep exists in
  * the tree.
  */
-function testTree2() {
+function testTree_SelectStep_Unaffected() {
   var treeBefore =
       'limit(100)\n' +
       '-skip(200)\n' +
@@ -133,51 +138,11 @@ function testTree2() {
 
 
 /**
- * Tests a tree where an existing IndexRangeScanStep exists, but it can't
- * leveraged because it uses multiple key ranges.
- */
-function testTree3() {
-  var treeBefore =
-      'limit(100)\n' +
-      '-skip(200)\n' +
-      '--project()\n' +
-      '---table_access_by_row_id(Employee)\n' +
-      '----index_range_scan(Employee.idx_salary, ' +
-          '[unbound, 1000],[2000, unbound], reverse)\n';
-
-  var limitNode = new lf.proc.LimitStep(100);
-  var skipNode = new lf.proc.SkipStep(200);
-  limitNode.addChild(skipNode);
-  var projectNode = new lf.proc.ProjectStep([], null);
-  skipNode.addChild(projectNode);
-  var tableAccessByRowIdNode = new lf.proc.TableAccessByRowIdStep(
-      hr.db.getGlobal(), e);
-  projectNode.addChild(tableAccessByRowIdNode);
-  var indexRangeScanStep = new lf.proc.IndexRangeScanStep(
-      hr.db.getGlobal(),
-      e.getIndices()[1],
-      [
-        lf.index.SingleKeyRange.upperBound(1000),
-        lf.index.SingleKeyRange.lowerBound(2000)
-      ],
-      true);
-  tableAccessByRowIdNode.addChild(indexRangeScanStep);
-
-  var rootNodeBefore = limitNode;
-  assertEquals(treeBefore, lf.tree.toString(rootNodeBefore));
-
-  var pass = new lf.proc.LimitSkipByIndexPass();
-  var rootNodeAfter = pass.rewrite(rootNodeBefore);
-  assertEquals(treeBefore, lf.tree.toString(rootNodeAfter));
-}
-
-
-/**
  * Tests a tree where an existing IndexRangeScanStep exists, but it can't be
  * leveraged for limiting and skipping results, because a GROUP_BY operation
  * exists.
  */
-function testTree4() {
+function testTree_GroupBy_Unaffected() {
   var treeBefore =
       'limit(100)\n' +
       '-skip(200)\n' +
@@ -213,7 +178,7 @@ function testTree4() {
  * leveraged for limiting and skipping results, because a project step that
  * includes aggregators exists.
  */
-function testTree5() {
+function testTree_Aggregators_Unaffected() {
   var treeBefore =
       'limit(100)\n' +
       '-skip(200)\n' +
@@ -251,7 +216,7 @@ function testTree5() {
  * Tests a tree where an existing IndexRangeScanStep exists, but it can't be
  * leveraged for limiting and skipping results, because an ORDER BY step exists.
  */
-function testTree6() {
+function testTree_OrderBy_Unaffected() {
   var treeBefore =
       'limit(100)\n' +
       '-skip(200)\n' +
