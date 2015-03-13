@@ -38225,7 +38225,7 @@ lf.proc.OrderByIndexPass.prototype.applyTableAccessFullOptimization_ =
         lf.proc.OrderByIndexPass.findIndexCandidateForOrderBy_(
             tableAccessFullStep.table, orderByStep.orderBy);
 
-    if (goog.isNull(indexRangeCandidate.indexSchema)) {
+    if (goog.isNull(indexRangeCandidate)) {
       // Could not find an index schema that can be leveraged.
       return rootNode;
     }
@@ -38233,8 +38233,7 @@ lf.proc.OrderByIndexPass.prototype.applyTableAccessFullOptimization_ =
     var indexRangeScanStep = new lf.proc.IndexRangeScanStep(
         this.global_,
         indexRangeCandidate.indexSchema,
-        /** @type {!Array<!lf.index.KeyRange|!lf.index.SingleKeyRange>} */ (
-            indexRangeCandidate.keyRanges),
+        indexRangeCandidate.keyRanges,
         indexRangeCandidate.isReverse);
     var tableAccessByRowIdStep = new lf.proc.TableAccessByRowIdStep(
         this.global_, tableAccessFullStep.table);
@@ -38261,13 +38260,18 @@ lf.proc.OrderByIndexPass.prototype.applyIndexRangeScanStepOptimization_ =
     function(orderByStep) {
   var rootNode = orderByStep;
   var indexRangeScanStep = lf.proc.OrderByIndexPass.findIndexRangeScanStep_(
-      orderByStep.orderBy[0],
       /** @type {!lf.proc.PhysicalQueryPlanNode} */ (
           orderByStep.getChildAt(0)));
   if (!goog.isNull(indexRangeScanStep)) {
-    indexRangeScanStep.reverseOrder =
-        orderByStep.orderBy[0].order !=
-            indexRangeScanStep.index.columns[0].order;
+    var indexRangeCandidate =
+        lf.proc.OrderByIndexPass.getIndexCandidateForIndexSchema_(
+            indexRangeScanStep.index, orderByStep.orderBy);
+
+    if (goog.isNull(indexRangeCandidate)) {
+      return rootNode;
+    }
+
+    indexRangeScanStep.reverseOrder = indexRangeCandidate.isReverse;
     rootNode = /** @type {!lf.proc.PhysicalQueryPlanNode} */ (
         lf.tree.removeNode(orderByStep).parent);
   }
@@ -38277,18 +38281,15 @@ lf.proc.OrderByIndexPass.prototype.applyIndexRangeScanStepOptimization_ =
 
 
 /**
- * Finds any existing IndexRangeScanStep that can be used to produce the
- * requested ordering instead of the OrderByStep.
- * @param {!lf.query.SelectContext.OrderBy} orderBy
+ * Finds any existing IndexRangeScanStep that can potentially be used to produce
+ * the requested ordering instead of the OrderByStep.
  * @param {!lf.proc.PhysicalQueryPlanNode} rootNode
- * @return {lf.proc.IndexRangeScanStep}
+ * @return {?lf.proc.IndexRangeScanStep}
  * @private
  */
-lf.proc.OrderByIndexPass.findIndexRangeScanStep_ = function(
-    orderBy, rootNode) {
+lf.proc.OrderByIndexPass.findIndexRangeScanStep_ = function(rootNode) {
   var filterFn = function(node) {
-    return node instanceof lf.proc.IndexRangeScanStep &&
-        node.index.columns[0].name == orderBy.column.getName();
+    return node instanceof lf.proc.IndexRangeScanStep;
   };
   // CrossProductStep and JoinStep nodes have more than one child, and mess up
   // the ordering of results. Therefore if such nodes exist this optimization
@@ -38304,10 +38305,10 @@ lf.proc.OrderByIndexPass.findIndexRangeScanStep_ = function(
 
 
 /**
- * Finds any existing TableAccessFullStep that can converted to an
- * IndexRangeScanStep instead of using an explicit OrderByStep.
+ * Finds any existing TableAccessFullStep that can potentially be converted to
+ * an IndexRangeScanStep instead of using an explicit OrderByStep.
  * @param {!lf.proc.PhysicalQueryPlanNode} rootNode
- * @return {lf.proc.TableAccessFullStep}
+ * @return {?lf.proc.TableAccessFullStep}
  * @private
  */
 lf.proc.OrderByIndexPass.findTableAccessFullStep_ = function(rootNode) {
@@ -38348,50 +38349,17 @@ lf.proc.OrderByIndexPass.findOrderByStep_ = function(rootNode) {
 /**
  * @param {!lf.schema.Table} tableSchema
  * @param {!Array<!lf.query.SelectContext.OrderBy>} orderBy
- * @return {!lf.proc.OrderByIndexPass.IndexRangeCandidate_}
+ * @return {?lf.proc.OrderByIndexPass.IndexRangeCandidate_}
  * @private
  */
 lf.proc.OrderByIndexPass.findIndexCandidateForOrderBy_ = function(
     tableSchema, orderBy) {
-  var indexCandidate = {
-    indexSchema: null,
-    keyRanges: null,
-    isReverse: false
-  };
+  var indexCandidate = null;
 
   var indexSchemas = tableSchema.getIndices();
-  for (var i = 0; i < indexSchemas.length; i++) {
-    var indexSchema = indexSchemas[i];
-
-    // First find an index schema which includes all columns to be sorted in the
-    // same order.
-    var columnsMatch = indexSchema.columns.length == orderBy.length &&
-        orderBy.every(function(singleOrderBy, j) {
-          var indexedColumn = indexSchema.columns[j];
-          return singleOrderBy.column.getName() == indexedColumn.name;
-        });
-
-    if (!columnsMatch) {
-      continue;
-    }
-
-    // If colums match, determine whether the requested ordering within each
-    // column matches the index, either in natural or reverse order.
-    var isNaturalOrReverse = lf.proc.OrderByIndexPass.checkOrder_(
-        orderBy, indexSchema);
-
-    if (!isNaturalOrReverse[0] && !isNaturalOrReverse[1]) {
-      continue;
-    }
-
-    indexCandidate.indexSchema = indexSchema;
-    indexCandidate.isReverse = isNaturalOrReverse[1];
-    indexCandidate.keyRanges = indexSchema.columns.length == 1 ?
-        [lf.index.SingleKeyRange.all()] :
-        [indexSchema.columns.map(function(column) {
-          return lf.index.SingleKeyRange.all();
-        })];
-    break;
+  for (var i = 0; i < indexSchemas.length && goog.isNull(indexCandidate); i++) {
+    indexCandidate = lf.proc.OrderByIndexPass.getIndexCandidateForIndexSchema_(
+        indexSchemas[i], orderBy);
   }
 
   return indexCandidate;
@@ -38399,9 +38367,54 @@ lf.proc.OrderByIndexPass.findIndexCandidateForOrderBy_ = function(
 
 
 /**
+ * Determines whether the given index schema can be leveraged for producing the
+ * ordering specified by the given orderBy.
+ * @param {!lf.schema.Index} indexSchema The index schema to examine.
+ * @param {!Array<!lf.query.SelectContext.OrderBy>} orderBy The requested
+ *     ordering.
+ * @return {?lf.proc.OrderByIndexPass.IndexRangeCandidate_} The index range
+ *     candidate, or null if this index schema can't be leveraged.
+ * @private
+ */
+lf.proc.OrderByIndexPass.getIndexCandidateForIndexSchema_ = function(
+    indexSchema, orderBy) {
+  // First find an index schema which includes all columns to be sorted in the
+  // same order.
+  var columnsMatch = indexSchema.columns.length == orderBy.length &&
+      orderBy.every(function(singleOrderBy, j) {
+        var indexedColumn = indexSchema.columns[j];
+        return singleOrderBy.column.getName() == indexedColumn.name;
+      });
+
+  if (!columnsMatch) {
+    return null;
+  }
+
+  // If colums match, determine whether the requested ordering within each
+  // column matches the index, either in natural or reverse order.
+  var isNaturalOrReverse = lf.proc.OrderByIndexPass.checkOrder_(
+      orderBy, indexSchema);
+
+  if (!isNaturalOrReverse[0] && !isNaturalOrReverse[1]) {
+    return null;
+  }
+
+  return {
+    indexSchema: indexSchema,
+    isReverse: isNaturalOrReverse[1],
+    keyRanges: indexSchema.columns.length == 1 ?
+        [lf.index.SingleKeyRange.all()] :
+        [indexSchema.columns.map(function(column) {
+          return lf.index.SingleKeyRange.all();
+        })]
+  };
+};
+
+
+/**
  * @typedef {{
- *   indexSchema: ?lf.schema.Index,
- *   keyRanges: ?Array<!lf.index.KeyRange|!lf.index.SingleKeyRange>,
+ *   indexSchema: !lf.schema.Index,
+ *   keyRanges: !Array<!lf.index.KeyRange|!lf.index.SingleKeyRange>,
  *   isReverse: boolean
  * }}
  */
