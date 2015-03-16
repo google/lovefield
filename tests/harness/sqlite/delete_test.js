@@ -63,9 +63,10 @@ function setUpPage() {
  * @param {!Array<string>} fields
  */
 function checkFlatten(expected, rows, fields) {
-  var actual = rows.map(function(row) {
+  var actual = rows.map(function(obj) {
+    assertEquals(fields.length, Object.keys(obj).length);
     return fields.map(function(name) {
-      return row[name].toString();
+      return obj[name].toString();
     }).join(' ');
   }).join(' ');
   assertEquals(expected, actual);
