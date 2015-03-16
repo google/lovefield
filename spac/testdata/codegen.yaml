@@ -52,7 +52,7 @@ table:
           reference: Album
           remoteColumn: id
           cascade: true
-      nullable: [ proto, tacotownJspb, accessTimestamp ]
+      nullable: [ proto, tacotownJspb, accessTimestamp, createdByAction ]
 
   Details:
     column:

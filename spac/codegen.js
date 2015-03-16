@@ -463,22 +463,26 @@ CodeGenerator.prototype.processSort_ = function(lines) {
 CodeGenerator.prototype.genGetDefaultPayload_ = function(table, prefix) {
   var body = [];  // Object body for UserType default object.
 
+  var pushField = function(col, defaultValue) {
+    var lhs = '  ' + prefix + '.' + col.name + ' = ';
+    body.push(lhs + (col.nullable ? 'null' : defaultValue) + ';');
+  };
+
   var columns = table.column;
   for (var i = 0; i < columns.length; ++i) {
     var col = columns[i];
-    var lhs = '  ' + prefix + '.' + col.name + ' = ';
     if (col.type == 'string') {
-      body.push(lhs + (col.nullable ? 'null' : '\'\'') + ';');
+      pushField(col, '\'\'');
     } else if (col.type == 'boolean') {
-      body.push(lhs + 'false;');
+      pushField(col, 'false');
     } else if (col.type == 'datetime') {
-      body.push(lhs + (col.nullable ? 'null' : 'new Date(0)') + ';');
+      pushField(col, 'new Date(0)');
     } else if (col.type == 'arraybuffer') {
-      body.push(lhs + (col.nullable ? 'null' : 'new ArrayBuffer(0)') + ';');
+      pushField(col, 'new ArrayBuffer(0)');
     } else if (col.type == 'object') {
-      body.push(lhs + (col.nullable ? 'null' : '{}') + ';');
+      pushField(col, '{}');
     } else {  // integer, number
-      body.push(lhs + '0;');
+      pushField(col, '0');
     }
   }
 
@@ -1070,7 +1074,13 @@ CodeGenerator.prototype.getColumnAsMembers_ = function(table) {
         break;
 
       case 'integer':
-        type = 'number';
+      case 'number':
+        type = col.nullable ? '?number' : 'number';
+        type2 = type;
+        break;
+
+      case 'boolean':
+        type = col.nullable ? '?boolean' : 'boolean';
         type2 = type;
         break;
 

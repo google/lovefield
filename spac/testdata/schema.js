@@ -534,7 +534,6 @@ lovefield.db.schema.Photo.prototype.getConstraint = function() {
     this.id,
     this.imageHash,
     this.isLocal,
-    this.createdByAction,
     this.timestamp,
     this.albumId,
     this.isCoverPhoto
@@ -560,7 +559,7 @@ lovefield.db.row.PhotoType = function() {
   this.imageHash;
   /** @export @type {boolean} */
   this.isLocal;
-  /** @export @type {boolean} */
+  /** @export @type {?boolean} */
   this.createdByAction;
   /** @export @type {!Date} */
   this.timestamp;
@@ -591,7 +590,7 @@ lovefield.db.row.PhotoDbType = function() {
   this.imageHash;
   /** @export @type {boolean} */
   this.isLocal;
-  /** @export @type {boolean} */
+  /** @export @type {?boolean} */
   this.createdByAction;
   /** @export @type {number} */
   this.timestamp;
@@ -630,7 +629,7 @@ lovefield.db.row.Photo.prototype.defaultPayload = function() {
   payload.id = '';
   payload.imageHash = '';
   payload.isLocal = false;
-  payload.createdByAction = false;
+  payload.createdByAction = null;
   payload.timestamp = new Date(0);
   payload.accessTimestamp = null;
   payload.albumId = '';
