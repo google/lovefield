@@ -40764,18 +40764,6 @@ lf.schema.TableBuilder = function(tableName) {
 
 
 /**
- * A set of types that are allowed to be declared as nullable.
- * @type {!goog.structs.Set<!lf.Type>}
- */
-lf.schema.TableBuilder.NULLABLE_TYPES = new goog.structs.Set([
-  lf.Type.ARRAY_BUFFER,
-  lf.Type.DATE_TIME,
-  lf.Type.OBJECT,
-  lf.Type.STRING
-]);
-
-
-/**
  * @param {string} name
  * @return {string}
  * @private
@@ -40916,13 +40904,6 @@ lf.schema.TableBuilder.prototype.addUnique = function(name, columns) {
 lf.schema.TableBuilder.prototype.addNullable = function(columns) {
   var cols = this.normalizeColumns_(columns, false);
   cols.forEach(function(col) {
-    var columnType = this.columns_.get(col.name);
-    if (!lf.schema.TableBuilder.NULLABLE_TYPES.contains(columnType)) {
-      throw new lf.Exception(
-          lf.Exception.Type.SYNTAX,
-          'Column ' + col.name + ' can\'t be declared as nullable.');
-    }
-
     this.nullable_.add(col.name);
   }, this);
   return this;

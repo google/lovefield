@@ -139,17 +139,6 @@ function testThrows_NonIntegerPkWithAutoInc() {
 }
 
 
-function testThrows_InvalidNullableType() {
-  var schemaBuilder = lf.schema.create('hr', 1);
-  lf.testing.util.assertThrowsSyntaxError(function() {
-    schemaBuilder.createTable('Employee').
-        addColumn('string', lf.Type.STRING).
-        addColumn('number', lf.Type.NUMBER).
-        addNullable(['number']);
-  });
-}
-
-
 function testSchemaCorrectness() {
   var ds = createBuilder();
   var schema = ds.getSchema();

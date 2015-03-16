@@ -96,15 +96,6 @@ var VALID_COLUMN_TYPE = [
 
 
 /** @const {!Array.<string>} */
-var NULLABLE_COLUMN_TYPE = [
-  'arraybuffer',
-  'datetime',
-  'object',
-  'string'
-];
-
-
-/** @const {!Array.<string>} */
 var NON_INDEXABLE_TYPE = [
   'arraybuffer',
   'object'
@@ -378,13 +369,6 @@ function checkForeignKey(tableName, schemas, schema, colNames, names, keyed) {
  * @return {!Array.<string>} Nullable columns
  */
 function checkNullable(tableName, schema, colNames, notNullable) {
-  var canBeNull = [];
-  for (var col in schema.column) {
-    if (NULLABLE_COLUMN_TYPE.indexOf(schema.column[col]) != -1) {
-      canBeNull.push(col);
-    }
-  }
-
   var nullable = schema.constraint.nullable;
   nullable.forEach(function(col) {
     var colName = tableName + '.' + col;
@@ -392,7 +376,7 @@ function checkNullable(tableName, schema, colNames, notNullable) {
       throw new Error(colName + ' does not exist and thus cannot be nullable');
     }
 
-    if (canBeNull.indexOf(col) == -1 || notNullable.indexOf(col) != -1) {
+    if (notNullable.indexOf(col) != -1) {
       throw new Error(colName + ' cannot be nullable');
     }
   });

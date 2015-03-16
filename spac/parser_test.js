@@ -163,18 +163,6 @@ describe('YAML Parser Test', function() {
     thrower('nullable_not_allowed.yaml');
   });
 
-  it('should throw if nullable on integer columns', function() {
-    thrower('integer_nullable_not_allowed.yaml');
-  });
-
-  it('should throw if nullable on number columns', function() {
-    thrower('number_nullable_not_allowed.yaml');
-  });
-
-  it('should throw if nullable on boolean columns', function() {
-    thrower('boolean_nullable_not_allowed.yaml');
-  });
-
   it('should throw if index name is invalid', function() {
     thrower('invalid_index_name.yaml');
   });
