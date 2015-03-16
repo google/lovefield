@@ -24405,7 +24405,7 @@ lf.index.Index.prototype.getName;
  * Inserts data into index. If the key already existed, append value to the
  * value list. If the index does not support duplicate keys, adding duplicate
  * keys will result in throwing CONSTRAINT error.
- * @param {!lf.index.Index.Key} key
+ * @param {?lf.index.Index.Key} key
  * @param {number} value
  * @throws {lf.Exception}
  */
@@ -24415,7 +24415,7 @@ lf.index.Index.prototype.add;
 /**
  * Replaces data in index. All existing data for that key will be purged.
  * If the key is not found, inserts the data.
- * @param {!lf.index.Index.Key} key
+ * @param {?lf.index.Index.Key} key
  * @param {number} value
  */
 lf.index.Index.prototype.set;
@@ -24423,7 +24423,7 @@ lf.index.Index.prototype.set;
 
 /**
  * Deletes a row having given key from index. If not found return silently.
- * @param {!lf.index.Index.Key} key
+ * @param {?lf.index.Index.Key} key
  * @param {number=} opt_rowId Delete a single row id when the index allows
  *     duplicate keys. Ignored for index supporting only unique keys.
  */
@@ -24432,7 +24432,7 @@ lf.index.Index.prototype.remove;
 
 /**
  * Gets values from index. Returns empty array if not found.
- * @param {!lf.index.Index.Key} key
+ * @param {?lf.index.Index.Key} key
  * @return {!Array<number>}
  */
 lf.index.Index.prototype.get;
@@ -24472,7 +24472,7 @@ lf.index.Index.prototype.clear;
 
 /**
  * Returns true if key existed, otherwise false.
- * @param {!lf.index.Index.Key} key
+ * @param {?lf.index.Index.Key} key
  * @return {boolean}
  */
 lf.index.Index.prototype.containsKey;
@@ -25330,25 +25330,28 @@ lf.index.BTree.prototype.toString = function() {
 
 /** @override */
 lf.index.BTree.prototype.add = function(key, value) {
-  this.root_ = this.root_.insert(key, value);
+  this.root_ = this.root_.insert(
+      /** @type {!lf.index.Index.Key} */ (key), value);
 };
 
 
 /** @override */
 lf.index.BTree.prototype.set = function(key, value) {
-  this.root_ = this.root_.insert(key, value, true);
+  this.root_ = this.root_.insert(
+      /** @type {!lf.index.Index.Key} */ (key), value, true);
 };
 
 
 /** @override */
 lf.index.BTree.prototype.remove = function(key, opt_rowId) {
-  this.root_ = this.root_.remove(key, opt_rowId);
+  this.root_ = this.root_.remove(
+      /** @type {!lf.index.Index.Key} */ (key), opt_rowId);
 };
 
 
 /** @override */
 lf.index.BTree.prototype.get = function(key) {
-  return this.root_.get(key);
+  return this.root_.get(/** @type {!lf.index.Index.Key} */ (key));
 };
 
 
@@ -25400,7 +25403,7 @@ lf.index.BTree.prototype.clear = function() {
 
 /** @override */
 lf.index.BTree.prototype.containsKey = function(key) {
-  return this.root_.containsKey(key);
+  return this.root_.containsKey(/** @type {!lf.index.Index.Key} */ (key));
 };
 
 
@@ -27778,13 +27781,14 @@ lf.index.AATree.prototype.insert_ = function(node, key, value) {
 
 /** @override */
 lf.index.AATree.prototype.add = function(key, value) {
-  this.root_ = this.insert_(this.root_, key, value);
+  this.root_ = this.insert_(
+      this.root_, /** @type {!lf.index.Index.Key} */ (key), value);
 };
 
 
 /** @override */
 lf.index.AATree.prototype.set = function(key, value) {
-  var node = this.search_(this.root_, key);
+  var node = this.search_(this.root_, /** @type {!lf.index.Index.Key} */ (key));
   if (node == null) {
     this.add(key, value);
   } else {
@@ -27838,7 +27842,8 @@ lf.index.AATree.prototype.delete_ = function(node, key) {
 
 /** @override */
 lf.index.AATree.prototype.remove = function(key, opt_rowId) {
-  this.root_ = this.delete_(this.root_, key);
+  this.root_ = this.delete_(
+      this.root_, /** @type {!lf.index.Index.Key} */ (key));
 };
 
 
@@ -27862,7 +27867,7 @@ lf.index.AATree.prototype.search_ = function(node, key) {
 
 /** @override */
 lf.index.AATree.prototype.get = function(key) {
-  var node = this.search_(this.root_, key);
+  var node = this.search_(this.root_, /** @type {!lf.index.Index.Key} */ (key));
   return node == null ? [] : [node.value];
 };
 
@@ -27950,7 +27955,8 @@ lf.index.AATree.prototype.clear = function() {
 
 /** @override */
 lf.index.AATree.prototype.containsKey = function(key) {
-  return this.search_(this.root_, key) != null;
+  return this.search_(
+      this.root_, /** @type {!lf.index.Index.Key} */ (key)) != null;
 };
 
 
@@ -28193,6 +28199,155 @@ lf.index.MemoryIndexStore.prototype.getTableIndices = function(tableName) {
     }
   }, this);
   return indices;
+};
+
+/**
+ * @license
+ * Copyright 2015 Google Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+goog.provide('lf.index.NullableIndex');
+
+goog.require('goog.structs.Set');
+goog.require('lf.index.Index');
+
+
+
+/**
+ * Wraps another index which does not support NULL to accept NULL values.
+ * @implements {lf.index.Index}
+ * @constructor
+ * @final
+ *
+ * @param {!lf.index.Index} index The index to be wrapped.
+ */
+lf.index.NullableIndex = function(index) {
+  /** @private {!lf.index.Index} */
+  this.index_ = index;
+
+  /** @private {!goog.structs.Set<number>} */
+  this.nulls_ = new goog.structs.Set();
+};
+
+
+/** @override */
+lf.index.NullableIndex.prototype.getName = function() {
+  return this.index_.getName();
+};
+
+
+/** @override */
+lf.index.NullableIndex.prototype.add = function(key, value) {
+  if (goog.isNull(key)) {
+    this.nulls_.add(value);
+  } else {
+    this.index_.add(key, value);
+  }
+};
+
+
+/** @override */
+lf.index.NullableIndex.prototype.set = function(key, value) {
+  if (goog.isNull(key)) {
+    this.nulls_.clear();
+    this.nulls_.add(value);
+  } else {
+    this.index_.set(key, value);
+  }
+};
+
+
+/** @override */
+lf.index.NullableIndex.prototype.remove = function(key, opt_rowId) {
+  if (goog.isNull(key)) {
+    if (opt_rowId) {
+      this.nulls_.remove(opt_rowId);
+    } else {
+      this.nulls_.clear();
+    }
+  } else {
+    this.index_.remove(key, opt_rowId);
+  }
+};
+
+
+/** @override */
+lf.index.NullableIndex.prototype.get = function(key) {
+  if (goog.isNull(key)) {
+    return this.nulls_.getValues();
+  } else {
+    return this.index_.get(key);
+  }
+};
+
+
+/** @override */
+lf.index.NullableIndex.prototype.cost = function(opt_keyRange) {
+  return this.index_.cost(opt_keyRange);
+};
+
+
+/** @override */
+lf.index.NullableIndex.prototype.getRange = function(
+    opt_keyRanges, opt_reverseOrder, opt_limit, opt_skip) {
+  var results = this.index_.getRange(
+      opt_keyRanges, opt_reverseOrder, opt_limit, opt_skip);
+  if (goog.isDefAndNotNull(opt_keyRanges)) {
+    return results;
+  }
+
+  return results.concat(this.nulls_.getValues());
+};
+
+
+/** @override */
+lf.index.NullableIndex.prototype.clear = function() {
+  this.nulls_.clear();
+  this.index_.clear();
+};
+
+
+/** @override */
+lf.index.NullableIndex.prototype.containsKey = function(key) {
+  return goog.isNull(key) ?
+      !this.nulls_.isEmpty() :
+      this.index_.containsKey(key);
+};
+
+
+/** @override */
+lf.index.NullableIndex.prototype.min = function() {
+  return this.index_.min();
+};
+
+
+/** @override */
+lf.index.NullableIndex.prototype.max = function() {
+  return this.index_.max();
+};
+
+
+/** @override */
+lf.index.NullableIndex.prototype.serialize = function() {
+  // TODO(arthurhsu): implement
+  return this.index_.serialize();
+};
+
+
+/** @override */
+lf.index.NullableIndex.prototype.comparator = function() {
+  return this.index_.comparator();
 };
 
 /**
