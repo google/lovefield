@@ -140,7 +140,7 @@ function insertToTree2(index, comparator, opt_duplicate) {
  * @return {!lf.index.BTree}
  */
 function deserializeTree(rows) {
-  return lf.index.BTree.deserialize(c, rows, 'test', true);
+  return lf.index.BTree.deserialize(c, 'test', true, rows);
 }
 
 

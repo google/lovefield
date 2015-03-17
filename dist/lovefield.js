@@ -2651,8 +2651,8 @@ goog.addDependency('debug/errorhandler.js', ['goog.debug.ErrorHandler', 'goog.de
 goog.addDependency('debug/errorhandler_async_test.js', ['goog.debug.ErrorHandlerAsyncTest'], ['goog.debug.ErrorHandler', 'goog.testing.AsyncTestCase', 'goog.testing.jsunit', 'goog.userAgent'], false);
 goog.addDependency('debug/errorhandler_test.js', ['goog.debug.ErrorHandlerTest'], ['goog.debug.ErrorHandler', 'goog.testing.MockControl', 'goog.testing.jsunit'], false);
 goog.addDependency('debug/errorhandlerweakdep.js', ['goog.debug.errorHandlerWeakDep'], [], false);
-goog.addDependency('debug/errorreporter.js', ['goog.debug.ErrorReporter', 'goog.debug.ErrorReporter.ExceptionEvent'], ['goog.asserts', 'goog.debug', 'goog.debug.ErrorHandler', 'goog.debug.entryPointRegistry', 'goog.events', 'goog.events.Event', 'goog.events.EventTarget', 'goog.log', 'goog.net.XhrIo', 'goog.object', 'goog.string', 'goog.uri.utils', 'goog.userAgent'], false);
-goog.addDependency('debug/errorreporter_test.js', ['goog.debug.ErrorReporterTest'], ['goog.debug.ErrorReporter', 'goog.events', 'goog.functions', 'goog.testing.PropertyReplacer', 'goog.testing.jsunit', 'goog.userAgent'], false);
+goog.addDependency('debug/errorreporter.js', ['goog.debug.ErrorReporter', 'goog.debug.ErrorReporter.ExceptionEvent'], ['goog.asserts', 'goog.debug', 'goog.debug.Error', 'goog.debug.ErrorHandler', 'goog.debug.entryPointRegistry', 'goog.events', 'goog.events.Event', 'goog.events.EventTarget', 'goog.log', 'goog.net.XhrIo', 'goog.object', 'goog.string', 'goog.uri.utils', 'goog.userAgent'], false);
+goog.addDependency('debug/errorreporter_test.js', ['goog.debug.ErrorReporterTest'], ['goog.debug.Error', 'goog.debug.ErrorReporter', 'goog.events', 'goog.functions', 'goog.testing.PropertyReplacer', 'goog.testing.jsunit', 'goog.userAgent'], false);
 goog.addDependency('debug/fancywindow.js', ['goog.debug.FancyWindow'], ['goog.array', 'goog.debug.DebugWindow', 'goog.debug.LogManager', 'goog.debug.Logger', 'goog.dom.DomHelper', 'goog.dom.TagName', 'goog.dom.safe', 'goog.html.SafeHtml', 'goog.html.SafeStyleSheet', 'goog.object', 'goog.string', 'goog.string.Const', 'goog.userAgent'], false);
 goog.addDependency('debug/formatter.js', ['goog.debug.Formatter', 'goog.debug.HtmlFormatter', 'goog.debug.TextFormatter'], ['goog.debug', 'goog.debug.Logger', 'goog.debug.RelativeTimeProvider', 'goog.html.SafeHtml'], false);
 goog.addDependency('debug/formatter_test.js', ['goog.debug.FormatterTest'], ['goog.debug.HtmlFormatter', 'goog.debug.LogRecord', 'goog.debug.Logger', 'goog.html.SafeHtml', 'goog.testing.jsunit'], false);
@@ -25285,7 +25285,7 @@ goog.require('lf.index.Index');
  * @param {string} name
  * @param {!lf.index.Comparator} comparator
  * @param {boolean} uniqueKeyOnly The tree does not allow duplicate keys.
- * @param {!Array.<!lf.index.BTreeNode_.Payload>=} opt_data Init sorted
+ * @param {!Array<!lf.index.BTreeNode_.Payload>=} opt_data Init sorted
  *     key-value pairs. This is used to quickly construct the tree from already
  *     stored and sorted data (about 5x to 6x faster according to benchmark).
  *     However, the caller should understand if they construct the pairs from
@@ -25497,12 +25497,12 @@ lf.index.BTree.prototype.serialize = function() {
 /**
  * Creates tree from serialized leaves.
  * @param {!lf.index.Comparator} comparator
- * @param {!Array.<!lf.Row>} rows
  * @param {string} name
  * @param {boolean} uniqueKeyOnly
+ * @param {!Array<!lf.Row>} rows
  * @return {!lf.index.BTree}
  */
-lf.index.BTree.deserialize = function(comparator, rows, name, uniqueKeyOnly) {
+lf.index.BTree.deserialize = function(comparator, name, uniqueKeyOnly, rows) {
   var tree = new lf.index.BTree(name, comparator, uniqueKeyOnly);
   var newRoot = lf.index.BTreeNode_.deserialize(rows, tree);
   tree.root_ = newRoot;
@@ -25537,13 +25537,13 @@ lf.index.BTreeNode_ = function(id, tree) {
   /** @private {?lf.index.BTreeNode_} */
   this.next_ = null;
 
-  /** @private {!Array.<!lf.index.Index.Key>} */
+  /** @private {!Array<!lf.index.Index.Key>} */
   this.keys_ = [];
 
   /** @private {!Array<number|!Array<number>>} */
   this.values_ = [];
 
-  /** @private {!Array.<!lf.index.BTreeNode_>} */
+  /** @private {!Array<!lf.index.BTreeNode_>} */
   this.children_ = [];
 };
 
@@ -25743,7 +25743,7 @@ lf.index.BTreeNode_.Payload;
 /**
  * Create leaf nodes from given data.
  * @param {!lf.index.BTree} tree
- * @param {!Array.<!lf.index.BTreeNode_.Payload>} data Sorted array.
+ * @param {!Array<!lf.index.BTreeNode_.Payload>} data Sorted array.
  * @return {!lf.index.BTreeNode_} Left most node of the leaves.
  * @private
  */
@@ -25837,7 +25837,7 @@ lf.index.BTreeNode_.createInternals_ = function(node) {
 /**
  * Create B-Tree from sorted array of key-value pairs.
  * @param {!lf.index.BTree} tree
- * @param {!Array.<!lf.index.BTreeNode_.Payload>} data Initial sorted tree data.
+ * @param {!Array<!lf.index.BTreeNode_.Payload>} data Initial sorted tree data.
  * @return {!lf.index.BTreeNode_} Root of the B-Tree.
  */
 lf.index.BTreeNode_.fromData = function(tree, data) {
@@ -26279,7 +26279,7 @@ lf.index.BTreeNode_.prototype.getRange = function(keyRange, opt_results) {
 /**
  * Appends newly found results to an existing bag of results.
  * @param {!Array<number>} currentResults
- * @param {!Array<number>|!Array.<!Array<number>>} newResults
+ * @param {!Array<number>|!Array<!Array<number>>} newResults
  * @private
  */
 lf.index.BTreeNode_.prototype.appendResults_ = function(
@@ -26293,7 +26293,7 @@ lf.index.BTreeNode_.prototype.appendResults_ = function(
 
 /**
  * @param {!lf.index.BTreeNode_} start
- * @return {!Array.<!lf.Row>}
+ * @return {!Array<!lf.Row>}
  */
 lf.index.BTreeNode_.serialize = function(start) {
   var rows = [];
@@ -26308,7 +26308,7 @@ lf.index.BTreeNode_.serialize = function(start) {
 
 
 /**
- * @param {!Array.<!lf.Row>} rows
+ * @param {!Array<!lf.Row>} rows
  * @param {!lf.index.BTree} tree
  * @return {!lf.index.BTreeNode_} New root node.
  */
@@ -27576,9 +27576,9 @@ lf.cache.Prefetcher.prototype.reconstructPersistentIndex_ = function(
         if (serializedRows.length > 1) {
           var btreeIndex = lf.index.BTree.deserialize(
               comparator,
-              serializedRows.slice(1),
               indexSchema.getNormalizedName(),
-              indexSchema.isUnique);
+              indexSchema.isUnique,
+              serializedRows.slice(1));
           this.indexStore_.set(btreeIndex);
         }
       }, this));
@@ -28220,6 +28220,8 @@ lf.index.MemoryIndexStore.prototype.getTableIndices = function(tableName) {
 goog.provide('lf.index.NullableIndex');
 
 goog.require('goog.structs.Set');
+goog.require('lf.Exception');
+goog.require('lf.Row');
 goog.require('lf.index.Index');
 
 
@@ -28338,16 +28340,56 @@ lf.index.NullableIndex.prototype.max = function() {
 };
 
 
+/**
+ * @const {number}
+ * @private
+ */
+lf.index.NullableIndex.NULL_ROW_ID_ = -2;
+
+
 /** @override */
 lf.index.NullableIndex.prototype.serialize = function() {
-  // TODO(arthurhsu): implement
-  return this.index_.serialize();
+  var rows = [
+    new lf.Row(lf.index.NullableIndex.NULL_ROW_ID_, this.nulls_.getValues())
+  ];
+  return rows.concat(this.index_.serialize());
 };
 
 
 /** @override */
 lf.index.NullableIndex.prototype.comparator = function() {
   return this.index_.comparator();
+};
+
+
+/**
+ * Creates tree from serialized format.
+ * @param {!function(!Array<!lf.Row>): !lf.index.Index} deserializeFn The
+ *     function that is used to deserialize the embedded tree.
+ * @param {!Array<!lf.Row>} rows
+ * @return {!lf.index.NullableIndex}
+ */
+lf.index.NullableIndex.deserialize = function(deserializeFn, rows) {
+  // Ideally, the special row should be the first one, and we can short cut.
+  var index = -1;
+  for (var i = 0; i < rows.length; ++i) {
+    if (rows[i].id() == lf.index.NullableIndex.NULL_ROW_ID_) {
+      index = i;
+      break;
+    }
+  }
+  if (index == -1) {
+    throw new lf.Exception(lf.Exception.Type.DATA,
+        'Data corruption detected');
+  }
+
+  var nulls = rows[index].payload();
+  var newRows = rows.slice(0);
+  newRows.splice(index, 1);
+  var tree = deserializeFn(newRows);
+  var nullableIndex = new lf.index.NullableIndex(tree);
+  nullableIndex.nulls_.addAll(nulls);
+  return nullableIndex;
 };
 
 /**

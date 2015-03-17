@@ -110,3 +110,25 @@ function testSingleRow_StringKey() {
   });
   test.run();
 }
+
+
+function testSerialize() {
+  var deserializeFn = lf.index.BTree.deserialize.bind(
+      undefined,
+      new lf.index.SimpleComparator(lf.Order.ASC),
+      'test',
+      false);
+
+  index.add(null, 1);
+  index.add(null, 2);
+  index.add(1, 3);
+  index.add(1, 4);
+  index.add(2, 5);
+  var rows = index.serialize();
+
+  var index2 = lf.index.NullableIndex.deserialize(deserializeFn, rows);
+  assertArrayEquals([3, 4, 5, 1, 2], index2.getRange());
+  assertArrayEquals([1, 2], index2.get(null));
+  assertArrayEquals([3, 4], index2.get(1));
+  assertArrayEquals([5], index2.get(2));
+}

@@ -316,9 +316,9 @@ function assertIndexContents(indexSchema, serializedRows, dataRows) {
   var comparator = lf.index.ComparatorFactory.create(indexSchema);
   var btreeIndex = lf.index.BTree.deserialize(
       comparator,
-      serializedRows.slice(1),
       indexSchema.getNormalizedName(),
-      indexSchema.isUnique);
+      indexSchema.isUnique,
+      serializedRows.slice(1));
   assertEquals(dataRows.length, btreeIndex.getRange().length);
 
   dataRows.forEach(function(row) {
