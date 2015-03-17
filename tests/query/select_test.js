@@ -442,3 +442,39 @@ function testExplain() {
       '--table_access(Employee)\n';
   assertEquals(expected, query.explain());
 }
+
+
+function testSkipLimitBinding() {
+  var query = db.select().from(db.getSchema().getEmployee()).
+      limit(lf.bind(0)).
+      skip(lf.bind(1));
+
+  query.bind([22, 33]);
+  var expected =
+      'limit(22)\n' +
+      '-skip(33)\n' +
+      '--project()\n' +
+      '---table_access(Employee)\n';
+  assertEquals(expected, query.explain());
+
+  query.bind([44, 55]);
+  var expected2 =
+      'limit(44)\n' +
+      '-skip(55)\n' +
+      '--project()\n' +
+      '---table_access(Employee)\n';
+  assertEquals(expected2, query.explain());
+}
+
+
+function testInvalidBindingRejects() {
+  var query = db.select().from(db.getSchema().getEmployee()).
+      limit(lf.bind(0)).
+      skip(lf.bind(1));
+
+  asyncTestCase.waitForAsync('testInvalidBindingRejects');
+  query.exec().then(fail, function(e) {
+    assertEquals(lf.Exception.Type.SYNTAX, e.name);
+    asyncTestCase.continueTesting();
+  });
+}

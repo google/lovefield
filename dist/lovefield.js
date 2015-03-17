@@ -33639,6 +33639,7 @@ goog.provide('lf.query.Insert');
 goog.provide('lf.query.Select');
 goog.provide('lf.query.Update');
 
+goog.forwardDeclare('lf.Binder');
 goog.forwardDeclare('lf.Order');
 goog.forwardDeclare('lf.Type');
 
@@ -33733,7 +33734,7 @@ lf.query.Select.prototype.leftOuterJoin;
 /**
  * Limits the number of rows returned in select results. If there are fewer rows
  * than limit, all rows will be returned.
- * @param {number} numberOfRows
+ * @param {number|!lf.Binder} numberOfRows
  * @return {!lf.query.Select}
  * @throws {!lf.Exception}
  */
@@ -33743,7 +33744,7 @@ lf.query.Select.prototype.limit;
 /**
  * Skips the number of rows returned in select results from the beginning. If
  * there are fewer rows than skip, no row will be returned.
- * @param {number} numberOfRows
+ * @param {number|!lf.Binder} numberOfRows
  * @return {!lf.query.Select}
  * @throws {!lf.Exception}
  */
@@ -35170,6 +35171,7 @@ lf.op.not = function(operand) {
  */
 goog.provide('lf.query.SelectBuilder');
 
+goog.require('lf.Binder');
 goog.require('lf.Exception');
 goog.require('lf.Order');
 goog.require('lf.Type');
@@ -35206,6 +35208,12 @@ lf.query.SelectBuilder = function(global, columns) {
    */
   this.fromAlreadyCalled_ = false;
 
+  /** @private {!lf.Binder} */
+  this.limitBinder_;
+
+  /** @private {!lf.Binder} */
+  this.skipBinder_;
+
   this.query = new lf.query.SelectContext();
   this.query.columns = columns;
 
@@ -35223,6 +35231,13 @@ lf.query.SelectBuilder.prototype.assertExecPreconditions = function() {
     throw new lf.Exception(
         lf.Exception.Type.SYNTAX,
         'Invalid usage of select()');
+  }
+
+  if ((goog.isDef(this.limitBinder_) && !goog.isDef(this.query.limit)) ||
+      (goog.isDef(this.skipBinder_) && !goog.isDef(this.query.skip))) {
+    throw new lf.Exception(
+        lf.Exception.Type.SYNTAX,
+        'Binding parameters of limit/skip without providing values');
   }
 
   this.checkProjectionList_();
@@ -35462,22 +35477,48 @@ lf.query.SelectBuilder.prototype.leftOuterJoin = function(table, predicate) {
 };
 
 
+/**
+ * @param {number} numberOfRows
+ * @private
+ */
+lf.query.SelectBuilder.prototype.setLimit_ = function(numberOfRows) {
+  this.assertNotNegative_(numberOfRows, 'limit');
+  this.query.limit = numberOfRows;
+};
+
+
 /** @override */
 lf.query.SelectBuilder.prototype.limit = function(numberOfRows) {
   this.assertNotAlreadyCalled_(this.query.limit, 'limit');
-  this.assertNotNegative_(numberOfRows, 'limit');
 
-  this.query.limit = numberOfRows;
+  if (numberOfRows instanceof lf.Binder) {
+    this.limitBinder_ = numberOfRows;
+  } else {
+    this.setLimit_(numberOfRows);
+  }
   return this;
+};
+
+
+/**
+ * @param {number} numberOfRows
+ * @private
+ */
+lf.query.SelectBuilder.prototype.setSkip_ = function(numberOfRows) {
+  this.assertNotNegative_(numberOfRows, 'skip');
+  this.query.skip = numberOfRows;
 };
 
 
 /** @override */
 lf.query.SelectBuilder.prototype.skip = function(numberOfRows) {
   this.assertNotAlreadyCalled_(this.query.skip, 'skip');
-  this.assertNotNegative_(numberOfRows, 'skip');
 
-  this.query.skip = numberOfRows;
+  if (numberOfRows instanceof lf.Binder) {
+    this.skipBinder_ = numberOfRows;
+  } else {
+    this.setSkip_(numberOfRows);
+  }
   return this;
 };
 
@@ -35543,6 +35584,15 @@ lf.query.SelectBuilder.isAggregationValid_ = function(
 /** @override */
 lf.query.SelectBuilder.prototype.bind = function(values) {
   lf.query.BaseBuilder.bindValuesInSearchCondition(this.query, values);
+  if (goog.isDefAndNotNull(this.limitBinder_)) {
+    this.setLimit_(
+        /** @type {number} */ (values[this.limitBinder_.getIndex()]));
+  }
+
+  if (goog.isDefAndNotNull(this.skipBinder_)) {
+    this.setSkip_(
+        /** @type {number} */ (values[this.skipBinder_.getIndex()]));
+  }
   return this;
 };
 
