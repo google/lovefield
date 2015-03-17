@@ -2407,7 +2407,7 @@ goog.defineClass.createSealingConstructor_ = function(ctr, superClass) {
       return ctr;
     }
     /**
-     * @this {Object}
+     * @this {*}
      * @return {?}
      */
     var wrappedCtr = function() {
@@ -41303,8 +41303,7 @@ lf.schema.TableBuilder.prototype.generateTableClass_ = function() {
    * @extends {lf.schema.Table}
    */
   var tableClass = function() {
-    /** @private {!Array<!lf.schema.Column>} */
-    this.cols_ = that.columns_.getKeys().map(function(colName) {
+    var columns = that.columns_.getKeys().map(function(colName) {
       this[colName] = new lf.schema.BaseColumn(
           this,
           colName,
@@ -41315,13 +41314,13 @@ lf.schema.TableBuilder.prototype.generateTableClass_ = function() {
     }, this);
     tableClass.base(
         this, 'constructor',
-        that.name_, this.cols_, indices, that.persistentIndex_);
+        that.name_, columns, indices, that.persistentIndex_);
 
     var pk = that.indices_.containsKey(that.pkName_) ?
         new lf.schema.Index(
         that.name_, that.pkName_, true, that.indices_.get(that.pkName_)) :
         null;
-    var notNullable = this.cols_.filter(function(col) {
+    var notNullable = columns.filter(function(col) {
       return !that.nullable_.contains(col.getName());
     });
     var foreignKeys = [];
@@ -41335,7 +41334,7 @@ lf.schema.TableBuilder.prototype.generateTableClass_ = function() {
         new lf.schema.Constraint(pk, notNullable, foreignKeys, unique);
 
     /** @private {!Function} */
-    this.rowClass_ = that.generateRowClass_(this.cols_, indices);
+    this.rowClass_ = that.generateRowClass_(columns, indices);
   };
   goog.inherits(tableClass, lf.schema.Table);
 
@@ -41347,7 +41346,7 @@ lf.schema.TableBuilder.prototype.generateTableClass_ = function() {
   /** @override */
   tableClass.prototype.deserializeRow = function(dbRecord) {
     var obj = {};
-    this.cols_.forEach(function(col) {
+    this.getColumns().forEach(function(col) {
       var key = col.getName();
       var type = col.getType();
       var value = dbRecord['value'][key];
