@@ -138,7 +138,6 @@ function testThrows_NonIntegerPkWithAutoInc() {
   });
 }
 
-
 function testSchemaCorrectness() {
   var ds = createBuilder();
   var schema = ds.getSchema();
@@ -158,18 +157,7 @@ function testSchemaCorrectness() {
   assertEquals('Employee.#', e.getRowIdIndexName());
 
   var dummy = schema.table('DummyTable');
-  var row = dummy.createRow();
-  assertTrue(row instanceof lf.Row);
-  var payload = row.payload();
-  assertEquals('', lf.Row.binToHex(payload['arraybuffer']));
-  assertFalse(payload['boolean']);
-  assertEquals(0, payload['datetime'].getTime());
-  assertEquals(0, payload['integer']);
-  assertEquals(0, payload['number']);
-  assertObjectEquals({}, payload['object']);
-  assertEquals('', payload['string']);
-
-  var row2 = dummy.createRow({
+  var row = dummy.createRow({
     'arraybuffer': null,
     'boolean': true,
     'datetime': new Date(1),
@@ -178,8 +166,8 @@ function testSchemaCorrectness() {
     'object': null,
     'string': 'bar'
   });
-  var row3 = dummy.deserializeRow(row2.serialize());
-  assertObjectEquals(row2.payload(), row3.payload());
+  var row2 = dummy.deserializeRow(row.serialize());
+  assertObjectEquals(row.payload(), row2.payload());
 }
 
 
@@ -231,6 +219,47 @@ function testThrows_IllegalName() {
         addColumn('name', lf.Type.STRING).
         addUnique('unq#name', ['name']);
   });
+}
+
+
+/**
+ * Tests that the generated createRow() function produces the correct default
+ * values for each column, based on the column's type and whether the column is
+ * nullable by default.
+ */
+function testCreateRow_DefaultValues() {
+  var schemaBuilder = createBuilder();
+  var schema = schemaBuilder.getSchema();
+  var e = schema.table('Employee');
+  var employeeRow = e.createRow();
+  assertTrue(employeeRow instanceof lf.Row);
+  var expectedEmployeeRow = {
+    id: 0,
+    firstName: '',
+    lastName: '',
+    email: '',
+    phoneNumber: '',
+    hireDate: null,
+    jobId: '',
+    salary: 0,
+    commissionPercent: 0,
+    managerId: '',
+    departmentId: '',
+    photo: null
+  };
+  assertObjectEquals(expectedEmployeeRow, employeeRow.payload());
+
+  var dt = schema.table('DummyTable');
+  var dummyTableRow = dt.createRow();
+  assertTrue(dummyTableRow instanceof lf.Row);
+  var payload = dummyTableRow.payload();
+  assertNull(payload['arraybuffer']);
+  assertFalse(payload['boolean']);
+  assertEquals(0, payload['datetime'].getTime());
+  assertEquals(0, payload['integer']);
+  assertEquals(0, payload['number']);
+  assertNull(payload['object']);
+  assertEquals('', payload['string']);
 }
 
 

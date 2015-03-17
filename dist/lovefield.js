@@ -2407,7 +2407,7 @@ goog.defineClass.createSealingConstructor_ = function(ctr, superClass) {
       return ctr;
     }
     /**
-     * @this {*}
+     * @this {Object}
      * @return {?}
      */
     var wrappedCtr = function() {
@@ -3429,7 +3429,7 @@ goog.addDependency('string/newlines_test.js', ['goog.string.newlinesTest'], ['go
 goog.addDependency('string/parser.js', ['goog.string.Parser'], [], false);
 goog.addDependency('string/path.js', ['goog.string.path'], ['goog.array', 'goog.string'], false);
 goog.addDependency('string/path_test.js', ['goog.string.pathTest'], ['goog.string.path', 'goog.testing.jsunit'], false);
-goog.addDependency('string/string.js', ['goog.string', 'goog.string.Unicode'], ['goog.dom.TagName'], false);
+goog.addDependency('string/string.js', ['goog.string', 'goog.string.Unicode'], [], false);
 goog.addDependency('string/string_test.js', ['goog.stringTest'], ['goog.dom.TagName', 'goog.functions', 'goog.object', 'goog.string', 'goog.string.Unicode', 'goog.testing.MockControl', 'goog.testing.PropertyReplacer', 'goog.testing.jsunit'], false);
 goog.addDependency('string/stringbuffer.js', ['goog.string.StringBuffer'], [], false);
 goog.addDependency('string/stringbuffer_test.js', ['goog.string.StringBufferTest'], ['goog.string.StringBuffer', 'goog.testing.jsunit'], false);
@@ -3490,7 +3490,7 @@ goog.addDependency('style/transition.js', ['goog.style.transition', 'goog.style.
 goog.addDependency('style/transition_test.js', ['goog.style.transitionTest'], ['goog.style', 'goog.style.transition', 'goog.testing.jsunit', 'goog.userAgent'], false);
 goog.addDependency('test_module.js', ['goog.test_module'], ['goog.test_module_dep'], true);
 goog.addDependency('test_module_dep.js', ['goog.test_module_dep'], [], true);
-goog.addDependency('testing/asserts.js', ['goog.testing.JsUnitException', 'goog.testing.asserts', 'goog.testing.asserts.ArrayLike'], ['goog.dom.TagName', 'goog.testing.stacktrace'], false);
+goog.addDependency('testing/asserts.js', ['goog.testing.JsUnitException', 'goog.testing.asserts', 'goog.testing.asserts.ArrayLike'], ['goog.testing.stacktrace'], false);
 goog.addDependency('testing/asserts_test.js', ['goog.testing.assertsTest'], ['goog.array', 'goog.dom', 'goog.iter.Iterator', 'goog.iter.StopIteration', 'goog.labs.userAgent.browser', 'goog.string', 'goog.structs.Map', 'goog.structs.Set', 'goog.testing.asserts', 'goog.testing.jsunit', 'goog.userAgent'], false);
 goog.addDependency('testing/async/mockcontrol.js', ['goog.testing.async.MockControl'], ['goog.asserts', 'goog.async.Deferred', 'goog.debug', 'goog.testing.asserts', 'goog.testing.mockmatchers.IgnoreArgument'], false);
 goog.addDependency('testing/async/mockcontrol_test.js', ['goog.testing.async.MockControlTest'], ['goog.async.Deferred', 'goog.testing.MockControl', 'goog.testing.asserts', 'goog.testing.async.MockControl', 'goog.testing.jsunit'], false);
@@ -4074,167 +4074,6 @@ goog.dom.NodeType = {
   NOTATION: 12
 };
 
-// Copyright 2007 The Closure Library Authors. All Rights Reserved.
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS-IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
-/**
- * @fileoverview Defines the goog.dom.TagName enum.  This enumerates
- * all HTML tag names specified in either the the W3C HTML 4.01 index of
- * elements or the HTML5 draft specification.
- *
- * References:
- * http://www.w3.org/TR/html401/index/elements.html
- * http://dev.w3.org/html5/spec/section-index.html
- *
- */
-goog.provide('goog.dom.TagName');
-
-
-/**
- * Enum of all html tag names specified by the W3C HTML4.01 and HTML5
- * specifications.
- * @enum {string}
- */
-goog.dom.TagName = {
-  A: 'A',
-  ABBR: 'ABBR',
-  ACRONYM: 'ACRONYM',
-  ADDRESS: 'ADDRESS',
-  APPLET: 'APPLET',
-  AREA: 'AREA',
-  ARTICLE: 'ARTICLE',
-  ASIDE: 'ASIDE',
-  AUDIO: 'AUDIO',
-  B: 'B',
-  BASE: 'BASE',
-  BASEFONT: 'BASEFONT',
-  BDI: 'BDI',
-  BDO: 'BDO',
-  BIG: 'BIG',
-  BLOCKQUOTE: 'BLOCKQUOTE',
-  BODY: 'BODY',
-  BR: 'BR',
-  BUTTON: 'BUTTON',
-  CANVAS: 'CANVAS',
-  CAPTION: 'CAPTION',
-  CENTER: 'CENTER',
-  CITE: 'CITE',
-  CODE: 'CODE',
-  COL: 'COL',
-  COLGROUP: 'COLGROUP',
-  COMMAND: 'COMMAND',
-  DATA: 'DATA',
-  DATALIST: 'DATALIST',
-  DD: 'DD',
-  DEL: 'DEL',
-  DETAILS: 'DETAILS',
-  DFN: 'DFN',
-  DIALOG: 'DIALOG',
-  DIR: 'DIR',
-  DIV: 'DIV',
-  DL: 'DL',
-  DT: 'DT',
-  EM: 'EM',
-  EMBED: 'EMBED',
-  FIELDSET: 'FIELDSET',
-  FIGCAPTION: 'FIGCAPTION',
-  FIGURE: 'FIGURE',
-  FONT: 'FONT',
-  FOOTER: 'FOOTER',
-  FORM: 'FORM',
-  FRAME: 'FRAME',
-  FRAMESET: 'FRAMESET',
-  H1: 'H1',
-  H2: 'H2',
-  H3: 'H3',
-  H4: 'H4',
-  H5: 'H5',
-  H6: 'H6',
-  HEAD: 'HEAD',
-  HEADER: 'HEADER',
-  HGROUP: 'HGROUP',
-  HR: 'HR',
-  HTML: 'HTML',
-  I: 'I',
-  IFRAME: 'IFRAME',
-  IMG: 'IMG',
-  INPUT: 'INPUT',
-  INS: 'INS',
-  ISINDEX: 'ISINDEX',
-  KBD: 'KBD',
-  KEYGEN: 'KEYGEN',
-  LABEL: 'LABEL',
-  LEGEND: 'LEGEND',
-  LI: 'LI',
-  LINK: 'LINK',
-  MAP: 'MAP',
-  MARK: 'MARK',
-  MATH: 'MATH',
-  MENU: 'MENU',
-  META: 'META',
-  METER: 'METER',
-  NAV: 'NAV',
-  NOFRAMES: 'NOFRAMES',
-  NOSCRIPT: 'NOSCRIPT',
-  OBJECT: 'OBJECT',
-  OL: 'OL',
-  OPTGROUP: 'OPTGROUP',
-  OPTION: 'OPTION',
-  OUTPUT: 'OUTPUT',
-  P: 'P',
-  PARAM: 'PARAM',
-  PRE: 'PRE',
-  PROGRESS: 'PROGRESS',
-  Q: 'Q',
-  RP: 'RP',
-  RT: 'RT',
-  RUBY: 'RUBY',
-  S: 'S',
-  SAMP: 'SAMP',
-  SCRIPT: 'SCRIPT',
-  SECTION: 'SECTION',
-  SELECT: 'SELECT',
-  SMALL: 'SMALL',
-  SOURCE: 'SOURCE',
-  SPAN: 'SPAN',
-  STRIKE: 'STRIKE',
-  STRONG: 'STRONG',
-  STYLE: 'STYLE',
-  SUB: 'SUB',
-  SUMMARY: 'SUMMARY',
-  SUP: 'SUP',
-  SVG: 'SVG',
-  TABLE: 'TABLE',
-  TBODY: 'TBODY',
-  TD: 'TD',
-  TEMPLATE: 'TEMPLATE',
-  TEXTAREA: 'TEXTAREA',
-  TFOOT: 'TFOOT',
-  TH: 'TH',
-  THEAD: 'THEAD',
-  TIME: 'TIME',
-  TITLE: 'TITLE',
-  TR: 'TR',
-  TRACK: 'TRACK',
-  TT: 'TT',
-  U: 'U',
-  UL: 'UL',
-  VAR: 'VAR',
-  VIDEO: 'VIDEO',
-  WBR: 'WBR'
-};
-
 // Copyright 2006 The Closure Library Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -4260,8 +4099,6 @@ goog.dom.TagName = {
  */
 goog.provide('goog.string');
 goog.provide('goog.string.Unicode');
-
-goog.require('goog.dom.TagName');
 
 
 /**
@@ -4952,9 +4789,9 @@ goog.string.unescapeEntitiesUsingDom_ = function(str, opt_document) {
   var seen = {'&amp;': '&', '&lt;': '<', '&gt;': '>', '&quot;': '"'};
   var div;
   if (opt_document) {
-    div = opt_document.createElement(goog.dom.TagName.DIV);
+    div = opt_document.createElement('div');
   } else {
-    div = goog.global.document.createElement(goog.dom.TagName.DIV);
+    div = goog.global.document.createElement('div');
   }
   // Match as many valid entity characters as possible. If the actual entity
   // happens to be shorter, it will still work as innerHTML will return the
@@ -7823,6 +7660,167 @@ goog.array.copyByIndex = function(arr, index_arr) {
     result.push(arr[index]);
   });
   return result;
+};
+
+// Copyright 2007 The Closure Library Authors. All Rights Reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS-IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+/**
+ * @fileoverview Defines the goog.dom.TagName enum.  This enumerates
+ * all HTML tag names specified in either the the W3C HTML 4.01 index of
+ * elements or the HTML5 draft specification.
+ *
+ * References:
+ * http://www.w3.org/TR/html401/index/elements.html
+ * http://dev.w3.org/html5/spec/section-index.html
+ *
+ */
+goog.provide('goog.dom.TagName');
+
+
+/**
+ * Enum of all html tag names specified by the W3C HTML4.01 and HTML5
+ * specifications.
+ * @enum {string}
+ */
+goog.dom.TagName = {
+  A: 'A',
+  ABBR: 'ABBR',
+  ACRONYM: 'ACRONYM',
+  ADDRESS: 'ADDRESS',
+  APPLET: 'APPLET',
+  AREA: 'AREA',
+  ARTICLE: 'ARTICLE',
+  ASIDE: 'ASIDE',
+  AUDIO: 'AUDIO',
+  B: 'B',
+  BASE: 'BASE',
+  BASEFONT: 'BASEFONT',
+  BDI: 'BDI',
+  BDO: 'BDO',
+  BIG: 'BIG',
+  BLOCKQUOTE: 'BLOCKQUOTE',
+  BODY: 'BODY',
+  BR: 'BR',
+  BUTTON: 'BUTTON',
+  CANVAS: 'CANVAS',
+  CAPTION: 'CAPTION',
+  CENTER: 'CENTER',
+  CITE: 'CITE',
+  CODE: 'CODE',
+  COL: 'COL',
+  COLGROUP: 'COLGROUP',
+  COMMAND: 'COMMAND',
+  DATA: 'DATA',
+  DATALIST: 'DATALIST',
+  DD: 'DD',
+  DEL: 'DEL',
+  DETAILS: 'DETAILS',
+  DFN: 'DFN',
+  DIALOG: 'DIALOG',
+  DIR: 'DIR',
+  DIV: 'DIV',
+  DL: 'DL',
+  DT: 'DT',
+  EM: 'EM',
+  EMBED: 'EMBED',
+  FIELDSET: 'FIELDSET',
+  FIGCAPTION: 'FIGCAPTION',
+  FIGURE: 'FIGURE',
+  FONT: 'FONT',
+  FOOTER: 'FOOTER',
+  FORM: 'FORM',
+  FRAME: 'FRAME',
+  FRAMESET: 'FRAMESET',
+  H1: 'H1',
+  H2: 'H2',
+  H3: 'H3',
+  H4: 'H4',
+  H5: 'H5',
+  H6: 'H6',
+  HEAD: 'HEAD',
+  HEADER: 'HEADER',
+  HGROUP: 'HGROUP',
+  HR: 'HR',
+  HTML: 'HTML',
+  I: 'I',
+  IFRAME: 'IFRAME',
+  IMG: 'IMG',
+  INPUT: 'INPUT',
+  INS: 'INS',
+  ISINDEX: 'ISINDEX',
+  KBD: 'KBD',
+  KEYGEN: 'KEYGEN',
+  LABEL: 'LABEL',
+  LEGEND: 'LEGEND',
+  LI: 'LI',
+  LINK: 'LINK',
+  MAP: 'MAP',
+  MARK: 'MARK',
+  MATH: 'MATH',
+  MENU: 'MENU',
+  META: 'META',
+  METER: 'METER',
+  NAV: 'NAV',
+  NOFRAMES: 'NOFRAMES',
+  NOSCRIPT: 'NOSCRIPT',
+  OBJECT: 'OBJECT',
+  OL: 'OL',
+  OPTGROUP: 'OPTGROUP',
+  OPTION: 'OPTION',
+  OUTPUT: 'OUTPUT',
+  P: 'P',
+  PARAM: 'PARAM',
+  PRE: 'PRE',
+  PROGRESS: 'PROGRESS',
+  Q: 'Q',
+  RP: 'RP',
+  RT: 'RT',
+  RUBY: 'RUBY',
+  S: 'S',
+  SAMP: 'SAMP',
+  SCRIPT: 'SCRIPT',
+  SECTION: 'SECTION',
+  SELECT: 'SELECT',
+  SMALL: 'SMALL',
+  SOURCE: 'SOURCE',
+  SPAN: 'SPAN',
+  STRIKE: 'STRIKE',
+  STRONG: 'STRONG',
+  STYLE: 'STYLE',
+  SUB: 'SUB',
+  SUMMARY: 'SUMMARY',
+  SUP: 'SUP',
+  SVG: 'SVG',
+  TABLE: 'TABLE',
+  TBODY: 'TBODY',
+  TD: 'TD',
+  TEMPLATE: 'TEMPLATE',
+  TEXTAREA: 'TEXTAREA',
+  TFOOT: 'TFOOT',
+  TH: 'TH',
+  THEAD: 'THEAD',
+  TIME: 'TIME',
+  TITLE: 'TITLE',
+  TR: 'TR',
+  TRACK: 'TRACK',
+  TT: 'TT',
+  U: 'U',
+  UL: 'UL',
+  VAR: 'VAR',
+  VIDEO: 'VIDEO',
+  WBR: 'WBR'
 };
 
 // Copyright 2006 The Closure Library Authors. All Rights Reserved.
@@ -40989,6 +40987,17 @@ lf.schema.TableBuilder = function(tableName) {
 
 
 /**
+ * A set of types that are nullable by default. Columns of this type default to
+ * a null value even if addNullable() is not explicitly called.
+ * @type {!goog.structs.Set<!lf.Type>}
+ */
+lf.schema.TableBuilder.NULLABLE_TYPES_BY_DEFAULT = new goog.structs.Set([
+  lf.Type.ARRAY_BUFFER,
+  lf.Type.OBJECT
+]);
+
+
+/**
  * @param {string} name
  * @return {string}
  * @private
@@ -41050,6 +41059,9 @@ lf.schema.TableBuilder.prototype.checkPrimaryKey_ = function(columns) {
 lf.schema.TableBuilder.prototype.addColumn = function(name, type) {
   this.checkName_(name);
   this.columns_.set(name, type);
+  if (lf.schema.TableBuilder.NULLABLE_TYPES_BY_DEFAULT.contains(type)) {
+    this.addNullable([name]);
+  }
   return this;
 };
 
@@ -41339,7 +41351,8 @@ lf.schema.TableBuilder.prototype.generateRowClass_ = function(
   rowClass.prototype.defaultPayload = function() {
     var obj = {};
     this.columns_.forEach(function(col) {
-      obj[col.getName()] = lf.type.DEFAULT_VALUES[col.getType()];
+      obj[col.getName()] = col.isNullable() ?
+          null : lf.type.DEFAULT_VALUES[col.getType()];
     });
     return obj;
   };
