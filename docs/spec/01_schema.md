@@ -91,26 +91,35 @@ the table. Each column must have an associated data type.
 The supported data types are listed in [`lf.Type`](
 https://github.com/google/lovefield/blob/4e5c4c1318d2466da48858cf5fccce40fd059652/lib/type.js#L21-30):
 
-| Type                 | Default Value | Nullable | Description               |
-|:---------------------|:--------------|:---------|:--------------------------|
-|`lf.Type.ARRAY_BUFFER`|`null`    |Yes |JavaScript `ArrayBuffer` object       |
-|`lf.Type.BOOLEAN`     |`false`   |No  |                                      |
-|`lf.Type.DATE_TIME`   |`Date(0)` |Yes |JavaScript Date, will be converted to timestamp integer internally |
-|`lf.Type.INTEGER`     |`0`       |No  |32-bit integer                        |
-|`lf.Type.NUMBER`      |`0`       |No  |JavaScript `number` type              |
-|`lf.Type.STRING`      |`''`      |Yes |JavaScript `string` type              |
-|`lf.Type.OBJECT`      |`null`    |Yes |JavaScript `Object`, store as-is      |
+| Type                 | Default Value | Nullable by default | Description                          |
+|:---------------------|:--------------|:--------------------|:-------------------------------------|
+|`lf.Type.ARRAY_BUFFER`|`null`         |Yes                  |JavaScript `ArrayBuffer` object       |
+|`lf.Type.BOOLEAN`     |`false`        |No                   |JavaScript `boolean` object           |
+|`lf.Type.DATE_TIME`   |`Date(0)`      |No                   |JavaScript Date, will be converted to timestamp integer internally |
+|`lf.Type.INTEGER`     |`0`            |No                   |32-bit integer                        |
+|`lf.Type.NUMBER`      |`0`            |No                   |JavaScript `number` type              |
+|`lf.Type.STRING`      |`''`           |No                   |JavaScript `string` type              |
+|`lf.Type.OBJECT`      |`null`         |Yes                  |JavaScript `Object`, stored as-is     |
 
-Although `lf.Type.STRING` and `lf.Type.DATE_TIME` can be null, the columns are
-defaulted to `NOT NULL`. This is very different from typical SQL engine
-behavior. The user needs to specifically call out nullable columns by calling
-[`addNullable()`](https://github.com/google/lovefield/blob/31f14db4995bb89fa053c99261a4b7501f87eb8d/lib/schema/table_builder.js#L213-231).
+Any column regardless of type can be marked as nullable by calling
+[`TableBuilder#addNullable()`]
+(https://github.com/google/lovefield/blob/31f14db4995bb89fa053c99261a4b7501f87eb8d/lib/schema/table_builder.js#L213-231).
+The default value for nullable columns is always `null`. The default values
+shown in the table above refer to the case where a column has not been marked as
+nullable.
+
+* Columns of type `lf.Type.ARRAY_BUFFER` and `lf.Type.OBJECT` are nullable by
+default (even if `addNullable()` is not explicitly called).
+* Columns of any other type are considered not nullable unless an explicit call
+to `addNullable()` is made. Note this is very different from typical SQL engine
+behavior.
 
 Lovefield internally accepts only string or number as index key. Array buffers
 and objects are not indexable (i.e. they cannot be put as index or any of the
 constraints) nor searchable (i.e. them cannot be part of `WHERE` clause).
 Implicit conversions will be performed internally if the following types are
 used as index / primary key or being placed as a unique constraint:
+
 * `lf.Type.BOOLEAN`: convert to `lf.Type.STRING`
 * `lf.Type.DATE_TIME`: convert to `lf.Type.NUMBER`
 * `lf.Type.INTEGER`: convert to `lf.Type.NUMBER`
