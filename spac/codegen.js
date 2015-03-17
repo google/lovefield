@@ -181,9 +181,10 @@ function convertSchema(yaml) {
       var col = {};
       col.name = colName;
       col.type = yaml.table[tableName].column[colName];
-      col.nullable = table.hasOwnProperty('constraint') &&
+      col.nullable = (table.hasOwnProperty('constraint') &&
           table.constraint.hasOwnProperty('nullable') &&
-          table.constraint.nullable.indexOf(col.name) != -1;
+          table.constraint.nullable.indexOf(col.name) != -1) ||
+          NULLABLE_TYPES_BY_DEFAULT.indexOf(col.type) != -1;
       columns.push(col);
     }
     table.column = columns;
@@ -197,6 +198,13 @@ function convertSchema(yaml) {
   schema.table = tables;
   return schema;
 }
+
+
+/** @const {!Array.<string>} */
+var NULLABLE_TYPES_BY_DEFAULT = [
+  'arraybuffer',
+  'object'
+];
 
 
 
@@ -722,7 +730,7 @@ CodeGenerator.columnTypeToJsType_ = function(columnType, isNullable) {
   } else if (columnType == 'string') {
     columnType = (isNullable ? '?' : '') + 'string';
   } else if (columnType == 'object') {
-    columnType = (isNullable ? '' : '!') + 'Object';
+    columnType = (isNullable ? '?' : '!') + 'Object';
   }
 
   // Must be either 'number', 'boolean', which are non-nullable according to the
@@ -1145,13 +1153,9 @@ CodeGenerator.prototype.getUniqueColumns_ = function(table) {
  * @private
  */
 CodeGenerator.prototype.getNullableColums_ = function(table) {
-  if (!table.constraint || !table.constraint.nullable) {
-    return [];
-  }
-
   return table.column.filter(
       function(column) {
-        return table.constraint.nullable.indexOf(column.name) != -1;
+        return column.nullable;
       }).map(
       function(column) {
         return column.name;
