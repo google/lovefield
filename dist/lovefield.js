@@ -31854,6 +31854,10 @@ lf.schema.Column.prototype.getAlias;
 lf.schema.Column.prototype.getIndices;
 
 
+/** @return {boolean} */
+lf.schema.Column.prototype.isNullable;
+
+
 
 /**
  * Models the return value of Database.getSchema().
@@ -32160,6 +32164,12 @@ lf.fn.AggregatedColumn.prototype.getIndices = function() {
 };
 
 
+/** @override */
+lf.fn.AggregatedColumn.prototype.isNullable = function() {
+  return false;
+};
+
+
 /**
  * @export
  * @param {string} name
@@ -32250,6 +32260,12 @@ lf.fn.StarColumn.prototype.getAlias = function() {
 /** @override */
 lf.fn.StarColumn.prototype.getIndices = function() {
   return [];
+};
+
+
+/** @override */
+lf.fn.StarColumn.prototype.isNullable = function() {
+  return false;
 };
 
 /**
@@ -40528,11 +40544,13 @@ goog.require('lf.schema.Column');
  *
  * @param {!lf.schema.Table} table The table where this column belongs.
  * @param {string} name The name of this column.
- * @param {boolean} isUnique The values in this column is unique.
+ * @param {boolean} isUnique Whether the values in this column are unique.
+ * @param {boolean} isNullable Whether the values in this column are nullable.
  * @param {!lf.Type} type The type of the data held by this column.
  * @param {string=} opt_alias Alias of this column.
  */
-lf.schema.BaseColumn = function(table, name, isUnique, type, opt_alias) {
+lf.schema.BaseColumn = function(
+    table, name, isUnique, isNullable, type, opt_alias) {
   /** @private {!lf.schema.Table} */
   this.table_ = table;
 
@@ -40541,6 +40559,9 @@ lf.schema.BaseColumn = function(table, name, isUnique, type, opt_alias) {
 
   /** @private {boolean} */
   this.isUnique_ = isUnique;
+
+  /** @private {boolean} */
+  this.isNullable_ = isNullable;
 
   /** @private {!lf.Type} */
   this.type_ = type;
@@ -40605,6 +40626,12 @@ lf.schema.BaseColumn.prototype.getIndices = function() {
   }
 
   return this.indices_;
+};
+
+
+/** @override */
+lf.schema.BaseColumn.prototype.isNullable = function() {
+  return this.isNullable_;
 };
 
 
@@ -40687,7 +40714,8 @@ lf.schema.BaseColumn.prototype.isNotNull = function() {
  */
 lf.schema.BaseColumn.prototype.as = function(name) {
   return new lf.schema.BaseColumn(
-      this.table_, this.name_, this.isUnique_, this.type_, name);
+      this.table_, this.name_, this.isUnique_, this.isNullable_,
+      this.type_, name);
 };
 
 /**
@@ -41177,6 +41205,7 @@ lf.schema.TableBuilder.prototype.generateTableClass_ = function() {
           this,
           colName,
           that.uniqueColumns_.contains(colName),
+          that.nullable_.contains(colName),
           that.columns_.get(colName));
       return this[colName];
     }, this);

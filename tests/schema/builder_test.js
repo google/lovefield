@@ -148,6 +148,8 @@ function testSchemaCorrectness() {
   var emp = schema.table('Employee');
   assertTrue(emp instanceof lf.schema.Table);
   assertEquals('Employee', emp.getEffectiveName());
+  assertTrue(emp['hireDate'].isNullable());
+
   var e = emp.as('e');
   assertEquals('e', e.getEffectiveName());
   assertEquals(2, emp.getIndices().length);

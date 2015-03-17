@@ -85,17 +85,17 @@ foo.db.schema.Foo = function() {
 
   /** @type {!lf.schema.BaseColumn.<string>} */
   this.id = new lf.schema.BaseColumn(
-      this, 'id', true, lf.Type.STRING);
+      this, 'id', true, false, lf.Type.STRING);
   cols.push(this.id);
 
   /** @type {!lf.schema.BaseColumn.<string>} */
   this.name = new lf.schema.BaseColumn(
-      this, 'name', false, lf.Type.STRING);
+      this, 'name', false, false, lf.Type.STRING);
   cols.push(this.name);
 
   /** @type {!lf.schema.BaseColumn.<string>} */
   this.bar = new lf.schema.BaseColumn(
-      this, 'bar', true, lf.Type.STRING);
+      this, 'bar', true, false, lf.Type.STRING);
   cols.push(this.bar);
 
   var indices = [

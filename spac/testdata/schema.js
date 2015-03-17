@@ -145,32 +145,32 @@ lovefield.db.schema.Album = function() {
 
   /** @type {!lf.schema.BaseColumn.<string>} */
   this.id = new lf.schema.BaseColumn(
-      this, 'id', true, lf.Type.STRING);
+      this, 'id', true, false, lf.Type.STRING);
   cols.push(this.id);
 
   /** @type {!lf.schema.BaseColumn.<boolean>} */
   this.isLocal = new lf.schema.BaseColumn(
-      this, 'isLocal', false, lf.Type.BOOLEAN);
+      this, 'isLocal', false, false, lf.Type.BOOLEAN);
   cols.push(this.isLocal);
 
   /** @type {!lf.schema.BaseColumn.<boolean>} */
   this.createdByAction = new lf.schema.BaseColumn(
-      this, 'createdByAction', false, lf.Type.BOOLEAN);
+      this, 'createdByAction', false, false, lf.Type.BOOLEAN);
   cols.push(this.createdByAction);
 
   /** @type {!lf.schema.BaseColumn.<!Date>} */
   this.timestamp = new lf.schema.BaseColumn(
-      this, 'timestamp', false, lf.Type.DATE_TIME);
+      this, 'timestamp', false, false, lf.Type.DATE_TIME);
   cols.push(this.timestamp);
 
   /** @type {!lf.schema.BaseColumn.<!ArrayBuffer>} */
   this.tacotownJspb = new lf.schema.BaseColumn(
-      this, 'tacotownJspb', false, lf.Type.ARRAY_BUFFER);
+      this, 'tacotownJspb', false, false, lf.Type.ARRAY_BUFFER);
   cols.push(this.tacotownJspb);
 
   /** @type {!lf.schema.BaseColumn.<!Object>} */
   this.proto = new lf.schema.BaseColumn(
-      this, 'proto', false, lf.Type.OBJECT);
+      this, 'proto', false, false, lf.Type.OBJECT);
   cols.push(this.proto);
 
   var indices = [
@@ -438,52 +438,52 @@ lovefield.db.schema.Photo = function() {
 
   /** @type {!lf.schema.BaseColumn.<string>} */
   this.id = new lf.schema.BaseColumn(
-      this, 'id', true, lf.Type.STRING);
+      this, 'id', true, false, lf.Type.STRING);
   cols.push(this.id);
 
   /** @type {!lf.schema.BaseColumn.<string>} */
   this.imageHash = new lf.schema.BaseColumn(
-      this, 'imageHash', true, lf.Type.STRING);
+      this, 'imageHash', true, false, lf.Type.STRING);
   cols.push(this.imageHash);
 
   /** @type {!lf.schema.BaseColumn.<boolean>} */
   this.isLocal = new lf.schema.BaseColumn(
-      this, 'isLocal', false, lf.Type.BOOLEAN);
+      this, 'isLocal', false, false, lf.Type.BOOLEAN);
   cols.push(this.isLocal);
 
   /** @type {!lf.schema.BaseColumn.<boolean>} */
   this.createdByAction = new lf.schema.BaseColumn(
-      this, 'createdByAction', false, lf.Type.BOOLEAN);
+      this, 'createdByAction', false, true, lf.Type.BOOLEAN);
   cols.push(this.createdByAction);
 
   /** @type {!lf.schema.BaseColumn.<!Date>} */
   this.timestamp = new lf.schema.BaseColumn(
-      this, 'timestamp', false, lf.Type.DATE_TIME);
+      this, 'timestamp', false, false, lf.Type.DATE_TIME);
   cols.push(this.timestamp);
 
   /** @type {!lf.schema.BaseColumn.<!Date>} */
   this.accessTimestamp = new lf.schema.BaseColumn(
-      this, 'accessTimestamp', false, lf.Type.DATE_TIME);
+      this, 'accessTimestamp', false, true, lf.Type.DATE_TIME);
   cols.push(this.accessTimestamp);
 
   /** @type {!lf.schema.BaseColumn.<string>} */
   this.albumId = new lf.schema.BaseColumn(
-      this, 'albumId', false, lf.Type.STRING);
+      this, 'albumId', false, false, lf.Type.STRING);
   cols.push(this.albumId);
 
   /** @type {!lf.schema.BaseColumn.<boolean>} */
   this.isCoverPhoto = new lf.schema.BaseColumn(
-      this, 'isCoverPhoto', false, lf.Type.BOOLEAN);
+      this, 'isCoverPhoto', false, false, lf.Type.BOOLEAN);
   cols.push(this.isCoverPhoto);
 
   /** @type {!lf.schema.BaseColumn.<!ArrayBuffer>} */
   this.tacotownJspb = new lf.schema.BaseColumn(
-      this, 'tacotownJspb', false, lf.Type.ARRAY_BUFFER);
+      this, 'tacotownJspb', false, true, lf.Type.ARRAY_BUFFER);
   cols.push(this.tacotownJspb);
 
   /** @type {!lf.schema.BaseColumn.<!Object>} */
   this.proto = new lf.schema.BaseColumn(
-      this, 'proto', false, lf.Type.OBJECT);
+      this, 'proto', false, true, lf.Type.OBJECT);
   cols.push(this.proto);
 
   var indices = [
@@ -847,27 +847,27 @@ lovefield.db.schema.Details = function() {
 
   /** @type {!lf.schema.BaseColumn.<string>} */
   this.id1 = new lf.schema.BaseColumn(
-      this, 'id1', true, lf.Type.STRING);
+      this, 'id1', true, false, lf.Type.STRING);
   cols.push(this.id1);
 
   /** @type {!lf.schema.BaseColumn.<number>} */
   this.id2 = new lf.schema.BaseColumn(
-      this, 'id2', true, lf.Type.NUMBER);
+      this, 'id2', true, false, lf.Type.NUMBER);
   cols.push(this.id2);
 
   /** @type {!lf.schema.BaseColumn.<string>} */
   this.photoId = new lf.schema.BaseColumn(
-      this, 'photoId', false, lf.Type.STRING);
+      this, 'photoId', false, false, lf.Type.STRING);
   cols.push(this.photoId);
 
   /** @type {!lf.schema.BaseColumn.<string>} */
   this.albumId = new lf.schema.BaseColumn(
-      this, 'albumId', false, lf.Type.STRING);
+      this, 'albumId', false, false, lf.Type.STRING);
   cols.push(this.albumId);
 
   /** @type {!lf.schema.BaseColumn.<number>} */
   this.totalComments = new lf.schema.BaseColumn(
-      this, 'totalComments', false, lf.Type.INTEGER);
+      this, 'totalComments', false, false, lf.Type.INTEGER);
   cols.push(this.totalComments);
 
   var indices = [
@@ -1108,17 +1108,17 @@ lovefield.db.schema.Curator = function() {
 
   /** @type {!lf.schema.BaseColumn.<number>} */
   this.id = new lf.schema.BaseColumn(
-      this, 'id', true, lf.Type.INTEGER);
+      this, 'id', true, false, lf.Type.INTEGER);
   cols.push(this.id);
 
   /** @type {!lf.schema.BaseColumn.<string>} */
   this.name = new lf.schema.BaseColumn(
-      this, 'name', false, lf.Type.STRING);
+      this, 'name', false, false, lf.Type.STRING);
   cols.push(this.name);
 
   /** @type {!lf.schema.BaseColumn.<number>} */
   this.timestamp = new lf.schema.BaseColumn(
-      this, 'timestamp', false, lf.Type.INTEGER);
+      this, 'timestamp', false, false, lf.Type.INTEGER);
   cols.push(this.timestamp);
 
   var indices = [
@@ -1323,17 +1323,17 @@ lovefield.db.schema.PhotoCurator = function() {
 
   /** @type {!lf.schema.BaseColumn.<string>} */
   this.photoId = new lf.schema.BaseColumn(
-      this, 'photoId', false, lf.Type.STRING);
+      this, 'photoId', false, false, lf.Type.STRING);
   cols.push(this.photoId);
 
   /** @type {!lf.schema.BaseColumn.<number>} */
   this.curator = new lf.schema.BaseColumn(
-      this, 'curator', false, lf.Type.INTEGER);
+      this, 'curator', false, false, lf.Type.INTEGER);
   cols.push(this.curator);
 
   /** @type {!lf.schema.BaseColumn.<string>} */
   this.topic = new lf.schema.BaseColumn(
-      this, 'topic', true, lf.Type.STRING);
+      this, 'topic', true, false, lf.Type.STRING);
   cols.push(this.topic);
 
   var indices = [

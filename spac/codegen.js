@@ -22,6 +22,7 @@
  * #bundledmode: enableBundledMode pragma value, default to false
  * #column: array of columns of last used #table, must be used in #repeatcolumn
  * #columnuniqueness: uniqueness of last used #column
+ * #columnnullable: nullability of last used #column
  * #dbname: database name
  * #dbtablelist: database table list
  * #dbversion: database version
@@ -1139,6 +1140,26 @@ CodeGenerator.prototype.getUniqueColumns_ = function(table) {
 
 
 /**
+ * @param {!Object} table
+ * @return {!Array.<string>}
+ * @private
+ */
+CodeGenerator.prototype.getNullableColums_ = function(table) {
+  if (!table.constraint || !table.constraint.nullable) {
+    return [];
+  }
+
+  return table.column.filter(
+      function(column) {
+        return table.constraint.nullable.indexOf(column.name) != -1;
+      }).map(
+      function(column) {
+        return column.name;
+      });
+};
+
+
+/**
  * @param {!Array.<string>} lines
  * @return {!Array.<string>}
  * @private
@@ -1147,6 +1168,7 @@ CodeGenerator.prototype.processRepeatColumn_ = function(lines) {
   var table = this.schema_.table[this.tableIndex_];
   var columns = table.column;
   var uniqueColumns = this.getUniqueColumns_(table);
+  var nullableColumns = this.getNullableColums_(table);
 
   var results = [];
 
@@ -1155,13 +1177,15 @@ CodeGenerator.prototype.processRepeatColumn_ = function(lines) {
     var name = col.name;
     var pascal = this.toPascal_(name);
     var camel = this.toCamel_(name);
-    var unique = (uniqueColumns.indexOf(name) != -1);
+    var isUnique = uniqueColumns.indexOf(name) != -1;
+    var isNullable = nullableColumns.indexOf(name) != -1;
 
     for (var j = 0; j < lines.length; ++j) {
       var genLine = lines[j];
       genLine = genLine.replace(/#column#pascal/g, pascal);
       genLine = genLine.replace(/#column#camel/g, camel);
-      genLine = genLine.replace(/#columnuniqueness/g, unique.toString());
+      genLine = genLine.replace(/#columnuniqueness/g, isUnique.toString());
+      genLine = genLine.replace(/#columnnullable/g, isNullable.toString());
       genLine = genLine.replace(
           /#columnjstype/g,
           CodeGenerator.columnTypeToJsType_(col.type, /* isNullable */ false));

@@ -95,7 +95,7 @@ goog.require('lf.schema.Table');
   /// #repeatcolumn
   /** @type {!lf.schema.BaseColumn.<#columnjstype>} */
   this.#column#camel = new lf.schema.BaseColumn(
-      this, '#column#camel', #columnuniqueness, #columnenumtype);
+      this, '#column#camel', #columnuniqueness, #columnnullable, #columnenumtype);
   cols.push(this.#column#camel);
 
   /// #repeatcolumnend

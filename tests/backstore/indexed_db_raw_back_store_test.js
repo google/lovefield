@@ -606,10 +606,11 @@ Schema_.prototype.setBundledMode = function(mode) {
  */
 var Table_ = function(tableName) {
   /** @type {!lf.schema.Column.<string>} */
-  this.id = new lf.schema.BaseColumn(this, 'id', false, lf.Type.STRING);
+  this.id = new lf.schema.BaseColumn(this, 'id', false, false, lf.Type.STRING);
 
   /** @type {!lf.schema.Column.<string>} */
-  this.name = new lf.schema.BaseColumn(this, 'name', false, lf.Type.STRING);
+  this.name = new lf.schema.BaseColumn(
+      this, 'name', false, false, lf.Type.STRING);
 
   Table_.base(this, 'constructor',
       tableName, [this.id, this.name], [], false);
