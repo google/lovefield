@@ -295,6 +295,33 @@ function testKeyOfIndex_SingleKey() {
 
 
 /**
+ * Tests that keyOfIndex() is correctly handling nullable fields.
+ */
+function testKeyOfIndex_NullableField() {
+  var schemaBuilder = lf.schema.create('ki', 1);
+  schemaBuilder.createTable('SomeTable').
+      addColumn('datetime', lf.Type.DATE_TIME).
+      addColumn('integer', lf.Type.INTEGER).
+      addColumn('number', lf.Type.NUMBER).
+      addColumn('string', lf.Type.STRING).
+      addColumn('boolean', lf.Type.BOOLEAN).
+      addNullable(['datetime', 'integer', 'number', 'string', 'boolean']).
+      addIndex('idx_datetime', ['datetime']).
+      addIndex('idx_integer', ['integer']).
+      addIndex('idx_number', ['number']).
+      addIndex('idx_string', ['string']).
+      addIndex('idx_boolean', ['boolean']);
+  var schema = schemaBuilder.getSchema();
+  var table = schema.table('SomeTable');
+  var row = table.createRow();
+
+  table.getIndices().forEach(function(indexSchema) {
+    assertNull(row.keyOfIndex(indexSchema.getNormalizedName()));
+  });
+}
+
+
+/**
  * Tests that keyOfIndex() method returns the expected keys, for the case of
  * cross-column indices.
  */

@@ -41775,11 +41775,18 @@ lf.schema.TableBuilder.prototype.generateRowClass_ = function(
     var colType = this.columns_.get(column.getName());
     if (colType == lf.Type.DATE_TIME) {
       return function(payload) {
-        return payload[column.getName()].getTime();
+        var value = payload[column.getName()];
+        return column.isNullable() && goog.isNull(value) ?
+            null : value.getTime();
       }
     } else if (colType == lf.Type.BOOLEAN) {
       return function(payload) {
-        return payload[column.getName()] ? 1 : 0;
+        if (column.isNullable()) {
+          var value = payload[column.getName()];
+          return goog.isNull(value) ? null : (value ? 1 : 0);
+        } else {
+          return payload[column.getName()] ? 1 : 0;
+        }
       }
     } else {
       return function(payload) {
