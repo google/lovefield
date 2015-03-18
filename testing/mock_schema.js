@@ -77,6 +77,17 @@ lf.testing.MockSchema = function() {
       addUnique('uq_email', ['email']).
       getSchema();
 
+  /**
+   * A table with a nullable column index.
+   * @private {!lf.schema.Table}
+   */
+  this.tableF_ = new lf.schema.TableBuilder('tableF').
+      addColumn('id', lf.Type.STRING).
+      addColumn('name', lf.Type.STRING).
+      addNullable(['name']).
+      addIndex('idxName', [{'name': 'name', 'order': lf.Order.ASC}]).
+      getSchema();
+
   /** @private {!lf.schema.Table} */
   this.tablePlusOne_ = createTable('tablePlusOne');
 
@@ -97,7 +108,7 @@ lf.testing.MockSchema = function() {
 lf.testing.MockSchema.prototype.tables = function() {
   var tables = [
     this.tableA_, this.tableB_, this.tableC_,
-    this.tableD_, this.tableE_
+    this.tableD_, this.tableE_, this.tableF_
   ];
   if (this.version_ > 1) {
     tables.push(this.tablePlusOne_);
@@ -125,7 +136,8 @@ lf.testing.MockSchema.prototype.table = function(tableName) {
     'tableB': this.tableB_,
     'tableC': this.tableC_,
     'tableD': this.tableD_,
-    'tableE': this.tableE_
+    'tableE': this.tableE_,
+    'tableF': this.tableF_
   };
   if (this.version_ > 1) {
     tables['tablePlusOne'] = this.tablePlusOne_;

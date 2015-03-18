@@ -23,6 +23,7 @@ goog.require('goog.testing.jsunit');
 goog.require('lf.index.BTree');
 goog.require('lf.index.ComparatorFactory');
 goog.require('lf.index.MemoryIndexStore');
+goog.require('lf.index.NullableIndex');
 goog.require('lf.index.RowId');
 goog.require('lf.testing.MockSchema');
 
@@ -57,10 +58,12 @@ function testMemoryIndexStore() {
   var schema = new lf.testing.MockSchema();
   var tableA = schema.tables()[0];
   var tableB = schema.tables()[1];
+  var tableF = schema.tables()[5];
   propertyReplacer.replace(tableB, 'persistentIndex', goog.functions.TRUE);
 
   assertFalse(tableA.persistentIndex());
   assertTrue(tableB.persistentIndex());
+  assertFalse(tableF.persistentIndex());
 
   indexStore.init(schema).then(function() {
     // Table A index names.
@@ -73,10 +76,18 @@ function testMemoryIndexStore() {
     var tableBNameIndex = 'tableB.idxName';
     var tableBRowIdIndex = 'tableB.#';
 
-    assertIndicesType([tableARowIdIndex, tableBRowIdIndex], lf.index.RowId);
+    // Table F index names.
+    var tableFNameIndex = 'tableF.idxName';
+    var tableFRowIdIndex = 'tableF.#';
+
+
+    assertIndicesType(
+        [tableARowIdIndex, tableBRowIdIndex, tableFRowIdIndex],
+        lf.index.RowId);
     assertIndicesType([tableAPkIndex], lf.index.BTree);
     assertIndicesType([tableANameIndex], lf.index.BTree);
     assertIndicesType([tableBPkIndex, tableBNameIndex], lf.index.BTree);
+    assertIndicesType([tableFNameIndex], lf.index.NullableIndex);
 
     asyncTestCase.continueTesting();
   }, fail);

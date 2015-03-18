@@ -25,6 +25,7 @@ goog.require('lf.index.BTree');
 goog.require('lf.index.IndexMetadata');
 goog.require('lf.index.IndexMetadataRow');
 goog.require('lf.index.MemoryIndexStore');
+goog.require('lf.index.NullableIndex');
 goog.require('lf.index.RowId');
 goog.require('lf.testing.MockEnv');
 
@@ -54,9 +55,11 @@ function tearDown() {
 function setUp() {
   env = new lf.testing.MockEnv();
 
-  // Modifying tableA to use persisted indices.
+  // Modifying tableA, tableF to use persisted indices.
   propertyReplacer.replace(
       env.schema.tables()[0], 'persistentIndex', goog.functions.TRUE);
+  propertyReplacer.replace(
+      env.schema.tables()[5], 'persistentIndex', goog.functions.TRUE);
 
   asyncTestCase.waitForAsync('init');
   env.init().then(goog.bind(asyncTestCase.continueTesting, asyncTestCase));
@@ -68,7 +71,7 @@ function testPrefetcher() {
 
   // Setup some data first.
   var tableSchema = env.schema.tables()[1];
-  var rows = getSampleRows(tableSchema, 19);
+  var rows = getSampleRows(tableSchema, 19, 0);
 
   var indices = env.indexStore.getTableIndices(tableSchema.getName());
   var rowIdIndex = indices[0];
@@ -107,8 +110,7 @@ function testInit_PersistentIndices() {
   asyncTestCase.waitForAsync('testInit_PersistentIndices');
 
   var tableSchema = env.schema.tables()[0];
-  var rows = getSampleRows(tableSchema, 10);
-  propertyReplacer.replace(tableSchema, 'persistentIndex', goog.functions.TRUE);
+  var rows = getSampleRows(tableSchema, 10, 0);
 
   simulatePersistedIndices(tableSchema, rows).then(
       function() {
@@ -135,11 +137,51 @@ function testInit_PersistentIndices() {
 
 
 /**
+ * Tests that Prefetcher is correctly reconstructing persisted indices from the
+ * backing store for the case where indices with nullable columns exist.
+ */
+function testInit_PersistentIndices_NullableIndex() {
+  asyncTestCase.waitForAsync('testInit_PersistentIndices_NullableIndex');
+
+  var tableSchema = env.schema.tables()[5];
+  var nonNullKeyRows = 4;
+  var nullKeyRows = 5;
+  var rows = getSampleRows(tableSchema, nonNullKeyRows, nullKeyRows);
+
+  simulatePersistedIndices(tableSchema, rows).then(
+      function() {
+        var prefetcher = new lf.cache.Prefetcher(lf.Global.get());
+        return prefetcher.init(env.schema);
+      }).then(
+      function() {
+        // Check that RowId index has been properly reconstructed.
+        var rowIdIndex = env.indexStore.get(tableSchema.getRowIdIndexName());
+        assertTrue(rowIdIndex instanceof lf.index.RowId);
+        assertEquals(rows.length, rowIdIndex.getRange().length);
+
+        // Check that remaining indices have been properly reconstructed.
+        var indices = env.indexStore.getTableIndices(
+            tableSchema.getName()).slice(1);
+        indices.forEach(function(index) {
+          assertTrue(index instanceof lf.index.NullableIndex);
+          assertEquals(rows.length, index.getRange().length);
+          assertEquals(nullKeyRows, index.get(null).length);
+        });
+
+        asyncTestCase.continueTesting();
+      }, fail);
+}
+
+
+/**
  * @param {!lf.schema.Table} tableSchema
- * @param {number} rowCount The number of sample rows to generate.
+ * @param {number} rowCount The number of sample rows to generate with all
+ *     fields populated.
+ * @param {number} nullNameRowCount The number of sample rows to with a null
+ *     'name' field to generate.
  * @return {!Array<!lf.Row>}
  */
-function getSampleRows(tableSchema, rowCount) {
+function getSampleRows(tableSchema, rowCount, nullNameRowCount) {
   var rows = [];
 
   var rowCountFirstHalf = Math.floor(rowCount / 2);
@@ -159,6 +201,15 @@ function getSampleRows(tableSchema, rowCount) {
     var row = tableSchema.createRow({
       'id': 1000 + i,
       'name': 'nonUniqueName'
+    });
+    row.assignRowId(i + 2);
+    rows.push(row);
+  }
+
+  for (var i = rowCount; i < rowCount + nullNameRowCount; i++) {
+    var row = tableSchema.createRow({
+      'id': 1000 + i,
+      'name': null
     });
     row.assignRowId(i + 2);
     rows.push(row);
