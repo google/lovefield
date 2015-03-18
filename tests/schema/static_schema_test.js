@@ -56,3 +56,16 @@ function testKeyOfIndex_CrossColumnKey() {
       [1, 'bar'],
       row.keyOfIndex(booleanStringIndexSchema.getNormalizedName()));
 }
+
+
+/**
+ * Tests that keyOfIndex() is correctly handling nullable fields for a
+ * statically generated schema.
+ */
+function testKeyOfIndex_NullableKey() {
+  var table = order.db.getSchema().getNullableTable();
+  var row = table.createRow();
+  table.getIndices().forEach(function(indexSchema) {
+    assertNull(row.keyOfIndex(indexSchema.getNormalizedName()));
+  });
+}

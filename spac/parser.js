@@ -525,12 +525,13 @@ function checkIndices(tableName, schema, colNames, names, nullable) {
     names.push(index);
 
     var indexSchema = convertIndexSchema(indexName, schema.index[index]);
-    indexSchema.column.forEach(function(col) {
+    indexSchema.column.forEach(function(col, i, columns) {
       if (colNames.indexOf(col.name) == -1) {
         throw new Error(indexName + ' has invalid column: ' + col);
       }
-      if (nullable.indexOf(col.name) != -1) {
-        throw new Error(indexName + ' referencing nullable column: ' + col);
+      if (columns.length > 1 && nullable.indexOf(col.name) != -1) {
+        throw new Error('Cross-column index ' + indexName +
+            ' referencing nullable column: ' + col);
       }
       if (NON_INDEXABLE_TYPE.indexOf(schema.column[col.name]) != -1) {
         throw new Error(indexName + ' referencing nonindexable column: ' + col);

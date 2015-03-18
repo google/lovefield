@@ -108,3 +108,24 @@ table:
       unique:
         uq_topic:
           column: [ topic ]
+
+  NullableTable:
+    column:
+      boolean: boolean
+      datetime: datetime
+      integer: integer
+      number: number
+      string: string
+    constraint:
+      nullable: [ boolean, datetime, integer, number, string ]
+    index:
+      idx_boolean:
+        column: [ boolean ]
+      idx_datetime:
+        column: [ datetime ]
+      idx_integer:
+        column: [ integer ]
+      idx_number:
+        column: [ number ]
+      idx_string:
+        column: [ string ]

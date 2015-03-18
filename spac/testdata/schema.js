@@ -7,6 +7,9 @@ goog.provide('lovefield.db.row.CuratorType');
 goog.provide('lovefield.db.row.Details');
 goog.provide('lovefield.db.row.DetailsDbType');
 goog.provide('lovefield.db.row.DetailsType');
+goog.provide('lovefield.db.row.NullableTable');
+goog.provide('lovefield.db.row.NullableTableDbType');
+goog.provide('lovefield.db.row.NullableTableType');
 goog.provide('lovefield.db.row.Photo');
 goog.provide('lovefield.db.row.PhotoCurator');
 goog.provide('lovefield.db.row.PhotoCuratorDbType');
@@ -17,6 +20,7 @@ goog.provide('lovefield.db.schema.Album');
 goog.provide('lovefield.db.schema.Curator');
 goog.provide('lovefield.db.schema.Database');
 goog.provide('lovefield.db.schema.Details');
+goog.provide('lovefield.db.schema.NullableTable');
 goog.provide('lovefield.db.schema.Photo');
 goog.provide('lovefield.db.schema.PhotoCurator');
 
@@ -65,6 +69,10 @@ lovefield.db.schema.Database = function() {
   this.photoCurator_ = new lovefield.db.schema.PhotoCurator();
   this.tableMap_['PhotoCurator'] = this.photoCurator_;
 
+  /** @private {!lovefield.db.schema.NullableTable} */
+  this.nullableTable_ = new lovefield.db.schema.NullableTable();
+  this.tableMap_['NullableTable'] = this.nullableTable_;
+
 };
 
 
@@ -87,7 +95,8 @@ lovefield.db.schema.Database.prototype.tables = function() {
     this.photo_,
     this.details_,
     this.curator_,
-    this.photoCurator_
+    this.photoCurator_,
+    this.nullableTable_
   ];
 };
 
@@ -131,6 +140,12 @@ lovefield.db.schema.Database.prototype.getCurator = function() {
 /** @return {!lovefield.db.schema.PhotoCurator} */
 lovefield.db.schema.Database.prototype.getPhotoCurator = function() {
   return this.photoCurator_;
+};
+
+
+/** @return {!lovefield.db.schema.NullableTable} */
+lovefield.db.schema.Database.prototype.getNullableTable = function() {
+  return this.nullableTable_;
 };
 
 
@@ -197,7 +212,8 @@ lovefield.db.schema.Album.prototype.createRow = function(opt_value) {
 
 
 /** @override */
-lovefield.db.schema.Album.prototype.deserializeRow = function(dbRecord) {
+lovefield.db.schema.Album.prototype.deserializeRow =
+    function(dbRecord) {
   var data = dbRecord['value'];
   data.timestamp = new Date(data.timestamp);
   data.tacotownJspb = lf.Row.hexToBin(data.tacotownJspb);
@@ -513,7 +529,8 @@ lovefield.db.schema.Photo.prototype.createRow = function(opt_value) {
 
 
 /** @override */
-lovefield.db.schema.Photo.prototype.deserializeRow = function(dbRecord) {
+lovefield.db.schema.Photo.prototype.deserializeRow =
+    function(dbRecord) {
   var data = dbRecord['value'];
   data.timestamp = new Date(data.timestamp);
   data.accessTimestamp = goog.isNull(data.accessTimestamp) ?
@@ -723,14 +740,14 @@ lovefield.db.row.Photo.prototype.setIsLocal = function(value) {
 };
 
 
-/** @return {boolean} */
+/** @return {?boolean} */
 lovefield.db.row.Photo.prototype.getCreatedByAction = function() {
   return this.payload().createdByAction;
 };
 
 
 /**
- * @param {boolean} value
+ * @param {?boolean} value
  * @return {!lovefield.db.row.Photo}
 */
 lovefield.db.row.Photo.prototype.setCreatedByAction = function(value) {
@@ -890,7 +907,8 @@ lovefield.db.schema.Details.prototype.createRow = function(opt_value) {
 
 
 /** @override */
-lovefield.db.schema.Details.prototype.deserializeRow = function(dbRecord) {
+lovefield.db.schema.Details.prototype.deserializeRow =
+    function(dbRecord) {
   var data = dbRecord['value'];
   return new lovefield.db.row.Details(dbRecord['id'], data);
 };
@@ -1145,7 +1163,8 @@ lovefield.db.schema.Curator.prototype.createRow = function(opt_value) {
 
 
 /** @override */
-lovefield.db.schema.Curator.prototype.deserializeRow = function(dbRecord) {
+lovefield.db.schema.Curator.prototype.deserializeRow =
+    function(dbRecord) {
   var data = dbRecord['value'];
   return new lovefield.db.row.Curator(dbRecord['id'], data);
 };
@@ -1355,7 +1374,8 @@ lovefield.db.schema.PhotoCurator.prototype.createRow = function(opt_value) {
 
 
 /** @override */
-lovefield.db.schema.PhotoCurator.prototype.deserializeRow = function(dbRecord) {
+lovefield.db.schema.PhotoCurator.prototype.deserializeRow =
+    function(dbRecord) {
   var data = dbRecord['value'];
   return new lovefield.db.row.PhotoCurator(dbRecord['id'], data);
 };
@@ -1508,5 +1528,284 @@ lovefield.db.row.PhotoCurator.prototype.getTopic = function() {
 */
 lovefield.db.row.PhotoCurator.prototype.setTopic = function(value) {
   this.payload().topic = value;
+  return this;
+};
+
+
+
+/**
+ * @extends {lf.schema.Table.<!lovefield.db.row.NullableTableType,
+ *     !lovefield.db.row.NullableTableDbType>}
+ * @constructor
+ */
+lovefield.db.schema.NullableTable = function() {
+  var cols = [];
+
+  /** @type {!lf.schema.BaseColumn.<boolean>} */
+  this.boolean = new lf.schema.BaseColumn(
+      this, 'boolean', false, true, lf.Type.BOOLEAN);
+  cols.push(this.boolean);
+
+  /** @type {!lf.schema.BaseColumn.<!Date>} */
+  this.datetime = new lf.schema.BaseColumn(
+      this, 'datetime', false, true, lf.Type.DATE_TIME);
+  cols.push(this.datetime);
+
+  /** @type {!lf.schema.BaseColumn.<number>} */
+  this.integer = new lf.schema.BaseColumn(
+      this, 'integer', false, true, lf.Type.INTEGER);
+  cols.push(this.integer);
+
+  /** @type {!lf.schema.BaseColumn.<number>} */
+  this.number = new lf.schema.BaseColumn(
+      this, 'number', false, true, lf.Type.NUMBER);
+  cols.push(this.number);
+
+  /** @type {!lf.schema.BaseColumn.<string>} */
+  this.string = new lf.schema.BaseColumn(
+      this, 'string', false, true, lf.Type.STRING);
+  cols.push(this.string);
+
+  var indices = [
+    new lf.schema.Index('NullableTable', 'idx_boolean', false,
+        [
+          {'schema': this.boolean, 'order': lf.Order.ASC}
+        ]),
+    new lf.schema.Index('NullableTable', 'idx_datetime', false,
+        [
+          {'schema': this.datetime, 'order': lf.Order.ASC}
+        ]),
+    new lf.schema.Index('NullableTable', 'idx_integer', false,
+        [
+          {'schema': this.integer, 'order': lf.Order.ASC}
+        ]),
+    new lf.schema.Index('NullableTable', 'idx_number', false,
+        [
+          {'schema': this.number, 'order': lf.Order.ASC}
+        ]),
+    new lf.schema.Index('NullableTable', 'idx_string', false,
+        [
+          {'schema': this.string, 'order': lf.Order.ASC}
+        ])
+  ];
+
+  lovefield.db.schema.NullableTable.base(
+      this, 'constructor', 'NullableTable', cols, indices, false);
+};
+goog.inherits(lovefield.db.schema.NullableTable, lf.schema.Table);
+
+
+/** @override */
+lovefield.db.schema.NullableTable.prototype.createRow = function(opt_value) {
+  return new lovefield.db.row.NullableTable(lf.Row.getNextId(), opt_value);
+};
+
+
+/** @override */
+lovefield.db.schema.NullableTable.prototype.deserializeRow =
+    function(dbRecord) {
+  var data = dbRecord['value'];
+  data.datetime = goog.isNull(data.datetime) ?
+      null : new Date(data.datetime);
+  return new lovefield.db.row.NullableTable(dbRecord['id'], data);
+};
+
+
+/** @override */
+lovefield.db.schema.NullableTable.prototype.getConstraint = function() {
+  var pk = null;
+  var notNullable = [
+
+  ];
+  var foreignKeys = [];
+  var unique = [
+  ];
+  return new lf.schema.Constraint(pk, notNullable, foreignKeys, unique);
+};
+
+
+
+/**
+ * @export
+ * @constructor
+ * @struct
+ * @final
+ */
+lovefield.db.row.NullableTableType = function() {
+  /** @export @type {?boolean} */
+  this.boolean;
+  /** @export @type {?Date} */
+  this.datetime;
+  /** @export @type {?number} */
+  this.integer;
+  /** @export @type {?number} */
+  this.number;
+  /** @export @type {?string} */
+  this.string;
+};
+
+
+
+/**
+ * @export
+ * @constructor
+ * @struct
+ * @final
+ */
+lovefield.db.row.NullableTableDbType = function() {
+  /** @export @type {?boolean} */
+  this.boolean;
+  /** @export @type {?number} */
+  this.datetime;
+  /** @export @type {?number} */
+  this.integer;
+  /** @export @type {?number} */
+  this.number;
+  /** @export @type {?string} */
+  this.string;
+};
+
+
+
+/**
+ * Constructs a new NullableTable row.
+ * @constructor
+ * @extends {lf.Row.<!lovefield.db.row.NullableTableType,
+ *     !lovefield.db.row.NullableTableDbType>}
+ *
+ * @param {number} rowId The row ID.
+ * @param {!lovefield.db.row.NullableTableType=} opt_payload
+ */
+lovefield.db.row.NullableTable = function(rowId, opt_payload) {
+  lovefield.db.row.NullableTable.base(this, 'constructor', rowId, opt_payload);
+};
+goog.inherits(lovefield.db.row.NullableTable, lf.Row);
+
+
+/** @override */
+lovefield.db.row.NullableTable.prototype.defaultPayload = function() {
+  var payload = new lovefield.db.row.NullableTableType();
+  payload.boolean = null;
+  payload.datetime = null;
+  payload.integer = null;
+  payload.number = null;
+  payload.string = null;
+  return payload;
+};
+
+
+/** @override */
+lovefield.db.row.NullableTable.prototype.toDbPayload = function() {
+  var payload = new lovefield.db.row.NullableTableDbType();
+  payload.boolean = this.payload().boolean;
+  payload.datetime = goog.isNull(this.payload().datetime) ?
+      null : this.payload().datetime.getTime();
+  payload.integer = this.payload().integer;
+  payload.number = this.payload().number;
+  payload.string = this.payload().string;
+  return payload;
+};
+
+
+/** @override */
+lovefield.db.row.NullableTable.prototype.keyOfIndex = function(indexName) {
+  switch (indexName) {
+    case 'NullableTable.idx_boolean':
+      var value = this.payload().boolean;
+      return goog.isNull(value) ? null : (value ? 1 : 0);
+    case 'NullableTable.idx_datetime':
+      var value = this.payload().datetime;
+      return goog.isNull(value) ? null : value.getTime();
+    case 'NullableTable.idx_integer':
+      return this.payload().integer;
+    case 'NullableTable.idx_number':
+      return this.payload().number;
+    case 'NullableTable.idx_string':
+      return this.payload().string;
+    case 'NullableTable.#':
+      return this.id();
+    default:
+      break;
+  }
+  return null;
+};
+
+
+/** @return {?boolean} */
+lovefield.db.row.NullableTable.prototype.getBoolean = function() {
+  return this.payload().boolean;
+};
+
+
+/**
+ * @param {?boolean} value
+ * @return {!lovefield.db.row.NullableTable}
+*/
+lovefield.db.row.NullableTable.prototype.setBoolean = function(value) {
+  this.payload().boolean = value;
+  return this;
+};
+
+
+/** @return {?Date} */
+lovefield.db.row.NullableTable.prototype.getDatetime = function() {
+  return this.payload().datetime;
+};
+
+
+/**
+ * @param {?Date} value
+ * @return {!lovefield.db.row.NullableTable}
+*/
+lovefield.db.row.NullableTable.prototype.setDatetime = function(value) {
+  this.payload().datetime = value;
+  return this;
+};
+
+
+/** @return {?number} */
+lovefield.db.row.NullableTable.prototype.getInteger = function() {
+  return this.payload().integer;
+};
+
+
+/**
+ * @param {?number} value
+ * @return {!lovefield.db.row.NullableTable}
+*/
+lovefield.db.row.NullableTable.prototype.setInteger = function(value) {
+  this.payload().integer = value;
+  return this;
+};
+
+
+/** @return {?number} */
+lovefield.db.row.NullableTable.prototype.getNumber = function() {
+  return this.payload().number;
+};
+
+
+/**
+ * @param {?number} value
+ * @return {!lovefield.db.row.NullableTable}
+*/
+lovefield.db.row.NullableTable.prototype.setNumber = function(value) {
+  this.payload().number = value;
+  return this;
+};
+
+
+/** @return {?string} */
+lovefield.db.row.NullableTable.prototype.getString = function() {
+  return this.payload().string;
+};
+
+
+/**
+ * @param {?string} value
+ * @return {!lovefield.db.row.NullableTable}
+*/
+lovefield.db.row.NullableTable.prototype.setString = function(value) {
+  this.payload().string = value;
   return this;
 };

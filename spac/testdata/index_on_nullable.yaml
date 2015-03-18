@@ -11,4 +11,4 @@ table:
       nullable: [name]
     index:
       idxName:
-        column: [name]  # Should throw: index on nullable
+        column: [id, name]  # Should throw: cross-column index on nullable

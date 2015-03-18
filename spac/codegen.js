@@ -537,14 +537,27 @@ CodeGenerator.prototype.genToDbPayload_ = function(table, prefix) {
 
 
 /**
+ * Produces code that when run extracts an index key from a row.
+ * Because this function is used both for single/cross column indices, and for
+ * non-nullable/nullable indices it needs to be customized to produce the
+ * correct output in both situations.
  * @param {Object} table
  * @param {string} column
+ * @param {string} indentation The prefix to use for each line.
+ * @param {boolean} includeSemicolonAndReturn Whether the output should include
+ *     semicolons and 'return' keywords.
  * @return {string}
  * @private
  */
-CodeGenerator.columnToKey_ = function(table, column) {
+CodeGenerator.columnToKey_ = function(
+    table, column, indentation, includeSemicolonAndReturn) {
   var columns = table.column;
-  var result = '';
+  var body = [];
+
+  var pushLine = function(line) {
+    body.push(indentation + line + (includeSemicolonAndReturn ? ';' : ''));
+  };
+
   for (var i = 0; i < columns.length; ++i) {
     var col = columns[i];
     if (col.name != column) {
@@ -553,17 +566,33 @@ CodeGenerator.columnToKey_ = function(table, column) {
 
     switch (col.type) {
       case 'datetime':
-        result = 'this.payload().' + column + '.getTime()';
+        if (col.nullable) {
+          pushLine('var value = this.payload().' + column);
+          pushLine('return goog.isNull(value) ? null : value.getTime()');
+        } else {
+          pushLine(
+              (includeSemicolonAndReturn ? 'return ' : '') +
+              'this.payload().' + column + '.getTime()');
+        }
         break;
 
       case 'string':
       case 'integer':
       case 'number':
-        result = 'this.payload().' + column;
+        pushLine(
+            (includeSemicolonAndReturn ? 'return ' : '') +
+            'this.payload().' + column);
         break;
 
       case 'boolean':
-        result = '(this.payload().' + column + ' ? 1 : 0)';
+        if (col.nullable) {
+          pushLine('var value = this.payload().' + column);
+          pushLine('return goog.isNull(value) ? null : (value ? 1 : 0)');
+        } else {
+          pushLine(
+              (includeSemicolonAndReturn ? 'return ' : '') +
+              'this.payload().' + column + ' ? 1 : 0');
+        }
         break;
 
       default:
@@ -572,7 +601,7 @@ CodeGenerator.columnToKey_ = function(table, column) {
     break;
   }
 
-  return result;
+  return body.join('\n');
 };
 
 
@@ -588,20 +617,24 @@ CodeGenerator.prototype.genKeyFromColumns_ = function(table, columns) {
         'Cannot generate index key for column:' + table.name + '.' + col);
   }).bind(this);
 
-  var colNames = columns.map(function(col) {
+  var indentation = columns.length > 1 ? '        ' : '      ';
+  var includeSemicolonAndReturn = columns.length == 1;
+
+  var columnNames = columns.map(function(col) {
     return col.name;
   });
 
-  var strings = colNames.map(function(col) {
+  var strings = columnNames.map(function(columnName) {
     try {
-      return CodeGenerator.columnToKey_(table, col);
+      return CodeGenerator.columnToKey_(
+          table, columnName, indentation, includeSemicolonAndReturn);
     } catch (e) {
-      doError(col);
+      doError(columnName);
     }
   });
-  return '      ' + (strings.length == 1 ?
-      'return ' + strings[0] + ';' :
-      'return [\n        ' + strings.join(',\n        ') + '\n      ];');
+  return (strings.length == 1 ?
+      strings[0] :
+      '      return [\n' + strings.join(',\n') + '\n      ];');
 };
 
 
@@ -725,10 +758,12 @@ CodeGenerator.columnTypeToJsType_ = function(columnType, isNullable) {
     columnType = (isNullable ? '?' : '!') + 'ArrayBuffer';
   } else if (columnType == 'datetime') {
     columnType = (isNullable ? '?' : '!') + 'Date';
-  } else if (columnType == 'integer') {
-    columnType = 'number';
+  } else if (columnType == 'integer' || columnType == 'number') {
+    columnType = (isNullable ? '?' : '') + 'number';
   } else if (columnType == 'string') {
     columnType = (isNullable ? '?' : '') + 'string';
+  } else if (columnType == 'boolean') {
+    columnType = (isNullable ? '?' : '') + 'boolean';
   } else if (columnType == 'object') {
     columnType = (isNullable ? '?' : '!') + 'Object';
   }

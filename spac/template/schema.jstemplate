@@ -116,7 +116,8 @@ goog.inherits(#namespace.schema.#table#pascal, lf.schema.Table);
 
 
 /** @override */
-#namespace.schema.#table#pascal.prototype.deserializeRow = function(dbRecord) {
+#namespace.schema.#table#pascal.prototype.deserializeRow =
+    function(dbRecord) {
 #deserializerow #namespace.row.#table#pascal dbRecord
 };
 
