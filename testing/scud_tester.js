@@ -29,8 +29,9 @@ goog.require('lf.service');
  *
  * @param {!lf.BackStore} db
  * @param {!lf.Global} global
+ * @param {function():!lf.BackStore=} opt_reload Reload DB before verification.
  */
-lf.testing.backstore.ScudTester = function(db, global) {
+lf.testing.backstore.ScudTester = function(db, global, opt_reload) {
   /** @private {!lf.BackStore} */
   this.db_ = db;
 
@@ -45,6 +46,9 @@ lf.testing.backstore.ScudTester = function(db, global) {
 
   /** @private {!lf.cache.Cache} */
   this.cache_ = global.getService(lf.service.CACHE);
+
+  /** @private {?function():!lf.BackStore} */
+  this.reload_ = opt_reload || null;
 };
 
 
@@ -126,6 +130,9 @@ lf.testing.backstore.ScudTester.prototype.selectAll_ = function() {
  * @private
  */
 lf.testing.backstore.ScudTester.prototype.assertOnlyRows_ = function(rows) {
+  if (!goog.isNull(this.reload_)) {
+    this.db_ = this.reload_();
+  }
   return this.selectAll_().then(function(results) {
     assertEquals(rows.length, results.length);
     rows.forEach(function(row, index) {

@@ -1,6 +1,6 @@
 /**
  * @license
- * Copyright 2014 Google Inc. All Rights Reserved.
+ * Copyright 2015 Google Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,21 +17,21 @@
 goog.setTestOnly();
 goog.require('goog.testing.AsyncTestCase');
 goog.require('goog.testing.jsunit');
-goog.require('lf.backstore.MemoryTable');
+goog.require('lf.backstore.LocalStorageTable');
 goog.require('lf.testing.backstore.TableTester');
 
 
 /** @type {!goog.testing.AsyncTestCase} */
-var asyncTestCase = goog.testing.AsyncTestCase.createAndInstall('MemoryTable');
+var asyncTestCase =
+    goog.testing.AsyncTestCase.createAndInstall('LocalStorageTable');
 
 
-function testMemoryTable() {
-  asyncTestCase.waitForAsync('testMemoryTable');
+function testLocalStorageTable() {
+  asyncTestCase.waitForAsync('testLocalStorageTable');
 
-  var tester = new lf.testing.backstore.TableTester(
-      function() {
-        return new lf.backstore.MemoryTable();
-      });
+  var tester = new lf.testing.backstore.TableTester(function() {
+    return new lf.backstore.LocalStorageTable({});
+  });
   tester.run().then(function() {
     asyncTestCase.continueTesting();
   }, fail);
