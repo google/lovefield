@@ -31962,7 +31962,7 @@ lf.schema.ConnectOptions;
 
 /**
  * @typedef {{
- *   name: string,
+ *   schema: !lf.schema.Column,
  *   order: !lf.Order,
  *   autoIncrement: boolean
  * }}
@@ -36883,7 +36883,7 @@ lf.proc.IndexRangeCandidate = function(indexStore, indexSchema) {
   this.indexedColumnNames_ = new goog.structs.Set();
   this.indexedColumnNames_.addAll(this.indexSchema.columns.map(
       function(col) {
-        return col.name;
+        return col.schema.getName();
       }));
 
   /**
@@ -36956,7 +36956,7 @@ lf.proc.IndexRangeCandidate.prototype.isUsable = function() {
 
   var keyRangeMap = this.getKeyRangeMap_();
   return this.indexSchema.columns.every(function(column) {
-    var keyRangeSet = keyRangeMap.get(column.name, null);
+    var keyRangeSet = keyRangeMap.get(column.schema.getName(), null);
     return !goog.isNull(keyRangeSet);
   });
 };
@@ -37046,11 +37046,11 @@ lf.proc.IndexRangeCandidate.prototype.fillMissingKeyRanges_ =
 
   for (var i = this.indexSchema.columns.length - 1; i >= 0; i--) {
     var column = this.indexSchema.columns[i];
-    var keyRangeSet = keyRangeMap.get(column.name, null);
+    var keyRangeSet = keyRangeMap.get(column.schema.getName(), null);
     if (!goog.isNull(keyRangeSet)) {
       break;
     }
-    keyRangeMap.set(column.name, getAllKeyRange());
+    keyRangeMap.set(column.schema.getName(), getAllKeyRange());
   }
 };
 
@@ -37067,7 +37067,7 @@ lf.proc.IndexRangeCandidate.prototype.getSortedKeyRangeSets_ = function(
   var sortHelper = new goog.structs.Map();
   var priority = 0;
   this.indexSchema.columns.forEach(function(column) {
-    sortHelper.set(column.name, priority);
+    sortHelper.set(column.schema.getName(), priority);
     priority++;
   });
 
@@ -37640,7 +37640,7 @@ lf.proc.InsertStep.assignAutoIncrementPks_ = function(
   var autoIncrement = goog.isNull(pkIndexSchema) ? false :
       pkIndexSchema.columns[0].autoIncrement;
   if (autoIncrement) {
-    var pkColumnName = pkIndexSchema.columns[0].name;
+    var pkColumnName = pkIndexSchema.columns[0].schema.getName();
     var index = indexStore.get(pkIndexSchema.getNormalizedName());
     var maxKey = index.max()[0] || 0;
 
@@ -38644,7 +38644,7 @@ lf.proc.OrderByIndexPass.getIndexCandidateForIndexSchema_ = function(
   var columnsMatch = indexSchema.columns.length == orderBy.length &&
       orderBy.every(function(singleOrderBy, j) {
         var indexedColumn = indexSchema.columns[j];
-        return singleOrderBy.column.getName() == indexedColumn.name;
+        return singleOrderBy.column.getName() == indexedColumn.schema.getName();
       });
 
   if (!columnsMatch) {
@@ -40707,7 +40707,7 @@ lf.schema.BaseColumn.prototype.getIndices = function() {
     this.getTable().getIndices().forEach(
         function(index) {
           var colNames = index.columns.map(function(col) {
-            return col.name;
+            return col.schema.getName();
           });
           if (colNames.indexOf(this.name_) != -1) {
             this.indices_.push(index);
@@ -41026,7 +41026,10 @@ lf.schema.TableBuilder = function(tableName) {
   /** @private {string} */
   this.pkName_ = 'pk' + lf.schema.TableBuilder.toPascal_(this.name_);
 
-  /** @private {!goog.structs.Map<string, !Array<!lf.schema.IndexedColumn>>} */
+  /**
+   * @private {!goog.structs.Map<string,
+   *     !Array<!lf.schema.TableBuilder.IndexedColumn_>>}
+   */
   this.indices_ = new goog.structs.Map();
 
   /** @private {boolean} */
@@ -41034,6 +41037,20 @@ lf.schema.TableBuilder = function(tableName) {
 
   this.checkName_(tableName);
 };
+
+
+/**
+ * A intermediate representation of an IndexedColumn used while this table's
+ * declaration is still in progress. Once this table's schema is finalized it is
+ * convered to a proper lf.schema.IndexedColumn object.
+ * @typedef {{
+ *   name: string,
+ *   order: !lf.Order,
+ *   autoIncrement: boolean
+ * }}
+ * @private
+ */
+lf.schema.TableBuilder.IndexedColumn_;
 
 
 /**
@@ -41077,7 +41094,7 @@ lf.schema.TableBuilder.prototype.checkName_ = function(name) {
 
 
 /**
- * @param {!Array<!lf.schema.IndexedColumn>} columns
+ * @param {!Array<!lf.schema.TableBuilder.IndexedColumn_>} columns
  * @private
  */
 lf.schema.TableBuilder.prototype.checkPrimaryKey_ = function(columns) {
@@ -41126,10 +41143,10 @@ lf.schema.TableBuilder.prototype.addColumn = function(name, type) {
  *   column in the columns, its type must be lf.Type.INTEGER, and its order
  *   must be the default lf.Order.ASC.
  *
- * case 2: (columns: !Array<!lf.schema.IndexedColumn>)
+ * case 2: (columns: !Array<!lf.schema.TableBuilder.IndexedColumn_>)
  *   allows different ordering per-column, but more verbose.
  *
- * @param {(!Array<string>|!Array<!lf.schema.IndexedColumn>)} columns
+ * @param {(!Array<string>|!Array<!lf.schema.TableBuilder.IndexedColumn_>)} columns
  * @param {boolean=} opt_autoInc
  * @return {!lf.schema.TableBuilder}
  * @export
@@ -41204,11 +41221,13 @@ lf.schema.TableBuilder.prototype.addNullable = function(columns) {
  * case 1: (name, columns: !Array<string>, opt_unique, opt_order)
  *   adds an index by column names only. All columns have same ordering.
  *
- * case 2: (name, columns: !Array<!lf.schema.IndexedColumn>, opt_unique)
+ * case 2: (name, columns: !Array<!lf.schema.TableBuilder.IndexedColumn_>,
+ *     opt_unique)
  *   adds an index, allowing customization of ordering, but more verbose.
  *
  * @param {string} name
- * @param {!Array<string> | !Array<!lf.schema.IndexedColumn>} columns
+ * @param {!Array<string> | !Array<!lf.schema.TableBuilder.IndexedColumn_>}
+ *     columns
  * @param {boolean=} opt_unique Whether the index is unique, default is false.
  * @param {!lf.Order=} opt_order Order of columns, only effective when columns
  *     are array of strings, default to lf.Order.ASC.
@@ -41244,11 +41263,11 @@ lf.schema.TableBuilder.prototype.getSchema = function() {
  * Convert different column representations (column name only or column objects)
  * into column object array. Also performs consistency check to make sure
  * referred columns are actually defined.
- * @param {(!Array<string>|!Array<!lf.schema.IndexedColumn>)} columns
+ * @param {(!Array<string>|!Array<!lf.schema.TableBuilder.IndexedColumn_>)} columns
  * @param {boolean} checkIndexable
  * @param {!lf.Order=} opt_order
  * @param {boolean=} opt_autoInc
- * @return {!Array<!lf.schema.IndexedColumn>} Normalized columns
+ * @return {!Array<!lf.schema.TableBuilder.IndexedColumn_>} Normalized columns
  * @private
  */
 lf.schema.TableBuilder.prototype.normalizeColumns_ = function(
@@ -41289,13 +41308,6 @@ lf.schema.TableBuilder.prototype.normalizeColumns_ = function(
  * @private
  */
 lf.schema.TableBuilder.prototype.generateTableClass_ = function() {
-  var indices = this.indices_.getKeys().map(function(indexName) {
-    return new lf.schema.Index(
-        this.name_,
-        indexName,
-        this.uniqueIndices_.contains(indexName),
-        this.indices_.get(indexName));
-  }, this);
   var that = this;
 
   /**
@@ -41312,13 +41324,34 @@ lf.schema.TableBuilder.prototype.generateTableClass_ = function() {
           that.columns_.get(colName));
       return this[colName];
     }, this);
+
+    var generateIndexedColumns = function(indexName) {
+      return that.indices_.get(indexName).map(
+          function(indexedColumn) {
+            return {
+              schema: this[indexedColumn.name],
+              order: indexedColumn.order,
+              autoIncrement: indexedColumn.autoIncrement
+            };
+          }, this);
+    };
+
+    var indices = that.indices_.getKeys().map(function(indexName) {
+      return new lf.schema.Index(
+          that.name_,
+          indexName,
+          that.uniqueIndices_.contains(indexName),
+          generateIndexedColumns.call(this, indexName));
+    }, this);
+
     tableClass.base(
         this, 'constructor',
         that.name_, columns, indices, that.persistentIndex_);
 
     var pk = that.indices_.containsKey(that.pkName_) ?
         new lf.schema.Index(
-        that.name_, that.pkName_, true, that.indices_.get(that.pkName_)) :
+            that.name_, that.pkName_, true,
+            generateIndexedColumns.call(this, that.pkName_)) :
         null;
     var notNullable = columns.filter(function(col) {
       return !that.nullable_.contains(col.getName());
@@ -41326,8 +41359,9 @@ lf.schema.TableBuilder.prototype.generateTableClass_ = function() {
     var foreignKeys = [];
     var unique = that.uniqueIndices_.getValues().map(function(indexName) {
       return new lf.schema.Index(
-          that.name_, indexName, true, that.indices_.get(indexName));
-    });
+          that.name_, indexName, true,
+          generateIndexedColumns.call(this, indexName));
+    }, this);
 
     /** @private {!lf.schema.Constraint} */
     this.constraint_ =
@@ -41430,29 +41464,32 @@ lf.schema.TableBuilder.prototype.generateRowClass_ = function(
    * @return {function(!Object): !lf.index.Index.Key}
    */
   var getSingleKeyFn = goog.bind(function(column) {
-    var colType = this.columns_.get(column.name);
+    var colType = this.columns_.get(column.getName());
     if (colType == lf.Type.DATE_TIME) {
       return function(payload) {
-        return payload[column.name].getTime();
+        return payload[column.getName()].getTime();
       }
     } else if (colType == lf.Type.BOOLEAN) {
       return function(payload) {
-        return payload[column.name] ? 1 : 0;
+        return payload[column.getName()] ? 1 : 0;
       }
     } else {
       return function(payload) {
-        return payload[column.name];
+        return payload[column.getName()];
       }
     }
   }, this);
 
 
   /**
-   * @param {!Array<!lf.schema.Column>} columns
+   * @param {!Array<!lf.schema.IndexedColumn>} columns
    * @return {function(!Object): !lf.index.Index.Key}
    */
   var getMultiKeyFn = goog.bind(function(columns) {
-    var getSingleKeyFunctions = columns.map(getSingleKeyFn);
+    var getSingleKeyFunctions = columns.map(
+        function(indexedColumn) {
+          return getSingleKeyFn(indexedColumn.schema);
+        });
     return function(payload) {
       return getSingleKeyFunctions.map(function(fn) {
         return fn(payload);
@@ -41467,7 +41504,7 @@ lf.schema.TableBuilder.prototype.generateRowClass_ = function(
    */
   var getKeyOfIndexFn = function(index) {
     return index.columns.length == 1 ?
-        getSingleKeyFn(index.columns[0]) :
+        getSingleKeyFn(index.columns[0].schema) :
         getMultiKeyFn(index.columns);
   };
 

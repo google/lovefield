@@ -895,7 +895,7 @@ CodeGenerator.getIndexDefinition_ = function(
       'new lf.schema.Index(\'' + tableName + '\', \'' + indexName + '\', ' +
           (isUnique ? 'true' : 'false') + ',\n' + getIndent(4);
   var columnBodys = columns.map(function(col) {
-    var colBody = getIndent(6) + '{\'name\': \'' + col.name + '\',';
+    var colBody = getIndent(6) + '{\'schema\': this.' + col.name + ',';
     colBody += ' \'order\': ' +
         (col.order == 'desc' ? 'lf.Order.DESC' : 'lf.Order.ASC');
     if (isPrimaryKey) {

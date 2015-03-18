@@ -101,15 +101,15 @@ foo.db.schema.Foo = function() {
   var indices = [
     new lf.schema.Index('Foo', 'pkFoo', true,
         [
-          {'name': 'id', 'order': lf.Order.ASC, 'autoIncrement': false}
+          {'schema': this.id, 'order': lf.Order.ASC, 'autoIncrement': false}
         ]),
     new lf.schema.Index('Foo', 'uq_bar', true,
         [
-          {'name': 'bar', 'order': lf.Order.ASC}
+          {'schema': this.bar, 'order': lf.Order.ASC}
         ]),
     new lf.schema.Index('Foo', 'idx_Name', false,
         [
-          {'name': 'name', 'order': lf.Order.ASC}
+          {'schema': this.name, 'order': lf.Order.ASC}
         ])
   ];
 
@@ -136,7 +136,7 @@ foo.db.schema.Foo.prototype.deserializeRow = function(dbRecord) {
 foo.db.schema.Foo.prototype.getConstraint = function() {
   var pk = new lf.schema.Index('Foo', 'pkFoo', true,
       [
-        {'name': 'id', 'order': lf.Order.ASC, 'autoIncrement': false}
+        {'schema': this.id, 'order': lf.Order.ASC, 'autoIncrement': false}
       ]);
   var notNullable = [
     this.id,
@@ -147,7 +147,7 @@ foo.db.schema.Foo.prototype.getConstraint = function() {
   var unique = [
     new lf.schema.Index('Foo', 'uq_bar', true,
         [
-          {'name': 'bar', 'order': lf.Order.ASC}
+          {'schema': this.bar, 'order': lf.Order.ASC}
         ])
   ];
   return new lf.schema.Constraint(pk, notNullable, foreignKeys, unique);
