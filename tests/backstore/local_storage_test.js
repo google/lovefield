@@ -54,7 +54,7 @@ function setUp() {
   global.registerService(lf.service.INDEX_STORE, indexStore);
   global.registerService(lf.service.SCHEMA, schema);
 
-  window.localStorage.removeItem(schema.name());
+  window.localStorage.clear();
   db = new lf.backstore.LocalStorage(schema);
 
   db.init().then(function() {

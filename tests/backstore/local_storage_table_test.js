@@ -30,7 +30,7 @@ function testLocalStorageTable() {
   asyncTestCase.waitForAsync('testLocalStorageTable');
 
   var tester = new lf.testing.backstore.TableTester(function() {
-    return new lf.backstore.LocalStorageTable({});
+    return new lf.backstore.LocalStorageTable('foo.bar');
   });
   tester.run().then(function() {
     asyncTestCase.continueTesting();
