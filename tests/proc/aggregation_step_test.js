@@ -16,6 +16,7 @@
  */
 goog.setTestOnly();
 goog.require('goog.Promise');
+goog.require('goog.testing.AsyncTestCase');
 goog.require('goog.testing.jsunit');
 goog.require('hr.db');
 goog.require('lf.cache.Journal');
@@ -27,6 +28,11 @@ goog.require('lf.proc.Relation');
 goog.require('lf.schema.DataStoreType');
 goog.require('lf.testing.hrSchema.MockDataGenerator');
 goog.require('lf.testing.proc.DummyStep');
+
+
+/** @type {!goog.testing.AsyncTestCase} */
+var asyncTestCase = goog.testing.AsyncTestCase.createAndInstall(
+    'AggregationStepTest');
 
 
 /** @type {!hr.db.schema.Employee} */
@@ -42,62 +48,88 @@ var dataGenerator;
 
 
 function setUp() {
+  asyncTestCase.waitForAsync('setUp');
   var schema = hr.db.getSchema();
   j = schema.getJob();
   e = schema.getEmployee();
   dataGenerator = new lf.testing.hrSchema.MockDataGenerator(schema);
   dataGenerator.generate(20, 100, 0);
-  return hr.db.connect({storeType: lf.schema.DataStoreType.MEMORY});
+  hr.db.connect({storeType: lf.schema.DataStoreType.MEMORY}).then(
+      function() {
+        asyncTestCase.continueTesting();
+      });
 }
 
 
 function testExec_Min() {
-  return checkCalculation(
-      lf.fn.min(j.maxSalary), dataGenerator.jobGroundTruth.minMaxSalary);
+  asyncTestCase.waitForAsync('testExec_Min');
+  checkCalculation(
+      lf.fn.min(j.maxSalary),
+      dataGenerator.jobGroundTruth.minMaxSalary).
+      then(asyncTestCase.continueTesting.bind(asyncTestCase), fail);
 }
 
 
 function testExec_Max() {
-  return checkCalculation(
-      lf.fn.max(j.maxSalary), dataGenerator.jobGroundTruth.maxMaxSalary);
+  asyncTestCase.waitForAsync('testExec_Max');
+  checkCalculation(
+      lf.fn.max(j.maxSalary),
+      dataGenerator.jobGroundTruth.maxMaxSalary).
+      then(asyncTestCase.continueTesting.bind(asyncTestCase), fail);
 }
 
 
 function testExec_Distinct() {
-  return checkCalculation(
+  asyncTestCase.waitForAsync('testExec_Distinct');
+  checkCalculation(
       lf.fn.distinct(j.maxSalary),
-      dataGenerator.jobGroundTruth.distinctMaxSalary);
+      dataGenerator.jobGroundTruth.distinctMaxSalary).
+      then(asyncTestCase.continueTesting.bind(asyncTestCase), fail);
 }
 
 
 function testExec_Count_Distinct() {
-  return checkCalculation(
+  asyncTestCase.waitForAsync('testExec_Count_Distinct');
+  checkCalculation(
       lf.fn.count(lf.fn.distinct(j.minSalary)),
-      dataGenerator.jobGroundTruth.countDistinctMinSalary);
+      dataGenerator.jobGroundTruth.countDistinctMinSalary).
+      then(asyncTestCase.continueTesting.bind(asyncTestCase), fail);
 }
 
 
 function testExec_Avg_Distinct() {
-  return checkCalculation(
+  asyncTestCase.waitForAsync('testExec_Avg_Distinct');
+  checkCalculation(
       lf.fn.avg(lf.fn.distinct(j.minSalary)),
-      dataGenerator.jobGroundTruth.avgDistinctMinSalary);
+      dataGenerator.jobGroundTruth.avgDistinctMinSalary).
+      then(asyncTestCase.continueTesting.bind(asyncTestCase), fail);
 }
 
 
 function testExec_Sum_Distinct() {
-  return checkCalculation(
+  asyncTestCase.waitForAsync('testExec_Sum_Distinct');
+  checkCalculation(
       lf.fn.sum(lf.fn.distinct(j.minSalary)),
-      dataGenerator.jobGroundTruth.sumDistinctMinSalary);
+      dataGenerator.jobGroundTruth.sumDistinctMinSalary).
+      then(asyncTestCase.continueTesting.bind(asyncTestCase), fail);
 }
 
 
 function testExec_Stddev_Distinct() {
-  return checkCalculation(
+  asyncTestCase.waitForAsync('testExec_Stddev_Distinct');
+  checkCalculation(
       lf.fn.stddev(lf.fn.distinct(j.minSalary)),
-      dataGenerator.jobGroundTruth.stddevDistinctMinSalary);
+      dataGenerator.jobGroundTruth.stddevDistinctMinSalary).
+      then(asyncTestCase.continueTesting.bind(asyncTestCase), fail);
 }
 
 
+/**
+ * @param {!lf.schema.Column} aggregatedColumn The column to be calculated.
+ * @param {number|!Array<number>} expectedValue The expected value for the
+ *     aggregated column.
+ * @return {!IThenable}
+ */
 function checkCalculation(aggregatedColumn, expectedValue) {
   return goog.Promise.all([
     checkCalculationWithoutJoin(aggregatedColumn, expectedValue),
@@ -110,9 +142,9 @@ function checkCalculation(aggregatedColumn, expectedValue) {
  * Checks that performing a transformation on a relationship that is *not* the
  * result of a natural join, results in a relation with fields that are
  * populated as expected.
- * @param {!lf.fn.AggregatedColumn} aggregatedColumn The column to be
- *     calculated.
- * @param {number} expectedValue The expected value for the aggregated column.
+ * @param {!lf.schema.Column} aggregatedColumn The column to be calculated.
+ * @param {number|!Array<number>} expectedValue The expected value for the
+ *     aggregated column.
  * @return {!IThenable}
  */
 function checkCalculationWithoutJoin(aggregatedColumn, expectedValue) {
@@ -127,9 +159,9 @@ function checkCalculationWithoutJoin(aggregatedColumn, expectedValue) {
  * Checks that performing a transformation on a relationship that is the
  * result of a natural join, results in a relation with fields that are
  * populated as expected.
- * @param {!lf.fn.AggregatedColumn} aggregatedColumn The column to be
- *     calculated.
- * @param {number} expectedValue The expected value for the aggregated column.
+ * @param {!lf.schema.Column} aggregatedColumn The column to be calculated.
+ * @param {number|!Array<number>} expectedValue The expected value for the
+ *     aggregated column.
  * @return {!IThenable}
  */
 function checkCalculationWithJoin(aggregatedColumn, expectedValue) {
@@ -147,8 +179,7 @@ function checkCalculationWithJoin(aggregatedColumn, expectedValue) {
 
 /**
  * @param {!lf.proc.Relation} inputRelation
- * @param {!lf.fn.AggregatedColumn} aggregatedColumn The column to be
- *     calculated.
+ * @param {!lf.schema.Column} aggregatedColumn The column to be calculated.
  * @param {number|!Array} expectedValue The expected value for the aggregated
  *     column.
  * @return {!IThenable}
