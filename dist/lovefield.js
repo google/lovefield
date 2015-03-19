@@ -22579,6 +22579,7 @@ goog.provide('lf.BackStore');
 goog.forwardDeclare('lf.Stream');
 goog.forwardDeclare('lf.TransactionType');
 goog.forwardDeclare('lf.backstore.Tx');
+goog.forwardDeclare('lf.cache.TableDiff');
 goog.forwardDeclare('lf.cache.Journal');
 goog.forwardDeclare('lf.raw.BackStore');
 
@@ -22614,6 +22615,22 @@ lf.BackStore.prototype.createTx;
  * Closes the database. This is just best-effort.
  */
 lf.BackStore.prototype.close;
+
+
+/**
+ * Subscribe to back store changes outside of this connection. Each change event
+ * corresponds to one transaction. The events will be fired in the order of
+ * reception, which implies the order of transactions happening. Each backstore
+ * will allow only one change handler.
+ * @param {!function(!Array<!lf.cache.TableDiff>)} handler
+ */
+lf.BackStore.prototype.subscribe;
+
+
+/**
+ * Unsubscribe current change handler.
+ */
+lf.BackStore.prototype.unsubscribe;
 
 /**
  * @license
@@ -23654,6 +23671,243 @@ lf.backstore.IndexedDB.prototype.close = function() {
   this.db_.close();
 };
 
+
+/** @override */
+lf.backstore.IndexedDB.prototype.subscribe = function(handler) {
+  // Not supported yet.
+};
+
+
+/** @override */
+lf.backstore.IndexedDB.prototype.unsubscribe = function() {
+  // Not supported yet.
+};
+
+/**
+ * @license
+ * Copyright 2014 Google Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+goog.provide('lf.cache.TableDiff');
+
+goog.require('goog.asserts');
+goog.require('goog.structs.Map');
+goog.require('goog.structs.Set');
+
+goog.forwardDeclare('lf.Row');
+
+
+
+/**
+ * A class representing a set of changes on the contents of a given table. It
+ * contains all necessary information needed to be able to reverse those changes
+ * after they have been applied.
+ *
+ * @constructor
+ * @struct
+ *
+ * @param {string} name Table name.
+ */
+lf.cache.TableDiff = function(name) {
+  /** @private {!goog.structs.Map<number, !lf.Row>} */
+  this.added_ = new goog.structs.Map();
+
+  /** @private {!goog.structs.Map<number, !Array<!lf.Row>>} */
+  this.modified_ = new goog.structs.Map();
+
+  /** @private {!goog.structs.Map<number, !lf.Row>} */
+  this.deleted_ = new goog.structs.Map();
+
+  /** @private {string} */
+  this.name_ = name;
+};
+
+
+/** @return {string} */
+lf.cache.TableDiff.prototype.getName = function() {
+  return this.name_;
+};
+
+
+/** @return {!goog.structs.Map<number, !lf.Row>} */
+lf.cache.TableDiff.prototype.getAdded = function() {
+  return this.added_;
+};
+
+
+/** @return {!goog.structs.Map<number, !Array<!lf.Row>>} */
+lf.cache.TableDiff.prototype.getModified = function() {
+  return this.modified_;
+};
+
+
+/** @return {!goog.structs.Map<number, !lf.Row>} */
+lf.cache.TableDiff.prototype.getDeleted = function() {
+  return this.deleted_;
+};
+
+
+/**
+ * @param {!lf.Row} row The row that was inserted.
+ */
+lf.cache.TableDiff.prototype.add = function(row) {
+  if (this.deleted_.containsKey(row.id())) {
+    var modification = [this.deleted_.get(row.id()), row];
+    this.modified_.set(row.id(), modification);
+    this.deleted_.remove(row.id());
+  } else {
+    this.added_.set(row.id(), row);
+  }
+};
+
+
+/**
+ * @param {!Array<!lf.Row>} modification The old and new values
+ *     of the modified row. Old value must be at position 0 and new value must
+ *     be at position 1.
+ */
+lf.cache.TableDiff.prototype.modify = function(modification) {
+  var oldValue = modification[0];
+  var newValue = modification[1];
+  goog.asserts.assert(
+      oldValue.id() == newValue.id(),
+      'Row ID mismatch between old/new values.');
+  var id = oldValue.id();
+
+  if (this.added_.containsKey(id)) {
+    this.added_.set(id, newValue);
+  } else if (this.modified_.containsKey(id)) {
+    var overallModification = [
+      this.modified_.get(modification[0].id())[0],
+      newValue
+    ];
+    this.modified_.set(id, overallModification);
+  } else {
+    this.modified_.set(id, modification);
+  }
+};
+
+
+/**
+ * @param {!lf.Row} row The row that was deleted.
+ */
+lf.cache.TableDiff.prototype.delete = function(row) {
+  if (this.added_.containsKey(row.id())) {
+    this.added_.remove(row.id());
+  } else if (this.modified_.containsKey(row.id())) {
+    var originalRow = this.modified_.get(row.id())[0];
+    this.modified_.remove(row.id());
+    this.deleted_.set(row.id(), originalRow);
+  } else {
+    this.deleted_.set(row.id(), row);
+  }
+};
+
+
+/**
+ * Merges another diff into this one.
+ * @param {!lf.cache.TableDiff} other The diff to be merged.
+ */
+lf.cache.TableDiff.prototype.merge = function(other) {
+  other.added_.forEach(
+      function(row, rowId) {
+        this.add(row);
+      }, this);
+  other.modified_.forEach(
+      function(modification, rowId) {
+        this.modify(modification);
+      }, this);
+  other.deleted_.getValues().forEach(
+      function(row) {
+        this.delete(row);
+      }, this);
+};
+
+
+/**
+ * Transforms each changes included in this diff (insertion, modification,
+ * deletion) as a pair of before and after values.
+ * Example addition:     [null, rowValue]
+ * Example modification: [oldRowValue, newRowValue]
+ * Example deletion      [oldRowValue, null]
+ * @return {!Array<!Array<?lf.Row>>} An array of all changes expressed as
+ *     before and after pairs.
+ */
+lf.cache.TableDiff.prototype.getAsModifications = function() {
+  var modifications = [];
+
+  this.added_.getValues().forEach(
+      /**
+       * @param {!lf.Row} row
+       */
+      function(row) {
+        modifications.push([/* then */ null, /* now */ row]);
+      }, this);
+  this.modified_.getValues().forEach(
+      /**
+       * @param {!Array<!lf.Row>} modification
+       */
+      function(modification) {
+        modifications.push(modification);
+      }, this);
+  this.deleted_.getValues().forEach(
+      /**
+       * @param {!lf.Row} row
+       */
+      function(row) {
+        modifications.push([/* then */ row, /* now */ null]);
+      }, this);
+
+  return modifications;
+};
+
+
+/** @override */
+lf.cache.TableDiff.prototype.toString = function() {
+  return '[' + this.added_.getKeys().toString() + '], ' +
+      '[' + this.modified_.getKeys().toString() + '], ' +
+      '[' + this.deleted_.getKeys().toString() + ']';
+};
+
+
+/**
+ * Reverses this set of changes. Useful for reverting changes after they have
+ * been applied.
+ * @return {!lf.cache.TableDiff} The reverse diff.
+ */
+lf.cache.TableDiff.prototype.getReverse = function() {
+  var reverseDiff = new lf.cache.TableDiff(this.name_);
+
+  this.added_.getValues().forEach(
+      function(row) {
+        reverseDiff.delete(row);
+      }, this);
+  this.deleted_.getValues().forEach(
+      function(row) {
+        reverseDiff.add(row);
+      }, this);
+  this.modified_.getValues().forEach(
+      function(modification) {
+        reverseDiff.modify([
+          modification[1],
+          modification[0]
+        ]);
+      }, this);
+
+  return reverseDiff;
+};
+
 /**
  * @license
  * Copyright 2015 Google Inc. All Rights Reserved.
@@ -23676,6 +23930,7 @@ goog.require('goog.Promise');
 goog.require('goog.object');
 goog.require('lf.Row');
 goog.require('lf.Stream');
+goog.require('lf.cache.TableDiff');
 
 
 
@@ -23758,6 +24013,40 @@ lf.backstore.LocalStorageTable.prototype.pipe = function(stream) {
  */
 lf.backstore.LocalStorageTable.prototype.commit = function() {
   window.localStorage.setItem(this.key_, JSON.stringify(this.data_));
+};
+
+
+/**
+ * Generates table diff from new data.
+ * @param {!Object} newData
+ * @return {!lf.cache.TableDiff}
+ */
+lf.backstore.LocalStorageTable.prototype.diff = function(newData) {
+  var oldIds = Object.keys(this.data_);
+  var newIds = Object.keys(newData);
+
+  var diff = new lf.cache.TableDiff(this.key_);
+  newIds.forEach(function(id) {
+    var rowId = parseInt(id, 10);
+    if (goog.object.containsKey(this.data_, id)) {
+      // A maybe update: the event simply pass back all values of table.
+      if (JSON.stringify(this.data_[id]) != JSON.stringify(newData[id])) {
+        diff.modify([
+          new lf.Row(rowId, this.data_[id]),
+          new lf.Row(rowId, newData[id])
+        ]);
+      }
+    } else {
+      // Add
+      diff.add(new lf.Row(rowId, newData[id]));
+    }
+  }, this);
+  oldIds.filter(function(id) {
+    return !goog.object.containsKey(newData, id);
+  }, this).forEach(function(id) {
+    diff.delete(new lf.Row(parseInt(id, 10), this.data_[id]));
+  }, this);
+  return diff;
 };
 
 /**
@@ -23858,7 +24147,6 @@ lf.backstore.LocalStorageTx.prototype.commit = function() {
 goog.provide('lf.backstore.LocalStorage');
 
 goog.require('goog.Promise');
-goog.require('goog.object');
 goog.require('goog.structs.Map');
 goog.require('lf.BackStore');
 goog.require('lf.Exception');
@@ -23887,6 +24175,12 @@ lf.backstore.LocalStorage = function(schema) {
 
   /** @private {!goog.structs.Map<string, !lf.backstore.LocalStorageTable>} */
   this.tables_ = new goog.structs.Map();
+
+  /** @private {?function(!Array<!lf.cache.TableDiff>)} */
+  this.changeHandler_ = null;
+
+  /** @private {?Function} */
+  this.listener_ = null;
 };
 
 
@@ -23972,6 +24266,18 @@ lf.backstore.LocalStorage.prototype.close = function() {
 };
 
 
+/** @override */
+lf.backstore.LocalStorage.prototype.subscribe = function(handler) {
+  this.changeHandler_ = handler;
+  if (goog.isDefAndNotNull(this.listener_)) {
+    return;
+  }
+
+  this.listener_ = this.onStorageEvent_.bind(this);
+  window.addEventListener('storage', this.listener_, false);
+};
+
+
 /**
  * Flushes changes to local storage.
  */
@@ -23979,6 +24285,47 @@ lf.backstore.LocalStorage.prototype.commit = function() {
   this.tables_.getValues().forEach(function(table) {
     table.commit();
   });
+};
+
+
+/** @override */
+lf.backstore.LocalStorage.prototype.unsubscribe = function() {
+  if (goog.isDefAndNotNull(this.listener_)) {
+    window.removeEventListener('storage', this.listener_, false);
+    this.listener_ = null;
+    this.changeHandler_ = null;
+  }
+};
+
+
+/**
+ * @param {!Event} raw
+ * @private
+ */
+lf.backstore.LocalStorage.prototype.onStorageEvent_ = function(raw) {
+  var ev = /** @type {!StorageEvent} */ (raw);
+  if (ev.storageArea != window.localStorage ||
+      ev.key.indexOf(this.schema_.name() + '.') != 0) {
+    return;
+  }
+
+  var newValue = window.localStorage.getItem(ev.key);
+  var newData = {};
+  if (!goog.isNull(newValue)) {
+    try {
+      // Retrieves the new value from local storage. IE does not offer that in
+      // the StorageEvent.
+      newData = JSON.parse(newValue);
+    } catch (e) {
+      return;
+    }
+  }
+
+  var tableName = ev.key.slice(this.schema_.name().length + 1);
+  var table = this.tables_.get(tableName);
+  if (table) {
+    this.changeHandler_([table.diff(newData)]);
+  }
 };
 
 /**
@@ -24299,6 +24646,18 @@ lf.backstore.Memory.prototype.createIndexTable_ = function(
 
 /** @override */
 lf.backstore.Memory.prototype.close = function() {
+};
+
+
+/** @override */
+lf.backstore.Memory.prototype.subscribe = function(handler) {
+  // Not supported.
+};
+
+
+/** @override */
+lf.backstore.Memory.prototype.unsubscribe = function() {
+  // Not supported.
 };
 
 /**
@@ -24857,220 +25216,6 @@ lf.index.Index.prototype.comparator;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-goog.provide('lf.cache.TableDiff');
-
-goog.require('goog.asserts');
-goog.require('goog.structs.Map');
-goog.require('goog.structs.Set');
-
-goog.forwardDeclare('lf.Row');
-
-
-
-/**
- * A class representing a set of changes on the contents of a given table. It
- * contains all necessary information needed to be able to reverse those changes
- * after they have been applied.
- *
- * @constructor
- * @struct
- */
-lf.cache.TableDiff = function() {
-  /** @private {!goog.structs.Map<number, !lf.Row>} */
-  this.added_ = new goog.structs.Map();
-
-  /** @private {!goog.structs.Map<number, !Array<!lf.Row>>} */
-  this.modified_ = new goog.structs.Map();
-
-  /** @private {!goog.structs.Map<number, !lf.Row>} */
-  this.deleted_ = new goog.structs.Map();
-};
-
-
-/** @return {!goog.structs.Map<number, !lf.Row>} */
-lf.cache.TableDiff.prototype.getAdded = function() {
-  return this.added_;
-};
-
-
-/** @return {!goog.structs.Map<number, !Array<!lf.Row>>} */
-lf.cache.TableDiff.prototype.getModified = function() {
-  return this.modified_;
-};
-
-
-/** @return {!goog.structs.Map<number, !lf.Row>} */
-lf.cache.TableDiff.prototype.getDeleted = function() {
-  return this.deleted_;
-};
-
-
-/**
- * @param {!lf.Row} row The row that was inserted.
- */
-lf.cache.TableDiff.prototype.add = function(row) {
-  if (this.deleted_.containsKey(row.id())) {
-    var modification = [this.deleted_.get(row.id()), row];
-    this.modified_.set(row.id(), modification);
-    this.deleted_.remove(row.id());
-  } else {
-    this.added_.set(row.id(), row);
-  }
-};
-
-
-/**
- * @param {!Array<!lf.Row>} modification The old and new values
- *     of the modified row. Old value must be at position 0 and new value must
- *     be at position 1.
- */
-lf.cache.TableDiff.prototype.modify = function(modification) {
-  var oldValue = modification[0];
-  var newValue = modification[1];
-  goog.asserts.assert(
-      oldValue.id() == newValue.id(),
-      'Row ID mismatch between old/new values.');
-  var id = oldValue.id();
-
-  if (this.added_.containsKey(id)) {
-    this.added_.set(id, newValue);
-  } else if (this.modified_.containsKey(id)) {
-    var overallModification = [
-      this.modified_.get(modification[0].id())[0],
-      newValue
-    ];
-    this.modified_.set(id, overallModification);
-  } else {
-    this.modified_.set(id, modification);
-  }
-};
-
-
-/**
- * @param {!lf.Row} row The row that was deleted.
- */
-lf.cache.TableDiff.prototype.delete = function(row) {
-  if (this.added_.containsKey(row.id())) {
-    this.added_.remove(row.id());
-  } else if (this.modified_.containsKey(row.id())) {
-    var originalRow = this.modified_.get(row.id())[0];
-    this.modified_.remove(row.id());
-    this.deleted_.set(row.id(), originalRow);
-  } else {
-    this.deleted_.set(row.id(), row);
-  }
-};
-
-
-/**
- * Merges another diff into this one.
- * @param {!lf.cache.TableDiff} other The diff to be merged.
- */
-lf.cache.TableDiff.prototype.merge = function(other) {
-  other.added_.forEach(
-      function(row, rowId) {
-        this.add(row);
-      }, this);
-  other.modified_.forEach(
-      function(modification, rowId) {
-        this.modify(modification);
-      }, this);
-  other.deleted_.getValues().forEach(
-      function(row) {
-        this.delete(row);
-      }, this);
-};
-
-
-/**
- * Transforms each changes included in this diff (insertion, modification,
- * deletion) as a pair of before and after values.
- * Example addition:     [null, rowValue]
- * Example modification: [oldRowValue, newRowValue]
- * Example deletion      [oldRowValue, null]
- * @return {!Array<!Array<?lf.Row>>} An array of all changes expressed as
- *     before and after pairs.
- */
-lf.cache.TableDiff.prototype.getAsModifications = function() {
-  var modifications = [];
-
-  this.added_.getValues().forEach(
-      /**
-       * @param {!lf.Row} row
-       */
-      function(row) {
-        modifications.push([/* then */ null, /* now */ row]);
-      }, this);
-  this.modified_.getValues().forEach(
-      /**
-       * @param {!Array<!lf.Row>} modification
-       */
-      function(modification) {
-        modifications.push(modification);
-      }, this);
-  this.deleted_.getValues().forEach(
-      /**
-       * @param {!lf.Row} row
-       */
-      function(row) {
-        modifications.push([/* then */ row, /* now */ null]);
-      }, this);
-
-  return modifications;
-};
-
-
-/** @override */
-lf.cache.TableDiff.prototype.toString = function() {
-  return '[' + this.added_.getKeys().toString() + '], ' +
-      '[' + this.modified_.getKeys().toString() + '], ' +
-      '[' + this.deleted_.getKeys().toString() + ']';
-};
-
-
-/**
- * Reverses this set of changes. Useful for reverting changes after they have
- * been applied.
- * @return {!lf.cache.TableDiff} The reverse diff.
- */
-lf.cache.TableDiff.prototype.getReverse = function() {
-  var reverseDiff = new lf.cache.TableDiff();
-
-  this.added_.getValues().forEach(
-      function(row) {
-        reverseDiff.delete(row);
-      }, this);
-  this.deleted_.getValues().forEach(
-      function(row) {
-        reverseDiff.add(row);
-      }, this);
-  this.modified_.getValues().forEach(
-      function(modification) {
-        reverseDiff.modify([
-          modification[1],
-          modification[0]
-        ]);
-      }, this);
-
-  return reverseDiff;
-};
-
-/**
- * @license
- * Copyright 2014 Google Inc. All Rights Reserved.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
 goog.provide('lf.cache.Journal');
 
 goog.require('goog.asserts');
@@ -25258,7 +25403,7 @@ lf.cache.Journal.prototype.insert = function(table, rows) {
 lf.cache.Journal.prototype.modifyRow_ = function(table, rowBefore, rowNow) {
   var tableName = table.getName();
   var diff = this.tableDiffs_.get(tableName, null) ||
-      new lf.cache.TableDiff();
+      new lf.cache.TableDiff(tableName);
   this.tableDiffs_.set(tableName, diff);
 
   var modification = [rowBefore, rowNow];

@@ -20,7 +20,7 @@ function setUp() {
  * additions, modifications and deletions.
  */
 function testMultipleOperations() {
-  var diff = new lf.cache.TableDiff();
+  var diff = new lf.cache.TableDiff(table.getName());
 
   // Assuming that 1 and 2 are the only row IDs that reside in the table prior
   // to this diff.
@@ -107,7 +107,7 @@ function testMultipleOperations() {
  * Testing reversing an empty diff.
  */
 function testGetReversed_Empty() {
-  var original = new lf.cache.TableDiff();
+  var original = new lf.cache.TableDiff(table.getName());
   var reverse = original.getReverse();
   assertEquals(0, reverse.getAdded().getCount());
   assertEquals(0, reverse.getModified().getCount());
@@ -119,7 +119,7 @@ function testGetReversed_Empty() {
  * Testing reversing a diff with only additions.
  */
 function testGetReversed_Add() {
-  var original = new lf.cache.TableDiff();
+  var original = new lf.cache.TableDiff(table.getName());
   var row1 = table.createRow({'id': 'pk1', 'name': 'DummyName'});
   row1.assignRowId(1);
   var row2 = table.createRow({'id': 'pk2', 'name': 'DummyName'});
@@ -146,7 +146,7 @@ function testGetReversed_Add() {
  * Testing reversing a diff with only deletions.
  */
 function testGetReversed_Delete() {
-  var original = new lf.cache.TableDiff();
+  var original = new lf.cache.TableDiff(table.getName());
   var row1 = table.createRow({'id': 'pk1', 'name': 'DummyName'});
   row1.assignRowId(1);
   var row2 = table.createRow({'id': 'pk2', 'name': 'DummyName'});
@@ -173,7 +173,7 @@ function testGetReversed_Delete() {
  * Testing reversing a diff with only modifications.
  */
 function testGetReversed_Modify() {
-  var original = new lf.cache.TableDiff();
+  var original = new lf.cache.TableDiff(table.getName());
   var rowOld = table.createRow({'id': 'pk1', 'name': 'DummyName'});
   rowOld.assignRowId(1);
   var rowNew = table.createRow({'id': 'pk1', 'name': 'OtherDummyName'});
@@ -205,7 +205,7 @@ function testGetReversed_Modify() {
 
 
 function testGetAsModifications() {
-  var diff = new lf.cache.TableDiff();
+  var diff = new lf.cache.TableDiff(table.getName());
 
   var row1 = table.createRow({'id': 'pk1', 'name': 'DummyName'});
   row1.assignRowId(1);

@@ -30,6 +30,14 @@ lf.testing.Capability = function() {
   /** @type {boolean} */
   this.memoryDbOnly = goog.userAgent.product.SAFARI ||
       (goog.userAgent.product.IE && !goog.userAgent.isVersionOrHigher(10));
+
+  /**
+   * Cannot obtain reliable LocalStorage event on IE10, so disable it.
+   * @type {boolean}
+   */
+  this.localStorageEvent = !(
+      goog.userAgent.product.IE &&
+      !goog.userAgent.isVersionOrHigher(11));
 };
 
 
