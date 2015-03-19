@@ -814,7 +814,7 @@ function testRollback() {
 
 /**
  * @param {!lf.schema.Table} table
- * @return {!Array.<!lf.Row>} The rows that exist in the given table according
+ * @return {!Array<!lf.Row>} The rows that exist in the given table according
  *     to the indexStore and the cache.
  */
 function getTableRows(table) {

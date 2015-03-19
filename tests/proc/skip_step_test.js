@@ -97,7 +97,7 @@ function checkExec(sampleDataCount, skip) {
 /**
  * Generates sample data for testing.
  * @param {number} rowCount The number of sample rows to be generated.
- * @return {!Array.<!lf.Row>}
+ * @return {!Array<!lf.Row>}
  */
 function generateSampleRows(rowCount) {
   var rows = new Array(rowCount);

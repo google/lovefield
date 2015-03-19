@@ -48,7 +48,7 @@ function setUp() {
 
 /**
  * Generates sample records to be used for testing.
- * @return {!Array.<!hr.db.row.Holiday>}
+ * @return {!Array<!hr.db.row.Holiday>}
  */
 function generateSampleRows() {
   return [

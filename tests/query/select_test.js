@@ -409,9 +409,9 @@ function testProject_Aggregator_Sum() {
 
 /**
  * Checks a list of aggregators for validity.
- * @param {!Array.<!lf.fn.AggregatedColumn>} invalidAggregators Aggregators
+ * @param {!Array<!lf.fn.AggregatedColumn>} invalidAggregators Aggregators
  *     expected to fail the validity check.
- * @param {!Array.<!lf.fn.AggregatedColumn>} validAggregators Aggregators
+ * @param {!Array<!lf.fn.AggregatedColumn>} validAggregators Aggregators
  *     expected to pass the validity check.
  * @param {!lf.schema.Table} table
  */

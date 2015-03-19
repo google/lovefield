@@ -51,7 +51,7 @@ lf.testing.EndToEndTester = function(global, connectFn) {
   /** @private {!lf.Global} */
   this.global_ = global;
 
-  /** @private {!Array.<!lf.Row>} */
+  /** @private {!Array<!lf.Row>} */
   this.sampleJobs__;
 
   /** @private {!Array<function(): !IThenable>} */

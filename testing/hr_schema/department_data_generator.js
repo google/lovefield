@@ -41,7 +41,7 @@ lf.testing.hrSchema.DepartmentDataGenerator = function(schema) {
 
 /**
  * @param {number} count The number of rows to generate.
- * @return {!Array.<!hr.db.row.DepartmentType>}
+ * @return {!Array<!hr.db.row.DepartmentType>}
  * @private
  */
 lf.testing.hrSchema.DepartmentDataGenerator.prototype.generateRaw_ =
@@ -66,7 +66,7 @@ lf.testing.hrSchema.DepartmentDataGenerator.prototype.generateRaw_ =
 
 /**
  * @param {number} count The number of rows to generate.
- * @return {!Array.<!hr.db.row.Department>}
+ * @return {!Array<!hr.db.row.Department>}
  */
 lf.testing.hrSchema.DepartmentDataGenerator.prototype.generate =
     function(count) {

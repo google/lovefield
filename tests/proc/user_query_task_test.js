@@ -45,7 +45,7 @@ var global;
 var cache;
 
 
-/** @type {!Array.<!lf.Row>} */
+/** @type {!Array<!lf.Row>} */
 var rows;
 
 

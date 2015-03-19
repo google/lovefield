@@ -69,7 +69,7 @@ lf.testing.Benchmark = function(name, opt_setUp, opt_tearDown) {
   /** @private {!goog.structs.Map<string, !Array<number>>} */
   this.results_ = new goog.structs.Map();
 
-  /** @private {!Array.<!lf.testing.BenchmarkTest_>} */
+  /** @private {!Array<!lf.testing.BenchmarkTest_>} */
   this.tests_ = [];
 
   /** @private {!function(): !IThenable} */

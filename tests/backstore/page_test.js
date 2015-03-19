@@ -40,7 +40,7 @@ function testGetPageRange() {
 }
 
 
-/** @return {!Array.<!lf.Row>} */
+/** @return {!Array<!lf.Row>} */
 function createRows() {
   var rows = [];
   for (var i = 0; i <= (4 * MAGIC); i += (MAGIC / 2)) {

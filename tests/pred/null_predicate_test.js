@@ -68,7 +68,7 @@ function clearDb() {
 /**
  * Creates two sample Employee rows. One with a specified 'hireDate' and one
  * with a null 'hireDate'.
- * @return {!Array.<!hr.db.row.Employee>}
+ * @return {!Array<!hr.db.row.Employee>}
  */
 function generateSampleEmployeeData() {
   var employeeRow1 =

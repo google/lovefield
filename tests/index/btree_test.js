@@ -81,7 +81,7 @@ var SEQUENCE = [
   10, 12, 16];
 
 
-/** @const {!Array.<!Array<number, string>>} */
+/** @const {!Array<!Array<number, string>>} */
 var SEQUENCE2 = [
   [13, '13'], [9, '09'], [21, '21'], [17, '17'],
   [5, '05'],
@@ -136,7 +136,7 @@ function insertToTree2(index, comparator, opt_duplicate) {
 
 
 /**
- * @param {!Array.<!lf.Row>} rows
+ * @param {!Array<!lf.Row>} rows
  * @return {!lf.index.BTree}
  */
 function deserializeTree(rows) {
@@ -1188,7 +1188,7 @@ function manualTestBenchmark() {
 
   stub.reset();
 
-  /** @param {!Array.<!lf.Row>} rows */
+  /** @param {!Array<!lf.Row>} rows */
   var runTest = function(rows) {
     var tree = new lf.index.BTree('test', c, true);
     var start = goog.global.performance.now();

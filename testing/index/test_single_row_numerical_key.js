@@ -186,7 +186,7 @@ lf.testing.index.TestSingleRowNumericalKey.prototype.populateIndex_ =
 
 /**
  * The key ranges to be used for testing.
- * @type {!Array.<!lf.index.SingleKeyRange|undefined>}
+ * @type {!Array<!lf.index.SingleKeyRange|undefined>}
  */
 lf.testing.index.TestSingleRowNumericalKey.keyRanges = [
   // get all.
@@ -211,7 +211,7 @@ lf.testing.index.TestSingleRowNumericalKey.keyRanges = [
 /**
  * The expected results for all key ranges in
  * lf.testing.index.TestSingleRowNumericalKeyCases.keyRanges.
- * @private {!Array.<!Array<number>>}
+ * @private {!Array<!Array<number>>}
  */
 lf.testing.index.TestSingleRowNumericalKey.getRangeExpectations_ = [
   // get all.

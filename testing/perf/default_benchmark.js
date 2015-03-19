@@ -41,7 +41,7 @@ lf.testing.perf.DefaultBenchmark = function(opt_volatile) {
   /** @private {!hr.db.schema.Employee} */
   this.e_;
 
-  /** @private {!Array.<!hr.db.row.Employee>} */
+  /** @private {!Array<!hr.db.row.Employee>} */
   this.data_;
 
   /** @private {boolean} */

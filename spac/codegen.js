@@ -48,19 +48,19 @@
 
 /**
  * @typedef {{
- *   primaryKey: !Array.<{
+ *   primaryKey: !Array<{
  *     name: string,
  *     order: ?string,
  *     autoIncrement: ?boolean
  *   }>,
- *   nullable: !Array.<string>,
- *   unique: !Array.<{
+ *   nullable: !Array<string>,
+ *   unique: !Array<{
  *     name: string,
- *     column: !Array.<{
+ *     column: !Array<{
  *       name: string
  *     }>
  *   }>,
- *   foreignKey: !Array.<{
+ *   foreignKey: !Array<{
  *     name: string,
  *     localColumn: string,
  *     reference: string,
@@ -85,17 +85,17 @@ var Pragma_;
  *   name: string,
  *   version: number,
  *   pragma: Pragma_,
- *   table: !Array.<{
+ *   table: !Array<{
  *     name: string,
- *     column: !Array.<{
+ *     column: !Array<{
  *       name: string,
  *       type: string,
  *       nullable: boolean
  *     }>,
  *     constraint: Constraint_,
- *     index: !Array.<{
+ *     index: !Array<{
  *       name: string,
- *       column: !Array.<{
+ *       column: !Array<{
  *         name: string,
  *         order: ?string
  *       }>,
@@ -113,7 +113,7 @@ var Schema_;
 
 /**
  * @param {!Object} yaml
- * @return {!Array.<!Object>}
+ * @return {!Array<!Object>}
  */
 function objectToArray(yaml) {
   var ret = [];
@@ -200,7 +200,7 @@ function convertSchema(yaml) {
 }
 
 
-/** @const {!Array.<string>} */
+/** @const {!Array<string>} */
 var NULLABLE_TYPES_BY_DEFAULT = [
   'arraybuffer',
   'object'
@@ -225,7 +225,7 @@ var CodeGenerator = function(namespace, schema) {
 
   /**
    * A stack used to store relative line numbers.
-   * @private {!Array.<number>}
+   * @private {!Array<number>}
    */
   this.stack_ = [];
 
@@ -388,8 +388,8 @@ CodeGenerator.prototype.getNewState_ = function(line, oldState) {
 
 
 /**
- * @param {!Array.<string>} lines
- * @return {!Array.<string>}
+ * @param {!Array<string>} lines
+ * @return {!Array<string>}
  * @private
  */
 CodeGenerator.prototype.parse_ = function(lines) {
@@ -432,8 +432,8 @@ CodeGenerator.prototype.parse_ = function(lines) {
 
 
 /**
- * @param {!Array.<string>} lines
- * @return {!Array.<string>}
+ * @param {!Array<string>} lines
+ * @return {!Array<string>}
  * @private
  */
 CodeGenerator.prototype.processSort_ = function(lines) {
@@ -607,7 +607,7 @@ CodeGenerator.columnToKey_ = function(
 
 /**
  * @param {Object} table
- * @param {!Array.<!Object>} columns
+ * @param {!Array<!Object>} columns
  * @return {string}
  * @private
  */
@@ -836,8 +836,8 @@ CodeGenerator.prototype.genRowGetSet_ = function(table, prefix) {
 
 
 /**
- * @param {!Array.<string>} lines
- * @return {!Array.<string>}
+ * @param {!Array<string>} lines
+ * @return {!Array<string>}
  * @private
  */
 CodeGenerator.prototype.processRepeatTable_ = function(lines) {
@@ -1024,7 +1024,7 @@ CodeGenerator.prototype.getConstraint_ = function(table) {
 /**
  * @param {!Object} table
  * @param {number} indentCount
- * @return {!Array.<string>}
+ * @return {!Array<string>}
  * @private
  */
 CodeGenerator.prototype.getUniqueIndices_ = function(table, indentCount) {
@@ -1089,7 +1089,7 @@ CodeGenerator.prototype.getIndices_ = function(table) {
 
 /**
  * @param {!Object} table
- * @return {!Array.<string>}
+ * @return {!Array<string>}
  * @private
  */
 CodeGenerator.prototype.getColumnAsMembers_ = function(table) {
@@ -1148,7 +1148,7 @@ CodeGenerator.prototype.getColumnAsMembers_ = function(table) {
 
 /**
  * @param {!Object} table
- * @return {!Array.<string>}
+ * @return {!Array<string>}
  * @private
  */
 CodeGenerator.prototype.getUniqueColumns_ = function(table) {
@@ -1184,7 +1184,7 @@ CodeGenerator.prototype.getUniqueColumns_ = function(table) {
 
 /**
  * @param {!Object} table
- * @return {!Array.<string>}
+ * @return {!Array<string>}
  * @private
  */
 CodeGenerator.prototype.getNullableColums_ = function(table) {
@@ -1199,8 +1199,8 @@ CodeGenerator.prototype.getNullableColums_ = function(table) {
 
 
 /**
- * @param {!Array.<string>} lines
- * @return {!Array.<string>}
+ * @param {!Array<string>} lines
+ * @return {!Array<string>}
  * @private
  */
 CodeGenerator.prototype.processRepeatColumn_ = function(lines) {

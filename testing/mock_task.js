@@ -27,20 +27,20 @@ goog.require('lf.proc.Task');
  * @struct
  *
  * @param {!lf.TransactionType} txType
- * @param {!goog.structs.Set.<!lf.schema.Table>} scope
+ * @param {!goog.structs.Set<!lf.schema.Table>} scope
  * @param {!Function} execFn The function to call when this task is executed.
  */
 lf.testing.MockTask = function(txType, scope, execFn) {
   /** @private {!lf.TransactionType} */
   this.txType_ = txType;
 
-  /** @private {!goog.structs.Set.<!lf.schema.Table>} */
+  /** @private {!goog.structs.Set<!lf.schema.Table>} */
   this.scope_ = scope;
 
   /** @private {!Function} */
   this.execFn_ = execFn;
 
-  /** @private {!goog.promise.Resolver.<!Array.<!lf.proc.Relation>>} */
+  /** @private {!goog.promise.Resolver.<!Array<!lf.proc.Relation>>} */
   this.resolver_ = goog.Promise.withResolver();
 };
 

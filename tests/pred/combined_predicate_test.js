@@ -262,7 +262,7 @@ function checkSetComplement(
 /**
  * Generates sample emolyee data to be used for tests.
  * @param {number} rowCount The number of sample rows to be generated.
- * @return {!Array.<!lf.Row>}
+ * @return {!Array<!lf.Row>}
  */
 function getSampleRows(rowCount) {
   var employees = new Array(rowCount);

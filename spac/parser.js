@@ -83,7 +83,7 @@ var INDEX_SCHEMA = {
 };
 
 
-/** @const {!Array.<string>} */
+/** @const {!Array<string>} */
 var VALID_COLUMN_TYPE = [
   'arraybuffer',
   'boolean',
@@ -95,18 +95,18 @@ var VALID_COLUMN_TYPE = [
 ];
 
 
-/** @const {!Array.<string>} */
+/** @const {!Array<string>} */
 var NON_INDEXABLE_TYPE = [
   'arraybuffer',
   'object'
 ];
 
 
-/** @const {!Array.<string>} */
+/** @const {!Array<string>} */
 var VALID_INDEX_ORDER = ['asc', 'desc'];
 
 
-/** @const {!Array.<string>} */
+/** @const {!Array<string>} */
 var INVALID_DB_NAMES = ['Db', 'Transaction'];
 
 
@@ -182,10 +182,10 @@ function checkObject(name, rule, data) {
 /**
  * @param {string} tableName
  * @param {!Object} schema The constraint section of schema
- * @param {!Array.<string>} colNames Column names in this table.
- * @param {!Array.<string>} names Names of unique identifiers in table, this
+ * @param {!Array<string>} colNames Column names in this table.
+ * @param {!Array<string>} names Names of unique identifiers in table, this
  *     function will insert entries into it as side effect.
- * @return {!Array.<string>} Columns associated.
+ * @return {!Array<string>} Columns associated.
  */
 function convertPrimaryKey(tableName, schema, colNames, names) {
   var keyName = 'pk' + tableName;
@@ -266,11 +266,11 @@ function checkAutoIncrement(table) {
 /**
  * @param {string} tableName
  * @param {!Object} tableSchema
- * @param {!Array.<string>} colNames Column names in this table.
- * @param {!Array.<string>} names Names of unique identifiers in table, this
+ * @param {!Array<string>} colNames Column names in this table.
+ * @param {!Array<string>} names Names of unique identifiers in table, this
  *     function will insert entries into it as side effect.
- * @param {!Array.<string>} unique Known unique columns.
- * @return {!Array.<string>} Columns associated.
+ * @param {!Array<string>} unique Known unique columns.
+ * @return {!Array<string>} Columns associated.
  */
 function convertUnique(tableName, tableSchema, colNames, names, unique) {
   var notNullable = [];
@@ -309,11 +309,11 @@ function convertUnique(tableName, tableSchema, colNames, names, unique) {
  * @param {string} tableName
  * @param {!Object} schemas Schema of the whole database.
  * @param {!Object} schema Schema of the foreign key constraint.
- * @param {!Array.<string>} colNames Columns of the table.
- * @param {!Array.<string>} names Names of unique identifiers in table, this
+ * @param {!Array<string>} colNames Columns of the table.
+ * @param {!Array<string>} names Names of unique identifiers in table, this
  *     function will insert entries into it as side effect.
- * @param {!Array.<string>} keyed Names already keyed locally.
- * @return {!Array.<string>} Columns associated.
+ * @param {!Array<string>} keyed Names already keyed locally.
+ * @return {!Array<string>} Columns associated.
  */
 function checkForeignKey(tableName, schemas, schema, colNames, names, keyed) {
   var tableNames = [];
@@ -363,10 +363,10 @@ function checkForeignKey(tableName, schemas, schema, colNames, names, keyed) {
 /**
  * @param {string} tableName
  * @param {!Object} schema
- * @param {!Array.<string>} colNames
- * @param {!Array.<string>} notNullable Already declared not nullable columns
+ * @param {!Array<string>} colNames
+ * @param {!Array<string>} notNullable Already declared not nullable columns
  *     (e.g. Primary Keys, Unique).
- * @return {!Array.<string>} Nullable columns
+ * @return {!Array<string>} Nullable columns
  */
 function checkNullable(tableName, schema, colNames, notNullable) {
   var nullable = schema.constraint.nullable;
@@ -388,7 +388,7 @@ function checkNullable(tableName, schema, colNames, notNullable) {
 /**
  * Validates whether the given columns are indexable or not.
  * @param {!Object} tableSchema
- * @param {!Array.<string>} cols
+ * @param {!Array<string>} cols
  */
 function checkIndexable(tableSchema, cols) {
   cols.forEach(function(col) {
@@ -403,10 +403,10 @@ function checkIndexable(tableSchema, cols) {
 /**
  * @param {string} tableName
  * @param {!Object} schemas
- * @param {!Array.<string>} colNames
- * @param {!Array.<string>} names Names of unique identifiers in table, this
+ * @param {!Array<string>} colNames
+ * @param {!Array<string>} names Names of unique identifiers in table, this
  *     function will insert entries into it as side effect.
- * @return {!Array.<string>} Nullable columns.
+ * @return {!Array<string>} Nullable columns.
  */
 function checkConstraint(tableName, schemas, colNames, names) {
   var schema = schemas[tableName].constraint;
@@ -494,10 +494,10 @@ function convertIndexSchema(indexName, raw) {
 /**
  * @param {string} tableName
  * @param {!Object} schema
- * @param {!Array.<string>} colNames
- * @param {!Array.<string>} names Names of unique identifiers in table, this
+ * @param {!Array<string>} colNames
+ * @param {!Array<string>} names Names of unique identifiers in table, this
  *     function will insert entries into it as side effect.
- * @param {!Array.<string>} nullable Nullable columns.
+ * @param {!Array<string>} nullable Nullable columns.
  */
 function checkIndices(tableName, schema, colNames, names, nullable) {
   var indexedCol = [];
@@ -561,7 +561,7 @@ function checkTable(tableName, schemas) {
 
   checkObject(tableName, TABLE_SCHEMA, schema);
 
-  /** @type {!Array.<string>} */
+  /** @type {!Array<string>} */
   var names = [];
 
   // Check column types.

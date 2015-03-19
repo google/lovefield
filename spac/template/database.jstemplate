@@ -48,7 +48,7 @@ goog.require('lf.service.ServiceId');
 
 /**
  * @param {!lf.schema.ConnectOptions=} opt_options
- * @return {!IThenable.<!lf.proc.Database>}
+ * @return {!IThenable<!lf.proc.Database>}
  */
 #namespace.connect = function(opt_options) {
   #namespace.getSchema();

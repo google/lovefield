@@ -289,9 +289,9 @@ function checkEvalRelations_MultiJoin(evalFn) {
  * Such that each job contains 10 employees and each department contains 20
  * employees.
  * @return {{
- *   employees: !Array.<!lf.Row>,
- *   jobs: !Array.<!lf.Row>,
- *   departments: !Array.<!lf.Row>
+ *   employees: !Array<!lf.Row>,
+ *   jobs: !Array<!lf.Row>,
+ *   departments: !Array<!lf.Row>
  * }}
  */
 function getSampleRows() {

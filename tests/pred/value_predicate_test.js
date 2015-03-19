@@ -281,7 +281,7 @@ function testIsKeyRangeCompatible_False() {
 /**
  * Generates sample table rows.
  * @param {number} rowCount The number of rows to be generated.
- * @return {!Array.<!lf.Row>} The generated rows.
+ * @return {!Array<!lf.Row>} The generated rows.
  */
 function getSampleRows(rowCount) {
   var table = schema.tables()[0];

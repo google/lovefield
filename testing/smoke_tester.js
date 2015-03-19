@@ -262,7 +262,7 @@ lf.testing.SmokeTester.prototype.testTransaction = function() {
 
 /**
  * Generates sample records to be used for testing.
- * @return {!Array.<!lf.Row>}
+ * @return {!Array<!lf.Row>}
  * @private
  */
 lf.testing.SmokeTester.prototype.generateSampleRows_ = function() {
@@ -281,7 +281,7 @@ lf.testing.SmokeTester.prototype.generateSampleRows_ = function() {
  * Generates sample records such that all generated rows have the same primary
  * key.
  * @param {number} count The number of rows to be generated.
- * @return {!Array.<!lf.Row>}
+ * @return {!Array<!lf.Row>}
  * @private
  */
 lf.testing.SmokeTester.prototype.generateSampleRowsWithSamePrimaryKey_ =

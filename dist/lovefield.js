@@ -21801,7 +21801,7 @@ lf.backstore.BaseTx.prototype.mergeTableChanges_ = function() {
         }
         var toPut = tableDiff.getModified().getValues().map(
             /**
-             * @param {!Array.<!lf.Row>} modification
+             * @param {!Array<!lf.Row>} modification
              */
             function(modification) {
               return modification[1];
@@ -22069,14 +22069,14 @@ lf.Stream = function() {};
 /**
  * Get from the stream.
  * @param {!Array<number>} ids
- * @return {!IThenable.<!Array.<!lf.Row>>}
+ * @return {!IThenable<!Array<!lf.Row>>}
  */
 lf.Stream.prototype.get;
 
 
 /**
  * Put to the stream.
- * @param {!Array.<!lf.Row>} rows
+ * @param {!Array<!lf.Row>} rows
  * @return {!IThenable}
  */
 lf.Stream.prototype.put;
@@ -22191,7 +22191,7 @@ lf.backstore.Page.prototype.getPayload = function() {
 };
 
 
-/** @param {!Array.<!lf.Row>} rows */
+/** @param {!Array<!lf.Row>} rows */
 lf.backstore.Page.prototype.setRows = function(rows) {
   rows.forEach(function(row) {
     this.payload_[row.id()] = row.serialize();
@@ -22199,7 +22199,7 @@ lf.backstore.Page.prototype.setRows = function(rows) {
 };
 
 
-/** @param {!Array.<!number>} ids */
+/** @param {!Array<!number>} ids */
 lf.backstore.Page.prototype.removeRows = function(ids) {
   ids.forEach(function(id) {
     goog.object.remove(this.payload_, id);
@@ -22332,7 +22332,7 @@ lf.backstore.BundledObjectStore.prototype.get = function(ids) {
 
 /**
  * @param {!Array<number>} rowIds
- * @return {!IThenable.<!goog.structs.Map<number, !lf.backstore.Page>>} Fetched
+ * @return {!IThenable<!goog.structs.Map<number, !lf.backstore.Page>>} Fetched
  *     pages.
  * @private
  */
@@ -22378,7 +22378,7 @@ lf.backstore.BundledObjectStore.prototype.getPagesByRowIds_ = function(rowIds) {
 
 /**
  * Reads everything from data store.
- * @return {!IThenable.<!Array.<!lf.Row>>}
+ * @return {!IThenable<!Array<!lf.Row>>}
  * @private
  */
 lf.backstore.BundledObjectStore.prototype.getAll_ = function() {
@@ -22712,7 +22712,7 @@ lf.raw.BackStore.prototype.getVersion;
 /**
  * Offers last resort for data rescue. This function dumps all rows in the
  * database to one single JSON object.
- * @return {!IThenable.<!Object>} All rows in DB. The format is a JSON object of
+ * @return {!IThenable<!Object>} All rows in DB. The format is a JSON object of
  *     {
  *        "table1": [ <row1>, <row2>, ..., <rowN> ],
  *        "table2": [ ... ],
@@ -22920,7 +22920,7 @@ lf.backstore.IndexedDBRawBackStore.prototype.renameTableColumn = function(
 
 /**
  * @param {string} tableName
- * @return {!IThenable.<!Array.<{id: number, value: *}>>} data
+ * @return {!IThenable<!Array<{id: number, value: *}>>} data
  * @private
  */
 lf.backstore.IndexedDBRawBackStore.prototype.getTableRows_ = function(
@@ -22994,7 +22994,7 @@ lf.backstore.IndexedDBRawBackStore.prototype.dump = function() {
 
 /**
  * @param {string} tableName
- * @return {!IThenable.<!Array.<!Object>>}
+ * @return {!IThenable<!Array<!Object>>}
  * @private
  */
 lf.backstore.IndexedDBRawBackStore.prototype.dumpTable_ = function(tableName) {
@@ -23091,7 +23091,7 @@ lf.backstore.ObjectStore.prototype.get = function(ids) {
 
 /**
  * Reads everything from data store.
- * @return {!IThenable.<!Array.<!lf.Row>>}
+ * @return {!IThenable<!Array<!lf.Row>>}
  * @private
  */
 lf.backstore.ObjectStore.prototype.getAll_ = function() {
@@ -24040,7 +24040,7 @@ lf.backstore.MemoryTable.prototype.get = function(ids) {
 
 /**
  * Returns all the rows in the table.
- * @return {!IThenable.<!Array.<!lf.Row>>}
+ * @return {!IThenable<!Array<!lf.Row>>}
  * @private
  */
 lf.backstore.MemoryTable.prototype.getAll_ = function() {
@@ -24333,7 +24333,7 @@ lf.cache.Cache = function() {};
 /**
  * Inserts/Updates contents in cache.
  * @param {string} tableName
- * @param {!Array.<!lf.Row>} rows
+ * @param {!Array<!lf.Row>} rows
  */
 lf.cache.Cache.prototype.set;
 
@@ -24341,7 +24341,7 @@ lf.cache.Cache.prototype.set;
 /**
  * Returns contents from the cache.
  * @param {!Array<number>} ids
- * @return {!Array.<?lf.Row>} The requested cache entries or null if not found.
+ * @return {!Array<?lf.Row>} The requested cache entries or null if not found.
  */
 lf.cache.Cache.prototype.get;
 
@@ -24352,7 +24352,7 @@ lf.cache.Cache.prototype.get;
  * @param {string} tableName
  * @param {number} fromId
  * @param {number} toId
- * @return {!Array.<!lf.Row>} The requested cache entries.
+ * @return {!Array<!lf.Row>} The requested cache entries.
  */
 lf.cache.Cache.prototype.getRange;
 
@@ -24450,7 +24450,7 @@ lf.cache.ConstraintChecker.prototype.findExistingRowIdInIndex_ = function(
  * Checks whether any not-nullable constraint violation occurs as a result of
  * inserting/updating the given set of rows.
  * @param {!lf.schema.Table} table The table where the rows belong.
- * @param {!Array.<!lf.Row>} rows The rows being inserted.
+ * @param {!Array<!lf.Row>} rows The rows being inserted.
  * @throws {!lf.Exception}
  */
 lf.cache.ConstraintChecker.prototype.checkNotNullable = function(table, rows) {
@@ -24830,7 +24830,7 @@ lf.index.Index.prototype.max;
 
 /**
  * Serializes this index such that it can be persisted.
- * @return {!Array.<!lf.Row>}
+ * @return {!Array<!lf.Row>}
  */
 lf.index.Index.prototype.serialize;
 
@@ -24879,7 +24879,7 @@ lf.cache.TableDiff = function() {
   /** @private {!goog.structs.Map<number, !lf.Row>} */
   this.added_ = new goog.structs.Map();
 
-  /** @private {!goog.structs.Map<number, !Array.<!lf.Row>>} */
+  /** @private {!goog.structs.Map<number, !Array<!lf.Row>>} */
   this.modified_ = new goog.structs.Map();
 
   /** @private {!goog.structs.Map<number, !lf.Row>} */
@@ -24893,7 +24893,7 @@ lf.cache.TableDiff.prototype.getAdded = function() {
 };
 
 
-/** @return {!goog.structs.Map<number, !Array.<!lf.Row>>} */
+/** @return {!goog.structs.Map<number, !Array<!lf.Row>>} */
 lf.cache.TableDiff.prototype.getModified = function() {
   return this.modified_;
 };
@@ -24920,7 +24920,7 @@ lf.cache.TableDiff.prototype.add = function(row) {
 
 
 /**
- * @param {!Array.<!lf.Row>} modification The old and new values
+ * @param {!Array<!lf.Row>} modification The old and new values
  *     of the modified row. Old value must be at position 0 and new value must
  *     be at position 1.
  */
@@ -24988,7 +24988,7 @@ lf.cache.TableDiff.prototype.merge = function(other) {
  * Example addition:     [null, rowValue]
  * Example modification: [oldRowValue, newRowValue]
  * Example deletion      [oldRowValue, null]
- * @return {!Array.<!Array.<?lf.Row>>} An array of all changes expressed as
+ * @return {!Array<!Array<?lf.Row>>} An array of all changes expressed as
  *     before and after pairs.
  */
 lf.cache.TableDiff.prototype.getAsModifications = function() {
@@ -25003,7 +25003,7 @@ lf.cache.TableDiff.prototype.getAsModifications = function() {
       }, this);
   this.modified_.getValues().forEach(
       /**
-       * @param {!Array.<!lf.Row>} modification
+       * @param {!Array<!lf.Row>} modification
        */
       function(modification) {
         modifications.push(modification);
@@ -25099,7 +25099,7 @@ goog.forwardDeclare('lf.schema.Index');
  * @final
  *
  * @param {!lf.Global} global
- * @param {!Array.<!lf.schema.Table>} scope A list of tables that this journal
+ * @param {!Array<!lf.schema.Table>} scope A list of tables that this journal
  *     should allow access. Trying to access any table not in that list will
  *     result in an error.
  */
@@ -25230,7 +25230,7 @@ lf.cache.Journal.prototype.getIndexScope = function() {
 
 /**
  * @param {!lf.schema.Table} table
- * @param {!Array.<!lf.Row>} rows
+ * @param {!Array<!lf.Row>} rows
  * @throws {!lf.Exception}
  */
 lf.cache.Journal.prototype.insert = function(table, rows) {
@@ -25287,7 +25287,7 @@ lf.cache.Journal.prototype.modifyRow_ = function(table, rowBefore, rowNow) {
 
 /**
  * @param {!lf.schema.Table} table
- * @param {!Array.<!lf.Row>} rows
+ * @param {!Array<!lf.Row>} rows
  * @throws {!lf.Exception}
  */
 lf.cache.Journal.prototype.update = function(table, rows) {
@@ -25305,7 +25305,7 @@ lf.cache.Journal.prototype.update = function(table, rows) {
 
 /**
  * @param {!lf.schema.Table} table
- * @param {!Array.<!lf.Row>} rows
+ * @param {!Array<!lf.Row>} rows
  * @throws {!lf.Exception}
  */
 lf.cache.Journal.prototype.insertOrReplace = function(table, rows) {
@@ -25333,7 +25333,7 @@ lf.cache.Journal.prototype.insertOrReplace = function(table, rows) {
 
 /**
  * @param {!lf.schema.Table} table
- * @param {!Array.<!lf.Row>} rows
+ * @param {!Array<!lf.Row>} rows
  * @throws {!lf.Exception}
  */
 lf.cache.Journal.prototype.remove = function(table, rows) {
@@ -25428,7 +25428,7 @@ lf.cache.Journal.prototype.updateTableIndices_ = function(table, diff) {
  * indices are unaffected.
  *
  * @param {!lf.schema.Table} table The table to be updated.
- * @param {!Array.<?lf.Row>} modification An array of exactly two elements where
+ * @param {!Array<?lf.Row>} modification An array of exactly two elements where
  *     position 0 is the value before the modification and position 1 is after
  *     the modification. A value of null means that the row was either just
  *     created or just deleted.
@@ -25437,7 +25437,7 @@ lf.cache.Journal.prototype.updateTableIndices_ = function(table, diff) {
  */
 lf.cache.Journal.prototype.updateTableIndicesForRow_ = function(
     table, modification) {
-  /** @type {!Array.<!lf.index.Index>} */
+  /** @type {!Array<!lf.index.Index>} */
   var indices = table.getIndices().map(
       /**
        * @param {!lf.schema.Index} indexSchema
@@ -26773,7 +26773,7 @@ lf.index.SingleKeyRange.prototype.toString = function() {
  * Finds the complement key range. Note that in some cases the complement is
  * composed of two disjoint key ranges. For example complementing [10, 20] would
  * result in [unbound, 10) and (20, unbound].
- * @return {!Array.<!lf.index.SingleKeyRange>} The complement key ranges. An
+ * @return {!Array<!lf.index.SingleKeyRange>} The complement key ranges. An
  *     empty array will be returned in the case where the complement is empty.
  */
 lf.index.SingleKeyRange.prototype.complement = function() {
@@ -27783,7 +27783,7 @@ lf.index.RowId = function(name) {
   /** @private {string} */
   this.name_ = name;
 
-  /** @private {!goog.structs.Set.<!lf.index.Index.SingleKey>} */
+  /** @private {!goog.structs.Set<!lf.index.Index.SingleKey>} */
   this.rows_ = new goog.structs.Set();
 
   /** @private {!lf.index.Comparator} */
@@ -27913,7 +27913,7 @@ lf.index.RowId.prototype.comparator = function() {
 /**
  * Creates a RowId index from a serialized form.
  * @param {string} name The normalized name of this index.
- * @param {!Array.<!lf.Row>} rows
+ * @param {!Array<!lf.Row>} rows
  * @return {!lf.index.RowId}
  */
 lf.index.RowId.deserialize = function(name, rows) {
@@ -28545,7 +28545,7 @@ lf.index.AATree.prototype.comparator = function() {
 
 /**
  * @param {!lf.index.AANode_} node
- * @param {!Array.<!Array<string>>} buffer
+ * @param {!Array<!Array<string>>} buffer
  * @private
  */
 lf.index.AATree.prototype.dump_ = function(node, buffer) {
@@ -28622,7 +28622,7 @@ lf.index.IndexStore.prototype.get;
 
 /**
  * @param {string} tableName
- * @return {!Array.<!lf.index.Index>} The indices for a given table or an
+ * @return {!Array<!lf.index.Index>} The indices for a given table or an
  *     empty array if no indices exist.
  */
 lf.index.IndexStore.prototype.getTableIndices;
@@ -28927,13 +28927,13 @@ goog.forwardDeclare('lf.schema.Column');
  * @constructor
  * @struct
  *
- * @param {!Array.<!lf.proc.RelationEntry>} entries
+ * @param {!Array<!lf.proc.RelationEntry>} entries
  * @param {!Array<string>} tables The names of the source tables of this
  *     relation.
  */
 lf.proc.Relation = function(entries, tables) {
   /**
-   * @type {!Array.<!lf.proc.RelationEntry>}
+   * @type {!Array<!lf.proc.RelationEntry>}
    * @const
    */
   this.entries = entries;
@@ -28999,7 +28999,7 @@ lf.proc.Relation.prototype.isPrefixApplied = function() {
 };
 
 
-/** @return {!Array.<!Object>} */
+/** @return {!Array<!Object>} */
 lf.proc.Relation.prototype.getPayloads = function() {
   return this.entries.map(function(entry) {
     return entry.row.payload();
@@ -29071,7 +29071,7 @@ lf.proc.Relation.createEmpty = function() {
 
 /**
  * Finds the intersection of a given list of relations.
- * @param {!Array.<!lf.proc.Relation>} relations The instances to be
+ * @param {!Array<!lf.proc.Relation>} relations The instances to be
  *     intersected.
  * @return {!lf.proc.Relation} A relation containing only those entries that
  *     exist in all input relations.
@@ -29116,7 +29116,7 @@ lf.proc.Relation.intersect = function(relations) {
 
 /**
  * Finds the union of a given list of relations.
- * @param {!Array.<!lf.proc.Relation>} relations The instances to be
+ * @param {!Array<!lf.proc.Relation>} relations The instances to be
  *     intersected.
  * @return {!lf.proc.Relation} A relation containing all entries from all input
  *     relations.
@@ -29141,7 +29141,7 @@ lf.proc.Relation.union = function(relations) {
 
 /**
  * Creates an lf.proc.Relation instance from a set of lf.Row instances.
- * @param {!Array.<!lf.Row>} rows
+ * @param {!Array<!lf.Row>} rows
  * @param {!Array<string>} tables The names of the tables where these rows
  *     belong.
  * @return {!lf.proc.Relation}
@@ -29371,7 +29371,7 @@ lf.tree.map = function(original, mapFn) {
 /**
  * Finds all leafs node existing in the subtree that starts at the given node.
  * @param {!goog.structs.TreeNode} node
- * @return {!Array.<!goog.structs.TreeNode>}
+ * @return {!Array<!goog.structs.TreeNode>}
  */
 lf.tree.getLeafNodes = function(node) {
   return lf.tree.find(node, function(node) { return node.isLeaf(); });
@@ -29632,7 +29632,7 @@ lf.tree.replaceChainWithNode = function(head, tail, node) {
  *     every visited node on the tree. If false is returned searching will stop
  *     for nodes below that node.
  *     such a function is not provided the entire tree is searched.
- * @return {!Array.<!goog.structs.TreeNode>}
+ * @return {!Array<!goog.structs.TreeNode>}
  */
 lf.tree.find = function(root, filterFn, opt_stopFn) {
   var results = [];
@@ -30576,7 +30576,7 @@ lf.pred.CombinedPredicate.prototype.eval = function(relation) {
 
 /**
  * Combines the results of all the children predicates.
- * @param {!Array.<!lf.proc.Relation>} results The results of each
+ * @param {!Array<!lf.proc.Relation>} results The results of each
  *     child predicate.
  * @return {!lf.proc.Relation} The comdined results.
  * @private
@@ -31378,8 +31378,8 @@ lf.eval.Registry = function() {
    * NOTE: No evaluation map exists for lf.Type.ARRAY_BUFFER since predicates
    * involving such a column do not make sense.
    *
-   * @private {!goog.structs.Map.<
-   *     !lf.Type, !goog.structs.Map.<!lf.eval.Type, !lf.eval.EvalFunction_>>}
+   * @private {!goog.structs.Map<
+   *     !lf.Type, !goog.structs.Map<!lf.eval.Type, !lf.eval.EvalFunction_>>}
    */
   this.evaluationMaps_ = new goog.structs.Map(
       lf.Type.BOOLEAN,
@@ -31422,7 +31422,7 @@ lf.eval.Registry.prototype.getEvaluator = function(columnType, evaluatorType) {
  * the case of a column of type 'number'.
  * NOTE: lf.eval.Type.MATCH is not available for numbers.
  *
- * @return {!goog.structs.Map.<!lf.eval.Type, !lf.eval.EvalFunction_>}
+ * @return {!goog.structs.Map<!lf.eval.Type, !lf.eval.EvalFunction_>}
  * @private
  */
 lf.eval.buildNumberEvaluatorMap_ = function() {
@@ -31453,7 +31453,7 @@ lf.eval.buildNumberEvaluatorMap_ = function() {
 /**
  * Builds a map associating evaluator types with the evaluator functions, for
  * the case of a column of type 'string'.
- * @return {!goog.structs.Map.<!lf.eval.Type, !lf.eval.EvalFunction_>}
+ * @return {!goog.structs.Map<!lf.eval.Type, !lf.eval.EvalFunction_>}
  * @private
  */
 lf.eval.buildStringEvaluatorMap_ = function() {
@@ -31491,7 +31491,7 @@ lf.eval.buildStringEvaluatorMap_ = function() {
  * the case of a column of type 'Date'.
  * NOTE: lf.eval.Type.MATCH is not available for Date objects.
  *
- * @return {!goog.structs.Map.<!lf.eval.Type, !lf.eval.EvalFunction_>}
+ * @return {!goog.structs.Map<!lf.eval.Type, !lf.eval.EvalFunction_>}
  * @private
  */
 lf.eval.buildDateEvaluatorMap_ = function() {
@@ -31537,7 +31537,7 @@ lf.eval.buildDateEvaluatorMap_ = function() {
  * NOTE: lf.eval.Type.BETWEEN, MATCH, GTE, GT, LTE, LT, are not available for
  * boolean objects.
  *
- * @return {!goog.structs.Map.<!lf.eval.Type, !lf.eval.EvalFunction_>}
+ * @return {!goog.structs.Map<!lf.eval.Type, !lf.eval.EvalFunction_>}
  * @private
  */
 lf.eval.buildBooleanEvaluatorMap_ = function() {
@@ -31673,7 +31673,7 @@ lf.pred.JoinPredicate.prototype.appliesToRight_ = function(relation) {
  * Detects which input relation should be used as left/right.
  * @param {!lf.proc.Relation} relation1 The first relation to examine.
  * @param {!lf.proc.Relation} relation2 The second relation to examine.
- * @return {!Array.<!lf.proc.Relation>} An array holding the two input relations
+ * @return {!Array<!lf.proc.Relation>} An array holding the two input relations
  *     in the order [left, right].
  * @private
  */
@@ -31814,7 +31814,7 @@ lf.pred.JoinPredicate.prototype.evalRelationsHashJoin_ = function(
       function(entry) {
         var key = String(entry.getField(maxColumn));
         if (map.containsKey(key)) {
-          var entries = /** @type {!Array.<!lf.proc.RelationEntry>} */ (
+          var entries = /** @type {!Array<!lf.proc.RelationEntry>} */ (
               map.get(key));
           entries.forEach(
               function(innerEntry) {
@@ -32027,7 +32027,7 @@ lf.pred.ValuePredicate.prototype.eval = function(relation) {
 };
 
 
-/** @param {!Array.<*>} values */
+/** @param {!Array<*>} values */
 lf.pred.ValuePredicate.prototype.bind = function(values) {
   /** @param {number} index */
   var checkIndexWithinRange = function(index) {
@@ -32109,7 +32109,7 @@ lf.pred.ValuePredicate.prototype.isKeyRangeCompatible = function() {
  * Converts this predicate to a key range.
  * NOTE: Not all predicates can be converted to a key range, callers must call
  * isKeyRangeCompatible() before calling this method.
- * @return {!Array.<!lf.index.SingleKeyRange>} The key ranges corresponding to
+ * @return {!Array<!lf.index.SingleKeyRange>} The key ranges corresponding to
  *     this predicate. The length of the array is at most two.
  */
 lf.pred.ValuePredicate.prototype.toKeyRange = function() {
@@ -32242,7 +32242,7 @@ lf.schema.Column.prototype.getType;
 lf.schema.Column.prototype.getAlias;
 
 
-/** @return {!Array.<!lf.schema.Index>} */
+/** @return {!Array<!lf.schema.Index>} */
 lf.schema.Column.prototype.getIndices;
 
 
@@ -32266,7 +32266,7 @@ lf.schema.Database.prototype.name;
 lf.schema.Database.prototype.version;
 
 
-/** @return {!Array.<!lf.schema.Table>} */
+/** @return {!Array<!lf.schema.Table>} */
 lf.schema.Database.prototype.tables;
 
 
@@ -32328,7 +32328,7 @@ lf.schema.IndexedColumn;
  * @param {string} tableName
  * @param {string} name
  * @param {boolean} isUnique
- * @param {!Array.<!lf.schema.IndexedColumn>} columns
+ * @param {!Array<!lf.schema.IndexedColumn>} columns
  * @constructor @struct
  */
 lf.schema.Index = function(tableName, name, isUnique, columns) {
@@ -32341,7 +32341,7 @@ lf.schema.Index = function(tableName, name, isUnique, columns) {
   /** @type {boolean} */
   this.isUnique = isUnique;
 
-  /** @type {!Array.<!lf.schema.IndexedColumn>} */
+  /** @type {!Array<!lf.schema.IndexedColumn>} */
   this.columns = columns;
 };
 
@@ -32372,8 +32372,8 @@ lf.schema.Index.prototype.hasNullableColumn = function() {
 /**
  * Models the return value of Database.getSchema().getTable().
  * @param {string} name
- * @param {!Array.<!lf.schema.Column>} cols
- * @param {!Array.<!lf.schema.Index>} indices
+ * @param {!Array<!lf.schema.Column>} cols
+ * @param {!Array<!lf.schema.Index>} indices
  * @param {boolean} persistentIndex
  *
  * @template UserType, StoredType
@@ -32383,10 +32383,10 @@ lf.schema.Table = function(name, cols, indices, persistentIndex) {
   /** @private */
   this.name_ = name;
 
-  /** @private {!Array.<!lf.schema.Index>} */
+  /** @private {!Array<!lf.schema.Index>} */
   this.indices_ = indices;
 
-  /** @private {!Array.<!lf.schema.Column>} */
+  /** @private {!Array<!lf.schema.Column>} */
   this.columns_ = cols;
 
   /** @private {boolean} */
@@ -32451,13 +32451,13 @@ lf.schema.Table.prototype.createRow = goog.abstractMethod;
 lf.schema.Table.prototype.deserializeRow = goog.abstractMethod;
 
 
-/** @return {!Array.<!lf.schema.Index>} */
+/** @return {!Array<!lf.schema.Index>} */
 lf.schema.Table.prototype.getIndices = function() {
   return this.indices_;
 };
 
 
-/** @return {!Array.<!lf.schema.Column>} */
+/** @return {!Array<!lf.schema.Column>} */
 lf.schema.Table.prototype.getColumns = function() {
   return this.columns_;
 };
@@ -32591,7 +32591,7 @@ lf.fn.AggregatedColumn.prototype.as = function(name) {
 
 
 /**
- * @return {!Array.<!lf.schema.Column>} The chain of Column instances that
+ * @return {!Array<!lf.schema.Column>} The chain of Column instances that
  *     starts from this Column.
  */
 lf.fn.AggregatedColumn.prototype.getColumnChain = function() {
@@ -32986,14 +32986,14 @@ goog.require('lf.proc.Relation');
  * @constructor @struct
  * @extends {lf.proc.PhysicalQueryPlanNode}
  *
- * @param {!Array.<!lf.schema.Column>} aggregatedColumns
+ * @param {!Array<!lf.schema.Column>} aggregatedColumns
  */
 lf.proc.AggregationStep = function(aggregatedColumns) {
   lf.proc.AggregationStep.base(this, 'constructor',
       lf.proc.PhysicalQueryPlanNode.ANY,
       lf.proc.PhysicalQueryPlanNode.ExecType.FIRST_CHILD);
 
-  /** @type {!Array.<!lf.schema.Column>} */
+  /** @type {!Array<!lf.schema.Column>} */
   this.aggregatedColumns = aggregatedColumns;
 };
 goog.inherits(lf.proc.AggregationStep, lf.proc.PhysicalQueryPlanNode);
@@ -33027,7 +33027,7 @@ lf.proc.AggregationStep.prototype.execInternal = function(journal, relations) {
  * @private
  *
  * @param {!lf.proc.Relation} relation The relation to be transformed.
- * @param {!Array.<!lf.fn.AggregatedColumn>} columns The columns to calculate.
+ * @param {!Array<!lf.fn.AggregatedColumn>} columns The columns to calculate.
  */
 lf.proc.AggregationStep.Calculator_ = function(relation, columns) {
   this.relation_ = relation;
@@ -33786,7 +33786,7 @@ lf.proc.AndPredicatePass.prototype.traverse_ = function(
  * Example: (a0 AND (a1 AND a2)) AND (b OR c) becomes
  *           a0 AND a1 AND a2 AND (b OR c) -> [a0, a1, a2, (b OR c)]
  * @param {!lf.pred.PredicateNode} predicate The predicate to be broken down.
- * @return  {!Array.<!lf.pred.PredicateNode>} The components of the given
+ * @return  {!Array<!lf.pred.PredicateNode>} The components of the given
  *     predicate.
  * @private
  */
@@ -33814,8 +33814,8 @@ lf.proc.AndPredicatePass.prototype.breakAndPredicate_ =
 
 
 /**
- * @param {!Array.<!lf.pred.PredicateNode>} predicates
- * @return {!Array.<!lf.proc.LogicalQueryPlanNode>}
+ * @param {!Array<!lf.pred.PredicateNode>} predicates
+ * @return {!Array<!lf.proc.LogicalQueryPlanNode>}
  * @private
  */
 lf.proc.AndPredicatePass.prototype.createSelectNodeChain_ =
@@ -33964,7 +33964,7 @@ lf.proc.CrossProductStep.prototype.execInternal = function(journal, relations) {
  * Calculates the cross product of two relations.
  * @param {!lf.proc.Relation} leftRelation The first relation.
  * @param {!lf.proc.Relation} rightRelation The second relation.
- * @return {!Array.<lf.proc.Relation>} The combined relation.
+ * @return {!Array<lf.proc.Relation>} The combined relation.
  * @private
  */
 lf.proc.CrossProductStep.crossProduct_ = function(
@@ -34038,7 +34038,7 @@ lf.query.Builder.prototype.explain;
 /**
  * Bind values to parameterized queries. Callers are responsible to make sure
  * the types of values match those specified in the query.
- * @param {!Array.<*>} values
+ * @param {!Array<*>} values
  * @return {!lf.query.Builder}
  */
 lf.query.Builder.prototype.bind;
@@ -34155,7 +34155,7 @@ lf.query.Insert.prototype.into;
 
 
 /**
- * @param {!Array.<!lf.Row>} rows
+ * @param {!Array<!lf.Row>} rows
  * @return {!lf.query.Insert}
  * @throws {DOMException}
  */
@@ -34256,7 +34256,7 @@ lf.proc.PhysicalQueryPlan.prototype.explain = function() {
 
 
 /**
- * @return {!Array.<!lf.schema.Table>} Scope of this plan (i.e. tables
+ * @return {!Array<!lf.schema.Table>} Scope of this plan (i.e. tables
  *     involved).
  */
 lf.proc.PhysicalQueryPlan.prototype.getScope = function() {
@@ -34280,8 +34280,8 @@ lf.proc.PhysicalQueryPlan.prototype.getScope = function() {
 
 /**
  * Calculates the combined scope of the given list of physical query plans.
- * @param {!Array.<!lf.proc.PhysicalQueryPlan>} plans
- * @return {!goog.structs.Set.<!lf.schema.Table>} The schemas of all tables
+ * @param {!Array<!lf.proc.PhysicalQueryPlan>} plans
+ * @return {!goog.structs.Set<!lf.schema.Table>} The schemas of all tables
  *     involved.
  */
 lf.proc.PhysicalQueryPlan.getCombinedScope = function(plans) {
@@ -34320,7 +34320,7 @@ lf.proc.Task = function() {};
 
 /**
  * Executes this task.
- * @return {!IThenable.<!Array.<!lf.proc.Relation>>}
+ * @return {!IThenable<!Array<!lf.proc.Relation>>}
  */
 lf.proc.Task.prototype.exec;
 
@@ -34339,7 +34339,7 @@ lf.proc.Task.prototype.getScope;
 
 
 /**
- * @return {!goog.promise.Resolver.<!Array.<!lf.proc.Relation>>}
+ * @return {!goog.promise.Resolver.<!Array<!lf.proc.Relation>>}
  */
 lf.proc.Task.prototype.getResolver;
 
@@ -34401,20 +34401,20 @@ lf.proc.QueryTask = function(global, queries) {
   var queryEngine = /** @type {!lf.proc.QueryEngine} */ (
       global.getService(lf.service.QUERY_ENGINE));
 
-  /** @private {!Array.<!lf.proc.PhysicalQueryPlan>} */
+  /** @private {!Array<!lf.proc.PhysicalQueryPlan>} */
   this.plans_ = this.queries.map(
       function(query) {
         return queryEngine.getPlan(query);
       });
 
 
-  /** @private {!goog.structs.Set.<!lf.schema.Table>} */
+  /** @private {!goog.structs.Set<!lf.schema.Table>} */
   this.combinedScope_ = lf.proc.PhysicalQueryPlan.getCombinedScope(this.plans_);
 
   /** @private {!lf.TransactionType} */
   this.txType_ = this.detectType_();
 
-  /** @private {!goog.promise.Resolver.<!Array.<!lf.proc.Relation>>} */
+  /** @private {!goog.promise.Resolver.<!Array<!lf.proc.Relation>>} */
   this.resolver_ = goog.Promise.withResolver();
 };
 
@@ -34711,7 +34711,7 @@ lf.query.InsertContext = function() {
   /** @type {!lf.schema.Table} */
   this.into;
 
-  /** @type {!Array.<!lf.Row>} */
+  /** @type {!Array<!lf.Row>} */
   this.values;
 
   /** @type {boolean} */
@@ -34747,7 +34747,7 @@ lf.query.UpdateContext = function() {
   /** @type {!lf.schema.Table} */
   this.table;
 
-  /** @type {!Array.<!lf.query.UpdateContext.Set>} */
+  /** @type {!Array<!lf.query.UpdateContext.Set>} */
   this.set;
 
   /** @type {!lf.Predicate} */
@@ -35228,7 +35228,7 @@ lf.query.BaseBuilder.prototype.getQuery = function() {
  * @param {!lf.query.SelectContext|
  *         !lf.query.UpdateContext|
  *         !lf.query.DeleteContext} context
- * @param {!Array.<*>} values
+ * @param {!Array<*>} values
  * @protected
  */
 lf.query.BaseBuilder.bindValuesInSearchCondition = function(context, values) {
@@ -35560,7 +35560,7 @@ goog.require('lf.query.SelectContext');
  * @struct
  *
  * @param {!lf.Global} global
- * @param {!Array.<!lf.schema.Column>} columns
+ * @param {!Array<!lf.schema.Column>} columns
  */
 lf.query.SelectBuilder = function(global, columns) {
   lf.query.SelectBuilder.base(this, 'constructor', global);
@@ -36250,7 +36250,7 @@ goog.require('lf.proc.LogicalPlanGenerator');
  * @implements {lf.proc.LogicalPlanGenerator}
  *
  * @param {!lf.proc.LogicalQueryPlanNode} rootNode
- * @param {!Array.<!lf.proc.RewritePass.<!lf.proc.LogicalQueryPlanNode>>}
+ * @param {!Array<!lf.proc.RewritePass.<!lf.proc.LogicalQueryPlanNode>>}
  *   rewritePasses The rewrite passes to be applied on the logical query tree.
  */
 lf.proc.LogicalPlanRewriter = function(rootNode, rewritePasses) {
@@ -36258,7 +36258,7 @@ lf.proc.LogicalPlanRewriter = function(rootNode, rewritePasses) {
   this.rootNode_ = rootNode;
 
   /**
-   * @private {!Array.<
+   * @private {!Array<
    *     !lf.proc.RewritePass.<!lf.proc.LogicalQueryPlanNode>>}
    */
   this.rewritePasses_ = rewritePasses;
@@ -36461,7 +36461,7 @@ lf.proc.PushDownSelectionsPass = function() {
   /**
    * A set of SelectNodes that have already been pushed down. This is necessary
    * to avoid re-visiting the same nodes (endless recursion).
-   * @private {!goog.structs.Set.<!goog.structs.TreeNode>}
+   * @private {!goog.structs.Set<!goog.structs.TreeNode>}
    */
   this.alreadyPushedDown_ = new goog.structs.Set();
 };
@@ -36712,7 +36712,7 @@ goog.require('lf.proc.TableAccessNode');
 lf.proc.SelectLogicalPlanGenerator = function(query) {
   lf.proc.SelectLogicalPlanGenerator.base(this, 'constructor', query);
 
-  /** @private {Array.<!lf.proc.LogicalQueryPlanNode>} */
+  /** @private {Array<!lf.proc.LogicalQueryPlanNode>} */
   this.tableAccessNodes_ = null;
 
   /** @private {lf.proc.LogicalQueryPlanNode} */
@@ -37831,7 +37831,7 @@ lf.proc.IndexRangeScanPass.prototype.rewrite = function(rootNode) {
   this.rootNode = rootNode;
 
   var tableAccessFullSteps =
-      /** @type {!Array.<!lf.proc.TableAccessFullStep>} */ (lf.tree.find(
+      /** @type {!Array<!lf.proc.TableAccessFullStep>} */ (lf.tree.find(
           rootNode,
           function(node) {
             return node instanceof lf.proc.TableAccessFullStep;
@@ -37877,7 +37877,7 @@ lf.proc.IndexRangeScanPass.prototype.rewrite = function(rootNode) {
  * node.
  * @param {!lf.proc.PhysicalQueryPlanNode} startNode The node to start searching
  *     from.
- * @return {!Array.<!lf.proc.SelectStep>} The SelectSteps that were found.
+ * @return {!Array<!lf.proc.SelectStep>} The SelectSteps that were found.
  * @private
  */
 lf.proc.IndexRangeScanPass.prototype.findSelectSteps_ = function(startNode) {
@@ -37958,7 +37958,7 @@ goog.require('lf.service');
  *
  * @param {!lf.Global} global
  * @param {!lf.schema.Table} table
- * @param {!Array.<!lf.Row>} values
+ * @param {!Array<!lf.Row>} values
  */
 lf.proc.InsertStep = function(global, table, values) {
   lf.proc.InsertStep.base(this, 'constructor',
@@ -37968,7 +37968,7 @@ lf.proc.InsertStep = function(global, table, values) {
   /** @private {!lf.index.IndexStore} */
   this.indexStore_ = global.getService(lf.service.INDEX_STORE);
 
-  /** @private {!Array.<!lf.Row>} */
+  /** @private {!Array<!lf.Row>} */
   this.values_ = values;
 
   /** @private {!lf.schema.Table} */
@@ -38038,7 +38038,7 @@ lf.proc.InsertStep.assignAutoIncrementPks_ = function(
  *
  * @param {!lf.Global} global
  * @param {!lf.schema.Table} table
- * @param {!Array.<!lf.Row>} values
+ * @param {!Array<!lf.Row>} values
  */
 lf.proc.InsertOrReplaceStep = function(global, table, values) {
   lf.proc.InsertOrReplaceStep.base(this, 'constructor',
@@ -38048,7 +38048,7 @@ lf.proc.InsertOrReplaceStep = function(global, table, values) {
   /** @private {!lf.index.IndexStore} */
   this.indexStore_ = global.getService(lf.service.INDEX_STORE);
 
-  /** @private {!Array.<!lf.Row>} */
+  /** @private {!Array<!lf.Row>} */
   this.values_ = values;
 
   /** @private {!lf.schema.Table} */
@@ -38211,14 +38211,14 @@ goog.require('lf.query.SelectContext');
  * @constructor @struct
  * @extends {lf.proc.PhysicalQueryPlanNode}
  *
- * @param {!Array.<!lf.query.SelectContext.OrderBy>} orderBy
+ * @param {!Array<!lf.query.SelectContext.OrderBy>} orderBy
  */
 lf.proc.OrderByStep = function(orderBy) {
   lf.proc.OrderByStep.base(this, 'constructor',
       lf.proc.PhysicalQueryPlanNode.ANY,
       lf.proc.PhysicalQueryPlanNode.ExecType.FIRST_CHILD);
 
-  /** @type {!Array.<!lf.query.SelectContext.OrderBy>} */
+  /** @type {!Array<!lf.query.SelectContext.OrderBy>} */
   this.orderBy = orderBy;
 };
 goog.inherits(lf.proc.OrderByStep, lf.proc.PhysicalQueryPlanNode);
@@ -38355,7 +38355,7 @@ goog.require('lf.proc.RelationEntry');
  * @struct
  *
  * @param {!lf.proc.Relation} relation The relation to be transformed.
- * @param {!Array.<!lf.schema.Column>} columns The columns of interest.
+ * @param {!Array<!lf.schema.Column>} columns The columns of interest.
  */
 lf.proc.RelationTransformer = function(relation, columns) {
   /**
@@ -38366,7 +38366,7 @@ lf.proc.RelationTransformer = function(relation, columns) {
 
   /**
    * The columns that should be included in the transformed relation.
-   * @private {!Array.<!lf.schema.Column>}
+   * @private {!Array<!lf.schema.Column>}
    */
   this.columns_ = columns;
 };
@@ -38460,9 +38460,9 @@ lf.proc.RelationTransformer.prototype.handleNonAggregatedColumns_ = function() {
  * transformed to a single entry on the final relation.
  * Note: Projection columns must include at least one aggregated column.
  *
- * @param {!Array.<!lf.proc.Relation>} relations The relations to be
+ * @param {!Array<!lf.proc.Relation>} relations The relations to be
  *     transformed.
- * @param {!Array.<!lf.schema.Column>} columns The columns to include in the
+ * @param {!Array<!lf.schema.Column>} columns The columns to include in the
  *     transformed relation.
  * @return {!lf.proc.Relation} The final relation.
  */
@@ -39114,7 +39114,7 @@ goog.provide('lf.proc.PhysicalPlanRewriter');
  * @struct
  *
  * @param {!lf.proc.PhysicalQueryPlanNode} rootNode
- * @param {!Array.<!lf.proc.RewritePass.<!lf.proc.PhysicalQueryPlanNode>>}
+ * @param {!Array<!lf.proc.RewritePass.<!lf.proc.PhysicalQueryPlanNode>>}
  *   rewritePasses The rewrite passes to be applied on the physical query tree.
  */
 lf.proc.PhysicalPlanRewriter = function(rootNode, rewritePasses) {
@@ -39122,7 +39122,7 @@ lf.proc.PhysicalPlanRewriter = function(rootNode, rewritePasses) {
   this.rootNode_ = rootNode;
 
   /**
-   * @private {!Array.<
+   * @private {!Array<
    *     !lf.proc.RewritePass.<!lf.proc.PhysicalQueryPlanNode>>}
    */
   this.rewritePasses_ = rewritePasses;
@@ -39171,7 +39171,7 @@ goog.require('lf.proc.Relation');
  * @extends {lf.proc.PhysicalQueryPlanNode}
  *
  * @param {!lf.schema.Table} table
- * @param {!Array.<!lf.query.UpdateContext.Set>} updates
+ * @param {!Array<!lf.query.UpdateContext.Set>} updates
  */
 lf.proc.UpdateStep = function(table, updates) {
   lf.proc.UpdateStep.base(this, 'constructor',
@@ -39181,7 +39181,7 @@ lf.proc.UpdateStep = function(table, updates) {
   /** @private {!lf.schema.Table} table */
   this.table_ = table;
 
-  /** @private {!Array.<!lf.query.UpdateContext.Set>} */
+  /** @private {!Array<!lf.query.UpdateContext.Set>} */
   this.updates_ = updates;
 };
 goog.inherits(lf.proc.UpdateStep, lf.proc.PhysicalQueryPlanNode);
@@ -39318,7 +39318,7 @@ lf.proc.PhysicalPlanFactory.prototype.create = function(
 
 /**
  * @param {!lf.proc.LogicalQueryPlanNode} rootNode
- * @param {!Array.<!lf.proc.RewritePass>=} opt_rewritePasses
+ * @param {!Array<!lf.proc.RewritePass>=} opt_rewritePasses
  * @return {!lf.proc.PhysicalQueryPlan}
  * @private
  */
@@ -39749,7 +39749,7 @@ goog.forwardDeclare('lf.proc.Task');
  * @final
  */
 lf.proc.Runner = function() {
-  /** @private {!Array.<!lf.proc.Task>} */
+  /** @private {!Array<!lf.proc.Task>} */
   this.queue_ = [];
 
   /** @private {!lf.proc.LockManager} */
@@ -39762,7 +39762,7 @@ lf.proc.Runner = function() {
  * @param {!lf.proc.Task} task The task to be scheduled.
  * @param {boolean=} opt_prioritize Whether the task should be added at the
  *     front of the queue, defaults to false.
- * @return {!IThenable.<!Array.<!lf.proc.Relation>>}
+ * @return {!IThenable<!Array<!lf.proc.Relation>>}
  */
 lf.proc.Runner.prototype.scheduleTask = function(task, opt_prioritize) {
   var prioritize = opt_prioritize || false;
@@ -39834,7 +39834,7 @@ lf.proc.Runner.prototype.execTask_ = function(task) {
 /**
  * Executes when a task finishes successfully.
  * @param {!lf.proc.Task} task The task that finished.
- * @param {!Array.<!lf.proc.Relation>} results The result produced by the task.
+ * @param {!Array<!lf.proc.Relation>} results The result produced by the task.
  * @private
  */
 lf.proc.Runner.prototype.onTaskSuccess_ = function(task, results) {
@@ -40149,8 +40149,8 @@ lf.ObserverRegistry.prototype.removeObserver = function(builder, callback) {
 /**
  * Finds all the observed queries that reference at least one of the given
  * tables.
- * @param {!Array.<!lf.schema.Table>} tables
- * @return {!Array.<!lf.query.SelectContext>}
+ * @param {!Array<!lf.schema.Table>} tables
+ * @return {!Array<!lf.query.SelectContext>}
  */
 lf.ObserverRegistry.prototype.getQueriesForTables = function(tables) {
   var tableSet = new goog.structs.Set();
@@ -40500,16 +40500,16 @@ lf.proc.TransactionTask = function(global, scope) {
   /** @private {!lf.ObserverRegistry} */
   this.observerRegistry_ = global.getService(lf.service.OBSERVER_REGISTRY);
 
-  /** @private {!goog.structs.Set.<!lf.schema.Table>} */
+  /** @private {!goog.structs.Set<!lf.schema.Table>} */
   this.scope_ = new goog.structs.Set(scope);
 
   /** @private {!lf.cache.Journal} */
   this.journal_ = new lf.cache.Journal(this.global_, this.scope_.getValues());
 
-  /** @private {!goog.promise.Resolver.<!Array.<!lf.proc.Relation>>} */
+  /** @private {!goog.promise.Resolver.<!Array<!lf.proc.Relation>>} */
   this.resolver_ = goog.Promise.withResolver();
 
-  /** @private {!goog.promise.Resolver.<!Array.<!lf.proc.Relation>>} */
+  /** @private {!goog.promise.Resolver.<!Array<!lf.proc.Relation>>} */
   this.execResolver_ = goog.Promise.withResolver();
 
   /** @private {!goog.promise.Resolver} */
@@ -40872,7 +40872,7 @@ lf.proc.Database = function(global) {
 /**
  * @param {!function(!lf.raw.BackStore):!IThenable=} opt_onUpgrade
  * @param {lf.schema.DataStoreType=} opt_backStoreType
- * @return {!IThenable.<!lf.proc.Database>}
+ * @return {!IThenable<!lf.proc.Database>}
  * @export
  */
 lf.proc.Database.prototype.init = function(opt_onUpgrade, opt_backStoreType) {
@@ -40880,7 +40880,7 @@ lf.proc.Database.prototype.init = function(opt_onUpgrade, opt_backStoreType) {
   // lf.proc.Database#close() was called, therefore it needs to be re-added.
   this.global_.registerService(lf.service.SCHEMA, this.schema_);
 
-  return /** @type  {!IThenable.<!lf.proc.Database>} */ (
+  return /** @type  {!IThenable<!lf.proc.Database>} */ (
       lf.base.init(
           this.global_,
           opt_backStoreType || lf.schema.DataStoreType.INDEXED_DB,
@@ -41030,7 +41030,7 @@ lf.schema.BaseColumn = function(
   /** @private {!lf.Type} */
   this.type_ = type;
 
-  /** @private {!Array.<!lf.schema.Index>} */
+  /** @private {!Array<!lf.schema.Index>} */
   this.indices_;
 
   /** @private {?string} */
@@ -41305,22 +41305,22 @@ goog.provide('lf.schema.Constraint');
  * @constructor
 
  * @param {?lf.schema.Index} primaryKey
- * @param {!Array.<!lf.schema.Column>} notNullable
- * @param {!Array.<!lf.schema.Index>} foreignKeys
- * @param {!Array.<!lf.schema.Index>} unique
+ * @param {!Array<!lf.schema.Column>} notNullable
+ * @param {!Array<!lf.schema.Index>} foreignKeys
+ * @param {!Array<!lf.schema.Index>} unique
  */
 lf.schema.Constraint = function(
     primaryKey, notNullable, foreignKeys, unique) {
   /** @private {?lf.schema.Index} */
   this.primaryKey_ = primaryKey;
 
-  /** @private {!Array.<!lf.schema.Column>} */
+  /** @private {!Array<!lf.schema.Column>} */
   this.notNullable_ = notNullable;
 
-  /** @private {!Array.<!lf.schema.Index>} */
+  /** @private {!Array<!lf.schema.Index>} */
   this.foreignKeys_ = foreignKeys;
 
-  /** @private {!Array.<!lf.schema.Index>} */
+  /** @private {!Array<!lf.schema.Index>} */
   this.unique_ = unique;
 };
 
@@ -41331,19 +41331,19 @@ lf.schema.Constraint.prototype.getPrimaryKey = function() {
 };
 
 
-/** @return {!Array.<!lf.schema.Column>} */
+/** @return {!Array<!lf.schema.Column>} */
 lf.schema.Constraint.prototype.getNotNullable = function() {
   return this.notNullable_;
 };
 
 
-/** @return {!Array.<!lf.schema.Index>} */
+/** @return {!Array<!lf.schema.Index>} */
 lf.schema.Constraint.prototype.getForeignKeys = function() {
   return this.foreignKeys_;
 };
 
 
-/** @return {!Array.<!lf.schema.Index>} */
+/** @return {!Array<!lf.schema.Index>} */
 lf.schema.Constraint.prototype.getUnique = function() {
   return this.unique_;
 };
@@ -42063,7 +42063,7 @@ lf.schema.Builder.prototype.getGlobal = function() {
 
 /**
  * @param {!lf.schema.ConnectOptions=} opt_options
- * @return {!IThenable.<!lf.proc.Database>}
+ * @return {!IThenable<!lf.proc.Database>}
  * @export
  */
 lf.schema.Builder.prototype.connect = function(opt_options) {

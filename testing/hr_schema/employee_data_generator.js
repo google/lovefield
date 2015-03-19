@@ -51,7 +51,7 @@ lf.testing.hrSchema.EmployeeDataGenerator = function(schema) {
 
 /**
  * @param {number} count The number of rows to generate.
- * @return {!Array.<!hr.db.row.EmployeeType>}
+ * @return {!Array<!hr.db.row.EmployeeType>}
  * @private
  */
 lf.testing.hrSchema.EmployeeDataGenerator.prototype.generateRaw_ =
@@ -112,7 +112,7 @@ lf.testing.hrSchema.EmployeeDataGenerator.prototype.setMaxDepartmentId =
 
 /**
  * @param {number} count The number of rows to generate.
- * @return {!Array.<!lf.Row>}
+ * @return {!Array<!lf.Row>}
  */
 lf.testing.hrSchema.EmployeeDataGenerator.prototype.generate = function(count) {
   var rawData = this.generateRaw_(count);

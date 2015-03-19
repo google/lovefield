@@ -75,7 +75,7 @@ lf.testing.perf.SelectBenchmark.EPSILON_ = Math.pow(10, -9);
 *    employeeSalaryStart: number,
 *    employeeSalaryEnd: number,
 *    employeeSalariesSpacedOut: !Array<number>,
-*    employeeHireDatesSpacedOut: !Array.<!Date>,
+*    employeeHireDatesSpacedOut: !Array<!Date>,
 *    employeeLimit: number,
 *    employeeSkip: number
 *  }}
@@ -208,7 +208,7 @@ lf.testing.perf.SelectBenchmark.prototype.querySingleRowIndexed =
 
 
 /**
- * @param {!Array.<!Object>} results
+ * @param {!Array<!Object>} results
  * @return {!IThenable<boolean>}
  */
 lf.testing.perf.SelectBenchmark.prototype.verifySingleRowIndexed =
@@ -261,7 +261,7 @@ lf.testing.perf.SelectBenchmark.prototype.querySingleRowMultipleIndices =
 
 
 /**
- * @param {!Array.<!Object>} results
+ * @param {!Array<!Object>} results
  * @return {!IThenable<boolean>}
  */
 lf.testing.perf.SelectBenchmark.prototype.verifySingleRowMultipleIndices =
@@ -278,7 +278,7 @@ lf.testing.perf.SelectBenchmark.prototype.verifySingleRowMultipleIndices =
 
 
 /**
- * @param {!Array.<!Object>} results
+ * @param {!Array<!Object>} results
  * @return {!IThenable<boolean>}
  */
 lf.testing.perf.SelectBenchmark.prototype.verifySingleRowNonIndexed =
@@ -307,7 +307,7 @@ lf.testing.perf.SelectBenchmark.prototype.queryMultiRowIndexedSpacedOut =
 
 
 /**
- * @param {!Array.<!Object>} results
+ * @param {!Array<!Object>} results
  * @return {!IThenable<boolean>}
  */
 lf.testing.perf.SelectBenchmark.prototype.verifyMultiRowIndexedSpacedOut =
@@ -341,7 +341,7 @@ lf.testing.perf.SelectBenchmark.prototype.queryMultiRowIndexedRange =
 
 
 /**
- * @param {!Array.<!Object>} results
+ * @param {!Array<!Object>} results
  * @return {!IThenable<boolean>}
  */
 lf.testing.perf.SelectBenchmark.prototype.verifyMultiRowIndexedRange =
@@ -378,7 +378,7 @@ lf.testing.perf.SelectBenchmark.prototype.queryMultiRowNonIndexedSpacedOut =
 
 
 /**
- * @param {!Array.<!Object>} results
+ * @param {!Array<!Object>} results
  * @return {!IThenable<boolean>}
  */
 lf.testing.perf.SelectBenchmark.prototype.verifyMultiRowNonIndexedSpacedOut =
@@ -415,7 +415,7 @@ lf.testing.perf.SelectBenchmark.prototype.queryMultiRowNonIndexedRange =
 
 
 /**
- * @param {!Array.<!Object>} results
+ * @param {!Array<!Object>} results
  * @return {!IThenable<boolean>}
  */
 lf.testing.perf.SelectBenchmark.prototype.verifyMultiRowNonIndexedRange =
@@ -454,7 +454,7 @@ lf.testing.perf.SelectBenchmark.prototype.queryOrderByIndexed =
 
 
 /**
- * @param {!Array.<!Object>} results
+ * @param {!Array<!Object>} results
  * @return {!IThenable<boolean>}
  */
 lf.testing.perf.SelectBenchmark.prototype.verifyOrderByIndexed =
@@ -488,7 +488,7 @@ lf.testing.perf.SelectBenchmark.prototype.queryOrderByIndexedCrossColumn =
 
 
 /**
- * @param {!Array.<!Object>} results
+ * @param {!Array<!Object>} results
  * @return {!IThenable<boolean>}
  */
 lf.testing.perf.SelectBenchmark.prototype.verifyOrderByIndexedCrossColumn =
@@ -519,7 +519,7 @@ lf.testing.perf.SelectBenchmark.prototype.queryOrderByNonIndexed =
 
 
 /**
- * @param {!Array.<!Object>} results
+ * @param {!Array<!Object>} results
  * @return {!IThenable<boolean>}
  */
 lf.testing.perf.SelectBenchmark.prototype.verifyOrderByNonIndexed =
@@ -554,7 +554,7 @@ lf.testing.perf.SelectBenchmark.prototype.queryLimitSkipIndexed =
 
 
 /**
- * @param {!Array.<!Object>} results
+ * @param {!Array<!Object>} results
  * @return {!IThenable<boolean>}
  */
 lf.testing.perf.SelectBenchmark.prototype.verifyLimitSkipIndexed =
@@ -592,7 +592,7 @@ lf.testing.perf.SelectBenchmark.prototype.queryProjectNonAggregatedColumns =
 
 
 /**
- * @param {!Array.<!Object>} results
+ * @param {!Array<!Object>} results
  * @return {!IThenable<boolean>}
  */
 lf.testing.perf.SelectBenchmark.prototype.verifyProjectNonAggregatedColumns =
@@ -622,7 +622,7 @@ lf.testing.perf.SelectBenchmark.prototype.queryProjectAggregateIndexed =
 
 
 /**
- * @param {!Array.<!Object>} results
+ * @param {!Array<!Object>} results
  * @return {!IThenable<boolean>}
  */
 lf.testing.perf.SelectBenchmark.prototype.verifyProjectAggregateIndexed =
@@ -659,7 +659,7 @@ lf.testing.perf.SelectBenchmark.prototype.queryProjectAggregateNonIndexed =
 
 
 /**
- * @param {!Array.<!Object>} results
+ * @param {!Array<!Object>} results
  * @return {!IThenable<boolean>}
  */
 lf.testing.perf.SelectBenchmark.prototype.verifyProjectAggregateNonIndexed =
@@ -692,7 +692,7 @@ lf.testing.perf.SelectBenchmark.prototype.queryJoinEqui = function() {
 
 
 /**
- * @param {!Array.<!Object>} results
+ * @param {!Array<!Object>} results
  * @return {!IThenable<boolean>}
  */
 lf.testing.perf.SelectBenchmark.prototype.verifyJoinEqui = function(results) {
@@ -726,7 +726,7 @@ lf.testing.perf.SelectBenchmark.prototype.queryJoinTheta = function() {
 
 
 /**
- * @param {!Array.<!Object>} results
+ * @param {!Array<!Object>} results
  * @return {!IThenable<boolean>}
  */
 lf.testing.perf.SelectBenchmark.prototype.verifyJoinTheta = function(results) {

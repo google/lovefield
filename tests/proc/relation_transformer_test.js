@@ -43,11 +43,11 @@ var j;
 var e;
 
 
-/** @type {!Array.<!hr.db.row.Job>} */
+/** @type {!Array<!hr.db.row.Job>} */
 var sampleJobs;
 
 
-/** @type {!Array.<!hr.db.row.Employee>} */
+/** @type {!Array<!hr.db.row.Employee>} */
 var sampleEmployees;
 
 
@@ -198,7 +198,7 @@ function testGetTransformed_Many() {
  * Checks that performing a transformation on a relationship that is *not* the
  * result of a natural join, results in a relation with fields that are
  * populated as expected.
- * @param {!Array.<!lf.schema.Column>} columns The columns to be requested.
+ * @param {!Array<!lf.schema.Column>} columns The columns to be requested.
  * @param {number} expectedResultCount The expected number of results.
  * @return {!lf.proc.Relation} The transformed relation.
  */
@@ -217,7 +217,7 @@ function checkTransformationWithoutJoin(columns, expectedResultCount) {
  * Checks that performing a transformation on a relationship that is the result
  * of a natural join, results in a relation with fields that are populated as
  * expected.
- * @param {!Array.<!lf.schema.Column>} columns The columns to be requested.
+ * @param {!Array<!lf.schema.Column>} columns The columns to be requested.
  * @param {number} expectedResultCount The expected number of results.
  * @return {!lf.proc.Relation} The transformed relation.
  */
@@ -236,7 +236,7 @@ function checkTransformationWithJoin(columns, expectedResultCount) {
 /**
  * Asserts that all requested columns are populated in the given relation's
  * entries.
- * @param {!Array.<!lf.schema.Column>} columns
+ * @param {!Array<!lf.schema.Column>} columns
  * @param {!lf.proc.Relation} relation The relation to be checked.
  */
 function assertColumnsPopulated(columns, relation) {

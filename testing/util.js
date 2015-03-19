@@ -26,7 +26,7 @@ goog.require('lf.service');
 /**
  * Executes a list of asynchronous functions in a serial manner, such that only
  * one function is being executed at any given time.
- * @param {!Array.<!function():!IThenable>} functions The functions to be
+ * @param {!Array<!function():!IThenable>} functions The functions to be
  *     executed.
  * @return {!IThenable} A deferred holding the results of each executed function
  *     in the same order.

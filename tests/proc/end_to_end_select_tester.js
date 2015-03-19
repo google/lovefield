@@ -972,7 +972,7 @@ lf.testing.EndToEndSelectTester.prototype.testDistinct = function() {
 
 /**
  * Asserts the ordering of a given list of results.
- * @param {!Array.<!Object>} results The results to be examined.
+ * @param {!Array<!Object>} results The results to be examined.
  * @param {!lf.schema.Column} column The column on which the entries are sorted.
  * @param {!lf.Order} order The expected ordering of the entries.
  * @private
@@ -996,7 +996,7 @@ lf.testing.EndToEndSelectTester.prototype.assertOrder_ = function(
  * ground truth data.
  * @param {!lf.schema.Table} employeeSchema
  * @param {string} jobId
- * @param {!Array.<{
+ * @param {!Array<{
  *     Employee: !hr.db.row.EmployeeType,
  *     Job: !hr.db.row.JobType}>} actualEmployees
  * @private

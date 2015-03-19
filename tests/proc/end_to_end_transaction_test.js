@@ -53,15 +53,15 @@ var j;
 var d;
 
 
-/** @type {!Array.<!hr.db.row.Job>} */
+/** @type {!Array<!hr.db.row.Job>} */
 var sampleJobs;
 
 
-/** @type {!Array.<!hr.db.row.Employee>} */
+/** @type {!Array<!hr.db.row.Employee>} */
 var sampleEmployees;
 
 
-/** @type {!Array.<!hr.db.row.Department>} */
+/** @type {!Array<!hr.db.row.Department>} */
 var sampleDepartments;
 
 

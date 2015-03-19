@@ -44,7 +44,7 @@ lovefield.db.getSchema = function() {
 
 /**
  * @param {!lf.schema.ConnectOptions=} opt_options
- * @return {!IThenable.<!lf.proc.Database>}
+ * @return {!IThenable<!lf.proc.Database>}
  */
 lovefield.db.connect = function(opt_options) {
   lovefield.db.getSchema();

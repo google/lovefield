@@ -178,7 +178,7 @@ lf.testing.index.TestMultiRowNumericalKey.allValues_ =
 /**
  * The expected results for all key ranges in
  * lf.testing.index.TestSingleRowNumericalKey.keyRanges.
- * @type {!Array.<!Array<number>>}
+ * @type {!Array<!Array<number>>}
  */
 lf.testing.index.TestMultiRowNumericalKey.getRangeExpectations = [
   // get all.

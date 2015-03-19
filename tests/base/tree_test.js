@@ -22,7 +22,7 @@ goog.require('lf.tree');
 
 /**
  * Creates a tree to be used in various tests.
- * @return {!Array.<!goog.structs.TreeNode>} An array holding all the nodes in
+ * @return {!Array<!goog.structs.TreeNode>} An array holding all the nodes in
  *     the tree in pre-order traversal order.
  */
 function createTestTree1() {
@@ -65,7 +65,7 @@ function createTestTree1() {
 
 /**
  * Creates a different tree to be used in various tests.
- * @return {!Array.<!goog.structs.TreeNode>} An array holding all the nodes in
+ * @return {!Array<!goog.structs.TreeNode>} An array holding all the nodes in
  *     the tree in pre-order traversal order.
  */
 function createTestTree2() {

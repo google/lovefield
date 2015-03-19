@@ -251,7 +251,7 @@ function testScanRowId() {
   /**
    * Generates a set of rows where they are on purpose not sorted with respect
    * to the row ID and with the larger rowID in position 0.
-   * @return {!Array.<!lf.Row>}
+   * @return {!Array<!lf.Row>}
    */
   var generateRows = function() {
     var rowIds = [
@@ -264,7 +264,7 @@ function testScanRowId() {
   };
 
   /**
-   * @param {!Array.<!lf.Row>} rows
+   * @param {!Array<!lf.Row>} rows
    * @return {!IThenable}
    */
   var insertIntoTable = function(rows) {

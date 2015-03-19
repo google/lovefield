@@ -130,7 +130,7 @@ function testNewDBInstance() {
  * @param {string} tableName
  * @param {function({id: number, value: *}): !T} fn
  * @template T
- * @return {!IThenable.<!Array.<!T>>}
+ * @return {!IThenable<!Array<!T>>}
  */
 function dumpDB(db, tableName, fn) {
   return new goog.Promise(function(resolve, reject) {
@@ -154,7 +154,7 @@ function dumpDB(db, tableName, fn) {
 /**
  * @param {!IDBDatabase} db
  * @param {string} tableName
- * @return {!IThenable.<!Array.<!lf.Row>>}
+ * @return {!IThenable<!Array<!lf.Row>>}
  */
 function dumpTable(db, tableName) {
   return dumpDB(db, tableName, lf.Row.deserialize);
@@ -164,7 +164,7 @@ function dumpTable(db, tableName) {
 /**
  * @param {!IDBDatabase} db
  * @param {string} tableName
- * @return {!IThenable.<!Array.<!lf.backstore.Page>>}
+ * @return {!IThenable<!Array<!lf.backstore.Page>>}
  */
 function dumpTableBundled(db, tableName) {
   return dumpDB(db, tableName, lf.backstore.Page.deserialize);

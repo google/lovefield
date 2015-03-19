@@ -72,7 +72,7 @@ function clearDb() {
 
 /**
  * @param {number} rowCount The number of rows to generate.
- * @return {!Array.<!hr.db.row.Employee>}
+ * @return {!Array<!hr.db.row.Employee>}
  */
 function generateSampleEmployeeData(rowCount) {
   var employees = new Array(rowCount);
