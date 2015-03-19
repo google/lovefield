@@ -2407,7 +2407,7 @@ goog.defineClass.createSealingConstructor_ = function(ctr, superClass) {
       return ctr;
     }
     /**
-     * @this {*}
+     * @this {Object}
      * @return {?}
      */
     var wrappedCtr = function() {
@@ -2706,7 +2706,7 @@ goog.addDependency('dom/fontsizemonitor_test.js', ['goog.dom.FontSizeMonitorTest
 goog.addDependency('dom/forms.js', ['goog.dom.forms'], ['goog.dom.InputType', 'goog.dom.TagName', 'goog.structs.Map'], false);
 goog.addDependency('dom/forms_test.js', ['goog.dom.formsTest'], ['goog.dom', 'goog.dom.forms', 'goog.testing.jsunit'], false);
 goog.addDependency('dom/fullscreen.js', ['goog.dom.fullscreen', 'goog.dom.fullscreen.EventType'], ['goog.dom', 'goog.userAgent'], false);
-goog.addDependency('dom/iframe.js', ['goog.dom.iframe'], ['goog.dom', 'goog.dom.TagName', 'goog.dom.safe', 'goog.html.SafeHtml', 'goog.html.SafeStyle', 'goog.userAgent'], false);
+goog.addDependency('dom/iframe.js', ['goog.dom.iframe'], ['goog.dom', 'goog.dom.safe', 'goog.html.SafeHtml', 'goog.html.SafeStyle', 'goog.html.legacyconversions', 'goog.userAgent'], false);
 goog.addDependency('dom/iframe_test.js', ['goog.dom.iframeTest'], ['goog.dom', 'goog.dom.iframe', 'goog.html.SafeHtml', 'goog.html.SafeStyle', 'goog.string.Const', 'goog.testing.jsunit'], false);
 goog.addDependency('dom/inputtype.js', ['goog.dom.InputType'], [], false);
 goog.addDependency('dom/inputtype_test.js', ['goog.dom.InputTypeTest'], ['goog.dom.InputType', 'goog.object'], false);
@@ -11814,7 +11814,7 @@ goog.html.SafeHtml.createSafeHtmlTagSecurityPrivateDoNotAccessOrElse =
   }
 
   var content = opt_content;
-  if (!goog.isDef(content)) {
+  if (!goog.isDefAndNotNull(content)) {
     content = [];
   } else if (!goog.isArray(content)) {
     content = [content];
@@ -11884,6 +11884,15 @@ goog.html.SafeHtml.combineAttributes = function(
 
   return combinedAttributes;
 };
+
+
+/**
+ * A SafeHtml instance corresponding to the HTML doctype: "<!DOCTYPE html>".
+ * @const {!goog.html.SafeHtml}
+ */
+goog.html.SafeHtml.DOCTYPE_HTML =
+    goog.html.SafeHtml.createSafeHtmlSecurityPrivateDoNotAccessOrElse(
+        '<!DOCTYPE html>', goog.i18n.bidi.Dir.NEUTRAL);
 
 
 /**
@@ -32348,9 +32357,14 @@ lf.schema.Index.prototype.getNormalizedName = function() {
  *     nullable.
  */
 lf.schema.Index.prototype.hasNullableColumn = function() {
-  return this.columns.some(function(column) {
-    return column.schema.isNullable();
-  });
+  return this.columns.some(
+      /**
+       * @param {!lf.schema.IndexedColumn} column
+       * @return {boolean}
+       */
+      function(column) {
+        return column.schema.isNullable();
+      });
 };
 
 
@@ -37310,10 +37324,15 @@ lf.proc.IndexRangeCandidate.prototype.isUsable = function() {
   }
 
   var keyRangeMap = this.getKeyRangeMap_();
-  return this.indexSchema.columns.every(function(column) {
-    var keyRangeSet = keyRangeMap.get(column.schema.getName(), null);
-    return !goog.isNull(keyRangeSet);
-  });
+  return this.indexSchema.columns.every(
+      /**
+       * @param {!lf.schema.IndexedColumn} column
+       * @return {boolean}
+       */
+      function(column) {
+        var keyRangeSet = keyRangeMap.get(column.schema.getName(), null);
+        return !goog.isNull(keyRangeSet);
+      });
 };
 
 
@@ -41061,9 +41080,14 @@ lf.schema.BaseColumn.prototype.getIndices = function() {
     this.indices_ = [];
     this.getTable().getIndices().forEach(
         function(index) {
-          var colNames = index.columns.map(function(col) {
-            return col.schema.getName();
-          });
+          var colNames = index.columns.map(
+              /**
+               * @param {!lf.schema.IndexedColumn} col
+               * @return {string}
+               */
+              function(col) {
+                return col.schema.getName();
+              });
           if (colNames.indexOf(this.name_) != -1) {
             this.indices_.push(index);
           }

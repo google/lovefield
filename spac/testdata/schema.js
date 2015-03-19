@@ -191,11 +191,11 @@ lovefield.db.schema.Album = function() {
   var indices = [
     new lf.schema.Index('Album', 'pkAlbum', true,
         [
-          {'schema': this.id, 'order': lf.Order.ASC, 'autoIncrement': false}
+          {schema: this.id, order: lf.Order.ASC, autoIncrement: false}
         ]),
     new lf.schema.Index('Album', 'idx_timestamp', false,
         [
-          {'schema': this.timestamp, 'order': lf.Order.DESC}
+          {schema: this.timestamp, order: lf.Order.DESC}
         ])
   ];
 
@@ -225,7 +225,7 @@ lovefield.db.schema.Album.prototype.deserializeRow =
 lovefield.db.schema.Album.prototype.getConstraint = function() {
   var pk = new lf.schema.Index('Album', 'pkAlbum', true,
       [
-        {'schema': this.id, 'order': lf.Order.ASC, 'autoIncrement': false}
+        {schema: this.id, order: lf.Order.ASC, autoIncrement: false}
       ]);
   var notNullable = [
     this.id,
@@ -504,15 +504,15 @@ lovefield.db.schema.Photo = function() {
   var indices = [
     new lf.schema.Index('Photo', 'pkPhoto', true,
         [
-          {'schema': this.id, 'order': lf.Order.ASC, 'autoIncrement': false}
+          {schema: this.id, order: lf.Order.ASC, autoIncrement: false}
         ]),
     new lf.schema.Index('Photo', 'idx_timestamp', false,
         [
-          {'schema': this.timestamp, 'order': lf.Order.DESC}
+          {schema: this.timestamp, order: lf.Order.DESC}
         ]),
     new lf.schema.Index('Photo', 'idx_imageHash', true,
         [
-          {'schema': this.imageHash, 'order': lf.Order.DESC}
+          {schema: this.imageHash, order: lf.Order.DESC}
         ])
   ];
 
@@ -544,7 +544,7 @@ lovefield.db.schema.Photo.prototype.deserializeRow =
 lovefield.db.schema.Photo.prototype.getConstraint = function() {
   var pk = new lf.schema.Index('Photo', 'pkPhoto', true,
       [
-        {'schema': this.id, 'order': lf.Order.ASC, 'autoIncrement': false}
+        {schema: this.id, order: lf.Order.ASC, autoIncrement: false}
       ]);
   var notNullable = [
     this.id,
@@ -889,8 +889,8 @@ lovefield.db.schema.Details = function() {
   var indices = [
     new lf.schema.Index('Details', 'pkDetails', true,
         [
-          {'schema': this.id1, 'order': lf.Order.ASC, 'autoIncrement': false},
-          {'schema': this.id2, 'order': lf.Order.ASC, 'autoIncrement': false}
+          {schema: this.id1, order: lf.Order.ASC, autoIncrement: false},
+          {schema: this.id2, order: lf.Order.ASC, autoIncrement: false}
         ])
   ];
 
@@ -918,8 +918,8 @@ lovefield.db.schema.Details.prototype.deserializeRow =
 lovefield.db.schema.Details.prototype.getConstraint = function() {
   var pk = new lf.schema.Index('Details', 'pkDetails', true,
       [
-        {'schema': this.id1, 'order': lf.Order.ASC, 'autoIncrement': false},
-        {'schema': this.id2, 'order': lf.Order.ASC, 'autoIncrement': false}
+        {schema: this.id1, order: lf.Order.ASC, autoIncrement: false},
+        {schema: this.id2, order: lf.Order.ASC, autoIncrement: false}
       ]);
   var notNullable = [
     this.id1,
@@ -1141,12 +1141,12 @@ lovefield.db.schema.Curator = function() {
   var indices = [
     new lf.schema.Index('Curator', 'pkCurator', true,
         [
-          {'schema': this.id, 'order': lf.Order.ASC, 'autoIncrement': true}
+          {schema: this.id, order: lf.Order.ASC, autoIncrement: true}
         ]),
     new lf.schema.Index('Curator', 'uq_creation', true,
         [
-          {'schema': this.name, 'order': lf.Order.ASC},
-          {'schema': this.timestamp, 'order': lf.Order.ASC}
+          {schema: this.name, order: lf.Order.ASC},
+          {schema: this.timestamp, order: lf.Order.ASC}
         ])
   ];
 
@@ -1174,7 +1174,7 @@ lovefield.db.schema.Curator.prototype.deserializeRow =
 lovefield.db.schema.Curator.prototype.getConstraint = function() {
   var pk = new lf.schema.Index('Curator', 'pkCurator', true,
       [
-        {'schema': this.id, 'order': lf.Order.ASC, 'autoIncrement': true}
+        {schema: this.id, order: lf.Order.ASC, autoIncrement: true}
       ]);
   var notNullable = [
     this.id,
@@ -1185,8 +1185,8 @@ lovefield.db.schema.Curator.prototype.getConstraint = function() {
   var unique = [
     new lf.schema.Index('Curator', 'uq_creation', true,
         [
-          {'schema': this.name, 'order': lf.Order.ASC},
-          {'schema': this.timestamp, 'order': lf.Order.ASC}
+          {schema: this.name, order: lf.Order.ASC},
+          {schema: this.timestamp, order: lf.Order.ASC}
         ])
   ];
   return new lf.schema.Constraint(pk, notNullable, foreignKeys, unique);
@@ -1357,7 +1357,7 @@ lovefield.db.schema.PhotoCurator = function() {
   var indices = [
     new lf.schema.Index('PhotoCurator', 'uq_topic', true,
         [
-          {'schema': this.topic, 'order': lf.Order.ASC}
+          {schema: this.topic, order: lf.Order.ASC}
         ])
   ];
 
@@ -1393,7 +1393,7 @@ lovefield.db.schema.PhotoCurator.prototype.getConstraint = function() {
   var unique = [
     new lf.schema.Index('PhotoCurator', 'uq_topic', true,
         [
-          {'schema': this.topic, 'order': lf.Order.ASC}
+          {schema: this.topic, order: lf.Order.ASC}
         ])
   ];
   return new lf.schema.Constraint(pk, notNullable, foreignKeys, unique);
@@ -1569,23 +1569,23 @@ lovefield.db.schema.NullableTable = function() {
   var indices = [
     new lf.schema.Index('NullableTable', 'idx_boolean', false,
         [
-          {'schema': this.boolean, 'order': lf.Order.ASC}
+          {schema: this.boolean, order: lf.Order.ASC}
         ]),
     new lf.schema.Index('NullableTable', 'idx_datetime', false,
         [
-          {'schema': this.datetime, 'order': lf.Order.ASC}
+          {schema: this.datetime, order: lf.Order.ASC}
         ]),
     new lf.schema.Index('NullableTable', 'idx_integer', false,
         [
-          {'schema': this.integer, 'order': lf.Order.ASC}
+          {schema: this.integer, order: lf.Order.ASC}
         ]),
     new lf.schema.Index('NullableTable', 'idx_number', false,
         [
-          {'schema': this.number, 'order': lf.Order.ASC}
+          {schema: this.number, order: lf.Order.ASC}
         ]),
     new lf.schema.Index('NullableTable', 'idx_string', false,
         [
-          {'schema': this.string, 'order': lf.Order.ASC}
+          {schema: this.string, order: lf.Order.ASC}
         ])
   ];
 

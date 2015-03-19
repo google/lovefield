@@ -930,12 +930,12 @@ CodeGenerator.getIndexDefinition_ = function(
       'new lf.schema.Index(\'' + tableName + '\', \'' + indexName + '\', ' +
           (isUnique ? 'true' : 'false') + ',\n' + getIndent(4);
   var columnBodys = columns.map(function(col) {
-    var colBody = getIndent(6) + '{\'schema\': this.' + col.name + ',';
-    colBody += ' \'order\': ' +
+    var colBody = getIndent(6) + '{schema: this.' + col.name + ',';
+    colBody += ' order: ' +
         (col.order == 'desc' ? 'lf.Order.DESC' : 'lf.Order.ASC');
     if (isPrimaryKey) {
       colBody +=
-          ', \'autoIncrement\': ' + (col.autoIncrement ? 'true' : 'false');
+          ', autoIncrement: ' + (col.autoIncrement ? 'true' : 'false');
     }
     colBody += '}';
 
