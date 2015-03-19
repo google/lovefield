@@ -6,7 +6,7 @@ All queries are executed in a transaction context, either implicit or explicit.
 A query has following life cycle:
 
 1. Creation: query builder creates the context of a query.
-2. (Optional) Binding: parameterized values are bound to the query context.
+2. (Optional) Binding: parametrized values are bound to the query context.
 3. Execution: query is executed within a transaction context.
 4. Finalize: query results are committed or rolled back.
 
@@ -451,33 +451,53 @@ q2.bind(['id3', 345, false]).exec();  // update without reconstructing query.
 q2.bind(['id4', 2222, true]).exec();
 ```
 
+LIMIT and SKIP can also be parametrized. For example
+
+```js
+// SELECT FROM Employee ORDER BY lastName LIMIT ?0 SKIP ?1;
+var e = db.getSchema().table('Employee');
+var q3 = db.select().
+    from(e).
+    orderBy(e.lastName).
+    limit(lf.bind(0)).
+    skip(lf.bind(1));
+q3.bind([100, 0]).exec();  // get the 1st page of 100 employees.
+q3.bind([100, 1]).exec();  // get the 2nd page of 100 employees.
+```
+
 The function [`lf.bind()`](
 https://github.com/google/lovefield/blob/e1f59b8212bbfc4867453b2623ccd55edb879311/lib/bind.js#L21-28)
 creates a placeholder in query context. When `lf.query.Builder#bind` is called,
 the placeholder will be replaced with the value provided in the binding array.
 For performance reasons, the `bind()` function unfortunately does not provide
-type checking. Users are responsible for making sure the bound values are of
+type checking. Users are responsible for ensuring that the bound values are of
 their correct type.
 
 The bind index is 0-based. The `bind()` call does not care if the array is
-bigger than actually needed. The user just needs to make sure the specified
-index has data of the correct type.
+bigger than actually needed.
 
-Currently parameterized queries can only exist in search conditions
-(i.e. `where()`) of `select()`/`update()`/`delete()`, and the `set()` clauses
-for `update()` query. For example:
+The following tables shows the clauses that are parametrizable for each query
+type.
+
+|Query type   |Parametrizable clauses         |
+|:----------- |:----------------------------- |
+|`SELECT`     |`where()`, `limit()`, `skip()` |
+|`UPDATE`     |`where()`, `set()`             |
+|`DELETE`     |`where()`                      |
+
+The `insert()` query does not support any parametrization. It makes little
+sense to bind `values()` since users have to call `createRow()` before calling
+`values()` anyway.
+
+The following example shows how to parametrize an `update()` and a `delete()`
+query.
 
 ```js
-db.select().from(order).where(order.date.eq(lf.bind(0)));
 db.update(order).
     set(order.date, lf.bind(1)).
     where(order.id.eq(lf.bind(0)));
-db.delete().from(order).where(order.id.eq(lf.bind(1)));
+db.delete().from(order).where(order.id.eq(lf.bind(0)));
 ```
-
-The `insert()` query does not support parameterized query. It makes little sense
-to bind `values()` since users has to call `createRow()` before calling
-`values()` anyway.
 
 ### 4.6 Observers
 
@@ -504,7 +524,7 @@ db.update(p).set(p.title, 'New Title').where(p.id.eq('1')).exec();
 db.unobserve(query, handler);
 ```
 
-Combining parameterized query with Observers can be used to handle a common
+Combining parametrized query with Observers can be used to handle a common
 scenario of updating data in MVC environment, for example:
 
 ```js

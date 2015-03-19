@@ -105,7 +105,7 @@ Once the database is fully initialized, it can start accepting queries. The life
 of query consists of three stages:
 
 1. Build query context
-2. (Optional) Bind values to parameterized query
+2. (Optional) Bind values to parametrized query
 3. Create query plan
 4. Execute query plan
 
@@ -118,18 +118,18 @@ builders perform the following major tasks:
 
 1. Create the query context
 2. Validate input and syntax
-3. Bind values for parameterized queries
+3. Bind values for parametrized queries
 
 Once the query context is successfully built, the builder can be used to
 generate the query plan through its `exec()` or `explain()` method.
 
 #### 3.3.2 Parameter Binding
 
-Parameterized query works similarily to Oracle's or SQLite's parameterized query
+Parameterized query works similarily to Oracle's or SQLite's parametrized query
 API. The general idea is to put a placeholder in query context, and replace the
 value with runtime values (i.e. *bind* the parameters).
 
-There are two different scenarios in parameterized query:
+There are two different scenarios in parametrized query:
 
 * Search condition
 * Update set
