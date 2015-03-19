@@ -41562,10 +41562,41 @@ lf.schema.TableBuilder.prototype.addUnique = function(name, columns) {
  */
 lf.schema.TableBuilder.prototype.addNullable = function(columns) {
   var cols = this.normalizeColumns_(columns, false);
+  this.checkNullableColumns_(cols);
   cols.forEach(function(col) {
     this.nullable_.add(col.name);
   }, this);
   return this;
+};
+
+
+/**
+ * Checks whether any of the given columns is referred by a cross-column index.
+ * @param {!Array<lf.schema.TableBuilder.IndexedColumn_>} columns
+ * @private
+ */
+lf.schema.TableBuilder.prototype.checkNullableColumns_ = function(columns) {
+  this.indices_.getKeys().forEach(
+      function(indexName) {
+        var indexedColumnNames = new goog.structs.Set();
+        this.indices_.get(indexName).forEach(
+            function(indexedColumn) {
+              indexedColumnNames.add(indexedColumn.name);
+            });
+
+        var nullableColumns = columns.filter(
+            function(nullableColumn) {
+              return indexedColumnNames.contains(nullableColumn.name);
+            });
+
+        if (indexedColumnNames.getCount() > 1 && nullableColumns.length > 0) {
+          // Cross-column indices can not refer to nullable columns.
+          throw new lf.Exception(
+              lf.Exception.Type.SYNTAX,
+              'Cross-column index ' + indexName +
+                  ' refers to nullable columns: ' + nullableColumns.join(','));
+        }
+      }, this);
 };
 
 
@@ -41593,11 +41624,37 @@ lf.schema.TableBuilder.prototype.addIndex = function(
     name, columns, opt_unique, opt_order) {
   this.checkName_(name);
   var cols = this.normalizeColumns_(columns, true, opt_order);
+  this.checkIndexedColumns_(name, cols);
   if (opt_unique) {
     this.uniqueIndices_.add(name);
   }
   this.indices_.set(name, cols);
   return this;
+};
+
+
+/**
+ * Checks whether any of the given columns has been marked as nullable, for the
+ * case of cross-column indices.
+ * @param {string} indexName
+ * @param {!Array<!lf.schema.TableBuilder.IndexedColumn_>} columns
+ * @private
+ */
+lf.schema.TableBuilder.prototype.checkIndexedColumns_ = function(
+    indexName, columns) {
+  if (columns.length > 1) {
+    // Cross-column indices can not refer to nullable columns.
+    var nullableColumns = columns.filter(function(column) {
+      return this.nullable_.contains(column.name);
+    }, this);
+
+    if (nullableColumns.length > 0) {
+      throw new lf.Exception(
+          lf.Exception.Type.SYNTAX,
+          'Cross-column index ' + indexName +
+              ' refers to nullable columns: ' + nullableColumns.join(','));
+    }
+  }
 };
 
 

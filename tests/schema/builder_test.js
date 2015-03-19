@@ -138,6 +138,32 @@ function testThrows_NonIntegerPkWithAutoInc() {
   });
 }
 
+
+/**
+ * Tests that if a cross-column index refers to a nullable column an exception
+ * is thrown.
+ */
+function testThrows_CrossColumnNullableIndex() {
+  var tableBuilder1 = lf.schema.create('hr', 1);
+  lf.testing.util.assertThrowsSyntaxError(function() {
+    tableBuilder1.createTable('Employee').
+        addColumn('id1', lf.Type.STRING).
+        addColumn('id2', lf.Type.STRING).
+        addNullable(['id1']).
+        addIndex('idx_indexName', ['id1', 'id2']);
+  });
+
+  var tableBuilder2 = lf.schema.create('hr', 1);
+  lf.testing.util.assertThrowsSyntaxError(function() {
+    tableBuilder2.createTable('Employee').
+        addColumn('id1', lf.Type.STRING).
+        addColumn('id2', lf.Type.STRING).
+        addIndex('idx_indexName', ['id1', 'id2']).
+        addNullable(['id1']);
+  });
+}
+
+
 function testSchemaCorrectness() {
   var ds = createBuilder();
   var schema = ds.getSchema();
