@@ -25,10 +25,10 @@ goog.require('lf.Row');
 
 /**
  * @constructor
- * @param {!function():!lf.Stream} tableCreator
+ * @param {!function():!lf.Table} tableCreator
  */
 lf.testing.backstore.TableTester = function(tableCreator) {
-  /** @private {!function():!lf.Stream} */
+  /** @private {!function():!lf.Table} */
   this.creator_ = tableCreator;
 };
 

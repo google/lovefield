@@ -21635,7 +21635,7 @@ lf.backstore.Tx = function() {};
  *     function to call for deserializing DB records in this table.
  * @param {!lf.backstore.TableType=} opt_tableType The type of the requested
  *     table. Defaults to lf.backstore.TableType.DATA if not specified.
- * @return {!lf.Stream}
+ * @return {!lf.Table}
  * @throws {lf.Exception}
  */
 lf.backstore.Tx.prototype.getTable;
@@ -21824,7 +21824,7 @@ lf.backstore.BaseTx.prototype.mergeIndexChanges_ = function() {
        * @this {lf.backstore.BaseTx}
        */
       function(index) {
-        /** @type {!lf.Stream} */
+        /** @type {!lf.Table} */
         var indexTable = this.getTable(index.getName(), lf.Row.deserialize);
         /**
          * Since there is no index diff implemented yet, the entire index needs
@@ -21858,91 +21858,6 @@ lf.backstore.BaseTx.prototype.handleError_ = function(e) {
     goog.log.error(this.getLogger(), 'Unknown DB error');
   }
   this.resolver.reject(e);
-};
-
-/**
- * @license
- * Copyright 2014 Google Inc. All Rights Reserved.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-goog.provide('lf.Exception');
-
-
-
-/**
- * @param {string} name
- * @param {string} message
- * @constructor
- * @struct
- */
-lf.Exception = function(name, message) {
-  /** @type {string} */
-  this.name = name;
-
-  /** @type {string} */
-  this.message = message;
-};
-
-
-/** @enum {string} */
-lf.Exception.Type = {
-  // Context is already in use and cannot be reused. For example, attempt to
-  // start observer twice.
-  BLOCKING: 'BlockingError',
-
-  // Constraints specified in schema are violated.
-  CONSTRAINT: 'ConstraintError',
-
-  // Data provided to an operation does not meet requirements.
-  DATA: 'DataError',
-
-  // Specified name not found.
-  NOT_FOUND: 'NotFoundError',
-
-  // The feature is not supported/implemented yet.
-  NOT_SUPPORTED: 'NotSupportedError',
-
-  // The operation failed because there was not enough remaining storage space,
-  // or the storage quota was reached and the user declined to give more space
-  // to the database.
-  QUOTA_EXCEEDED: 'QuotaExceededError',
-
-  // Invalid syntax. For example, calling from() twice.
-  SYNTAX: 'SyntaxError',
-
-  // Scope violation: attempt to access outside of specified scope. For example,
-  // accessing table not specified in transaction.begin().
-  SCOPE_ERROR: 'ScopeError',
-
-  // Operation time out. (Reserved, not used in Lovefield yet.)
-  TIMEOUT: 'TimeoutError',
-
-  // The index structure (B+ Tree) is not capable of handling so many rows
-  // (current limitation is 2^27 = 134217728 rows).
-  TOO_MANY_ROWS: 'TooManyRowsError',
-
-  // Transaction is in an invalid state.
-  TRANSACTION: 'TransactionError',
-
-  // Unknown error.
-  UNKNOWN: 'UnknownError',
-
-  // The database connection has not initialized yet.
-  UNINITIALIZED: 'UninitializedError',
-
-  // Lovefield library version mismatch.
-  VERSION: 'VersionError'
 };
 
 /**
@@ -22056,45 +21971,38 @@ lf.service.SCHEMA = new lf.service.ServiceId('schema');
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-goog.provide('lf.Stream');
+goog.provide('lf.Table');
 
 
 
 /**
  * @interface
  */
-lf.Stream = function() {};
+lf.Table = function() {};
 
 
 /**
- * Get from the stream.
+ * Get from the table.
  * @param {!Array<number>} ids
  * @return {!IThenable<!Array<!lf.Row>>}
  */
-lf.Stream.prototype.get;
+lf.Table.prototype.get;
 
 
 /**
- * Put to the stream.
+ * Put to the table.
  * @param {!Array<!lf.Row>} rows
  * @return {!IThenable}
  */
-lf.Stream.prototype.put;
+lf.Table.prototype.put;
 
 
 /**
- * Remove from the stream.
+ * Remove from the table.
  * @param {!Array<number>} ids
  * @return {!IThenable}
  */
-lf.Stream.prototype.remove;
-
-
-/**
- * Pipe this stream into another stream.
- * @param {!lf.Stream} stream The stream to pipe to.
- */
-lf.Stream.prototype.pipe;
+lf.Table.prototype.remove;
 
 /**
  * @license
@@ -22275,8 +22183,7 @@ goog.require('goog.asserts');
 goog.require('goog.log');
 goog.require('goog.object');
 goog.require('goog.structs.Map');
-goog.require('lf.Exception');
-goog.require('lf.Stream');
+goog.require('lf.Table');
 goog.require('lf.backstore.Page');
 goog.require('lf.backstore.TableType');
 goog.require('lf.service');
@@ -22290,7 +22197,7 @@ goog.forwardDeclare('goog.debug.Logger');
  * @constructor
  * @struct
  * @final
- * @implements {lf.Stream}
+ * @implements {lf.Table}
  *
  * @param {!IDBObjectStore} store
  * @param {!function({id: number, value: *}): !lf.Row} deserializeFn
@@ -22499,13 +22406,6 @@ lf.backstore.BundledObjectStore.prototype.remove = function(ids) {
 };
 
 
-/** @override */
-lf.backstore.BundledObjectStore.prototype.pipe = function(stream) {
-  throw new lf.Exception(lf.Exception.Type.SYNTAX,
-      'BundledObjectStore should be the last in chain');
-};
-
-
 /**
  * Retrieves a page for the case of a DATA table. It uses the Cache to retrieve
  * the rows that belong to the requested page.
@@ -22546,7 +22446,7 @@ lf.backstore.BundledObjectStore.getIndexTablePage_ = function(
  * @param {!IDBObjectStore} store
  * @param {!function({id: number, value: *}): !lf.Row} deserializeFn
  * @param {!lf.backstore.TableType} tableType
- * @return {!lf.Stream}
+ * @return {!lf.Table}
  */
 lf.backstore.BundledObjectStore.forTableType = function(
     global, store, deserializeFn, tableType) {
@@ -22576,7 +22476,7 @@ lf.backstore.BundledObjectStore.forTableType = function(
  */
 goog.provide('lf.BackStore');
 
-goog.forwardDeclare('lf.Stream');
+goog.forwardDeclare('lf.Table');
 goog.forwardDeclare('lf.TransactionType');
 goog.forwardDeclare('lf.backstore.Tx');
 goog.forwardDeclare('lf.cache.TableDiff');
@@ -22631,6 +22531,91 @@ lf.BackStore.prototype.subscribe;
  * Unsubscribe current change handler.
  */
 lf.BackStore.prototype.unsubscribe;
+
+/**
+ * @license
+ * Copyright 2014 Google Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+goog.provide('lf.Exception');
+
+
+
+/**
+ * @param {string} name
+ * @param {string} message
+ * @constructor
+ * @struct
+ */
+lf.Exception = function(name, message) {
+  /** @type {string} */
+  this.name = name;
+
+  /** @type {string} */
+  this.message = message;
+};
+
+
+/** @enum {string} */
+lf.Exception.Type = {
+  // Context is already in use and cannot be reused. For example, attempt to
+  // start observer twice.
+  BLOCKING: 'BlockingError',
+
+  // Constraints specified in schema are violated.
+  CONSTRAINT: 'ConstraintError',
+
+  // Data provided to an operation does not meet requirements.
+  DATA: 'DataError',
+
+  // Specified name not found.
+  NOT_FOUND: 'NotFoundError',
+
+  // The feature is not supported/implemented yet.
+  NOT_SUPPORTED: 'NotSupportedError',
+
+  // The operation failed because there was not enough remaining storage space,
+  // or the storage quota was reached and the user declined to give more space
+  // to the database.
+  QUOTA_EXCEEDED: 'QuotaExceededError',
+
+  // Invalid syntax. For example, calling from() twice.
+  SYNTAX: 'SyntaxError',
+
+  // Scope violation: attempt to access outside of specified scope. For example,
+  // accessing table not specified in transaction.begin().
+  SCOPE_ERROR: 'ScopeError',
+
+  // Operation time out. (Reserved, not used in Lovefield yet.)
+  TIMEOUT: 'TimeoutError',
+
+  // The index structure (B+ Tree) is not capable of handling so many rows
+  // (current limitation is 2^27 = 134217728 rows).
+  TOO_MANY_ROWS: 'TooManyRowsError',
+
+  // Transaction is in an invalid state.
+  TRANSACTION: 'TransactionError',
+
+  // Unknown error.
+  UNKNOWN: 'UnknownError',
+
+  // The database connection has not initialized yet.
+  UNINITIALIZED: 'UninitializedError',
+
+  // Lovefield library version mismatch.
+  VERSION: 'VersionError'
+};
 
 /**
  * @license
@@ -23043,8 +23028,7 @@ goog.provide('lf.backstore.ObjectStore');
 
 goog.require('goog.Promise');
 goog.require('goog.log');
-goog.require('lf.Exception');
-goog.require('lf.Stream');
+goog.require('lf.Table');
 
 goog.forwardDeclare('goog.debug.Logger');
 
@@ -23055,7 +23039,7 @@ goog.forwardDeclare('goog.debug.Logger');
  * @constructor
  * @struct
  * @final
- * @implements {lf.Stream}
+ * @implements {lf.Table}
  *
  * @param {!IDBObjectStore} store
  * @param {!function({id: number, value: *}): !lf.Row} deserializeFn
@@ -23202,13 +23186,6 @@ lf.backstore.ObjectStore.prototype.remove = function(ids) {
 
     request.onerror = reject;
   }, this);
-};
-
-
-/** @override */
-lf.backstore.ObjectStore.prototype.pipe = function(stream) {
-  throw new lf.Exception(lf.Exception.Type.SYNTAX,
-      'ObjectStore should be the last in chain');
 };
 
 /**
@@ -23929,7 +23906,7 @@ goog.provide('lf.backstore.LocalStorageTable');
 goog.require('goog.Promise');
 goog.require('goog.object');
 goog.require('lf.Row');
-goog.require('lf.Stream');
+goog.require('lf.Table');
 goog.require('lf.cache.TableDiff');
 
 
@@ -23938,7 +23915,7 @@ goog.require('lf.cache.TableDiff');
  * Tables are stored in LocalStorage as a stringified data object in the format
  * of {id1: row1, id2: row2, ..., idN: rowN}.
  * @constructor
- * @implements {lf.Stream}
+ * @implements {lf.Table}
  *
  * @param {string} tableKey Key of the table, i.e. schemaName.tableName
  */
@@ -24000,11 +23977,6 @@ lf.backstore.LocalStorageTable.prototype.remove = function(ids) {
   }
 
   return goog.Promise.resolve();
-};
-
-
-/** @override */
-lf.backstore.LocalStorageTable.prototype.pipe = function(stream) {
 };
 
 
@@ -24241,7 +24213,7 @@ lf.backstore.LocalStorage.prototype.loadTables_ = function() {
 /**
  * @param {string} tableName The name of the table to get. Throws an exception
  *     if such a table does not exist.
- * @return {!lf.Stream}
+ * @return {!lf.Table}
  * @throws {lf.Exception}
  */
 lf.backstore.LocalStorage.prototype.getTableInternal = function(tableName) {
@@ -24348,7 +24320,7 @@ goog.provide('lf.backstore.MemoryTable');
 
 goog.require('goog.Promise');
 goog.require('goog.structs.Map');
-goog.require('lf.Stream');
+goog.require('lf.Table');
 
 goog.forwardDeclare('lf.Row');
 
@@ -24356,7 +24328,7 @@ goog.forwardDeclare('lf.Row');
 
 /**
  * @constructor
- * @implements {lf.Stream}
+ * @implements {lf.Table}
  */
 lf.backstore.MemoryTable = function() {
   /**
@@ -24417,11 +24389,6 @@ lf.backstore.MemoryTable.prototype.remove = function(ids) {
   }
 
   return goog.Promise.resolve();
-};
-
-
-/** @override */
-lf.backstore.MemoryTable.prototype.pipe = function(stream) {
 };
 
 /**
@@ -24558,7 +24525,7 @@ lf.backstore.Memory.prototype.init = function(opt_onUpgrade) {
 /**
  * @param {string} tableName The name of the table to get. Throws an exception
  *     if such a table does not exist.
- * @return {!lf.Stream}
+ * @return {!lf.Table}
  * @throws {lf.Exception}
  */
 lf.backstore.Memory.prototype.getTableInternal = function(tableName) {

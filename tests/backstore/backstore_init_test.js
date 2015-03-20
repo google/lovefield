@@ -186,7 +186,7 @@ function assertIndexTables(schema, tableNames) {
 
 /**
  * Checks that the given backing store is populated with the index metadata.
- * @param {!lf.Stream} objectStore
+ * @param {!lf.Table} objectStore
  * @param {string} indexName
  * @return {!IThenable}
  */
