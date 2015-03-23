@@ -65,6 +65,7 @@ lf.testing.MockEnv = function() {
 lf.testing.MockEnv.prototype.init = function() {
   var global = lf.Global.get();
   return this.store.init().then(goog.bind(function() {
+    global.registerService(lf.service.SCHEMA, this.schema);
     global.registerService(lf.service.BACK_STORE, this.store);
 
     this.queryEngine = new lf.proc.DefaultQueryEngine(global);
