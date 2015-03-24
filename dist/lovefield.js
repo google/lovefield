@@ -3675,9 +3675,9 @@ goog.addDependency('ui/combobox_test.js', ['goog.ui.ComboBoxTest'], ['goog.dom',
 goog.addDependency('ui/component.js', ['goog.ui.Component', 'goog.ui.Component.Error', 'goog.ui.Component.EventType', 'goog.ui.Component.State'], ['goog.array', 'goog.asserts', 'goog.dom', 'goog.dom.NodeType', 'goog.dom.TagName', 'goog.events.EventHandler', 'goog.events.EventTarget', 'goog.object', 'goog.style', 'goog.ui.IdGenerator'], false);
 goog.addDependency('ui/component_test.js', ['goog.ui.ComponentTest'], ['goog.dom', 'goog.dom.DomHelper', 'goog.dom.NodeType', 'goog.dom.TagName', 'goog.events.EventTarget', 'goog.testing.PropertyReplacer', 'goog.testing.jsunit', 'goog.ui.Component'], false);
 goog.addDependency('ui/container.js', ['goog.ui.Container', 'goog.ui.Container.EventType', 'goog.ui.Container.Orientation'], ['goog.a11y.aria', 'goog.a11y.aria.State', 'goog.asserts', 'goog.dom', 'goog.events.EventType', 'goog.events.KeyCodes', 'goog.events.KeyHandler', 'goog.object', 'goog.style', 'goog.ui.Component', 'goog.ui.ContainerRenderer', 'goog.ui.Control'], false);
-goog.addDependency('ui/container_test.js', ['goog.ui.ContainerTest'], ['goog.a11y.aria', 'goog.dom', 'goog.dom.classlist', 'goog.events', 'goog.events.Event', 'goog.events.KeyCodes', 'goog.events.KeyEvent', 'goog.testing.events', 'goog.testing.jsunit', 'goog.ui.Component', 'goog.ui.Container', 'goog.ui.Control'], false);
-goog.addDependency('ui/containerrenderer.js', ['goog.ui.ContainerRenderer'], ['goog.a11y.aria', 'goog.array', 'goog.asserts', 'goog.dom.NodeType', 'goog.dom.classlist', 'goog.string', 'goog.style', 'goog.ui.registry', 'goog.userAgent'], false);
-goog.addDependency('ui/containerrenderer_test.js', ['goog.ui.ContainerRendererTest'], ['goog.dom', 'goog.style', 'goog.testing.ExpectedFailures', 'goog.testing.PropertyReplacer', 'goog.testing.jsunit', 'goog.testing.ui.rendererasserts', 'goog.ui.Container', 'goog.ui.ContainerRenderer', 'goog.userAgent'], false);
+goog.addDependency('ui/container_test.js', ['goog.ui.ContainerTest'], ['goog.a11y.aria', 'goog.dom', 'goog.dom.TagName', 'goog.dom.classlist', 'goog.events', 'goog.events.Event', 'goog.events.KeyCodes', 'goog.events.KeyEvent', 'goog.testing.events', 'goog.testing.jsunit', 'goog.ui.Component', 'goog.ui.Container', 'goog.ui.Control'], false);
+goog.addDependency('ui/containerrenderer.js', ['goog.ui.ContainerRenderer'], ['goog.a11y.aria', 'goog.array', 'goog.asserts', 'goog.dom.NodeType', 'goog.dom.TagName', 'goog.dom.classlist', 'goog.string', 'goog.style', 'goog.ui.registry', 'goog.userAgent'], false);
+goog.addDependency('ui/containerrenderer_test.js', ['goog.ui.ContainerRendererTest'], ['goog.dom', 'goog.dom.TagName', 'goog.style', 'goog.testing.ExpectedFailures', 'goog.testing.PropertyReplacer', 'goog.testing.jsunit', 'goog.testing.ui.rendererasserts', 'goog.ui.Container', 'goog.ui.ContainerRenderer', 'goog.userAgent'], false);
 goog.addDependency('ui/containerscroller.js', ['goog.ui.ContainerScroller'], ['goog.Disposable', 'goog.Timer', 'goog.events.EventHandler', 'goog.style', 'goog.ui.Component', 'goog.ui.Container'], false);
 goog.addDependency('ui/containerscroller_test.js', ['goog.ui.ContainerScrollerTest'], ['goog.dom', 'goog.testing.MockClock', 'goog.testing.events', 'goog.testing.jsunit', 'goog.ui.Container', 'goog.ui.ContainerScroller'], false);
 goog.addDependency('ui/control.js', ['goog.ui.Control'], ['goog.Disposable', 'goog.array', 'goog.dom', 'goog.events.BrowserEvent', 'goog.events.Event', 'goog.events.EventHandler', 'goog.events.EventType', 'goog.events.KeyCodes', 'goog.events.KeyHandler', 'goog.string', 'goog.ui.Component', 'goog.ui.ControlContent', 'goog.ui.ControlRenderer', 'goog.ui.decorate', 'goog.ui.registry', 'goog.userAgent'], false);
@@ -22474,6 +22474,615 @@ lf.backstore.BundledObjectStore.forTableType = function(
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+goog.provide('lf.index.Comparator');
+goog.provide('lf.index.Favor');
+goog.provide('lf.index.Index');
+
+goog.forwardDeclare('lf.Order');
+goog.forwardDeclare('lf.Row');
+goog.forwardDeclare('lf.index.SingleKeyRange');
+
+
+/**
+ * The comparison result constant. This must be consistent with the constant
+ * required by the sort function of Array.prototype.sort.
+ * @enum {number}
+ */
+lf.index.Favor = {
+  RHS: -1,  // favors right hand side, i.e. lhs < rhs
+  TIE: 0,  // no favorite, i.e. lhs == rhs
+  LHS: 1    // favors left hand side, i.e. lhs > rhs
+};
+
+
+
+/**
+ * Comparator used to provide necessary information for building an index tree.
+ * It offers methods to indicate which operand is "favorable".
+ *
+ * @template KeyType, RangeType
+ * @constructor
+ */
+lf.index.Comparator = function() {};
+
+
+/**
+ * @param {KeyType} lhs
+ * @param {KeyType} rhs
+ * @return {!lf.index.Favor}
+ */
+lf.index.Comparator.prototype.compare;
+
+
+/**
+ * Returns an array of boolean which represents the relative positioning of
+ * a key to a range. The concept is to project both the key and the range onto
+ * the 1-D space. The returned array is in the form of [left, right]. If the
+ * range projection covers any value left/right of the key (including the key
+ * itself), then left/right will be set to true.
+ * @param {KeyType} key
+ * @param {RangeType} range
+ * @return {!Array<boolean>}
+ */
+lf.index.Comparator.prototype.compareRange;
+
+
+/**
+ * Finds which one of the two operands is the minimum in absolute terms.
+ * @param {KeyType} lhs
+ * @param {KeyType} rhs
+ * @return {!lf.index.Favor}
+ */
+lf.index.Comparator.prototype.min;
+
+
+/**
+ * Finds which one of the two operands is the maximum in absolute terms.
+ * @param {KeyType} lhs
+ * @param {KeyType} rhs
+ * @return {!lf.index.Favor}
+ */
+lf.index.Comparator.prototype.max;
+
+
+/**
+ * @param {KeyType} key
+ * @param {RangeType} range
+ * @return {boolean}
+ */
+lf.index.Comparator.prototype.isInRange;
+
+
+/**
+ * Binds unbound values to given key ranges, and sorts them so that these ranges
+ * will be in the order from left to right.
+ * @param {!KeyType} leftMostKey The value to substitute when left boundary
+ *     is unbound.
+ * @param {!KeyType} rightMostKey The value to substitute when right boundary
+ *     is unbound.
+ * @param {!Array<!RangeType>=} opt_keyRanges When provided, any two ranges
+ *     inside the key ranges array shall not overlap each other.
+ * @return {!Array<!RangeType>} A new array containing bounded ranges, sorted by
+ *     comparator's order from left-most to right-most.
+ */
+lf.index.Comparator.prototype.bindAndSortKeyRanges;
+
+
+/**
+ * Converts key range to keys.
+ * @param {!RangeType} range Normalized key range.
+ * @return {!Array<!KeyType>} An array of two keys, [left-most, right-most]
+ */
+lf.index.Comparator.prototype.rangeToKeys;
+
+
+
+/**
+ * Single key to row id(s) index.
+ * @interface
+ */
+lf.index.Index = function() {};
+
+
+/** @typedef {string|number} */
+lf.index.Index.SingleKey;
+
+
+/** @typedef {!lf.index.Index.SingleKey|!Array<!lf.index.Index.SingleKey>} */
+lf.index.Index.Key;
+
+
+/** @return {string} Normalized name for this index. */
+lf.index.Index.prototype.getName;
+
+
+/**
+ * Inserts data into index. If the key already existed, append value to the
+ * value list. If the index does not support duplicate keys, adding duplicate
+ * keys will result in throwing CONSTRAINT error.
+ * @param {?lf.index.Index.Key} key
+ * @param {number} value
+ * @throws {lf.Exception}
+ */
+lf.index.Index.prototype.add;
+
+
+/**
+ * Replaces data in index. All existing data for that key will be purged.
+ * If the key is not found, inserts the data.
+ * @param {?lf.index.Index.Key} key
+ * @param {number} value
+ */
+lf.index.Index.prototype.set;
+
+
+/**
+ * Deletes a row having given key from index. If not found return silently.
+ * @param {?lf.index.Index.Key} key
+ * @param {number=} opt_rowId Delete a single row id when the index allows
+ *     duplicate keys. Ignored for index supporting only unique keys.
+ */
+lf.index.Index.prototype.remove;
+
+
+/**
+ * Gets values from index. Returns empty array if not found.
+ * @param {?lf.index.Index.Key} key
+ * @return {!Array<number>}
+ */
+lf.index.Index.prototype.get;
+
+
+/**
+ * Gets the cost of retrieving data for given range.
+ * @param {(!lf.index.SingleKeyRange|!lf.index.KeyRange)=} opt_keyRange The key
+ *     range to search for. If not provided, the cost will be equal to the
+ *     number of rows in the index.
+ * @return {number}
+ */
+lf.index.Index.prototype.cost;
+
+
+/**
+ * Retrieves all data within the range. Returns empty array if not found.
+ * @param {(!Array<!lf.index.SingleKeyRange>|!Array<!lf.index.KeyRange>)=}
+ *     opt_keyRanges The key ranges to search for. When multiple key ranges are
+ *     specified, the function will return the union of range query results.
+ *     If none provided, all rowIds in this index will be returned. Caller must
+ *     ensure the ranges do not overlap.
+ * @param {!boolean=} opt_reverseOrder Retrive the results in the reverse
+ *     ordering of the index's comparator.
+ * @param {number=} opt_limit Max number of rows to return
+ * @param {number=} opt_skip Skip first N rows
+ * @return {!Array<number>}
+ */
+lf.index.Index.prototype.getRange;
+
+
+/**
+ * Removes everything from the tree.
+ */
+lf.index.Index.prototype.clear;
+
+
+/**
+ * Returns true if key existed, otherwise false.
+ * @param {?lf.index.Index.Key} key
+ * @return {boolean}
+ */
+lf.index.Index.prototype.containsKey;
+
+
+/**
+ * @return {!Array} An array of exactly two elements, holding the minimum key at
+ *     position 0, and all associated values at position 1. If no keys exist in
+ *     the index [null, null] is returned.
+ */
+lf.index.Index.prototype.min;
+
+
+/**
+ * @return {!Array} An array of exactly two elements, holding the maximum key at
+ *     position 0, and all associated values at position 1. If no keys exist in
+ *     the index [null, null] is returned.
+ */
+lf.index.Index.prototype.max;
+
+
+/**
+ * Serializes this index such that it can be persisted.
+ * @return {!Array<!lf.Row>}
+ */
+lf.index.Index.prototype.serialize;
+
+
+/**
+ * Returns the comparator used by this index.
+ * @return {!lf.index.Comparator}
+ */
+lf.index.Index.prototype.comparator;
+
+/**
+ * @license
+ * Copyright 2015 Google Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+goog.provide('lf.cache.InMemoryUpdater');
+
+goog.require('lf.index.Favor');
+goog.require('lf.service');
+
+
+
+/**
+ * A helper class for updating in-memory data structures (specifically in-memory
+ * indices and caches).
+ * @constructor
+ *
+ * @param {!lf.Global} global
+ */
+lf.cache.InMemoryUpdater = function(global) {
+  /** @private {!lf.cache.Cache} */
+  this.cache_ = global.getService(lf.service.CACHE);
+
+  /** @private {!lf.index.IndexStore} */
+  this.indexStore_ = global.getService(lf.service.INDEX_STORE);
+
+  this.schema_ = global.getService(lf.service.SCHEMA);
+};
+
+
+/**
+ * Updates all indices and the cache to reflect the changes that are described
+ * in the given diffs.
+ * @param {!Array<!lf.cache.TableDiff>} tableDiffs Description of the changes to
+ *     be performed.
+ */
+lf.cache.InMemoryUpdater.prototype.update = function(tableDiffs) {
+  tableDiffs.forEach(
+      function(tableDiff) {
+        this.updateIndicesForDiff_(tableDiff);
+        this.updateCacheForDiff_(tableDiff);
+      }, this);
+};
+
+
+/**
+ * Updates the cache based on the given table diff.
+ * @param {!lf.cache.TableDiff} diff
+ * @private
+ */
+lf.cache.InMemoryUpdater.prototype.updateCacheForDiff_ = function(diff) {
+  var tableName = diff.getName();
+  diff.getDeleted().getValues().forEach(
+      function(row) {
+        this.cache_.remove(tableName, [row.id()]);
+      }, this);
+  diff.getAdded().forEach(
+      function(row, rowId) {
+        this.cache_.set(tableName, [row]);
+      }, this);
+  diff.getModified().forEach(
+      function(modification, rowId) {
+        this.cache_.set(tableName, [modification[1]]);
+      }, this);
+};
+
+
+/**
+ * Updates index data structures based on the given table diff.
+ * @param {!lf.cache.TableDiff} diff
+ * @private
+ */
+lf.cache.InMemoryUpdater.prototype.updateIndicesForDiff_ = function(diff) {
+  var table = this.schema_.table(diff.getName());
+  var modifications = diff.getAsModifications();
+  modifications.forEach(
+      function(modification) {
+        this.updateTableIndicesForRow(table, modification);
+      }, this);
+};
+
+
+/**
+ * Updates all indices that are affefted as a result of the given modification.
+ * In the case where an exception is thrown (constraint violation) all the
+ * indices are unaffected.
+ *
+ * @param {!lf.schema.Table} table The table to be updated.
+ * @param {!Array<?lf.Row>} modification An array of exactly two elements where
+ *     position 0 is the value before the modification and position 1 is after
+ *     the modification. A value of null means that the row was either just
+ *     created or just deleted.
+ * @throws {!lf.Exception}
+ */
+lf.cache.InMemoryUpdater.prototype.updateTableIndicesForRow = function(
+    table, modification) {
+  /** @type {!Array<!lf.index.Index>} */
+  var indices = table.getIndices().map(
+      /**
+       * @param {!lf.schema.Index} indexSchema
+       * @this {!lf.cache.InMemoryUpdater}
+       */
+      function(indexSchema) {
+        return this.indexStore_.get(indexSchema.getNormalizedName());
+      }, this).concat([this.indexStore_.get(table.getRowIdIndexName())]);
+
+  indices.forEach(
+      /** @param {!lf.index.Index} index */
+      function(index) {
+        var keyNow = goog.isNull(modification[1]) ? null :
+            modification[1].keyOfIndex(index.getName());
+        var keyThen = goog.isNull(modification[0]) ? null :
+            modification[0].keyOfIndex(index.getName());
+
+        if (goog.isNull(keyThen) && !goog.isNull(keyNow)) {
+          // Insertion
+          index.add(keyNow, modification[1].id());
+        } else if (!goog.isNull(keyThen) && !goog.isNull(keyNow)) {
+          if (index.comparator().compare(keyThen, keyNow) ==
+              lf.index.Favor.TIE) {
+            return;
+          }
+
+          // Update
+          // NOTE: the order of calling add() and remove() here matters.
+          // Index#add() might throw an exception because of a constraint
+          // violation, in which case the index remains unaffected as expected.
+          index.add(keyNow, modification[1].id());
+          index.remove(keyThen, modification[0].id());
+        } else if (!goog.isNull(keyThen) && goog.isNull(keyNow)) {
+          // Deletion
+          index.remove(keyThen, modification[0].id());
+        }
+      });
+};
+
+/**
+ * @license
+ * Copyright 2014 Google Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+goog.provide('lf.proc.Task');
+
+
+
+/**
+ * @interface
+ */
+lf.proc.Task = function() {};
+
+
+/**
+ * Executes this task.
+ * @return {!IThenable<!Array<!lf.proc.Relation>>}
+ */
+lf.proc.Task.prototype.exec;
+
+
+/**
+ * @return {!lf.TransactionType}
+ */
+lf.proc.Task.prototype.getType;
+
+
+/**
+ * The tables that this task refers to.
+ * @return {!goog.structs.Set<!lf.schema.Table>}
+ */
+lf.proc.Task.prototype.getScope;
+
+
+/**
+ * @return {!goog.promise.Resolver.<!Array<!lf.proc.Relation>>}
+ */
+lf.proc.Task.prototype.getResolver;
+
+
+/**
+ * A unique identifier for this task.
+ * @return {number}
+ */
+lf.proc.Task.prototype.getId;
+
+/**
+ * @license
+ * Copyright 2015 Google Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+goog.provide('lf.proc.ExternalChangeTask');
+
+goog.require('goog.Promise');
+goog.require('goog.structs.Set');
+goog.require('lf.TransactionType');
+goog.require('lf.cache.InMemoryUpdater');
+goog.require('lf.proc.Task');
+goog.require('lf.service');
+
+
+
+/**
+ * @implements {lf.proc.Task}
+ * @constructor
+ * @struct
+ *
+ * @param {!lf.Global} global
+ * @param {!Array<!lf.cache.TableDiff>} tableDiffs
+ */
+lf.proc.ExternalChangeTask = function(global, tableDiffs) {
+  /** @private {!lf.cache.InMemoryUpdater} */
+  this.inMemoryUpdater_ = new lf.cache.InMemoryUpdater(global);
+
+  /** @private {!Array<!lf.cache.TableDiff>} */
+  this.tableDiffs_ = tableDiffs;
+
+  var schema = global.getService(lf.service.SCHEMA);
+  var tableSchemas = this.tableDiffs_.map(
+      function(tableDiff) {
+        return schema.table(tableDiff.getName());
+      });
+
+  /** @private {!goog.structs.Set<!lf.schema.Table>} */
+  this.scope_ = new goog.structs.Set(tableSchemas);
+
+  /** @private {!goog.promise.Resolver.<!Array<!lf.proc.Relation>>} */
+  this.resolver_ = goog.Promise.withResolver();
+};
+
+
+/** @override */
+lf.proc.ExternalChangeTask.prototype.exec = function() {
+  this.inMemoryUpdater_.update(this.tableDiffs_);
+  return goog.Promise.resolve();
+};
+
+
+/** @override */
+lf.proc.ExternalChangeTask.prototype.getType = function() {
+  return lf.TransactionType.READ_WRITE;
+};
+
+
+/** @override */
+lf.proc.ExternalChangeTask.prototype.getScope = function() {
+  return this.scope_;
+};
+
+
+/** @override */
+lf.proc.ExternalChangeTask.prototype.getResolver = function() {
+  return this.resolver_;
+};
+
+
+/** @override */
+lf.proc.ExternalChangeTask.prototype.getId = function() {
+  return goog.getUid(this);
+};
+
+/**
+ * @license
+ * Copyright 2015 Google Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+goog.provide('lf.backstore.ExternalChangeObserver');
+
+goog.require('lf.proc.ExternalChangeTask');
+goog.require('lf.service');
+
+
+
+/**
+ * @constructor
+ * @struct
+ *
+ * @param {!lf.Global} global
+ */
+lf.backstore.ExternalChangeObserver = function(global) {
+  /** @private {!lf.Global} */
+  this.global_ = global;
+
+  /** @private {!lf.BackStore} */
+  this.backStore_ = global.getService(lf.service.BACK_STORE);
+
+  /** @private {!lf.proc.Runner} */
+  this.runner_ = global.getService(lf.service.RUNNER);
+};
+
+
+/**
+ * Starts observing the backing store for any external changes.
+ */
+lf.backstore.ExternalChangeObserver.prototype.startObserving =
+    function() {
+  this.backStore_.subscribe(this.onChange_.bind(this));
+};
+
+
+/**
+ * Stops observing the backing store.
+ */
+lf.backstore.ExternalChangeObserver.prototype.stopObserving = function() {
+  this.backStore_.unsubscribe();
+};
+
+
+/**
+ * Executes every time a change is reported by the backing store. It is
+ * responsible for schudeling a task that will updated the in-memory data layers
+ * (indices and cache) accordingly.
+ * @param {!Array<!lf.cache.TableDiff>} tableDiffs
+ * @private
+ */
+lf.backstore.ExternalChangeObserver.prototype.onChange_ = function(tableDiffs) {
+  // Note: Current logic does not check for any conflicts between external
+  // changes and in-flight READ_WRITE queries. It assumes that no conflicts
+  // exist (single writer, multiple readers model).
+  var externalChangeTask = new lf.proc.ExternalChangeTask(
+      this.global_, tableDiffs);
+  this.runner_.scheduleTask(externalChangeTask, true /* opt_prioritize */);
+};
+
+/**
+ * @license
+ * Copyright 2014 Google Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 goog.provide('lf.BackStore');
 
 goog.forwardDeclare('lf.Table');
@@ -24987,397 +25596,6 @@ lf.cache.DefaultCache.prototype.getCount = function(opt_tableName) {
   return goog.isDefAndNotNull(opt_tableName) ?
       this.getTableSet_(opt_tableName).getCount() :
       this.map_.getCount();
-};
-
-/**
- * @license
- * Copyright 2014 Google Inc. All Rights Reserved.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-goog.provide('lf.index.Comparator');
-goog.provide('lf.index.Favor');
-goog.provide('lf.index.Index');
-
-goog.forwardDeclare('lf.Order');
-goog.forwardDeclare('lf.Row');
-goog.forwardDeclare('lf.index.SingleKeyRange');
-
-
-/**
- * The comparison result constant. This must be consistent with the constant
- * required by the sort function of Array.prototype.sort.
- * @enum {number}
- */
-lf.index.Favor = {
-  RHS: -1,  // favors right hand side, i.e. lhs < rhs
-  TIE: 0,  // no favorite, i.e. lhs == rhs
-  LHS: 1    // favors left hand side, i.e. lhs > rhs
-};
-
-
-
-/**
- * Comparator used to provide necessary information for building an index tree.
- * It offers methods to indicate which operand is "favorable".
- *
- * @template KeyType, RangeType
- * @constructor
- */
-lf.index.Comparator = function() {};
-
-
-/**
- * @param {KeyType} lhs
- * @param {KeyType} rhs
- * @return {!lf.index.Favor}
- */
-lf.index.Comparator.prototype.compare;
-
-
-/**
- * Returns an array of boolean which represents the relative positioning of
- * a key to a range. The concept is to project both the key and the range onto
- * the 1-D space. The returned array is in the form of [left, right]. If the
- * range projection covers any value left/right of the key (including the key
- * itself), then left/right will be set to true.
- * @param {KeyType} key
- * @param {RangeType} range
- * @return {!Array<boolean>}
- */
-lf.index.Comparator.prototype.compareRange;
-
-
-/**
- * Finds which one of the two operands is the minimum in absolute terms.
- * @param {KeyType} lhs
- * @param {KeyType} rhs
- * @return {!lf.index.Favor}
- */
-lf.index.Comparator.prototype.min;
-
-
-/**
- * Finds which one of the two operands is the maximum in absolute terms.
- * @param {KeyType} lhs
- * @param {KeyType} rhs
- * @return {!lf.index.Favor}
- */
-lf.index.Comparator.prototype.max;
-
-
-/**
- * @param {KeyType} key
- * @param {RangeType} range
- * @return {boolean}
- */
-lf.index.Comparator.prototype.isInRange;
-
-
-/**
- * Binds unbound values to given key ranges, and sorts them so that these ranges
- * will be in the order from left to right.
- * @param {!KeyType} leftMostKey The value to substitute when left boundary
- *     is unbound.
- * @param {!KeyType} rightMostKey The value to substitute when right boundary
- *     is unbound.
- * @param {!Array<!RangeType>=} opt_keyRanges When provided, any two ranges
- *     inside the key ranges array shall not overlap each other.
- * @return {!Array<!RangeType>} A new array containing bounded ranges, sorted by
- *     comparator's order from left-most to right-most.
- */
-lf.index.Comparator.prototype.bindAndSortKeyRanges;
-
-
-/**
- * Converts key range to keys.
- * @param {!RangeType} range Normalized key range.
- * @return {!Array<!KeyType>} An array of two keys, [left-most, right-most]
- */
-lf.index.Comparator.prototype.rangeToKeys;
-
-
-
-/**
- * Single key to row id(s) index.
- * @interface
- */
-lf.index.Index = function() {};
-
-
-/** @typedef {string|number} */
-lf.index.Index.SingleKey;
-
-
-/** @typedef {!lf.index.Index.SingleKey|!Array<!lf.index.Index.SingleKey>} */
-lf.index.Index.Key;
-
-
-/** @return {string} Normalized name for this index. */
-lf.index.Index.prototype.getName;
-
-
-/**
- * Inserts data into index. If the key already existed, append value to the
- * value list. If the index does not support duplicate keys, adding duplicate
- * keys will result in throwing CONSTRAINT error.
- * @param {?lf.index.Index.Key} key
- * @param {number} value
- * @throws {lf.Exception}
- */
-lf.index.Index.prototype.add;
-
-
-/**
- * Replaces data in index. All existing data for that key will be purged.
- * If the key is not found, inserts the data.
- * @param {?lf.index.Index.Key} key
- * @param {number} value
- */
-lf.index.Index.prototype.set;
-
-
-/**
- * Deletes a row having given key from index. If not found return silently.
- * @param {?lf.index.Index.Key} key
- * @param {number=} opt_rowId Delete a single row id when the index allows
- *     duplicate keys. Ignored for index supporting only unique keys.
- */
-lf.index.Index.prototype.remove;
-
-
-/**
- * Gets values from index. Returns empty array if not found.
- * @param {?lf.index.Index.Key} key
- * @return {!Array<number>}
- */
-lf.index.Index.prototype.get;
-
-
-/**
- * Gets the cost of retrieving data for given range.
- * @param {(!lf.index.SingleKeyRange|!lf.index.KeyRange)=} opt_keyRange The key
- *     range to search for. If not provided, the cost will be equal to the
- *     number of rows in the index.
- * @return {number}
- */
-lf.index.Index.prototype.cost;
-
-
-/**
- * Retrieves all data within the range. Returns empty array if not found.
- * @param {(!Array<!lf.index.SingleKeyRange>|!Array<!lf.index.KeyRange>)=}
- *     opt_keyRanges The key ranges to search for. When multiple key ranges are
- *     specified, the function will return the union of range query results.
- *     If none provided, all rowIds in this index will be returned. Caller must
- *     ensure the ranges do not overlap.
- * @param {!boolean=} opt_reverseOrder Retrive the results in the reverse
- *     ordering of the index's comparator.
- * @param {number=} opt_limit Max number of rows to return
- * @param {number=} opt_skip Skip first N rows
- * @return {!Array<number>}
- */
-lf.index.Index.prototype.getRange;
-
-
-/**
- * Removes everything from the tree.
- */
-lf.index.Index.prototype.clear;
-
-
-/**
- * Returns true if key existed, otherwise false.
- * @param {?lf.index.Index.Key} key
- * @return {boolean}
- */
-lf.index.Index.prototype.containsKey;
-
-
-/**
- * @return {!Array} An array of exactly two elements, holding the minimum key at
- *     position 0, and all associated values at position 1. If no keys exist in
- *     the index [null, null] is returned.
- */
-lf.index.Index.prototype.min;
-
-
-/**
- * @return {!Array} An array of exactly two elements, holding the maximum key at
- *     position 0, and all associated values at position 1. If no keys exist in
- *     the index [null, null] is returned.
- */
-lf.index.Index.prototype.max;
-
-
-/**
- * Serializes this index such that it can be persisted.
- * @return {!Array<!lf.Row>}
- */
-lf.index.Index.prototype.serialize;
-
-
-/**
- * Returns the comparator used by this index.
- * @return {!lf.index.Comparator}
- */
-lf.index.Index.prototype.comparator;
-
-/**
- * @license
- * Copyright 2015 Google Inc. All Rights Reserved.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-goog.provide('lf.cache.InMemoryUpdater');
-
-goog.require('lf.index.Favor');
-goog.require('lf.service');
-
-
-
-/**
- * A helper class for updating in-memory data structures (specifically in-memory
- * indices and caches).
- * @constructor
- *
- * @param {!lf.Global} global
- */
-lf.cache.InMemoryUpdater = function(global) {
-  /** @private {!lf.cache.Cache} */
-  this.cache_ = global.getService(lf.service.CACHE);
-
-  /** @private {!lf.index.IndexStore} */
-  this.indexStore_ = global.getService(lf.service.INDEX_STORE);
-
-  this.schema_ = global.getService(lf.service.SCHEMA);
-};
-
-
-/**
- * Updates all indices and the cache to reflect the changes that are described
- * in the given diffs.
- * @param {!Array<!lf.cache.TableDiff>} tableDiffs Description of the changes to
- *     be performed.
- */
-lf.cache.InMemoryUpdater.prototype.update = function(tableDiffs) {
-  tableDiffs.forEach(
-      function(tableDiff) {
-        this.updateIndicesForDiff_(tableDiff);
-        this.updateCacheForDiff_(tableDiff);
-      }, this);
-};
-
-
-/**
- * Updates the cache based on the given table diff.
- * @param {!lf.cache.TableDiff} diff
- * @private
- */
-lf.cache.InMemoryUpdater.prototype.updateCacheForDiff_ = function(diff) {
-  var tableName = diff.getName();
-  diff.getDeleted().getValues().forEach(
-      function(row) {
-        this.cache_.remove(tableName, [row.id()]);
-      }, this);
-  diff.getAdded().forEach(
-      function(row, rowId) {
-        this.cache_.set(tableName, [row]);
-      }, this);
-  diff.getModified().forEach(
-      function(modification, rowId) {
-        this.cache_.set(tableName, [modification[1]]);
-      }, this);
-};
-
-
-/**
- * Updates index data structures based on the given table diff.
- * @param {!lf.cache.TableDiff} diff
- * @private
- */
-lf.cache.InMemoryUpdater.prototype.updateIndicesForDiff_ = function(diff) {
-  var table = this.schema_.table(diff.getName());
-  var modifications = diff.getAsModifications();
-  modifications.forEach(
-      function(modification) {
-        this.updateTableIndicesForRow(table, modification);
-      }, this);
-};
-
-
-/**
- * Updates all indices that are affefted as a result of the given modification.
- * In the case where an exception is thrown (constraint violation) all the
- * indices are unaffected.
- *
- * @param {!lf.schema.Table} table The table to be updated.
- * @param {!Array<?lf.Row>} modification An array of exactly two elements where
- *     position 0 is the value before the modification and position 1 is after
- *     the modification. A value of null means that the row was either just
- *     created or just deleted.
- * @throws {!lf.Exception}
- */
-lf.cache.InMemoryUpdater.prototype.updateTableIndicesForRow = function(
-    table, modification) {
-  /** @type {!Array<!lf.index.Index>} */
-  var indices = table.getIndices().map(
-      /**
-       * @param {!lf.schema.Index} indexSchema
-       * @this {!lf.cache.InMemoryUpdater}
-       */
-      function(indexSchema) {
-        return this.indexStore_.get(indexSchema.getNormalizedName());
-      }, this).concat([this.indexStore_.get(table.getRowIdIndexName())]);
-
-  indices.forEach(
-      /** @param {!lf.index.Index} index */
-      function(index) {
-        var keyNow = goog.isNull(modification[1]) ? null :
-            modification[1].keyOfIndex(index.getName());
-        var keyThen = goog.isNull(modification[0]) ? null :
-            modification[0].keyOfIndex(index.getName());
-
-        if (goog.isNull(keyThen) && !goog.isNull(keyNow)) {
-          // Insertion
-          index.add(keyNow, modification[1].id());
-        } else if (!goog.isNull(keyThen) && !goog.isNull(keyNow)) {
-          if (index.comparator().compare(keyThen, keyNow) ==
-              lf.index.Favor.TIE) {
-            return;
-          }
-
-          // Update
-          // NOTE: the order of calling add() and remove() here matters.
-          // Index#add() might throw an exception because of a constraint
-          // violation, in which case the index remains unaffected as expected.
-          index.add(keyNow, modification[1].id());
-          index.remove(keyThen, modification[0].id());
-        } else if (!goog.isNull(keyThen) && goog.isNull(keyNow)) {
-          // Deletion
-          index.remove(keyThen, modification[0].id());
-        }
-      });
 };
 
 /**
@@ -34528,64 +34746,6 @@ lf.proc.PhysicalQueryPlan.getCombinedScope = function(plans) {
   });
   return tableSet;
 };
-
-/**
- * @license
- * Copyright 2014 Google Inc. All Rights Reserved.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-goog.provide('lf.proc.Task');
-
-
-
-/**
- * @interface
- */
-lf.proc.Task = function() {};
-
-
-/**
- * Executes this task.
- * @return {!IThenable<!Array<!lf.proc.Relation>>}
- */
-lf.proc.Task.prototype.exec;
-
-
-/**
- * @return {!lf.TransactionType}
- */
-lf.proc.Task.prototype.getType;
-
-
-/**
- * The tables that this task refers to.
- * @return {!goog.structs.Set<!lf.schema.Table>}
- */
-lf.proc.Task.prototype.getScope;
-
-
-/**
- * @return {!goog.promise.Resolver.<!Array<!lf.proc.Relation>>}
- */
-lf.proc.Task.prototype.getResolver;
-
-
-/**
- * A unique identifier for this task.
- * @return {number}
- */
-lf.proc.Task.prototype.getId;
 
 /**
  * @license
