@@ -22865,6 +22865,946 @@ lf.cache.InMemoryUpdater.prototype.updateTableIndicesForRow = function(
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+goog.provide('lf.Exception');
+
+
+
+/**
+ * @param {string} name
+ * @param {string} message
+ * @constructor
+ * @struct
+ */
+lf.Exception = function(name, message) {
+  /** @type {string} */
+  this.name = name;
+
+  /** @type {string} */
+  this.message = message;
+};
+
+
+/** @enum {string} */
+lf.Exception.Type = {
+  // Context is already in use and cannot be reused. For example, attempt to
+  // start observer twice.
+  BLOCKING: 'BlockingError',
+
+  // Constraints specified in schema are violated.
+  CONSTRAINT: 'ConstraintError',
+
+  // Data provided to an operation does not meet requirements.
+  DATA: 'DataError',
+
+  // Specified name not found.
+  NOT_FOUND: 'NotFoundError',
+
+  // The feature is not supported/implemented yet.
+  NOT_SUPPORTED: 'NotSupportedError',
+
+  // The operation failed because there was not enough remaining storage space,
+  // or the storage quota was reached and the user declined to give more space
+  // to the database.
+  QUOTA_EXCEEDED: 'QuotaExceededError',
+
+  // Invalid syntax. For example, calling from() twice.
+  SYNTAX: 'SyntaxError',
+
+  // Scope violation: attempt to access outside of specified scope. For example,
+  // accessing table not specified in transaction.begin().
+  SCOPE_ERROR: 'ScopeError',
+
+  // Operation time out. (Reserved, not used in Lovefield yet.)
+  TIMEOUT: 'TimeoutError',
+
+  // The index structure (B+ Tree) is not capable of handling so many rows
+  // (current limitation is 2^27 = 134217728 rows).
+  TOO_MANY_ROWS: 'TooManyRowsError',
+
+  // Transaction is in an invalid state.
+  TRANSACTION: 'TransactionError',
+
+  // Unknown error.
+  UNKNOWN: 'UnknownError',
+
+  // The database connection has not initialized yet.
+  UNINITIALIZED: 'UninitializedError',
+
+  // Lovefield library version mismatch.
+  VERSION: 'VersionError'
+};
+
+/**
+ * @license
+ * Copyright 2014 Google Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+goog.provide('lf.cache.ConstraintChecker');
+
+goog.require('goog.structs.Set');
+goog.require('lf.Exception');
+goog.require('lf.service');
+
+
+
+/**
+ * A helper class for performing various constraint checks.
+ *
+ * @constructor
+ * @struct
+ *
+ * @param {!lf.Global} global
+ */
+lf.cache.ConstraintChecker = function(global) {
+  /** @private {!lf.index.IndexStore} */
+  this.indexStore_ = global.getService(lf.service.INDEX_STORE);
+};
+
+
+/**
+ * Finds if any row with the same primary key exists in the primary key index.
+ * @param {!lf.schema.Table} table The table where the row belongs.
+ * @param {!lf.Row} row The row whose primary key needs to checked.
+ * @return {?number} The row ID of an existing row that has the same primary
+ *     key as the input row, on null if no existing row was found.
+ */
+lf.cache.ConstraintChecker.prototype.findExistingRowIdInPkIndex = function(
+    table, row) {
+  var pkIndexSchema = table.getConstraint().getPrimaryKey();
+  if (goog.isNull(pkIndexSchema)) {
+    // There is no primary key for the given table.
+    return null;
+  }
+  return this.findExistingRowIdInIndex_(pkIndexSchema, row);
+};
+
+
+/**
+ * Finds if any row with the same index key exists in the given index.
+ * @param {!lf.schema.Index} indexSchema The index to check.
+ * @param {!lf.Row} row The row whose index key needs to checked.
+ * @return {?number} The row ID of an existing row that has the same index
+ *     key as the input row, on null if no existing row was found.
+ * @private
+ */
+lf.cache.ConstraintChecker.prototype.findExistingRowIdInIndex_ = function(
+    indexSchema, row) {
+  var indexName = indexSchema.getNormalizedName();
+  var indexKey = row.keyOfIndex(indexName);
+  var index = this.indexStore_.get(indexName);
+
+  var rowIds = index.get(/** @type {!lf.index.Index.Key} */ (indexKey));
+  return rowIds.length == 0 ? null : rowIds[0];
+};
+
+
+/**
+ * Checks whether any not-nullable constraint violation occurs as a result of
+ * inserting/updating the given set of rows.
+ * @param {!lf.schema.Table} table The table where the rows belong.
+ * @param {!Array<!lf.Row>} rows The rows being inserted.
+ * @throws {!lf.Exception}
+ */
+lf.cache.ConstraintChecker.prototype.checkNotNullable = function(table, rows) {
+  var notNullable = table.getConstraint().getNotNullable();
+  rows.forEach(function(row) {
+    notNullable.forEach(function(column) {
+      if (goog.isNull(row.payload()[column.getName()])) {
+        throw new lf.Exception(
+            lf.Exception.Type.CONSTRAINT,
+            'Attempted to insert NULL value to non-nullable field ' +
+            column.getNormalizedName());
+      }
+    }, this);
+  }, this);
+};
+
+/**
+ * @license
+ * Copyright 2014 Google Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+goog.provide('lf.cache.TableDiff');
+
+goog.require('goog.asserts');
+goog.require('goog.structs.Map');
+goog.require('goog.structs.Set');
+
+goog.forwardDeclare('lf.Row');
+
+
+
+/**
+ * A class representing a set of changes on the contents of a given table. It
+ * contains all necessary information needed to be able to reverse those changes
+ * after they have been applied.
+ *
+ * @constructor
+ * @struct
+ *
+ * @param {string} name Table name.
+ */
+lf.cache.TableDiff = function(name) {
+  /** @private {!goog.structs.Map<number, !lf.Row>} */
+  this.added_ = new goog.structs.Map();
+
+  /** @private {!goog.structs.Map<number, !Array<!lf.Row>>} */
+  this.modified_ = new goog.structs.Map();
+
+  /** @private {!goog.structs.Map<number, !lf.Row>} */
+  this.deleted_ = new goog.structs.Map();
+
+  /** @private {string} */
+  this.name_ = name;
+};
+
+
+/** @return {string} */
+lf.cache.TableDiff.prototype.getName = function() {
+  return this.name_;
+};
+
+
+/** @return {!goog.structs.Map<number, !lf.Row>} */
+lf.cache.TableDiff.prototype.getAdded = function() {
+  return this.added_;
+};
+
+
+/** @return {!goog.structs.Map<number, !Array<!lf.Row>>} */
+lf.cache.TableDiff.prototype.getModified = function() {
+  return this.modified_;
+};
+
+
+/** @return {!goog.structs.Map<number, !lf.Row>} */
+lf.cache.TableDiff.prototype.getDeleted = function() {
+  return this.deleted_;
+};
+
+
+/**
+ * @param {!lf.Row} row The row that was inserted.
+ */
+lf.cache.TableDiff.prototype.add = function(row) {
+  if (this.deleted_.containsKey(row.id())) {
+    var modification = [this.deleted_.get(row.id()), row];
+    this.modified_.set(row.id(), modification);
+    this.deleted_.remove(row.id());
+  } else {
+    this.added_.set(row.id(), row);
+  }
+};
+
+
+/**
+ * @param {!Array<!lf.Row>} modification The old and new values
+ *     of the modified row. Old value must be at position 0 and new value must
+ *     be at position 1.
+ */
+lf.cache.TableDiff.prototype.modify = function(modification) {
+  var oldValue = modification[0];
+  var newValue = modification[1];
+  goog.asserts.assert(
+      oldValue.id() == newValue.id(),
+      'Row ID mismatch between old/new values.');
+  var id = oldValue.id();
+
+  if (this.added_.containsKey(id)) {
+    this.added_.set(id, newValue);
+  } else if (this.modified_.containsKey(id)) {
+    var overallModification = [
+      this.modified_.get(modification[0].id())[0],
+      newValue
+    ];
+    this.modified_.set(id, overallModification);
+  } else {
+    this.modified_.set(id, modification);
+  }
+};
+
+
+/**
+ * @param {!lf.Row} row The row that was deleted.
+ */
+lf.cache.TableDiff.prototype.delete = function(row) {
+  if (this.added_.containsKey(row.id())) {
+    this.added_.remove(row.id());
+  } else if (this.modified_.containsKey(row.id())) {
+    var originalRow = this.modified_.get(row.id())[0];
+    this.modified_.remove(row.id());
+    this.deleted_.set(row.id(), originalRow);
+  } else {
+    this.deleted_.set(row.id(), row);
+  }
+};
+
+
+/**
+ * Merges another diff into this one.
+ * @param {!lf.cache.TableDiff} other The diff to be merged.
+ */
+lf.cache.TableDiff.prototype.merge = function(other) {
+  other.added_.forEach(
+      function(row, rowId) {
+        this.add(row);
+      }, this);
+  other.modified_.forEach(
+      function(modification, rowId) {
+        this.modify(modification);
+      }, this);
+  other.deleted_.getValues().forEach(
+      function(row) {
+        this.delete(row);
+      }, this);
+};
+
+
+/**
+ * Transforms each changes included in this diff (insertion, modification,
+ * deletion) as a pair of before and after values.
+ * Example addition:     [null, rowValue]
+ * Example modification: [oldRowValue, newRowValue]
+ * Example deletion      [oldRowValue, null]
+ * @return {!Array<!Array<?lf.Row>>} An array of all changes expressed as
+ *     before and after pairs.
+ */
+lf.cache.TableDiff.prototype.getAsModifications = function() {
+  var modifications = [];
+
+  this.added_.getValues().forEach(
+      /**
+       * @param {!lf.Row} row
+       */
+      function(row) {
+        modifications.push([/* then */ null, /* now */ row]);
+      }, this);
+  this.modified_.getValues().forEach(
+      /**
+       * @param {!Array<!lf.Row>} modification
+       */
+      function(modification) {
+        modifications.push(modification);
+      }, this);
+  this.deleted_.getValues().forEach(
+      /**
+       * @param {!lf.Row} row
+       */
+      function(row) {
+        modifications.push([/* then */ row, /* now */ null]);
+      }, this);
+
+  return modifications;
+};
+
+
+/** @override */
+lf.cache.TableDiff.prototype.toString = function() {
+  return '[' + this.added_.getKeys().toString() + '], ' +
+      '[' + this.modified_.getKeys().toString() + '], ' +
+      '[' + this.deleted_.getKeys().toString() + ']';
+};
+
+
+/**
+ * Reverses this set of changes. Useful for reverting changes after they have
+ * been applied.
+ * @return {!lf.cache.TableDiff} The reverse diff.
+ */
+lf.cache.TableDiff.prototype.getReverse = function() {
+  var reverseDiff = new lf.cache.TableDiff(this.name_);
+
+  this.added_.getValues().forEach(
+      function(row) {
+        reverseDiff.delete(row);
+      }, this);
+  this.deleted_.getValues().forEach(
+      function(row) {
+        reverseDiff.add(row);
+      }, this);
+  this.modified_.getValues().forEach(
+      function(modification) {
+        reverseDiff.modify([
+          modification[1],
+          modification[0]
+        ]);
+      }, this);
+
+  return reverseDiff;
+};
+
+/**
+ * @license
+ * Copyright 2014 Google Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+goog.provide('lf.cache.Journal');
+
+goog.require('goog.asserts');
+goog.require('goog.structs.Map');
+goog.require('goog.structs.Set');
+goog.require('lf.Exception');
+goog.require('lf.cache.ConstraintChecker');
+goog.require('lf.cache.InMemoryUpdater');
+goog.require('lf.cache.TableDiff');
+goog.require('lf.service');
+
+goog.forwardDeclare('lf.cache.Cache');
+goog.forwardDeclare('lf.index.Index');
+goog.forwardDeclare('lf.index.IndexStore');
+goog.forwardDeclare('lf.schema.Index');
+
+
+
+/**
+ * Transaction Journal which is contained within lf.backstore.Tx. The journal
+ * stores rows changed by this transaction so that they can be merged into the
+ * backing store. Caches and indices are updated as soon as a change is
+ * recorded in the journal.
+ * @constructor
+ * @struct
+ * @final
+ *
+ * @param {!lf.Global} global
+ * @param {!Array<!lf.schema.Table>} scope A list of tables that this journal
+ *     should allow access. Trying to access any table not in that list will
+ *     result in an error.
+ */
+lf.cache.Journal = function(global, scope) {
+  /**
+   * Scope of this transaction in the form of table schema.
+   * @private {!goog.structs.Map<string, !lf.schema.Table>}
+   */
+  this.scope_ = new goog.structs.Map();
+  scope.forEach(function(tableSchema) {
+    this.scope_.set(tableSchema.getName(), tableSchema);
+  }, this);
+
+  /** @private {!lf.cache.Cache} */
+  this.cache_ = global.getService(lf.service.CACHE);
+
+  /** @private {!lf.index.IndexStore} */
+  this.indexStore_ = global.getService(lf.service.INDEX_STORE);
+
+  /** @private {!lf.cache.ConstraintChecker} */
+  this.contstraintChecker_ = new lf.cache.ConstraintChecker(global);
+
+  /** @private {!lf.cache.InMemoryUpdater} */
+  this.inMemoryUpdater_ = new lf.cache.InMemoryUpdater(global);
+
+  /**
+   * A terminated journal can no longer be modified or rolled back. This should
+   * be set to true only after the changes in this Journal have been reflected
+   * in the backing store, or the journal has been rolled back.
+   * @private {boolean}
+   */
+  this.terminated_ = false;
+
+  /**
+   * When a constraint violation happens the journal becomes not writable
+   * anymore and the only operation that is allowed is rolling back. Callers
+   * of Journal#insert,insertOrReplace,update,remove *must* rollback the journal
+   * if any lf.Exception is thrown, otherwise the index data structures will not
+   * reflect what is in the database.
+   * @private {boolean}
+   */
+  this.pendingRollback_ = false;
+
+  /**
+   * The changes that have been applied since the start of this journal. The
+   * keys are table names, and the values are changes that have happened per
+   * table.
+   * @private {!goog.structs.Map<string, !lf.cache.TableDiff>}
+   */
+  this.tableDiffs_ = new goog.structs.Map();
+};
+
+
+/**
+ * @return {!goog.structs.Map<string, !lf.cache.TableDiff>}
+ */
+lf.cache.Journal.prototype.getDiff = function() {
+  return this.tableDiffs_;
+};
+
+
+/**
+ * @return {!Array<!lf.index.Index>} The indices that were modified in this
+ *     within this journal.
+ * TODO(dpapad): Indices currently can't provide a diff, therefore the entire
+ * index is flushed into disk every time, even if only one leaf-node changed.
+ */
+lf.cache.Journal.prototype.getIndexDiff = function() {
+  var tableSchemas = this.tableDiffs_.getKeys().map(
+      function(tableName) {
+        return this.scope_.get(tableName);
+      }, this);
+
+  var indices = [];
+  tableSchemas.forEach(
+      /**
+       * @param {!lf.schema.Table} tableSchema
+       * @this {lf.cache.Journal}
+       */
+      function(tableSchema) {
+        if (tableSchema.persistentIndex()) {
+          var tableIndices = tableSchema.getIndices();
+          tableIndices.forEach(
+              /**
+               * @param {!lf.schema.Index} indexSchema
+               * @this {lf.cache.Journal}
+               */
+              function(indexSchema) {
+                indices.push(this.indexStore_.get(
+                    indexSchema.getNormalizedName()));
+              }, this);
+          indices.push(this.indexStore_.get(tableSchema.getName() + '.#'));
+        }
+      }, this);
+
+  return indices;
+};
+
+
+/**
+ * @return {!goog.structs.Map<string, !lf.schema.Table>}
+ */
+lf.cache.Journal.prototype.getScope = function() {
+  return this.scope_;
+};
+
+
+/**
+ * @return {!Array<string>} The names of all persisted index tables that can be
+ *     affected by this journal.
+ */
+lf.cache.Journal.prototype.getIndexScope = function() {
+  var indexScope = [];
+
+  var tables = this.scope_.getValues();
+  tables.forEach(function(tableSchema) {
+    if (tableSchema.persistentIndex()) {
+      var tableIndices = tableSchema.getIndices();
+      tableIndices.forEach(function(indexSchema) {
+        indexScope.push(indexSchema.getNormalizedName());
+      });
+
+      // Adding RowId backing store name to the scope.
+      indexScope.push(tableSchema.getName() + '.#');
+    }
+  });
+
+  return indexScope;
+};
+
+
+/**
+ * @param {!lf.schema.Table} table
+ * @param {!Array<!lf.Row>} rows
+ * @throws {!lf.Exception}
+ */
+lf.cache.Journal.prototype.insert = function(table, rows) {
+  this.assertJournalWritable_();
+  this.checkScope_(table);
+  this.contstraintChecker_.checkNotNullable(table, rows);
+
+  for (var i = 0; i < rows.length; i++) {
+    this.modifyRow_(table, null /* rowBefore */, rows[i] /* rowNow */);
+  }
+};
+
+
+/**
+ * Updates the journal to reflect a modification (insertion, update, deletion)
+ * of a single row.
+ * @param {!lf.schema.Table} table The table where the row belongs.
+ * @param {?lf.Row} rowBefore The value of the row before this modification.
+ *     Null indicates that the row did not exist before.
+ * @param {?lf.Row} rowNow The value of the row after this modification.
+ *     Null indicates that the row is being deleted.
+ * @private
+ * @throws {!lf.Exception}
+ */
+lf.cache.Journal.prototype.modifyRow_ = function(table, rowBefore, rowNow) {
+  var tableName = table.getName();
+  var diff = this.tableDiffs_.get(tableName, null) ||
+      new lf.cache.TableDiff(tableName);
+  this.tableDiffs_.set(tableName, diff);
+
+  var modification = [rowBefore, rowNow];
+  try {
+    this.inMemoryUpdater_.updateTableIndicesForRow(table, modification);
+  } catch (e) {
+    this.pendingRollback_ = true;
+    throw e;
+  }
+
+  if (goog.isNull(rowBefore) && !goog.isNull(rowNow)) {
+    // Insertion
+    this.cache_.set(tableName, [rowNow]);
+    diff.add(rowNow);
+  } else if (!goog.isNull(rowBefore) && !goog.isNull(rowNow)) {
+    // Update
+    this.cache_.set(tableName, [rowNow]);
+    diff.modify(modification);
+  } else if (!goog.isNull(rowBefore) && goog.isNull(rowNow)) {
+    // Deletion
+    this.cache_.remove(tableName, [rowBefore.id()]);
+    diff.delete(rowBefore);
+  }
+};
+
+
+/**
+ * @param {!lf.schema.Table} table
+ * @param {!Array<!lf.Row>} rows
+ * @throws {!lf.Exception}
+ */
+lf.cache.Journal.prototype.update = function(table, rows) {
+  this.assertJournalWritable_();
+  this.checkScope_(table);
+  this.contstraintChecker_.checkNotNullable(table, rows);
+
+  for (var i = 0; i < rows.length; i++) {
+    var row = rows[i];
+    var rowBefore = /** @type {!lf.Row} */ (this.cache_.get([row.id()])[0]);
+    this.modifyRow_(table, rowBefore /* rowBefore */, row /* rowNow */);
+  }
+};
+
+
+/**
+ * @param {!lf.schema.Table} table
+ * @param {!Array<!lf.Row>} rows
+ * @throws {!lf.Exception}
+ */
+lf.cache.Journal.prototype.insertOrReplace = function(table, rows) {
+  this.assertJournalWritable_();
+  this.checkScope_(table);
+  this.contstraintChecker_.checkNotNullable(table, rows);
+
+  for (var i = 0; i < rows.length; i++) {
+    var rowNow = rows[i];
+    var rowBefore = null;
+
+    var existingRowId =
+        this.contstraintChecker_.findExistingRowIdInPkIndex(table, rowNow);
+
+    if (goog.isDefAndNotNull(existingRowId)) {
+      rowBefore = /** @type {!lf.Row} */ (
+          this.cache_.get([existingRowId])[0]);
+      rowNow.assignRowId(existingRowId);
+    }
+
+    this.modifyRow_(table, rowBefore, rowNow);
+  }
+};
+
+
+/**
+ * @param {!lf.schema.Table} table
+ * @param {!Array<!lf.Row>} rows
+ * @throws {!lf.Exception}
+ */
+lf.cache.Journal.prototype.remove = function(table, rows) {
+  this.assertJournalWritable_();
+  this.checkScope_(table);
+
+  for (var i = 0; i < rows.length; i++) {
+    this.modifyRow_(table, rows[i] /* rowBefore */, null /* rowNow */);
+  }
+};
+
+
+/**
+ * Commits journal changes into cache and indices.
+ */
+lf.cache.Journal.prototype.commit = function() {
+  this.assertJournalWritable_();
+  this.terminated_ = true;
+};
+
+
+/**
+ * Asserts that this journal can still be used.
+ * @private
+ */
+lf.cache.Journal.prototype.assertJournalWritable_ = function() {
+  goog.asserts.assert(
+      !this.pendingRollback_,
+      'Attemptted to use journal that needs to be rolled back.');
+  goog.asserts.assert(
+      !this.terminated_, 'Attemptted to commit a terminated journal.');
+};
+
+
+/**
+ * Rolls back all the changes that were made in this journal from the cache and
+ * indices.
+ */
+lf.cache.Journal.prototype.rollback = function() {
+  goog.asserts.assert(
+      !this.terminated_, 'Attempted to rollback a terminated journal.');
+
+  var reverseDiffs = this.tableDiffs_.getValues().map(
+      function(tableDiff) {
+        return tableDiff.getReverse();
+      }, this);
+  this.inMemoryUpdater_.update(reverseDiffs);
+
+  this.terminated_ = true;
+  this.pendingRollback_ = false;
+};
+
+
+/**
+ * Checks that the given table is within the declared scope.
+ * @param {!lf.schema.Table} tableSchema
+ * @throws {!lfException}
+ * @private
+ */
+lf.cache.Journal.prototype.checkScope_ = function(tableSchema) {
+  if (!this.scope_.containsKey(tableSchema.getName())) {
+    throw new lf.Exception(
+        lf.Exception.Type.SCOPE_ERROR,
+        tableSchema.getName() + ' is not in the journal\'s scope.');
+  }
+};
+
+/**
+ * @license
+ * Copyright 2014 Google Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+goog.provide('lf.Order');
+
+
+/** @export @enum {number} */
+lf.Order = {
+  DESC: 0,
+  ASC: 1
+};
+
+/**
+ * @license
+ * Copyright 2014 Google Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+goog.provide('lf.query.SelectContext');
+goog.provide('lf.query.SelectContext.OrderBy');
+
+goog.require('lf.Order');
+
+
+
+/**
+ * Internal representation of an SELECT query.
+ * @constructor
+ */
+lf.query.SelectContext = function() {
+  /** @type {!Array<!lf.schema.Column>} */
+  this.columns;
+
+  /** @type {!Array<!lf.schema.Table>} */
+  this.from;
+
+  /** @type {!lf.Predicate} */
+  this.where;
+
+  /** @type {number} */
+  this.limit;
+
+  /** @type {number} */
+  this.skip;
+
+  /** @type {!Array<!lf.query.SelectContext.OrderBy>} */
+  this.orderBy;
+
+  /** @type {!Array<lf.schema.Column>} */
+  this.groupBy;
+};
+
+
+/**
+ * @typedef {{
+ *     column: !lf.schema.Column,
+ *     order: !lf.Order}}
+ */
+lf.query.SelectContext.OrderBy;
+
+
+/**
+ * @param {!Array<!lf.query.SelectContext.OrderBy>} orderBy
+ * @return {string} A text representation of OrderBy instances, useful for
+ *     testing.
+ */
+lf.query.SelectContext.orderByToString = function(orderBy) {
+  var out = '';
+  orderBy.forEach(function(orderByEl, index) {
+    out += orderByEl.column.getNormalizedName() + ' ';
+    out += orderByEl.order == lf.Order.ASC ? 'ASC' : 'DESC';
+    if (index < orderBy.length - 1) {
+      out += ', ';
+    }
+  });
+
+  return out;
+};
+
+/**
+ * @license
+ * Copyright 2014 Google Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+goog.provide('lf.proc.PhysicalQueryPlan');
+
+goog.require('goog.Promise');
+goog.require('goog.structs.Set');
+
+
+
+/**
+ * @param {!lf.proc.PhysicalQueryPlanNode} rootNode
+ * @constructor @struct
+ */
+lf.proc.PhysicalQueryPlan = function(rootNode) {
+  /** @private {!lf.proc.PhysicalQueryPlanNode} */
+  this.rootNode_ = rootNode;
+};
+
+
+/** @return {!lf.proc.PhysicalQueryPlanNode} */
+lf.proc.PhysicalQueryPlan.prototype.getRoot = function() {
+  return this.rootNode_;
+};
+
+
+/** @return {string} A textual representation of this query plan. */
+lf.proc.PhysicalQueryPlan.prototype.explain = function() {
+  // TODO(dpapad): Implement this.
+  return 'plan description';
+};
+
+
+/**
+ * @return {!Array<!lf.schema.Table>} Scope of this plan (i.e. tables
+ *     involved).
+ */
+lf.proc.PhysicalQueryPlan.prototype.getScope = function() {
+  var scope = new goog.structs.Set();
+
+  /** @param {!lf.proc.PhysicalQueryPlanNode} node */
+  var traverse = function(node) {
+    var table = node.getScope();
+    if (table) {
+      scope.add(table);
+    }
+    node.getChildren().forEach(function(child) {
+      traverse(/** @type {!lf.proc.PhysicalQueryPlanNode} */ (child));
+    });
+  };
+
+  traverse(this.rootNode_);
+  return scope.getValues();
+};
+
+
+/**
+ * Calculates the combined scope of the given list of physical query plans.
+ * @param {!Array<!lf.proc.PhysicalQueryPlan>} plans
+ * @return {!goog.structs.Set<!lf.schema.Table>} The schemas of all tables
+ *     involved.
+ */
+lf.proc.PhysicalQueryPlan.getCombinedScope = function(plans) {
+  var tableSet = new goog.structs.Set();
+  plans.forEach(function(plan) {
+    tableSet.addAll(plan.getScope());
+  });
+  return tableSet;
+};
+
+/**
+ * @license
+ * Copyright 2014 Google Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 goog.provide('lf.proc.Task');
 
 
@@ -22909,6 +23849,220 @@ lf.proc.Task.prototype.getId;
 
 /**
  * @license
+ * Copyright 2014 Google Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+goog.provide('lf.proc.QueryTask');
+
+goog.require('goog.Promise');
+goog.require('lf.TransactionType');
+goog.require('lf.cache.Journal');
+goog.require('lf.proc.PhysicalQueryPlan');
+goog.require('lf.proc.Task');
+goog.require('lf.query.SelectContext');
+goog.require('lf.service');
+
+
+
+/**
+ * A QueryTask represents a collection of queries that should be executed as
+ * part of a single transaction.
+ * @implements {lf.proc.Task}
+ * @constructor
+ * @struct
+ *
+ * @param {!lf.Global} global
+ * @param {!Array<lf.proc.QueryTask.QueryContext>} queries
+ */
+lf.proc.QueryTask = function(global, queries) {
+  /** @protected {!lf.Global} */
+  this.global = global;
+
+  /** @private {!lf.BackStore} */
+  this.backStore_ = global.getService(lf.service.BACK_STORE);
+
+  /** @protected {!Array<lf.proc.QueryTask.QueryContext>} */
+  this.queries = queries;
+
+  var queryEngine = /** @type {!lf.proc.QueryEngine} */ (
+      global.getService(lf.service.QUERY_ENGINE));
+
+  /** @private {!Array<!lf.proc.PhysicalQueryPlan>} */
+  this.plans_ = this.queries.map(
+      function(query) {
+        return queryEngine.getPlan(query);
+      });
+
+
+  /** @private {!goog.structs.Set<!lf.schema.Table>} */
+  this.combinedScope_ = lf.proc.PhysicalQueryPlan.getCombinedScope(this.plans_);
+
+  /** @private {!lf.TransactionType} */
+  this.txType_ = this.detectType_();
+
+  /** @private {!goog.promise.Resolver.<!Array<!lf.proc.Relation>>} */
+  this.resolver_ = goog.Promise.withResolver();
+};
+
+
+/**
+ * @typedef {
+ *     !lf.query.SelectContext|
+ *     !lf.query.UpdateContext|
+ *     !lf.query.InsertContext|
+ *     !lf.query.DeleteContext}
+ */
+lf.proc.QueryTask.QueryContext;
+
+
+/**
+ * @return {!lf.TransactionType}
+ * @private
+ */
+lf.proc.QueryTask.prototype.detectType_ = function() {
+  var txType = this.queries.some(
+      function(query) {
+        return !(query instanceof lf.query.SelectContext);
+      }) ? lf.TransactionType.READ_WRITE : lf.TransactionType.READ_ONLY;
+  return txType;
+};
+
+
+/** @override */
+lf.proc.QueryTask.prototype.exec = function() {
+  var journal = new lf.cache.Journal(
+      this.global, this.combinedScope_.getValues());
+  var results = [];
+
+  var remainingPlans = this.plans_.slice();
+
+  /** @return {!IThenable} */
+  var sequentiallyExec = goog.bind(function() {
+    var plan = remainingPlans.shift();
+    if (plan) {
+      return plan.getRoot().exec(journal).then(function(relations) {
+        results.push(relations[0]);
+        return sequentiallyExec();
+      });
+    }
+    return goog.Promise.resolve();
+  }, this);
+
+  return sequentiallyExec().then(goog.bind(function() {
+    var tx = this.backStore_.createTx(this.txType_, journal);
+    return tx.commit();
+  }, this)).then(goog.bind(function() {
+    this.onSuccess(results);
+    return results;
+  }, this), goog.bind(function(e) {
+    journal.rollback();
+    throw e;
+  }, this));
+};
+
+
+/** @override */
+lf.proc.QueryTask.prototype.getType = function() {
+  return this.txType_;
+};
+
+
+/** @override */
+lf.proc.QueryTask.prototype.getScope = function() {
+  return this.combinedScope_;
+};
+
+
+/** @override */
+lf.proc.QueryTask.prototype.getResolver = function() {
+  return this.resolver_;
+};
+
+
+/** @override */
+lf.proc.QueryTask.prototype.getId = function() {
+  return goog.getUid(this);
+};
+
+
+/**
+ * Executes after all queries have finished successfully. Default implementation
+ * is a no-op. Subclasses should override this method as necessary.
+ * @param {!Array<!lf.proc.Relation>} results The results of all queries run by
+ *     this task.
+ * @protected
+ */
+lf.proc.QueryTask.prototype.onSuccess = function(results) {
+  // Default implementation is a no-op.
+};
+
+/**
+ * @license
+ * Copyright 2014 Google Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+goog.provide('lf.proc.ObserverQueryTask');
+
+goog.require('lf.proc.QueryTask');
+goog.require('lf.service');
+
+
+
+/**
+ * An ObserverTask represents a collection of SELECT queries that should be
+ * executed because their results might have changed and therefore observers
+ * should be notified.
+ * @extends {lf.proc.QueryTask}
+ * @constructor
+ * @struct
+ *
+ * @param {!lf.Global} global
+ * @param {!Array<!lf.query.SelectContext>} queries
+ */
+lf.proc.ObserverQueryTask = function(global, queries) {
+  lf.proc.ObserverQueryTask.base(this, 'constructor', global, queries);
+
+  /** @private {!lf.ObserverRegistry} */
+  this.observerRegistry_ = global.getService(lf.service.OBSERVER_REGISTRY);
+};
+goog.inherits(lf.proc.ObserverQueryTask, lf.proc.QueryTask);
+
+
+/** @override */
+lf.proc.ObserverQueryTask.prototype.onSuccess = function(results) {
+  var queries = /** @type {!Array<!lf.query.SelectContext>} */ (
+      this.queries);
+
+  queries.forEach(
+      function(query, index) {
+        this.observerRegistry_.updateResultsForQuery(query, results[index]);
+      }, this);
+};
+
+/**
+ * @license
  * Copyright 2015 Google Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -22929,6 +24083,7 @@ goog.require('goog.Promise');
 goog.require('goog.structs.Set');
 goog.require('lf.TransactionType');
 goog.require('lf.cache.InMemoryUpdater');
+goog.require('lf.proc.ObserverQueryTask');
 goog.require('lf.proc.Task');
 goog.require('lf.service');
 
@@ -22943,6 +24098,15 @@ goog.require('lf.service');
  * @param {!Array<!lf.cache.TableDiff>} tableDiffs
  */
 lf.proc.ExternalChangeTask = function(global, tableDiffs) {
+  /** @private {!lf.Global} */
+  this.global_ = global;
+
+  /** @private {!lf.ObserverRegistry} */
+  this.observerRegistry_ = global.getService(lf.service.OBSERVER_REGISTRY);
+
+  /** @private {!lf.proc.Runner} */
+  this.runner_ = global.getService(lf.service.RUNNER);
+
   /** @private {!lf.cache.InMemoryUpdater} */
   this.inMemoryUpdater_ = new lf.cache.InMemoryUpdater(global);
 
@@ -22966,6 +24130,7 @@ lf.proc.ExternalChangeTask = function(global, tableDiffs) {
 /** @override */
 lf.proc.ExternalChangeTask.prototype.exec = function() {
   this.inMemoryUpdater_.update(this.tableDiffs_);
+  this.scheduleObserverTask_();
   return goog.Promise.resolve();
 };
 
@@ -22991,6 +24156,21 @@ lf.proc.ExternalChangeTask.prototype.getResolver = function() {
 /** @override */
 lf.proc.ExternalChangeTask.prototype.getId = function() {
   return goog.getUid(this);
+};
+
+
+/**
+ * Schedules an ObserverTask for any observed queries that need to be
+ * re-executed, if any.
+ * @private
+ */
+lf.proc.ExternalChangeTask.prototype.scheduleObserverTask_ = function() {
+  var queries = this.observerRegistry_.getQueriesForTables(
+      this.scope_.getValues());
+  if (queries.length != 0) {
+    var observerTask = new lf.proc.ObserverQueryTask(this.global_, queries);
+    this.runner_.scheduleTask(observerTask, true /* opt_prioritize */);
+  }
 };
 
 /**
@@ -23140,91 +24320,6 @@ lf.BackStore.prototype.subscribe;
  * Unsubscribe current change handler.
  */
 lf.BackStore.prototype.unsubscribe;
-
-/**
- * @license
- * Copyright 2014 Google Inc. All Rights Reserved.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-goog.provide('lf.Exception');
-
-
-
-/**
- * @param {string} name
- * @param {string} message
- * @constructor
- * @struct
- */
-lf.Exception = function(name, message) {
-  /** @type {string} */
-  this.name = name;
-
-  /** @type {string} */
-  this.message = message;
-};
-
-
-/** @enum {string} */
-lf.Exception.Type = {
-  // Context is already in use and cannot be reused. For example, attempt to
-  // start observer twice.
-  BLOCKING: 'BlockingError',
-
-  // Constraints specified in schema are violated.
-  CONSTRAINT: 'ConstraintError',
-
-  // Data provided to an operation does not meet requirements.
-  DATA: 'DataError',
-
-  // Specified name not found.
-  NOT_FOUND: 'NotFoundError',
-
-  // The feature is not supported/implemented yet.
-  NOT_SUPPORTED: 'NotSupportedError',
-
-  // The operation failed because there was not enough remaining storage space,
-  // or the storage quota was reached and the user declined to give more space
-  // to the database.
-  QUOTA_EXCEEDED: 'QuotaExceededError',
-
-  // Invalid syntax. For example, calling from() twice.
-  SYNTAX: 'SyntaxError',
-
-  // Scope violation: attempt to access outside of specified scope. For example,
-  // accessing table not specified in transaction.begin().
-  SCOPE_ERROR: 'ScopeError',
-
-  // Operation time out. (Reserved, not used in Lovefield yet.)
-  TIMEOUT: 'TimeoutError',
-
-  // The index structure (B+ Tree) is not capable of handling so many rows
-  // (current limitation is 2^27 = 134217728 rows).
-  TOO_MANY_ROWS: 'TooManyRowsError',
-
-  // Transaction is in an invalid state.
-  TRANSACTION: 'TransactionError',
-
-  // Unknown error.
-  UNKNOWN: 'UnknownError',
-
-  // The database connection has not initialized yet.
-  UNINITIALIZED: 'UninitializedError',
-
-  // Lovefield library version mismatch.
-  VERSION: 'VersionError'
-};
 
 /**
  * @license
@@ -24271,231 +25366,6 @@ lf.backstore.IndexedDB.prototype.unsubscribe = function() {
 
 /**
  * @license
- * Copyright 2014 Google Inc. All Rights Reserved.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-goog.provide('lf.cache.TableDiff');
-
-goog.require('goog.asserts');
-goog.require('goog.structs.Map');
-goog.require('goog.structs.Set');
-
-goog.forwardDeclare('lf.Row');
-
-
-
-/**
- * A class representing a set of changes on the contents of a given table. It
- * contains all necessary information needed to be able to reverse those changes
- * after they have been applied.
- *
- * @constructor
- * @struct
- *
- * @param {string} name Table name.
- */
-lf.cache.TableDiff = function(name) {
-  /** @private {!goog.structs.Map<number, !lf.Row>} */
-  this.added_ = new goog.structs.Map();
-
-  /** @private {!goog.structs.Map<number, !Array<!lf.Row>>} */
-  this.modified_ = new goog.structs.Map();
-
-  /** @private {!goog.structs.Map<number, !lf.Row>} */
-  this.deleted_ = new goog.structs.Map();
-
-  /** @private {string} */
-  this.name_ = name;
-};
-
-
-/** @return {string} */
-lf.cache.TableDiff.prototype.getName = function() {
-  return this.name_;
-};
-
-
-/** @return {!goog.structs.Map<number, !lf.Row>} */
-lf.cache.TableDiff.prototype.getAdded = function() {
-  return this.added_;
-};
-
-
-/** @return {!goog.structs.Map<number, !Array<!lf.Row>>} */
-lf.cache.TableDiff.prototype.getModified = function() {
-  return this.modified_;
-};
-
-
-/** @return {!goog.structs.Map<number, !lf.Row>} */
-lf.cache.TableDiff.prototype.getDeleted = function() {
-  return this.deleted_;
-};
-
-
-/**
- * @param {!lf.Row} row The row that was inserted.
- */
-lf.cache.TableDiff.prototype.add = function(row) {
-  if (this.deleted_.containsKey(row.id())) {
-    var modification = [this.deleted_.get(row.id()), row];
-    this.modified_.set(row.id(), modification);
-    this.deleted_.remove(row.id());
-  } else {
-    this.added_.set(row.id(), row);
-  }
-};
-
-
-/**
- * @param {!Array<!lf.Row>} modification The old and new values
- *     of the modified row. Old value must be at position 0 and new value must
- *     be at position 1.
- */
-lf.cache.TableDiff.prototype.modify = function(modification) {
-  var oldValue = modification[0];
-  var newValue = modification[1];
-  goog.asserts.assert(
-      oldValue.id() == newValue.id(),
-      'Row ID mismatch between old/new values.');
-  var id = oldValue.id();
-
-  if (this.added_.containsKey(id)) {
-    this.added_.set(id, newValue);
-  } else if (this.modified_.containsKey(id)) {
-    var overallModification = [
-      this.modified_.get(modification[0].id())[0],
-      newValue
-    ];
-    this.modified_.set(id, overallModification);
-  } else {
-    this.modified_.set(id, modification);
-  }
-};
-
-
-/**
- * @param {!lf.Row} row The row that was deleted.
- */
-lf.cache.TableDiff.prototype.delete = function(row) {
-  if (this.added_.containsKey(row.id())) {
-    this.added_.remove(row.id());
-  } else if (this.modified_.containsKey(row.id())) {
-    var originalRow = this.modified_.get(row.id())[0];
-    this.modified_.remove(row.id());
-    this.deleted_.set(row.id(), originalRow);
-  } else {
-    this.deleted_.set(row.id(), row);
-  }
-};
-
-
-/**
- * Merges another diff into this one.
- * @param {!lf.cache.TableDiff} other The diff to be merged.
- */
-lf.cache.TableDiff.prototype.merge = function(other) {
-  other.added_.forEach(
-      function(row, rowId) {
-        this.add(row);
-      }, this);
-  other.modified_.forEach(
-      function(modification, rowId) {
-        this.modify(modification);
-      }, this);
-  other.deleted_.getValues().forEach(
-      function(row) {
-        this.delete(row);
-      }, this);
-};
-
-
-/**
- * Transforms each changes included in this diff (insertion, modification,
- * deletion) as a pair of before and after values.
- * Example addition:     [null, rowValue]
- * Example modification: [oldRowValue, newRowValue]
- * Example deletion      [oldRowValue, null]
- * @return {!Array<!Array<?lf.Row>>} An array of all changes expressed as
- *     before and after pairs.
- */
-lf.cache.TableDiff.prototype.getAsModifications = function() {
-  var modifications = [];
-
-  this.added_.getValues().forEach(
-      /**
-       * @param {!lf.Row} row
-       */
-      function(row) {
-        modifications.push([/* then */ null, /* now */ row]);
-      }, this);
-  this.modified_.getValues().forEach(
-      /**
-       * @param {!Array<!lf.Row>} modification
-       */
-      function(modification) {
-        modifications.push(modification);
-      }, this);
-  this.deleted_.getValues().forEach(
-      /**
-       * @param {!lf.Row} row
-       */
-      function(row) {
-        modifications.push([/* then */ row, /* now */ null]);
-      }, this);
-
-  return modifications;
-};
-
-
-/** @override */
-lf.cache.TableDiff.prototype.toString = function() {
-  return '[' + this.added_.getKeys().toString() + '], ' +
-      '[' + this.modified_.getKeys().toString() + '], ' +
-      '[' + this.deleted_.getKeys().toString() + ']';
-};
-
-
-/**
- * Reverses this set of changes. Useful for reverting changes after they have
- * been applied.
- * @return {!lf.cache.TableDiff} The reverse diff.
- */
-lf.cache.TableDiff.prototype.getReverse = function() {
-  var reverseDiff = new lf.cache.TableDiff(this.name_);
-
-  this.added_.getValues().forEach(
-      function(row) {
-        reverseDiff.delete(row);
-      }, this);
-  this.deleted_.getValues().forEach(
-      function(row) {
-        reverseDiff.add(row);
-      }, this);
-  this.modified_.getValues().forEach(
-      function(modification) {
-        reverseDiff.modify([
-          modification[1],
-          modification[0]
-        ]);
-      }, this);
-
-  return reverseDiff;
-};
-
-/**
- * @license
  * Copyright 2015 Google Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -25388,102 +26258,6 @@ lf.cache.Cache.prototype.getCount;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-goog.provide('lf.cache.ConstraintChecker');
-
-goog.require('goog.structs.Set');
-goog.require('lf.Exception');
-goog.require('lf.service');
-
-
-
-/**
- * A helper class for performing various constraint checks.
- *
- * @constructor
- * @struct
- *
- * @param {!lf.Global} global
- */
-lf.cache.ConstraintChecker = function(global) {
-  /** @private {!lf.index.IndexStore} */
-  this.indexStore_ = global.getService(lf.service.INDEX_STORE);
-};
-
-
-/**
- * Finds if any row with the same primary key exists in the primary key index.
- * @param {!lf.schema.Table} table The table where the row belongs.
- * @param {!lf.Row} row The row whose primary key needs to checked.
- * @return {?number} The row ID of an existing row that has the same primary
- *     key as the input row, on null if no existing row was found.
- */
-lf.cache.ConstraintChecker.prototype.findExistingRowIdInPkIndex = function(
-    table, row) {
-  var pkIndexSchema = table.getConstraint().getPrimaryKey();
-  if (goog.isNull(pkIndexSchema)) {
-    // There is no primary key for the given table.
-    return null;
-  }
-  return this.findExistingRowIdInIndex_(pkIndexSchema, row);
-};
-
-
-/**
- * Finds if any row with the same index key exists in the given index.
- * @param {!lf.schema.Index} indexSchema The index to check.
- * @param {!lf.Row} row The row whose index key needs to checked.
- * @return {?number} The row ID of an existing row that has the same index
- *     key as the input row, on null if no existing row was found.
- * @private
- */
-lf.cache.ConstraintChecker.prototype.findExistingRowIdInIndex_ = function(
-    indexSchema, row) {
-  var indexName = indexSchema.getNormalizedName();
-  var indexKey = row.keyOfIndex(indexName);
-  var index = this.indexStore_.get(indexName);
-
-  var rowIds = index.get(/** @type {!lf.index.Index.Key} */ (indexKey));
-  return rowIds.length == 0 ? null : rowIds[0];
-};
-
-
-/**
- * Checks whether any not-nullable constraint violation occurs as a result of
- * inserting/updating the given set of rows.
- * @param {!lf.schema.Table} table The table where the rows belong.
- * @param {!Array<!lf.Row>} rows The rows being inserted.
- * @throws {!lf.Exception}
- */
-lf.cache.ConstraintChecker.prototype.checkNotNullable = function(table, rows) {
-  var notNullable = table.getConstraint().getNotNullable();
-  rows.forEach(function(row) {
-    notNullable.forEach(function(column) {
-      if (goog.isNull(row.payload()[column.getName()])) {
-        throw new lf.Exception(
-            lf.Exception.Type.CONSTRAINT,
-            'Attempted to insert NULL value to non-nullable field ' +
-            column.getNormalizedName());
-      }
-    }, this);
-  }, this);
-};
-
-/**
- * @license
- * Copyright 2014 Google Inc. All Rights Reserved.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
 goog.provide('lf.cache.DefaultCache');
 
 goog.require('goog.asserts');
@@ -25596,355 +26370,6 @@ lf.cache.DefaultCache.prototype.getCount = function(opt_tableName) {
   return goog.isDefAndNotNull(opt_tableName) ?
       this.getTableSet_(opt_tableName).getCount() :
       this.map_.getCount();
-};
-
-/**
- * @license
- * Copyright 2014 Google Inc. All Rights Reserved.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-goog.provide('lf.cache.Journal');
-
-goog.require('goog.asserts');
-goog.require('goog.structs.Map');
-goog.require('goog.structs.Set');
-goog.require('lf.Exception');
-goog.require('lf.cache.ConstraintChecker');
-goog.require('lf.cache.InMemoryUpdater');
-goog.require('lf.cache.TableDiff');
-goog.require('lf.service');
-
-goog.forwardDeclare('lf.cache.Cache');
-goog.forwardDeclare('lf.index.Index');
-goog.forwardDeclare('lf.index.IndexStore');
-goog.forwardDeclare('lf.schema.Index');
-
-
-
-/**
- * Transaction Journal which is contained within lf.backstore.Tx. The journal
- * stores rows changed by this transaction so that they can be merged into the
- * backing store. Caches and indices are updated as soon as a change is
- * recorded in the journal.
- * @constructor
- * @struct
- * @final
- *
- * @param {!lf.Global} global
- * @param {!Array<!lf.schema.Table>} scope A list of tables that this journal
- *     should allow access. Trying to access any table not in that list will
- *     result in an error.
- */
-lf.cache.Journal = function(global, scope) {
-  /**
-   * Scope of this transaction in the form of table schema.
-   * @private {!goog.structs.Map<string, !lf.schema.Table>}
-   */
-  this.scope_ = new goog.structs.Map();
-  scope.forEach(function(tableSchema) {
-    this.scope_.set(tableSchema.getName(), tableSchema);
-  }, this);
-
-  /** @private {!lf.cache.Cache} */
-  this.cache_ = global.getService(lf.service.CACHE);
-
-  /** @private {!lf.index.IndexStore} */
-  this.indexStore_ = global.getService(lf.service.INDEX_STORE);
-
-  /** @private {!lf.cache.ConstraintChecker} */
-  this.contstraintChecker_ = new lf.cache.ConstraintChecker(global);
-
-  /** @private {!lf.cache.InMemoryUpdater} */
-  this.inMemoryUpdater_ = new lf.cache.InMemoryUpdater(global);
-
-  /**
-   * A terminated journal can no longer be modified or rolled back. This should
-   * be set to true only after the changes in this Journal have been reflected
-   * in the backing store, or the journal has been rolled back.
-   * @private {boolean}
-   */
-  this.terminated_ = false;
-
-  /**
-   * When a constraint violation happens the journal becomes not writable
-   * anymore and the only operation that is allowed is rolling back. Callers
-   * of Journal#insert,insertOrReplace,update,remove *must* rollback the journal
-   * if any lf.Exception is thrown, otherwise the index data structures will not
-   * reflect what is in the database.
-   * @private {boolean}
-   */
-  this.pendingRollback_ = false;
-
-  /**
-   * The changes that have been applied since the start of this journal. The
-   * keys are table names, and the values are changes that have happened per
-   * table.
-   * @private {!goog.structs.Map<string, !lf.cache.TableDiff>}
-   */
-  this.tableDiffs_ = new goog.structs.Map();
-};
-
-
-/**
- * @return {!goog.structs.Map<string, !lf.cache.TableDiff>}
- */
-lf.cache.Journal.prototype.getDiff = function() {
-  return this.tableDiffs_;
-};
-
-
-/**
- * @return {!Array<!lf.index.Index>} The indices that were modified in this
- *     within this journal.
- * TODO(dpapad): Indices currently can't provide a diff, therefore the entire
- * index is flushed into disk every time, even if only one leaf-node changed.
- */
-lf.cache.Journal.prototype.getIndexDiff = function() {
-  var tableSchemas = this.tableDiffs_.getKeys().map(
-      function(tableName) {
-        return this.scope_.get(tableName);
-      }, this);
-
-  var indices = [];
-  tableSchemas.forEach(
-      /**
-       * @param {!lf.schema.Table} tableSchema
-       * @this {lf.cache.Journal}
-       */
-      function(tableSchema) {
-        if (tableSchema.persistentIndex()) {
-          var tableIndices = tableSchema.getIndices();
-          tableIndices.forEach(
-              /**
-               * @param {!lf.schema.Index} indexSchema
-               * @this {lf.cache.Journal}
-               */
-              function(indexSchema) {
-                indices.push(this.indexStore_.get(
-                    indexSchema.getNormalizedName()));
-              }, this);
-          indices.push(this.indexStore_.get(tableSchema.getName() + '.#'));
-        }
-      }, this);
-
-  return indices;
-};
-
-
-/**
- * @return {!goog.structs.Map<string, !lf.schema.Table>}
- */
-lf.cache.Journal.prototype.getScope = function() {
-  return this.scope_;
-};
-
-
-/**
- * @return {!Array<string>} The names of all persisted index tables that can be
- *     affected by this journal.
- */
-lf.cache.Journal.prototype.getIndexScope = function() {
-  var indexScope = [];
-
-  var tables = this.scope_.getValues();
-  tables.forEach(function(tableSchema) {
-    if (tableSchema.persistentIndex()) {
-      var tableIndices = tableSchema.getIndices();
-      tableIndices.forEach(function(indexSchema) {
-        indexScope.push(indexSchema.getNormalizedName());
-      });
-
-      // Adding RowId backing store name to the scope.
-      indexScope.push(tableSchema.getName() + '.#');
-    }
-  });
-
-  return indexScope;
-};
-
-
-/**
- * @param {!lf.schema.Table} table
- * @param {!Array<!lf.Row>} rows
- * @throws {!lf.Exception}
- */
-lf.cache.Journal.prototype.insert = function(table, rows) {
-  this.assertJournalWritable_();
-  this.checkScope_(table);
-  this.contstraintChecker_.checkNotNullable(table, rows);
-
-  for (var i = 0; i < rows.length; i++) {
-    this.modifyRow_(table, null /* rowBefore */, rows[i] /* rowNow */);
-  }
-};
-
-
-/**
- * Updates the journal to reflect a modification (insertion, update, deletion)
- * of a single row.
- * @param {!lf.schema.Table} table The table where the row belongs.
- * @param {?lf.Row} rowBefore The value of the row before this modification.
- *     Null indicates that the row did not exist before.
- * @param {?lf.Row} rowNow The value of the row after this modification.
- *     Null indicates that the row is being deleted.
- * @private
- * @throws {!lf.Exception}
- */
-lf.cache.Journal.prototype.modifyRow_ = function(table, rowBefore, rowNow) {
-  var tableName = table.getName();
-  var diff = this.tableDiffs_.get(tableName, null) ||
-      new lf.cache.TableDiff(tableName);
-  this.tableDiffs_.set(tableName, diff);
-
-  var modification = [rowBefore, rowNow];
-  try {
-    this.inMemoryUpdater_.updateTableIndicesForRow(table, modification);
-  } catch (e) {
-    this.pendingRollback_ = true;
-    throw e;
-  }
-
-  if (goog.isNull(rowBefore) && !goog.isNull(rowNow)) {
-    // Insertion
-    this.cache_.set(tableName, [rowNow]);
-    diff.add(rowNow);
-  } else if (!goog.isNull(rowBefore) && !goog.isNull(rowNow)) {
-    // Update
-    this.cache_.set(tableName, [rowNow]);
-    diff.modify(modification);
-  } else if (!goog.isNull(rowBefore) && goog.isNull(rowNow)) {
-    // Deletion
-    this.cache_.remove(tableName, [rowBefore.id()]);
-    diff.delete(rowBefore);
-  }
-};
-
-
-/**
- * @param {!lf.schema.Table} table
- * @param {!Array<!lf.Row>} rows
- * @throws {!lf.Exception}
- */
-lf.cache.Journal.prototype.update = function(table, rows) {
-  this.assertJournalWritable_();
-  this.checkScope_(table);
-  this.contstraintChecker_.checkNotNullable(table, rows);
-
-  for (var i = 0; i < rows.length; i++) {
-    var row = rows[i];
-    var rowBefore = /** @type {!lf.Row} */ (this.cache_.get([row.id()])[0]);
-    this.modifyRow_(table, rowBefore /* rowBefore */, row /* rowNow */);
-  }
-};
-
-
-/**
- * @param {!lf.schema.Table} table
- * @param {!Array<!lf.Row>} rows
- * @throws {!lf.Exception}
- */
-lf.cache.Journal.prototype.insertOrReplace = function(table, rows) {
-  this.assertJournalWritable_();
-  this.checkScope_(table);
-  this.contstraintChecker_.checkNotNullable(table, rows);
-
-  for (var i = 0; i < rows.length; i++) {
-    var rowNow = rows[i];
-    var rowBefore = null;
-
-    var existingRowId =
-        this.contstraintChecker_.findExistingRowIdInPkIndex(table, rowNow);
-
-    if (goog.isDefAndNotNull(existingRowId)) {
-      rowBefore = /** @type {!lf.Row} */ (
-          this.cache_.get([existingRowId])[0]);
-      rowNow.assignRowId(existingRowId);
-    }
-
-    this.modifyRow_(table, rowBefore, rowNow);
-  }
-};
-
-
-/**
- * @param {!lf.schema.Table} table
- * @param {!Array<!lf.Row>} rows
- * @throws {!lf.Exception}
- */
-lf.cache.Journal.prototype.remove = function(table, rows) {
-  this.assertJournalWritable_();
-  this.checkScope_(table);
-
-  for (var i = 0; i < rows.length; i++) {
-    this.modifyRow_(table, rows[i] /* rowBefore */, null /* rowNow */);
-  }
-};
-
-
-/**
- * Commits journal changes into cache and indices.
- */
-lf.cache.Journal.prototype.commit = function() {
-  this.assertJournalWritable_();
-  this.terminated_ = true;
-};
-
-
-/**
- * Asserts that this journal can still be used.
- * @private
- */
-lf.cache.Journal.prototype.assertJournalWritable_ = function() {
-  goog.asserts.assert(
-      !this.pendingRollback_,
-      'Attemptted to use journal that needs to be rolled back.');
-  goog.asserts.assert(
-      !this.terminated_, 'Attemptted to commit a terminated journal.');
-};
-
-
-/**
- * Rolls back all the changes that were made in this journal from the cache and
- * indices.
- */
-lf.cache.Journal.prototype.rollback = function() {
-  goog.asserts.assert(
-      !this.terminated_, 'Attempted to rollback a terminated journal.');
-
-  var reverseDiffs = this.tableDiffs_.getValues().map(
-      function(tableDiff) {
-        return tableDiff.getReverse();
-      }, this);
-  this.inMemoryUpdater_.update(reverseDiffs);
-
-  this.terminated_ = true;
-  this.pendingRollback_ = false;
-};
-
-
-/**
- * Checks that the given table is within the declared scope.
- * @param {!lf.schema.Table} tableSchema
- * @throws {!lfException}
- * @private
- */
-lf.cache.Journal.prototype.checkScope_ = function(tableSchema) {
-  if (!this.scope_.containsKey(tableSchema.getName())) {
-    throw new lf.Exception(
-        lf.Exception.Type.SCOPE_ERROR,
-        tableSchema.getName() + ' is not in the journal\'s scope.');
-  }
 };
 
 /**
@@ -27114,31 +27539,6 @@ lf.index.BTreeNode_.deserialize = function(rows, tree) {
   return (leaves.length > 1) ?
       lf.index.BTreeNode_.createInternals_(leaves[0]) :
       leaves[0];
-};
-
-/**
- * @license
- * Copyright 2014 Google Inc. All Rights Reserved.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-goog.provide('lf.Order');
-
-
-/** @export @enum {number} */
-lf.Order = {
-  DESC: 0,
-  ASC: 1
 };
 
 /**
@@ -33685,83 +34085,6 @@ lf.proc.AggregationStep.Calculator_.distinct_ = function(relation, column) {
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-goog.provide('lf.query.SelectContext');
-goog.provide('lf.query.SelectContext.OrderBy');
-
-goog.require('lf.Order');
-
-
-
-/**
- * Internal representation of an SELECT query.
- * @constructor
- */
-lf.query.SelectContext = function() {
-  /** @type {!Array<!lf.schema.Column>} */
-  this.columns;
-
-  /** @type {!Array<!lf.schema.Table>} */
-  this.from;
-
-  /** @type {!lf.Predicate} */
-  this.where;
-
-  /** @type {number} */
-  this.limit;
-
-  /** @type {number} */
-  this.skip;
-
-  /** @type {!Array<!lf.query.SelectContext.OrderBy>} */
-  this.orderBy;
-
-  /** @type {!Array<lf.schema.Column>} */
-  this.groupBy;
-};
-
-
-/**
- * @typedef {{
- *     column: !lf.schema.Column,
- *     order: !lf.Order}}
- */
-lf.query.SelectContext.OrderBy;
-
-
-/**
- * @param {!Array<!lf.query.SelectContext.OrderBy>} orderBy
- * @return {string} A text representation of OrderBy instances, useful for
- *     testing.
- */
-lf.query.SelectContext.orderByToString = function(orderBy) {
-  var out = '';
-  orderBy.forEach(function(orderByEl, index) {
-    out += orderByEl.column.getNormalizedName() + ' ';
-    out += orderByEl.order == lf.Order.ASC ? 'ASC' : 'DESC';
-    if (index < orderBy.length - 1) {
-      out += ', ';
-    }
-  });
-
-  return out;
-};
-
-/**
- * @license
- * Copyright 2014 Google Inc. All Rights Reserved.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
 goog.provide('lf.proc.AggregationNode');
 goog.provide('lf.proc.CrossProductNode');
 goog.provide('lf.proc.DeleteNode');
@@ -34663,303 +34986,6 @@ lf.query.Delete.prototype.from;
  * @throws {DOMException}
  */
 lf.query.Delete.prototype.where;
-
-/**
- * @license
- * Copyright 2014 Google Inc. All Rights Reserved.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-goog.provide('lf.proc.PhysicalQueryPlan');
-
-goog.require('goog.Promise');
-goog.require('goog.structs.Set');
-
-
-
-/**
- * @param {!lf.proc.PhysicalQueryPlanNode} rootNode
- * @constructor @struct
- */
-lf.proc.PhysicalQueryPlan = function(rootNode) {
-  /** @private {!lf.proc.PhysicalQueryPlanNode} */
-  this.rootNode_ = rootNode;
-};
-
-
-/** @return {!lf.proc.PhysicalQueryPlanNode} */
-lf.proc.PhysicalQueryPlan.prototype.getRoot = function() {
-  return this.rootNode_;
-};
-
-
-/** @return {string} A textual representation of this query plan. */
-lf.proc.PhysicalQueryPlan.prototype.explain = function() {
-  // TODO(dpapad): Implement this.
-  return 'plan description';
-};
-
-
-/**
- * @return {!Array<!lf.schema.Table>} Scope of this plan (i.e. tables
- *     involved).
- */
-lf.proc.PhysicalQueryPlan.prototype.getScope = function() {
-  var scope = new goog.structs.Set();
-
-  /** @param {!lf.proc.PhysicalQueryPlanNode} node */
-  var traverse = function(node) {
-    var table = node.getScope();
-    if (table) {
-      scope.add(table);
-    }
-    node.getChildren().forEach(function(child) {
-      traverse(/** @type {!lf.proc.PhysicalQueryPlanNode} */ (child));
-    });
-  };
-
-  traverse(this.rootNode_);
-  return scope.getValues();
-};
-
-
-/**
- * Calculates the combined scope of the given list of physical query plans.
- * @param {!Array<!lf.proc.PhysicalQueryPlan>} plans
- * @return {!goog.structs.Set<!lf.schema.Table>} The schemas of all tables
- *     involved.
- */
-lf.proc.PhysicalQueryPlan.getCombinedScope = function(plans) {
-  var tableSet = new goog.structs.Set();
-  plans.forEach(function(plan) {
-    tableSet.addAll(plan.getScope());
-  });
-  return tableSet;
-};
-
-/**
- * @license
- * Copyright 2014 Google Inc. All Rights Reserved.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-goog.provide('lf.proc.QueryTask');
-
-goog.require('goog.Promise');
-goog.require('lf.TransactionType');
-goog.require('lf.cache.Journal');
-goog.require('lf.proc.PhysicalQueryPlan');
-goog.require('lf.proc.Task');
-goog.require('lf.query.SelectContext');
-goog.require('lf.service');
-
-
-
-/**
- * A QueryTask represents a collection of queries that should be executed as
- * part of a single transaction.
- * @implements {lf.proc.Task}
- * @constructor
- * @struct
- *
- * @param {!lf.Global} global
- * @param {!Array<lf.proc.QueryTask.QueryContext>} queries
- */
-lf.proc.QueryTask = function(global, queries) {
-  /** @protected {!lf.Global} */
-  this.global = global;
-
-  /** @private {!lf.BackStore} */
-  this.backStore_ = global.getService(lf.service.BACK_STORE);
-
-  /** @protected {!Array<lf.proc.QueryTask.QueryContext>} */
-  this.queries = queries;
-
-  var queryEngine = /** @type {!lf.proc.QueryEngine} */ (
-      global.getService(lf.service.QUERY_ENGINE));
-
-  /** @private {!Array<!lf.proc.PhysicalQueryPlan>} */
-  this.plans_ = this.queries.map(
-      function(query) {
-        return queryEngine.getPlan(query);
-      });
-
-
-  /** @private {!goog.structs.Set<!lf.schema.Table>} */
-  this.combinedScope_ = lf.proc.PhysicalQueryPlan.getCombinedScope(this.plans_);
-
-  /** @private {!lf.TransactionType} */
-  this.txType_ = this.detectType_();
-
-  /** @private {!goog.promise.Resolver.<!Array<!lf.proc.Relation>>} */
-  this.resolver_ = goog.Promise.withResolver();
-};
-
-
-/**
- * @typedef {
- *     !lf.query.SelectContext|
- *     !lf.query.UpdateContext|
- *     !lf.query.InsertContext|
- *     !lf.query.DeleteContext}
- */
-lf.proc.QueryTask.QueryContext;
-
-
-/**
- * @return {!lf.TransactionType}
- * @private
- */
-lf.proc.QueryTask.prototype.detectType_ = function() {
-  var txType = this.queries.some(
-      function(query) {
-        return !(query instanceof lf.query.SelectContext);
-      }) ? lf.TransactionType.READ_WRITE : lf.TransactionType.READ_ONLY;
-  return txType;
-};
-
-
-/** @override */
-lf.proc.QueryTask.prototype.exec = function() {
-  var journal = new lf.cache.Journal(
-      this.global, this.combinedScope_.getValues());
-  var results = [];
-
-  var remainingPlans = this.plans_.slice();
-
-  /** @return {!IThenable} */
-  var sequentiallyExec = goog.bind(function() {
-    var plan = remainingPlans.shift();
-    if (plan) {
-      return plan.getRoot().exec(journal).then(function(relations) {
-        results.push(relations[0]);
-        return sequentiallyExec();
-      });
-    }
-    return goog.Promise.resolve();
-  }, this);
-
-  return sequentiallyExec().then(goog.bind(function() {
-    var tx = this.backStore_.createTx(this.txType_, journal);
-    return tx.commit();
-  }, this)).then(goog.bind(function() {
-    this.onSuccess(results);
-    return results;
-  }, this), goog.bind(function(e) {
-    journal.rollback();
-    throw e;
-  }, this));
-};
-
-
-/** @override */
-lf.proc.QueryTask.prototype.getType = function() {
-  return this.txType_;
-};
-
-
-/** @override */
-lf.proc.QueryTask.prototype.getScope = function() {
-  return this.combinedScope_;
-};
-
-
-/** @override */
-lf.proc.QueryTask.prototype.getResolver = function() {
-  return this.resolver_;
-};
-
-
-/** @override */
-lf.proc.QueryTask.prototype.getId = function() {
-  return goog.getUid(this);
-};
-
-
-/**
- * Executes after all queries have finished successfully. Default implementation
- * is a no-op. Subclasses should override this method as necessary.
- * @param {!Array<!lf.proc.Relation>} results The results of all queries run by
- *     this task.
- * @protected
- */
-lf.proc.QueryTask.prototype.onSuccess = function(results) {
-  // Default implementation is a no-op.
-};
-
-/**
- * @license
- * Copyright 2014 Google Inc. All Rights Reserved.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-goog.provide('lf.proc.ObserverQueryTask');
-
-goog.require('lf.proc.QueryTask');
-goog.require('lf.service');
-
-
-
-/**
- * An ObserverTask represents a collection of SELECT queries that should be
- * executed because their results might have changed and therefore observers
- * should be notified.
- * @extends {lf.proc.QueryTask}
- * @constructor
- * @struct
- *
- * @param {!lf.Global} global
- * @param {!Array<!lf.query.SelectContext>} queries
- */
-lf.proc.ObserverQueryTask = function(global, queries) {
-  lf.proc.ObserverQueryTask.base(this, 'constructor', global, queries);
-
-  /** @private {!lf.ObserverRegistry} */
-  this.observerRegistry_ = global.getService(lf.service.OBSERVER_REGISTRY);
-};
-goog.inherits(lf.proc.ObserverQueryTask, lf.proc.QueryTask);
-
-
-/** @override */
-lf.proc.ObserverQueryTask.prototype.onSuccess = function(results) {
-  var queries = /** @type {!Array<!lf.query.SelectContext>} */ (
-      this.queries);
-
-  queries.forEach(
-      function(query, index) {
-        this.observerRegistry_.updateResultsForQuery(query, results[index]);
-      }, this);
-};
 
 /**
  * @license

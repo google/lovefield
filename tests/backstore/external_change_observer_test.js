@@ -146,6 +146,26 @@ function testExternalChangesApplied() {
 
 
 /**
+ * Tests that Lovefield's observers are firing as a result of an external
+ * backstore change.
+ */
+function testDbObserversFired() {
+  asyncTestCase.waitForAsync('testDbObserversFired');
+
+  var query = db.select().from(j);
+  db.observe(query, function(changes) {
+    assertEquals(sampleJobs.length, changes.length);
+    changes.forEach(function(changeEvent) {
+      assertEquals(1, changeEvent.addedCount);
+    });
+    asyncTestCase.continueTesting();
+  });
+
+  simulateInsertionModification(j, sampleJobs);
+}
+
+
+/**
  * Simulates an external insertion/modification change.
  * @param {!lf.schema.Table} tableSchema
  * @param {!Array<!lf.Row>} rows The rows to  be inserted/modified.
