@@ -24629,6 +24629,72 @@ lf.backstore.Memory.prototype.unsubscribe = function() {
 
 /**
  * @license
+ * Copyright 2015 Google Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+goog.provide('lf.backstore.ObservableStore');
+
+goog.require('lf.backstore.Memory');
+
+
+
+/**
+ * A backing store implementation that holds all data in-memory, without
+ * persisting anything to disk, and can be observed. This only makes sense
+ * during testing where external changes are simulated on a MemoryDB.
+ *
+ * @extends {lf.backstore.Memory}
+ * @constructor
+ *
+ * @param {!lf.schema.Database} schema The schema of the database.
+ */
+lf.backstore.ObservableStore = function(schema) {
+  lf.backstore.ObservableStore.base(this, 'constructor', schema);
+
+  /** @private {?function(!Array<!lf.cache.TableDiff>)} */
+  this.observer_ = null;
+};
+goog.inherits(lf.backstore.ObservableStore, lf.backstore.Memory);
+
+
+/** @override */
+lf.backstore.ObservableStore.prototype.subscribe = function(observer) {
+  // Currently only one observer is supported.
+  if (goog.isNull(this.observer_)) {
+    this.observer_ = observer;
+  }
+};
+
+
+/** @override */
+lf.backstore.ObservableStore.prototype.unsubscribe = function() {
+  this.observer_ = null;
+};
+
+
+/**
+ * @param {!Array<!lf.cache.TableDiff>} tableDiffs
+ */
+lf.backstore.ObservableStore.prototype.notifyObservers =
+    function(tableDiffs) {
+  if (!goog.isNull(this.observer_)) {
+    this.observer_(tableDiffs);
+  }
+};
+
+/**
+ * @license
  * Copyright 2014 Google Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -32471,7 +32537,10 @@ lf.schema.Database.Pragma;
 lf.schema.DataStoreType = {
   INDEXED_DB: 0,
   MEMORY: 1,
-  LOCAL_STORAGE: 2
+  LOCAL_STORAGE: 2,
+
+  // Used for testing purposes only.
+  OBSERVABLE_STORE: 99
 };
 
 
@@ -40461,6 +40530,7 @@ goog.provide('lf.base');
 goog.require('lf.ObserverRegistry');
 goog.require('lf.backstore.IndexedDB');
 goog.require('lf.backstore.Memory');
+goog.require('lf.backstore.ObservableStore');
 goog.require('lf.cache.DefaultCache');
 goog.require('lf.cache.Prefetcher');
 goog.require('lf.index.MemoryIndexStore');
@@ -40484,9 +40554,17 @@ lf.base.init = function(global, dataStoreType, opt_onUpgrade) {
   var cache = new lf.cache.DefaultCache();
   global.registerService(lf.service.CACHE, cache);
 
-  var backStore = (dataStoreType == lf.schema.DataStoreType.MEMORY) ?
-      new lf.backstore.Memory(schema) :
-      new lf.backstore.IndexedDB(global, schema);
+  var backStore = null;
+  switch (dataStoreType) {
+    case lf.schema.DataStoreType.MEMORY:
+      backStore = new lf.backstore.Memory(schema);
+      break;
+    case lf.schema.DataStoreType.OBSERVABLE_STORE:
+      backStore = new lf.backstore.ObservableStore(schema);
+      break;
+    default:
+      backStore = new lf.backstore.IndexedDB(global, schema);
+  }
   global.registerService(lf.service.BACK_STORE, backStore);
 
   return backStore.init(opt_onUpgrade).then(function() {

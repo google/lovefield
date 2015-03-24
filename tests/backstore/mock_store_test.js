@@ -19,13 +19,13 @@ goog.require('goog.testing.AsyncTestCase');
 goog.require('goog.testing.jsunit');
 goog.require('lf.Global');
 goog.require('lf.TransactionType');
+goog.require('lf.backstore.ObservableStore');
 goog.require('lf.cache.DefaultCache');
 goog.require('lf.cache.Journal');
 goog.require('lf.index.MemoryIndexStore');
 goog.require('lf.service');
 goog.require('lf.testing.MockSchema');
 goog.require('lf.testing.backstore.MockStore');
-goog.require('lf.testing.backstore.ObservableStore');
 goog.require('lf.testing.backstore.ScudTester');
 
 
@@ -34,7 +34,7 @@ var asyncTestCase = goog.testing.AsyncTestCase.createAndInstall(
     'MockStoreTest');
 
 
-/** @type {!lf.testing.backstore.ObservableStore} */
+/** @type {!lf.backstore.ObservableStore} */
 var actualStore;
 
 
@@ -62,7 +62,7 @@ function setUp() {
   global.registerService(lf.service.INDEX_STORE, indexStore);
   global.registerService(lf.service.SCHEMA, schema);
 
-  actualStore = new lf.testing.backstore.ObservableStore(schema);
+  actualStore = new lf.backstore.ObservableStore(schema);
   mockStore = new lf.testing.backstore.MockStore(actualStore);
 
   mockStore.init().then(function() {
