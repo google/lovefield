@@ -306,22 +306,32 @@ function testAttach_Error() {
 
   var scope = [j, e];
   var newJobId = 'SomeUniqueId';
-  var newJob = sampleJobs[0];
-  newJob.setId(newJobId);
 
   tx.begin(scope).then(function() {
+    var q0 = db.select().from(j);
+    return tx.attach(q0);
+  }).then(function(results) {
+    assertEquals(sampleJobs.length, results.length);
+
     // Adding a new job row.
+    var newJob = j.createRow();
+    newJob.setId(newJobId);
     var q1 = db.insert().into(j).values([newJob]);
     return tx.attach(q1);
-  }).then(function(results) {
+  }).then(function() {
     var q2 = db.select().from(j).where(j.id.eq(newJobId));
     return tx.attach(q2);
   }).then(function(results) {
     assertEquals(1, results.length);
 
-    // Attempting to add an employee row that already exists.
-    var q3 = db.insert().into(e).values([sampleEmployees[0]]);
+    var q3 = db.select().from(j);
     return tx.attach(q3);
+  }).then(function(results) {
+    assertEquals(sampleJobs.length + 1, results.length);
+
+    // Attempting to add an employee row that already exists.
+    var q4 = db.insert().into(e).values([sampleEmployees[0]]);
+    return tx.attach(q4);
   }).thenCatch(function(e) {
     assertEquals(lf.Exception.Type.CONSTRAINT, e.name);
 
@@ -335,6 +345,12 @@ function testAttach_Error() {
   }).then(function(results) {
     // Checking that the entire transaction was rolled back, and therefore that
     // Job row that had been added does not appear on disk.
+    assertEquals(sampleJobs.length, results.length);
+
+    // Checking that all locks have been released, which will allow other
+    // transactions referring to the same scope to execute successfully.
+    return db.select().from(j).exec();
+  }).then(function(results) {
     assertEquals(sampleJobs.length, results.length);
     asyncTestCase.continueTesting();
   });
@@ -350,11 +366,11 @@ function testRollback() {
 
   var scope = [j, e];
   var newJobId = 'SomeUniqueId';
-  var newJob = sampleJobs[0];
-  newJob.setId(newJobId);
 
   tx.begin(scope).then(function() {
     // Adding a new job row.
+    var newJob = j.createRow();
+    newJob.setId(newJobId);
     var q1 = db.insert().into(j).values([newJob]);
     return tx.attach(q1);
   }).then(function(results) {
@@ -362,6 +378,11 @@ function testRollback() {
     return tx.attach(q2);
   }).then(function(results) {
     assertEquals(1, results.length);
+
+    var q3 = db.select().from(j);
+    return tx.attach(q3);
+  }).then(function(results) {
+    assertEquals(sampleJobs.length + 1, results.length);
 
     return tx.rollback();
   }).then(function() {

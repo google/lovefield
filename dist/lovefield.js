@@ -33082,13 +33082,10 @@ lf.proc.PhysicalQueryPlanNode.prototype.assertInput_ = function(relations) {
  * @private
  */
 lf.proc.PhysicalQueryPlanNode.prototype.execNoChild_ = function(journal) {
-  var results;
-  try {
-    results = this.execInternal(journal, []);
-  } catch (e) {
-    return goog.Promise.reject(e);
-  }
-  return goog.Promise.resolve(results);
+  return new goog.Promise(goog.bind(
+      function(resolve, reject) {
+        resolve(this.execInternal(journal, []));
+      }, this));
 };
 
 
@@ -40753,6 +40750,14 @@ lf.proc.TransactionTask.prototype.attachQuery = function(queryBuilder) {
       }, goog.bind(
       function(e) {
         this.journal_.rollback();
+
+        // Need to reject execResolver here such that all locks acquired by this
+        // transaction task are eventually released.
+        // NOTE: Using a CancellationError to prevent the Promise framework to
+        // consider this.execResolver_.promise an unhandled rejected promise,
+        // which ends up in an unwanted exception showing up in the console.
+        var error = new goog.Promise.CancellationError(e.name);
+        this.execResolver_.reject(error);
         throw e;
       }, this));
 };
@@ -40894,7 +40899,8 @@ lf.proc.StateTransitions_ = new goog.structs.Map(
 
     lf.proc.TransactionState_.EXECUTING_QUERY,
     new goog.structs.Set([
-      lf.proc.TransactionState_.ACQUIRED_SCOPE
+      lf.proc.TransactionState_.ACQUIRED_SCOPE,
+      lf.proc.TransactionState_.FINALIZED
     ]),
 
     lf.proc.TransactionState_.EXECUTING_AND_COMMITTING,
@@ -40984,6 +40990,10 @@ lf.proc.Transaction.prototype.attach = function(query) {
       function(result) {
         this.stateTransition_(lf.proc.TransactionState_.ACQUIRED_SCOPE);
         return result;
+      }, this), goog.bind(
+      function(e) {
+        this.stateTransition_(lf.proc.TransactionState_.FINALIZED);
+        throw e;
       }, this));
 };
 
