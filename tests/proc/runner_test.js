@@ -20,6 +20,7 @@ goog.require('goog.testing.AsyncTestCase');
 goog.require('goog.testing.jsunit');
 goog.require('hr.db');
 goog.require('lf.TransactionType');
+goog.require('lf.proc.TaskPriority');
 goog.require('lf.schema.DataStoreType');
 goog.require('lf.service');
 goog.require('lf.testing.MockTask');
@@ -67,11 +68,13 @@ function testTransaction_Read() {
   var queryTask1 = new lf.testing.MockTask(
       lf.TransactionType.READ_WRITE,
       new goog.structs.Set([j]),
-      function() { executionOrder.push('query1'); });
+      function() { executionOrder.push('query1'); },
+      lf.proc.TaskPriority.USER_QUERY_TASK);
   var queryTask2 = new lf.testing.MockTask(
       lf.TransactionType.READ_ONLY,
       new goog.structs.Set([j]),
-      function() { executionOrder.push('query2'); });
+      function() { executionOrder.push('query2'); },
+      lf.proc.TaskPriority.USER_QUERY_TASK);
 
   var promises = [queryTask1, queryTask2].map(
       function(queryTask) {
@@ -97,7 +100,8 @@ function testTask_Success() {
   var queryTask = new lf.testing.MockTask(
       lf.TransactionType.READ_WRITE,
       new goog.structs.Set([j]),
-      function() { return expectedResult; });
+      function() { return expectedResult; },
+      lf.proc.TaskPriority.USER_QUERY_TASK);
 
   runner.scheduleTask(queryTask).then(
       function(result) {
@@ -115,7 +119,8 @@ function testTask_Failure() {
   var queryTask = new lf.testing.MockTask(
       lf.TransactionType.READ_WRITE,
       new goog.structs.Set([j]),
-      function() { throw expectedError; });
+      function() { throw expectedError; },
+      lf.proc.TaskPriority.USER_QUERY_TASK);
 
   runner.scheduleTask(queryTask).then(
       fail,
@@ -138,24 +143,33 @@ function testScheduleTask_Prioritize() {
   var task1 = new lf.testing.MockTask(
       lf.TransactionType.READ_WRITE,
       new goog.structs.Set([j]),
-      function() { return resolver.promise; });
+      function() { return resolver.promise; },
+      lf.proc.TaskPriority.USER_QUERY_TASK);
   var task2 = new lf.testing.MockTask(
       lf.TransactionType.READ_WRITE,
       new goog.structs.Set([j]),
-      function() { executionOrder.push('task2'); });
+      function() { executionOrder.push('task2'); },
+      lf.proc.TaskPriority.TRANSACTION_TASK);
   var task3 = new lf.testing.MockTask(
       lf.TransactionType.READ_WRITE,
       new goog.structs.Set([j]),
-      function() { executionOrder.push('task3'); });
+      function() { executionOrder.push('task3'); },
+      lf.proc.TaskPriority.EXTERNAL_CHANGE_TASK);
+  var task4 = new lf.testing.MockTask(
+      lf.TransactionType.READ_WRITE,
+      new goog.structs.Set([j]),
+      function() { executionOrder.push('task4'); },
+      lf.proc.TaskPriority.OBSERVER_QUERY_TASK);
 
   var p1 = runner.scheduleTask(task1);
   var p2 = runner.scheduleTask(task2);
-  var p3 = runner.scheduleTask(task3, true /* opt_prioritize */);
+  var p3 = runner.scheduleTask(task3);
+  var p4 = runner.scheduleTask(task4);
 
-  goog.Promise.all([p1, p2, p3]).then(
+  goog.Promise.all([p1, p2, p3, p4]).then(
       function(results) {
         // Ensuring that the prioritized task3 executed before task2.
-        assertArrayEquals(['task3', 'task2'], executionOrder);
+        assertArrayEquals(['task4', 'task3', 'task2'], executionOrder);
         asyncTestCase.continueTesting();
       });
 
@@ -182,14 +196,16 @@ function testTransaction_WriteWhileReading() {
         return resolver.promise.then(function() {
           executionOrder.push('q1 end');
         });
-      });
+      },
+      lf.proc.TaskPriority.USER_QUERY_TASK);
   var queryTask2 = new lf.testing.MockTask(
       lf.TransactionType.READ_WRITE,
       new goog.structs.Set([j]),
       function() {
         executionOrder.push('q2 start');
         executionOrder.push('q2 end');
-      });
+      },
+      lf.proc.TaskPriority.USER_QUERY_TASK);
 
   var promises = [queryTask1, queryTask2].map(
       function(queryTask) {

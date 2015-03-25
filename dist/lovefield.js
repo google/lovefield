@@ -17111,6 +17111,7 @@ lf.proc.PhysicalQueryPlan.getCombinedScope = function(plans) {
  * limitations under the License.
  */
 goog.provide('lf.proc.Task');
+goog.provide('lf.proc.TaskPriority');
 
 
 
@@ -17151,6 +17152,25 @@ lf.proc.Task.prototype.getResolver;
  * @return {number}
  */
 lf.proc.Task.prototype.getId;
+
+
+/**
+ * The priority of this task.
+ * @return {!lf.proc.TaskPriority}
+ */
+lf.proc.Task.prototype.getPriority;
+
+
+/**
+ * The priority of each type of task. Lower number means higher priority.
+ * @enum {number}
+ */
+lf.proc.TaskPriority = {
+  OBSERVER_QUERY_TASK: 0,
+  EXTERNAL_CHANGE_TASK: 1,
+  USER_QUERY_TASK: 2,
+  TRANSACTION_TASK: 2
+};
 
 /**
  * @license
@@ -17301,6 +17321,10 @@ lf.proc.QueryTask.prototype.getId = function() {
 };
 
 
+/** @override */
+lf.proc.QueryTask.prototype.getPriority = goog.abstractMethod;
+
+
 /**
  * Executes after all queries have finished successfully. Default implementation
  * is a no-op. Subclasses should override this method as necessary.
@@ -17331,6 +17355,7 @@ lf.proc.QueryTask.prototype.onSuccess = function(results) {
 goog.provide('lf.proc.ObserverQueryTask');
 
 goog.require('lf.proc.QueryTask');
+goog.require('lf.proc.TaskPriority');
 goog.require('lf.service');
 
 
@@ -17353,6 +17378,12 @@ lf.proc.ObserverQueryTask = function(global, queries) {
   this.observerRegistry_ = global.getService(lf.service.OBSERVER_REGISTRY);
 };
 goog.inherits(lf.proc.ObserverQueryTask, lf.proc.QueryTask);
+
+
+/** @override */
+lf.proc.ObserverQueryTask.prototype.getPriority = function() {
+  return lf.proc.TaskPriority.OBSERVER_QUERY_TASK;
+};
 
 
 /** @override */
@@ -17390,6 +17421,7 @@ goog.require('lf.TransactionType');
 goog.require('lf.cache.InMemoryUpdater');
 goog.require('lf.proc.ObserverQueryTask');
 goog.require('lf.proc.Task');
+goog.require('lf.proc.TaskPriority');
 goog.require('lf.service');
 
 
@@ -17464,6 +17496,12 @@ lf.proc.ExternalChangeTask.prototype.getId = function() {
 };
 
 
+/** @override */
+lf.proc.ExternalChangeTask.prototype.getPriority = function() {
+  return lf.proc.TaskPriority.EXTERNAL_CHANGE_TASK;
+};
+
+
 /**
  * Schedules an ObserverTask for any observed queries that need to be
  * re-executed, if any.
@@ -17474,7 +17512,7 @@ lf.proc.ExternalChangeTask.prototype.scheduleObserverTask_ = function() {
       this.scope_.getValues());
   if (queries.length != 0) {
     var observerTask = new lf.proc.ObserverQueryTask(this.global_, queries);
-    this.runner_.scheduleTask(observerTask, true /* opt_prioritize */);
+    this.runner_.scheduleTask(observerTask);
   }
 };
 
@@ -17549,7 +17587,7 @@ lf.backstore.ExternalChangeObserver.prototype.onChange_ = function(tableDiffs) {
   // exist (single writer, multiple readers model).
   var externalChangeTask = new lf.proc.ExternalChangeTask(
       this.global_, tableDiffs);
-  this.runner_.scheduleTask(externalChangeTask, true /* opt_prioritize */);
+  this.runner_.scheduleTask(externalChangeTask);
 };
 
 /**
@@ -28248,6 +28286,7 @@ goog.provide('lf.proc.UserQueryTask');
 goog.require('lf.TransactionType');
 goog.require('lf.proc.ObserverQueryTask');
 goog.require('lf.proc.QueryTask');
+goog.require('lf.proc.TaskPriority');
 goog.require('lf.query.SelectContext');
 goog.require('lf.service');
 
@@ -28273,6 +28312,12 @@ lf.proc.UserQueryTask = function(global, queries) {
   this.observerRegistry_ = global.getService(lf.service.OBSERVER_REGISTRY);
 };
 goog.inherits(lf.proc.UserQueryTask, lf.proc.QueryTask);
+
+
+/** @override */
+lf.proc.UserQueryTask.prototype.getPriority = function() {
+  return lf.proc.TaskPriority.USER_QUERY_TASK;
+};
 
 
 /** @override */
@@ -28310,7 +28355,7 @@ lf.proc.UserQueryTask.prototype.scheduleObserverTask_ = function() {
       this.getScope().getValues());
   if (queries.length != 0) {
     var observerTask = new lf.proc.ObserverQueryTask(this.global, queries);
-    this.runner_.scheduleTask(observerTask, true /* opt_prioritize */);
+    this.runner_.scheduleTask(observerTask);
   }
 };
 
@@ -33430,9 +33475,11 @@ lf.proc.LockTableEntry_.prototype.grantLock = function(taskId, lockType) {
  */
 goog.provide('lf.proc.Runner');
 
+goog.require('goog.array');
 goog.require('lf.TransactionType');
 goog.require('lf.proc.LockManager');
 goog.require('lf.proc.LockType');
+goog.require('lf.proc.TaskPriority');
 
 goog.forwardDeclare('lf.proc.Task');
 
@@ -33446,8 +33493,8 @@ goog.forwardDeclare('lf.proc.Task');
  * @final
  */
 lf.proc.Runner = function() {
-  /** @private {!Array<!lf.proc.Task>} */
-  this.queue_ = [];
+  /** @private {!lf.proc.Runner.TaskQueue_} */
+  this.queue_ = new lf.proc.Runner.TaskQueue_();
 
   /** @private {!lf.proc.LockManager} */
   this.lockManager_ = new lf.proc.LockManager();
@@ -33457,18 +33504,18 @@ lf.proc.Runner = function() {
 /**
  * Schedules a task for this runner.
  * @param {!lf.proc.Task} task The task to be scheduled.
- * @param {boolean=} opt_prioritize Whether the task should be added at the
- *     front of the queue, defaults to false.
  * @return {!IThenable<!Array<!lf.proc.Relation>>}
  */
-lf.proc.Runner.prototype.scheduleTask = function(task, opt_prioritize) {
-  var prioritize = opt_prioritize || false;
-  if (prioritize) {
+lf.proc.Runner.prototype.scheduleTask = function(task) {
+  if (task.getPriority() < lf.proc.TaskPriority.USER_QUERY_TASK ||
+      task.getPriority() < lf.proc.TaskPriority.TRANSACTION_TASK) {
+    // Any priority that is higher than USER_QUERY_TASK or TRANSACTION_TASK is
+    // considered a "high" priority task and all held reserved locks should be
+    // cleared to allow it to execute.
     this.lockManager_.clearReservedLocks(task.getScope().getValues());
-    this.queue_.unshift(task);
-  } else {
-    this.queue_.push(task);
   }
+
+  this.queue_.insert(task);
   this.consumePending_();
   return task.getResolver().promise;
 };
@@ -33480,45 +33527,60 @@ lf.proc.Runner.prototype.scheduleTask = function(task, opt_prioritize) {
  * @private
  */
 lf.proc.Runner.prototype.consumePending_ = function() {
-  var queue = this.queue_.slice();
+  var queue = this.queue_.getValues();
 
   for (var i = 0; i < queue.length; i++) {
     // Note: Iterating on a shallow copy of this.queue_, because this.queue_
-    // will be modified during iteration and therefore it is not correct
-    // iterating on this.queue_, as it can't guarantee that every task in the
-    // queue will be traversed.
+    // will be modified during iteration and therefore iterating on this.queue_
+    // would not guarantee that every task in the queue will be traversed.
     var task = queue[i];
 
     var acquiredLock = false;
     if (task.getType() == lf.TransactionType.READ_ONLY) {
-      var acquiredReservedLock = this.lockManager_.requestLock(
-          task.getId(), task.getScope().getValues(),
-          lf.proc.LockType.RESERVED_READ_ONLY);
-      // Escalating the RESERVED_READ_ONLY lock to a SHARED lock.
-      if (acquiredReservedLock) {
-        acquiredLock = this.lockManager_.requestLock(
-            task.getId(), task.getScope().getValues(),
-            lf.proc.LockType.SHARED);
-      }
+      acquiredLock = this.requestTwoPhaseLock_(
+          task,
+          lf.proc.LockType.RESERVED_READ_ONLY,
+          lf.proc.LockType.SHARED);
     } else {
-      var acquiredReservedLock = this.lockManager_.requestLock(
-          task.getId(), task.getScope().getValues(),
-          lf.proc.LockType.RESERVED_READ_WRITE);
-      // Escalating the RESERVED_READ_WRITE lock to an EXCLUSIVE lock.
-      if (acquiredReservedLock) {
-        acquiredLock = this.lockManager_.requestLock(
-            task.getId(), task.getScope().getValues(),
-            lf.proc.LockType.EXCLUSIVE);
-      }
+      acquiredLock = this.requestTwoPhaseLock_(
+          task,
+          lf.proc.LockType.RESERVED_READ_WRITE,
+          lf.proc.LockType.EXCLUSIVE);
     }
 
     if (acquiredLock) {
-      // Removing from this.queue_, not queue which is a copy used for
-      // iteration.
-      this.queue_.splice(i, /* howMany */ 1);
+      // Removing task from the task queue and executing it.
+      this.queue_.remove(task);
       this.execTask_(task);
     }
   }
+};
+
+
+/**
+ * Performs a two-phase lock acquisition. The 1st lock is requested first. If
+ * it is granted, the 2nd lock is requested.
+ * @param {!lf.proc.Task} task The task that requests the locks.
+ * @param {!lf.proc.LockType} lockType1
+ * @param {!lf.proc.LockType} lockType2
+ * @return {boolean} Whether two-phase locking was successfull. If false, either
+ *     the 2nd lock was not granted or both 1st and 2nd were not granted.
+ * @private
+ */
+lf.proc.Runner.prototype.requestTwoPhaseLock_ = function(
+    task, lockType1, lockType2) {
+  var acquiredLock = false;
+  var scope = task.getScope().getValues();
+  var acquiredFirstLock = this.lockManager_.requestLock(
+      task.getId(), scope, lockType1);
+
+  if (acquiredFirstLock) {
+    // Escalating the first lock to the second lock.
+    acquiredLock = this.lockManager_.requestLock(
+        task.getId(), scope, lockType2);
+  }
+
+  return acquiredLock;
 };
 
 
@@ -33559,6 +33621,50 @@ lf.proc.Runner.prototype.onTaskError_ = function(task, error) {
   this.lockManager_.releaseLock(task.getId(), task.getScope().getValues());
   task.getResolver().reject(error);
   this.consumePending_();
+};
+
+
+
+/**
+ * @constructor
+ * @private
+ */
+lf.proc.Runner.TaskQueue_ = function() {
+  /** @private {!Array<!lf.proc.Task>} */
+  this.queue_ = [];
+};
+
+
+/**
+ * Inserts a task in the queue.
+ * @param {!lf.proc.Task} task
+ */
+lf.proc.Runner.TaskQueue_.prototype.insert = function(task) {
+  goog.array.binaryInsert(
+      this.queue_, task,
+      function(t1, t2) {
+        var priorityDiff = t1.getPriority() - t2.getPriority();
+        return priorityDiff == 0 ? t1.getId() - t2.getId() : priorityDiff;
+      });
+};
+
+
+/**
+ * @return {!Array<!lf.proc.Task>} A shallow-copy of this queue.
+ */
+lf.proc.Runner.TaskQueue_.prototype.getValues = function() {
+  return this.queue_.slice();
+};
+
+
+/**
+ * Removes the given task from the queue.
+ * @param {!lf.proc.Task} task The task to be removed.
+ * @return {boolean} Whether the task was removed, false if the task was not
+ *     found.
+ */
+lf.proc.Runner.TaskQueue_.prototype.remove = function(task) {
+  return goog.array.remove(this.queue_, task);
 };
 
 /**
@@ -34177,6 +34283,7 @@ goog.require('lf.TransactionType');
 goog.require('lf.cache.Journal');
 goog.require('lf.proc.ObserverQueryTask');
 goog.require('lf.proc.Task');
+goog.require('lf.proc.TaskPriority');
 goog.require('lf.service');
 
 
@@ -34272,6 +34379,12 @@ lf.proc.TransactionTask.prototype.getId = function() {
 };
 
 
+/** @override */
+lf.proc.TransactionTask.prototype.getPriority = function() {
+  return lf.proc.TaskPriority.TRANSACTION_TASK;
+};
+
+
 /**
  * Acquires all locks required such that this task can execute queries.
  * @return {!IThenable}
@@ -34344,7 +34457,7 @@ lf.proc.TransactionTask.prototype.scheduleObserverTask_ = function() {
       this.scope_.getValues());
   if (queries.length != 0) {
     var observerTask = new lf.proc.ObserverQueryTask(this.global_, queries);
-    this.runner_.scheduleTask(observerTask, /* opt_prioritize */ true);
+    this.runner_.scheduleTask(observerTask);
   }
 };
 

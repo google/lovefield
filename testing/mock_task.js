@@ -29,8 +29,9 @@ goog.require('lf.proc.Task');
  * @param {!lf.TransactionType} txType
  * @param {!goog.structs.Set<!lf.schema.Table>} scope
  * @param {!Function} execFn The function to call when this task is executed.
+ * @param {!lf.proc.TaskPriority} priority The priority of this task.
  */
-lf.testing.MockTask = function(txType, scope, execFn) {
+lf.testing.MockTask = function(txType, scope, execFn, priority) {
   /** @private {!lf.TransactionType} */
   this.txType_ = txType;
 
@@ -39,6 +40,9 @@ lf.testing.MockTask = function(txType, scope, execFn) {
 
   /** @private {!Function} */
   this.execFn_ = execFn;
+
+  /** @private {!lf.proc.TaskPriority} */
+  this.priority_ = priority;
 
   /** @private {!goog.promise.Resolver.<!Array<!lf.proc.Relation>>} */
   this.resolver_ = goog.Promise.withResolver();
@@ -66,6 +70,12 @@ lf.testing.MockTask.prototype.getResolver = function() {
 /** @override */
 lf.testing.MockTask.prototype.getId = function() {
   return goog.getUid(this);
+};
+
+
+/** @override */
+lf.testing.MockTask.prototype.getPriority = function() {
+  return this.priority_;
 };
 
 

@@ -166,6 +166,37 @@ function testDbObserversFired() {
 
 
 /**
+ * Ensures that even in the case of an external change, Lovefield observers are
+ * fired after every READ_WRITE transaction.
+ */
+function testOrder_Observer_ExternalChange() {
+  asyncTestCase.waitForAsync('testOrder_Observer_ExternalChange');
+
+  var sampleJobs1 = sampleJobs.slice(0, sampleJobs.length / 2 - 1);
+  var sampleJobs2 = sampleJobs.slice(sampleJobs.length / 2 - 1);
+
+  var query = db.select().from(j);
+  var counter = 0;
+  db.observe(query, function(changes) {
+    counter++;
+    // Expecting the observer to be called twice, once when the db.insert()
+    // query is completed, and once when the external change has been merged.
+    if (counter == 1) {
+      assertEquals(sampleJobs1.length, changes.length);
+    } else if (counter == 2) {
+      assertEquals(sampleJobs2.length, changes.length);
+      asyncTestCase.continueTesting();
+    }
+  });
+
+  goog.Promise.all([
+    db.insert().into(j).values(sampleJobs1).exec(),
+    simulateInsertionModification(j, sampleJobs2)
+  ]);
+}
+
+
+/**
  * Simulates an external insertion/modification change.
  * @param {!lf.schema.Table} tableSchema
  * @param {!Array<!lf.Row>} rows The rows to  be inserted/modified.
