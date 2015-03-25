@@ -12174,14 +12174,6 @@ lf.backstore.BaseTx.prototype.getJournal = function() {
 lf.backstore.BaseTx.prototype.abort = goog.abstractMethod;
 
 
-/**
- * @return {!IThenable} A signal that this transaction has completed.
- */
-lf.backstore.BaseTx.prototype.finished = function() {
-  return this.resolver.promise;
-};
-
-
 /** @override */
 lf.backstore.BaseTx.prototype.commit = function() {
   var mergeIntoBackstore = goog.bind(function() {
