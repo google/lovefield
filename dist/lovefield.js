@@ -33183,16 +33183,23 @@ goog.require('goog.structs.Set');
  * LockManager is responsible for granting locks to tasks. Each lock corresponds
  * to a database table.
  *
- * Three types of locks exist, SHARED, RESERVED and EXCLUSIVE, in order to
- * implement a two-phase locking algorithm.
- * 1) SHARED: Multiple shared locks can be granted (meant to be used by
- *    READ_ONLY tasks).
- * 2) RESERVED: Granted to a single READ_WRITE task. It prevents further SHARED
- *    or RESERVED locks to be granted, but the underlying table should not be
- *    modified yet, until the lock is escalated to an EXCLUSIVE lock.
- * 3) EXCLUSIVE: Granted to a single READ_WRITE task. It prevents further
- *    SHARED or EXCLUSIVE locks to be granted. It is OK to modify a table while
- *    holding such a lock.
+ * Four types of locks exist in order to implement a two-phase locking
+ * algorithm.
+ * 1) RESERVED_READ_ONLY: Multiple such locks can be granted. It prevents any
+ *    RESERVED_READ_WRITE and EXCLUSIVE locks from being granted. It needs to be
+ *    acquired by any task that wants to eventually escalate it to a SHARED
+ *    lock.
+ * 2) SHARED: Multiple shared locks can be granted (meant to be used by
+ *    READ_ONLY tasks). Such tasks must be already holding a RESERVED_READ_ONLY
+ *    lock.
+ * 3) RESERVED_READ_WRITE: Granted to a single READ_WRITE task. It prevents
+ *    further SHARED, RESERVED_READ_ONLY and RESERVED_READ_WRITE locks to be
+ *    granted, but the underlying table should not be modified yet, until the
+ *    lock is escalated to an EXCLUSIVE lock.
+ * 4) EXCLUSIVE: Granted to a single READ_WRITE task. That task must already be
+ *    holding a RESERVED_READ_WRITE lock. It prevents further SHARED or
+ *    EXCLUSIVE locks to be granted. It is OK to modify a table while holding
+ *    such a lock.
  *
  * @constructor
  * @struct
@@ -33212,8 +33219,9 @@ lf.proc.LockManager = function() {
  */
 lf.proc.LockType = {
   EXCLUSIVE: 0,
-  RESERVED: 1,
-  SHARED: 2
+  RESERVED_READ_ONLY: 1,
+  RESERVED_READ_WRITE: 2,
+  SHARED: 3
 };
 
 
@@ -33303,7 +33311,7 @@ lf.proc.LockManager.prototype.clearReservedLocks = function(dataItems) {
   dataItems.forEach(
       function(dataItem) {
         var lockTableEntry = this.getEntry_(dataItem);
-        lockTableEntry.reservedLock = null;
+        lockTableEntry.reservedReadWriteLock = null;
       }, this);
 };
 
@@ -33320,7 +33328,10 @@ lf.proc.LockTableEntry_ = function() {
   this.exclusiveLock = null;
 
   /** @type {?number} */
-  this.reservedLock = null;
+  this.reservedReadWriteLock = null;
+
+  /** @type {?goog.structs.Set<number>} */
+  this.reservedReadOnlyLocks = null;
 
   /** @type {?goog.structs.Set<number>} */
   this.sharedLocks = null;
@@ -33334,8 +33345,11 @@ lf.proc.LockTableEntry_.prototype.releaseLock = function(taskId) {
   if (this.exclusiveLock == taskId) {
     this.exclusiveLock = null;
   }
-  if (this.reservedLock == taskId) {
-    this.reservedLock = null;
+  if (this.reservedReadWriteLock == taskId) {
+    this.reservedReadWriteLock = null;
+  }
+  if (!goog.isNull(this.reservedReadOnlyLocks)) {
+    this.reservedReadOnlyLocks.remove(taskId);
   }
   if (!goog.isNull(this.sharedLocks)) {
     this.sharedLocks.remove(taskId);
@@ -33349,16 +33363,27 @@ lf.proc.LockTableEntry_.prototype.releaseLock = function(taskId) {
  * @return {boolean}
  */
 lf.proc.LockTableEntry_.prototype.canAcquireLock = function(taskId, lockType) {
+  var noReservedReadOnlyLocksExist = goog.isNull(this.reservedReadOnlyLocks) ||
+      this.reservedReadOnlyLocks.isEmpty();
+
   if (lockType == lf.proc.LockType.EXCLUSIVE) {
     var noSharedLocksExist = goog.isNull(this.sharedLocks) ||
         this.sharedLocks.isEmpty();
-    return noSharedLocksExist && goog.isNull(this.exclusiveLock) &&
-        (goog.isNull(this.reservedLock) || this.reservedLock == taskId);
+    return noSharedLocksExist && noReservedReadOnlyLocksExist &&
+        goog.isNull(this.exclusiveLock) &&
+        !goog.isNull(this.reservedReadWriteLock) &&
+        this.reservedReadWriteLock == taskId;
   } else if (lockType == lf.proc.LockType.SHARED) {
-    return goog.isNull(this.exclusiveLock) && goog.isNull(this.reservedLock);
-  } else {
-    // Case of RESERVED lock.
-    return goog.isNull(this.reservedLock) || this.reservedLock == taskId;
+    return goog.isNull(this.exclusiveLock) &&
+        goog.isNull(this.reservedReadWriteLock) &&
+        !goog.isNull(this.reservedReadOnlyLocks) &&
+        this.reservedReadOnlyLocks.contains(taskId);
+  } else if (lockType == lf.proc.LockType.RESERVED_READ_ONLY) {
+    return goog.isNull(this.reservedReadWriteLock);
+  } else { // case of lockType == lf.proc.LockType.RESERVED_READ_WRITE
+    return noReservedReadOnlyLocksExist &&
+        (goog.isNull(this.reservedReadWriteLock) ||
+         this.reservedReadWriteLock == taskId);
   }
 };
 
@@ -33370,7 +33395,7 @@ lf.proc.LockTableEntry_.prototype.canAcquireLock = function(taskId, lockType) {
 lf.proc.LockTableEntry_.prototype.grantLock = function(taskId, lockType) {
   if (lockType == lf.proc.LockType.EXCLUSIVE) {
     // TODO(dpapad): Assert that reserved lock was held by this taskId.
-    this.reservedLock = null;
+    this.reservedReadWriteLock = null;
     this.exclusiveLock = taskId;
   } else if (lockType == lf.proc.LockType.SHARED) {
     // TODO(dpapad): Assert that no other locked is held by this taskId and that
@@ -33379,10 +33404,19 @@ lf.proc.LockTableEntry_.prototype.grantLock = function(taskId, lockType) {
       this.sharedLocks = new goog.structs.Set();
     }
     this.sharedLocks.add(taskId);
-  } else {
-    // Case of RESERVED lock.
-    // TODO(dpapad): Any oter assertions here?
-    this.reservedLock = taskId;
+
+    if (goog.isNull(this.reservedReadOnlyLocks)) {
+      this.reservedReadOnlyLocks = new goog.structs.Set();
+    }
+    this.reservedReadOnlyLocks.remove(taskId);
+  } else if (lockType == lf.proc.LockType.RESERVED_READ_ONLY) {
+    if (goog.isNull(this.reservedReadOnlyLocks)) {
+      this.reservedReadOnlyLocks = new goog.structs.Set();
+    }
+    this.reservedReadOnlyLocks.add(taskId);
+  } else if (lockType == lf.proc.LockType.RESERVED_READ_WRITE) {
+    // TODO(dpapad): Any other assertions here?
+    this.reservedReadWriteLock = taskId;
   }
 };
 
@@ -33465,12 +33499,20 @@ lf.proc.Runner.prototype.consumePending_ = function() {
 
     var acquiredLock = false;
     if (task.getType() == lf.TransactionType.READ_ONLY) {
-      acquiredLock = this.lockManager_.requestLock(
-          task.getId(), task.getScope().getValues(), lf.proc.LockType.SHARED);
+      var acquiredReservedLock = this.lockManager_.requestLock(
+          task.getId(), task.getScope().getValues(),
+          lf.proc.LockType.RESERVED_READ_ONLY);
+      // Escalating the RESERVED_READ_ONLY lock to a SHARED lock.
+      if (acquiredReservedLock) {
+        acquiredLock = this.lockManager_.requestLock(
+            task.getId(), task.getScope().getValues(),
+            lf.proc.LockType.SHARED);
+      }
     } else {
       var acquiredReservedLock = this.lockManager_.requestLock(
-          task.getId(), task.getScope().getValues(), lf.proc.LockType.RESERVED);
-      // Escalating the RESERVED lock to an EXCLUSIVE lock.
+          task.getId(), task.getScope().getValues(),
+          lf.proc.LockType.RESERVED_READ_WRITE);
+      // Escalating the RESERVED_READ_WRITE lock to an EXCLUSIVE lock.
       if (acquiredReservedLock) {
         acquiredLock = this.lockManager_.requestLock(
             task.getId(), task.getScope().getValues(),
