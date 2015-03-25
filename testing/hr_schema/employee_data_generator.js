@@ -41,11 +41,10 @@ lf.testing.hrSchema.EmployeeDataGenerator = function(schema) {
   this.assignedSalaries_ = new goog.structs.Set();
 
   /** @private {number} */
-  this.maxJobIndex_ = lf.testing.hrSchema.samples.JOB_TITLES.length;
+  this.jobCount_ = lf.testing.hrSchema.samples.JOB_TITLES.length;
 
   /** @private {number} */
-  this.maxDepartmentIndex_ =
-      lf.testing.hrSchema.samples.DEPARTMENT_NAMES.length;
+  this.departmentCount_ = lf.testing.hrSchema.samples.DEPARTMENT_NAMES.length;
 };
 
 
@@ -73,11 +72,14 @@ lf.testing.hrSchema.EmployeeDataGenerator.prototype.generateRaw_ =
       email: email,
       phoneNumber: phoneNumber,
       hireDate: this.genHireDate_(),
-      jobId: this.genJobId_(),
+      // Ensuring that each job is assigned at least one employee.
+      jobId: i < this.jobCount_ ? 'jobId' + i : this.genJobId_(),
       salary: this.genSalary_(),
       commissionPercent: commissionPercent,
       managerId: 'managerId',
-      departmentId: this.genDepartmentId_(),
+      // Ensuring that each department is assigned at least one employee.
+      departmentId: i < this.departmentCount_ ?
+          'departmentId' + i : this.genDepartmentId_(),
       photo: this.genPhoto_()
     };
   }
@@ -87,26 +89,24 @@ lf.testing.hrSchema.EmployeeDataGenerator.prototype.generateRaw_ =
 
 
 /**
- * Sets the max index in JOB_TITLES that will be used for all generated
- * employees.
- * @param {number} maxJobIndex
+ * Sets the number of jobs that will be used for all generated employees.
+ * @param {number} jobCount
  */
-lf.testing.hrSchema.EmployeeDataGenerator.prototype.setMaxJobId =
-    function(maxJobIndex) {
-  this.maxJobIndex_ = Math.min(
-      maxJobIndex, lf.testing.hrSchema.samples.JOB_TITLES.length);
+lf.testing.hrSchema.EmployeeDataGenerator.prototype.setJobCount =
+    function(jobCount) {
+  this.jobCount_ = Math.min(
+      jobCount, lf.testing.hrSchema.samples.JOB_TITLES.length);
 };
 
 
 /**
- * Sets the max index in DEPARTMENT_NAMES that will be used for all generated
- * employees.
- * @param {number} maxDepartmentIndex
+ * Sets the number of departments that will be used for all generated employees.
+ * @param {number} departmentCount
  */
-lf.testing.hrSchema.EmployeeDataGenerator.prototype.setMaxDepartmentId =
-    function(maxDepartmentIndex) {
-  this.maxDepartmentIndex_ = Math.min(
-      maxDepartmentIndex, lf.testing.hrSchema.samples.DEPARTMENT_NAMES.length);
+lf.testing.hrSchema.EmployeeDataGenerator.prototype.setDepartmentCount =
+    function(departmentCount) {
+  this.departmentCount_ = Math.min(
+      departmentCount, lf.testing.hrSchema.samples.DEPARTMENT_NAMES.length);
 };
 
 
@@ -115,8 +115,14 @@ lf.testing.hrSchema.EmployeeDataGenerator.prototype.setMaxDepartmentId =
  * @return {!Array<!lf.Row>}
  */
 lf.testing.hrSchema.EmployeeDataGenerator.prototype.generate = function(count) {
-  var rawData = this.generateRaw_(count);
+  goog.asserts.assert(
+      count >= this.jobCount_,
+      'employee count must be greater or equal to job count');
+  goog.asserts.assert(
+      count >= this.departmentCount_,
+      'employee count must be greater or equal to department count');
 
+  var rawData = this.generateRaw_(count);
   return rawData.map(function(object) {
     return this.schema_.table('Employee').createRow(object);
   }, this);
@@ -150,7 +156,7 @@ lf.testing.hrSchema.EmployeeDataGenerator.prototype.genLastName_ = function() {
  * @private
  */
 lf.testing.hrSchema.EmployeeDataGenerator.prototype.genJobId_ = function() {
-  var index = Math.floor(Math.random() * this.maxJobIndex_);
+  var index = Math.floor(Math.random() * this.jobCount_);
   return 'jobId' + index;
 };
 
@@ -161,7 +167,7 @@ lf.testing.hrSchema.EmployeeDataGenerator.prototype.genJobId_ = function() {
  */
 lf.testing.hrSchema.EmployeeDataGenerator.prototype.genDepartmentId_ =
     function() {
-  var index = Math.floor(Math.random() * this.maxDepartmentIndex_);
+  var index = Math.floor(Math.random() * this.departmentCount_);
   return 'departmentId' + index;
 };
 

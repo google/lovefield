@@ -76,6 +76,7 @@ function generateSampleJobData(db) {
   var employeeGenerator =
       new lf.testing.hrSchema.EmployeeDataGenerator(schema);
   var employeeCount = 2 * jobCount;
+  employeeGenerator.setJobCount(jobCount);
   sampleEmployees = employeeGenerator.generate(employeeCount);
 
   for (var i = 0; i < jobCount; i++) {

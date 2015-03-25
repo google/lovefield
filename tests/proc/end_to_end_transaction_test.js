@@ -24,6 +24,7 @@ goog.require('hr.db');
 goog.require('lf.Exception');
 goog.require('lf.fn');
 goog.require('lf.schema.DataStoreType');
+goog.require('lf.testing.hrSchema.JobDataGenerator');
 goog.require('lf.testing.hrSchema.MockDataGenerator');
 goog.require('lf.testing.util');
 
@@ -418,11 +419,9 @@ function testAttach_WithObservers() {
   var initialJobCount = sampleJobs.length;
   var additionalJobCount = 2;
 
-  dataGenerator.generate(
-      /* jobCount */ additionalJobCount,
-      /* employeeCount */ 1,
-      /* departmentCount */ 1);
-  var newJobs = dataGenerator.sampleJobs;
+  var jobDataGenerator = new lf.testing.hrSchema.JobDataGenerator(
+      hr.db.getSchema());
+  var newJobs = jobDataGenerator.generate(additionalJobCount);
   newJobs.forEach(function(job, index) {
     job.setId('SomeUniqueId' + index.toString());
   });
