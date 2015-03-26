@@ -17,7 +17,6 @@
 var fs = require('fs');
 var gulp = require('gulp');
 var webserver = require('gulp-webserver');
-var spawn = require('child_process').spawn;
 
 
 gulp.task('copy_lovefield', function() {

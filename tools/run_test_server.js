@@ -15,8 +15,8 @@
  * limitations under the License.
  */
 var pathMod = require('path');
-var createServer =
-    /** @type {!Function} */ (require('http-server').createServer);
+var gulp = require('gulp');
+var webserver = /** @type {!Function} */ (require('gulp-webserver'));
 var config =
     /** @type {!Function} */ (
         require(pathMod.resolve(__dirname + '/config.js')))();
@@ -28,58 +28,30 @@ var cleanUp =
         require(pathMod.join(__dirname, 'setup_tests.js')).cleanUp);
 
 
-/** @typedef {{listen: !Function, close: !Function}} @private */
-var HTTPServerType_;
-
-
-/** @type {HTTPServerType_} */
-var server;
-
 var stdin = process.stdin;
 var stdout = process.stdout;
 
 
-/** @param {number=} opt_port */
-function runTestServer(opt_port) {
-  var port = opt_port || 4000;
-  var onSetupDone = function(tempPath) {
-    if (tempPath) {
-      server = /** @type {HTTPServerType_} */ (createServer());
-      server.listen(port);
-      stdout.write('Server path: ' + tempPath + '\r\n');
-      stdout.write('Server started at port ' + port + '\r\n');
-      waitCtrlC(tempPath);
-    } else {
-      stdout.write('ERROR: unable to generate code from schema\r\n');
-      cleanUp(tempPath);
-      process.exit(1);
-    }
-  };
+function runTestServer() {
+  createTestEnv(function(tempPath) {
+    var serverStream = webserver({
+      livereload: true,
+      fallback: 'index.html'
+    });
 
-  createTestEnv(onSetupDone);
-}
+    stdin.setRawMode(true);
+    stdin.resume();
+    stdin.setEncoding('utf8');
+    stdin.on('data', function(key) {
+      if (key == '\u0003') {
+        serverStream.emit('kill');
+        cleanUp(tempPath);
+        process.exit(0);
+      }
+    });
 
-
-/**
- * Waits until user press Ctrl-C.
- * @param {string} tempPath Path hosting test environment.
- */
-function waitCtrlC(tempPath) {
-  // Wait until Ctrl-C is pressed.
-  stdin.setRawMode(true);
-  stdin.resume();
-  stdin.setEncoding('utf8');
-  stdout.write('Press Ctrl-C to stop server ...\r\n');
-  stdin.on('data', function(key) {
-    if (key == '\u0003') {
-      stdout.write('Stopping server ...\r\n');
-      server.close();
-      cleanUp(tempPath);
-      process.exit(0);
-    }
-
-    // Write key to stdout as usual.
-    stdout.write(key);
+    stdout.write('Server path: ' + tempPath + '\r\n');
+    gulp.src(tempPath).pipe(serverStream);
   });
 }
 
