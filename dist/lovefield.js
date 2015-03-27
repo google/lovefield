@@ -27383,6 +27383,7 @@ lf.proc.PhysicalQueryPlanNode.prototype.execAllChildren_ = function(journal) {
  */
 goog.provide('lf.proc.AggregationStep');
 
+goog.require('goog.structs.Map');
 goog.require('lf.fn.AggregatedColumn');
 goog.require('lf.fn.Type');
 goog.require('lf.proc.PhysicalQueryPlanNode');
