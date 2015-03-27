@@ -1,3 +1,195 @@
+/**
+ * @externs
+ * @license
+ * Copyright 2015 Google Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ * @fileoverview Temporary extern file for Firebase clients to compile. Once
+ * Firebase has landed Google3, clients should directly reference the Closure-
+ * annotated source.
+ */
+
+
+
+/**
+ * @constructor
+ * @param {string} url
+ * @param {string=} opt_context
+ * @see https://www.firebase.com/docs/web/api/firebase/constructor.html
+ */
+function Firebase(url, opt_context) {}
+
+
+/**
+ * @param {string} path
+ * @return {!Firebase}
+ */
+Firebase.prototype.child;
+
+
+/** @return {!Firebase} */
+Firebase.prototype.parent;
+
+
+/** @return {!Firebase} */
+Firebase.prototype.root;
+
+
+/** @return {string} */
+Firebase.prototype.key;
+
+
+/**
+ * @param {?Object|string|number|boolean} value
+ * @param {!Function=} opt_onComplete
+ */
+Firebase.prototype.set;
+
+
+/**
+ * @param {!Object} value
+ * @param {!Function=} opt_onComplete
+ */
+Firebase.prototype.update;
+
+
+/** @param {!Function=} opt_onComplete */
+Firebase.prototype.remove;
+
+
+/**
+ * @param {(?Object|string|number|boolean)=} opt_value
+ * @param {!Function=} opt_onComplete
+ */
+Firebase.prototype.push;
+
+
+/**
+ * @param {?Object|string|number|boolean} value
+ * @param {string|number} priority
+ * @param {!Function=} opt_onComplete
+ */
+Firebase.prototype.setWithPriority;
+
+
+/**
+ * @param {!Function} updateFunction
+ * @param {!Function=} opt_onComplete
+ * @param {!Function=} opt_applyLocally
+ */
+Firebase.prototype.transaction;
+
+
+/**
+ * @param {string} eventType
+ * @param {!function(!DataSnapshot, string=)} callback
+ * @param {!function(!Error)=} opt_cancelCallback
+ * @param {!Object=} opt_context The "this" object for callbacks.
+ * @return {!function(!DataSnapshot)} The function passed in as callback.
+ */
+Firebase.prototype.on;
+
+
+/**
+ * @param {string} eventType
+ * @param {!Function} callback
+ * @param {!Object=} opt_context The "this" object for callbacks.
+ */
+Firebase.prototype.off;
+
+
+/**
+ * @param {string} eventType
+ * @param {!function(!DataSnapshot)} successCallback
+ * @param {!function(!Error)=} opt_failureCallback
+ * @param {!Object=} opt_context The "this" object for callbacks.
+ */
+Firebase.prototype.once;
+
+
+/** @type {!function()} */
+Firebase.goOffline;
+
+
+/**
+ * @param {boolean} logger
+ * @param {boolean} persistent
+ */
+Firebase.enableLogging;
+
+
+
+/** @constructor */
+function DataSnapshot() {}
+
+
+/** @return {boolean} */
+DataSnapshot.prototype.exists;
+
+
+/** @return {!Object} */
+DataSnapshot.prototype.val;
+
+
+/**
+ * @param {string} childPath
+ * @return {!DataSnapshot}
+ */
+DataSnapshot.prototype.child;
+
+
+/**
+ * @param {!function(!DataSnapshot):(boolean|undefined)} childAction
+ * @return {boolean|undefined}
+ */
+DataSnapshot.prototype.forEach;
+
+
+/**
+ * @param {string} childPath
+ * @return {boolean}
+ */
+DataSnapshot.prototype.hasChild;
+
+
+/** @return {boolean} */
+DataSnapshot.prototype.hasChildren;
+
+
+/** @return {string} */
+DataSnapshot.prototype.key;
+
+
+/** @return {string} */
+DataSnapshot.prototype.name;
+
+
+/** @return {number} */
+DataSnapshot.prototype.numChilren;
+
+
+/** @return {!Firebase} */
+DataSnapshot.prototype.ref;
+
+
+/** @return {string|number|null} */
+DataSnapshot.prototype.getPriority;
+
+
+/** @return {!Object} */
+DataSnapshot.prototype.exportVal;
+
 // Copyright 2006 The Closure Library Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -12106,7 +12298,7 @@ lf.backstore.Tx.prototype.commit;
 
 
 /**
- * Aborts tranaction. Caller shall listen to rejection of finished() to detect
+ * Aborts tranaction. Caller shall listen to rejection of commit() to detect
  * end of transaction.
  */
 lf.backstore.Tx.prototype.abort;
@@ -17682,6 +17874,399 @@ lf.BackStore.prototype.notify;
 
 /**
  * @license
+ * Copyright 2015 Google Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+goog.provide('lf.backstore.FirebaseTx');
+
+goog.require('goog.Promise');
+goog.require('lf.backstore.BaseTx');
+
+
+
+/**
+ * Psuedo transaction object for Firebase.
+ *
+ * @constructor
+ * @struct
+ * @final
+ * @extends {lf.backstore.BaseTx}
+ *
+ * @param {!lf.backstore.Firebase} db
+ * @param {!lf.TransactionType} type
+ * @param {!lf.cache.Journal} journal
+ */
+lf.backstore.FirebaseTx = function(db, type, journal) {
+  lf.backstore.FirebaseTx.base(this, 'constructor', journal, type);
+
+  /** @private {!lf.backstore.Firebase} */
+  this.db_ = db;
+};
+goog.inherits(lf.backstore.FirebaseTx, lf.backstore.BaseTx);
+
+
+/** @override */
+lf.backstore.FirebaseTx.prototype.getTable = function(name, deserializeFn) {
+  return this.db_.getTableInternal(name);
+};
+
+
+/** @override */
+lf.backstore.FirebaseTx.prototype.commit = function() {
+  // Update the memory snapshots, this will effectively be synchronous.
+  lf.backstore.FirebaseTx.base(this, 'commit');
+
+  var diffs = this.getJournal().getDiff();
+  var numTableAffected = diffs.getCount();
+  if (numTableAffected == 0) {
+    this.resolver.resolve();
+  } else {
+    var ref = numTableAffected > 1 ? this.db_ :
+        this.db_.getTableRef(diffs.getValues()[0].getName());
+    var changes = this.diffToChange_();
+    ref.update(changes, goog.bind(function(e) {
+      if (e) {
+        // TODO(arthurhsu): when transaction failed, the snapshots of tables
+        // are invalid and need reload.
+        this.resolver.reject(e);
+      } else {
+        this.resolver.resolve();
+      }
+    }, this));
+  }
+  return this.resolver.promise;
+};
+
+
+/**
+ * @return {!Object}
+ * @private
+ */
+lf.backstore.FirebaseTx.prototype.diffToChange_ = function() {
+  var object = {};
+  var diffs = this.getJournal().getDiff();
+  diffs.forEach(function(diff) {
+    var prefix = diffs.length > 1 ? diff.getName() + '.' : '';
+    var setter = function(row, value) {
+      object[prefix + row.id().toString()] = row.payload();
+    };
+    diff.getAdded().getValues().forEach(setter);
+    diff.getModified().getValues().forEach(setter);
+    diff.getDeleted().getValues().forEach(function(row) {
+      object[prefix + row.id().toString()] = null;
+    });
+  });
+  return object;
+};
+
+/**
+ * @license
+ * Copyright 2014 Google Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+goog.provide('lf.backstore.MemoryTable');
+
+goog.require('goog.Promise');
+goog.require('goog.structs.Map');
+goog.require('lf.Table');
+
+goog.forwardDeclare('lf.Row');
+
+
+
+/**
+ * @constructor
+ * @implements {lf.Table}
+ */
+lf.backstore.MemoryTable = function() {
+  /**
+   * @private {!goog.structs.Map<number, !lf.Row>}
+   */
+  this.data_ = new goog.structs.Map();
+};
+
+
+/** @override */
+lf.backstore.MemoryTable.prototype.get = function(ids) {
+  // Empty array is treated as "return all rows".
+  if (ids.length == 0) {
+    return this.getAll_();
+  }
+
+  var results = [];
+  ids.forEach(function(id) {
+    var row = this.data_.get(id, null);
+    if (!goog.isNull(row)) {
+      results.push(row);
+    }
+  }, this);
+
+  return goog.Promise.resolve(results);
+};
+
+
+/**
+ * Returns all the rows in the table.
+ * @return {!IThenable<!Array<!lf.Row>>}
+ * @private
+ */
+lf.backstore.MemoryTable.prototype.getAll_ = function() {
+  return goog.Promise.resolve(this.data_.getValues());
+};
+
+
+/** @override */
+lf.backstore.MemoryTable.prototype.put = function(rows) {
+  rows.forEach(function(row) {
+    this.data_.set(row.id(), row);
+  }, this);
+
+  return goog.Promise.resolve();
+};
+
+
+/** @override */
+lf.backstore.MemoryTable.prototype.remove = function(ids) {
+  if (ids.length == 0 || ids.length == this.data_.getCount()) {
+    // Remove all.
+    this.data_.clear();
+  } else {
+    ids.forEach(function(id) {
+      this.data_.remove(id);
+    }, this);
+  }
+
+  return goog.Promise.resolve();
+};
+
+
+/** @return {number} */
+lf.backstore.MemoryTable.prototype.getMaxRowId = function() {
+  if (this.data_.isEmpty()) {
+    return 0;
+  }
+  return this.data_.getKeys().reduce(function(prev, cur) {
+    return prev > cur ? prev : cur;
+  }, 0);
+};
+
+/**
+ * @license
+ * Copyright 2015 Google Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+goog.provide('lf.backstore.Firebase');
+
+goog.require('goog.Promise');
+goog.require('goog.structs.Map');
+goog.require('lf.BackStore');
+goog.require('lf.Exception');
+goog.require('lf.Row');
+goog.require('lf.backstore.FirebaseTx');
+goog.require('lf.backstore.MemoryTable');
+
+
+
+/**
+ * Firebase-backed back store. This store is experimental and subjected to
+ * significant changes.
+ *
+ * @constructor
+ * @struct
+ * @final
+ * @implements {lf.BackStore}
+ *
+ * @param {!lf.schema.Database} schema
+ * @param {!Firebase} fb Firebase instance, must point to the app level.
+ */
+lf.backstore.Firebase = function(schema, fb) {
+  /** @private {!lf.schema.Database} */
+  this.schema_ = schema;
+
+  /** @private {!Firebase} */
+  this.app_ = fb;
+
+  /** @private {!Firebase} */
+  this.db_;
+
+  /** @private {!goog.structs.Map<string, lf.backstore.MemoryTable>} */
+  this.tables_ = new goog.structs.Map();
+};
+
+
+/**
+ * Populates data acquired from Firebase.
+ * @param {!lf.backstore.MemoryTable} table
+ * @param {!Object} data
+ * @private
+ */
+lf.backstore.Firebase.prototype.populate_ = function(table, data) {
+  var rows = [];
+  for (var key in data) {
+    if (key == '.meta') {
+      // Ignore table metadata.
+      continue;
+    }
+    var id = parseInt(key, 10);
+    rows.push(new lf.Row(id, data[key]));
+  }
+
+  table.put(rows);  // It's actually synchronous for MemoryTable.
+};
+
+
+/** @override */
+lf.backstore.Firebase.prototype.init = function(opt_onUpgrade) {
+  var resolver = goog.Promise.withResolver();
+
+  this.db_ = this.app_.child(this.schema_.name());
+
+  // This call will fetch everything in the DB from network.
+  this.db_.once('value', goog.bind(function(snapshot) {
+    var rawDb = snapshot.val();
+    if (goog.isNull(rawDb)) {
+      // New database, need initialization.
+      this.db_.set(this.createNewDb_(), resolver.resolve.bind(resolver));
+    } else if (rawDb['__version__'] == this.schema_.version()) {
+      this.schema_.tables().forEach(function(table) {
+        var memTable = new lf.backstore.MemoryTable();
+        this.populate_(memTable, rawDb[table.getName()]);
+        this.tables_.set(table.getName(), memTable);
+      }, this);
+
+      // Scan row id
+      var maxRowId = this.tables_.getValues().map(function(table) {
+        return table.getMaxRowId();
+      }).reduce(function(prev, cur) {
+        return prev > cur ? prev : cur;
+      }, 0);
+      lf.Row.setNextId(maxRowId + 1);
+
+      resolver.resolve();
+    } // TODO(arthurhsu): implement upgrade.
+  }, this));
+
+  return resolver.promise;
+};
+
+
+/**
+ * @param {string} tableName
+ * @return {!IThenable}
+ */
+lf.backstore.Firebase.prototype.reloadTable = function(tableName) {
+  var resolver = goog.Promise.withResolver();
+  var ref = this.getTableRef(tableName);
+  ref.once('value', goog.bind(function(snapshot) {
+    var memTable = new lf.backstore.MemoryTable();
+    this.populate_(memTable, snapshot);
+    this.tables_.set(tableName, memTable);
+    resolver.resolve();
+  }, this));
+  return resolver.promise;
+};
+
+
+/**
+ * @return {!Object}
+ * @private
+ */
+lf.backstore.Firebase.prototype.createNewDb_ = function() {
+  var val = {};
+  val['__version__'] = this.schema_.version();
+  this.schema_.tables().forEach(function(table) {
+    var tableName = table.getName();
+    this.tables_.set(tableName, new lf.backstore.MemoryTable());
+  }, this);
+  return val;
+};
+
+
+/** @override */
+lf.backstore.Firebase.prototype.createTx = function(type, journal) {
+  return new lf.backstore.FirebaseTx(this, type, journal);
+};
+
+
+/** @override */
+lf.backstore.Firebase.prototype.getTableInternal = function(tableName) {
+  var table = this.tables_.get(tableName, null);
+  if (!goog.isNull(table)) {
+    return table;
+  }
+
+  throw new lf.Exception(lf.Exception.Type.DATA,
+      'Table ' + tableName + ' not found');
+};
+
+
+/**
+ * @param {string} tableName
+ * @return {!Firebase}
+ */
+lf.backstore.Firebase.prototype.getTableRef = function(tableName) {
+  return this.db_.child(tableName);
+};
+
+
+/** @override */
+lf.backstore.Firebase.prototype.close = function() {
+  // Not supported.
+};
+
+
+/** @override */
+lf.backstore.Firebase.prototype.subscribe = function(handler) {
+  // TODO(arthurhsu): implement
+};
+
+
+/** @override */
+lf.backstore.Firebase.prototype.unsubscribe = function() {
+  // TODO(arthurhsu): implement
+};
+
+
+/** @override */
+lf.backstore.Firebase.prototype.notify = function(changes) {
+  // TODO(arthurhsu): implement
+};
+
+/**
+ * @license
  * Copyright 2014 Google Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -19099,97 +19684,6 @@ lf.backstore.LocalStorage.prototype.onStorageEvent_ = function(raw) {
   if (table) {
     this.changeHandler_([table.diff(newData)]);
   }
-};
-
-/**
- * @license
- * Copyright 2014 Google Inc. All Rights Reserved.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-goog.provide('lf.backstore.MemoryTable');
-
-goog.require('goog.Promise');
-goog.require('goog.structs.Map');
-goog.require('lf.Table');
-
-goog.forwardDeclare('lf.Row');
-
-
-
-/**
- * @constructor
- * @implements {lf.Table}
- */
-lf.backstore.MemoryTable = function() {
-  /**
-   * @private {!goog.structs.Map<number, !lf.Row>}
-   */
-  this.data_ = new goog.structs.Map();
-};
-
-
-/** @override */
-lf.backstore.MemoryTable.prototype.get = function(ids) {
-  // Empty array is treated as "return all rows".
-  if (ids.length == 0) {
-    return this.getAll_();
-  }
-
-  var results = [];
-  ids.forEach(function(id) {
-    var row = this.data_.get(id, null);
-    if (!goog.isNull(row)) {
-      results.push(row);
-    }
-  }, this);
-
-  return goog.Promise.resolve(results);
-};
-
-
-/**
- * Returns all the rows in the table.
- * @return {!IThenable<!Array<!lf.Row>>}
- * @private
- */
-lf.backstore.MemoryTable.prototype.getAll_ = function() {
-  return goog.Promise.resolve(this.data_.getValues());
-};
-
-
-/** @override */
-lf.backstore.MemoryTable.prototype.put = function(rows) {
-  rows.forEach(function(row) {
-    this.data_.set(row.id(), row);
-  }, this);
-
-  return goog.Promise.resolve();
-};
-
-
-/** @override */
-lf.backstore.MemoryTable.prototype.remove = function(ids) {
-  if (ids.length == 0 || ids.length == this.data_.getCount()) {
-    // Remove all.
-    this.data_.clear();
-  } else {
-    ids.forEach(function(id) {
-      this.data_.remove(id);
-    }, this);
-  }
-
-  return goog.Promise.resolve();
 };
 
 /**
@@ -26616,6 +27110,7 @@ goog.provide('lf.schema.Index');
 goog.provide('lf.schema.IndexedColumn');
 goog.provide('lf.schema.Table');
 
+goog.forwardDeclare('Firebase');
 goog.forwardDeclare('lf.Order');
 goog.forwardDeclare('lf.Predicate');
 goog.forwardDeclare('lf.Row');
@@ -26709,6 +27204,7 @@ lf.schema.DataStoreType = {
   INDEXED_DB: 0,
   MEMORY: 1,
   LOCAL_STORAGE: 2,
+  FIREBASE: 3,
 
   // Used for testing purposes only.
   OBSERVABLE_STORE: 99
@@ -26718,7 +27214,8 @@ lf.schema.DataStoreType = {
 /**
  * @typedef {{
  *   onUpgrade: (undefined|!function(!lf.raw.BackStore):!IThenable),
- *   storeType: (undefined|!lf.schema.DataStoreType)
+ *   storeType: (undefined|!lf.schema.DataStoreType),
+ *   firebase: (undefined|!Firebase)
  * }}
  */
 lf.schema.ConnectOptions;
