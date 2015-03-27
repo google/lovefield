@@ -18,10 +18,14 @@ var gulp = /** @type {{task: function(string, Function)}} */ (require('gulp'));
 var pathMod = require('path');
 var builder = require(pathMod.resolve(
     pathMod.join(__dirname, 'tools/builder.js'))).builder;
-var runTest = require(pathMod.resolve(
-    pathMod.join(__dirname, 'tools/run_test.js'))).runTest;
+var runner = /** @type {{
+    runJsUnitTests: function(?string):!IThenable,
+    runSpacTests: function():!IThenable }} */ (
+        require(pathMod.resolve(
+            pathMod.join(__dirname, 'tools/run_test.js'))));
 var runTestServer = require(pathMod.resolve(
     pathMod.join(__dirname, 'tools/run_test_server.js'))).runTestServer;
+var nopt = /** @type {!Function} */ (require('nopt'));
 
 
 var log = console['log'];
@@ -38,11 +42,37 @@ gulp.task('build', function(callback) {
   builder(callback);
 });
 
-gulp.task('test', function(callback) {
-  runTest(callback);
-});
-
 gulp.task('debug', function() {
   // The test server cannot callback. It is terminated by Ctrl-C.
   runTestServer();
+});
+
+
+/**
+ * TODO(dpapad):
+ *  1) Accept command line param to run a specific browser, run all browsers by
+ *     default.
+ *  2) Gather the output of the tests and display something useful (summary).
+ */
+gulp.task('test', function(callback) {
+  var knownOpts = { 'target': [String, null] };
+  var options = nopt(knownOpts);
+  var whenTestsDone = null;
+
+  if (options.target == null) {
+    // Run both SPAC and JSUnit tests, one after the other.
+    whenTestsDone = runner.runSpacTests().then(
+        function() {
+          return runner.runJsUnitTests(null);
+        });
+  } else if (options.target == 'spac') {
+    // Run only SPAC.
+    whenTestsDone = runner.runSpacTests();
+  } else {
+    // Run only JSUnit tests.
+    whenTestsDone = runner.runJsUnitTests(options.target);
+  }
+  whenTestsDone.then(function() {
+    callback();
+  });
 });

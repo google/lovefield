@@ -14,38 +14,101 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-var pathMod = require('path');
+var chromeMod = require('selenium-webdriver/chrome');
 var fork = /** @type {!Function} */ (require('child_process').fork);
-var noptMod = /** @type {!Function} */ (require('nopt'));
+var glob = /** @type {{sync:!Function}} */ (require('glob'));
+var pathMod = require('path');
 
-// Command line options
-var knownOpts = {
-  'target': [String, null]
-};
-var options = noptMod(knownOpts);
+var JsUnitTestRunner = require('./jsunit_test_runner.js').JsUnitTestRunner;
+var webdriver = require('selenium-webdriver');
+
 
 
 // Need to trick the presubmit script to not complain.
 var log = console['log'];
 
-function runSpacTests(callback) {
+
+/**
+ * Runs SPAC tests.
+ * @return {!IThenable}
+ */
+function runSpacTests() {
   log('Starting SPAC tests ...');
-  var spacPath = pathMod.join(
-      pathMod.resolve(__dirname), '../spac/run_test.js');
-  var spacTest = fork(spacPath);
-  spacTest.on('close', function(code) {
-    log('SPAC tests:', code ? 'FAILED' : 'PASSED');
-    callback();
+  return new Promise(function(resolve, reject) {
+    var spacPath = pathMod.join(
+        pathMod.resolve(__dirname), '../spac/run_test.js');
+    var spacTest = fork(spacPath);
+    spacTest.on('close', function(code) {
+      log('SPAC tests:', code ? 'FAILED' : 'PASSED');
+      resolve();
+    });
   });
 }
 
-function runTest(callback) {
-  var target = options.target || 'spac';
-  if (target == 'spac') {
-    runSpacTests(callback);
-  }
+
+/**
+ * Runs JSUnit tests.
+ * @param {?string} testPrefix Only tests that match the prefix will be
+ *     returned. If null, all tests will run.
+ * @return {!IThenable}
+ */
+function runJsUnitTests(testPrefix) {
+  /**
+   * @return {!Array<string>} A list of all matching testing URLs.
+   */
+  var getTestUrls = function() {
+    var relativeTestUrls = glob.sync('tests/**/*_test.js').map(
+        function(filename) {
+          var prefixLength = 'tests/'.length;
+          return filename.substr(prefixLength);
+        }).filter(
+        function(filename) {
+          return testPrefix == null ?
+              true : (filename.indexOf(testPrefix) != -1);
+        }).map(
+        function(filename) {
+          return filename.replace(/\.js$/, '.html');
+        });
+
+    return relativeTestUrls.map(
+        function(url) {
+          return 'http://localhost:8000/html/' + url;
+        });
+  };
+
+
+  /** @return {!WebDriver} */
+  var getWebDriver = function() {
+    var chromeOptions = new chromeMod.Options();
+    chromeOptions.addArguments([
+      '--user-data-dir=/tmp/selenium_gulp_' + new Date().getTime(),
+      '--no-first-run'
+    ]);
+
+    var capabilities = new webdriver.Capabilities();
+    capabilities.set('browserName', 'chrome');
+
+    return new webdriver.Builder()
+        .withCapabilities(capabilities)
+        .setChromeOptions(chromeOptions)
+        .build();
+  };
+
+  var testUrls = getTestUrls();
+  log('Found', testUrls.length, 'JsUnit tests. Running...');
+  var driver = getWebDriver();
+
+  return /** @type {{runMany:!Function}} */ (
+      JsUnitTestRunner).runMany(driver, testUrls).then(
+      function() {
+        driver.quit();
+      });
 }
 
 
 /** @type {!Function} */
-exports.runTest = runTest;
+exports.runSpacTests = runSpacTests;
+
+
+/** @type {!Function} */
+exports.runJsUnitTests = runJsUnitTests;

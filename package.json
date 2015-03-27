@@ -2,7 +2,9 @@
   "name": "lovefield",
   "version": "2.0.46",
   "description": "Lovefield - A Data Access Library",
-  "keywords": ["lovefield"],
+  "keywords": [
+    "lovefield"
+  ],
   "homepage": "https://github.com/google/lovefield",
   "bugs": {
     "url": "https://github.com/google/lovefield/issues"
@@ -33,8 +35,10 @@
     "google-closure-library-latest": "*",
     "gulp": "^3.8.10",
     "gulp-webserver": "^0.9.0",
+    "minijasminenode": "^1.1.1",
     "mkdirp": "^0.3.5",
     "rimraf": "*",
+    "selenium-webdriver": "^2.45.1",
     "tempfile": "*",
     "temporary": "*"
   },
