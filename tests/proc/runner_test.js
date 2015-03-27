@@ -92,6 +92,40 @@ function testTransaction_Read() {
 }
 
 
+/**
+ * Tests that multiple overlapping READ_WRITE transactions are executed in the
+ * expected order.
+ */
+function testTransaction_Write() {
+  asyncTestCase.waitForAsync('testTransaction_Write');
+  var actualExecutionOrder = [];
+  var expectedExecutionOrder = [];
+
+  var ids = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+  var queryTasks = ids.map(function(id) {
+    var queryTask = new lf.testing.MockTask(
+        lf.TransactionType.READ_WRITE,
+        new goog.structs.Set([j]),
+        function() {
+          actualExecutionOrder.push('query' + id.toString());
+        },
+        lf.proc.TaskPriority.USER_QUERY_TASK);
+    expectedExecutionOrder.push('query' + id.toString());
+    return queryTask;
+  });
+
+  var promises = queryTasks.map(function(task) {
+    return runner.scheduleTask(task);
+  });
+
+  goog.Promise.all(promises).then(
+      function(results) {
+        assertArrayEquals(expectedExecutionOrder, actualExecutionOrder);
+        asyncTestCase.continueTesting();
+      });
+}
+
+
 function testTask_Success() {
   asyncTestCase.waitForAsync('testTask_Success');
 
