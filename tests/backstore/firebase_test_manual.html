@@ -1,0 +1,34 @@
+<!doctype html>
+<html>
+<head>
+
+  <title>Test for Firebase.</title>
+  <script>
+
+(function() {
+  function includeTestScript(src) {
+    document.write(
+        '<script type="text/javascript" src="' + src + '"><' + '/script>');
+  }
+
+  var realBase = '../../../../../';
+  window.CLOSURE_BASE_PATH = realBase + 'javascript/closure/';
+
+  includeTestScript(CLOSURE_BASE_PATH + 'base.js');
+  includeTestScript('test_js_deps-runfiles.js');
+})();
+
+  </script>
+  <script>
+
+goog.require('goog.testing.AsyncTestCase');
+goog.require('goog.testing.jsunit');
+
+  </script>
+  <script src="https://cdn.firebase.com/js/client/2.2.3/firebase.js">
+  </script>
+</head>
+<body>
+  <script src="firebase_test.js"></script>
+</body>
+</html>
