@@ -35378,7 +35378,7 @@ lf.proc.Transaction.prototype.stateTransition_ = function(newState) {
 };
 
 
-/** @override */
+/** @export @override */
 lf.proc.Transaction.prototype.exec = function(queryBuilders) {
   this.stateTransition_(
       lf.proc.TransactionState_.EXECUTING_AND_COMMITTING);
@@ -35410,7 +35410,7 @@ lf.proc.Transaction.prototype.exec = function(queryBuilders) {
 };
 
 
-/** @override */
+/** @export @override */
 lf.proc.Transaction.prototype.begin = function(scope) {
   this.stateTransition_(lf.proc.TransactionState_.ACQUIRING_SCOPE);
 
@@ -35423,7 +35423,7 @@ lf.proc.Transaction.prototype.begin = function(scope) {
 };
 
 
-/** @override */
+/** @export @override */
 lf.proc.Transaction.prototype.attach = function(query) {
   this.stateTransition_(lf.proc.TransactionState_.EXECUTING_QUERY);
 
@@ -35439,7 +35439,7 @@ lf.proc.Transaction.prototype.attach = function(query) {
 };
 
 
-/** @override */
+/** @export @override */
 lf.proc.Transaction.prototype.commit = function() {
   this.stateTransition_(lf.proc.TransactionState_.COMMITTING);
   return this.transactionTask_.commit().then(goog.bind(
@@ -35449,7 +35449,7 @@ lf.proc.Transaction.prototype.commit = function() {
 };
 
 
-/** @override */
+/** @export @override */
 lf.proc.Transaction.prototype.rollback = function() {
   this.stateTransition_(lf.proc.TransactionState_.ROLLING_BACK);
   return this.transactionTask_.rollback().then(goog.bind(
