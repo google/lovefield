@@ -2893,7 +2893,7 @@ goog.addDependency('dom/dataset.js', ['goog.dom.dataset'], ['goog.string', 'goog
 goog.addDependency('dom/dataset_test.js', ['goog.dom.datasetTest'], ['goog.dom', 'goog.dom.dataset', 'goog.testing.jsunit'], false);
 goog.addDependency('dom/dom.js', ['goog.dom', 'goog.dom.Appendable', 'goog.dom.DomHelper'], ['goog.array', 'goog.asserts', 'goog.dom.BrowserFeature', 'goog.dom.NodeType', 'goog.dom.TagName', 'goog.dom.safe', 'goog.html.SafeHtml', 'goog.math.Coordinate', 'goog.math.Size', 'goog.object', 'goog.string', 'goog.string.Unicode', 'goog.userAgent'], false);
 goog.addDependency('dom/dom_test.js', ['goog.dom.dom_test'], ['goog.dom', 'goog.dom.BrowserFeature', 'goog.dom.DomHelper', 'goog.dom.InputType', 'goog.dom.NodeType', 'goog.dom.TagName', 'goog.functions', 'goog.html.testing', 'goog.object', 'goog.string.Unicode', 'goog.testing.PropertyReplacer', 'goog.testing.asserts', 'goog.userAgent', 'goog.userAgent.product', 'goog.userAgent.product.isVersion'], false);
-goog.addDependency('dom/fontsizemonitor.js', ['goog.dom.FontSizeMonitor', 'goog.dom.FontSizeMonitor.EventType'], ['goog.dom', 'goog.events', 'goog.events.EventTarget', 'goog.events.EventType', 'goog.userAgent'], false);
+goog.addDependency('dom/fontsizemonitor.js', ['goog.dom.FontSizeMonitor', 'goog.dom.FontSizeMonitor.EventType'], ['goog.dom', 'goog.dom.TagName', 'goog.events', 'goog.events.EventTarget', 'goog.events.EventType', 'goog.userAgent'], false);
 goog.addDependency('dom/fontsizemonitor_test.js', ['goog.dom.FontSizeMonitorTest'], ['goog.dom', 'goog.dom.FontSizeMonitor', 'goog.dom.TagName', 'goog.events', 'goog.events.Event', 'goog.testing.PropertyReplacer', 'goog.testing.events', 'goog.testing.jsunit', 'goog.userAgent'], false);
 goog.addDependency('dom/forms.js', ['goog.dom.forms'], ['goog.dom.InputType', 'goog.dom.TagName', 'goog.structs.Map'], false);
 goog.addDependency('dom/forms_test.js', ['goog.dom.formsTest'], ['goog.dom', 'goog.dom.forms', 'goog.testing.jsunit'], false);
@@ -3842,7 +3842,7 @@ goog.addDependency('ui/bubble.js', ['goog.ui.Bubble'], ['goog.Timer', 'goog.dom.
 goog.addDependency('ui/button.js', ['goog.ui.Button', 'goog.ui.Button.Side'], ['goog.events.EventType', 'goog.events.KeyCodes', 'goog.events.KeyHandler', 'goog.ui.ButtonRenderer', 'goog.ui.ButtonSide', 'goog.ui.Component', 'goog.ui.Control', 'goog.ui.NativeButtonRenderer', 'goog.ui.registry'], false);
 goog.addDependency('ui/button_test.js', ['goog.ui.ButtonTest'], ['goog.dom', 'goog.dom.classlist', 'goog.events', 'goog.events.Event', 'goog.events.EventType', 'goog.events.KeyCodes', 'goog.events.KeyHandler', 'goog.testing.events', 'goog.testing.jsunit', 'goog.ui.Button', 'goog.ui.ButtonRenderer', 'goog.ui.ButtonSide', 'goog.ui.Component', 'goog.ui.NativeButtonRenderer'], false);
 goog.addDependency('ui/buttonrenderer.js', ['goog.ui.ButtonRenderer'], ['goog.a11y.aria', 'goog.a11y.aria.Role', 'goog.a11y.aria.State', 'goog.asserts', 'goog.ui.ButtonSide', 'goog.ui.Component', 'goog.ui.ControlRenderer'], false);
-goog.addDependency('ui/buttonrenderer_test.js', ['goog.ui.ButtonRendererTest'], ['goog.a11y.aria', 'goog.a11y.aria.Role', 'goog.a11y.aria.State', 'goog.dom', 'goog.dom.classlist', 'goog.testing.ExpectedFailures', 'goog.testing.jsunit', 'goog.testing.ui.rendererasserts', 'goog.ui.Button', 'goog.ui.ButtonRenderer', 'goog.ui.ButtonSide', 'goog.ui.Component'], false);
+goog.addDependency('ui/buttonrenderer_test.js', ['goog.ui.ButtonRendererTest'], ['goog.a11y.aria', 'goog.a11y.aria.Role', 'goog.a11y.aria.State', 'goog.dom', 'goog.dom.TagName', 'goog.dom.classlist', 'goog.testing.ExpectedFailures', 'goog.testing.jsunit', 'goog.testing.ui.rendererasserts', 'goog.ui.Button', 'goog.ui.ButtonRenderer', 'goog.ui.ButtonSide', 'goog.ui.Component'], false);
 goog.addDependency('ui/buttonside.js', ['goog.ui.ButtonSide'], [], false);
 goog.addDependency('ui/charcounter.js', ['goog.ui.CharCounter', 'goog.ui.CharCounter.Display'], ['goog.dom', 'goog.events', 'goog.events.EventTarget', 'goog.events.InputHandler'], false);
 goog.addDependency('ui/charcounter_test.js', ['goog.ui.CharCounterTest'], ['goog.dom', 'goog.testing.asserts', 'goog.testing.jsunit', 'goog.ui.CharCounter', 'goog.userAgent'], false);
@@ -3859,7 +3859,7 @@ goog.addDependency('ui/colormenubutton.js', ['goog.ui.ColorMenuButton'], ['goog.
 goog.addDependency('ui/colormenubuttonrenderer.js', ['goog.ui.ColorMenuButtonRenderer'], ['goog.asserts', 'goog.color', 'goog.dom.TagName', 'goog.dom.classlist', 'goog.ui.MenuButtonRenderer', 'goog.userAgent'], false);
 goog.addDependency('ui/colormenubuttonrenderer_test.js', ['goog.ui.ColorMenuButtonTest'], ['goog.dom', 'goog.dom.TagName', 'goog.testing.jsunit', 'goog.testing.ui.RendererHarness', 'goog.testing.ui.rendererasserts', 'goog.ui.ColorMenuButton', 'goog.ui.ColorMenuButtonRenderer', 'goog.userAgent'], false);
 goog.addDependency('ui/colorpalette.js', ['goog.ui.ColorPalette'], ['goog.array', 'goog.color', 'goog.dom.TagName', 'goog.style', 'goog.ui.Palette', 'goog.ui.PaletteRenderer'], false);
-goog.addDependency('ui/colorpalette_test.js', ['goog.ui.ColorPaletteTest'], ['goog.color', 'goog.testing.jsunit', 'goog.ui.ColorPalette'], false);
+goog.addDependency('ui/colorpalette_test.js', ['goog.ui.ColorPaletteTest'], ['goog.color', 'goog.dom.TagName', 'goog.testing.jsunit', 'goog.ui.ColorPalette'], false);
 goog.addDependency('ui/colorpicker.js', ['goog.ui.ColorPicker', 'goog.ui.ColorPicker.EventType'], ['goog.ui.ColorPalette', 'goog.ui.Component'], false);
 goog.addDependency('ui/colorsplitbehavior.js', ['goog.ui.ColorSplitBehavior'], ['goog.ui.ColorMenuButton', 'goog.ui.SplitBehavior'], false);
 goog.addDependency('ui/combobox.js', ['goog.ui.ComboBox', 'goog.ui.ComboBoxItem'], ['goog.Timer', 'goog.asserts', 'goog.dom', 'goog.dom.InputType', 'goog.dom.TagName', 'goog.dom.classlist', 'goog.events.EventType', 'goog.events.InputHandler', 'goog.events.KeyCodes', 'goog.events.KeyHandler', 'goog.log', 'goog.positioning.Corner', 'goog.positioning.MenuAnchoredPosition', 'goog.string', 'goog.style', 'goog.ui.Component', 'goog.ui.ItemEvent', 'goog.ui.LabelInput', 'goog.ui.Menu', 'goog.ui.MenuItem', 'goog.ui.MenuSeparator', 'goog.ui.registry', 'goog.userAgent'], false);
@@ -4001,7 +4001,7 @@ goog.addDependency('ui/mockactivitymonitor_test.js', ['goog.ui.MockActivityMonit
 goog.addDependency('ui/modalpopup.js', ['goog.ui.ModalPopup'], ['goog.Timer', 'goog.a11y.aria', 'goog.a11y.aria.State', 'goog.asserts', 'goog.dom', 'goog.dom.TagName', 'goog.dom.classlist', 'goog.dom.iframe', 'goog.events', 'goog.events.EventType', 'goog.events.FocusHandler', 'goog.fx.Transition', 'goog.string', 'goog.style', 'goog.ui.Component', 'goog.ui.PopupBase', 'goog.userAgent'], false);
 goog.addDependency('ui/modalpopup_test.js', ['goog.ui.ModalPopupTest'], ['goog.a11y.aria', 'goog.a11y.aria.State', 'goog.dispose', 'goog.dom', 'goog.dom.TagName', 'goog.events', 'goog.events.EventTarget', 'goog.fx.Transition', 'goog.fx.css3', 'goog.string', 'goog.style', 'goog.testing.MockClock', 'goog.testing.jsunit', 'goog.ui.ModalPopup', 'goog.ui.PopupBase'], false);
 goog.addDependency('ui/nativebuttonrenderer.js', ['goog.ui.NativeButtonRenderer'], ['goog.asserts', 'goog.dom.InputType', 'goog.dom.TagName', 'goog.dom.classlist', 'goog.events.EventType', 'goog.ui.ButtonRenderer', 'goog.ui.Component'], false);
-goog.addDependency('ui/nativebuttonrenderer_test.js', ['goog.ui.NativeButtonRendererTest'], ['goog.dom', 'goog.dom.classlist', 'goog.events', 'goog.testing.ExpectedFailures', 'goog.testing.events', 'goog.testing.jsunit', 'goog.testing.ui.rendererasserts', 'goog.ui.Button', 'goog.ui.Component', 'goog.ui.NativeButtonRenderer', 'goog.userAgent'], false);
+goog.addDependency('ui/nativebuttonrenderer_test.js', ['goog.ui.NativeButtonRendererTest'], ['goog.dom', 'goog.dom.TagName', 'goog.dom.classlist', 'goog.events', 'goog.testing.ExpectedFailures', 'goog.testing.events', 'goog.testing.jsunit', 'goog.testing.ui.rendererasserts', 'goog.ui.Button', 'goog.ui.Component', 'goog.ui.NativeButtonRenderer', 'goog.userAgent'], false);
 goog.addDependency('ui/option.js', ['goog.ui.Option'], ['goog.ui.Component', 'goog.ui.MenuItem', 'goog.ui.registry'], false);
 goog.addDependency('ui/palette.js', ['goog.ui.Palette'], ['goog.array', 'goog.dom', 'goog.events', 'goog.events.EventType', 'goog.events.KeyCodes', 'goog.math.Size', 'goog.ui.Component', 'goog.ui.Control', 'goog.ui.PaletteRenderer', 'goog.ui.SelectionModel'], false);
 goog.addDependency('ui/palette_test.js', ['goog.ui.PaletteTest'], ['goog.a11y.aria', 'goog.dom', 'goog.events', 'goog.events.EventType', 'goog.events.KeyCodes', 'goog.events.KeyEvent', 'goog.testing.events.Event', 'goog.testing.jsunit', 'goog.testing.recordFunction', 'goog.ui.Component', 'goog.ui.Container', 'goog.ui.Palette'], false);
@@ -4028,7 +4028,7 @@ goog.addDependency('ui/ratings.js', ['goog.ui.Ratings', 'goog.ui.Ratings.EventTy
 goog.addDependency('ui/registry.js', ['goog.ui.registry'], ['goog.asserts', 'goog.dom.classlist'], false);
 goog.addDependency('ui/registry_test.js', ['goog.ui.registryTest'], ['goog.object', 'goog.testing.jsunit', 'goog.ui.registry'], false);
 goog.addDependency('ui/richtextspellchecker.js', ['goog.ui.RichTextSpellChecker'], ['goog.Timer', 'goog.asserts', 'goog.dom', 'goog.dom.NodeType', 'goog.dom.Range', 'goog.events.EventHandler', 'goog.events.EventType', 'goog.events.KeyCodes', 'goog.events.KeyHandler', 'goog.math.Coordinate', 'goog.spell.SpellCheck', 'goog.string.StringBuffer', 'goog.style', 'goog.ui.AbstractSpellChecker', 'goog.ui.Component', 'goog.ui.PopupMenu'], false);
-goog.addDependency('ui/richtextspellchecker_test.js', ['goog.ui.RichTextSpellCheckerTest'], ['goog.dom.Range', 'goog.dom.classlist', 'goog.events.KeyCodes', 'goog.object', 'goog.spell.SpellCheck', 'goog.testing.MockClock', 'goog.testing.events', 'goog.testing.jsunit', 'goog.ui.RichTextSpellChecker'], false);
+goog.addDependency('ui/richtextspellchecker_test.js', ['goog.ui.RichTextSpellCheckerTest'], ['goog.dom.Range', 'goog.dom.TagName', 'goog.dom.classlist', 'goog.events.KeyCodes', 'goog.object', 'goog.spell.SpellCheck', 'goog.testing.MockClock', 'goog.testing.events', 'goog.testing.jsunit', 'goog.ui.RichTextSpellChecker'], false);
 goog.addDependency('ui/roundedpanel.js', ['goog.ui.BaseRoundedPanel', 'goog.ui.CssRoundedPanel', 'goog.ui.GraphicsRoundedPanel', 'goog.ui.RoundedPanel', 'goog.ui.RoundedPanel.Corner'], ['goog.asserts', 'goog.dom', 'goog.dom.TagName', 'goog.dom.classlist', 'goog.graphics', 'goog.graphics.Path', 'goog.graphics.SolidFill', 'goog.graphics.Stroke', 'goog.math', 'goog.math.Coordinate', 'goog.style', 'goog.ui.Component', 'goog.userAgent'], false);
 goog.addDependency('ui/roundedpanel_test.js', ['goog.ui.RoundedPanelTest'], ['goog.testing.jsunit', 'goog.ui.CssRoundedPanel', 'goog.ui.GraphicsRoundedPanel', 'goog.ui.RoundedPanel', 'goog.userAgent'], false);
 goog.addDependency('ui/roundedtabrenderer.js', ['goog.ui.RoundedTabRenderer'], ['goog.dom', 'goog.dom.TagName', 'goog.ui.Tab', 'goog.ui.TabBar', 'goog.ui.TabRenderer', 'goog.ui.registry'], false);
@@ -4064,7 +4064,7 @@ goog.addDependency('ui/tab_test.js', ['goog.ui.TabTest'], ['goog.dom', 'goog.tes
 goog.addDependency('ui/tabbar.js', ['goog.ui.TabBar', 'goog.ui.TabBar.Location'], ['goog.ui.Component.EventType', 'goog.ui.Container', 'goog.ui.Container.Orientation', 'goog.ui.Tab', 'goog.ui.TabBarRenderer', 'goog.ui.registry'], false);
 goog.addDependency('ui/tabbar_test.js', ['goog.ui.TabBarTest'], ['goog.dom', 'goog.events', 'goog.events.Event', 'goog.events.EventType', 'goog.events.KeyCodes', 'goog.testing.jsunit', 'goog.ui.Component', 'goog.ui.Container', 'goog.ui.Tab', 'goog.ui.TabBar', 'goog.ui.TabBarRenderer'], false);
 goog.addDependency('ui/tabbarrenderer.js', ['goog.ui.TabBarRenderer'], ['goog.a11y.aria.Role', 'goog.object', 'goog.ui.ContainerRenderer'], false);
-goog.addDependency('ui/tabbarrenderer_test.js', ['goog.ui.TabBarRendererTest'], ['goog.a11y.aria.Role', 'goog.dom', 'goog.dom.classlist', 'goog.testing.jsunit', 'goog.testing.ui.rendererasserts', 'goog.ui.Container', 'goog.ui.TabBar', 'goog.ui.TabBarRenderer'], false);
+goog.addDependency('ui/tabbarrenderer_test.js', ['goog.ui.TabBarRendererTest'], ['goog.a11y.aria.Role', 'goog.dom', 'goog.dom.TagName', 'goog.dom.classlist', 'goog.testing.jsunit', 'goog.testing.ui.rendererasserts', 'goog.ui.Container', 'goog.ui.TabBar', 'goog.ui.TabBarRenderer'], false);
 goog.addDependency('ui/tablesorter.js', ['goog.ui.TableSorter', 'goog.ui.TableSorter.EventType'], ['goog.array', 'goog.dom', 'goog.dom.TagName', 'goog.dom.classlist', 'goog.events.EventType', 'goog.functions', 'goog.ui.Component'], false);
 goog.addDependency('ui/tablesorter_test.js', ['goog.ui.TableSorterTest'], ['goog.array', 'goog.dom', 'goog.dom.TagName', 'goog.dom.classlist', 'goog.testing.events', 'goog.testing.jsunit', 'goog.ui.TableSorter'], false);
 goog.addDependency('ui/tabpane.js', ['goog.ui.TabPane', 'goog.ui.TabPane.Events', 'goog.ui.TabPane.TabLocation', 'goog.ui.TabPane.TabPage', 'goog.ui.TabPaneEvent'], ['goog.asserts', 'goog.dom', 'goog.dom.TagName', 'goog.dom.classlist', 'goog.events', 'goog.events.Event', 'goog.events.EventTarget', 'goog.events.EventType', 'goog.events.KeyCodes', 'goog.style'], false);
@@ -4088,7 +4088,7 @@ goog.addDependency('ui/toolbarrenderer.js', ['goog.ui.ToolbarRenderer'], ['goog.
 goog.addDependency('ui/toolbarselect.js', ['goog.ui.ToolbarSelect'], ['goog.ui.Select', 'goog.ui.ToolbarMenuButtonRenderer', 'goog.ui.registry'], false);
 goog.addDependency('ui/toolbarseparator.js', ['goog.ui.ToolbarSeparator'], ['goog.ui.Separator', 'goog.ui.ToolbarSeparatorRenderer', 'goog.ui.registry'], false);
 goog.addDependency('ui/toolbarseparatorrenderer.js', ['goog.ui.ToolbarSeparatorRenderer'], ['goog.asserts', 'goog.dom.TagName', 'goog.dom.classlist', 'goog.ui.INLINE_BLOCK_CLASSNAME', 'goog.ui.MenuSeparatorRenderer'], false);
-goog.addDependency('ui/toolbarseparatorrenderer_test.js', ['goog.ui.ToolbarSeparatorRendererTest'], ['goog.dom', 'goog.dom.classlist', 'goog.testing.jsunit', 'goog.ui.Component', 'goog.ui.INLINE_BLOCK_CLASSNAME', 'goog.ui.ToolbarSeparator', 'goog.ui.ToolbarSeparatorRenderer'], false);
+goog.addDependency('ui/toolbarseparatorrenderer_test.js', ['goog.ui.ToolbarSeparatorRendererTest'], ['goog.dom', 'goog.dom.TagName', 'goog.dom.classlist', 'goog.testing.jsunit', 'goog.ui.Component', 'goog.ui.INLINE_BLOCK_CLASSNAME', 'goog.ui.ToolbarSeparator', 'goog.ui.ToolbarSeparatorRenderer'], false);
 goog.addDependency('ui/toolbartogglebutton.js', ['goog.ui.ToolbarToggleButton'], ['goog.ui.ToggleButton', 'goog.ui.ToolbarButtonRenderer', 'goog.ui.registry'], false);
 goog.addDependency('ui/tooltip.js', ['goog.ui.Tooltip', 'goog.ui.Tooltip.CursorTooltipPosition', 'goog.ui.Tooltip.ElementTooltipPosition', 'goog.ui.Tooltip.State'], ['goog.Timer', 'goog.array', 'goog.dom', 'goog.dom.TagName', 'goog.dom.safe', 'goog.events', 'goog.events.EventType', 'goog.html.legacyconversions', 'goog.math.Box', 'goog.math.Coordinate', 'goog.positioning', 'goog.positioning.AnchoredPosition', 'goog.positioning.Corner', 'goog.positioning.Overflow', 'goog.positioning.OverflowStatus', 'goog.positioning.ViewportPosition', 'goog.structs.Set', 'goog.style', 'goog.ui.Popup', 'goog.ui.PopupBase'], false);
 goog.addDependency('ui/tooltip_test.js', ['goog.ui.TooltipTest'], ['goog.dom', 'goog.dom.TagName', 'goog.events.Event', 'goog.events.EventHandler', 'goog.events.EventType', 'goog.html.testing', 'goog.math.Coordinate', 'goog.positioning.AbsolutePosition', 'goog.style', 'goog.testing.MockClock', 'goog.testing.PropertyReplacer', 'goog.testing.TestQueue', 'goog.testing.events', 'goog.testing.jsunit', 'goog.ui.PopupBase', 'goog.ui.Tooltip', 'goog.userAgent'], false);
@@ -18008,11 +18008,14 @@ lf.backstore.MemoryTable = function() {
 };
 
 
-/** @override */
-lf.backstore.MemoryTable.prototype.get = function(ids) {
+/**
+ * @param {!Array<number>} ids
+ * @return {!Array<!lf.Row>}
+ */
+lf.backstore.MemoryTable.prototype.getSync = function(ids) {
   // Empty array is treated as "return all rows".
   if (ids.length == 0) {
-    return this.getAll_();
+    return this.data_.getValues();
   }
 
   var results = [];
@@ -18023,32 +18026,33 @@ lf.backstore.MemoryTable.prototype.get = function(ids) {
     }
   }, this);
 
-  return goog.Promise.resolve(results);
+  return results;
 };
 
 
-/**
- * Returns all the rows in the table.
- * @return {!IThenable<!Array<!lf.Row>>}
- * @private
- */
-lf.backstore.MemoryTable.prototype.getAll_ = function() {
-  return goog.Promise.resolve(this.data_.getValues());
+/** @override */
+lf.backstore.MemoryTable.prototype.get = function(ids) {
+  return goog.Promise.resolve(this.getSync(ids));
+};
+
+
+/** @param {!Array<!lf.Row>} rows */
+lf.backstore.MemoryTable.prototype.putSync = function(rows) {
+  rows.forEach(function(row) {
+    this.data_.set(row.id(), row);
+  }, this);
 };
 
 
 /** @override */
 lf.backstore.MemoryTable.prototype.put = function(rows) {
-  rows.forEach(function(row) {
-    this.data_.set(row.id(), row);
-  }, this);
-
+  this.putSync(rows);
   return goog.Promise.resolve();
 };
 
 
-/** @override */
-lf.backstore.MemoryTable.prototype.remove = function(ids) {
+/** @param {!Array<number>} ids */
+lf.backstore.MemoryTable.prototype.removeSync = function(ids) {
   if (ids.length == 0 || ids.length == this.data_.getCount()) {
     // Remove all.
     this.data_.clear();
@@ -18057,7 +18061,12 @@ lf.backstore.MemoryTable.prototype.remove = function(ids) {
       this.data_.remove(id);
     }, this);
   }
+};
 
+
+/** @override */
+lf.backstore.MemoryTable.prototype.remove = function(ids) {
+  this.removeSync(ids);
   return goog.Promise.resolve();
 };
 
@@ -18122,7 +18131,7 @@ lf.backstore.Firebase = function(schema, fb) {
   /** @private {!Firebase} */
   this.db_;
 
-  /** @private {!goog.structs.Map<string, lf.backstore.MemoryTable>} */
+  /** @private {!goog.structs.Map<string, !lf.backstore.MemoryTable>} */
   this.tables_ = new goog.structs.Map();
 };
 
@@ -18144,7 +18153,7 @@ lf.backstore.Firebase.prototype.populate_ = function(table, data) {
     rows.push(new lf.Row(id, data[key]));
   }
 
-  table.put(rows);  // It's actually synchronous for MemoryTable.
+  table.putSync(rows);
 };
 
 
