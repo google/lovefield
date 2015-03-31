@@ -4151,7 +4151,7 @@ goog.addDependency('vec/vec4d.js', ['goog.vec.vec4d', 'goog.vec.vec4d.Type'], ['
 goog.addDependency('vec/vec4f.js', ['goog.vec.vec4f', 'goog.vec.vec4f.Type'], ['goog.vec'], false);
 goog.addDependency('webgl/webgl.js', ['goog.webgl'], [], false);
 goog.addDependency('window/window.js', ['goog.window'], ['goog.dom.TagName', 'goog.labs.userAgent.platform', 'goog.string', 'goog.userAgent'], false);
-goog.addDependency('window/window_test.js', ['goog.windowTest'], ['goog.dom', 'goog.dom.TagName', 'goog.events', 'goog.functions', 'goog.labs.userAgent.engine', 'goog.labs.userAgent.platform', 'goog.string', 'goog.testing.AsyncTestCase', 'goog.testing.PropertyReplacer', 'goog.testing.jsunit', 'goog.window'], false);
+goog.addDependency('window/window_test.js', ['goog.windowTest'], ['goog.dom', 'goog.dom.TagName', 'goog.events', 'goog.functions', 'goog.labs.userAgent.browser', 'goog.labs.userAgent.engine', 'goog.labs.userAgent.platform', 'goog.string', 'goog.testing.AsyncTestCase', 'goog.testing.PropertyReplacer', 'goog.testing.jsunit', 'goog.window'], false);
 
 // Copyright 2009 The Closure Library Authors. All Rights Reserved.
 //
