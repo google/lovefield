@@ -17958,11 +17958,12 @@ lf.backstore.FirebaseTx.prototype.diffToChange_ = function() {
   var diffs = this.getJournal().getDiff();
   diffs.forEach(function(diff) {
     var prefix = diffs.length > 1 ? diff.getName() + '.' : '';
-    var setter = function(row, value) {
+    diff.getAdded().getValues().forEach(function(row) {
       object[prefix + row.id().toString()] = row.payload();
-    };
-    diff.getAdded().getValues().forEach(setter);
-    diff.getModified().getValues().forEach(setter);
+    });
+    diff.getModified().getValues().forEach(function(pair) {
+      object[prefix + pair[1].id().toString()] = pair[1].payload();
+    });
     diff.getDeleted().getValues().forEach(function(row) {
       object[prefix + row.id().toString()] = null;
     });
@@ -18145,10 +18146,6 @@ lf.backstore.Firebase = function(schema, fb) {
 lf.backstore.Firebase.prototype.populate_ = function(table, data) {
   var rows = [];
   for (var key in data) {
-    if (key == '.meta') {
-      // Ignore table metadata.
-      continue;
-    }
     var id = parseInt(key, 10);
     rows.push(new lf.Row(id, data[key]));
   }
@@ -18165,7 +18162,7 @@ lf.backstore.Firebase.prototype.init = function(opt_onUpgrade) {
 
   // This call will fetch everything in the DB from network.
   this.db_.once('value', goog.bind(function(snapshot) {
-    var rawDb = snapshot.val();
+    var rawDb = snapshot.exportVal();
     if (goog.isNull(rawDb)) {
       // New database, need initialization.
       this.db_.set(this.createNewDb_(), resolver.resolve.bind(resolver));
@@ -18201,7 +18198,7 @@ lf.backstore.Firebase.prototype.reloadTable = function(tableName) {
   var ref = this.getTableRef(tableName);
   ref.once('value', goog.bind(function(snapshot) {
     var memTable = new lf.backstore.MemoryTable();
-    this.populate_(memTable, snapshot);
+    this.populate_(memTable, snapshot.exportVal());
     this.tables_.set(tableName, memTable);
     resolver.resolve();
   }, this));
