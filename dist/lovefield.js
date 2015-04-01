@@ -12344,8 +12344,8 @@ lf.backstore.BaseTx = function(journal, txType) {
   /** @private {!lf.cache.Journal} */
   this.journal_ = journal;
 
-  /** @private {!lf.TransactionType} */
-  this.txType_ = txType;
+  /** @protected {!lf.TransactionType} */
+  this.txType = txType;
 
   /** @protected {!goog.promise.Resolver} */
   this.resolver = goog.Promise.withResolver();
@@ -12370,7 +12370,7 @@ lf.backstore.BaseTx.prototype.abort = goog.abstractMethod;
 lf.backstore.BaseTx.prototype.commit = function() {
   var mergeIntoBackstore = goog.bind(function() {
     // Nothing to merge if this is a READ_ONLY transaction.
-    return this.txType_ == lf.TransactionType.READ_ONLY ?
+    return this.txType == lf.TransactionType.READ_ONLY ?
         goog.Promise.resolve() : this.mergeIntoBackstore_();
   }, this);
 
@@ -20360,6 +20360,664 @@ lf.backstore.TrackedTx.prototype.commit = function() {
 
 /**
  * @license
+ * Copyright 2015 Google Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+goog.provide('lf.backstore.WebSqlTable');
+
+goog.require('goog.Promise');
+goog.require('lf.Table');
+
+
+
+/**
+ * Table stream based on a given WebSQL table.
+ * @constructor
+ * @struct
+ * @final
+ * @implements {lf.Table}
+ *
+ * @param {!lf.backstore.WebSqlTx} tx
+ * @param {string} name
+ * @param {!function({id: number, value: *}): !lf.Row} deserializeFn
+ */
+lf.backstore.WebSqlTable = function(tx, name, deserializeFn) {
+  /** @private {!lf.backstore.WebSqlTx} */
+  this.tx_ = tx;
+
+  /** @private {string} */
+  this.name_ = name;
+
+  /** @private {!function({id: number, value: *}): !lf.Row} */
+  this.deserializeFn_ = deserializeFn;
+};
+
+
+/** @override */
+lf.backstore.WebSqlTable.prototype.get = function(ids) {
+  var where = (ids.length == 0) ? '' :
+      'WHERE id IN (' + ids.join(',') + ')';
+
+  var sql = 'SELECT id, value FROM ' + this.name_ + ' ' + where;
+  var resolver = goog.Promise.withResolver();
+  var deserializeFn = this.deserializeFn_;
+  this.tx_.execSql(sql, []).then(function(results) {
+    var length = results.rows.length;
+    var rows = [];
+    for (var i = 0; i < length; ++i) {
+      rows.push(deserializeFn({
+        id: results.rows.item(i)['id'],
+        value: JSON.parse(results.rows.item(i)['value'])
+      }));
+    }
+    resolver.resolve(rows);
+  }, function(e) {
+    resolver.reject(e);
+  });
+
+  return resolver.promise;
+};
+
+
+/** @override */
+lf.backstore.WebSqlTable.prototype.put = function(rows) {
+  if (rows.length == 0) {
+    return goog.Promise.resolve();
+  }
+
+  var sql = 'INSERT OR REPLACE INTO ' + this.name_ + '(id, value) ' +
+      'VALUES (?, ?)';
+  var promises = rows.map(function(row) {
+    return this.tx_.execSql(sql, [row.id(), JSON.stringify(row.payload())]);
+  }, this);
+
+  return goog.Promise.all(promises);
+};
+
+
+/** @override */
+lf.backstore.WebSqlTable.prototype.remove = function(ids) {
+  var where = (ids.length == 0) ? '' :
+      'WHERE id IN (' + ids.join(',') + ')';
+
+  var sql = 'DELETE FROM ' + this.name_ + ' ' + where;
+  return this.tx_.execSql(sql, []);
+};
+
+/**
+ * @license
+ * Copyright 2015 Google Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+goog.provide('lf.backstore.WebSqlTx');
+
+goog.require('goog.Promise');
+goog.require('goog.structs.Map');
+goog.require('lf.TransactionType');
+goog.require('lf.backstore.BaseTx');
+goog.require('lf.backstore.TrackedTable');
+goog.require('lf.backstore.WebSqlTable');
+
+
+
+/**
+ * Wrapper for Transaction object obtained from WebSQL.
+ * @constructor
+ * @struct
+ * @extends {lf.backstore.BaseTx}
+ *
+ * @param {!lf.Global} global
+ * @param {!Database} db
+ * @param {!lf.cache.Journal} journal
+ * @param {!lf.TransactionType} txType
+ */
+lf.backstore.WebSqlTx = function(global, db, journal, txType) {
+  lf.backstore.WebSqlTx.base(this, 'constructor', journal, txType);
+
+  /** @private {!Database} */
+  this.db_ = db;
+
+  /** @private {!SQLTransaction} */
+  this.tx_;
+
+  /** @private {!goog.structs.Map<string, !lf.backstore.TrackedTable>} */
+  this.tables_ = new goog.structs.Map();
+};
+goog.inherits(lf.backstore.WebSqlTx, lf.backstore.BaseTx);
+
+
+/**
+ * @return {!IThenable}
+ * @private
+ */
+lf.backstore.WebSqlTx.prototype.whenReady_ = function() {
+  if (goog.isDefAndNotNull(this.tx_)) {
+    return goog.Promise.resolve();
+  } else {
+    return new goog.Promise(goog.bind(function(resolve, reject) {
+      var txHandler = goog.bind(function(tx) {
+        this.tx_ = tx;
+        resolve();
+      }, this);
+
+      if (this.txType == lf.TransactionType.READ_ONLY) {
+        this.db_.readTransaction(txHandler, reject);
+      } else {
+        this.db_.transaction(txHandler, reject);
+      }
+    }, this));
+  }
+};
+
+
+/** @override */
+lf.backstore.WebSqlTx.prototype.getTable = function(tableName, deserializeFn) {
+  var table = this.tables_.get(tableName, null);
+  if (goog.isNull(table)) {
+    table = new lf.backstore.TrackedTable(
+        new lf.backstore.WebSqlTable(this, tableName, deserializeFn),
+        tableName);
+    this.tables_.set(tableName, table);
+  }
+
+  return table;
+};
+
+
+/** @override */
+lf.backstore.WebSqlTx.prototype.commit = function() {
+  lf.backstore.WebSqlTx.base(this, 'commit');
+  return this.whenReady_().then(goog.bind(function() {
+    return goog.Promise.all(this.tables_.getValues().map(function(table) {
+      return table.whenRequestsDone();
+    }));
+  }, this)).then(goog.bind(function() {
+    this.resolver.resolve();
+  }, this));
+};
+
+
+/** @override */
+lf.backstore.WebSqlTx.prototype.abort = function() {
+  this.whenReady_().then(goog.bind(function() {
+    // This is the way to abort WebSQL transaction: give an invalid statement.
+    this.tx_.executeSql('UPDATE .invalid%name SET nada = 1');
+  }, this));
+};
+
+
+/**
+ * @param {string} sql
+ * @param {!Array} params
+ * @return {!IThenable}
+ */
+lf.backstore.WebSqlTx.prototype.execSql = function(sql, params) {
+  return this.whenReady_().then(goog.bind(function() {
+    return lf.backstore.WebSqlTx.execSql(this.tx_, sql, params);
+  }, this));
+};
+
+
+/**
+ * Wraps a WebSQL execution as promise.
+ * @param {!SQLTransaction} transaction
+ * @param {string} sql
+ * @param {!Array} params
+ * @return {!IThenable}
+ */
+lf.backstore.WebSqlTx.execSql = function(transaction, sql, params) {
+  return new goog.Promise(function(resolve, reject) {
+    transaction.executeSql(sql, params, function(tx, results) {
+      resolve(results);
+    }, function(tx, e) {
+      reject(e);
+    });
+  });
+};
+
+
+/**
+ * @license
+ * Copyright 2015 Google Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+goog.provide('lf.backstore.WebSqlRawBackStore');
+
+goog.require('goog.Promise');
+goog.require('goog.object');
+goog.require('lf.Row');
+goog.require('lf.backstore.WebSqlTx');
+goog.require('lf.raw.BackStore');
+
+
+
+/**
+ * @implements {lf.raw.BackStore.<Database>}
+ * @constructor
+ * @struct
+ * @final
+ *
+ * @param {number} oldVersion
+ * @param {!Database} db
+ * @param {!SQLTransaction} tx
+ */
+lf.backstore.WebSqlRawBackStore = function(oldVersion, db, tx) {
+  /** @private {!Database} */
+  this.db_ = db;
+
+  /** @private {!SQLTransaction} */
+  this.tx_ = tx;
+
+  /** @private {number} */
+  this.version_ = oldVersion;
+};
+
+
+/** @override */
+lf.backstore.WebSqlRawBackStore.prototype.getRawDBInstance = function() {
+  return this.db_;
+};
+
+
+/** @override */
+lf.backstore.WebSqlRawBackStore.prototype.getRawTransaction = function() {
+  return this.tx_;
+};
+
+
+/** @override */
+lf.backstore.WebSqlRawBackStore.prototype.dropTable = function(tableName) {
+  var sql = 'DROP TABLE ' + tableName;
+  return lf.backstore.WebSqlTx.execSql(this.tx_, sql, []);
+};
+
+
+/** @override */
+lf.backstore.WebSqlRawBackStore.prototype.addTableColumn = function(
+    tableName, columnName, defaultValue) {
+  // TODO(arthurhsu): implement
+  return goog.Promise.reject();
+};
+
+
+/** @override */
+lf.backstore.WebSqlRawBackStore.prototype.dropTableColumn = function(
+    tableName, columnName) {
+  // TODO(arthurhsu): implement
+  return goog.Promise.reject();
+};
+
+
+/** @override */
+lf.backstore.WebSqlRawBackStore.prototype.renameTableColumn = function(
+    tableName, oldColumnName, newColumnName) {
+  // TODO(arthurhsu): implement
+  return goog.Promise.reject();
+};
+
+
+/** @override */
+lf.backstore.WebSqlRawBackStore.prototype.createRow = function(payload) {
+  // TODO(arthurhsu): implement
+  return lf.Row.create(payload);
+};
+
+
+/** @override */
+lf.backstore.WebSqlRawBackStore.prototype.getVersion = function() {
+  return this.version_;
+};
+
+
+/** @override */
+lf.backstore.WebSqlRawBackStore.prototype.dump = function() {
+  // TODO(arthurhsu): implement
+  return goog.Promise.reject();
+};
+
+/**
+ * @license
+ * Copyright 2015 Google Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+goog.provide('lf.backstore.WebSql');
+
+goog.require('goog.Promise');
+goog.require('lf.BackStore');
+goog.require('lf.Exception');
+goog.require('lf.backstore.WebSqlRawBackStore');
+goog.require('lf.backstore.WebSqlTx');
+
+
+
+/**
+ * @constructor
+ * @struct
+ * @final
+ * @implements {lf.BackStore}
+ *
+ * @param {!lf.Global} global
+ * @param {!lf.schema.Database} schema
+ * @param {number=} opt_size Size of database in bytes.
+ */
+lf.backstore.WebSql = function(global, schema, opt_size) {
+  /** @private {!lf.Global} */
+  this.global_ = global;
+
+  /** @private {!lf.schema.Database} */
+  this.schema_ = schema;
+
+  /** @private {?Database} */
+  this.db_;
+
+  /** @private {number} */
+  this.size_ = opt_size || 2e9;  // Default to 2GB.
+};
+
+
+/** @override */
+lf.backstore.WebSql.prototype.init = function(opt_onUpgrade) {
+  if (!goog.isDefAndNotNull(window.openDatabase)) {
+    throw new lf.Exception(lf.Exception.Type.NOT_SUPPORTED,
+        'WebSql not supported by platform.');
+  }
+
+  var onUpgrade = opt_onUpgrade || function(rawDb) {
+    return goog.Promise.resolve();
+  };
+
+  var resolver = goog.Promise.withResolver();
+  try {
+    window.openDatabase(
+        this.schema_.name(),
+        '',  // Just open it with any version, otherwise weird error can happen.
+        this.schema_.name(),
+        this.size_,
+        goog.bind(function(db) {
+          this.db_ = db;
+          this.checkVersion_(onUpgrade).then(
+              resolver.resolve.bind(resolver),
+              goog.bind(function(e) {
+                this.db_ = null;
+                resolver.reject(e);
+              }, this));
+        }, this));
+  } catch (e) {
+    resolver.reject(e);
+  }
+
+  return resolver.promise;
+};
+
+
+/**
+ * Workaround Chrome's changeVersion problem.
+ * WebSQL changeVersion function is not working on Chrome. As a result, creating
+ * a .version table to save database version.
+ * @param {!function(!lf.raw.BackStore):!IThenable} onUpgrade
+ * @return {!IThenable}
+ * @private
+ */
+lf.backstore.WebSql.prototype.checkVersion_ = function(onUpgrade) {
+  var CREATE_VERSION =
+      'CREATE TABLE IF NOT EXISTS __lf_ver(id INTEGER PRIMARY KEY, v INTEGER)';
+  var GET_VERSION =
+      'SELECT v FROM __lf_ver WHERE id = 0';
+
+  var resolver = goog.Promise.withResolver();
+
+  this.db_.transaction(goog.bind(function(tx) {
+    lf.backstore.WebSqlTx.execSql(tx, CREATE_VERSION, []).then(function() {
+      return lf.backstore.WebSqlTx.execSql(tx, GET_VERSION, []);
+    }).then(goog.bind(function(results) {
+      var version = 0;
+      if (results.rows.length) {
+        version = results.rows.item(0)['v'];
+      }
+      if (version < this.schema_.version()) {
+        this.onUpgrade_(onUpgrade, version).then(
+            resolver.resolve.bind(resolver));
+      } else if (version > this.schema_.version()) {
+        resolver.reject(new lf.Exception(lf.Exception.Type.DATA,
+            'Attempt to open a newer database with old code'));
+      } else {
+        resolver.resolve();
+      }
+    }, this));
+  }, this), resolver.reject.bind(resolver));
+
+  return resolver.promise;
+};
+
+
+/** @return {boolean} */
+lf.backstore.WebSql.prototype.initialized = function() {
+  return goog.isDefAndNotNull(this.db_);
+};
+
+
+/** @override */
+lf.backstore.WebSql.prototype.createTx = function(type, journal) {
+  if (goog.isDefAndNotNull(this.db_)) {
+    return new lf.backstore.WebSqlTx(this.global_, this.db_, journal, type);
+  }
+  throw new lf.Exception(lf.Exception.Type.DATA,
+      'Attempt to create transaction from uninitialized DB');
+};
+
+
+/** @override */
+lf.backstore.WebSql.prototype.close = function() {
+  // WebSQL does not support closing a database connection.
+};
+
+
+/** @override */
+lf.backstore.WebSql.prototype.getTableInternal = function(tableName) {
+  throw new lf.Exception(lf.Exception.Type.SYNTAX,
+      'WebSQL tables needs to be acquired from transactions');
+};
+
+
+/**
+ * @throws {lf.Exception}
+ * @private
+ */
+lf.backstore.WebSql.prototype.notSupported_ = function() {
+  throw new lf.Exception(lf.Exception.Type.NOT_SUPPORTED,
+      'WebSQL does not support change notification');
+};
+
+
+/** @override */
+lf.backstore.WebSql.prototype.subscribe = function(handler) {
+  this.notSupported_();
+};
+
+
+/** @override */
+lf.backstore.WebSql.prototype.unsubscribe = function() {
+  this.notSupported_();
+};
+
+
+/** @override */
+lf.backstore.WebSql.prototype.notify = function(changes) {
+  this.notSupported_();
+};
+
+
+/**
+ * @param {!function(!lf.raw.BackStore):!IThenable} onUpgrade
+ * @param {number} oldVersion
+ * @return {!IThenable}
+ * @private
+ */
+lf.backstore.WebSql.prototype.onUpgrade_ = function(onUpgrade, oldVersion) {
+  var resolver = goog.Promise.withResolver();
+
+  this.db_.transaction(goog.bind(function(tx) {
+    this.preUpgrade_(tx).then(goog.bind(function() {
+      var rawDb = new lf.backstore.WebSqlRawBackStore(
+          oldVersion, /** @type {!Database} */ (this.db_), tx);
+      onUpgrade(rawDb).then(goog.bind(function() {
+        return this.scanRowId_();
+      }, this)).then(resolver.resolve.bind(resolver));
+    }, this));
+  }, this),
+  resolver.reject.bind(resolver));
+
+  return resolver.promise;
+};
+
+
+/**
+ * Deletes persisted indices and creates new tables.
+ * @param {!SQLTransaction} tx
+ * @return {!IThenable}
+ * @private
+ */
+lf.backstore.WebSql.prototype.preUpgrade_ = function(tx) {
+  var runSql = lf.backstore.WebSqlTx.execSql.bind(null, tx);
+
+  /**
+   * @param {!Array<string>} sqls
+   * @return {!IThenable}
+   */
+  var runSqlSequentially = function(sqls) {
+    if (sqls.length == 0) {
+      return goog.Promise.resolve();
+    }
+
+    var sql = sqls[0];
+    return runSql(sql, []).then(function() {
+      runSqlSequentially(sqls.slice(1));
+    });
+  };
+
+  var tables = this.schema_.tables();
+  var tableNames = [];
+
+  var UPDATE_VERSION = 'UPDATE __lf_ver SET v=? WHERE id=0';
+  var GET_TABLE_NAMES = 'SELECT tbl_name FROM sqlite_master WHERE type="table"';
+
+  return runSql(UPDATE_VERSION, [this.schema_.version()]).then(function() {
+    return runSql(GET_TABLE_NAMES, []);
+  }).then(function(results) {
+    // Delete all existing persisted indices.
+    var length = results.rows.length;
+    for (var i = 0; i < length; ++i) {
+      tableNames.push(results.rows.item(i)['tbl_name']);
+    }
+    var indices = tableNames.filter(function(name) {
+      return name.indexOf('.') != -1;
+    });
+    var sqls = indices.map(function(name) {
+      return 'DROP TABLE ' + name;
+    });
+    return runSqlSequentially(sqls);
+
+  }).then(function() {
+    // Create new tables.
+    var existingTables = tableNames.filter(function(name) {
+      return name.indexOf('.') == -1;
+    });
+    var newTables = tables.map(function(table) {
+      return table.getName();
+    }).filter(function(name) {
+      return existingTables.indexOf(name) == -1;
+    });
+    var sqls = newTables.map(function(name) {
+      return 'CREATE TABLE ' + name + '(id INTEGER PRIMARY KEY, value TEXT)';
+    });
+    return runSqlSequentially(sqls);
+  });
+};
+
+
+/**
+ * Scans existing database and find the maximum row id.
+ * @return {!IThenable<number>}
+ * @private
+ */
+lf.backstore.WebSql.prototype.scanRowId_ = function() {
+  var sqlStatements = this.schema_.tables().map(function(table) {
+    return 'SELECT MAX(id) FROM ' + table.getName();
+  });
+
+  /** @type {number} */
+  var maxRowId = 0;
+
+  /**
+   * @param {!SQLTransaction} tx
+   * @return {!IThenable}
+   */
+  var execSequentially = function(tx) {
+    if (sqlStatements.length == 0) {
+      return goog.Promise.resolve(maxRowId);
+    }
+
+    var sql = sqlStatements.shift();
+    return lf.backstore.WebSqlTx.execSql(tx, sql, []).then(function(results) {
+      var id = results.rows.item(0)[0];
+      maxRowId = Math.max(id, maxRowId);
+      return maxRowId;
+    });
+  };
+
+  var resolver = goog.Promise.withResolver();
+  this.db_.readTransaction(function(tx) {
+    execSequentially(tx).then(resolver.resolve.bind(resolver));
+  }, resolver.reject.bind(resolver));
+  return resolver.promise;
+};
+
+/**
+ * @license
  * Copyright 2014 Google Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -27344,6 +28002,7 @@ lf.schema.DataStoreType = {
   MEMORY: 1,
   LOCAL_STORAGE: 2,
   FIREBASE: 3,
+  WEB_SQL: 4,
 
   // Used for testing purposes only.
   OBSERVABLE_STORE: 99

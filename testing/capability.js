@@ -41,6 +41,13 @@ lf.testing.Capability = function() {
   this.localStorageEvent = !(
       goog.userAgent.product.IE &&
       !goog.userAgent.isVersionOrHigher(11));
+
+  /**
+   * WebSQL is supported by Safari and Chrome only.
+   * TODO(arthurhsu): enable Safari testing once WebSQL backstore is stable.
+   * @type {boolean}
+   */
+  this.webSql = goog.userAgent.product.CHROME;
 };
 
 
