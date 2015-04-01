@@ -32,12 +32,18 @@ var Config = function() {
           __dirname,
           '../node_modules/google-closure-library-latest/lib'));
 
+  // Externs declarations for third party APIs.
+  this.EXTERNS = [
+    '--externs=' + pathMod.resolve(pathMod.join(
+        __dirname, '../builddef/firebase_externs.js'))
+  ];
+
   // Compiler options for all configurations.
   this.COMPILER_FLAGS_COMMON = [
     '--generate_exports',
     '--language_in=ECMASCRIPT5_STRICT',
     '--warning_level=VERBOSE'
-  ];
+  ].concat(this.EXTERNS);
 
   // Compiler options for release mode.
   this.COMPILER_FLAGS_OPT = this.COMPILER_FLAGS_COMMON.concat([
