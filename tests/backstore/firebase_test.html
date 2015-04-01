@@ -4,13 +4,12 @@
 
   <title>Test for Firebase.</title>
   <script>
+function includeTestScript(src) {
+  document.write(
+      '<script type="text/javascript" src="' + src + '"><' + '/script>');
+}
 
 (function() {
-  function includeTestScript(src) {
-    document.write(
-        '<script type="text/javascript" src="' + src + '"><' + '/script>');
-  }
-
   var realBase = '../../../../../';
   window.CLOSURE_BASE_PATH = realBase + 'javascript/closure/';
 
@@ -24,8 +23,13 @@
 goog.require('goog.testing.AsyncTestCase');
 goog.require('goog.testing.jsunit');
 
-  </script>
-  <script src="https://cdn.firebase.com/js/client/2.2.3/firebase.js">
+
+/** @type {boolean} */
+window.MANUAL_MODE = false;
+
+if (window.MANUAL_MODE) {
+  includeTestScript('https://cdn.firebase.com/js/client/2.2.3/firebase.js');
+}
   </script>
 </head>
 <body>

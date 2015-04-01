@@ -15,6 +15,7 @@
  * limitations under the License.
  */
 goog.setTestOnly();
+goog.require('goog.Promise');
 goog.require('goog.testing.AsyncTestCase');
 goog.require('goog.testing.jsunit');
 goog.require('lf.Global');
@@ -57,13 +58,28 @@ var cache;
 var schema;
 
 
+/** @const {string} */
+var FB_URL = 'https://torrid-inferno-8867.firebaseIO.com/test';
+
+
+/** @type {boolean} */
+var manualMode;
+
+
 function setUpPage() {
-  // Assumes only one writer in all following tests.
-  // To add more writers, one must create different Firebase mocks.
-  fb = new Firebase('https://torrid-inferno-8867.firebaseIO.com/test');
+  manualMode = window['MANUAL_MODE'] || false;
+  if (!manualMode) {
+    return;
+  }
+
+  fb = new Firebase(FB_URL);
 }
 
 function setUp() {
+  if (!manualMode) {
+    return;
+  }
+
   asyncTestCase.waitForAsync('setUp');
 
   cache = new lf.cache.DefaultCache();
@@ -87,6 +103,10 @@ function setUp() {
  * instance that is passed into its constructor.
  */
 function testConstruction() {
+  if (!manualMode) {
+    return;
+  }
+
   assertTrue(schema.tables().length > 0);
 
   schema.tables().forEach(
@@ -97,6 +117,10 @@ function testConstruction() {
 
 
 function testGetTable_NonExisting() {
+  if (!manualMode) {
+    return;
+  }
+
   assertThrows(
       goog.bind(db.getTableInternal, db, 'nonExistingTableName'));
 }
@@ -105,6 +129,10 @@ function testGetTable_NonExisting() {
 // Can't use lf.testing.backstore.ScudTester since Firebase backstore is a
 // wrapper itself, and does not really change backstore until commit() is hit.
 function testSCUD() {
+  if (!manualMode) {
+    return;
+  }
+
   asyncTestCase.waitForAsync('testSCUD');
 
   // Use tableC, which has no indices.
@@ -133,15 +161,11 @@ function testSCUD() {
   journal.insertOrReplace(t2, [row0, row1]);
   var tx = db.createTx(lf.TransactionType.READ_WRITE, journal);
   tx.commit().then(function() {
-    return db.reloadTable(t2.getName());
-  }).then(function() {
     checkRows([row0, row1]);
     journal = new lf.cache.Journal(global, [t2]);
     journal.update(t2, [new lf.Row(2, CONTENTS2)]);
     tx = db.createTx(lf.TransactionType.READ_WRITE, journal);
     return tx.commit();
-  }).then(function() {
-    return db.reloadTable(t2.getName());
   }).then(function() {
     checkRows([row0, row2]);
     journal = new lf.cache.Journal(global, [t2]);
@@ -149,9 +173,117 @@ function testSCUD() {
     tx = db.createTx(lf.TransactionType.READ_WRITE, journal);
     return tx.commit();
   }).then(function() {
-    return db.reloadTable(t2.getName());
-  }).then(function() {
     checkRows([]);
+    asyncTestCase.continueTesting();
+  });
+}
+
+
+function testExternalChange() {
+  if (!manualMode) {
+    return;
+  }
+
+  asyncTestCase.waitForAsync('testExternalChange');
+
+  var CONTENTS0 = {'id': 'hello0', 'name': 'world0'};
+  var CONTENTS1 = {'id': 'hello1', 'name': 'world1'};
+  var CONTENTS2 = {'id': 'hello1', 'name': 'world2'};
+
+  var testAdd = function() {
+    var resolver = goog.Promise.withResolver();
+
+    var handler1 = function(diffs) {
+      assertEquals(1, diffs.length);
+      assertEquals('tableC', diffs[0].getName());
+      assertEquals(2, diffs[0].getAdded().getCount());
+      assertEquals(0, diffs[0].getModified().getCount());
+      assertEquals(0, diffs[0].getDeleted().getCount());
+      assertObjectEquals(CONTENTS0, diffs[0].getAdded().get(1).payload());
+      assertObjectEquals(CONTENTS1, diffs[0].getAdded().get(2).payload());
+      resolver.resolve();
+    };
+
+    db.subscribe(handler1);
+
+    new Firebase(FB_URL).child(schema.name()).transaction(function(data) {
+      var rev = data['__revision__'];
+      data['__revision__'] = rev + 1;
+      data['tableC']['1'] = CONTENTS0;
+      data['tableC']['2'] = CONTENTS1;
+      return data;
+    }, function(error, committed, snapshot) {
+      if (error || !committed) {
+        resolver.reject(error);
+      }
+    });
+
+    return resolver.promise;
+  };
+
+  var testModify = function() {
+    var resolver = goog.Promise.withResolver();
+    var handler2 = function(diffs) {
+      assertEquals(1, diffs.length);
+      assertEquals('tableC', diffs[0].getName());
+      assertEquals(0, diffs[0].getAdded().getCount());
+      assertEquals(1, diffs[0].getModified().getCount());
+      assertEquals(0, diffs[0].getDeleted().getCount());
+      assertObjectEquals(CONTENTS2, diffs[0].getModified().get(2)[1].payload());
+      resolver.resolve();
+    };
+
+    db.subscribe(handler2);
+
+    new Firebase(FB_URL).child(schema.name()).transaction(function(data) {
+      var rev = data['__revision__'];
+      data['__revision__'] = rev + 1;
+      data['tableC']['2'] = CONTENTS2;
+      return data;
+    }, function(error, committed, snapshot) {
+      if (error || !committed) {
+        resolver.reject(error);
+      }
+    });
+
+    return resolver.promise;
+  };
+
+  var testDelete = function() {
+    var resolver = goog.Promise.withResolver();
+    var handler3 = function(diffs) {
+      assertEquals(1, diffs.length);
+      assertEquals('tableC', diffs[0].getName());
+      assertEquals(0, diffs[0].getAdded().getCount());
+      assertEquals(0, diffs[0].getModified().getCount());
+      assertEquals(2, diffs[0].getDeleted().getCount());
+      assertArrayEquals([1, 2], diffs[0].getDeleted().getKeys());
+      resolver.resolve();
+    };
+
+    db.subscribe(handler3);
+
+    new Firebase(FB_URL).child(schema.name()).transaction(function(data) {
+      var rev = data['__revision__'];
+      data['__revision__'] = rev + 1;
+      data['tableC']['1'] = null;
+      data['tableC']['2'] = null;
+      return data;
+    }, function(error, committed, snapshot) {
+      if (error || !committed) {
+        resolver.reject(error);
+      }
+    });
+
+    return resolver.promise;
+  };
+
+  testAdd().then(function() {
+    return testModify();
+  }).then(function() {
+    return testDelete();
+  }).then(function() {
+    db.unsubscribe();
     asyncTestCase.continueTesting();
   });
 }

@@ -108,10 +108,9 @@ function testMultipleOperations() {
  */
 function testGetReversed_Empty() {
   var original = new lf.cache.TableDiff(table.getName());
+  assertTrue(original.isEmpty());
   var reverse = original.getReverse();
-  assertEquals(0, reverse.getAdded().getCount());
-  assertEquals(0, reverse.getModified().getCount());
-  assertEquals(0, reverse.getDeleted().getCount());
+  assertTrue(reverse.isEmpty());
 }
 
 

@@ -16752,6 +16752,14 @@ lf.cache.TableDiff.prototype.getReverse = function() {
   return reverseDiff;
 };
 
+
+/** @return {boolean} */
+lf.cache.TableDiff.prototype.isEmpty = function() {
+  return this.added_.isEmpty() &&
+      this.deleted_.isEmpty() &&
+      this.modified_.isEmpty();
+};
+
 /**
  * @license
  * Copyright 2014 Google Inc. All Rights Reserved.
@@ -17932,43 +17940,42 @@ lf.backstore.FirebaseTx.prototype.commit = function() {
   if (numTableAffected == 0) {
     this.resolver.resolve();
   } else {
-    var ref = numTableAffected > 1 ? this.db_ :
-        this.db_.getTableRef(diffs.getValues()[0].getName());
-    var changes = this.diffToChange_();
-    ref.update(changes, goog.bind(function(e) {
-      if (e) {
-        // TODO(arthurhsu): when transaction failed, the snapshots of tables
-        // are invalid and need reload.
-        this.resolver.reject(e);
+    var rev = this.db_.getRevision() + 1;
+    this.db_.getRef().transaction(goog.bind(function(snapshot) {
+      // Firebase will send change notification before actually committing to
+      // remote database. Therefore the DB revision needs to be increased here
+      // for the change management to work correctly.
+      this.db_.setRevision(rev);
+      diffs.forEach(function(diff) {
+        var table = snapshot[diff.getName()];
+        diff.getAdded().forEach(function(row, rowId) {
+          table[rowId.toString()] = row.payload();
+        });
+        diff.getModified().getValues().forEach(function(pair) {
+          table[pair[1].id().toString()] = pair[1].payload();
+        });
+        diff.getDeleted().getValues().forEach(function(row) {
+          table[row.id().toString()] = null;
+        });
+      });
+      snapshot['__revision__'] = rev;
+      return snapshot;
+    }, this), goog.bind(function(error, committed, snapshot) {
+      if (error || !committed) {
+        // Transaction failed or aborted.
+        this.db_.setRevision(rev - 1);
+        diffs.forEach(goog.bind(function(diff) {
+          var tableName = diff.getName();
+          this.db_.reloadTable(tableName, snapshot[tableName]);
+        }, this));
+        this.resolver.reject(error);
       } else {
+        // Transaction committed.
         this.resolver.resolve();
       }
     }, this));
   }
   return this.resolver.promise;
-};
-
-
-/**
- * @return {!Object}
- * @private
- */
-lf.backstore.FirebaseTx.prototype.diffToChange_ = function() {
-  var object = {};
-  var diffs = this.getJournal().getDiff();
-  diffs.forEach(function(diff) {
-    var prefix = diffs.length > 1 ? diff.getName() + '.' : '';
-    diff.getAdded().getValues().forEach(function(row) {
-      object[prefix + row.id().toString()] = row.payload();
-    });
-    diff.getModified().getValues().forEach(function(pair) {
-      object[prefix + pair[1].id().toString()] = pair[1].payload();
-    });
-    diff.getDeleted().getValues().forEach(function(row) {
-      object[prefix + row.id().toString()] = null;
-    });
-  });
-  return object;
 };
 
 /**
@@ -18028,6 +18035,12 @@ lf.backstore.MemoryTable.prototype.getSync = function(ids) {
   }, this);
 
   return results;
+};
+
+
+/** @return {!goog.structs.Map<number, !lf.Row>} */
+lf.backstore.MemoryTable.prototype.getData = function() {
+  return this.data_;
 };
 
 
@@ -18101,12 +18114,15 @@ lf.backstore.MemoryTable.prototype.getMaxRowId = function() {
 goog.provide('lf.backstore.Firebase');
 
 goog.require('goog.Promise');
+goog.require('goog.object');
 goog.require('goog.structs.Map');
+goog.require('goog.structs.Set');
 goog.require('lf.BackStore');
 goog.require('lf.Exception');
 goog.require('lf.Row');
 goog.require('lf.backstore.FirebaseTx');
 goog.require('lf.backstore.MemoryTable');
+goog.require('lf.cache.TableDiff');
 
 
 
@@ -18132,8 +18148,26 @@ lf.backstore.Firebase = function(schema, fb) {
   /** @private {!Firebase} */
   this.db_;
 
+  /** @private {number} */
+  this.revision_ = -1;
+
   /** @private {!goog.structs.Map<string, !lf.backstore.MemoryTable>} */
   this.tables_ = new goog.structs.Map();
+
+  /** @private {?function(!Array<!lf.cache.TableDiff>)} */
+  this.changeHandler_ = null;
+};
+
+
+/** @return {number} */
+lf.backstore.Firebase.prototype.getRevision = function() {
+  return this.revision_;
+};
+
+
+/** @param {number} revision */
+lf.backstore.Firebase.prototype.setRevision = function(revision) {
+  this.revision_ = revision;
 };
 
 
@@ -18146,6 +18180,9 @@ lf.backstore.Firebase = function(schema, fb) {
 lf.backstore.Firebase.prototype.populate_ = function(table, data) {
   var rows = [];
   for (var key in data) {
+    if (key == '__meta__') {
+      continue;
+    }
     var id = parseInt(key, 10);
     rows.push(new lf.Row(id, data[key]));
   }
@@ -18161,48 +18198,142 @@ lf.backstore.Firebase.prototype.init = function(opt_onUpgrade) {
   this.db_ = this.app_.child(this.schema_.name());
 
   // This call will fetch everything in the DB from network.
-  this.db_.once('value', goog.bind(function(snapshot) {
-    var rawDb = snapshot.exportVal();
-    if (goog.isNull(rawDb)) {
-      // New database, need initialization.
-      this.db_.set(this.createNewDb_(), resolver.resolve.bind(resolver));
-    } else if (rawDb['__version__'] == this.schema_.version()) {
-      this.schema_.tables().forEach(function(table) {
-        var memTable = new lf.backstore.MemoryTable();
-        this.populate_(memTable, rawDb[table.getName()]);
-        this.tables_.set(table.getName(), memTable);
-      }, this);
-
-      // Scan row id
-      var maxRowId = this.tables_.getValues().map(function(table) {
-        return table.getMaxRowId();
-      }).reduce(function(prev, cur) {
-        return prev > cur ? prev : cur;
-      }, 0);
-      lf.Row.setNextId(maxRowId + 1);
-
-      resolver.resolve();
-    } // TODO(arthurhsu): implement upgrade.
+  this.db_.on('value', goog.bind(function(snapshot) {
+    resolver.resolve(this.onValue_(snapshot));
   }, this));
 
   return resolver.promise;
 };
 
 
+/** @private */
+lf.backstore.Firebase.prototype.initRowId_ = function() {
+  var maxRowId = this.tables_.getValues().map(function(table) {
+    return table.getMaxRowId();
+  }).reduce(function(maxSoFar, cur) {
+    return maxSoFar > cur ? maxSoFar : cur;
+  }, 0);
+  lf.Row.setNextId(maxRowId + 1);
+};
+
+
+/**
+ * The value listener that handles database value changes. Firebase will
+ * call this handler no matter the change is from this session or not.
+ * @param {!DataSnapshot} snapshot
+ * @return {!IThenable}
+ * @private
+ */
+lf.backstore.Firebase.prototype.onValue_ = function(snapshot) {
+  return this.revision_ < 0 ?
+      this.initialize_(snapshot.exportVal()) :
+      this.onChange_(snapshot.exportVal());
+};
+
+
+/**
+ * @param {!Object} rawDb
+ * @return {!IThenable}
+ * @private
+ */
+lf.backstore.Firebase.prototype.initialize_ = function(rawDb) {
+  var resolver = goog.Promise.withResolver();
+
+  if (goog.isNull(rawDb)) {
+    // New database, need initialization.
+    this.db_.set(this.createNewDb_(), function() {
+      resolver.resolve();
+    });
+  } else if (rawDb['__version__'] == this.schema_.version()) {
+    this.revision_ = rawDb['__revision__'];
+    this.schema_.tables().forEach(function(table) {
+      var memTable = new lf.backstore.MemoryTable();
+      this.populate_(memTable, rawDb[table.getName()]);
+      this.tables_.set(table.getName(), memTable);
+    }, this);
+
+    this.initRowId_();
+    resolver.resolve();
+  } // TODO(arthurhsu): implement upgrade.
+
+  return resolver.promise;
+};
+
+
+/**
+ * @param {!Object} rawDb
+ * @return {!IThenable}
+ * @private
+ */
+lf.backstore.Firebase.prototype.onChange_ = function(rawDb) {
+  if (rawDb['__revision__'] == this.revision_) {
+    return goog.Promise.resolve();
+  }
+
+  var diffs = this.schema_.tables().map(function(table) {
+    var tableName = table.getName();
+    return this.generateDiff_(tableName, rawDb[tableName]);
+  }, this).filter(function(diff) {
+    return !diff.isEmpty();
+  });
+
+  this.revision_ = rawDb['__revision__'];
+  diffs.forEach(function(diff) {
+    var memTable = new lf.backstore.MemoryTable();
+    this.populate_(memTable, rawDb[diff.getName()]);
+    this.tables_.set(diff.getName(), memTable);
+  }, this);
+
+  if (diffs.length) {
+    this.notify(diffs);
+  }
+  return goog.Promise.resolve();
+};
+
+
 /**
  * @param {string} tableName
- * @return {!IThenable}
+ * @param {!Object} snapshot
+ * @return {!lf.cache.TableDiff}
+ * @private
  */
-lf.backstore.Firebase.prototype.reloadTable = function(tableName) {
-  var resolver = goog.Promise.withResolver();
-  var ref = this.getTableRef(tableName);
-  ref.once('value', goog.bind(function(snapshot) {
-    var memTable = new lf.backstore.MemoryTable();
-    this.populate_(memTable, snapshot.exportVal());
-    this.tables_.set(tableName, memTable);
-    resolver.resolve();
-  }, this));
-  return resolver.promise;
+lf.backstore.Firebase.prototype.generateDiff_ = function(tableName, snapshot) {
+  var diff = new lf.cache.TableDiff(tableName);
+  var table = this.tables_.get(tableName).getData();
+  var newKeySet = new goog.structs.Set(
+      goog.object.getKeys(snapshot).filter(function(key) {
+        return key != '__meta__';
+      }).map(function(key) {
+        return parseInt(key, 10);
+      }));
+
+  var newKeys = newKeySet.difference(table.getKeys()).getValues();
+  newKeys.forEach(function(key) {
+    diff.add(new lf.Row(key, snapshot[key.toString()]));
+  });
+
+  table.getKeys().forEach(function(key) {
+    if (!newKeySet.contains(key)) {
+      diff.delete(table.get(key));
+    } else {
+      var oldRow = table.get(key);
+      if (JSON.stringify(oldRow.payload()) != JSON.stringify(snapshot[key])) {
+        diff.modify([oldRow, new lf.Row(key, snapshot[key.toString()])]);
+      }
+    }
+  });
+  return diff;
+};
+
+
+/**
+ * @param {string} tableName
+ * @param {!DataSnapshot} snapshot The snapshot of tableName.
+ */
+lf.backstore.Firebase.prototype.reloadTable = function(tableName, snapshot) {
+  var memTable = new lf.backstore.MemoryTable();
+  this.populate_(memTable, snapshot.exportVal());
+  this.tables_.set(tableName, memTable);
 };
 
 
@@ -18213,8 +18344,11 @@ lf.backstore.Firebase.prototype.reloadTable = function(tableName) {
 lf.backstore.Firebase.prototype.createNewDb_ = function() {
   var val = {};
   val['__version__'] = this.schema_.version();
+  val['__revision__'] = 1;
   this.schema_.tables().forEach(function(table) {
     var tableName = table.getName();
+    // The field __meta__ ensures Firebase creates this node.
+    val[tableName] = { '__meta__': '' };
     this.tables_.set(tableName, new lf.backstore.MemoryTable());
   }, this);
   return val;
@@ -18239,12 +18373,9 @@ lf.backstore.Firebase.prototype.getTableInternal = function(tableName) {
 };
 
 
-/**
- * @param {string} tableName
- * @return {!Firebase}
- */
-lf.backstore.Firebase.prototype.getTableRef = function(tableName) {
-  return this.db_.child(tableName);
+/** @return {!Firebase} */
+lf.backstore.Firebase.prototype.getRef = function() {
+  return this.db_;
 };
 
 
@@ -18256,19 +18387,21 @@ lf.backstore.Firebase.prototype.close = function() {
 
 /** @override */
 lf.backstore.Firebase.prototype.subscribe = function(handler) {
-  // TODO(arthurhsu): implement
+  this.changeHandler_ = handler;
 };
 
 
 /** @override */
 lf.backstore.Firebase.prototype.unsubscribe = function() {
-  // TODO(arthurhsu): implement
+  this.changeHandler_ = null;
 };
 
 
 /** @override */
 lf.backstore.Firebase.prototype.notify = function(changes) {
-  // TODO(arthurhsu): implement
+  if (goog.isDefAndNotNull(this.changeHandler_)) {
+    this.changeHandler_(changes);
+  }
 };
 
 /**
