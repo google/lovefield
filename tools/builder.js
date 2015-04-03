@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-var glob = require('glob');
+var glob = /** @type {{sync: !Function}} */ (require('glob'));
 var pathMod = require('path');
 var fsMod = require('fs');
 var tempfile = /** @type {!Function} */ (require('tempfile'));

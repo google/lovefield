@@ -16,10 +16,10 @@
  */
 var fsMod = require('fs');
 var pathMod = require('path');
-var mkdir = /** @type {!Function} */ (require('mkdirp').sync);
-var rmdir = /** @type {!Function} */ (require('rimraf').sync);
-var glob = /** @type {!Function} */ (require('glob').sync);
-var fork = /** @type {!Function} */ (require('child_process').fork);
+var mkdir = /** @type {{sync: !Function}} */ (require('mkdirp')).sync;
+var rmdir = /** @type {{sync: !Function}} */ (require('rimraf')).sync;
+var glob = /** @type {{sync: !Function}} */ (require('glob')).sync;
+var fork = /** @type {{fork: !Function}} */ (require('child_process')).fork;
 
 
 /**
