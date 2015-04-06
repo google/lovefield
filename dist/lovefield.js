@@ -20749,6 +20749,24 @@ lf.backstore.WebSqlRawBackStore.prototype.getVersion = function() {
 };
 
 
+/**
+ * @param {!SQLTransaction} tx
+ * @return {!IThenable<!Array<string>>}
+ */
+lf.backstore.WebSqlRawBackStore.listTables = function(tx) {
+  var GET_TABLE_NAMES = 'SELECT tbl_name FROM sqlite_master WHERE type="table"';
+
+  return lf.backstore.WebSqlTx.execSql(tx, GET_TABLE_NAMES, []).then(
+      function(results) {
+        var tableNames = new Array(results.rows.length);
+        for (var i = 0; i < tableNames.length; ++i) {
+          tableNames[i] = results.rows.item(i)['tbl_name'];
+        }
+        return goog.Promise.resolve(tableNames);
+      });
+};
+
+
 /** @override */
 lf.backstore.WebSqlRawBackStore.prototype.dump = function() {
   // TODO(arthurhsu): implement
@@ -20955,8 +20973,7 @@ lf.backstore.WebSql.prototype.onUpgrade_ = function(onUpgrade, oldVersion) {
         return this.scanRowId_();
       }, this)).then(resolver.resolve.bind(resolver));
     }, this));
-  }, this),
-  resolver.reject.bind(resolver));
+  }, this), resolver.reject.bind(resolver));
 
   return resolver.promise;
 };
@@ -20990,17 +21007,12 @@ lf.backstore.WebSql.prototype.preUpgrade_ = function(tx) {
   var tableNames = [];
 
   var UPDATE_VERSION = 'UPDATE __lf_ver SET v=? WHERE id=0';
-  var GET_TABLE_NAMES = 'SELECT tbl_name FROM sqlite_master WHERE type="table"';
 
   return runSql(UPDATE_VERSION, [this.schema_.version()]).then(function() {
-    return runSql(GET_TABLE_NAMES, []);
+    return lf.backstore.WebSqlRawBackStore.listTables(tx);
   }).then(function(results) {
     // Delete all existing persisted indices.
-    var length = results.rows.length;
-    for (var i = 0; i < length; ++i) {
-      tableNames.push(results.rows.item(i)['tbl_name']);
-    }
-    var indices = tableNames.filter(function(name) {
+    var indices = results.filter(function(name) {
       return name.indexOf('.') != -1;
     });
     var sqls = indices.map(function(name) {
