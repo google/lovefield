@@ -44,10 +44,9 @@ lf.testing.Capability = function() {
 
   /**
    * WebSQL is supported by Safari and Chrome only.
-   * TODO(arthurhsu): enable Safari testing once WebSQL backstore is stable.
    * @type {boolean}
    */
-  this.webSql = goog.userAgent.product.CHROME;
+  this.webSql = goog.userAgent.product.CHROME || goog.userAgent.product.SAFARI;
 };
 
 

@@ -3716,14 +3716,14 @@ goog.addDependency('testing/fs/blob.js', ['goog.testing.fs.Blob'], ['goog.crypt.
 goog.addDependency('testing/fs/blob_test.js', ['goog.testing.fs.BlobTest'], ['goog.testing.fs.Blob', 'goog.testing.jsunit'], false);
 goog.addDependency('testing/fs/directoryentry_test.js', ['goog.testing.fs.DirectoryEntryTest'], ['goog.array', 'goog.fs.DirectoryEntry', 'goog.fs.Error', 'goog.testing.MockClock', 'goog.testing.fs.FileSystem', 'goog.testing.jsunit'], false);
 goog.addDependency('testing/fs/entry.js', ['goog.testing.fs.DirectoryEntry', 'goog.testing.fs.Entry', 'goog.testing.fs.FileEntry'], ['goog.Timer', 'goog.array', 'goog.asserts', 'goog.async.Deferred', 'goog.fs.DirectoryEntry', 'goog.fs.DirectoryEntryImpl', 'goog.fs.Entry', 'goog.fs.Error', 'goog.fs.FileEntry', 'goog.functions', 'goog.object', 'goog.string', 'goog.testing.fs.File', 'goog.testing.fs.FileWriter'], false);
-goog.addDependency('testing/fs/entry_test.js', ['goog.testing.fs.EntryTest'], ['goog.fs.DirectoryEntry', 'goog.fs.Error', 'goog.testing.AsyncTestCase', 'goog.testing.MockClock', 'goog.testing.fs.FileSystem', 'goog.testing.jsunit'], false);
+goog.addDependency('testing/fs/entry_test.js', ['goog.testing.fs.EntryTest'], ['goog.fs.DirectoryEntry', 'goog.fs.Error', 'goog.testing.MockClock', 'goog.testing.fs.FileSystem', 'goog.testing.jsunit'], false);
 goog.addDependency('testing/fs/file.js', ['goog.testing.fs.File'], ['goog.testing.fs.Blob'], false);
-goog.addDependency('testing/fs/fileentry_test.js', ['goog.testing.fs.FileEntryTest'], ['goog.testing.AsyncTestCase', 'goog.testing.MockClock', 'goog.testing.fs.FileEntry', 'goog.testing.fs.FileSystem', 'goog.testing.jsunit'], false);
+goog.addDependency('testing/fs/fileentry_test.js', ['goog.testing.fs.FileEntryTest'], ['goog.testing.MockClock', 'goog.testing.fs.FileEntry', 'goog.testing.fs.FileSystem', 'goog.testing.jsunit'], false);
 goog.addDependency('testing/fs/filereader.js', ['goog.testing.fs.FileReader'], ['goog.Timer', 'goog.events.EventTarget', 'goog.fs.Error', 'goog.fs.FileReader', 'goog.testing.fs.ProgressEvent'], false);
 goog.addDependency('testing/fs/filereader_test.js', ['goog.testing.fs.FileReaderTest'], ['goog.Promise', 'goog.array', 'goog.events', 'goog.fs.Error', 'goog.fs.FileReader', 'goog.object', 'goog.testing.events.EventObserver', 'goog.testing.fs.FileReader', 'goog.testing.fs.FileSystem', 'goog.testing.jsunit'], false);
 goog.addDependency('testing/fs/filesystem.js', ['goog.testing.fs.FileSystem'], ['goog.fs.FileSystem', 'goog.testing.fs.DirectoryEntry'], false);
 goog.addDependency('testing/fs/filewriter.js', ['goog.testing.fs.FileWriter'], ['goog.Timer', 'goog.events.EventTarget', 'goog.fs.Error', 'goog.fs.FileSaver', 'goog.string', 'goog.testing.fs.ProgressEvent'], false);
-goog.addDependency('testing/fs/filewriter_test.js', ['goog.testing.fs.FileWriterTest'], ['goog.async.Deferred', 'goog.events', 'goog.fs.Error', 'goog.fs.FileSaver', 'goog.testing.AsyncTestCase', 'goog.testing.MockClock', 'goog.testing.fs.Blob', 'goog.testing.fs.FileSystem', 'goog.testing.jsunit'], false);
+goog.addDependency('testing/fs/filewriter_test.js', ['goog.testing.fs.FileWriterTest'], ['goog.Promise', 'goog.array', 'goog.events', 'goog.fs.Error', 'goog.fs.FileSaver', 'goog.object', 'goog.testing.MockClock', 'goog.testing.events.EventObserver', 'goog.testing.fs.Blob', 'goog.testing.fs.FileSystem', 'goog.testing.jsunit'], false);
 goog.addDependency('testing/fs/fs.js', ['goog.testing.fs'], ['goog.Timer', 'goog.array', 'goog.async.Deferred', 'goog.fs', 'goog.testing.fs.Blob', 'goog.testing.fs.FileSystem'], false);
 goog.addDependency('testing/fs/fs_test.js', ['goog.testing.fsTest'], ['goog.testing.AsyncTestCase', 'goog.testing.fs', 'goog.testing.fs.Blob', 'goog.testing.jsunit'], false);
 goog.addDependency('testing/fs/integration_test.js', ['goog.testing.fs.integrationTest'], ['goog.async.Deferred', 'goog.async.DeferredList', 'goog.events', 'goog.fs', 'goog.fs.DirectoryEntry', 'goog.fs.Error', 'goog.fs.FileSaver', 'goog.testing.AsyncTestCase', 'goog.testing.PropertyReplacer', 'goog.testing.fs', 'goog.testing.jsunit'], false);
@@ -5380,9 +5380,13 @@ goog.string.regExpEscape = function(s) {
  * @return {string} A string containing {@code length} repetitions of
  *     {@code string}.
  */
-goog.string.repeat = function(string, length) {
-  return new Array(length + 1).join(string);
-};
+goog.string.repeat = (String.prototype.repeat) ?
+    function(string, length) {
+      return string.repeat(length);
+    } :
+    function(string, length) {
+      return new Array(length + 1).join(string);
+    };
 
 
 /**
@@ -10670,9 +10674,10 @@ goog.require('goog.promise.Resolver');
 
 /**
  * Promises provide a result that may be resolved asynchronously. A Promise may
- * be resolved by being fulfilled or rejected with a value, which will be known
- * as the fulfillment value or the rejection reason. Whether fulfilled or
- * rejected, the Promise result is immutable once it is set.
+ * be resolved by being fulfilled with a fulfillment value, rejected with a
+ * rejection reason, or blocked by another Promise. A Promise is said to be
+ * settled if it is either fulfilled or rejected. Once settled, the Promise
+ * result is immutable.
  *
  * Promises may represent results of any type, including undefined. Rejection
  * reasons are typically Errors, but may also be of any type. Closure Promises
@@ -10681,14 +10686,14 @@ goog.require('goog.promise.Resolver');
  *
  * The result of a Promise is accessible by calling {@code then} and registering
  * {@code onFulfilled} and {@code onRejected} callbacks. Once the Promise
- * resolves, the relevant callbacks are invoked with the fulfillment value or
+ * is settled, the relevant callbacks are invoked with the fulfillment value or
  * rejection reason as argument. Callbacks are always invoked in the order they
  * were registered, even when additional {@code then} calls are made from inside
  * another callback. A callback is always run asynchronously sometime after the
  * scope containing the registering {@code then} invocation has returned.
  *
  * If a Promise is resolved with another Promise, the first Promise will block
- * until the second is resolved, and then assumes the same result as the second
+ * until the second is settled, and then assumes the same result as the second
  * Promise. This allows Promises to depend on the results of other Promises,
  * linking together multiple asynchronous operations.
  *
@@ -10725,7 +10730,7 @@ goog.Promise = function(resolver, opt_context) {
   this.state_ = goog.Promise.State_.PENDING;
 
   /**
-   * The resolved result of the Promise. Immutable once set with either a
+   * The settled result of the Promise. Immutable once set with either a
    * fulfillment value or rejection reason.
    * @private {*}
    */
@@ -10898,7 +10903,7 @@ goog.Promise.CallbackEntry_ = function() {
 
   /**
    * A boolean value to indicate this is a "thenAlways" callback entry.
-   * Unlike a normal "then/thenVoid" a "thenAlways doesn't particapate
+   * Unlike a normal "then/thenVoid" a "thenAlways doesn't participate
    * in "cancel" considerations but is simply an observer and requires
    * special handling.
    * @type {boolean}
@@ -10998,7 +11003,8 @@ goog.Promise.reject = function(opt_reason) {
 /**
  * @param {!Array<!(goog.Thenable<TYPE>|Thenable)>} promises
  * @return {!goog.Promise<TYPE>} A Promise that receives the result of the
- *     first Promise (or Promise-like) input to complete.
+ *     first Promise (or Promise-like) input to settle immediately after it
+ *     settles.
  * @template TYPE
  */
 goog.Promise.race = function(promises) {
@@ -11017,7 +11023,8 @@ goog.Promise.race = function(promises) {
  * @param {!Array<!(goog.Thenable<TYPE>|Thenable)>} promises
  * @return {!goog.Promise<!Array<TYPE>>} A Promise that receives a list of
  *     every fulfilled value once every input Promise (or Promise-like) is
- *     successfully fulfilled, or is rejected by the first rejection result.
+ *     successfully fulfilled, or is rejected with the first rejection reason
+ *     immediately after it is rejected.
  * @template TYPE
  */
 goog.Promise.all = function(promises) {
@@ -11199,7 +11206,7 @@ goog.Thenable.addImplementation(goog.Promise);
  * @param {?(function(this:THIS, TYPE):
  *             (RESULT|IThenable<RESULT>|Thenable))=} opt_onFulfilled A
  *     function that will be invoked with the fulfillment value if the Promise
- *     is fullfilled.
+ *     is fulfilled.
  * @param {?(function(this:THIS, *): *)=} opt_onRejected A function that will
  *     be invoked with the rejection reason if the Promise is rejected.
  * @param {THIS=} opt_context An optional context object that will be the
@@ -11255,8 +11262,8 @@ goog.Promise.maybeThenVoid_ = function(
 
 
 /**
- * Adds a callback that will be invoked whether the Promise is fulfilled or
- * rejected. The callback receives no argument, and no new child Promise is
+ * Adds a callback that will be invoked when the Promise is settled (fulfilled
+ * or rejected). The callback receives no argument, and no new child Promise is
  * created. This is useful for ensuring that cleanup takes place after certain
  * asynchronous operations. Callbacks added with {@code thenAlways} will be
  * executed in the same order with other calls to {@code then},
@@ -11525,11 +11532,11 @@ goog.Promise.prototype.unblockAndReject_ = function(reason) {
  * is a no-op if the given Promise has already been resolved.
  *
  * If the given result is a Thenable (such as another Promise), the Promise will
- * be resolved with the same state and result as the Thenable once it is itself
- * resolved.
+ * be settled with the same state and result as the Thenable once it is itself
+ * settled.
  *
- * If the given result is not a Thenable, the Promise will be fulfilled or
- * rejected with that result based on the given state.
+ * If the given result is not a Thenable, the Promise will be settled (fulfilled
+ * or rejected) with that result based on the given state.
  *
  * @see http://promisesaplus.com/#the_promise_resolution_procedure
  *
@@ -20421,284 +20428,12 @@ lf.backstore.TrackedTx.prototype.commit = function() {
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-goog.provide('lf.backstore.WebSqlTable');
-
-goog.require('goog.Promise');
-goog.require('lf.Table');
-
-
-
-/**
- * Table stream based on a given WebSQL table.
- * @constructor
- * @struct
- * @final
- * @implements {lf.Table}
- *
- * @param {!lf.backstore.WebSqlTx} tx
- * @param {string} name
- * @param {!function(!lf.Row.Raw): !lf.Row} deserializeFn
- */
-lf.backstore.WebSqlTable = function(tx, name, deserializeFn) {
-  /** @private {!lf.backstore.WebSqlTx} */
-  this.tx_ = tx;
-
-  /** @private {string} */
-  this.name_ = name;
-
-  /** @private {!function(!lf.Row.Raw): !lf.Row} */
-  this.deserializeFn_ = deserializeFn;
-};
-
-
-/** @override */
-lf.backstore.WebSqlTable.prototype.get = function(ids) {
-  var where = (ids.length == 0) ? '' :
-      ' WHERE id IN (' + ids.join(',') + ')';
-
-  return this.tx_.selectTable(this.name_, [], where).then(
-      goog.bind(function(results) {
-        var rows = results.map(function(rawData) {
-          return this.deserializeFn_(rawData);
-        }, this);
-        return goog.Promise.resolve(rows);
-      }, this));
-};
-
-
-/** @override */
-lf.backstore.WebSqlTable.prototype.put = function(rows) {
-  if (rows.length == 0) {
-    return goog.Promise.resolve();
-  }
-
-  var sql = 'INSERT OR REPLACE INTO ' + this.name_ + '(id, value) ' +
-      'VALUES (?, ?)';
-  var promises = rows.map(function(row) {
-    return this.tx_.execSql(sql, [row.id(), JSON.stringify(row.payload())]);
-  }, this);
-
-  return goog.Promise.all(promises);
-};
-
-
-/** @override */
-lf.backstore.WebSqlTable.prototype.remove = function(ids) {
-  var where = (ids.length == 0) ? '' :
-      'WHERE id IN (' + ids.join(',') + ')';
-
-  var sql = 'DELETE FROM ' + this.name_ + ' ' + where;
-  return this.tx_.execSql(sql, []);
-};
-
-/**
- * @license
- * Copyright 2015 Google Inc. All Rights Reserved.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-goog.provide('lf.backstore.WebSqlTx');
-
-goog.require('goog.Promise');
-goog.require('goog.structs.Map');
-goog.require('lf.TransactionType');
-goog.require('lf.backstore.BaseTx');
-goog.require('lf.backstore.TrackedTable');
-goog.require('lf.backstore.WebSqlTable');
-
-
-
-/**
- * Wrapper for Transaction object obtained from WebSQL.
- * @constructor
- * @struct
- * @extends {lf.backstore.BaseTx}
- *
- * @param {!lf.Global} global
- * @param {!Database} db
- * @param {!lf.cache.Journal} journal
- * @param {!lf.TransactionType} txType
- */
-lf.backstore.WebSqlTx = function(global, db, journal, txType) {
-  lf.backstore.WebSqlTx.base(this, 'constructor', journal, txType);
-
-  /** @private {!Database} */
-  this.db_ = db;
-
-  /** @private {!SQLTransaction} */
-  this.tx_;
-
-  /** @private {!goog.structs.Map<string, !lf.backstore.TrackedTable>} */
-  this.tables_ = new goog.structs.Map();
-};
-goog.inherits(lf.backstore.WebSqlTx, lf.backstore.BaseTx);
-
-
-/**
- * @return {!IThenable}
- * @private
- */
-lf.backstore.WebSqlTx.prototype.whenReady_ = function() {
-  if (goog.isDefAndNotNull(this.tx_)) {
-    return goog.Promise.resolve();
-  } else {
-    return new goog.Promise(goog.bind(function(resolve, reject) {
-      var txHandler = goog.bind(function(tx) {
-        this.tx_ = tx;
-        resolve();
-      }, this);
-
-      if (this.txType == lf.TransactionType.READ_ONLY) {
-        this.db_.readTransaction(txHandler, reject);
-      } else {
-        this.db_.transaction(txHandler, reject);
-      }
-    }, this));
-  }
-};
-
-
-/** @override */
-lf.backstore.WebSqlTx.prototype.getTable = function(tableName, deserializeFn) {
-  var table = this.tables_.get(tableName, null);
-  if (goog.isNull(table)) {
-    table = new lf.backstore.TrackedTable(
-        new lf.backstore.WebSqlTable(this, tableName, deserializeFn),
-        tableName);
-    this.tables_.set(tableName, table);
-  }
-
-  return table;
-};
-
-
-/** @override */
-lf.backstore.WebSqlTx.prototype.commit = function() {
-  lf.backstore.WebSqlTx.base(this, 'commit');
-  return this.whenReady_().then(goog.bind(function() {
-    return goog.Promise.all(this.tables_.getValues().map(function(table) {
-      return table.whenRequestsDone();
-    }));
-  }, this)).then(goog.bind(function() {
-    this.resolver.resolve();
-  }, this));
-};
-
-
-/** @override */
-lf.backstore.WebSqlTx.prototype.abort = function() {
-  this.whenReady_().then(goog.bind(function() {
-    // This is the way to abort WebSQL transaction: give an invalid statement.
-    this.tx_.executeSql('UPDATE .invalid%name SET nada = 1');
-  }, this));
-};
-
-
-/**
- * @param {string} sql
- * @param {!Array} params
- * @return {!IThenable}
- */
-lf.backstore.WebSqlTx.prototype.execSql = function(sql, params) {
-  return this.whenReady_().then(goog.bind(function() {
-    return lf.backstore.WebSqlTx.execSql(this.tx_, sql, params);
-  }, this));
-};
-
-
-/**
- * Wraps a WebSQL execution as promise.
- * @param {!SQLTransaction} transaction
- * @param {string} sql
- * @param {!Array} params
- * @return {!IThenable}
- */
-lf.backstore.WebSqlTx.execSql = function(transaction, sql, params) {
-  return new goog.Promise(function(resolve, reject) {
-    transaction.executeSql(sql, params, function(tx, results) {
-      resolve(results);
-    }, function(tx, e) {
-      reject(e);
-    });
-  });
-};
-
-
-/**
- * @param {string} tableName
- * @param {!Array} params
- * @param {string=} opt_whereClause
- * @return {!IThenable<!Array<!lf.Row.Raw>>}
- */
-lf.backstore.WebSqlTx.prototype.selectTable = function(
-    tableName, params, opt_whereClause) {
-  return this.whenReady_().then(goog.bind(function() {
-    return lf.backstore.WebSqlTx.selectTable(
-        this.tx_, tableName, params, opt_whereClause);
-  }, this));
-};
-
-
-/**
- * Reads raw objects from table.
- * @param {!SQLTransaction} transaction
- * @param {string} tableName
- * @param {!Array} params
- * @param {string=} opt_whereClause
- * @return {!IThenable<!Array<!lf.Row.Raw>>}
- */
-lf.backstore.WebSqlTx.selectTable = function(
-    transaction, tableName, params, opt_whereClause) {
-  var sql = 'SELECT id, value FROM ' + tableName +
-      (opt_whereClause || '');
-  return new goog.Promise(function(resolve, reject) {
-    transaction.executeSql(sql, params, function(tx, results) {
-      var length = results.rows.length;
-      var rows = new Array(length);
-      for (var i = 0; i < length; ++i) {
-        var item = results.rows.item(i);
-        rows[i] = /** @type {!lf.Row.Raw} */ ({
-          id: item['id'],
-          value: JSON.parse(item['value'])
-        });
-      }
-      resolve(rows);
-    }, reject);
-  });
-};
-
-/**
- * @license
- * Copyright 2015 Google Inc. All Rights Reserved.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
 goog.provide('lf.backstore.WebSqlRawBackStore');
 
 goog.require('goog.Promise');
 goog.require('goog.object');
+goog.require('lf.Exception');
 goog.require('lf.Row');
-goog.require('lf.backstore.WebSqlTx');
 goog.require('lf.raw.BackStore');
 
 
@@ -20711,14 +20446,10 @@ goog.require('lf.raw.BackStore');
  *
  * @param {number} oldVersion
  * @param {!Database} db
- * @param {!SQLTransaction} tx
  */
-lf.backstore.WebSqlRawBackStore = function(oldVersion, db, tx) {
+lf.backstore.WebSqlRawBackStore = function(oldVersion, db) {
   /** @private {!Database} */
   this.db_ = db;
-
-  /** @private {!SQLTransaction} */
-  this.tx_ = tx;
 
   /** @private {number} */
   this.version_ = oldVersion;
@@ -20733,14 +20464,16 @@ lf.backstore.WebSqlRawBackStore.prototype.getRawDBInstance = function() {
 
 /** @override */
 lf.backstore.WebSqlRawBackStore.prototype.getRawTransaction = function() {
-  return this.tx_;
+  throw new lf.Exception(
+      lf.Exception.Type.NOT_SUPPORTED,
+      'Use the raw instance to create transaction instead.');
 };
 
 
 /** @override */
 lf.backstore.WebSqlRawBackStore.prototype.dropTable = function(tableName) {
-  var sql = 'DROP TABLE ' + tableName;
-  return lf.backstore.WebSqlTx.execSql(this.tx_, sql, []);
+  // TODO(arthurhsu): implement
+  return goog.Promise.reject();
 };
 
 
@@ -20781,21 +20514,17 @@ lf.backstore.WebSqlRawBackStore.prototype.getVersion = function() {
 };
 
 
-/**
- * @param {!SQLTransaction} tx
- * @return {!IThenable<!Array<string>>}
- */
-lf.backstore.WebSqlRawBackStore.listTables = function(tx) {
+/** @param {!lf.backstore.WebSqlTx} tx */
+lf.backstore.WebSqlRawBackStore.queueListTables = function(tx) {
   var GET_TABLE_NAMES = 'SELECT tbl_name FROM sqlite_master WHERE type="table"';
 
-  return lf.backstore.WebSqlTx.execSql(tx, GET_TABLE_NAMES, []).then(
-      function(results) {
-        var tableNames = new Array(results.rows.length);
-        for (var i = 0; i < tableNames.length; ++i) {
-          tableNames[i] = results.rows.item(i)['tbl_name'];
-        }
-        return goog.Promise.resolve(tableNames);
-      });
+  tx.queue(GET_TABLE_NAMES, [], function(results) {
+    var tableNames = new Array(results.rows.length);
+    for (var i = 0; i < tableNames.length; ++i) {
+      tableNames[i] = results.rows.item(i)['tbl_name'];
+    }
+    return tableNames;
+  });
 };
 
 
@@ -20821,13 +20550,252 @@ lf.backstore.WebSqlRawBackStore.prototype.dump = function() {
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+goog.provide('lf.backstore.WebSqlTable');
+
+goog.require('goog.Promise');
+goog.require('lf.Table');
+
+
+
+/**
+ * Table stream based on a given WebSQL table.
+ * @constructor
+ * @struct
+ * @final
+ * @implements {lf.Table}
+ *
+ * @param {!lf.backstore.WebSqlTx} tx
+ * @param {string} name
+ * @param {!function(!lf.Row.Raw): !lf.Row} deserializeFn
+ */
+lf.backstore.WebSqlTable = function(tx, name, deserializeFn) {
+  /** @private {!lf.backstore.WebSqlTx} */
+  this.tx_ = tx;
+
+  /** @private {string} */
+  this.name_ = name;
+
+  /** @private {!function(!lf.Row.Raw): !lf.Row} */
+  this.deserializeFn_ = deserializeFn;
+};
+
+
+/** @override */
+lf.backstore.WebSqlTable.prototype.get = function(ids) {
+  var where = (ids.length == 0) ? '' :
+      'WHERE id IN (' + ids.join(',') + ')';
+
+  var sql = 'SELECT id, value FROM ' + this.name_ + ' ' + where;
+  var deserializeFn = this.deserializeFn_;
+
+  /**
+   * @param {!Object} results
+   * @return {!Array<!lf.Row.Raw>}
+   */
+  var transformer = function(results) {
+    var length = results.rows.length;
+    var rows = new Array(length);
+    for (var i = 0; i < length; ++i) {
+      rows[i] = deserializeFn(/** @type {!lf.Row.Raw} */ ({
+        id: results.rows.item(i)['id'],
+        value: JSON.parse(results.rows.item(i)['value'])
+      }));
+    }
+    return rows;
+  };
+
+  this.tx_.queue(sql, [], transformer);
+
+  // Note: Safari will commit the native WebSQL transaction once it's out of its
+  // mini-task. Therefore resolving the promise actually implies the end of the
+  // transaction, which is effectively commit. In a production code, this
+  // function shall only be used by prefetcher.
+  return this.tx_.commit();
+};
+
+
+/** @override */
+lf.backstore.WebSqlTable.prototype.put = function(rows) {
+  if (rows.length == 0) {
+    return goog.Promise.resolve();
+  }
+
+  var sql = 'INSERT OR REPLACE INTO ' + this.name_ + '(id, value) ' +
+      'VALUES (?, ?)';
+  rows.forEach(function(row) {
+    this.tx_.queue(sql, [row.id(), JSON.stringify(row.payload())]);
+  }, this);
+
+  return goog.Promise.resolve();
+};
+
+
+/** @override */
+lf.backstore.WebSqlTable.prototype.remove = function(ids) {
+  var where = (ids.length == 0) ? '' :
+      'WHERE id IN (' + ids.join(',') + ')';
+
+  var sql = 'DELETE FROM ' + this.name_ + ' ' + where;
+  this.tx_.queue(sql, []);
+  return goog.Promise.resolve();
+};
+
+/**
+ * @license
+ * Copyright 2015 Google Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+goog.provide('lf.backstore.WebSqlTx');
+
+goog.require('goog.Promise');
+goog.require('goog.structs.Map');
+goog.require('lf.TransactionType');
+goog.require('lf.backstore.BaseTx');
+goog.require('lf.backstore.WebSqlTable');
+
+
+
+/**
+ * Wrapper for Transaction object obtained from WebSQL.
+ * @constructor
+ * @struct
+ * @extends {lf.backstore.BaseTx}
+ *
+ * @param {!Database} db
+ * @param {!lf.cache.Journal} journal
+ * @param {!lf.TransactionType} txType
+ */
+lf.backstore.WebSqlTx = function(db, journal, txType) {
+  lf.backstore.WebSqlTx.base(this, 'constructor', journal, txType);
+
+  /** @private {!Database} */
+  this.db_ = db;
+
+  /** @private {!SQLTransaction} */
+  this.tx_;
+
+  /** @private {!goog.structs.Map<string, !lf.backstore.WebSqlTable>} */
+  this.tables_ = new goog.structs.Map();
+
+  /** @private {!Array<!lf.backstore.WebSqlTx.Command_>} */
+  this.commands_ = [];
+};
+goog.inherits(lf.backstore.WebSqlTx, lf.backstore.BaseTx);
+
+
+/**
+ * @typedef {{
+ *   statement: string,
+ *   params: !Array,
+ *   transform: (undefined|!function(!Object):!Array<!lf.Row.Raw>)
+ * }}
+ */
+lf.backstore.WebSqlTx.Command_;
+
+
+/** @override */
+lf.backstore.WebSqlTx.prototype.getTable = function(tableName, deserializeFn) {
+  var table = this.tables_.get(tableName, null);
+  if (goog.isNull(table)) {
+    table = new lf.backstore.WebSqlTable(this, tableName, deserializeFn);
+    this.tables_.set(tableName, table);
+  }
+
+  return table;
+};
+
+
+/**
+ * Queues a SQL statement for the transaction.
+ * @param {string} statement
+ * @param {!Array} params
+ * @param {!function(!Object):!Array<!lf.Row.Raw>=} opt_transform
+ */
+lf.backstore.WebSqlTx.prototype.queue = function(
+    statement, params, opt_transform) {
+  this.commands_.push({
+    statement: statement,
+    params: params,
+    transform: opt_transform
+  });
+};
+
+
+/** @override */
+lf.backstore.WebSqlTx.prototype.commit = function() {
+  lf.backstore.WebSqlTx.base(this, 'commit');
+
+  var lastResults;
+  var transformer;
+  var onError = this.resolver.reject.bind(this.resolver);
+
+  var callback = goog.bind(function(tx, results) {
+    lastResults = results;
+    if (this.commands_.length) {
+      var command = this.commands_.shift();
+      transformer = command.transform;
+      tx.executeSql(command.statement, command.params, callback, onError);
+    } else {
+      var ret = lastResults;
+      if (goog.isDefAndNotNull(transformer) &&
+          goog.isDefAndNotNull(lastResults)) {
+        ret = transformer(lastResults);
+      }
+      this.resolver.resolve(ret);
+    }
+  }, this);
+
+  if (this.txType == lf.TransactionType.READ_ONLY) {
+    this.db_.readTransaction(callback, onError);
+  } else {
+    this.db_.transaction(callback, onError);
+  }
+
+  return this.resolver.promise;
+};
+
+
+/** @override */
+lf.backstore.WebSqlTx.prototype.abort = function() {
+  this.commands_ = [];
+};
+
+/**
+ * @license
+ * Copyright 2015 Google Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 goog.provide('lf.backstore.WebSql');
 
 goog.require('goog.Promise');
 goog.require('lf.BackStore');
 goog.require('lf.Exception');
+goog.require('lf.TransactionType');
 goog.require('lf.backstore.WebSqlRawBackStore');
 goog.require('lf.backstore.WebSqlTx');
+goog.require('lf.cache.Journal');
 
 
 
@@ -20839,7 +20807,7 @@ goog.require('lf.backstore.WebSqlTx');
  *
  * @param {!lf.Global} global
  * @param {!lf.schema.Database} schema
- * @param {number=} opt_size Size of database in bytes.
+ * @param {number=} opt_size Size of database in bytes, default to 5MB.
  */
 lf.backstore.WebSql = function(global, schema, opt_size) {
   /** @private {!lf.Global} */
@@ -20848,11 +20816,20 @@ lf.backstore.WebSql = function(global, schema, opt_size) {
   /** @private {!lf.schema.Database} */
   this.schema_ = schema;
 
-  /** @private {?Database} */
+  /** @private {!Database} */
   this.db_;
 
   /** @private {number} */
-  this.size_ = opt_size || 2e9;  // Default to 2GB.
+  this.size_ = opt_size || 5000000;  // Default to 5MB.
+};
+
+
+/**
+ * @return {!lf.cache.Journal}
+ * @private
+ */
+lf.backstore.WebSql.prototype.getEmptyJournal_ = function() {
+  return new lf.cache.Journal(this.global_, []);
 };
 
 
@@ -20867,27 +20844,21 @@ lf.backstore.WebSql.prototype.init = function(opt_onUpgrade) {
     return goog.Promise.resolve();
   };
 
-  var resolver = goog.Promise.withResolver();
-  try {
-    window.openDatabase(
-        this.schema_.name(),
-        '',  // Just open it with any version, otherwise weird error can happen.
-        this.schema_.name(),
-        this.size_,
-        goog.bind(function(db) {
-          this.db_ = db;
-          this.checkVersion_(onUpgrade).then(
-              resolver.resolve.bind(resolver),
-              goog.bind(function(e) {
-                this.db_ = null;
-                resolver.reject(e);
-              }, this));
-        }, this));
-  } catch (e) {
-    resolver.reject(e);
-  }
-
-  return resolver.promise;
+  return new goog.Promise(goog.bind(function(resolve, reject) {
+    try {
+      window.openDatabase(
+          this.schema_.name(),
+          '',  // Just open it with any version
+          this.schema_.name(),
+          this.size_,
+          goog.bind(function(db) {
+            this.db_ = db;
+            this.checkVersion_(onUpgrade).then(resolve, reject);
+          }, this));
+    } catch (e) {
+      reject(e);
+    }
+  }, this));
 };
 
 
@@ -20907,25 +20878,24 @@ lf.backstore.WebSql.prototype.checkVersion_ = function(onUpgrade) {
 
   var resolver = goog.Promise.withResolver();
 
-  this.db_.transaction(goog.bind(function(tx) {
-    lf.backstore.WebSqlTx.execSql(tx, CREATE_VERSION, []).then(function() {
-      return lf.backstore.WebSqlTx.execSql(tx, GET_VERSION, []);
-    }).then(goog.bind(function(results) {
-      var version = 0;
-      if (results.rows.length) {
-        version = results.rows.item(0)['v'];
-      }
-      if (version < this.schema_.version()) {
-        this.onUpgrade_(onUpgrade, version).then(
-            resolver.resolve.bind(resolver));
-      } else if (version > this.schema_.version()) {
-        resolver.reject(new lf.Exception(lf.Exception.Type.DATA,
-            'Attempt to open a newer database with old code'));
-      } else {
-        resolver.resolve();
-      }
-    }, this));
-  }, this), resolver.reject.bind(resolver));
+  var tx = new lf.backstore.WebSqlTx(
+      this.db_, this.getEmptyJournal_(), lf.TransactionType.READ_WRITE);
+  tx.queue(CREATE_VERSION, []);
+  tx.queue(GET_VERSION, []);
+  tx.commit().then(goog.bind(function(results) {
+    var version = 0;
+    if (results.rows.length) {
+      version = results.rows.item(0)['v'];
+    }
+    if (version < this.schema_.version()) {
+      this.onUpgrade_(onUpgrade, version).then(resolver.resolve.bind(resolver));
+    } else if (version > this.schema_.version()) {
+      resolver.reject(new lf.Exception(lf.Exception.Type.DATA,
+          'Attempt to open a newer database with old code'));
+    } else {
+      resolver.resolve();
+    }
+  }, this));
 
   return resolver.promise;
 };
@@ -20940,7 +20910,7 @@ lf.backstore.WebSql.prototype.initialized = function() {
 /** @override */
 lf.backstore.WebSql.prototype.createTx = function(type, journal) {
   if (goog.isDefAndNotNull(this.db_)) {
-    return new lf.backstore.WebSqlTx(this.global_, this.db_, journal, type);
+    return new lf.backstore.WebSqlTx(this.db_, journal, type);
   }
   throw new lf.Exception(lf.Exception.Type.DATA,
       'Attempt to create transaction from uninitialized DB');
@@ -20997,14 +20967,11 @@ lf.backstore.WebSql.prototype.notify = function(changes) {
 lf.backstore.WebSql.prototype.onUpgrade_ = function(onUpgrade, oldVersion) {
   var resolver = goog.Promise.withResolver();
 
-  this.db_.transaction(goog.bind(function(tx) {
-    this.preUpgrade_(tx).then(goog.bind(function() {
-      var rawDb = new lf.backstore.WebSqlRawBackStore(
-          oldVersion, /** @type {!Database} */ (this.db_), tx);
-      onUpgrade(rawDb).then(goog.bind(function() {
-        return this.scanRowId_();
-      }, this)).then(resolver.resolve.bind(resolver));
-    }, this));
+  this.preUpgrade_().then(goog.bind(function() {
+    var rawDb = new lf.backstore.WebSqlRawBackStore(oldVersion, this.db_);
+    onUpgrade(rawDb).then(goog.bind(function() {
+      return this.scanRowId_();
+    }, this)).then(resolver.resolve.bind(resolver));
   }, this), resolver.reject.bind(resolver));
 
   return resolver.promise;
@@ -21013,46 +20980,29 @@ lf.backstore.WebSql.prototype.onUpgrade_ = function(onUpgrade, oldVersion) {
 
 /**
  * Deletes persisted indices and creates new tables.
- * @param {!SQLTransaction} tx
  * @return {!IThenable}
  * @private
  */
-lf.backstore.WebSql.prototype.preUpgrade_ = function(tx) {
-  var runSql = lf.backstore.WebSqlTx.execSql.bind(null, tx);
-
-  /**
-   * @param {!Array<string>} sqls
-   * @return {!IThenable}
-   */
-  var runSqlSequentially = function(sqls) {
-    if (sqls.length == 0) {
-      return goog.Promise.resolve();
-    }
-
-    var sql = sqls[0];
-    return runSql(sql, []).then(function() {
-      runSqlSequentially(sqls.slice(1));
-    });
-  };
-
+lf.backstore.WebSql.prototype.preUpgrade_ = function() {
   var tables = this.schema_.tables();
   var tableNames = [];
 
-  var UPDATE_VERSION = 'UPDATE __lf_ver SET v=? WHERE id=0';
+  var tx = new lf.backstore.WebSqlTx(
+      this.db_, this.getEmptyJournal_(), lf.TransactionType.READ_WRITE);
+  var tx2 = new lf.backstore.WebSqlTx(
+      this.db_, this.getEmptyJournal_(), lf.TransactionType.READ_WRITE);
 
-  return runSql(UPDATE_VERSION, [this.schema_.version()]).then(function() {
-    return lf.backstore.WebSqlRawBackStore.listTables(tx);
-  }).then(function(results) {
+  tx.queue('UPDATE __lf_ver SET v=? WHERE id=0', [this.schema_.version()]);
+  lf.backstore.WebSqlRawBackStore.queueListTables(tx);
+  return tx.commit().then(function(results) {
     // Delete all existing persisted indices.
     var indices = results.filter(function(name) {
       return name.indexOf('.') != -1;
     });
-    var sqls = indices.map(function(name) {
-      return 'DROP TABLE ' + name;
+    indices.forEach(function(name) {
+      tx2.queue('DROP TABLE ' + name, []);
     });
-    return runSqlSequentially(sqls);
 
-  }).then(function() {
     // Create new tables.
     var existingTables = tableNames.filter(function(name) {
       return name.indexOf('.') == -1;
@@ -21062,10 +21012,12 @@ lf.backstore.WebSql.prototype.preUpgrade_ = function(tx) {
     }).filter(function(name) {
       return existingTables.indexOf(name) == -1;
     });
-    var sqls = newTables.map(function(name) {
-      return 'CREATE TABLE ' + name + '(id INTEGER PRIMARY KEY, value TEXT)';
+    newTables.forEach(function(name) {
+      tx2.queue(
+          'CREATE TABLE ' + name + '(id INTEGER PRIMARY KEY, value TEXT)',
+          []);
     });
-    return runSqlSequentially(sqls);
+    return tx2.commit();
   });
 };
 
@@ -21076,34 +21028,33 @@ lf.backstore.WebSql.prototype.preUpgrade_ = function(tx) {
  * @private
  */
 lf.backstore.WebSql.prototype.scanRowId_ = function() {
-  var sqlStatements = this.schema_.tables().map(function(table) {
-    return 'SELECT MAX(id) FROM ' + table.getName();
-  });
-
-  /** @type {number} */
   var maxRowId = 0;
+  var resolver = goog.Promise.withResolver();
 
   /**
-   * @param {!SQLTransaction} tx
+   * @param {string} tableName
    * @return {!IThenable}
    */
-  var execSequentially = function(tx) {
-    if (sqlStatements.length == 0) {
-      return goog.Promise.resolve(maxRowId);
-    }
-
-    var sql = sqlStatements.shift();
-    return lf.backstore.WebSqlTx.execSql(tx, sql, []).then(function(results) {
+  var selectIdFromTable = goog.bind(function(tableName) {
+    var tx = new lf.backstore.WebSqlTx(
+        this.db_, this.getEmptyJournal_(), lf.TransactionType.READ_ONLY);
+    tx.queue('SELECT MAX(id) FROM ' + tableName, []);
+    return tx.commit().then(function(results) {
       var id = results.rows.item(0)[0];
       maxRowId = Math.max(id, maxRowId);
-      return maxRowId;
     });
-  };
+  }, this);
 
-  var resolver = goog.Promise.withResolver();
-  this.db_.readTransaction(function(tx) {
-    execSequentially(tx).then(resolver.resolve.bind(resolver));
-  }, resolver.reject.bind(resolver));
+  var promises = this.schema_.tables().map(function(table) {
+    return selectIdFromTable(table.getName());
+  });
+
+  goog.Promise.all(promises).then(function() {
+    resolver.resolve(maxRowId);
+  }, function(e) {
+    resolver.reject(e);
+  });
+
   return resolver.promise;
 };
 

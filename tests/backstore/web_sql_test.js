@@ -34,6 +34,10 @@ goog.require('lf.testing.backstore.ScudTester');
 var asyncTestCase = goog.testing.AsyncTestCase.createAndInstall('WebSql');
 
 
+/** @type {number} */
+asyncTestCase.stepTimeout = 5000;  // Raise the timeout to 5 seconds.
+
+
 /** @type {!lf.cache.Cache} */
 var cache;
 
