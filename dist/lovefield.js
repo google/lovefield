@@ -20454,26 +20454,15 @@ lf.backstore.WebSqlTable = function(tx, name, deserializeFn) {
 /** @override */
 lf.backstore.WebSqlTable.prototype.get = function(ids) {
   var where = (ids.length == 0) ? '' :
-      'WHERE id IN (' + ids.join(',') + ')';
+      ' WHERE id IN (' + ids.join(',') + ')';
 
-  var sql = 'SELECT id, value FROM ' + this.name_ + ' ' + where;
-  var resolver = goog.Promise.withResolver();
-  var deserializeFn = this.deserializeFn_;
-  this.tx_.execSql(sql, []).then(function(results) {
-    var length = results.rows.length;
-    var rows = [];
-    for (var i = 0; i < length; ++i) {
-      rows.push(deserializeFn(/** @type {!lf.Row.Raw} */ ({
-        id: results.rows.item(i)['id'],
-        value: JSON.parse(results.rows.item(i)['value'])
-      })));
-    }
-    resolver.resolve(rows);
-  }, function(e) {
-    resolver.reject(e);
-  });
-
-  return resolver.promise;
+  return this.tx_.selectTable(this.name_, [], where).then(
+      goog.bind(function(results) {
+        var rows = results.map(function(rawData) {
+          return this.deserializeFn_(rawData);
+        }, this);
+        return goog.Promise.resolve(rows);
+      }, this));
 };
 
 
@@ -20644,6 +20633,49 @@ lf.backstore.WebSqlTx.execSql = function(transaction, sql, params) {
   });
 };
 
+
+/**
+ * @param {string} tableName
+ * @param {!Array} params
+ * @param {string=} opt_whereClause
+ * @return {!IThenable<!Array<!lf.Row.Raw>>}
+ */
+lf.backstore.WebSqlTx.prototype.selectTable = function(
+    tableName, params, opt_whereClause) {
+  return this.whenReady_().then(goog.bind(function() {
+    return lf.backstore.WebSqlTx.selectTable(
+        this.tx_, tableName, params, opt_whereClause);
+  }, this));
+};
+
+
+/**
+ * Reads raw objects from table.
+ * @param {!SQLTransaction} transaction
+ * @param {string} tableName
+ * @param {!Array} params
+ * @param {string=} opt_whereClause
+ * @return {!IThenable<!Array<!lf.Row.Raw>>}
+ */
+lf.backstore.WebSqlTx.selectTable = function(
+    transaction, tableName, params, opt_whereClause) {
+  var sql = 'SELECT id, value FROM ' + tableName +
+      (opt_whereClause || '');
+  return new goog.Promise(function(resolve, reject) {
+    transaction.executeSql(sql, params, function(tx, results) {
+      var length = results.rows.length;
+      var rows = new Array(length);
+      for (var i = 0; i < length; ++i) {
+        var item = results.rows.item(i);
+        rows[i] = /** @type {!lf.Row.Raw} */ ({
+          id: item['id'],
+          value: JSON.parse(item['value'])
+        });
+      }
+      resolve(rows);
+    }, reject);
+  });
+};
 
 /**
  * @license
