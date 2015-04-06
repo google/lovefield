@@ -2929,7 +2929,7 @@ goog.addDependency('dom/pattern/sequence.js', ['goog.dom.pattern.Sequence'], ['g
 goog.addDependency('dom/pattern/starttag.js', ['goog.dom.pattern.StartTag'], ['goog.dom.TagWalkType', 'goog.dom.pattern.Tag'], false);
 goog.addDependency('dom/pattern/tag.js', ['goog.dom.pattern.Tag'], ['goog.dom.pattern', 'goog.dom.pattern.AbstractPattern', 'goog.dom.pattern.MatchType', 'goog.object'], false);
 goog.addDependency('dom/pattern/text.js', ['goog.dom.pattern.Text'], ['goog.dom.NodeType', 'goog.dom.pattern', 'goog.dom.pattern.AbstractPattern', 'goog.dom.pattern.MatchType'], false);
-goog.addDependency('dom/range.js', ['goog.dom.Range'], ['goog.dom', 'goog.dom.AbstractRange', 'goog.dom.BrowserFeature', 'goog.dom.ControlRange', 'goog.dom.MultiRange', 'goog.dom.NodeType', 'goog.dom.TextRange', 'goog.userAgent'], false);
+goog.addDependency('dom/range.js', ['goog.dom.Range'], ['goog.dom', 'goog.dom.AbstractRange', 'goog.dom.BrowserFeature', 'goog.dom.ControlRange', 'goog.dom.MultiRange', 'goog.dom.NodeType', 'goog.dom.TextRange'], false);
 goog.addDependency('dom/range_test.js', ['goog.dom.RangeTest'], ['goog.dom', 'goog.dom.NodeType', 'goog.dom.Range', 'goog.dom.RangeType', 'goog.dom.TagName', 'goog.dom.TextRange', 'goog.dom.browserrange', 'goog.testing.dom', 'goog.testing.jsunit', 'goog.userAgent'], false);
 goog.addDependency('dom/rangeendpoint.js', ['goog.dom.RangeEndpoint'], [], false);
 goog.addDependency('dom/safe.js', ['goog.dom.safe'], ['goog.html.SafeHtml', 'goog.html.SafeUrl'], false);
@@ -2958,7 +2958,7 @@ goog.addDependency('dom/xml.js', ['goog.dom.xml'], ['goog.dom', 'goog.dom.NodeTy
 goog.addDependency('dom/xml_test.js', ['goog.dom.xmlTest'], ['goog.dom.TagName', 'goog.dom.xml', 'goog.testing.jsunit', 'goog.userAgent'], false);
 goog.addDependency('editor/browserfeature.js', ['goog.editor.BrowserFeature'], ['goog.editor.defines', 'goog.userAgent', 'goog.userAgent.product', 'goog.userAgent.product.isVersion'], false);
 goog.addDependency('editor/browserfeature_test.js', ['goog.editor.BrowserFeatureTest'], ['goog.dom', 'goog.dom.Range', 'goog.dom.TagName', 'goog.editor.BrowserFeature', 'goog.testing.ExpectedFailures', 'goog.testing.jsunit'], false);
-goog.addDependency('editor/clicktoeditwrapper.js', ['goog.editor.ClickToEditWrapper'], ['goog.Disposable', 'goog.dom', 'goog.dom.Range', 'goog.dom.TagName', 'goog.editor.BrowserFeature', 'goog.editor.Command', 'goog.editor.Field', 'goog.editor.range', 'goog.events.BrowserEvent', 'goog.events.EventHandler', 'goog.events.EventType', 'goog.log'], false);
+goog.addDependency('editor/clicktoeditwrapper.js', ['goog.editor.ClickToEditWrapper'], ['goog.Disposable', 'goog.dom', 'goog.dom.Range', 'goog.dom.TagName', 'goog.editor.BrowserFeature', 'goog.editor.Command', 'goog.editor.Field', 'goog.editor.range', 'goog.events.BrowserEvent', 'goog.events.EventHandler', 'goog.events.EventType'], false);
 goog.addDependency('editor/clicktoeditwrapper_test.js', ['goog.editor.ClickToEditWrapperTest'], ['goog.dom', 'goog.dom.Range', 'goog.dom.TagName', 'goog.editor.ClickToEditWrapper', 'goog.editor.SeamlessField', 'goog.testing.MockClock', 'goog.testing.events', 'goog.testing.jsunit', 'goog.userAgent', 'goog.userAgent.product'], false);
 goog.addDependency('editor/command.js', ['goog.editor.Command'], [], false);
 goog.addDependency('editor/contenteditablefield.js', ['goog.editor.ContentEditableField'], ['goog.asserts', 'goog.editor.Field', 'goog.log'], false);
@@ -3436,7 +3436,7 @@ goog.addDependency('module/moduleinfo_test.js', ['goog.module.ModuleInfoTest'], 
 goog.addDependency('module/moduleloadcallback.js', ['goog.module.ModuleLoadCallback'], ['goog.debug.entryPointRegistry', 'goog.module'], false);
 goog.addDependency('module/moduleloadcallback_test.js', ['goog.module.ModuleLoadCallbackTest'], ['goog.debug.ErrorHandler', 'goog.debug.entryPointRegistry', 'goog.functions', 'goog.module.ModuleLoadCallback', 'goog.testing.jsunit', 'goog.testing.recordFunction'], false);
 goog.addDependency('module/moduleloader.js', ['goog.module.ModuleLoader'], ['goog.Timer', 'goog.array', 'goog.events', 'goog.events.Event', 'goog.events.EventHandler', 'goog.events.EventTarget', 'goog.labs.userAgent.browser', 'goog.log', 'goog.module.AbstractModuleLoader', 'goog.net.BulkLoader', 'goog.net.EventType', 'goog.net.jsloader', 'goog.userAgent', 'goog.userAgent.product'], false);
-goog.addDependency('module/moduleloader_test.js', ['goog.module.ModuleLoaderTest'], ['goog.array', 'goog.dom', 'goog.dom.TagName', 'goog.events', 'goog.functions', 'goog.module.ModuleLoader', 'goog.module.ModuleManager', 'goog.net.BulkLoader', 'goog.net.XmlHttp', 'goog.object', 'goog.testing.AsyncTestCase', 'goog.testing.PropertyReplacer', 'goog.testing.events.EventObserver', 'goog.testing.jsunit', 'goog.userAgent'], false);
+goog.addDependency('module/moduleloader_test.js', ['goog.module.ModuleLoaderTest'], ['goog.Promise', 'goog.array', 'goog.dom', 'goog.dom.TagName', 'goog.events', 'goog.functions', 'goog.module.ModuleLoader', 'goog.module.ModuleManager', 'goog.net.BulkLoader', 'goog.net.XmlHttp', 'goog.object', 'goog.testing.PropertyReplacer', 'goog.testing.events.EventObserver', 'goog.testing.jsunit', 'goog.userAgent'], false);
 goog.addDependency('module/modulemanager.js', ['goog.module.ModuleManager', 'goog.module.ModuleManager.CallbackType', 'goog.module.ModuleManager.FailureType'], ['goog.Disposable', 'goog.array', 'goog.asserts', 'goog.async.Deferred', 'goog.debug.Trace', 'goog.dispose', 'goog.log', 'goog.module', 'goog.module.ModuleInfo', 'goog.module.ModuleLoadCallback', 'goog.object'], false);
 goog.addDependency('module/modulemanager_test.js', ['goog.module.ModuleManagerTest'], ['goog.array', 'goog.functions', 'goog.module.BaseModule', 'goog.module.ModuleManager', 'goog.testing', 'goog.testing.MockClock', 'goog.testing.jsunit', 'goog.testing.recordFunction'], false);
 goog.addDependency('module/testdata/modA_1.js', ['goog.module.testdata.modA_1'], [], false);
@@ -3444,10 +3444,10 @@ goog.addDependency('module/testdata/modA_2.js', ['goog.module.testdata.modA_2'],
 goog.addDependency('module/testdata/modB_1.js', ['goog.module.testdata.modB_1'], ['goog.module.ModuleManager'], false);
 goog.addDependency('net/browserchannel.js', ['goog.net.BrowserChannel', 'goog.net.BrowserChannel.Error', 'goog.net.BrowserChannel.Event', 'goog.net.BrowserChannel.Handler', 'goog.net.BrowserChannel.LogSaver', 'goog.net.BrowserChannel.QueuedMap', 'goog.net.BrowserChannel.ServerReachability', 'goog.net.BrowserChannel.ServerReachabilityEvent', 'goog.net.BrowserChannel.Stat', 'goog.net.BrowserChannel.StatEvent', 'goog.net.BrowserChannel.State', 'goog.net.BrowserChannel.TimingEvent'], ['goog.Uri', 'goog.array', 'goog.asserts', 'goog.debug.TextFormatter', 'goog.events.Event', 'goog.events.EventTarget', 'goog.json', 'goog.json.EvalJsonProcessor', 'goog.log', 'goog.net.BrowserTestChannel', 'goog.net.ChannelDebug', 'goog.net.ChannelRequest', 'goog.net.XhrIo', 'goog.net.tmpnetwork', 'goog.object', 'goog.string', 'goog.structs', 'goog.structs.CircularBuffer'], false);
 goog.addDependency('net/browserchannel_test.js', ['goog.net.BrowserChannelTest'], ['goog.Timer', 'goog.array', 'goog.dom', 'goog.functions', 'goog.json', 'goog.net.BrowserChannel', 'goog.net.ChannelDebug', 'goog.net.ChannelRequest', 'goog.net.tmpnetwork', 'goog.structs.Map', 'goog.testing.MockClock', 'goog.testing.PropertyReplacer', 'goog.testing.asserts', 'goog.testing.jsunit', 'goog.testing.recordFunction'], false);
-goog.addDependency('net/browsertestchannel.js', ['goog.net.BrowserTestChannel'], ['goog.json.EvalJsonProcessor', 'goog.net.ChannelRequest', 'goog.net.ChannelRequest.Error', 'goog.net.tmpnetwork', 'goog.string.Parser', 'goog.userAgent'], false);
+goog.addDependency('net/browsertestchannel.js', ['goog.net.BrowserTestChannel'], ['goog.json.EvalJsonProcessor', 'goog.net.ChannelRequest', 'goog.net.ChannelRequest.Error', 'goog.net.tmpnetwork', 'goog.string.Parser'], false);
 goog.addDependency('net/bulkloader.js', ['goog.net.BulkLoader'], ['goog.events.EventHandler', 'goog.events.EventTarget', 'goog.log', 'goog.net.BulkLoaderHelper', 'goog.net.EventType', 'goog.net.XhrIo'], false);
 goog.addDependency('net/bulkloader_test.js', ['goog.net.BulkLoaderTest'], ['goog.events.Event', 'goog.events.EventHandler', 'goog.net.BulkLoader', 'goog.net.EventType', 'goog.testing.MockClock', 'goog.testing.jsunit'], false);
-goog.addDependency('net/bulkloaderhelper.js', ['goog.net.BulkLoaderHelper'], ['goog.Disposable', 'goog.log'], false);
+goog.addDependency('net/bulkloaderhelper.js', ['goog.net.BulkLoaderHelper'], ['goog.Disposable'], false);
 goog.addDependency('net/channeldebug.js', ['goog.net.ChannelDebug'], ['goog.json', 'goog.log'], false);
 goog.addDependency('net/channelrequest.js', ['goog.net.ChannelRequest', 'goog.net.ChannelRequest.Error'], ['goog.Timer', 'goog.async.Throttle', 'goog.dom.TagName', 'goog.events.EventHandler', 'goog.net.ErrorCode', 'goog.net.EventType', 'goog.net.XmlHttp', 'goog.object', 'goog.userAgent'], false);
 goog.addDependency('net/channelrequest_test.js', ['goog.net.ChannelRequestTest'], ['goog.Uri', 'goog.functions', 'goog.net.BrowserChannel', 'goog.net.ChannelDebug', 'goog.net.ChannelRequest', 'goog.testing.MockClock', 'goog.testing.PropertyReplacer', 'goog.testing.jsunit', 'goog.testing.net.XhrIo', 'goog.testing.recordFunction'], false);
@@ -3456,7 +3456,7 @@ goog.addDependency('net/cookies_test.js', ['goog.net.cookiesTest'], ['goog.array
 goog.addDependency('net/corsxmlhttpfactory.js', ['goog.net.CorsXmlHttpFactory', 'goog.net.IeCorsXhrAdapter'], ['goog.net.HttpStatus', 'goog.net.XhrLike', 'goog.net.XmlHttp', 'goog.net.XmlHttpFactory'], false);
 goog.addDependency('net/corsxmlhttpfactory_test.js', ['goog.net.CorsXmlHttpFactoryTest'], ['goog.net.CorsXmlHttpFactory', 'goog.net.IeCorsXhrAdapter', 'goog.testing.jsunit', 'goog.userAgent'], false);
 goog.addDependency('net/crossdomainrpc.js', ['goog.net.CrossDomainRpc'], ['goog.Uri', 'goog.dom', 'goog.dom.TagName', 'goog.dom.safe', 'goog.events', 'goog.events.EventTarget', 'goog.events.EventType', 'goog.html.legacyconversions', 'goog.json', 'goog.log', 'goog.net.EventType', 'goog.net.HttpStatus', 'goog.string', 'goog.userAgent'], false);
-goog.addDependency('net/crossdomainrpc_test.js', ['goog.net.CrossDomainRpcTest'], ['goog.log', 'goog.log.Level', 'goog.net.CrossDomainRpc', 'goog.testing.AsyncTestCase', 'goog.testing.jsunit', 'goog.userAgent'], false);
+goog.addDependency('net/crossdomainrpc_test.js', ['goog.net.CrossDomainRpcTest'], ['goog.Promise', 'goog.log', 'goog.net.CrossDomainRpc', 'goog.testing.jsunit', 'goog.userAgent'], false);
 goog.addDependency('net/errorcode.js', ['goog.net.ErrorCode'], [], false);
 goog.addDependency('net/eventtype.js', ['goog.net.EventType'], [], false);
 goog.addDependency('net/filedownloader.js', ['goog.net.FileDownloader', 'goog.net.FileDownloader.Error'], ['goog.Disposable', 'goog.asserts', 'goog.async.Deferred', 'goog.crypt.hash32', 'goog.debug.Error', 'goog.events', 'goog.events.EventHandler', 'goog.fs', 'goog.fs.DirectoryEntry', 'goog.fs.Error', 'goog.fs.FileSaver', 'goog.net.EventType', 'goog.net.XhrIo', 'goog.net.XhrIoPool', 'goog.object'], false);
@@ -3720,7 +3720,7 @@ goog.addDependency('testing/fs/entry_test.js', ['goog.testing.fs.EntryTest'], ['
 goog.addDependency('testing/fs/file.js', ['goog.testing.fs.File'], ['goog.testing.fs.Blob'], false);
 goog.addDependency('testing/fs/fileentry_test.js', ['goog.testing.fs.FileEntryTest'], ['goog.testing.AsyncTestCase', 'goog.testing.MockClock', 'goog.testing.fs.FileEntry', 'goog.testing.fs.FileSystem', 'goog.testing.jsunit'], false);
 goog.addDependency('testing/fs/filereader.js', ['goog.testing.fs.FileReader'], ['goog.Timer', 'goog.events.EventTarget', 'goog.fs.Error', 'goog.fs.FileReader', 'goog.testing.fs.ProgressEvent'], false);
-goog.addDependency('testing/fs/filereader_test.js', ['goog.testing.fs.FileReaderTest'], ['goog.Timer', 'goog.async.Deferred', 'goog.events', 'goog.fs.Error', 'goog.fs.FileReader', 'goog.fs.FileSaver', 'goog.testing.AsyncTestCase', 'goog.testing.fs.FileReader', 'goog.testing.fs.FileSystem', 'goog.testing.jsunit'], false);
+goog.addDependency('testing/fs/filereader_test.js', ['goog.testing.fs.FileReaderTest'], ['goog.Promise', 'goog.array', 'goog.events', 'goog.fs.Error', 'goog.fs.FileReader', 'goog.object', 'goog.testing.events.EventObserver', 'goog.testing.fs.FileReader', 'goog.testing.fs.FileSystem', 'goog.testing.jsunit'], false);
 goog.addDependency('testing/fs/filesystem.js', ['goog.testing.fs.FileSystem'], ['goog.fs.FileSystem', 'goog.testing.fs.DirectoryEntry'], false);
 goog.addDependency('testing/fs/filewriter.js', ['goog.testing.fs.FileWriter'], ['goog.Timer', 'goog.events.EventTarget', 'goog.fs.Error', 'goog.fs.FileSaver', 'goog.string', 'goog.testing.fs.ProgressEvent'], false);
 goog.addDependency('testing/fs/filewriter_test.js', ['goog.testing.fs.FileWriterTest'], ['goog.async.Deferred', 'goog.events', 'goog.fs.Error', 'goog.fs.FileSaver', 'goog.testing.AsyncTestCase', 'goog.testing.MockClock', 'goog.testing.fs.Blob', 'goog.testing.fs.FileSystem', 'goog.testing.jsunit'], false);
@@ -11052,6 +11052,49 @@ goog.Promise.all = function(promises) {
 
 /**
  * @param {!Array<!(goog.Thenable<TYPE>|Thenable)>} promises
+ * @return {!goog.Promise<!Array<{
+ *     fulfilled: boolean,
+ *     value: (TYPE|undefined),
+ *     reason: (*|undefined)}>>} A Promise that resolves with a list of
+ *         result objects once all input Promises (or Promise-like) have
+ *         settled. Each result object contains a 'fulfilled' boolean indicating
+ *         whether an input Promise was fulfilled or rejected. For fulfilled
+ *         Promises, the resulting value is stored in the 'value' field. For
+ *         rejected Promises, the rejection reason is stored in the 'reason'
+ *         field.
+ * @template TYPE
+ */
+goog.Promise.allSettled = function(promises) {
+  return new goog.Promise(function(resolve, reject) {
+    var toSettle = promises.length;
+    var results = [];
+
+    if (!toSettle) {
+      resolve(results);
+      return;
+    }
+
+    var onSettled = function(index, fulfilled, result) {
+      toSettle--;
+      results[index] = fulfilled ?
+          {fulfilled: true, value: result} :
+          {fulfilled: false, reason: result};
+      if (toSettle == 0) {
+        resolve(results);
+      }
+    };
+
+    for (var i = 0, promise; promise = promises[i]; i++) {
+      goog.Promise.maybeThenVoid_(promise,
+          goog.partial(onSettled, i, true /* fulfilled */),
+          goog.partial(onSettled, i, false /* fulfilled */));
+    }
+  });
+};
+
+
+/**
+ * @param {!Array<!(goog.Thenable<TYPE>|Thenable)>} promises
  * @return {!goog.Promise<TYPE>} A Promise that receives the value of the first
  *     input to be fulfilled, or is rejected with a list of every rejection
  *     reason if all inputs are rejected.
@@ -12000,7 +12043,11 @@ lf.Row.prototype.toDbPayload = function() {
 };
 
 
-/** @return {{id: number, value: *}} */
+/** @typedef {{id: number, value: (string|!Object)}} */
+lf.Row.Raw;
+
+
+/** @return {!lf.Row.Raw} */
 lf.Row.prototype.serialize = function() {
   return {'id': this.id_, 'value': this.toDbPayload()};
 };
@@ -12024,7 +12071,7 @@ lf.Row.prototype.keyOfIndex = function(indexName) {
 
 /**
  * Creates a new Row instance from DB data.
- * @param {{id: number, value: *}} data
+ * @param {!lf.Row.Raw} data
  * @return {!lf.Row}
  */
 lf.Row.deserialize = function(data) {
@@ -12271,7 +12318,7 @@ lf.backstore.Tx = function() {};
 /**
  * @param {string} tableName  The name of the requested table. Throws an
  *     exception if such a table does not exist.
- * @param {!function({id: number, value: *}): !lf.Row} deserializeFn The
+ * @param {!function(!lf.Row.Raw): !lf.Row} deserializeFn The
  *     function to call for deserializing DB records in this table.
  * @param {!lf.backstore.TableType=} opt_tableType The type of the requested
  *     table. Defaults to lf.backstore.TableType.DATA if not specified.
@@ -15629,7 +15676,7 @@ lf.backstore.Page.prototype.removeRows = function(ids) {
 };
 
 
-/** @return {{id: number, value: *}} */
+/** @return {!lf.Row.Raw} */
 lf.backstore.Page.prototype.serialize = function() {
   return {'id': this.id_, 'value': JSON.stringify(this.payload_)};
 };
@@ -15637,7 +15684,7 @@ lf.backstore.Page.prototype.serialize = function() {
 
 /**
  * Creates a new Page instance from DB data.
- * @param {{id: number, value: *}} data
+ * @param {!lf.Row.Raw} data
  * @return {!lf.backstore.Page}
  */
 lf.backstore.Page.deserialize = function(data) {
@@ -15711,7 +15758,7 @@ goog.require('lf.service');
  * @implements {lf.Table}
  *
  * @param {!IDBObjectStore} store
- * @param {!function({id: number, value: *}): !lf.Row} deserializeFn
+ * @param {!function(!lf.Row.Raw): !lf.Row} deserializeFn
  * @param {!function(string, number): !lf.backstore.Page} retrievePageFn The
  *     function to call for retrieving an existing page.
  */
@@ -15720,7 +15767,7 @@ lf.backstore.BundledObjectStore = function(
   /** @private {!IDBObjectStore} */
   this.store_ = store;
 
-  /** @private {!function({id: number, value: *}): !lf.Row} */
+  /** @private {!function(!lf.Row.Raw): !lf.Row} */
   this.deserializeFn_ = deserializeFn;
 
   /** @private {!function(string, number): !lf.backstore.Page} */
@@ -15941,7 +15988,7 @@ lf.backstore.BundledObjectStore.getIndexTablePage_ = function(
  *
  * @param {!lf.Global} global
  * @param {!IDBObjectStore} store
- * @param {!function({id: number, value: *}): !lf.Row} deserializeFn
+ * @param {!function(!lf.Row.Raw): !lf.Row} deserializeFn
  * @param {!lf.backstore.TableType} tableType
  * @return {!lf.Table}
  */
@@ -18709,7 +18756,7 @@ lf.backstore.IndexedDBRawBackStore.prototype.renameTableColumn = function(
 
 /**
  * @param {string} tableName
- * @return {!IThenable<!Array<{id: number, value: *}>>} data
+ * @return {!IThenable<!Array<!lf.Row.Raw>>} data
  * @private
  */
 lf.backstore.IndexedDBRawBackStore.prototype.getTableRows_ = function(
@@ -18826,13 +18873,13 @@ goog.require('lf.Table');
  * @implements {lf.Table}
  *
  * @param {!IDBObjectStore} store
- * @param {!function({id: number, value: *}): !lf.Row} deserializeFn
+ * @param {!function(!lf.Row.Raw): !lf.Row} deserializeFn
  */
 lf.backstore.ObjectStore = function(store, deserializeFn) {
   /** @private {!IDBObjectStore} */
   this.store_ = store;
 
-  /** @private {!function({id: number, value: *}): !lf.Row} */
+  /** @private {!function(!lf.Row.Raw): !lf.Row} */
   this.deserializeFn_ = deserializeFn;
 };
 
@@ -20390,7 +20437,7 @@ goog.require('lf.Table');
  *
  * @param {!lf.backstore.WebSqlTx} tx
  * @param {string} name
- * @param {!function({id: number, value: *}): !lf.Row} deserializeFn
+ * @param {!function(!lf.Row.Raw): !lf.Row} deserializeFn
  */
 lf.backstore.WebSqlTable = function(tx, name, deserializeFn) {
   /** @private {!lf.backstore.WebSqlTx} */
@@ -20399,7 +20446,7 @@ lf.backstore.WebSqlTable = function(tx, name, deserializeFn) {
   /** @private {string} */
   this.name_ = name;
 
-  /** @private {!function({id: number, value: *}): !lf.Row} */
+  /** @private {!function(!lf.Row.Raw): !lf.Row} */
   this.deserializeFn_ = deserializeFn;
 };
 
@@ -20416,10 +20463,10 @@ lf.backstore.WebSqlTable.prototype.get = function(ids) {
     var length = results.rows.length;
     var rows = [];
     for (var i = 0; i < length; ++i) {
-      rows.push(deserializeFn({
+      rows.push(deserializeFn(/** @type {!lf.Row.Raw} */ ({
         id: results.rows.item(i)['id'],
         value: JSON.parse(results.rows.item(i)['value'])
-      }));
+      })));
     }
     resolver.resolve(rows);
   }, function(e) {
@@ -28150,7 +28197,7 @@ lf.schema.Table.prototype.createRow = goog.abstractMethod;
 
 
 /**
- * @param {{id: number, value: *}} dbRecord
+ * @param {!lf.Row.Raw} dbRecord
  * @return {!lf.Row.<UserType, StoredType>}
  * @export
  */

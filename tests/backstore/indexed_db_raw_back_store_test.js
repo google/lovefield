@@ -128,7 +128,7 @@ function testNewDBInstance() {
 /**
  * @param {!IDBDatabase} db
  * @param {string} tableName
- * @param {function({id: number, value: *}): !T} fn
+ * @param {function(!lf.Row.Raw): !T} fn
  * @template T
  * @return {!IThenable<!Array<!T>>}
  */
