@@ -30,13 +30,12 @@
     "nopt": "~2.2.1"
   },
   "devDependencies": {
-    "closurecompiler": "*",
     "glob": "~3.2.6",
-    "google-closure-library-latest": "*",
     "gulp": "^3.8.10",
     "gulp-webserver": "^0.9.0",
     "minijasminenode": "^1.1.1",
     "mkdirp": "^0.3.5",
+    "napa": "^1.2.0",
     "rimraf": "*",
     "selenium-webdriver": "^2.45.1",
     "tempfile": "*",
@@ -44,5 +43,12 @@
   },
   "engines": {
     "node": ">=0.11"
+  },
+  "scripts": {
+    "install": "napa"
+  },
+  "napa": {
+    "closure-compiler": "https://dl.google.com/closure-compiler/compiler-latest.zip",
+    "closure-library": "https://github.com/google/closure-library/archive/master.zip"
   }
 }

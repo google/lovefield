@@ -24,13 +24,13 @@ var Config = function() {
   this.CLOSURE_COMPILER_PATH =
       pathMod.resolve(pathMod.join(
           __dirname,
-          '../node_modules/closurecompiler/compiler/compiler.jar'));
+          '../node_modules/closure-compiler/compiler.jar'));
 
   // Root of Closure library git repo checkout.
   this.CLOSURE_LIBRARY_PATH =
       pathMod.resolve(pathMod.join(
           __dirname,
-          '../node_modules/google-closure-library-latest/lib'));
+          '../node_modules/closure-library'));
 
   // Externs declarations for third party APIs.
   this.EXTERNS = [
