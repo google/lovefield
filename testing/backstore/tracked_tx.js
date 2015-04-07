@@ -14,12 +14,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-goog.provide('lf.backstore.TrackedTx');
+goog.provide('lf.testing.backstore.TrackedTx');
 
 goog.require('goog.structs.Map');
 goog.require('lf.TransactionType');
 goog.require('lf.backstore.BaseTx');
-goog.require('lf.backstore.TrackedTable');
+goog.require('lf.testing.backstore.TrackedTable');
 
 
 
@@ -33,8 +33,8 @@ goog.require('lf.backstore.TrackedTable');
  * @param {!lf.TransactionType} type
  * @param {!lf.cache.Journal} journal
  */
-lf.backstore.TrackedTx = function(store, type, journal) {
-  lf.backstore.TrackedTx.base(this, 'constructor', journal, type);
+lf.testing.backstore.TrackedTx = function(store, type, journal) {
+  lf.testing.backstore.TrackedTx.base(this, 'constructor', journal, type);
 
   /** @private {!lf.BackStore} */
   this.store_ = store;
@@ -42,7 +42,7 @@ lf.backstore.TrackedTx = function(store, type, journal) {
   /**
    * A directory of all the table connections that have been created within this
    * transaction.
-   * @private {!goog.structs.Map<string, !lf.backstore.TrackedTable>}
+   * @private {!goog.structs.Map<string, !lf.testing.backstore.TrackedTable>}
    */
   this.tables_ = new goog.structs.Map();
 
@@ -50,14 +50,15 @@ lf.backstore.TrackedTx = function(store, type, journal) {
     this.resolver.resolve();
   }
 };
-goog.inherits(lf.backstore.TrackedTx, lf.backstore.BaseTx);
+goog.inherits(lf.testing.backstore.TrackedTx, lf.backstore.BaseTx);
 
 
 /** @override */
-lf.backstore.TrackedTx.prototype.getTable = function(tableName, deserializeFn) {
+lf.testing.backstore.TrackedTx.prototype.getTable = function(
+    tableName, deserializeFn) {
   var table = this.tables_.get(tableName, null);
   if (goog.isNull(table)) {
-    table = new lf.backstore.TrackedTable(
+    table = new lf.testing.backstore.TrackedTable(
         this.store_.getTableInternal(tableName), tableName);
     this.tables_.set(tableName, table);
   }
@@ -67,14 +68,14 @@ lf.backstore.TrackedTx.prototype.getTable = function(tableName, deserializeFn) {
 
 
 /** @override */
-lf.backstore.TrackedTx.prototype.abort = function() {
+lf.testing.backstore.TrackedTx.prototype.abort = function() {
   this.resolver.reject(undefined);
 };
 
 
 /** @override */
-lf.backstore.TrackedTx.prototype.commit = function() {
-  lf.backstore.TrackedTx.base(this, 'commit');
+lf.testing.backstore.TrackedTx.prototype.commit = function() {
+  lf.testing.backstore.TrackedTx.base(this, 'commit');
 
   var requests = [];
   var tableDiffs = [];

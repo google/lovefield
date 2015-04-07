@@ -17,7 +17,7 @@
 goog.provide('lf.testing.backstore.MockStore');
 
 goog.require('lf.BackStore');
-goog.require('lf.backstore.TrackedTx');
+goog.require('lf.testing.backstore.TrackedTx');
 
 
 
@@ -65,7 +65,7 @@ lf.testing.backstore.MockStore.prototype.getTableInternal =
 /** @override */
 lf.testing.backstore.MockStore.prototype.createTx = function(
     mode, journal) {
-  return new lf.backstore.TrackedTx(this, mode, journal);
+  return new lf.testing.backstore.TrackedTx(this, mode, journal);
 };
 
 

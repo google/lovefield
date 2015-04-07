@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-goog.provide('lf.backstore.TrackedTable');
+goog.provide('lf.testing.backstore.TrackedTable');
 
 goog.require('goog.Promise');
 goog.require('goog.structs.Map');
@@ -31,7 +31,7 @@ goog.require('lf.cache.TableDiff');
  * @param {!lf.Table} table
  * @param {string} tableName
  */
-lf.backstore.TrackedTable = function(table, tableName) {
+lf.testing.backstore.TrackedTable = function(table, tableName) {
   /** @private {!lf.Table} */
   this.table_ = table;
 
@@ -54,14 +54,14 @@ lf.backstore.TrackedTable = function(table, tableName) {
 
 
 /** @return {!IThenable} */
-lf.backstore.TrackedTable.prototype.whenRequestsDone = function() {
+lf.testing.backstore.TrackedTable.prototype.whenRequestsDone = function() {
   this.acceptingRequests_ = false;
   return goog.Promise.all(this.requests_);
 };
 
 
 /** @return {!lf.cache.TableDiff} */
-lf.backstore.TrackedTable.prototype.getDiff = function() {
+lf.testing.backstore.TrackedTable.prototype.getDiff = function() {
   return this.tableDiff_;
 };
 
@@ -70,7 +70,8 @@ lf.backstore.TrackedTable.prototype.getDiff = function() {
  * @throws {lf.Exception}
  * @private
  */
-lf.backstore.TrackedTable.prototype.checkAcceptingRequests_ = function() {
+lf.testing.backstore.TrackedTable.prototype.checkAcceptingRequests_ =
+    function() {
   if (!this.acceptingRequests_) {
     throw new lf.Exception(lf.Exception.Type.SYNTAX,
         'Attempt to post requests while waiting transaction to complete.');
@@ -79,7 +80,7 @@ lf.backstore.TrackedTable.prototype.checkAcceptingRequests_ = function() {
 
 
 /** @override */
-lf.backstore.TrackedTable.prototype.get = function(ids) {
+lf.testing.backstore.TrackedTable.prototype.get = function(ids) {
   try {
     this.checkAcceptingRequests_();
   } catch (e) {
@@ -93,7 +94,7 @@ lf.backstore.TrackedTable.prototype.get = function(ids) {
 
 
 /** @override */
-lf.backstore.TrackedTable.prototype.put = function(rows) {
+lf.testing.backstore.TrackedTable.prototype.put = function(rows) {
   try {
     this.checkAcceptingRequests_();
   } catch (e) {
@@ -128,7 +129,7 @@ lf.backstore.TrackedTable.prototype.put = function(rows) {
 
 
 /** @override */
-lf.backstore.TrackedTable.prototype.remove = function(ids) {
+lf.testing.backstore.TrackedTable.prototype.remove = function(ids) {
   try {
     this.checkAcceptingRequests_();
   } catch (e) {
