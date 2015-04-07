@@ -39,23 +39,26 @@ var Config = function() {
   ];
 
   // Compiler options for all configurations.
-  this.COMPILER_FLAGS_COMMON = [
-    '--generate_exports',
-    '--language_in=ECMASCRIPT5_STRICT',
-    '--warning_level=VERBOSE'
-  ].concat(this.EXTERNS);
+  this.COMPILER_FLAGS_COMMON = {
+    generate_exports: null,
+    language_in: 'ECMASCRIPT5_STRICT',
+    warning_level: 'VERBOSE',
+    externs: [
+      'builddef/firebase_externs.js'
+    ]
+  };
 
   // Compiler options for release mode.
-  this.COMPILER_FLAGS_OPT = this.COMPILER_FLAGS_COMMON.concat([
-    '--compilation_level=SIMPLE'
-  ]);
+  this.COMPILER_FLAGS_OPT = {
+    compilation_level: 'SIMPLE'
+  };
 
   // Compiler options for debug mode.
-  this.COMPILER_FLAGS_DEBUG = this.COMPILER_FLAGS_COMMON.concat([
-    '--debug',
-    '--compilation_level=WHITESPACE_ONLY',
-    '--formatting=PRETTY_PRINT'
-  ]);
+  this.COMPILER_FLAGS_DEBUG = {
+    compilation_level: 'WHITESPACE_ONLY',
+    debug: null,
+    formatting: 'PRETTY_PRINT'
+  };
 
   // Schemas used for tests.
   this.TEST_SCHEMAS = [

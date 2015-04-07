@@ -16,8 +16,11 @@
  */
 var gulp = /** @type {{task: function(string, Function)}} */ (require('gulp'));
 var pathMod = require('path');
-var builder = require(pathMod.resolve(
-    pathMod.join(__dirname, 'tools/builder.js'))).builder;
+var nopt = /** @type {!Function} */ (require('nopt'));
+
+var builder = /** @type {{buildLib: !Function, buildTest: !Function}} */ (
+    require(
+        pathMod.resolve(pathMod.join(__dirname, 'tools/builder.js'))));
 var runner = /** @type {{
     runJsUnitTests: function(?string):!IThenable,
     runSpacTests: function():!IThenable }} */ (
@@ -25,7 +28,6 @@ var runner = /** @type {{
             pathMod.join(__dirname, 'tools/run_test.js'))));
 var runTestServer = require(pathMod.resolve(
     pathMod.join(__dirname, 'tools/run_test_server.js'))).runTestServer;
-var nopt = /** @type {!Function} */ (require('nopt'));
 
 
 var log = console['log'];
@@ -33,14 +35,28 @@ var log = console['log'];
 
 gulp.task('default', function() {
   log('Usage: ');
-  log('  gulp build: build Lovefield dist package');
-  log('  gulp test <target>: run Lovefield tests');
+  log('  gulp build --target=<target>: build library or tests');
+  log('  gulp test --target=<target>: run Lovefield tests');
   log('  gulp debug: start a debug server at port 4000');
 });
 
-gulp.task('build', function(callback) {
-  builder(callback);
+
+gulp.task('build', function() {
+  var knownOpts = {
+    'mode': [String, null],
+    'target': [String, null]
+  };
+  var options = nopt(knownOpts);
+
+  if (options.target == 'all' || options.target == null) {
+    // TODO(dpapad): Build all tests and and lib.
+  } else if (options.target == 'lib') {
+    return builder.buildLib(options);
+  } else {
+    return builder.buildTest(options);
+  }
 });
+
 
 gulp.task('debug', function() {
   // The test server cannot callback. It is terminated by Ctrl-C.

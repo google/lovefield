@@ -35,6 +35,8 @@ var genDeps = /** @type {!Function} */ (require(
     pathMod.join(__dirname, 'scan_deps.js')).genDeps);
 var extractRequires = /** @type {!Function} */ (require(
     pathMod.join(__dirname, 'scan_deps.js')).extractRequires);
+var runSpac = /** @type {!Function} */ (require(
+    pathMod.join(__dirname, 'builder.js')).runSpac);
 
 
 /** @typedef {{Dir: !Function}} @private */
@@ -79,46 +81,16 @@ function createTestEnv(callback) {
     }
 
     var target = targets.shift();
-    runSpac(tempPath, target.file, target.namespace, function(result) {
-      if (result) {
-        runSequentially();
-      } else {
-        process.chdir(origPath);
-        cleanUp(tempPath);
-        callback(null);
-      }
-    });
+    runSpac(target.file, target.namespace, tempPath).then(
+        runSequentially,
+        function(e) {
+          process.chdir(origPath);
+          cleanUp(tempPath);
+          callback(null);
+        });
   };
 
   runSequentially();
-}
-
-
-/**
- * Runs SPAC to generate code.
- * @param {string} tempPath
- * @param {string} path
- * @param {string} namespace
- * @param {!function(boolean)} callback
- */
-function runSpac(tempPath, path, namespace, callback) {
-  var spacPath = pathMod.resolve(pathMod.join(__dirname, '../spac/spac.js'));
-  var spac = fork(
-      spacPath,
-      [
-        '--schema=' + path,
-        '--namespace=' + namespace,
-        '--outputdir=' + pathMod.resolve(pathMod.join(tempPath, 'html')),
-        '--nocombine=true'
-      ]);
-  spac.on('close', function(code) {
-    if (code == 0) {
-      callback(true);
-    } else {
-      log('ERROR: unable to generate code from ' + path + '\r\n');
-      callback(false);
-    }
-  });
 }
 
 

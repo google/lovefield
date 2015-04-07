@@ -332,10 +332,6 @@ function genDeps(basePath, targets) {
     files = files.concat(relativeGlob(target));
   });
   scanFiles(files, provideMap, requireMap);
-  var closureFiles = extractClosureDependencies(requireMap);
-  var closureProvide = new ProvideMap_();
-  var closureRequire = new RequireMap_();
-  scanFiles(closureFiles, closureProvide, closureRequire);
 
   var results = genAddDependency(basePath, provideMap, requireMap);
   return results.join('\n');
@@ -352,3 +348,145 @@ exports.genDeps = genDeps;
 
 /** @type {Function} */
 exports.extractRequires = extractRequires;
+
+
+
+/**
+ * A helper class for getting a the minimal list of files that need to be passed
+ * to the compiler such that a given test can be compiled.
+ * @constructor
+ *
+ * @param {string} testFile The test file to be compiled.
+ * @param {string} generatedFilesDir The folder that holds auto-generated code.
+ */
+var TransitiveDepsScanner = function(testFile, generatedFilesDir) {
+  /** @private {string} */
+  this.filepath_ = pathMod.resolve(testFile);
+
+  /** @private {string} */
+  this.generatedFilesDir_ = pathMod.resolve(generatedFilesDir);
+
+  /** @private {?ProvideMap_} */
+  this.provideMap_;
+
+  /** @private {?RequireMap_} */
+  this.requireMap_;
+};
+
+
+/**
+ * @private
+ */
+TransitiveDepsScanner.prototype.buildRequireProvideMaps_ = function() {
+  this.provideMap_ = new ProvideMap_();
+  this.requireMap_ = new RequireMap_();
+  scanFiles(relativeGlob('lib'), this.provideMap_, this.requireMap_);
+  scanFiles(relativeGlob('testing'), this.provideMap_, this.requireMap_);
+  scanFiles(relativeGlob('tests'), this.provideMap_, this.requireMap_);
+  scanFiles(
+      relativeGlob(this.generatedFilesDir_),
+      this.provideMap_, this.requireMap_);
+
+  var closurePath = config.CLOSURE_LIBRARY_PATH + '/closure/goog';
+  scanFiles(relativeGlob(closurePath), this.provideMap_, this.requireMap_);
+};
+
+
+/**
+ * @param {string} dependency The namespace being visited.
+ * @param {!Set<string>} depsSoFar The set of transitive dependencies that have
+ *     been visited so far.
+ * @private
+ */
+TransitiveDepsScanner.prototype.gatherDepsRec_ = function(
+    dependency, depsSoFar) {
+  if (depsSoFar.has(dependency)) {
+    return;
+  }
+  depsSoFar.add(dependency);
+  var provider = this.provideMap_.get(dependency);
+  var deps = this.requireMap_.get(/** @type {string} */ (provider));
+  deps.forEach(function(dep) {
+    this.gatherDepsRec_(dep, depsSoFar);
+  }, this);
+};
+
+
+/**
+ * Gathers all transitive dependencies.
+ * @return {!Set<string>}
+ * @private
+ */
+TransitiveDepsScanner.prototype.gatherDeps_ = function() {
+  var testProvideMap = new ProvideMap_();
+  var testRequireMap = new RequireMap_();
+  scanFiles([this.filepath_], testProvideMap, testRequireMap);
+  var topLevelDeps = testRequireMap.get(this.filepath_);
+
+  var transitiveDeps = new Set();
+  topLevelDeps.forEach(
+      function(dependency) {
+        this.gatherDepsRec_(dependency, transitiveDeps);
+      }, this);
+  return transitiveDeps;
+};
+
+
+/**
+ * Gets a list of all files (absolute file paths) that need to be passed to the
+ * compiler.
+ * @return {!Array<string>}
+ */
+TransitiveDepsScanner.prototype.getDeps = function() {
+  this.buildRequireProvideMaps_();
+  var transitiveDeps = this.gatherDeps_();
+
+  var transitiveFileDeps = new Set();
+  transitiveDeps.forEach(function(dep) {
+    transitiveFileDeps.add(this.provideMap_.get(dep));
+  }, this);
+
+  // Manually adding Closure's base.js file to the deps. Because this file is
+  // not goog.providing anything it is not detected above.
+  var closureBaseFile = pathMod.resolve(
+      pathMod.join(config.CLOSURE_LIBRARY_PATH, 'closure/goog/base.js'));
+  transitiveFileDeps.add(closureBaseFile);
+
+  // Manually adding the test file that it is compiled as a dependency, such
+  // that it is included during compilation.
+  transitiveFileDeps.add(this.filepath_);
+
+  return setToArray(transitiveFileDeps);
+};
+
+
+/**
+ * TODO(dpapad): Replace this method with Array.from once it becomes available.
+ * @param {!Set<T>} set
+ * @return {!Array<T>}
+ * @template T
+ */
+function setToArray(set) {
+  var array = new Array();
+  // TODO(dpapad): Fix Set externs to declare the 2nd param as optional.
+  set.forEach(function(value) {
+    array.push(value);
+  }, null);
+  return array;
+}
+
+
+/**
+ * @param {string} testFile The test file to be compiled.
+ * @param {string} generatedFilesDir The folder that holds auto-generated code.
+ * @return {!Array<string>}
+ */
+function getTransitiveDeps(testFile, generatedFilesDir) {
+  var depsScanner = new TransitiveDepsScanner(testFile, generatedFilesDir);
+  return depsScanner.getDeps();
+
+}
+
+
+/** @type {Function} */
+exports.getTransitiveDeps = getTransitiveDeps;
