@@ -16,6 +16,7 @@
  */
 var pathMod = require('path');
 var fsMod = require('fs');
+var glob = /** @type {{sync:!Function}} */ (require('glob'));
 
 
 /** @type {{CLOSURE_LIBRARY_PATH: string}} */
@@ -139,31 +140,11 @@ RequireMap_.prototype.getAllRequires = function() {
 
 
 /**
- * @param {string} dir
- * @param {!Array.<string>} files
- */
-function getFiles(dir, files) {
-  var candidates = fsMod.readdirSync(dir);
-  for (var file in candidates) {
-    if (!candidates.hasOwnProperty(file)) continue;
-    var name = dir + '/' + candidates[file];
-    if (fsMod.statSync(name).isDirectory()) {
-      getFiles(name, files);
-    } else if (pathMod.extname(name) == '.js') {
-      files.push(name);
-    }
-  }
-}
-
-
-/**
  * @param {string} startPath
- * @return {!Array.<string>} relativePaths
+ * @return {!Array<string>} relativePaths
  */
 function relativeGlob(startPath) {
-  var files = [];
-  getFiles(startPath, files);
-  return files;
+  return glob.sync(startPath + '/**/*.js');
 }
 
 
