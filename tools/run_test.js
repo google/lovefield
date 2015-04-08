@@ -14,13 +14,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-var chromeMod = require('selenium-webdriver/chrome');
+var chromeMod = /** @type {{Options: !Function}} */ (
+    require('selenium-webdriver/chrome'));
+var firefoxMod = /** @type {{Profile: !Function, Options: !Function}} */ (
+    require('selenium-webdriver/firefox'));
 var fork = /** @type {!Function} */ (require('child_process').fork);
-var glob = /** @type {{sync:!Function}} */ (require('glob'));
+var glob = /** @type {{sync: !Function}} */ (require('glob'));
 var pathMod = require('path');
 
 var JsUnitTestRunner = require('./jsunit_test_runner.js').JsUnitTestRunner;
-var webdriver = require('selenium-webdriver');
+var webdriver = /** @type {{Capabilities: !Function, Builder: !Function}} */ (
+    require('selenium-webdriver'));
 
 
 
@@ -50,9 +54,11 @@ function runSpacTests() {
  * Runs JSUnit tests.
  * @param {?string} testPrefix Only tests that match the prefix will be
  *     returned. If null, all tests will run.
+ * @param {string} browser The browser to run the unit tests on. Must be one of
+ *     'chrome' or 'firefox'.
  * @return {!IThenable}
  */
-function runJsUnitTests(testPrefix) {
+function runJsUnitTests(testPrefix, browser) {
   /**
    * @return {!Array<string>} A list of all matching testing URLs.
    */
@@ -79,30 +85,53 @@ function runJsUnitTests(testPrefix) {
 
   /** @return {!WebDriver} */
   var getWebDriver = function() {
-    var chromeOptions = new chromeMod.Options();
-    chromeOptions.addArguments([
-      '--user-data-dir=/tmp/selenium_gulp_' + new Date().getTime(),
-      '--no-first-run'
-    ]);
+    var capabilities = /** @type {!WebDriverCapabilities} */ (
+        new webdriver.Capabilities());
+    capabilities.set('browserName', browser);
 
-    var capabilities = new webdriver.Capabilities();
-    capabilities.set('browserName', 'chrome');
+    if (browser == 'chrome') {
+      var chromeOptions = /** @type {!ChromeOptions} */ (
+          new chromeMod.Options());
+      chromeOptions.addArguments([
+        '--user-data-dir=/tmp/selenium_chrome_' + new Date().getTime(),
+        '--no-first-run'
+      ]);
 
-    return new webdriver.Builder()
-        .withCapabilities(capabilities)
-        .setChromeOptions(chromeOptions)
-        .build();
+      return /** @type {!WebDriverBuilder} */ (new webdriver.Builder()).
+          withCapabilities(capabilities).
+          setChromeOptions(chromeOptions).
+          build();
+    } else if (browser == 'firefox') {
+      var firefoxOptions = /** @type {!FirefoxOptions} */ (
+          new firefoxMod.Options());
+      firefoxOptions.setProfile(new firefoxMod.Profile());
+      return /** @type {!WebDriverBuilder} */ (new webdriver.Builder()).
+          withCapabilities(capabilities).
+          setFirefoxOptions(firefoxOptions).
+          build();
+    } else {
+      throw new Error('Unknown browser:', browser);
+    }
   };
 
   var testUrls = getTestUrls();
   log('Found', testUrls.length, 'JsUnit tests. Running...');
   var driver = getWebDriver();
 
-  return /** @type {{runMany:!Function}} */ (
-      JsUnitTestRunner).runMany(driver, testUrls).then(
-      function() {
-        driver.quit();
-      });
+  return new Promise(function(resolve, reject) {
+    var startupWaitInterval = 8 * 1000;
+    console.log(
+        'Waiting', startupWaitInterval,
+        'ms for the browser to get ready.');
+    setTimeout(function() {
+      /** @type {{runMany: !Function}} */ (
+          JsUnitTestRunner).runMany(driver, testUrls).then(
+          function() {
+            driver.quit();
+            resolve();
+          }, reject);
+    }, startupWaitInterval);
+  });
 }
 
 

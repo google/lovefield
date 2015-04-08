@@ -25,7 +25,7 @@ var builder = /** @type {{
         require(pathMod.resolve(
             pathMod.join(__dirname, 'tools/builder.js'))));
 var runner = /** @type {{
-    runJsUnitTests: function(?string):!IThenable,
+    runJsUnitTests: function(?string, string):!IThenable,
     runSpacTests: function():!IThenable }} */ (
         require(pathMod.resolve(
             pathMod.join(__dirname, 'tools/run_test.js'))));
@@ -39,7 +39,7 @@ var log = console['log'];
 gulp.task('default', function() {
   log('Usage: ');
   log('  gulp build --target=<target>: build library or tests');
-  log('  gulp test --target=<target>: run Lovefield tests');
+  log('  gulp test --target=<target> --browser=<broswer>: run Lovefield tests');
   log('  gulp debug: start a debug server at port 4000');
 });
 
@@ -75,22 +75,26 @@ gulp.task('debug', function() {
  *  2) Gather the output of the tests and display something useful (summary).
  */
 gulp.task('test', function(callback) {
-  var knownOpts = { 'target': [String, null] };
+  var knownOpts = {
+    'browser': [String, null],
+    'target': [String, null]
+  };
   var options = nopt(knownOpts);
-  var whenTestsDone = null;
+  options.browser = options.browser || 'chrome';
 
+  var whenTestsDone = null;
   if (options.target == null) {
     // Run both SPAC and JSUnit tests, one after the other.
     whenTestsDone = runner.runSpacTests().then(
         function() {
-          return runner.runJsUnitTests(null);
+          return runner.runJsUnitTests(null, options.browser);
         });
   } else if (options.target == 'spac') {
     // Run only SPAC.
     whenTestsDone = runner.runSpacTests();
   } else {
     // Run only JSUnit tests.
-    whenTestsDone = runner.runJsUnitTests(options.target);
+    whenTestsDone = runner.runJsUnitTests(options.target, options.browser);
   }
   whenTestsDone.then(function() {
     callback();

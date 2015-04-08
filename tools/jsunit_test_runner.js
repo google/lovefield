@@ -88,7 +88,7 @@ JsUnitTestRunner.prototype.whenTestFinished_ = function() {
   var didTestFinish = function() {
     return this.driver_.executeScript(
         function() {
-          return window['G_testRunner'].isFinished();
+          return window['G_testRunner'] && window['G_testRunner'].isFinished();
         });
   }.bind(this);
 
