@@ -36607,7 +36607,7 @@ lf.schema.TableBuilder = function(tableName) {
 
   /**
    * @private {!goog.structs.Map<string,
-   *     !Array<!lf.schema.TableBuilder.IndexedColumn_>>}
+   *     !Array<!lf.schema.TableBuilder.IndexedColumn>>}
    */
   this.indices_ = new goog.structs.Map();
 
@@ -36627,9 +36627,8 @@ lf.schema.TableBuilder = function(tableName) {
  *   order: !lf.Order,
  *   autoIncrement: boolean
  * }}
- * @private
  */
-lf.schema.TableBuilder.IndexedColumn_;
+lf.schema.TableBuilder.IndexedColumn;
 
 
 /**
@@ -36673,7 +36672,7 @@ lf.schema.TableBuilder.prototype.checkName_ = function(name) {
 
 
 /**
- * @param {!Array<!lf.schema.TableBuilder.IndexedColumn_>} columns
+ * @param {!Array<!lf.schema.TableBuilder.IndexedColumn>} columns
  * @private
  */
 lf.schema.TableBuilder.prototype.checkPrimaryKey_ = function(columns) {
@@ -36722,10 +36721,10 @@ lf.schema.TableBuilder.prototype.addColumn = function(name, type) {
  *   column in the columns, its type must be lf.Type.INTEGER, and its order
  *   must be the default lf.Order.ASC.
  *
- * case 2: (columns: !Array<!lf.schema.TableBuilder.IndexedColumn_>)
+ * case 2: (columns: !Array<!lf.schema.TableBuilder.IndexedColumn>)
  *   allows different ordering per-column, but more verbose.
  *
- * @param {(!Array<string>|!Array<!lf.schema.TableBuilder.IndexedColumn_>)} columns
+ * @param {(!Array<string>|!Array<!lf.schema.TableBuilder.IndexedColumn>)} columns
  * @param {boolean=} opt_autoInc
  * @return {!lf.schema.TableBuilder}
  * @export
@@ -36796,7 +36795,7 @@ lf.schema.TableBuilder.prototype.addNullable = function(columns) {
 
 /**
  * Checks whether any of the given columns is referred by a cross-column index.
- * @param {!Array<lf.schema.TableBuilder.IndexedColumn_>} columns
+ * @param {!Array<lf.schema.TableBuilder.IndexedColumn>} columns
  * @private
  */
 lf.schema.TableBuilder.prototype.checkNullableColumns_ = function(columns) {
@@ -36831,12 +36830,12 @@ lf.schema.TableBuilder.prototype.checkNullableColumns_ = function(columns) {
  * case 1: (name, columns: !Array<string>, opt_unique, opt_order)
  *   adds an index by column names only. All columns have same ordering.
  *
- * case 2: (name, columns: !Array<!lf.schema.TableBuilder.IndexedColumn_>,
+ * case 2: (name, columns: !Array<!lf.schema.TableBuilder.IndexedColumn>,
  *     opt_unique)
  *   adds an index, allowing customization of ordering, but more verbose.
  *
  * @param {string} name
- * @param {!Array<string> | !Array<!lf.schema.TableBuilder.IndexedColumn_>}
+ * @param {!Array<string> | !Array<!lf.schema.TableBuilder.IndexedColumn>}
  *     columns
  * @param {boolean=} opt_unique Whether the index is unique, default is false.
  * @param {!lf.Order=} opt_order Order of columns, only effective when columns
@@ -36861,7 +36860,7 @@ lf.schema.TableBuilder.prototype.addIndex = function(
  * Checks whether any of the given columns has been marked as nullable, for the
  * case of cross-column indices.
  * @param {string} indexName
- * @param {!Array<!lf.schema.TableBuilder.IndexedColumn_>} columns
+ * @param {!Array<!lf.schema.TableBuilder.IndexedColumn>} columns
  * @private
  */
 lf.schema.TableBuilder.prototype.checkIndexedColumns_ = function(
@@ -36899,11 +36898,11 @@ lf.schema.TableBuilder.prototype.getSchema = function() {
  * Convert different column representations (column name only or column objects)
  * into column object array. Also performs consistency check to make sure
  * referred columns are actually defined.
- * @param {(!Array<string>|!Array<!lf.schema.TableBuilder.IndexedColumn_>)} columns
+ * @param {(!Array<string>|!Array<!lf.schema.TableBuilder.IndexedColumn>)} columns
  * @param {boolean} checkIndexable
  * @param {!lf.Order=} opt_order
  * @param {boolean=} opt_autoInc
- * @return {!Array<!lf.schema.TableBuilder.IndexedColumn_>} Normalized columns
+ * @return {!Array<!lf.schema.TableBuilder.IndexedColumn>} Normalized columns
  * @private
  */
 lf.schema.TableBuilder.prototype.normalizeColumns_ = function(
