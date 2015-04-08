@@ -16,7 +16,6 @@
  */
 var fsMod = require('fs');
 var gulp = /** @type {{src: !Function, dest: !Function}} */ (require('gulp'));
-var glob = /** @type {{sync: !Function}} */ (require('glob'));
 var pathMod = require('path');
 var closureCompiler = /** @type {!Function} */ (
     require('gulp-closure-compiler'));
@@ -92,7 +91,6 @@ function buildTest(options) {
  * @return {!IThenable}
  */
 function generateTestSchemas(outputDir) {
-  var testSchema = config.TEST_SCHEMAS[0];
   var promises = config.TEST_SCHEMAS.map(
       function(testSchema) {
         return runSpac(testSchema.file, testSchema.namespace, outputDir);
@@ -173,4 +171,4 @@ exports.buildTest = buildTest;
 
 
 /** @type {!Function} */
-exports.runSpac = runSpac;
+exports.generateTestSchemas = generateTestSchemas;

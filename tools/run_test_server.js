@@ -33,7 +33,7 @@ var stdout = process.stdout;
 
 
 function runTestServer() {
-  createTestEnv(function(tempPath) {
+  return createTestEnv().then(function(tempPath) {
     var serverStream = webserver({
       livereload: true,
       fallback: 'index.html'

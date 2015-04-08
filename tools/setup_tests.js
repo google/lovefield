@@ -14,12 +14,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-var fsMod = require('fs');
-var pathMod = require('path');
-var mkdir = /** @type {{sync: !Function}} */ (require('mkdirp')).sync;
-var rmdir = /** @type {{sync: !Function}} */ (require('rimraf')).sync;
-var glob = /** @type {{sync: !Function}} */ (require('glob')).sync;
 var fork = /** @type {{fork: !Function}} */ (require('child_process')).fork;
+var fsMod = require('fs');
+var glob = /** @type {{sync: !Function}} */ (require('glob')).sync;
+var mkdir = /** @type {{sync: !Function}} */ (require('mkdirp')).sync;
+var pathMod = require('path');
+var rmdir = /** @type {{sync: !Function}} */ (require('rimraf')).sync;
+var temp = /** @type {{Dir: !Function}} */ (require('temporary'));
 
 
 /**
@@ -35,62 +36,49 @@ var genDeps = /** @type {!Function} */ (require(
     pathMod.join(__dirname, 'scan_deps.js')).genDeps);
 var extractRequires = /** @type {!Function} */ (require(
     pathMod.join(__dirname, 'scan_deps.js')).extractRequires);
-var runSpac = /** @type {!Function} */ (require(
-    pathMod.join(__dirname, 'builder.js')).runSpac);
+var generateTestSchemas = /** @type {!Function} */ (require(
+    pathMod.join(__dirname, 'builder.js')).generateTestSchemas);
 
 
-/** @typedef {{Dir: !Function}} @private */
-var TempType_;
-var temp = /** @type {TempType_} */ (require('temporary'));
 
 // Make linter happy.
 var log = console['log'];
 
 
-/** @const {!Array.<string>} */
+/** @const {!Array<string>} */
 var SYMLINKS = ['lib', 'perf', 'testing', 'tests'];
 
 
 /**
  * Creates a temporary directory that is capable of executing tests.
- * @param {!function(?string)} callback The full path of the directory, or
- *     null if failed.
+ * @return {!IThenable<string>} A promise holding the path of the temporary
+ *     directory.
  */
-function createTestEnv(callback) {
-  // Creates a temp directory.
-  var dir = new temp.Dir();
-  var tempPath = pathMod.resolve(dir.path);
+function createTestEnv() {
+  var tempPath = pathMod.resolve(new temp.Dir().path);
   var origPath = process.cwd();
   process.chdir(tempPath);
+
+  var genDir = pathMod.join(tempPath, 'gen');
   fsMod.mkdirSync('html');
-  var libraryPath = config.CLOSURE_LIBRARY_PATH;
-
-  createSymLinks(libraryPath, tempPath);
-  var targets = config.TEST_SCHEMAS.slice(0);
-  var runSequentially = function() {
-    if (targets.length == 0) {
-      createTestFiles();
-      var links = SYMLINKS.map(function(dir) {
-        return pathMod.join(tempPath, dir);
+  var htmlDir = pathMod.join(tempPath, 'html');
+  return generateTestSchemas(genDir).then(
+      function() {
+        createSymLinks(config.CLOSURE_LIBRARY_PATH, tempPath);
+        createTestFiles();
+        var directories = SYMLINKS.map(
+            function(dir) {
+              return pathMod.join(tempPath, dir);
+            }).concat([htmlDir, genDir]);
+        var deps = genDeps(tempPath, directories);
+        fsMod.writeFileSync('deps.js', deps);
+        return tempPath;
+      },
+      function(e) {
+        process.chdir(origPath);
+        cleanUp(tempPath);
+        throw e;
       });
-      links = links.concat(pathMod.join(tempPath, 'html'));
-      var deps = genDeps(tempPath, links);
-      fsMod.writeFileSync('deps.js', deps);
-      callback(tempPath);
-      return;
-    }
-
-    var target = targets.shift();
-    runSpac(target.file, target.namespace, tempPath).then(
-        runSequentially,
-        function(e) {
-          process.chdir(origPath);
-          cleanUp(tempPath);
-          callback(null);
-        });
-  };
-
-  runSequentially();
 }
 
 
@@ -199,9 +187,9 @@ function cleanUp(tempPath) {
 }
 
 
-/** @type {Object} */
+/** @type {!Function} */
 exports.createTestEnv = createTestEnv;
 
 
-/** @type {Object} */
+/** @type {!Function} */
 exports.cleanUp = cleanUp;
