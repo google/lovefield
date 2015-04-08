@@ -14,6 +14,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+var pathMod = require('path');
+var sequentiallyRun = require(pathMod.resolve(
+    pathMod.join(__dirname, '/promise_util.js'))).sequentiallyRun;
 
 
 
@@ -113,38 +116,14 @@ JsUnitTestRunner.prototype.whenTestFinished_ = function() {
 JsUnitTestRunner.runMany = function(driver, urls) {
   var testFunctions = urls.map(function(url) {
     var runner = new JsUnitTestRunner(driver, url);
-    return runner.run.bind(runner);
+    return {
+      fn: runner.run.bind(runner),
+      name: url
+    };
   });
 
   return sequentiallyRun(testFunctions);
 };
-
-
-/**
- * Runs a list of asynchronous functions one at a time.
- * @param {!Array<function():!IThenable>} functions
- * @return {!IThenable}
- */
-function sequentiallyRun(functions) {
-  return new Promise(function(resolve, reject) {
-    var results = new Array(functions.length);
-    var i = 0;
-    var runner = function() {
-      functions[i]().then(function(result) {
-        results[i] = result;
-        if (i < functions.length - 1) {
-          i++;
-          runner();
-        } else {
-          resolve(results);
-        }
-      }, function(e) {
-        reject(e);
-      });
-    };
-    runner();
-  });
-}
 
 
 /** @type {Function} */

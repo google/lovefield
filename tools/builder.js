@@ -41,6 +41,8 @@ var depsHelper = /** @type {{
         require(pathMod.resolve(__dirname + '/scan_deps.js')));
 var StripLicense = require(pathMod.resolve(
     pathMod.join(__dirname, '/strip_license.js'))).StripLicense;
+var sequentiallyRun = require(pathMod.resolve(
+    pathMod.join(__dirname, '/promise_util.js'))).sequentiallyRun;
 
 // Make linter happy
 var log = console['log'];
@@ -81,6 +83,28 @@ function buildTest(options) {
           });
         }, reject);
   });
+}
+
+
+function buildAllTests() {
+  var glob = /** @type {{sync:!Function}} */ (require('glob'));
+  var testFiles = glob.sync('tests/**/*_test.js');
+  var functionItems = testFiles.map(function(file) {
+    return {
+      fn: buildTest.bind(null, {target: file}),
+      name: file
+    };
+  });
+
+  var counter = 0;
+  var onStart = function(functionItem) {
+    counter++;
+    console.log(
+        'Building...', counter, 'of',
+        functionItems.length, functionItem.name);
+  };
+  return sequentiallyRun(functionItems, onStart);
+
 }
 
 
@@ -168,6 +192,10 @@ exports.buildLib = buildLib;
 
 /** @type {!Function} */
 exports.buildTest = buildTest;
+
+
+/** @type {!Function} */
+exports.buildAllTests = buildAllTests;
 
 
 /** @type {!Function} */

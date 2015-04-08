@@ -337,13 +337,9 @@ exports.extractRequires = extractRequires;
  * to the compiler such that a given test can be compiled.
  * @constructor
  *
- * @param {string} testFile The test file to be compiled.
  * @param {string} generatedFilesDir The folder that holds auto-generated code.
  */
-var TransitiveDepsScanner = function(testFile, generatedFilesDir) {
-  /** @private {string} */
-  this.filepath_ = pathMod.resolve(testFile);
-
+var TransitiveDepsScanner = function(generatedFilesDir) {
   /** @private {string} */
   this.generatedFilesDir_ = pathMod.resolve(generatedFilesDir);
 
@@ -359,6 +355,12 @@ var TransitiveDepsScanner = function(testFile, generatedFilesDir) {
  * @private
  */
 TransitiveDepsScanner.prototype.buildRequireProvideMaps_ = function() {
+  if (this.provideMap_ != null && this.requireMap_ != null) {
+    // Require/Provide maps have already been constructed from a previous
+    // invocation, no need to re-construct.
+    return;
+  }
+
   this.provideMap_ = new ProvideMap_();
   this.requireMap_ = new RequireMap_();
   scanFiles(relativeGlob('lib'), this.provideMap_, this.requireMap_);
@@ -395,14 +397,15 @@ TransitiveDepsScanner.prototype.gatherDepsRec_ = function(
 
 /**
  * Gathers all transitive dependencies.
+ * @param {string} filepath The absolute path of the file to be compiled.
  * @return {!Set<string>}
  * @private
  */
-TransitiveDepsScanner.prototype.gatherDeps_ = function() {
+TransitiveDepsScanner.prototype.gatherDeps_ = function(filepath) {
   var testProvideMap = new ProvideMap_();
   var testRequireMap = new RequireMap_();
-  scanFiles([this.filepath_], testProvideMap, testRequireMap);
-  var topLevelDeps = testRequireMap.get(this.filepath_);
+  scanFiles([filepath], testProvideMap, testRequireMap);
+  var topLevelDeps = testRequireMap.get(filepath);
 
   var transitiveDeps = new Set();
   topLevelDeps.forEach(
@@ -416,11 +419,14 @@ TransitiveDepsScanner.prototype.gatherDeps_ = function() {
 /**
  * Gets a list of all files (absolute file paths) that need to be passed to the
  * compiler.
+ * @param {string} testFile The test file to be compiled.
  * @return {!Array<string>}
  */
-TransitiveDepsScanner.prototype.getDeps = function() {
+TransitiveDepsScanner.prototype.getDeps = function(testFile) {
+  var filepath = pathMod.resolve(testFile);
+
   this.buildRequireProvideMaps_();
-  var transitiveDeps = this.gatherDeps_();
+  var transitiveDeps = this.gatherDeps_(filepath);
 
   var transitiveFileDeps = new Set();
   transitiveDeps.forEach(function(dep) {
@@ -435,7 +441,7 @@ TransitiveDepsScanner.prototype.getDeps = function() {
 
   // Manually adding the test file that it is compiled as a dependency, such
   // that it is included during compilation.
-  transitiveFileDeps.add(this.filepath_);
+  transitiveFileDeps.add(filepath);
 
   return setToArray(transitiveFileDeps);
 };
@@ -449,7 +455,6 @@ TransitiveDepsScanner.prototype.getDeps = function() {
  */
 function setToArray(set) {
   var array = new Array();
-  // TODO(dpapad): Fix Set externs to declare the 2nd param as optional.
   set.forEach(function(value) {
     array.push(value);
   }, null);
@@ -458,14 +463,33 @@ function setToArray(set) {
 
 
 /**
+ * Singleton TransitiveDepsScanner instance, instantiated lazily.
+ * @private {?TransitiveDepsScanner}
+ */
+TransitiveDepsScanner.instance_ = null;
+
+
+/**
+ * @param {string} generatedFilesDir The folder that holds auto-generated code.
+ * @return {!TransitiveDepsScanner}
+ */
+TransitiveDepsScanner.getInstance = function(generatedFilesDir) {
+  if (TransitiveDepsScanner.instance_ == null) {
+    TransitiveDepsScanner.instance_ =
+        new TransitiveDepsScanner(generatedFilesDir);
+  }
+  return TransitiveDepsScanner.instance_;
+};
+
+
+/**
  * @param {string} testFile The test file to be compiled.
  * @param {string} generatedFilesDir The folder that holds auto-generated code.
  * @return {!Array<string>}
  */
 function getTransitiveDeps(testFile, generatedFilesDir) {
-  var depsScanner = new TransitiveDepsScanner(testFile, generatedFilesDir);
-  return depsScanner.getDeps();
-
+  var depsScanner = TransitiveDepsScanner.getInstance(generatedFilesDir);
+  return depsScanner.getDeps(testFile);
 }
 
 

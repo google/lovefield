@@ -18,9 +18,12 @@ var gulp = /** @type {{task: function(string, Function)}} */ (require('gulp'));
 var pathMod = require('path');
 var nopt = /** @type {!Function} */ (require('nopt'));
 
-var builder = /** @type {{buildLib: !Function, buildTest: !Function}} */ (
-    require(
-        pathMod.resolve(pathMod.join(__dirname, 'tools/builder.js'))));
+var builder = /** @type {{
+    buildLib: !Function,
+    buildTest: !Function,
+    buildAllTests: !Function}} */ (
+        require(pathMod.resolve(
+            pathMod.join(__dirname, 'tools/builder.js'))));
 var runner = /** @type {{
     runJsUnitTests: function(?string):!IThenable,
     runSpacTests: function():!IThenable }} */ (
@@ -49,7 +52,8 @@ gulp.task('build', function() {
   var options = nopt(knownOpts);
 
   if (options.target == 'all' || options.target == null) {
-    // TODO(dpapad): Build all tests and and lib.
+    // TODO(dpapad): Build also the lib here.
+    return builder.buildAllTests();
   } else if (options.target == 'lib') {
     return builder.buildLib(options);
   } else {

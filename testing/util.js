@@ -22,6 +22,8 @@ goog.require('lf.TransactionType');
 goog.require('lf.cache.Journal');
 goog.require('lf.service');
 
+goog.forwardDeclare('goog.testing.PropertyReplacer');
+
 
 /**
  * Executes a list of asynchronous functions in a serial manner, such that only
