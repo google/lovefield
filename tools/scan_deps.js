@@ -17,6 +17,7 @@
 var pathMod = require('path');
 var fsMod = require('fs');
 var glob = /** @type {{sync:!Function}} */ (require('glob'));
+var osMod = /** @type {{platform:!Function}} */ (require('os'));
 
 
 /** @type {{CLOSURE_LIBRARY_PATH: string}} */
@@ -278,8 +279,17 @@ function genAddDependency(basePath, provideMap, requireMap) {
 
   var results = [];
   for (var key in set) {
-    var servePath = pathMod.relative(basePath, key);
-    var line = 'goog.addDependency("../../' + servePath + '", ';
+    var relativeServePath = pathMod.join(
+        '../../', pathMod.relative(basePath, key));
+
+    if (osMod.platform().indexOf('win') != -1) {
+      // For the case of Windows relativeServePath contains backslashes. Need to
+      // escape the backward slash, otherwise it will not appear in the deps.js
+      // file correctly. An alternative would be to convert backslashes to
+      // forward slashes which works just as fine in the context of a browser.
+      relativeServePath = relativeServePath.replace(/\\/g, '\\\\');
+    }
+    var line = 'goog.addDependency("' + relativeServePath + '", ';
 
     if (provide.hasOwnProperty(key)) {
       line += JSON.stringify(provide[key]) + ', ';
