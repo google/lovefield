@@ -20175,128 +20175,6 @@ lf.backstore.ObservableStore.prototype.notify = function(changes) {
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-goog.provide('lf.backstore.WebSqlRawBackStore');
-
-goog.require('goog.Promise');
-goog.require('goog.object');
-goog.require('lf.Exception');
-goog.require('lf.Row');
-goog.require('lf.raw.BackStore');
-
-
-
-/**
- * @implements {lf.raw.BackStore.<Database>}
- * @constructor
- * @struct
- * @final
- *
- * @param {number} oldVersion
- * @param {!Database} db
- */
-lf.backstore.WebSqlRawBackStore = function(oldVersion, db) {
-  /** @private {!Database} */
-  this.db_ = db;
-
-  /** @private {number} */
-  this.version_ = oldVersion;
-};
-
-
-/** @override */
-lf.backstore.WebSqlRawBackStore.prototype.getRawDBInstance = function() {
-  return this.db_;
-};
-
-
-/** @override */
-lf.backstore.WebSqlRawBackStore.prototype.getRawTransaction = function() {
-  throw new lf.Exception(
-      lf.Exception.Type.NOT_SUPPORTED,
-      'Use the raw instance to create transaction instead.');
-};
-
-
-/** @override */
-lf.backstore.WebSqlRawBackStore.prototype.dropTable = function(tableName) {
-  // TODO(arthurhsu): implement
-  return goog.Promise.reject();
-};
-
-
-/** @override */
-lf.backstore.WebSqlRawBackStore.prototype.addTableColumn = function(
-    tableName, columnName, defaultValue) {
-  // TODO(arthurhsu): implement
-  return goog.Promise.reject();
-};
-
-
-/** @override */
-lf.backstore.WebSqlRawBackStore.prototype.dropTableColumn = function(
-    tableName, columnName) {
-  // TODO(arthurhsu): implement
-  return goog.Promise.reject();
-};
-
-
-/** @override */
-lf.backstore.WebSqlRawBackStore.prototype.renameTableColumn = function(
-    tableName, oldColumnName, newColumnName) {
-  // TODO(arthurhsu): implement
-  return goog.Promise.reject();
-};
-
-
-/** @override */
-lf.backstore.WebSqlRawBackStore.prototype.createRow = function(payload) {
-  // TODO(arthurhsu): implement
-  return lf.Row.create(payload);
-};
-
-
-/** @override */
-lf.backstore.WebSqlRawBackStore.prototype.getVersion = function() {
-  return this.version_;
-};
-
-
-/** @param {!lf.backstore.WebSqlTx} tx */
-lf.backstore.WebSqlRawBackStore.queueListTables = function(tx) {
-  var GET_TABLE_NAMES = 'SELECT tbl_name FROM sqlite_master WHERE type="table"';
-
-  tx.queue(GET_TABLE_NAMES, [], function(results) {
-    var tableNames = new Array(results.rows.length);
-    for (var i = 0; i < tableNames.length; ++i) {
-      tableNames[i] = results.rows.item(i)['tbl_name'];
-    }
-    return tableNames;
-  });
-};
-
-
-/** @override */
-lf.backstore.WebSqlRawBackStore.prototype.dump = function() {
-  // TODO(arthurhsu): implement
-  return goog.Promise.reject();
-};
-
-/**
- * @license
- * Copyright 2015 Google Inc. All Rights Reserved.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
 goog.provide('lf.backstore.WebSqlTable');
 
 goog.require('goog.Promise');
@@ -20534,6 +20412,235 @@ lf.backstore.WebSqlTx.prototype.abort = function() {
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+goog.provide('lf.backstore.WebSqlRawBackStore');
+
+goog.require('goog.Promise');
+goog.require('goog.object');
+goog.require('lf.Exception');
+goog.require('lf.Row');
+goog.require('lf.TransactionType');
+goog.require('lf.backstore.IndexedDBRawBackStore');
+goog.require('lf.backstore.WebSqlTx');
+goog.require('lf.cache.Journal');
+goog.require('lf.raw.BackStore');
+
+
+
+/**
+ * WebSQL raw back store. Please note that all altering functions will commit
+ * immediately due to implementation restrictions. This is different from the
+ * IndexedDB raw back store.
+ *
+ * @implements {lf.raw.BackStore.<Database>}
+ * @constructor
+ * @struct
+ * @final
+ *
+ * @param {!lf.Global} global
+ * @param {number} oldVersion
+ * @param {!Database} db
+ */
+lf.backstore.WebSqlRawBackStore = function(global, oldVersion, db) {
+  /** @private {!Database} */
+  this.db_ = db;
+
+  /** @private {!lf.Global} */
+  this.global_ = global;
+
+  /** @private {number} */
+  this.version_ = oldVersion;
+};
+
+
+/** @override */
+lf.backstore.WebSqlRawBackStore.prototype.getRawDBInstance = function() {
+  return this.db_;
+};
+
+
+/** @override */
+lf.backstore.WebSqlRawBackStore.prototype.getRawTransaction = function() {
+  throw new lf.Exception(
+      lf.Exception.Type.NOT_SUPPORTED,
+      'Use the raw instance to create transaction instead.');
+};
+
+
+/**
+ * @return {!lf.backstore.WebSqlTx}
+ * @private
+ */
+lf.backstore.WebSqlRawBackStore.prototype.createTx_ = function() {
+  return new lf.backstore.WebSqlTx(
+      this.db_,
+      new lf.cache.Journal(this.global_, []),
+      lf.TransactionType.READ_WRITE);
+};
+
+
+/** @override */
+lf.backstore.WebSqlRawBackStore.prototype.dropTable = function(tableName) {
+  var tx = this.createTx_();
+  tx.queue('DROP TABLE ' + tableName, []);
+  return tx.commit();
+};
+
+
+/**
+ * @param {string} tableName
+ * @return {!IThenable<!Array<!lf.Row.Raw>>}
+ * @private
+ */
+lf.backstore.WebSqlRawBackStore.prototype.dumpTable_ = function(tableName) {
+  var tx = this.createTx_();
+  tx.queue('SELECT id, value FROM ' + tableName, []);
+  return tx.commit().then(function(results) {
+    var length = results.rows.length;
+    var rows = new Array(length);
+    for (var i = 0; i < length; ++i) {
+      rows[i] = /** @type {!lf.Row.Raw} */ ({
+        id: results.rows.item(i)['id'],
+        value: JSON.parse(results.rows.item(i)['value'])
+      });
+    }
+
+    return goog.Promise.resolve(rows);
+  });
+};
+
+
+/**
+ * @param {string} tableName
+ * @param {!function(!lf.Row.Raw): !lf.Row.Raw} transformer
+ * @return {!IThenable}
+ * @private
+ */
+lf.backstore.WebSqlRawBackStore.prototype.transformColumn_ = function(
+    tableName, transformer) {
+  var tx = this.createTx_();
+  var sql = 'UPDATE ' + tableName + ' SET value=? WHERE id=?';
+  return this.dumpTable_(tableName).then(function(rows) {
+    rows.forEach(function(row) {
+      var newRow = transformer(row);
+      tx.queue(sql, [JSON.stringify(newRow.value), newRow.id]);
+    });
+    return tx.commit();
+  });
+};
+
+
+/** @override */
+lf.backstore.WebSqlRawBackStore.prototype.addTableColumn = function(
+    tableName, columnName, defaultValue) {
+  var value = lf.backstore.IndexedDBRawBackStore.convert(defaultValue);
+
+  return this.transformColumn_(tableName, function(row) {
+    row.value[columnName] = value;
+    return row;
+  });
+};
+
+
+/** @override */
+lf.backstore.WebSqlRawBackStore.prototype.dropTableColumn = function(
+    tableName, columnName) {
+  return this.transformColumn_(tableName, function(row) {
+    delete row.value[columnName];
+    return row;
+  });
+};
+
+
+/** @override */
+lf.backstore.WebSqlRawBackStore.prototype.renameTableColumn = function(
+    tableName, oldColumnName, newColumnName) {
+  return this.transformColumn_(tableName, function(row) {
+    row.value[newColumnName] = row.value[oldColumnName];
+    delete row.value[oldColumnName];
+    return row;
+  });
+};
+
+
+/** @override */
+lf.backstore.WebSqlRawBackStore.prototype.createRow = function(payload) {
+  var data = {};
+  for (var key in payload) {
+    data[key] = lf.backstore.IndexedDBRawBackStore.convert(payload[key]);
+  }
+
+  return lf.Row.create(data);
+};
+
+
+/** @override */
+lf.backstore.WebSqlRawBackStore.prototype.getVersion = function() {
+  return this.version_;
+};
+
+
+/** @param {!lf.backstore.WebSqlTx} tx */
+lf.backstore.WebSqlRawBackStore.queueListTables = function(tx) {
+  var GET_TABLE_NAMES = 'SELECT tbl_name FROM sqlite_master WHERE type="table"';
+
+  tx.queue(GET_TABLE_NAMES, [], function(results) {
+    var tableNames = new Array(results.rows.length);
+    for (var i = 0; i < tableNames.length; ++i) {
+      tableNames[i] = results.rows.item(i)['tbl_name'];
+    }
+    return tableNames;
+  });
+};
+
+
+/** @override */
+lf.backstore.WebSqlRawBackStore.prototype.dump = function() {
+  var resolver = goog.Promise.withResolver();
+
+  var tx = this.createTx_();
+  lf.backstore.WebSqlRawBackStore.queueListTables(tx);
+
+  var ret = {};
+  tx.commit().then(goog.bind(
+      /** @this {!lf.backstore.WebSqlRawBackStore} */
+      function(results) {
+        var tables = results.filter(function(name) {
+          return name != '__lf_ver' && name != '__WebKitDatabaseInfoTable__';
+        });
+        var promises = tables.map(
+            /** @this {!lf.backstore.WebSqlRawBackStore} */
+            function(tableName) {
+              return this.dumpTable_(tableName).then(function(rows) {
+                ret[tableName] = rows;
+              });
+            }, this);
+        goog.Promise.all(promises).then(function() {
+          resolver.resolve(ret);
+        });
+      }, this));
+
+  return resolver.promise;
+};
+
+/**
+ * @license
+ * Copyright 2015 Google Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ * @fileoverview This WebSQL backstore shall be considered a gap-stopping patch
+ * and will be removed as soon as Apple fixes IndexedDB bugs in Safari.
+ */
 goog.provide('lf.backstore.WebSql');
 
 goog.require('goog.Promise');
@@ -20715,7 +20822,8 @@ lf.backstore.WebSql.prototype.onUpgrade_ = function(onUpgrade, oldVersion) {
   var resolver = goog.Promise.withResolver();
 
   this.preUpgrade_().then(goog.bind(function() {
-    var rawDb = new lf.backstore.WebSqlRawBackStore(oldVersion, this.db_);
+    var rawDb = new lf.backstore.WebSqlRawBackStore(
+        this.global_, oldVersion, this.db_);
     onUpgrade(rawDb).then(goog.bind(function() {
       return this.scanRowId_();
     }, this)).then(resolver.resolve.bind(resolver));
@@ -20732,26 +20840,25 @@ lf.backstore.WebSql.prototype.onUpgrade_ = function(onUpgrade, oldVersion) {
  */
 lf.backstore.WebSql.prototype.preUpgrade_ = function() {
   var tables = this.schema_.tables();
-  var tableNames = [];
 
   var tx = new lf.backstore.WebSqlTx(
       this.db_, this.getEmptyJournal_(), lf.TransactionType.READ_WRITE);
   var tx2 = new lf.backstore.WebSqlTx(
       this.db_, this.getEmptyJournal_(), lf.TransactionType.READ_WRITE);
 
-  tx.queue('UPDATE __lf_ver SET v=? WHERE id=0', [this.schema_.version()]);
+  tx.queue('INSERT OR REPLACE INTO __lf_ver VALUES (0, ?)',
+      [this.schema_.version()]);
   lf.backstore.WebSqlRawBackStore.queueListTables(tx);
   return tx.commit().then(function(results) {
     // Delete all existing persisted indices.
-    var indices = results.filter(function(name) {
+    results.filter(function(name) {
       return name.indexOf('.') != -1;
-    });
-    indices.forEach(function(name) {
+    }).forEach(function(name) {
       tx2.queue('DROP TABLE ' + name, []);
     });
 
     // Create new tables.
-    var existingTables = tableNames.filter(function(name) {
+    var existingTables = results.filter(function(name) {
       return name.indexOf('.') == -1;
     });
     var newTables = tables.map(function(table) {
@@ -35465,6 +35572,7 @@ goog.require('lf.ObserverRegistry');
 goog.require('lf.backstore.IndexedDB');
 goog.require('lf.backstore.Memory');
 goog.require('lf.backstore.ObservableStore');
+goog.require('lf.backstore.WebSql');
 goog.require('lf.cache.DefaultCache');
 goog.require('lf.cache.Prefetcher');
 goog.require('lf.index.MemoryIndexStore');
@@ -35495,6 +35603,10 @@ lf.base.init = function(global, dataStoreType, opt_onUpgrade) {
       break;
     case lf.schema.DataStoreType.OBSERVABLE_STORE:
       backStore = new lf.backstore.ObservableStore(schema);
+      break;
+    case lf.schema.DataStoreType.WEB_SQL:
+      // TODO(arthurhsu): pass over size information.
+      backStore = new lf.backstore.WebSql(global, schema);
       break;
     default:
       backStore = new lf.backstore.IndexedDB(global, schema);
