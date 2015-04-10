@@ -27909,7 +27909,8 @@ lf.schema.DataStoreType = {
  * @typedef {{
  *   onUpgrade: (undefined|!function(!lf.raw.BackStore):!IThenable),
  *   storeType: (undefined|!lf.schema.DataStoreType),
- *   firebase: (undefined|!Firebase)
+ *   firebase: (undefined|!Firebase),
+ *   webSqlDbSize: (undefined|number)
  * }}
  */
 lf.schema.ConnectOptions;
@@ -35584,14 +35585,14 @@ goog.require('lf.service');
 
 /**
  * @param {!lf.Global} global
- * @param {!lf.schema.DataStoreType} dataStoreType The type of backing store
- *     to use. Defaults to INDEXED_DB.
- * @param {!function(!lf.raw.BackStore):!IThenable=} opt_onUpgrade
+ * @param {!lf.schema.ConnectOptions=} opt_options
  * @return {!IThenable} A promise resolved after all initialization operations
  *     have finished.
  */
-lf.base.init = function(global, dataStoreType, opt_onUpgrade) {
+lf.base.init = function(global, opt_options) {
   var schema = global.getService(lf.service.SCHEMA);
+  var options = opt_options || {};
+  var dataStoreType = options.storeType || lf.schema.DataStoreType.INDEXED_DB;
 
   var cache = new lf.cache.DefaultCache();
   global.registerService(lf.service.CACHE, cache);
@@ -35605,15 +35606,14 @@ lf.base.init = function(global, dataStoreType, opt_onUpgrade) {
       backStore = new lf.backstore.ObservableStore(schema);
       break;
     case lf.schema.DataStoreType.WEB_SQL:
-      // TODO(arthurhsu): pass over size information.
-      backStore = new lf.backstore.WebSql(global, schema);
+      backStore = new lf.backstore.WebSql(global, schema, options.webSqlDbSize);
       break;
     default:
       backStore = new lf.backstore.IndexedDB(global, schema);
   }
   global.registerService(lf.service.BACK_STORE, backStore);
 
-  return backStore.init(opt_onUpgrade).then(function() {
+  return backStore.init(options.onUpgrade).then(function() {
     var queryEngine = new lf.proc.DefaultQueryEngine(global);
     global.registerService(lf.service.QUERY_ENGINE, queryEngine);
     var runner = new lf.proc.Runner();
@@ -36158,7 +36158,6 @@ goog.require('lf.query.DeleteBuilder');
 goog.require('lf.query.InsertBuilder');
 goog.require('lf.query.SelectBuilder');
 goog.require('lf.query.UpdateBuilder');
-goog.require('lf.schema.DataStoreType');
 goog.require('lf.service');
 
 
@@ -36182,21 +36181,17 @@ lf.proc.Database = function(global) {
 
 
 /**
- * @param {!function(!lf.raw.BackStore):!IThenable=} opt_onUpgrade
- * @param {lf.schema.DataStoreType=} opt_backStoreType
+ * @param {!lf.schema.ConnectOptions=} opt_options
  * @return {!IThenable<!lf.proc.Database>}
  * @export
  */
-lf.proc.Database.prototype.init = function(opt_onUpgrade, opt_backStoreType) {
+lf.proc.Database.prototype.init = function(opt_options) {
   // The SCHEMA might have been removed from this.global_ in the case where
   // lf.proc.Database#close() was called, therefore it needs to be re-added.
   this.global_.registerService(lf.service.SCHEMA, this.schema_);
 
   return /** @type  {!IThenable<!lf.proc.Database>} */ (
-      lf.base.init(
-          this.global_,
-          opt_backStoreType || lf.schema.DataStoreType.INDEXED_DB,
-          opt_onUpgrade).then(goog.bind(function() {
+      lf.base.init(this.global_, opt_options).then(goog.bind(function() {
         this.initialized_ = true;
         return this;
       }, this)));
@@ -37382,13 +37377,9 @@ lf.schema.Builder.prototype.connect = function(opt_options) {
   if (!global.isRegistered(lf.service.SCHEMA)) {
     global.registerService(lf.service.SCHEMA, this.getSchema());
   }
-  var upgradeCallback = (opt_options && opt_options.onUpgrade) ?
-      opt_options.onUpgrade : undefined;
-  var backstoreType = (opt_options && opt_options.storeType) ?
-      opt_options.storeType : undefined;
 
   var db = new lf.proc.Database(global);
-  return db.init(upgradeCallback, backstoreType);
+  return db.init(opt_options);
 };
 
 

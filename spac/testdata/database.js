@@ -49,9 +49,5 @@ lovefield.db.getSchema = function() {
 lovefield.db.connect = function(opt_options) {
   lovefield.db.getSchema();
   var db = new lf.proc.Database(lovefield.db.getGlobal());
-  var upgradeCallback = (opt_options && opt_options.onUpgrade) ?
-      opt_options.onUpgrade : undefined;
-  var backstoreType = (opt_options && opt_options.storeType) ?
-      opt_options.storeType : undefined;
-  return db.init(upgradeCallback, backstoreType);
+  return db.init(opt_options);
 };
