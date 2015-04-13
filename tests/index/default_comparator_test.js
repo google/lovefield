@@ -508,7 +508,7 @@ function testMultiKeyComparator_BindAndSortKeyRanges_MixedOrder() {
   var expectations = [
     '[0, 2),(X, Z]',
     '[22, 22],[D, D]',
-    '(24, 25],[A, B)',
+    '(24, 25],[A, B)'
   ];
 
   var actual = c.bindAndSortKeyRanges(leftMostKey, rightMostKey, keyRanges).map(

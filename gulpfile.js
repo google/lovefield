@@ -14,7 +14,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-var gulp = /** @type {{task: function(string, Function)}} */ (require('gulp'));
+var gulp = /** @type {{task: function(string, Function), src: !Function}} */ (
+    require('gulp'));
+var gjslint = /** @type {!Function} */ (require('gulp-gjslint'));
 var pathMod = require('path');
 var nopt = /** @type {!Function} */ (require('nopt'));
 
@@ -41,6 +43,16 @@ gulp.task('default', function() {
   log('  gulp build --target=<target>: build library or tests');
   log('  gulp test --target=<target> --browser=<broswer>: run Lovefield tests');
   log('  gulp debug: start a debug server at port 4000');
+});
+
+
+gulp.task('lint', function() {
+  return gulp.src([
+    'src/**/*.js',
+    'tests/**/*.js',
+    'testing/**/*.js',
+  ]).pipe(gjslint()).
+      pipe(gjslint['reporter']('console'), {fail: true});
 });
 
 

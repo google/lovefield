@@ -310,4 +310,4 @@ lf.testing.SmokeTester.prototype.selectAll_ = function() {
       lf.TransactionType.READ_ONLY,
       new lf.cache.Journal(this.global_, [r]));
   return tx.getTable(r.getName(), goog.bind(r.deserializeRow, r)).get([]);
-}
+};

@@ -537,16 +537,16 @@ lf.testing.EndToEndTester.prototype.testObserve_MultipleObservers = function() {
    * @return {!lf.query.Select}
    * @this {!lf.testing.EndToEndTester}
    */
-  var getQuery = function() {
+  var getQuery = (function() {
     return this.db_.select().from(this.j_);
-  }.bind(this);
+  }.bind(this));
 
   var callback1Params = [];
   var callback2Params = [];
   var callback3Params = [];
 
   var resolver = goog.Promise.withResolver();
-  var doAssertions = function() {
+  var doAssertions = (function() {
     try {
       // Expecting callback1 to have been called 3 times.
       assertArrayEquals([this.sampleJobs_.length + 1, 1, 1], callback1Params);
@@ -559,7 +559,7 @@ lf.testing.EndToEndTester.prototype.testObserve_MultipleObservers = function() {
     }
     lf.testing.EndToEndTester.markDone_('testObserve_MultipleObservers');
     resolver.resolve();
-  }.bind(this);
+  }.bind(this));
 
   var callback1 = function(changes) { callback1Params.push(changes.length); };
   var callback2 = function(changes) { callback2Params.push(changes.length); };

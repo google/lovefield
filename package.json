@@ -35,6 +35,7 @@
     "google-closure-library": "latest",
     "gulp": "^3.8.10",
     "gulp-closure-compiler": "^0.2.18",
+    "gulp-gjslint": "^0.1.4",
     "gulp-webserver": "^0.9.0",
     "minijasminenode": "^1.1.1",
     "mkdirp": "^0.3.5",

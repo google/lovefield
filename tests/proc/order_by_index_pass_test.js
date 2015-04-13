@@ -337,7 +337,7 @@ function constructTree3(sortOrder1, sortOrder2) {
       hr.db.getGlobal(), dt);
   var indexRangeScanNode = new lf.proc.IndexRangeScanStep(
       hr.db.getGlobal(), dt.getIndices()[0],
-      [lf.index.SingleKeyRange.all(), lf.index.SingleKeyRange.upperBound(10),],
+      [lf.index.SingleKeyRange.all(), lf.index.SingleKeyRange.upperBound(10)],
       false);
 
   tableAccessByRowIdNode.addChild(indexRangeScanNode);
