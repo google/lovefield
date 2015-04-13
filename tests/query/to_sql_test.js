@@ -236,3 +236,29 @@ function testSelectToSql_Join() {
       ' (Job.id = Employee.jobId);',
       query.toSql());
 }
+
+function testNull() {
+  var e = db.getSchema().getEmployee();
+  var row = e.createRow({
+    id: '1',
+    firstName: 'a',
+    lastName: 'b',
+    email: 'c',
+    phoneNumber: 'd',
+    hireDate: null,
+    jobId: 'e',
+    salary: 10000,
+    commissionPercent: 0,
+    managerId: 'f',
+    departmentId: 'g',
+    photo: null
+  });
+
+  var query = db.insert().into(e).values([row]);
+  assertEquals(
+      'INSERT INTO Employee(id, firstName, lastName, email, phoneNumber, ' +
+      'hireDate, jobId, salary, commissionPercent, managerId, departmentId, ' +
+      'photo) VALUES (\'1\', \'a\', \'b\', \'c\', \'d\', NULL, \'e\', 10000, ' +
+      '0, \'f\', \'g\', NULL);',
+      query.toSql());
+}

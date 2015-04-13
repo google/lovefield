@@ -29980,6 +29980,10 @@ goog.require('lf.query.UpdateContext');
  * @private
  */
 lf.query.escapeSqlValue_ = function(type, value) {
+  if (!goog.isDefAndNotNull(value)) {
+    return 'NULL';
+  }
+
   switch (type) {
     case lf.Type.BOOLEAN:
       return value ? 1 : 0;
@@ -29993,8 +29997,7 @@ lf.query.escapeSqlValue_ = function(type, value) {
       return '\'' + lf.Row.binToHex(/** @type {!ArrayBuffer} */ (value)) + '\'';
 
     default:  // datetime, string
-      var val = value.toString();
-      return '\'' + val + '\'';
+      return '\'' + value.toString() + '\'';
   }
 };
 
