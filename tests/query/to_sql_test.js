@@ -262,3 +262,27 @@ function testNull() {
       '0, \'f\', \'g\', NULL);',
       query.toSql());
 }
+
+function testStripValueInfo() {
+  var query = db.select(j.title).
+      from(j).
+      where(lf.op.and(
+          j.minSalary.gt(lf.bind(0)),
+          j.id.eq(1)));
+  assertEquals(
+      'SELECT Job.title FROM Job WHERE (Job.minSalary > ?0) AND (Job.id = #);',
+      query.toSql(true));
+
+  // Simulate erraneous usage exposed by toSql().
+  query.bind([null]);
+  assertEquals(
+      'SELECT Job.title FROM Job WHERE ' +
+      '(Job.minSalary > NULL) AND (Job.id = #);',
+      query.toSql(true));
+
+  var job = lf.testing.hrSchemaSampleData.generateSampleJobData(db);
+  var query2 = db.insert().into(j).values([job]);
+  assertEquals(
+      'INSERT INTO Job(id, title, minSalary, maxSalary) VALUES (#, #, #, #);',
+      query2.toSql(true));
+}

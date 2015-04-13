@@ -2808,7 +2808,7 @@ goog.addDependency('date/daterange.js', ['goog.date.DateRange', 'goog.date.DateR
 goog.addDependency('date/daterange_test.js', ['goog.date.DateRangeTest'], ['goog.date.Date', 'goog.date.DateRange', 'goog.date.Interval', 'goog.i18n.DateTimeSymbols', 'goog.testing.jsunit'], false);
 goog.addDependency('date/duration.js', ['goog.date.duration'], ['goog.i18n.DateTimeFormat', 'goog.i18n.MessageFormat'], false);
 goog.addDependency('date/duration_test.js', ['goog.date.durationTest'], ['goog.date.duration', 'goog.i18n.DateTimeFormat', 'goog.i18n.DateTimeSymbols', 'goog.i18n.DateTimeSymbols_bn', 'goog.i18n.DateTimeSymbols_en', 'goog.i18n.DateTimeSymbols_fa', 'goog.testing.jsunit'], false);
-goog.addDependency('date/relative.js', ['goog.date.relative', 'goog.date.relative.TimeDeltaFormatter', 'goog.date.relative.Unit'], ['goog.i18n.DateTimeFormat'], false);
+goog.addDependency('date/relative.js', ['goog.date.relative', 'goog.date.relative.TimeDeltaFormatter', 'goog.date.relative.Unit'], ['goog.i18n.DateTimeFormat', 'goog.i18n.DateTimePatterns'], false);
 goog.addDependency('date/relative_test.js', ['goog.date.relativeTest'], ['goog.date.DateTime', 'goog.date.relative', 'goog.i18n.DateTimeFormat', 'goog.testing.jsunit'], false);
 goog.addDependency('date/relativewithplurals.js', ['goog.date.relativeWithPlurals'], ['goog.date.relative', 'goog.date.relative.Unit', 'goog.i18n.MessageFormat'], false);
 goog.addDependency('date/relativewithplurals_test.js', ['goog.date.relativeWithPluralsTest'], ['goog.date.relative', 'goog.date.relativeTest', 'goog.date.relativeWithPlurals', 'goog.i18n.DateTimeFormat', 'goog.i18n.DateTimeSymbols', 'goog.i18n.DateTimeSymbols_bn', 'goog.i18n.DateTimeSymbols_en', 'goog.i18n.DateTimeSymbols_fa', 'goog.i18n.NumberFormatSymbols', 'goog.i18n.NumberFormatSymbols_bn', 'goog.i18n.NumberFormatSymbols_en', 'goog.i18n.NumberFormatSymbols_fa'], false);
@@ -29569,7 +29569,8 @@ lf.query.Builder.prototype.bind;
 
 
 /**
- *
+ * @param {boolean=} opt_stripValueInfo Strip value, default to false. This is
+ *     used to remove all PII.
  * @return {string}
  */
 lf.query.Builder.prototype.toSql;
@@ -30004,10 +30005,11 @@ lf.query.escapeSqlValue_ = function(type, value) {
 
 /**
  * @param {!lf.query.InsertContext} query
+ * @param {boolean} stripValueInfo
  * @return {string}
  * @private
  */
-lf.query.insertToSql_ = function(query) {
+lf.query.insertToSql_ = function(query, stripValueInfo) {
   var prefix = query.allowReplace ? 'INSERT OR REPLACE' : 'INSERT';
   var columns = query.into.getColumns();
   prefix += ' INTO ' + query.into.getName() + '(';
@@ -30016,7 +30018,9 @@ lf.query.insertToSql_ = function(query) {
   var sqls = query.values.map(function(row) {
     var values = columns.map(function(col) {
       var rawVal = row.payload()[col.getName()];
-      return lf.query.escapeSqlValue_(col.getType(), rawVal);
+      return stripValueInfo ?
+          (goog.isDefAndNotNull(rawVal) ? '#' : 'NULL') :
+          lf.query.escapeSqlValue_(col.getType(), rawVal);
     });
     return prefix + values.join(', ') + ');';
   });
@@ -30059,12 +30063,17 @@ lf.query.evaluatorToSql_ = function(op) {
  * @param {!lf.Binder|Array|ArrayBuffer|Date|boolean|null|number|string} value
  * @param {!lf.eval.Type} op
  * @param {!lf.Type} type
+ * @param {boolean} stripValueInfo
  * @return {string}
  * @private
  */
-lf.query.valueToSql_ = function(value, op, type) {
+lf.query.valueToSql_ = function(value, op, type, stripValueInfo) {
   if (value instanceof lf.Binder) {
     return '?' + value.getIndex().toString();
+  }
+
+  if (stripValueInfo) {
+    return goog.isDefAndNotNull(value) ? '#' : 'NULL';
   } else if (op == lf.eval.Type.MATCH) {
     return '\'' + value.toString() + '\'';
   } else if (op == lf.eval.Type.IN) {
@@ -30088,27 +30097,30 @@ lf.query.valueToSql_ = function(value, op, type) {
 
 /**
  * @param {!lf.pred.ValuePredicate} pred
+ * @param {boolean} stripValueInfo
  * @return {string}
  * @private
  */
-lf.query.valuePredicateToSql_ = function(pred) {
+lf.query.valuePredicateToSql_ = function(pred, stripValueInfo) {
   return [
     pred.column.getNormalizedName(),
     lf.query.evaluatorToSql_(pred.evaluatorType),
-    lf.query.valueToSql_(pred.value, pred.evaluatorType, pred.column.getType())
+    lf.query.valueToSql_(
+          pred.value, pred.evaluatorType, pred.column.getType(), stripValueInfo)
   ].join(' ');
 };
 
 
 /**
  * @param {!lf.pred.CombinedPredicate} pred
+ * @param {boolean} stripValueInfo
  * @return {string}
  * @private
  */
-lf.query.combinedPredicateToSql_ = function(pred) {
+lf.query.combinedPredicateToSql_ = function(pred, stripValueInfo) {
   var children = pred.getChildren().map(function(childNode) {
     return '(' + lf.query.parseSearchCondition_(
-        /** @type {!lf.Predicate} */ (childNode)) + ')';
+        /** @type {!lf.Predicate} */ (childNode), stripValueInfo) + ')';
   });
   var joinToken = (pred.operator == lf.pred.Operator.AND) ? ' AND ' : ' OR ';
   return children.join(joinToken);
@@ -30131,14 +30143,15 @@ lf.query.joinPredicateToSql_ = function(pred) {
 
 /**
  * @param {!lf.Predicate} pred
+ * @param {boolean} stripValueInfo
  * @return {string}
  * @private
  */
-lf.query.parseSearchCondition_ = function(pred) {
+lf.query.parseSearchCondition_ = function(pred, stripValueInfo) {
   if (pred instanceof lf.pred.ValuePredicate) {
-    return lf.query.valuePredicateToSql_(pred);
+    return lf.query.valuePredicateToSql_(pred, stripValueInfo);
   } else if (pred instanceof lf.pred.CombinedPredicate) {
-    return lf.query.combinedPredicateToSql_(pred);
+    return lf.query.combinedPredicateToSql_(pred, stripValueInfo);
   } else if (pred instanceof lf.pred.JoinPredicate) {
     return lf.query.joinPredicateToSql_(pred);
   }
@@ -30150,11 +30163,12 @@ lf.query.parseSearchCondition_ = function(pred) {
 
 /**
  * @param {!lf.Predicate} pred
+ * @param {boolean} stripValueInfo
  * @return {string}
  * @private
  */
-lf.query.predicateToSql_ = function(pred) {
-  var whereClause = lf.query.parseSearchCondition_(pred);
+lf.query.predicateToSql_ = function(pred, stripValueInfo) {
+  var whereClause = lf.query.parseSearchCondition_(pred, stripValueInfo);
   if (whereClause) {
     return ' WHERE ' + whereClause;
   }
@@ -30164,13 +30178,14 @@ lf.query.predicateToSql_ = function(pred) {
 
 /**
  * @param {!lf.query.DeleteContext} query
+ * @param {boolean} stripValueInfo
  * @return {string}
  * @private
  */
-lf.query.deleteToSql_ = function(query) {
+lf.query.deleteToSql_ = function(query, stripValueInfo) {
   var sql = 'DELETE FROM ' + query.from.getName();
   if (query.where) {
-    sql += lf.query.predicateToSql_(query.where);
+    sql += lf.query.predicateToSql_(query.where, stripValueInfo);
   }
   sql += ';';
   return sql;
@@ -30179,10 +30194,11 @@ lf.query.deleteToSql_ = function(query) {
 
 /**
  * @param {!lf.query.UpdateContext} query
+ * @param {boolean} stripValueInfo
  * @return {string}
  * @private
  */
-lf.query.updateToSql_ = function(query) {
+lf.query.updateToSql_ = function(query, stripValueInfo) {
   var sql = 'UPDATE ' + query.table.getName() + ' SET ';
   sql += query.set.map(function(set) {
     var setter = set.column.getNormalizedName() + ' = ';
@@ -30195,7 +30211,7 @@ lf.query.updateToSql_ = function(query) {
         (set.value)).toString();
   }).join(', ');
   if (query.where) {
-    sql += lf.query.predicateToSql_(query.where);
+    sql += lf.query.predicateToSql_(query.where, stripValueInfo);
   }
   sql += ';';
   return sql;
@@ -30204,10 +30220,11 @@ lf.query.updateToSql_ = function(query) {
 
 /**
  * @param {!lf.query.SelectContext} query
+ * @param {boolean} stripValueInfo
  * @return {string}
  * @private
  */
-lf.query.selectToSql_ = function(query) {
+lf.query.selectToSql_ = function(query, stripValueInfo) {
   var colList = '*';
   if (query.columns.length) {
     colList = query.columns.map(function(col) {
@@ -30229,7 +30246,7 @@ lf.query.selectToSql_ = function(query) {
 
   var sql = 'SELECT ' + colList + ' FROM ' + fromList;
   if (query.where) {
-    sql += lf.query.predicateToSql_(query.where);
+    sql += lf.query.predicateToSql_(query.where, stripValueInfo);
   }
 
   if (query.orderBy) {
@@ -30262,24 +30279,27 @@ lf.query.selectToSql_ = function(query) {
 
 /**
  * @param {!lf.query.BaseBuilder} builder
+ * @param {boolean=} opt_stripValueInfo Strip value, default to false. This is
+ *     used to remove all PII.
  * @return {string}
  */
-lf.query.toSql = function(builder) {
+lf.query.toSql = function(builder, opt_stripValueInfo) {
   var query = builder.query;
+  var stripValueInfo = opt_stripValueInfo || false;
   if (query instanceof lf.query.InsertContext) {
-    return lf.query.insertToSql_(query);
+    return lf.query.insertToSql_(query, stripValueInfo);
   }
 
   if (query instanceof lf.query.DeleteContext) {
-    return lf.query.deleteToSql_(query);
+    return lf.query.deleteToSql_(query, stripValueInfo);
   }
 
   if (query instanceof lf.query.UpdateContext) {
-    return lf.query.updateToSql_(query);
+    return lf.query.updateToSql_(query, stripValueInfo);
   }
 
   if (query instanceof lf.query.SelectContext) {
-    return lf.query.selectToSql_(query);
+    return lf.query.selectToSql_(query, stripValueInfo);
   }
 
   throw new lf.Exception(lf.Exception.Type.NOT_SUPPORTED,
@@ -30380,8 +30400,8 @@ lf.query.BaseBuilder.prototype.bind = function(values) {
  * @override
  * @export
  */
-lf.query.BaseBuilder.prototype.toSql = function() {
-  return lf.query.toSql(this);
+lf.query.BaseBuilder.prototype.toSql = function(opt_stripValueInfo) {
+  return lf.query.toSql(this, opt_stripValueInfo);
 };
 
 
