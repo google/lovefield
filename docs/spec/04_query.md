@@ -61,7 +61,9 @@ be schema column object, for example:
 
 ```js
 var infoCard = db.getSchema().table('InfoCard');
-var q1 = db.select(infoCard.id, infoCard.lang, infoCard.fileName);
+var q1 = db.
+    select(infoCard.id, infoCard.lang, infoCard.fileName).
+    from(infoCard);
 q1.exec().then(function(rows) {
   // No prefix, context involves only one table
   // console.log(rows[0]['id'], rows[0]['lang'], rows[0]['fileName']);
