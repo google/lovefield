@@ -1,63 +1,19 @@
 # Dev Setup for Lovefield
 
-## Python, Java, Git
+## Java, Git, Node.js
 
-You will need to have Python, Java, and git in a working state. Windows users
-please consider install [depot_tools](
-http://www.chromium.org/developers/how-tos/install-depot-tools) directly.
+You will need to have Java, git, and Node.js in a working state. They must be
+searchable from your PATH.
 
-Lovefield will move away from Python, however, the Closure library it depends
-on has not cut the dependencies on Python yet, and thus you need a working
-Python.
+Lovefield uses node.js for various development tools. Due to the ES6 APIs used,
+version of installed node.js must be greater than 0.12.
 
-All these programs must be searchable from your PATH.
+### Special Notes for Windows Users
 
-## node.js
-
-Lovefield uses node.js for various development tools. There is no run-time
-dependency. You need to have a working node.js whose version is greater
-than 0.11.
-
-### Ubuntu
-
-The easy way to install node.js is `apt-get install nodejs`. However, it is
-strongly discouraged, i.e. *DON'T DO IT*. The recommended way of doing things:
-
-1. Remove all existing node packages
-
-        sudo apt-get remove nodejs
-
-2. Install nvm under your home dir so that nothing requires sudo
-
-        cd
-        wget -qO- https://raw.github.com/creationix/nvm/master/install.sh | sh
-        source .profile
-
-3. Install nodejs
-
-        nvm install v0.11
-
-4. Update npm
-
-        npm update -g npm
-
-### Mac
-
-1. Install [Homebrew](http://brew.sh) if you have not done so.
-
-2. Install nvm: `brew install nvm`
-
-3. Follow Ubuntu step 3 and 4.
-
-### Windows
-
-1. Install [nvmw](https://github.com/hakobera/nvmw).
-
-2. Install nodejs via nvmw. nvmw requires full version for its command-line,
-   i.e. 0.10.32 instead of just giving 0.10.
-
-3. Check if your npm can find packages. If not, you will need to set the
-   NODE_PATH environment variable yourself, or by modifying nvmw.bat.
+Windows Command Prompt has a limitation of command-line length, which will cause
+Closure compiler failure since the compiler requires a command-line way longer
+than that limit. The solution is to install a command line utility, such as
+TCC/LE, to overcome that limitation.
 
 ## Set Up Dev Environment
 
@@ -73,9 +29,12 @@ npm update
 
 2. Build/Test Lovefield
 
-   Lovefield uses gulp as its build manager. This part is currently under active
-   construction and will be further detailed once all the wrinkles are ironed
-   out.
+   Lovefield uses gulp as its build manager. Run
+
+```bash
+gulp
+```
+   to see the commands supported.
 
 ## Markdowns
 
