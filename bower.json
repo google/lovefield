@@ -1,0 +1,31 @@
+{
+  "name": "lovefield",
+  "version": "2.0.48",
+  "homepage": "https://github.com/google/lovefield",
+  "authors": [
+    "Google Inc."
+  ],
+  "private": true,
+  "description": "Lovefield - A Data Access Library",
+  "main": "dist/lovefield.min.js",
+  "keywords": [
+    "lovefield"
+  ],
+  "license": "Apache 2.0",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "builddef",
+    "demos",
+    "docs",
+    "examples",
+    "gulpfile.js",
+    "lib",
+    "perf",
+    "spac",
+    "testing",
+    "tests",
+    "tools"
+  ]
+}
