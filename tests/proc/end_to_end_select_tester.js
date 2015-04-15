@@ -79,6 +79,7 @@ lf.testing.EndToEndSelectTester = function(connectFn) {
     this.testOrderBy_Ascending.bind(this),
     this.testOrderBy_Multiple.bind(this),
     this.testOrderBy_Aggregate.bind(this),
+    this.testOrderBy_Distinct.bind(this),
     this.testOrderBy_NonProjectedAggregate.bind(this),
     this.testGroupBy.bind(this),
     this.testGroupByWithLimit.bind(this),
@@ -688,6 +689,28 @@ lf.testing.EndToEndSelectTester.prototype.testOrderBy_Aggregate =
       from(e).
       orderBy(aggregatedColumn, order).
       groupBy(e.jobId));
+
+  return queryBuilder.exec().then(
+      function(results) {
+        this.assertOrder_(results, aggregatedColumn, order);
+      }.bind(this));
+};
+
+
+/**
+ * Tests the case where the ordering is requested on a column that is being
+ * projected as a DISTINCT aggregation.
+ * @return {!IThenable}
+ */
+lf.testing.EndToEndSelectTester.prototype.testOrderBy_Distinct =
+    function() {
+  var e = this.e_;
+  var aggregatedColumn = lf.fn.distinct(e.jobId);
+  var order = lf.Order.DESC;
+  var queryBuilder = /** @type {!lf.query.SelectBuilder} */ (
+      this.db_.select(aggregatedColumn).
+      from(e).
+      orderBy(e.jobId, order));
 
   return queryBuilder.exec().then(
       function(results) {

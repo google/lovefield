@@ -24645,6 +24645,17 @@ lf.proc.Relation.prototype.getAggregationResult = function(column) {
 };
 
 
+/**
+ * @param {!lf.schema.Column} column
+ * @return {boolean} Whether an aggregation result for the given aggregated
+ *     column has been calculated.
+ */
+lf.proc.Relation.prototype.hasAggregationResult = function(column) {
+  return !goog.isNull(this.aggregationResults_) &&
+      this.aggregationResults_.containsKey(column.getNormalizedName());
+};
+
+
 /** @private {?lf.proc.Relation} */
 lf.proc.Relation.emptyRelation_ = null;
 
@@ -33400,6 +33411,7 @@ lf.proc.LimitStep.prototype.execInternal = function(journal, relations) {
 goog.provide('lf.proc.OrderByStep');
 
 goog.require('lf.Order');
+goog.require('lf.fn');
 goog.require('lf.fn.AggregatedColumn');
 goog.require('lf.proc.PhysicalQueryPlanNode');
 goog.require('lf.query.SelectContext');
@@ -33433,11 +33445,43 @@ lf.proc.OrderByStep.prototype.toString = function() {
 /** @override */
 lf.proc.OrderByStep.prototype.execInternal = function(journal, relations) {
   if (relations.length == 1) {
-    relations[0].entries.sort(this.entryComparatorFn_.bind(this));
+    var distinctColumn = this.findDistinctColumn_(relations[0]);
+
+    // If such a column exists, sort the results of the lf.fn.distinct
+    // aggregator instead, since this is what will be used in the returned
+    // result.
+    var relationToSort = goog.isNull(distinctColumn) ?
+        relations[0] :
+        relations[0].getAggregationResult(distinctColumn);
+
+    relationToSort.entries.sort(this.entryComparatorFn_.bind(this));
   } else { // if (relations.length > 1) {
     relations.sort(this.relationComparatorFn_.bind(this));
   }
   return relations;
+};
+
+
+/**
+ * Determines whether sorting is requested on a column that has been aggregated
+ * with lf.fn.distinct (if any).
+ * @param {!lf.proc.Relation} relation The input relation.
+ * @return {?lf.schema.Column} The DISTINCT aggregated column or null if no such
+ *     column was found.
+ * @private
+ */
+lf.proc.OrderByStep.prototype.findDistinctColumn_ = function(relation) {
+  var distinctColumn = null;
+
+  for (var i = 0; i < this.orderBy.length; i++) {
+    var tempDistinctColumn = lf.fn.distinct(
+        /** @type {!lf.schema.BaseColumn} */ (this.orderBy[i].column));
+    if (relation.hasAggregationResult(tempDistinctColumn)) {
+      distinctColumn = tempDistinctColumn;
+      break;
+    }
+  }
+  return distinctColumn;
 };
 
 
