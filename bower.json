@@ -5,7 +5,6 @@
   "authors": [
     "Google Inc."
   ],
-  "private": true,
   "description": "Lovefield - A Data Access Library",
   "main": "dist/lovefield.min.js",
   "keywords": [
