@@ -58,15 +58,15 @@ describe('Generator Test', function() {
   it('should generate database.js', function() {
     var codeTemplate = fs.readFileSync(template['database.jstemplate']);
     var expected = fs.readFileSync(testdata['database.js']);
-    expect(expected.toString()).toEqual(
-        codegen.generate('db.js', codeTemplate));
+    expect(expected.toString().replace(/\r/gm, '')).toEqual(
+        codegen.generate('db.js', codeTemplate).replace(/\r/gm, ''));
   });
 
   it('should generate schema.js', function() {
     var codeTemplate = fs.readFileSync(template['schema.jstemplate']);
     var expected = fs.readFileSync(testdata['schema.js']);
-    expect(expected.toString()).toEqual(
-        codegen.generate('schema.js', codeTemplate));
+    expect(expected.toString().replace(/\r/gm, '')).toEqual(
+        codegen.generate('schema.js', codeTemplate).replace(/\r/gm, ''));
   });
 
   it('should honor enableBundledMode', function() {
@@ -80,7 +80,7 @@ describe('Generator Test', function() {
     codegen = new CodeGenerator('foo.db', schema);
     var codeTemplate = fs.readFileSync(template['schema.jstemplate']);
     var expected = fs.readFileSync(testdata['foo_schema.js']);
-    expect(expected.toString()).toEqual(
-        codegen.generate('schema.js', codeTemplate));
+    expect(expected.toString().replace(/\r/gm, '')).toEqual(
+        codegen.generate('schema.js', codeTemplate).replace(/\r/gm, ''));
   });
 });

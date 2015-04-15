@@ -870,6 +870,11 @@ CodeGenerator.prototype.processRepeatTable_ = function(lines) {
 
       // These patterns must be replaced last.
       var prefix = genLine.split(' ')[1];
+      if (prefix) {
+        // The genLine is splitted by space, but on Windows an additional
+        // \r may be added, therefore need to trim the token here.
+        prefix = prefix.trim();
+      }
       if (genLine.indexOf('#getdefaultpayload ') != -1) {
         genLine = this.genGetDefaultPayload_(table, prefix);
       }
@@ -883,7 +888,7 @@ CodeGenerator.prototype.processRepeatTable_ = function(lines) {
         genLine = this.genKeyOfIndex_(table, prefix);
       }
       if (genLine.indexOf('#deserializerow ') != -1) {
-        var source = genLine.split(' ')[2];
+        var source = genLine.split(' ')[2].trim();
         genLine = this.genDeserializeRow_(table, prefix, source);
       }
 
