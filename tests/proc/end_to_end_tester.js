@@ -62,6 +62,8 @@ lf.testing.EndToEndTester = function(global, connectFn) {
     this.testInsert_CrossColumnUniqueKey.bind(this),
     this.testInsert_AutoIncrement.bind(this),
     this.testInsertOrReplace_AutoIncrement.bind(this),
+    this.testInsertOrReplace_Bind.bind(this),
+    this.testInsertOrReplace_BindArray.bind(this),
     this.testUpdate_All.bind(this),
     this.testUpdate_Predicate.bind(this),
     this.testUpdate_UnboundPredicate.bind(this),
@@ -264,6 +266,47 @@ lf.testing.EndToEndTester.prototype.testInsertOrReplace_AutoIncrement =
     lf.testing.EndToEndTester.markDone_(
         'testInsertOrReplace_AutoIncrement');
   });
+};
+
+
+/**
+ * Tests INSERT OR REPLACE query accepts value binding.
+ * @return {!IThenable}
+ */
+lf.testing.EndToEndTester.prototype.testInsertOrReplace_Bind = function() {
+  var region = this.db_.getSchema().table('Region');
+  var rows = [region.createRow({'id': 'd1'}), region.createRow({'id': 'd2'})];
+
+  var queryBuilder = /** @type {!lf.query.InsertBuilder} */ (
+      this.db_.insertOrReplace().into(region).
+      values([lf.bind(0), lf.bind(1)]));
+
+  return queryBuilder.bind(rows).exec().then(function() {
+    return lf.testing.util.selectAll(this.global_, region);
+  }.bind(this)).then(function(results) {
+    assertEquals(2, results.length);
+    lf.testing.EndToEndTester.markDone_('testInsertOrReplace_Bind');
+  }.bind(this));
+};
+
+
+/**
+ * Tests INSERT OR REPLACE query accepts value binding.
+ * @return {!IThenable}
+ */
+lf.testing.EndToEndTester.prototype.testInsertOrReplace_BindArray = function() {
+  var region = this.db_.getSchema().table('Region');
+  var rows = [region.createRow({'id': 'd1'}), region.createRow({'id': 'd2'})];
+
+  var queryBuilder = /** @type {!lf.query.InsertBuilder} */ (
+      this.db_.insertOrReplace().into(region).values(lf.bind(0)));
+
+  return queryBuilder.bind([rows]).exec().then(function() {
+    return lf.testing.util.selectAll(this.global_, region);
+  }.bind(this)).then(function(results) {
+    assertEquals(2, results.length);
+    lf.testing.EndToEndTester.markDone_('testInsertOrReplace_BindArray');
+  }.bind(this));
 };
 
 

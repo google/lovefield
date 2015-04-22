@@ -443,6 +443,15 @@ var q1 = db.select().from(p).where(p.id.eq(lf.bind(0)));
 q1.bind(['id1']).exec();  // find id 1
 q1.bind(['id2']).exec();  // find id 2
 
+// INSERT query is slightly tricky when using bind.
+// You can bind an array directly.
+var q8 = db.insert().into(p).values(lf.bind(0));
+q8.bind([[p.createRow(payload7), p.createRow(payload8)]]).exec();
+// Or bind individual values.
+var q9 = db.insertOrReplace().into(p).values([lf.bind(0), lf.bind(1)]);
+q9.bind([p.createRow(payload9), p.createRow(payload10)]).exec();
+// Either way you need to createRow() as the bound value.
+
 // UPDATE Photo SET timestamp = ?1, local = ?2 WHERE id = ?0;
 var q2 = db.
     update(p).
@@ -484,12 +493,9 @@ type.
 |Query type   |Parametrizable clauses         |
 |:----------- |:----------------------------- |
 |`SELECT`     |`where()`, `limit()`, `skip()` |
+|`INSERT`     |`values()`                     |
 |`UPDATE`     |`where()`, `set()`             |
 |`DELETE`     |`where()`                      |
-
-The `insert()` query does not support any parametrization. It makes little
-sense to bind `values()` since users have to call `createRow()` before calling
-`values()` anyway.
 
 The following example shows how to parametrize an `update()` and a `delete()`
 query.

@@ -18,6 +18,7 @@ goog.setTestOnly();
 goog.require('goog.testing.AsyncTestCase');
 goog.require('goog.testing.jsunit');
 goog.require('hr.db');
+goog.require('lf.bind');
 goog.require('lf.query.InsertBuilder');
 goog.require('lf.schema.DataStoreType');
 goog.require('lf.testing.hrSchemaSampleData');
@@ -122,4 +123,16 @@ function testInto_ThrowsAlreadyCalled() {
   };
 
   assertThrows(buildQuery);
+}
+
+
+function testValues_ThrowMissingBinding() {
+  asyncTestCase.waitForAsync('testExec_ThrowsMissingBinding');
+
+  var query = new lf.query.InsertBuilder(hr.db.getGlobal());
+  var jobTable = db.getSchema().getJob();
+  query.into(jobTable).values(lf.bind(0));
+  query.exec().then(fail, function(e) {
+    asyncTestCase.continueTesting();
+  });
 }

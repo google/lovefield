@@ -29702,7 +29702,7 @@ lf.query.Insert.prototype.into;
 
 
 /**
- * @param {!Array<!lf.Row>} rows
+ * @param {!Array<!lf.Row>|!lf.Binder|!Array<!lf.Binder>} rows
  * @return {!lf.query.Insert}
  * @throws {DOMException}
  */
@@ -30583,6 +30583,7 @@ lf.query.DeleteBuilder.prototype.bind = function(values) {
  */
 goog.provide('lf.query.InsertBuilder');
 
+goog.require('lf.Binder');
 goog.require('lf.Exception');
 goog.require('lf.query.BaseBuilder');
 goog.require('lf.query.Insert');
@@ -30602,6 +30603,9 @@ goog.require('lf.query.InsertContext');
  */
 lf.query.InsertBuilder = function(global, opt_allowReplace) {
   lf.query.InsertBuilder.base(this, 'constructor', global);
+
+  /** @private {!lf.Binder|!Array<!lf.Binder>} */
+  this.binder_;
 
   this.query = new lf.query.InsertContext();
   this.query.allowReplace = opt_allowReplace || false;
@@ -30642,7 +30646,12 @@ lf.query.InsertBuilder.prototype.into = function(table) {
 /** @override */
 lf.query.InsertBuilder.prototype.values = function(rows) {
   this.assertValuesPreconditions_();
-  this.query.values = rows;
+
+  if (rows instanceof lf.Binder || rows[0] instanceof lf.Binder) {
+    this.binder_ = rows;
+  } else {
+    this.query.values = rows;
+  }
 
   return this;
 };
@@ -30671,6 +30680,22 @@ lf.query.InsertBuilder.prototype.assertValuesPreconditions_ = function() {
         lf.Exception.Type.SYNTAX,
         'values() has already been called.');
   }
+};
+
+
+/** @override */
+lf.query.InsertBuilder.prototype.bind = function(values) {
+  if (this.binder_) {
+    if (this.binder_ instanceof lf.Binder) {
+      this.query.values = /** @type {!Array<!lf.Row>} */ (
+          values[this.binder_.getIndex()]);
+    } else {
+      this.query.values = this.binder_.map(function(binder) {
+        return values[binder.getIndex()];
+      });
+    }
+  }
+  return this;
 };
 
 /**
