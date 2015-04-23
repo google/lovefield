@@ -17193,6 +17193,32 @@ lf.Order = {
 
 /**
  * @license
+ * Copyright 2015 Google Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+goog.provide('lf.query.Context');
+
+
+
+/**
+ * Base context for all query types.
+ * @constructor
+ */
+lf.query.Context = function() {};
+
+/**
+ * @license
  * Copyright 2014 Google Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -17211,14 +17237,18 @@ goog.provide('lf.query.SelectContext');
 goog.provide('lf.query.SelectContext.OrderBy');
 
 goog.require('lf.Order');
+goog.require('lf.query.Context');
 
 
 
 /**
  * Internal representation of an SELECT query.
  * @constructor
+ * @extends {lf.query.Context}
  */
 lf.query.SelectContext = function() {
+  lf.query.SelectContext.base(this, 'constructor');
+
   /** @type {!Array<!lf.schema.Column>} */
   this.columns;
 
@@ -17237,9 +17267,10 @@ lf.query.SelectContext = function() {
   /** @type {!Array<!lf.query.SelectContext.OrderBy>} */
   this.orderBy;
 
-  /** @type {!Array<lf.schema.Column>} */
+  /** @type {!Array<!lf.schema.Column>} */
   this.groupBy;
 };
+goog.inherits(lf.query.SelectContext, lf.query.Context);
 
 
 /**
@@ -17465,7 +17496,7 @@ goog.require('lf.service');
  * @struct
  *
  * @param {!lf.Global} global
- * @param {!Array<lf.proc.QueryTask.QueryContext>} queries
+ * @param {!Array<!lf.query.Context>} queries
  */
 lf.proc.QueryTask = function(global, queries) {
   /** @protected {!lf.Global} */
@@ -17474,7 +17505,7 @@ lf.proc.QueryTask = function(global, queries) {
   /** @private {!lf.BackStore} */
   this.backStore_ = global.getService(lf.service.BACK_STORE);
 
-  /** @protected {!Array<lf.proc.QueryTask.QueryContext>} */
+  /** @protected {!Array<!lf.query.Context>} */
   this.queries = queries;
 
   var queryEngine = /** @type {!lf.proc.QueryEngine} */ (
@@ -17496,16 +17527,6 @@ lf.proc.QueryTask = function(global, queries) {
   /** @private {!goog.promise.Resolver.<!Array<!lf.proc.Relation>>} */
   this.resolver_ = goog.Promise.withResolver();
 };
-
-
-/**
- * @typedef {
- *     !lf.query.SelectContext|
- *     !lf.query.UpdateContext|
- *     !lf.query.InsertContext|
- *     !lf.query.DeleteContext}
- */
-lf.proc.QueryTask.QueryContext;
 
 
 /**
@@ -29791,7 +29812,7 @@ goog.require('lf.service');
  * @struct
  *
  * @param {!lf.Global} global
- * @param {!Array<lf.proc.QueryTask.QueryContext>} queries
+ * @param {!Array<!lf.query.Context>} queries
  */
 lf.proc.UserQueryTask = function(global, queries) {
   lf.proc.UserQueryTask.base(this, 'constructor', global, queries);
@@ -29868,19 +29889,25 @@ lf.proc.UserQueryTask.prototype.scheduleObserverTask_ = function() {
  */
 goog.provide('lf.query.DeleteContext');
 
+goog.require('lf.query.Context');
+
 
 
 /**
  * Internal representation of a DELETE query.
  * @constructor
+ * @extends {lf.query.Context}
  */
 lf.query.DeleteContext = function() {
+  lf.query.DeleteContext.base(this, 'constructor');
+
   /** @type {!lf.schema.Table} */
   this.from;
 
   /** @type {!lf.Predicate} */
   this.where;
 };
+goog.inherits(lf.query.DeleteContext, lf.query.Context);
 
 /**
  * @license
@@ -29900,13 +29927,18 @@ lf.query.DeleteContext = function() {
  */
 goog.provide('lf.query.InsertContext');
 
+goog.require('lf.query.Context');
+
 
 
 /**
  * Internal representation of INSERT and INSERT_OR_REPLACE queries.
  * @constructor
+ * @extends {lf.query.Context}
  */
 lf.query.InsertContext = function() {
+  lf.query.InsertContext.base(this, 'constructor');
+
   /** @type {!lf.schema.Table} */
   this.into;
 
@@ -29916,6 +29948,7 @@ lf.query.InsertContext = function() {
   /** @type {boolean} */
   this.allowReplace = false;
 };
+goog.inherits(lf.query.InsertContext, lf.query.Context);
 
 /**
  * @license
@@ -29936,13 +29969,18 @@ lf.query.InsertContext = function() {
 goog.provide('lf.query.UpdateContext');
 goog.provide('lf.query.UpdateContext.Set');
 
+goog.require('lf.query.Context');
+
 
 
 /**
  * Internal representation of an UPDATE query.
  * @constructor
+ * @extends {lf.query.Context}
  */
 lf.query.UpdateContext = function() {
+  lf.query.UpdateContext.base(this, 'constructor');
+
   /** @type {!lf.schema.Table} */
   this.table;
 
@@ -29952,6 +29990,7 @@ lf.query.UpdateContext = function() {
   /** @type {!lf.Predicate} */
   this.where;
 };
+goog.inherits(lf.query.UpdateContext, lf.query.Context);
 
 
 /**
@@ -32184,10 +32223,7 @@ lf.proc.LogicalPlanFactory = function() {};
 
 
 /**
- * @param {!lf.query.DeleteContext|
- *         !lf.query.InsertContext|
- *         !lf.query.SelectContext|
- *         !lf.query.UpdateContext} query
+ * @param {!lf.query.Context} query
  * @return {!lf.proc.LogicalQueryPlanNode}
  */
 lf.proc.LogicalPlanFactory.prototype.create = function(query) {
@@ -34684,10 +34720,7 @@ lf.proc.QueryEngine = function() {};
 
 
 /**
- * @param {!lf.query.DeleteContext|
- *         !lf.query.InsertContext|
- *         !lf.query.SelectContext|
- *         !lf.query.UpdateContext} query
+ * @param {!lf.query.Context} query
  * @return {!lf.proc.PhysicalQueryPlan} The generated plan that can be
  *     understood by Runner.
  */
@@ -34741,10 +34774,7 @@ lf.proc.DefaultQueryEngine.prototype.getPlan = function(query) {
 
 
 /**
- * @param {!lf.query.DeleteContext|
- *         !lf.query.InsertContext|
- *         !lf.query.SelectContext|
- *         !lf.query.UpdateContext} query
+ * @param {!lf.query.Context} query
  * @return {!lf.proc.LogicalQueryPlanNode} The root of the logical plan tree.
  * @private
  */
@@ -35923,16 +35953,6 @@ lf.proc.TransactionTask = function(global, scope) {
   /** @private {!goog.promise.Resolver} */
   this.acquireScopeResolver_ = goog.Promise.withResolver();
 };
-
-
-/**
- * @typedef {
- *     !lf.query.SelectContext|
- *     !lf.query.UpdateContext|
- *     !lf.query.InsertContext|
- *     !lf.query.DeleteContext}
- */
-lf.proc.TransactionTask.QueryContext;
 
 
 /** @override */
