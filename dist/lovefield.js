@@ -17554,10 +17554,12 @@ lf.proc.QueryTask.prototype.exec = function() {
   var sequentiallyExec = goog.bind(function() {
     var plan = remainingPlans.shift();
     if (plan) {
-      return plan.getRoot().exec(journal).then(function(relations) {
-        results.push(relations[0]);
-        return sequentiallyExec();
-      });
+      var queryContext = this.queries[results.length];
+      return plan.getRoot().exec(journal, queryContext).then(
+          function(relations) {
+            results.push(relations[0]);
+            return sequentiallyExec();
+          });
     }
     return goog.Promise.resolve();
   }, this);
@@ -28454,6 +28456,7 @@ goog.require('goog.asserts');
 goog.require('goog.structs.TreeNode');
 
 goog.forwardDeclare('lf.cache.Journal');
+goog.forwardDeclare('lf.query.Context');
 goog.forwardDeclare('lf.schema.Table');
 
 
@@ -28509,6 +28512,7 @@ lf.proc.PhysicalQueryPlanNode.prototype.getScope = function() {
  * @param {!Array<!lf.proc.Relation>} relations Array of input relations. The
  *     length of relations is guaranteed to be consistent with what is specified
  *     in the constructor.
+ * @param {!lf.query.Context=} opt_context
  * @return {!Array<!lf.proc.Relation>}
  * @protected
  */
@@ -28517,19 +28521,20 @@ lf.proc.PhysicalQueryPlanNode.prototype.execInternal = goog.abstractMethod;
 
 /**
  * @param {!lf.cache.Journal} journal
+ * @param {!lf.query.Context=} opt_context
  * @return {!IThenable<!Array<!lf.proc.Relation>>}
  * @final
  */
-lf.proc.PhysicalQueryPlanNode.prototype.exec = function(journal) {
+lf.proc.PhysicalQueryPlanNode.prototype.exec = function(journal, opt_context) {
   switch (this.execType_) {
     case lf.proc.PhysicalQueryPlanNode.ExecType.FIRST_CHILD:
-      return this.execFirstChild_(journal);
+      return this.execFirstChild_(journal, opt_context);
 
     case lf.proc.PhysicalQueryPlanNode.ExecType.ALL:
-      return this.execAllChildren_(journal);
+      return this.execAllChildren_(journal, opt_context);
 
     default:  // NO_CHILD
-      return this.execNoChild_(journal);
+      return this.execNoChild_(journal, opt_context);
   }
 };
 
@@ -28553,38 +28558,45 @@ lf.proc.PhysicalQueryPlanNode.prototype.assertInput_ = function(relations) {
 
 /**
  * @param {!lf.cache.Journal} journal
+ * @param {!lf.query.Context=} opt_context
  * @return {!IThenable<!Array<!lf.proc.Relation>>}
  * @private
  */
-lf.proc.PhysicalQueryPlanNode.prototype.execNoChild_ = function(journal) {
+lf.proc.PhysicalQueryPlanNode.prototype.execNoChild_ = function(
+    journal, opt_context) {
   return new goog.Promise(goog.bind(
       function(resolve, reject) {
-        resolve(this.execInternal(journal, []));
+        resolve(this.execInternal(journal, [], opt_context));
       }, this));
 };
 
 
 /**
  * @param {!lf.cache.Journal} journal
+ * @param {!lf.query.Context=} opt_context
  * @return {!IThenable<!Array<!lf.proc.Relation>>}
  * @private
  */
-lf.proc.PhysicalQueryPlanNode.prototype.execFirstChild_ = function(journal) {
-  return this.getChildAt(0).exec(journal).then(goog.bind(function(results) {
-    this.assertInput_(results);
-    return this.execInternal(journal, results);
-  }, this));
+lf.proc.PhysicalQueryPlanNode.prototype.execFirstChild_ = function(
+    journal, opt_context) {
+  return this.getChildAt(0).exec(journal, opt_context).then(goog.bind(
+      function(results) {
+        this.assertInput_(results);
+        return this.execInternal(journal, results, opt_context);
+      }, this));
 };
 
 
 /**
  * @param {!lf.cache.Journal} journal
+ * @param {!lf.query.Context=} opt_context
  * @return {!IThenable<!Array<!lf.proc.Relation>>}
  * @private
  */
-lf.proc.PhysicalQueryPlanNode.prototype.execAllChildren_ = function(journal) {
+lf.proc.PhysicalQueryPlanNode.prototype.execAllChildren_ = function(
+    journal, opt_context) {
   var promises = this.getChildren().map(function(child) {
-    return child.exec(journal);
+    return child.exec(journal, opt_context);
   });
 
   return goog.Promise.all(promises).then(goog.bind(function(results) {
@@ -28596,7 +28608,7 @@ lf.proc.PhysicalQueryPlanNode.prototype.execAllChildren_ = function(journal) {
       }
     });
     this.assertInput_(relations);
-    return this.execInternal(journal, relations);
+    return this.execInternal(journal, relations, opt_context);
   }, this));
 };
 
@@ -36008,9 +36020,10 @@ lf.proc.TransactionTask.prototype.acquireScope = function() {
  * @return {!IThenable}
  */
 lf.proc.TransactionTask.prototype.attachQuery = function(queryBuilder) {
-  var plan = this.queryEngine_.getPlan(queryBuilder.getQuery());
+  var queryContext = queryBuilder.getQuery();
+  var plan = this.queryEngine_.getPlan(queryContext);
 
-  return plan.getRoot().exec(this.journal_).then(
+  return plan.getRoot().exec(this.journal_, queryContext).then(
       function(relations) {
         return relations[0].getPayloads();
       }, goog.bind(
