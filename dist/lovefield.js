@@ -3825,7 +3825,7 @@ goog.addDependency('ui/advancedtooltip_test.js', ['goog.ui.AdvancedTooltipTest']
 goog.addDependency('ui/animatedzippy.js', ['goog.ui.AnimatedZippy'], ['goog.dom', 'goog.dom.TagName', 'goog.events', 'goog.fx.Animation', 'goog.fx.Transition', 'goog.fx.easing', 'goog.ui.Zippy', 'goog.ui.ZippyEvent'], false);
 goog.addDependency('ui/animatedzippy_test.js', ['goog.ui.AnimatedZippyTest'], ['goog.a11y.aria', 'goog.a11y.aria.State', 'goog.asserts', 'goog.dom', 'goog.events', 'goog.functions', 'goog.fx.Animation', 'goog.fx.Transition', 'goog.testing.PropertyReplacer', 'goog.testing.asserts', 'goog.testing.jsunit', 'goog.ui.AnimatedZippy', 'goog.ui.Zippy'], false);
 goog.addDependency('ui/attachablemenu.js', ['goog.ui.AttachableMenu'], ['goog.a11y.aria', 'goog.a11y.aria.State', 'goog.array', 'goog.asserts', 'goog.dom', 'goog.dom.classlist', 'goog.events.Event', 'goog.events.KeyCodes', 'goog.string', 'goog.style', 'goog.ui.ItemEvent', 'goog.ui.MenuBase', 'goog.ui.PopupBase', 'goog.userAgent'], false);
-goog.addDependency('ui/bidiinput.js', ['goog.ui.BidiInput'], ['goog.dom', 'goog.dom.InputType', 'goog.dom.TagName', 'goog.events', 'goog.events.InputHandler', 'goog.i18n.bidi', 'goog.i18n.bidi.Dir', 'goog.ui.Component'], false);
+goog.addDependency('ui/bidiinput.js', ['goog.ui.BidiInput'], ['goog.dom', 'goog.dom.InputType', 'goog.dom.TagName', 'goog.events', 'goog.events.InputHandler', 'goog.i18n.bidi', 'goog.ui.Component'], false);
 goog.addDependency('ui/bidiinput_test.js', ['goog.ui.BidiInputTest'], ['goog.dom', 'goog.testing.jsunit', 'goog.ui.BidiInput'], false);
 goog.addDependency('ui/bubble.js', ['goog.ui.Bubble'], ['goog.Timer', 'goog.dom.safe', 'goog.events', 'goog.events.EventType', 'goog.html.SafeHtml', 'goog.html.legacyconversions', 'goog.math.Box', 'goog.positioning', 'goog.positioning.AbsolutePosition', 'goog.positioning.AnchoredPosition', 'goog.positioning.Corner', 'goog.positioning.CornerBit', 'goog.string.Const', 'goog.style', 'goog.ui.Component', 'goog.ui.Popup'], false);
 goog.addDependency('ui/button.js', ['goog.ui.Button', 'goog.ui.Button.Side'], ['goog.events.EventType', 'goog.events.KeyCodes', 'goog.events.KeyHandler', 'goog.ui.ButtonRenderer', 'goog.ui.ButtonSide', 'goog.ui.Component', 'goog.ui.Control', 'goog.ui.NativeButtonRenderer', 'goog.ui.registry'], false);
@@ -13017,7 +13017,7 @@ goog.iter.Iterable;
 goog.iter.StopIteration = ('StopIteration' in goog.global) ?
     // For script engines that support legacy iterators.
     goog.global['StopIteration'] :
-    Error('StopIteration');
+    { message: 'StopIteration', stack: ''};
 
 
 
@@ -35673,6 +35673,8 @@ lf.ObserverRegistry.Entry_.prototype.updateResults = function(newResults) {
 goog.provide('lf.base');
 
 goog.require('lf.ObserverRegistry');
+goog.require('lf.backstore.ExternalChangeObserver');
+goog.require('lf.backstore.Firebase');
 goog.require('lf.backstore.IndexedDB');
 goog.require('lf.backstore.Memory');
 goog.require('lf.backstore.ObservableStore');
@@ -35701,6 +35703,7 @@ lf.base.init = function(global, opt_options) {
   global.registerService(lf.service.CACHE, cache);
 
   var backStore = null;
+  var observeExternalChanges = false;
   switch (dataStoreType) {
     case lf.schema.DataStoreType.MEMORY:
       backStore = new lf.backstore.Memory(schema);
@@ -35710,6 +35713,11 @@ lf.base.init = function(global, opt_options) {
       break;
     case lf.schema.DataStoreType.WEB_SQL:
       backStore = new lf.backstore.WebSql(global, schema, options.webSqlDbSize);
+      break;
+    case lf.schema.DataStoreType.FIREBASE:
+      backStore = new lf.backstore.Firebase(schema,
+          /** @type {!Firebase} */ (options.firebase));
+      observeExternalChanges = true;
       break;
     default:
       backStore = new lf.backstore.IndexedDB(global, schema);
@@ -35726,8 +35734,12 @@ lf.base.init = function(global, opt_options) {
     var observerRegistry = new lf.ObserverRegistry();
     global.registerService(lf.service.OBSERVER_REGISTRY, observerRegistry);
     return indexStore.init(schema);
-
   }).then(function() {
+    if (observeExternalChanges) {
+      var externalChangeObserver =
+          new lf.backstore.ExternalChangeObserver(global);
+      externalChangeObserver.startObserving();
+    }
     var prefetcher = new lf.cache.Prefetcher(global);
     return prefetcher.init(schema);
   });
