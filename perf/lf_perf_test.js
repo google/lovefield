@@ -25,6 +25,7 @@ goog.require('lf.testing.Benchmark');
 goog.require('lf.testing.Capability');
 goog.require('lf.testing.hrSchema.MockDataGenerator');
 goog.require('lf.testing.perf.DefaultBenchmark');
+goog.require('lf.testing.perf.ScenarioBenchmark');
 goog.require('lf.testing.perf.SelectBenchmark');
 
 
@@ -386,6 +387,23 @@ function test5LoadingPopulatedDB() {
   benchmark.run(REPETITIONS).then(function() {
     asyncTestCase.continueTesting();
   }, fail);
+}
+
+function test6ScenarioSimulations() {
+  asyncTestCase.waitForAsync('test6ScenarioSimulations');
+  var test = new lf.testing.perf.ScenarioBenchmark();
+  var benchmark = new lf.testing.Benchmark('Scenario Simulations');
+
+  test.init().then(function() {
+    benchmark.schedule('Insert via Tx Attach', test.insertTxAttach.bind(test));
+    benchmark.schedule('Select', test.select.bind(test));
+    benchmark.schedule('Select Binding', test.selectBinding.bind(test));
+    benchmark.schedule('Teardown', test.tearDown.bind(test), undefined, true);
+
+    benchmark.run(REPETITIONS).then(function() {
+      asyncTestCase.continueTesting();
+    }, fail);
+  });
 }
 
 

@@ -3039,7 +3039,7 @@ goog.addDependency('events/filedrophandler_test.js', ['goog.events.FileDropHandl
 goog.addDependency('events/focushandler.js', ['goog.events.FocusHandler', 'goog.events.FocusHandler.EventType'], ['goog.events', 'goog.events.BrowserEvent', 'goog.events.EventTarget', 'goog.userAgent'], false);
 goog.addDependency('events/imehandler.js', ['goog.events.ImeHandler', 'goog.events.ImeHandler.Event', 'goog.events.ImeHandler.EventType'], ['goog.events.Event', 'goog.events.EventHandler', 'goog.events.EventTarget', 'goog.events.EventType', 'goog.events.KeyCodes', 'goog.userAgent'], false);
 goog.addDependency('events/imehandler_test.js', ['goog.events.ImeHandlerTest'], ['goog.array', 'goog.dom', 'goog.events', 'goog.events.ImeHandler', 'goog.events.KeyCodes', 'goog.object', 'goog.string', 'goog.testing.PropertyReplacer', 'goog.testing.events', 'goog.testing.events.Event', 'goog.testing.jsunit', 'goog.userAgent'], false);
-goog.addDependency('events/inputhandler.js', ['goog.events.InputHandler', 'goog.events.InputHandler.EventType'], ['goog.Timer', 'goog.dom', 'goog.dom.TagName', 'goog.events.BrowserEvent', 'goog.events.EventHandler', 'goog.events.EventTarget', 'goog.events.KeyCodes', 'goog.userAgent'], false);
+goog.addDependency('events/inputhandler.js', ['goog.events.InputHandler', 'goog.events.InputHandler.EventType'], ['goog.Timer', 'goog.dom.TagName', 'goog.events.BrowserEvent', 'goog.events.EventHandler', 'goog.events.EventTarget', 'goog.events.KeyCodes', 'goog.userAgent'], false);
 goog.addDependency('events/inputhandler_test.js', ['goog.events.InputHandlerTest'], ['goog.dom', 'goog.events.EventHandler', 'goog.events.EventType', 'goog.events.InputHandler', 'goog.events.KeyCodes', 'goog.testing.events', 'goog.testing.events.Event', 'goog.testing.jsunit', 'goog.testing.recordFunction', 'goog.userAgent'], false);
 goog.addDependency('events/keycodes.js', ['goog.events.KeyCodes'], ['goog.userAgent'], false);
 goog.addDependency('events/keycodes_test.js', ['goog.events.KeyCodesTest'], ['goog.events.BrowserEvent', 'goog.events.KeyCodes', 'goog.object', 'goog.testing.PropertyReplacer', 'goog.testing.jsunit', 'goog.userAgent'], false);
@@ -25736,10 +25736,11 @@ goog.structs.TreeNode.prototype.forEachChild = function(f, opt_this) {
  * @template THIS
  */
 goog.structs.TreeNode.prototype.forEachDescendant = function(f, opt_this) {
-  goog.array.forEach(this.getChildren(), function(child) {
-    f.call(opt_this, child);
-    child.forEachDescendant(f, opt_this);
-  });
+  var children = this.getChildren();
+  for (var i = 0; i < children.length; i++) {
+    f.call(opt_this, children[i]);
+    children[i].forEachDescendant(f, opt_this);
+  }
 };
 
 
@@ -25756,9 +25757,10 @@ goog.structs.TreeNode.prototype.forEachDescendant = function(f, opt_this) {
  */
 goog.structs.TreeNode.prototype.traverse = function(f, opt_this) {
   if (f.call(opt_this, this) !== false) {
-    goog.array.forEach(this.getChildren(), function(child) {
-      child.traverse(f, opt_this);
-    });
+    var children = this.getChildren();
+    for (var i = 0; i < children.length; i++) {
+      children[i].traverse(f, opt_this);
+    }
   }
 };
 
@@ -25845,7 +25847,7 @@ goog.structs.TreeNode.prototype.removeChildAt = function(index) {
     child.setParent(null);
     goog.array.removeAt(this.children_, index);
     if (this.children_.length == 0) {
-      delete this.children_;
+      this.children_ = null;
     }
     return child;
   }
@@ -25868,11 +25870,11 @@ goog.structs.TreeNode.prototype.removeChild = function(child) {
  */
 goog.structs.TreeNode.prototype.removeChildren = function() {
   if (this.children_) {
-    goog.array.forEach(this.children_, function(child) {
-      child.setParent(null);
-    });
+    for (var i = 0; i < this.children_.length; i++) {
+      this.children_[i].setParent(null);
+    }
+    this.children_ = null;
   }
-  delete this.children_;
 };
 
 /**
