@@ -19,6 +19,7 @@ goog.require('goog.testing.AsyncTestCase');
 goog.require('goog.testing.PropertyReplacer');
 goog.require('goog.testing.jsunit');
 goog.require('lf.Global');
+goog.require('lf.op');
 goog.require('lf.proc.DeleteNode');
 goog.require('lf.proc.PhysicalPlanFactory');
 goog.require('lf.proc.SelectNode');
@@ -83,22 +84,35 @@ function testCreate_DeletePlan() {
       '---index_range_scan(tableA.idxName, [name, name], natural)\n';
 
   var table = env.schema.tables()[0];
+  var queryContext = new lf.query.DeleteContext();
+  queryContext.from = table;
+  queryContext.where = lf.op.and(
+      table['id'].eq('id'), table['name'].eq('name'));
+
   lf.testing.util.simulateIndexCost(
       propertyReplacer, env.indexStore, table['id'].getIndices()[0], 100);
   lf.testing.util.simulateIndexCost(
       propertyReplacer, env.indexStore, table['name'].getIndices()[0], 1);
 
   var deleteNode = new lf.proc.DeleteNode(table);
-  var selectNode1 = new lf.proc.SelectNode(table['id'].eq('id'));
+  var selectNode1 = new lf.proc.SelectNode(/** @type {!lf.Predicate} */ (
+      /** @type {!lf.pred.PredicateNode} */ (
+          queryContext.where).getChildAt(0)));
   deleteNode.addChild(selectNode1);
-  var selectNode2 = new lf.proc.SelectNode(table['name'].eq('name'));
+  var selectNode2 = new lf.proc.SelectNode(/** @type {!lf.Predicate} */ (
+      /** @type {!lf.pred.PredicateNode} */ (
+          queryContext.where).getChildAt(1)));
   selectNode1.addChild(selectNode2);
-  var tableAccessNode = new lf.proc.TableAccessNode(table);
+  var tableAccessNode = new lf.proc.TableAccessNode(queryContext.from);
   selectNode2.addChild(tableAccessNode);
 
   assertEquals(logicalTree, lf.tree.toString(deleteNode));
 
   var physicalPlan = physicalPlanFactory.create(
-      deleteNode, new lf.query.DeleteContext());
-  assertEquals(physicalTree, lf.tree.toString(physicalPlan.getRoot()));
+      deleteNode, queryContext);
+  var toStringFn = function(node) {
+    return node.toContextString(queryContext) + '\n';
+  };
+  assertEquals(
+      physicalTree, lf.tree.toString(physicalPlan.getRoot(), toStringFn));
 }

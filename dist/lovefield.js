@@ -17209,13 +17209,56 @@ lf.Order = {
  */
 goog.provide('lf.query.Context');
 
+goog.require('goog.asserts');
+goog.require('goog.structs.Map');
+
 
 
 /**
  * Base context for all query types.
  * @constructor
  */
-lf.query.Context = function() {};
+lf.query.Context = function() {
+  /**
+   * A map used for locating predicates by ID. Instantiated lazily.
+   * @private {?goog.structs.Map<number, !lf.Predicate>}
+   */
+  this.predicateMap_ = null;
+
+  /** @type {!lf.Predicate} */
+  this.where;
+};
+
+
+/**
+ * @param {number} id
+ * @return {!lf.Predicate}
+ */
+lf.query.Context.prototype.getPredicate = function(id) {
+  if (goog.isNull(this.predicateMap_) && goog.isDefAndNotNull(this.where)) {
+    this.predicateMap_ = lf.query.Context.buildPredicateMap_(
+        /** @type {!lf.pred.PredicateNode} */ (this.where));
+  }
+
+  var predicate = this.predicateMap_.get(id, null);
+  goog.asserts.assert(!goog.isNull(predicate));
+  return predicate;
+};
+
+
+/**
+ * Creates predicateMap such that predicates can be located by ID.
+ * @param {!lf.pred.PredicateNode} rootPredicate The root of the predicate tree.
+ * @return {!goog.structs.Map<number, !lf.Predicate>}
+ * @private
+ */
+lf.query.Context.buildPredicateMap_ = function(rootPredicate) {
+  var predicateMap = new goog.structs.Map();
+  rootPredicate.traverse(function(node) {
+    predicateMap.set(node.getId(), /** @type {!lf.Predicate} */ (node));
+  });
+  return predicateMap;
+};
 
 /**
  * @license
@@ -17254,9 +17297,6 @@ lf.query.SelectContext = function() {
 
   /** @type {!Array<!lf.schema.Table>} */
   this.from;
-
-  /** @type {!lf.Predicate} */
-  this.where;
 
   /** @type {number} */
   this.limit;
@@ -29963,9 +30003,6 @@ lf.query.DeleteContext = function() {
 
   /** @type {!lf.schema.Table} */
   this.from;
-
-  /** @type {!lf.Predicate} */
-  this.where;
 };
 goog.inherits(lf.query.DeleteContext, lf.query.Context);
 
@@ -30046,9 +30083,6 @@ lf.query.UpdateContext = function() {
 
   /** @type {!Array<!lf.query.UpdateContext.Set>} */
   this.set;
-
-  /** @type {!lf.Predicate} */
-  this.where;
 };
 goog.inherits(lf.query.UpdateContext, lf.query.Context);
 
@@ -32974,28 +33008,37 @@ goog.require('lf.proc.PhysicalQueryPlanNode');
  * @constructor @struct
  * @extends {lf.proc.PhysicalQueryPlanNode}
  *
- * @param {!lf.Predicate} predicate
+ * @param {number} predicateId
  */
-lf.proc.SelectStep = function(predicate) {
+lf.proc.SelectStep = function(predicateId) {
   lf.proc.SelectStep.base(this, 'constructor',
       1,
       lf.proc.PhysicalQueryPlanNode.ExecType.FIRST_CHILD);
 
-  /** @type {lf.Predicate} */
-  this.predicate = predicate;
+  /** @type {number} */
+  this.predicateId = predicateId;
 };
 goog.inherits(lf.proc.SelectStep, lf.proc.PhysicalQueryPlanNode);
 
 
 /** @override */
 lf.proc.SelectStep.prototype.toString = function() {
-  return 'select(' + this.predicate.toString() + ')';
+  return 'select(?)';
 };
 
 
 /** @override */
-lf.proc.SelectStep.prototype.execInternal = function(journal, relations) {
-  return [this.predicate.eval(relations[0])];
+lf.proc.SelectStep.prototype.toContextString = function(context) {
+  var predicate = context.getPredicate(this.predicateId);
+  return this.toString().replace('?', predicate.toString());
+};
+
+
+/** @override */
+lf.proc.SelectStep.prototype.execInternal = function(
+    journal, relations, context) {
+  var predicate = context.getPredicate(this.predicateId);
+  return [predicate.eval(relations[0])];
 };
 
 /**
@@ -33188,7 +33231,8 @@ goog.inherits(lf.proc.IndexRangeScanPass, lf.proc.RewritePass);
 
 
 /** @override */
-lf.proc.IndexRangeScanPass.prototype.rewrite = function(rootNode) {
+lf.proc.IndexRangeScanPass.prototype.rewrite = function(
+    rootNode, queryContext) {
   this.rootNode = rootNode;
 
   var tableAccessFullSteps =
@@ -33208,7 +33252,7 @@ lf.proc.IndexRangeScanPass.prototype.rewrite = function(rootNode) {
             this.global_, tableAccessFullStep.table);
         var indexRangeCandidate = costEstimator.chooseIndexFor(
             selectStepsCandidates.map(function(c) {
-              return c.predicate;
+              return queryContext.getPredicate(c.predicateId);
             }));
         if (goog.isNull(indexRangeCandidate)) {
           // No SelectStep could be optimized for this table.
@@ -33221,7 +33265,7 @@ lf.proc.IndexRangeScanPass.prototype.rewrite = function(rootNode) {
         var predicateToSelectStepMap = new goog.structs.Map();
         selectStepsCandidates.forEach(function(selectStep) {
           predicateToSelectStepMap.set(
-              goog.getUid(selectStep.predicate),
+              selectStep.predicateId,
               selectStep);
         }, this);
 
@@ -33269,7 +33313,7 @@ lf.proc.IndexRangeScanPass.prototype.replaceWithIndexRangeScanStep_ = function(
     indexRangeCandidate, predicateToSelectStepMap, tableAccessFullStep) {
   var predicates = indexRangeCandidate.getPredicates();
   var selectSteps = predicates.map(function(predicate) {
-    return predicateToSelectStepMap.get(goog.getUid(predicate));
+    return predicateToSelectStepMap.get(predicate.getId());
   });
   selectSteps.forEach(lf.tree.removeNode);
 
@@ -34763,7 +34807,7 @@ lf.proc.PhysicalPlanFactory.prototype.mapFn_ = function(node) {
   } else if (node instanceof lf.proc.LimitNode) {
     return new lf.proc.LimitStep();
   } else if (node instanceof lf.proc.SelectNode) {
-    return new lf.proc.SelectStep(node.predicate);
+    return new lf.proc.SelectStep(node.predicate.getId());
   } else if (node instanceof lf.proc.CrossProductNode) {
     return new lf.proc.CrossProductStep();
   } else if (node instanceof lf.proc.JoinNode) {

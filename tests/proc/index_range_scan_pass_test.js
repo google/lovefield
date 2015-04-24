@@ -20,8 +20,7 @@ goog.require('goog.testing.PropertyReplacer');
 goog.require('goog.testing.jsunit');
 goog.require('hr.db');
 goog.require('lf.Order');
-goog.require('lf.eval.Type');
-goog.require('lf.pred.ValuePredicate');
+goog.require('lf.op');
 goog.require('lf.proc.CrossProductStep');
 goog.require('lf.proc.IndexRangeScanPass');
 goog.require('lf.proc.JoinStep');
@@ -33,8 +32,8 @@ goog.require('lf.proc.TableAccessFullStep');
 goog.require('lf.query.SelectContext');
 goog.require('lf.schema.DataStoreType');
 goog.require('lf.service');
+goog.require('lf.testing.treeutil');
 goog.require('lf.testing.util');
-goog.require('lf.tree');
 
 
 /** @type {!goog.testing.AsyncTestCase} */
@@ -62,6 +61,10 @@ var dt;
 var indexStore;
 
 
+/** @type {!lf.proc.IndexRangeScanPass} */
+var pass;
+
+
 /** @type {!goog.testing.PropertyReplacer} */
 var propertyReplacer;
 
@@ -77,6 +80,7 @@ function setUp() {
     dt = db.getSchema().getDummyTable();
     indexStore =  /** @type {!lf.index.IndexStore} */ (
         hr.db.getGlobal().getService(lf.service.INDEX_STORE));
+    pass = new lf.proc.IndexRangeScanPass(hr.db.getGlobal());
   }).then(function() {
     asyncTestCase.continueTesting();
   }, fail);
@@ -89,7 +93,7 @@ function tearDown() {
 
 
 /**
- * Tests a simple tree, where only one AND predicate exists.
+ * Tests a simple tree, where only one value predicate exists.
  */
 function testSimpleTree() {
   var treeBefore =
@@ -104,30 +108,34 @@ function testSimpleTree() {
       '--table_access_by_row_id(Employee)\n' +
       '---index_range_scan(Employee.pkEmployee, (100, unbound], natural)\n';
 
-  // Generating a simple tree that has just one SelectNode corresponding to an
-  // AND predicate.
-  var queryContext = new lf.query.SelectContext();
-  queryContext.limit = 20;
+  var constructTree = function() {
+    var queryContext = new lf.query.SelectContext();
+    queryContext.from = [e];
+    queryContext.where = e.id.gt('100');
+    queryContext.limit = 20;
 
-  var toStringFn = function(node) {
-    return node.toContextString(queryContext) + '\n';
+    var limitNode = new lf.proc.LimitStep();
+    var projectNode = new lf.proc.ProjectStep([], null);
+    limitNode.addChild(projectNode);
+    var selectNode = new lf.proc.SelectStep(queryContext.where.getId());
+    projectNode.addChild(selectNode);
+    var tableAccessNode = new lf.proc.TableAccessFullStep(
+        hr.db.getGlobal(), queryContext.from[0]);
+    selectNode.addChild(tableAccessNode);
+
+    return {
+      queryContext: queryContext,
+      root: limitNode
+    };
   };
 
-  var limitNode = new lf.proc.LimitStep();
-  var projectNode = new lf.proc.ProjectStep([], null);
-  limitNode.addChild(projectNode);
-  var predicate = e.id.gt('100');
-  var selectNode = new lf.proc.SelectStep(predicate);
-  projectNode.addChild(selectNode);
-  var tableAccessNode = new lf.proc.TableAccessFullStep(hr.db.getGlobal(), e);
-  selectNode.addChild(tableAccessNode);
+  lf.testing.treeutil.assertTreeTransformation(
+      constructTree(), treeBefore, treeAfter, pass);
+}
 
-  var rootNodeBefore = limitNode;
-  assertEquals(treeBefore, lf.tree.toString(rootNodeBefore, toStringFn));
 
-  var pass = new lf.proc.IndexRangeScanPass(hr.db.getGlobal());
-  var rootNodeAfter = pass.rewrite(rootNodeBefore);
-  assertEquals(treeAfter, lf.tree.toString(rootNodeAfter, toStringFn));
+function toString(queryContext, node) {
+  return node.toContextString(queryContext) + '\n';
 }
 
 
@@ -147,12 +155,8 @@ function testTree1() {
   lf.testing.util.simulateIndexCost(
       propertyReplacer, indexStore, e.id.getIndices()[0], 5);
 
-  var rootNodeBefore = constructTree1();
-  assertEquals(treeBefore, lf.tree.toString(rootNodeBefore));
-
-  var pass = new lf.proc.IndexRangeScanPass(hr.db.getGlobal());
-  var rootNodeAfter = pass.rewrite(rootNodeBefore);
-  assertEquals(treeAfter, lf.tree.toString(rootNodeAfter));
+  lf.testing.treeutil.assertTreeTransformation(
+      constructTree1(), treeBefore, treeAfter, pass);
 }
 
 
@@ -192,12 +196,8 @@ function testTree2() {
   lf.testing.util.simulateIndexCost(
       propertyReplacer, indexStore, j.id.getIndices()[0], 5);
 
-  var rootNodeBefore = constructTree2();
-  assertEquals(treeBefore, lf.tree.toString(rootNodeBefore));
-
-  var pass = new lf.proc.IndexRangeScanPass(hr.db.getGlobal());
-  var rootNodeAfter = pass.rewrite(rootNodeBefore);
-  assertEquals(treeAfter, lf.tree.toString(rootNodeAfter));
+  lf.testing.treeutil.assertTreeTransformation(
+      constructTree2(), treeBefore, treeAfter, pass);
 }
 
 
@@ -221,25 +221,32 @@ function testTree3() {
       '---index_range_scan(Job.pkJob, [100, 100], natural)\n' +
       '--table_access(Department)\n';
 
-  var crossProductStep = new lf.proc.CrossProductStep();
-  var tableAccessJob = new lf.proc.TableAccessFullStep(hr.db.getGlobal(), j);
-  var tableAccessDepartment = new lf.proc.TableAccessFullStep(
-      hr.db.getGlobal(), d);
-  crossProductStep.addChild(tableAccessJob);
-  crossProductStep.addChild(tableAccessDepartment);
+  var constructTree = function() {
+    var queryContext = new lf.query.SelectContext();
+    queryContext.from = [j, d];
+    queryContext.where = j.id.eq('100');
 
-  var selectStep = new lf.proc.SelectStep(new lf.pred.ValuePredicate(
-      j.id, '100', lf.eval.Type.EQ));
-  selectStep.addChild(crossProductStep);
+    var crossProductStep = new lf.proc.CrossProductStep();
+    var tableAccessJob = new lf.proc.TableAccessFullStep(
+        hr.db.getGlobal(), queryContext.from[0]);
+    var tableAccessDepartment = new lf.proc.TableAccessFullStep(
+        hr.db.getGlobal(), queryContext.from[1]);
+    crossProductStep.addChild(tableAccessJob);
+    crossProductStep.addChild(tableAccessDepartment);
 
-  var rootNodeBefore = new lf.proc.ProjectStep([], null);
-  rootNodeBefore.addChild(selectStep);
-  assertEquals(treeBefore, lf.tree.toString(rootNodeBefore));
+    var selectStep = new lf.proc.SelectStep(queryContext.where.getId());
+    selectStep.addChild(crossProductStep);
+    var rootNode = new lf.proc.ProjectStep([], null);
+    rootNode.addChild(selectStep);
 
-  var pass = new lf.proc.IndexRangeScanPass(hr.db.getGlobal());
-  var rootNodeAfter = pass.rewrite(rootNodeBefore);
+    return {
+      queryContext: queryContext,
+      root: rootNode
+    };
+  };
 
-  assertEquals(treeAfter, lf.tree.toString(rootNodeAfter));
+  lf.testing.treeutil.assertTreeTransformation(
+      constructTree(), treeBefore, treeAfter, pass);
 }
 
 
@@ -269,12 +276,8 @@ function testTree_MultiplePredicates_SingleColumnIndices() {
   lf.testing.util.simulateIndexCost(
       propertyReplacer, indexStore, e.id.getIndices()[0], 500);
 
-  var rootNodeBefore = constructTree3();
-  assertEquals(treeBefore, lf.tree.toString(rootNodeBefore));
-
-  var pass = new lf.proc.IndexRangeScanPass(hr.db.getGlobal());
-  var rootNodeAfter = pass.rewrite(rootNodeBefore);
-  assertEquals(treeAfter, lf.tree.toString(rootNodeAfter));
+  lf.testing.treeutil.assertTreeTransformation(
+      constructTree3(), treeBefore, treeAfter, pass);
 }
 
 
@@ -308,22 +311,34 @@ function testTree_MultipleCrossColumnIndices() {
   lf.testing.util.simulateIndexCost(
       propertyReplacer, indexStore, indices[1], 10);
 
-  var selectNode1 = new lf.proc.SelectStep(dt.string.eq('StringValue'));
-  var selectNode2 = new lf.proc.SelectStep(dt.integer.gt(100));
-  var selectNode3 = new lf.proc.SelectStep(dt.number.gte(400));
-  var selectNode4 = new lf.proc.SelectStep(dt.string2.eq('StringValue2'));
-  var tableAccessNode = new lf.proc.TableAccessFullStep(hr.db.getGlobal(), dt);
-  selectNode1.addChild(selectNode2);
-  selectNode2.addChild(selectNode3);
-  selectNode3.addChild(selectNode4);
-  selectNode4.addChild(tableAccessNode);
+  var constructTree = function() {
+    var queryContext = new lf.query.SelectContext();
+    queryContext.from = [dt];
+    queryContext.where = lf.op.and(
+        dt.string.eq('StringValue'),
+        dt.integer.gt(100),
+        dt.number.gte(400),
+        dt.string2.eq('StringValue2'));
 
-  var rootNodeBefore = selectNode1;
-  assertEquals(treeBefore, lf.tree.toString(rootNodeBefore));
+    var selectNode1 = createSelectStep(queryContext, 0);
+    var selectNode2 = createSelectStep(queryContext, 1);
+    var selectNode3 = createSelectStep(queryContext, 2);
+    var selectNode4 = createSelectStep(queryContext, 3);
+    var tableAccessNode = new lf.proc.TableAccessFullStep(
+        hr.db.getGlobal(), queryContext.from[0]);
+    selectNode1.addChild(selectNode2);
+    selectNode2.addChild(selectNode3);
+    selectNode3.addChild(selectNode4);
+    selectNode4.addChild(tableAccessNode);
 
-  var pass = new lf.proc.IndexRangeScanPass(hr.db.getGlobal());
-  var rootNodeAfter = pass.rewrite(rootNodeBefore);
-  assertEquals(treeAfter, lf.tree.toString(rootNodeAfter));
+    return {
+      queryContext: queryContext,
+      root: selectNode1
+    };
+  };
+
+  lf.testing.treeutil.assertTreeTransformation(
+      constructTree(), treeBefore, treeAfter, pass);
 }
 
 
@@ -355,18 +370,28 @@ function testTree_MultipleCrossColumnIndices_PartialMatching() {
   lf.testing.util.simulateIndexCost(
       propertyReplacer, indexStore, indices[1], 100);
 
-  var selectNode1 = new lf.proc.SelectStep(dt.string.eq('StringValue'));
-  var selectNode2 = new lf.proc.SelectStep(dt.integer.gt(100));
-  var tableAccessNode = new lf.proc.TableAccessFullStep(hr.db.getGlobal(), dt);
-  selectNode1.addChild(selectNode2);
-  selectNode2.addChild(tableAccessNode);
+  var constructTree = function() {
+    var queryContext = new lf.query.SelectContext();
+    queryContext.from = [dt];
+    queryContext.where = lf.op.and(
+        dt.string.eq('StringValue'),
+        dt.integer.gt(100));
 
-  var rootNodeBefore = selectNode1;
-  assertEquals(treeBefore, lf.tree.toString(rootNodeBefore));
+    var selectNode1 = createSelectStep(queryContext, 0);
+    var selectNode2 = createSelectStep(queryContext, 1);
+    var tableAccessNode = new lf.proc.TableAccessFullStep(
+        hr.db.getGlobal(), queryContext.from[0]);
+    selectNode1.addChild(selectNode2);
+    selectNode2.addChild(tableAccessNode);
 
-  var pass = new lf.proc.IndexRangeScanPass(hr.db.getGlobal());
-  var rootNodeAfter = pass.rewrite(rootNodeBefore);
-  assertEquals(treeAfter, lf.tree.toString(rootNodeAfter));
+    return {
+      queryContext: queryContext,
+      root: selectNode1
+    };
+  };
+
+  lf.testing.treeutil.assertTreeTransformation(
+      constructTree(), treeBefore, treeAfter, pass);
 }
 
 
@@ -389,20 +414,31 @@ function testTree_Unaffected() {
       '--select(value_pred(DummyTable.string2 eq OtherStringValue))\n' +
       '---table_access(DummyTable)\n';
 
-  var selectNode1 = new lf.proc.SelectStep(dt.boolean.eq(false));
-  var selectNode2 = new lf.proc.SelectStep(dt.number.gt(100));
-  var selectNode3 = new lf.proc.SelectStep(dt.string2.eq('OtherStringValue'));
-  var tableAccessNode = new lf.proc.TableAccessFullStep(hr.db.getGlobal(), dt);
-  selectNode1.addChild(selectNode2);
-  selectNode2.addChild(selectNode3);
-  selectNode3.addChild(tableAccessNode);
+  var constructTree = function() {
+    var queryContext = new lf.query.SelectContext();
+    queryContext.from = [dt];
+    queryContext.where = lf.op.and(
+        dt.boolean.eq(false),
+        dt.number.gt(100),
+        dt.string2.eq('OtherStringValue'));
 
-  var rootNodeBefore = selectNode1;
-  assertEquals(treeBefore, lf.tree.toString(rootNodeBefore));
+    var selectNode1 = createSelectStep(queryContext, 0);
+    var selectNode2 = createSelectStep(queryContext, 1);
+    var selectNode3 = createSelectStep(queryContext, 2);
+    var tableAccessNode = new lf.proc.TableAccessFullStep(
+        hr.db.getGlobal(), queryContext.from[0]);
+    selectNode1.addChild(selectNode2);
+    selectNode2.addChild(selectNode3);
+    selectNode3.addChild(tableAccessNode);
 
-  var pass = new lf.proc.IndexRangeScanPass(hr.db.getGlobal());
-  var rootNodeAfter = pass.rewrite(rootNodeBefore);
-  assertEquals(treeBefore, lf.tree.toString(rootNodeAfter));
+    return {
+      queryContext: queryContext,
+      root: selectNode1
+    };
+  };
+
+  lf.testing.treeutil.assertTreeTransformation(
+      constructTree(), treeBefore, treeBefore, pass);
 }
 
 
@@ -410,16 +446,24 @@ function testTree_Unaffected() {
  * Constructs a tree where:
  *  - One TableAccessFullStep node exists.
  *  - Multiple SelectStep nodes exist without any nodes in-between them.
- * @return {!lf.proc.PhysicalQueryPlanNode} The root of the constructed tree.
+ * @return {lf.testing.treeutil.Tree} The constructed tree and corresponding
+ *     query context.
  */
 function constructTree1() {
-  var selectNode1 = new lf.proc.SelectStep(e.id.gt('100'));
-  var selectNode2 = new lf.proc.SelectStep(e.salary.eq(10000));
+  var queryContext = new lf.query.SelectContext();
+  queryContext.from = [e];
+  queryContext.where = lf.op.and(e.id.gt('100'), e.salary.eq(10000));
+
+  var selectNode1 = createSelectStep(queryContext, 0);
+  var selectNode2 = createSelectStep(queryContext, 1);
   selectNode1.addChild(selectNode2);
   var tableAccessNode = new lf.proc.TableAccessFullStep(
-      hr.db.getGlobal(), e);
+      hr.db.getGlobal(), queryContext.from[0]);
   selectNode2.addChild(tableAccessNode);
-  return selectNode1;
+  return {
+    queryContext: queryContext,
+    root: selectNode1
+  };
 }
 
 
@@ -428,26 +472,38 @@ function constructTree1() {
  *  - Two TableAccessFullStep nodes exist.
  *  - Multiple SelectStep nodes per TableAcessFullStep node exist.
  *  - SelectStep nodes are separated by an OrderByStep node in between them.
- * @return {!lf.proc.PhysicalQueryPlanNode} The root of the constructed tree.
+ * @return {lf.testing.treeutil.Tree} The constructed tree and corresponding
+ *     query context.
  */
 function constructTree2() {
-  // Constructnig left sub-tree.
-  var selectNode1 = new lf.proc.SelectStep(e.id.gt('100'));
+  var queryContext = new lf.query.SelectContext();
+  queryContext.from = [e, j];
+  queryContext.where = lf.op.and(
+      e.id.gt('100'),
+      e.salary.eq(10000),
+      j.id.gt('100'),
+      j.maxSalary.eq(1000),
+      j.id.eq(e.jobId));
+
+  // Constructing left sub-tree.
+  var selectNode1 = createSelectStep(queryContext, 0);
   var orderByNode1 = new lf.proc.OrderByStep(
       [{column: e.salary, order: lf.Order.ASC}]);
-  var selectNode2 = new lf.proc.SelectStep(e.salary.eq(10000));
-  var tableAccessNode1 = new lf.proc.TableAccessFullStep(hr.db.getGlobal(), e);
+  var selectNode2 = createSelectStep(queryContext, 1);
+  var tableAccessNode1 = new lf.proc.TableAccessFullStep(
+      hr.db.getGlobal(), queryContext.from[0]);
 
   selectNode1.addChild(orderByNode1);
   orderByNode1.addChild(selectNode2);
   selectNode2.addChild(tableAccessNode1);
 
   // Constructing right sub-tree.
-  var selectNode3 = new lf.proc.SelectStep(j.id.gt('100'));
+  var selectNode3 = createSelectStep(queryContext, 2);
   var orderByNode2 = new lf.proc.OrderByStep(
       [{column: j.title, order: lf.Order.ASC}]);
-  var selectNode4 = new lf.proc.SelectStep(j.maxSalary.eq(1000));
-  var tableAccessNode2 = new lf.proc.TableAccessFullStep(hr.db.getGlobal(), j);
+  var selectNode4 = createSelectStep(queryContext, 3);
+  var tableAccessNode2 = new lf.proc.TableAccessFullStep(
+      hr.db.getGlobal(), queryContext.from[1]);
 
   selectNode3.addChild(orderByNode2);
   orderByNode2.addChild(selectNode4);
@@ -457,29 +513,58 @@ function constructTree2() {
   var rootNode = new lf.proc.ProjectStep([], null);
   var orderByNode3 = new lf.proc.OrderByStep(
       [{column: e.salary, order: lf.Order.ASC}]);
-  var joinNode = new lf.proc.JoinStep(j.id.eq(e.jobId));
+  var joinPredicate = /** @type {!lf.Predicate} */ (
+      /** @type {!lf.pred.PredicateNode} */ (
+          queryContext.where).getChildAt(4));
+  var joinNode = new lf.proc.JoinStep(joinPredicate);
 
   rootNode.addChild(orderByNode3);
   orderByNode3.addChild(joinNode);
   joinNode.addChild(selectNode1);
   joinNode.addChild(selectNode3);
 
-  return rootNode;
+  return {
+    queryContext: queryContext,
+    root: rootNode
+  };
 }
 
 
 /**
- * @return {!lf.proc.PhysicalQueryPlanNode} The root of the constructed tree.
+ * @return {lf.testing.treeutil.Tree} The constructed tree and corresponding
+ *     query context.
  */
 function constructTree3() {
-  var selectNode1 = new lf.proc.SelectStep(e.salary.lte(200));
-  var selectNode2 = new lf.proc.SelectStep(e.id.gt('100'));
-  var selectNode3 = new lf.proc.SelectStep(e.salary.gte(100));
+  var queryContext = new lf.query.SelectContext();
+  queryContext.from = [e];
+  queryContext.where = lf.op.and(
+      e.salary.lte(200),
+      e.id.gt('100'),
+      e.salary.gte(100));
+
+  var selectNode1 = createSelectStep(queryContext, 0);
+  var selectNode2 = createSelectStep(queryContext, 1);
+  var selectNode3 = createSelectStep(queryContext, 2);
   var tableAccessNode = new lf.proc.TableAccessFullStep(
-      hr.db.getGlobal(), e);
+      hr.db.getGlobal(), queryContext.from[0]);
 
   selectNode1.addChild(selectNode2);
   selectNode2.addChild(selectNode3);
   selectNode3.addChild(tableAccessNode);
-  return selectNode1;
+
+  return {
+    queryContext: queryContext,
+    root: selectNode1
+  };
+}
+
+
+/**
+ * @param {!lf.query.SelectContext} queryContext
+ * @param {number} predicateIndex
+ * @return {!lf.proc.SelectStep}
+ */
+function createSelectStep(queryContext, predicateIndex) {
+  return new lf.proc.SelectStep(/** @type {!lf.pred.PredicateNode} */ (
+      queryContext.where).getChildAt(predicateIndex).getId());
 }

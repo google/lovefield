@@ -27,7 +27,9 @@ goog.require('lf.proc.ProjectStep');
 goog.require('lf.proc.SelectStep');
 goog.require('lf.proc.TableAccessByRowIdStep');
 goog.require('lf.proc.TableAccessFullStep');
+goog.require('lf.query.SelectContext');
 goog.require('lf.schema.DataStoreType');
+goog.require('lf.testing.treeutil');
 goog.require('lf.tree');
 
 
@@ -44,12 +46,17 @@ var e;
 var dt;
 
 
+/** @type {!lf.proc.OrderByIndexPass} */
+var pass;
+
+
 function setUp() {
   asyncTestCase.waitForAsync('setUp');
   hr.db.connect({storeType: lf.schema.DataStoreType.MEMORY}).then(function(
       database) {
         e = database.getSchema().getEmployee();
         dt = database.getSchema().getDummyTable();
+        pass = new lf.proc.OrderByIndexPass(hr.db.getGlobal());
       }).then(function() {
     asyncTestCase.continueTesting();
   }, fail);
@@ -73,12 +80,8 @@ function testTree1() {
       '--table_access_by_row_id(Employee)\n' +
       '---index_range_scan(Employee.idx_salary, [unbound, unbound], natural)\n';
 
-  var rootNodeBefore = constructTree1(e.salary, lf.Order.DESC);
-  assertEquals(treeBefore, lf.tree.toString(rootNodeBefore));
-
-  var pass = new lf.proc.OrderByIndexPass(hr.db.getGlobal());
-  var rootNodeAfter = pass.rewrite(rootNodeBefore);
-  assertEquals(treeAfter, lf.tree.toString(rootNodeAfter));
+  lf.testing.treeutil.assertTreeTransformation(
+      constructTree1(e.salary, lf.Order.DESC), treeBefore, treeAfter, pass);
 }
 
 
@@ -131,13 +134,9 @@ function testTree3() {
       '--select(value_pred(Employee.id gt 100))\n' +
       '---table_access(Employee)\n';
 
-  var rootNodeBefore = constructTree1(e.hireDate, lf.Order.ASC);
-  assertEquals(treeBefore, lf.tree.toString(rootNodeBefore));
-
-  var pass = new lf.proc.OrderByIndexPass(hr.db.getGlobal());
-  var rootNodeAfter = pass.rewrite(rootNodeBefore);
   // Tree should be unaffected, since no index exists on Employee#hireDate.
-  assertEquals(treeBefore, lf.tree.toString(rootNodeAfter));
+  lf.testing.treeutil.assertTreeTransformation(
+      constructTree1(e.hireDate, lf.Order.ASC), treeBefore, treeBefore, pass);
 }
 
 
@@ -159,12 +158,8 @@ function testTree_TableAccess_CrossColumnIndex_Natural() {
       '---index_range_scan(DummyTable.pkDummyTable, ' +
           '[unbound, unbound],[unbound, unbound], natural)\n';
 
-  var rootNodeBefore = constructTree2(lf.Order.ASC, lf.Order.ASC);
-  assertEquals(treeBefore, lf.tree.toString(rootNodeBefore));
-
-  var pass = new lf.proc.OrderByIndexPass(hr.db.getGlobal());
-  var rootNodeAfter = pass.rewrite(rootNodeBefore);
-  assertEquals(treeAfter, lf.tree.toString(rootNodeAfter));
+  lf.testing.treeutil.assertTreeTransformation(
+      constructTree2(lf.Order.ASC, lf.Order.ASC), treeBefore, treeAfter, pass);
 }
 
 
@@ -186,12 +181,9 @@ function testTree_TableAccess_CrossColumnIndex_Reverse() {
       '---index_range_scan(DummyTable.pkDummyTable, ' +
           '[unbound, unbound],[unbound, unbound], reverse)\n';
 
-  var rootNodeBefore = constructTree2(lf.Order.DESC, lf.Order.DESC);
-  assertEquals(treeBefore, lf.tree.toString(rootNodeBefore));
-
-  var pass = new lf.proc.OrderByIndexPass(hr.db.getGlobal());
-  var rootNodeAfter = pass.rewrite(rootNodeBefore);
-  assertEquals(treeAfter, lf.tree.toString(rootNodeAfter));
+  lf.testing.treeutil.assertTreeTransformation(
+      constructTree2(lf.Order.DESC, lf.Order.DESC),
+      treeBefore, treeAfter, pass);
 }
 
 
@@ -208,12 +200,9 @@ function testTree_TableAccess_CrossColumnIndex_Unaffected() {
       '--select(value_pred(DummyTable.boolean eq false))\n' +
       '---table_access(DummyTable)\n';
 
-  var rootNodeBefore = constructTree2(lf.Order.DESC, lf.Order.ASC);
-  assertEquals(treeBefore, lf.tree.toString(rootNodeBefore));
-
-  var pass = new lf.proc.OrderByIndexPass(hr.db.getGlobal());
-  var rootNodeAfter = pass.rewrite(rootNodeBefore);
-  assertEquals(treeBefore, lf.tree.toString(rootNodeAfter));
+  lf.testing.treeutil.assertTreeTransformation(
+      constructTree2(lf.Order.DESC, lf.Order.ASC),
+      treeBefore, treeBefore, pass);
 }
 
 
@@ -238,12 +227,9 @@ function testTree_IndexRangeScan_CrossColumnIndex() {
       '---index_range_scan(DummyTable.pkDummyTable, ' +
           '[unbound, unbound],[unbound, 10], reverse)\n';
 
-  var rootNodeBefore = constructTree3(lf.Order.DESC, lf.Order.DESC);
-  assertEquals(treeBefore, lf.tree.toString(rootNodeBefore));
-
-  var pass = new lf.proc.OrderByIndexPass(hr.db.getGlobal());
-  var rootNodeAfter = pass.rewrite(rootNodeBefore);
-  assertEquals(treeAfter, lf.tree.toString(rootNodeAfter));
+  lf.testing.treeutil.assertTreeTransformation(
+      constructTree3(lf.Order.DESC, lf.Order.DESC),
+      treeBefore, treeAfter, pass);
 }
 
 
@@ -261,12 +247,9 @@ function testTree_IndexRangeScan_CrossColumnIndex_Unaffected() {
       '----index_range_scan(DummyTable.pkDummyTable, ' +
           '[unbound, unbound],[unbound, 10], natural)\n';
 
-  var rootNodeBefore = constructTree3(lf.Order.ASC, lf.Order.DESC);
-  assertEquals(treeBefore, lf.tree.toString(rootNodeBefore));
-
-  var pass = new lf.proc.OrderByIndexPass(hr.db.getGlobal());
-  var rootNodeAfter = pass.rewrite(rootNodeBefore);
-  assertEquals(treeBefore, lf.tree.toString(rootNodeAfter));
+  lf.testing.treeutil.assertTreeTransformation(
+      constructTree3(lf.Order.ASC, lf.Order.DESC),
+      treeBefore, treeBefore, pass);
 }
 
 
@@ -274,22 +257,31 @@ function testTree_IndexRangeScan_CrossColumnIndex_Unaffected() {
  * Constructs a tree to be used for testing.
  * @param {!lf.schema.Column} sortColumn The column on which to sort.
  * @param {!lf.Order} sortOrder The sort order.
- * @return {!lf.proc.PhysicalQueryPlanNode}
+ * @return {lf.testing.treeutil.Tree} The constructed tree and corresponding
+ *     query context.
  */
 function constructTree1(sortColumn, sortOrder) {
+  var queryContext = new lf.query.SelectContext();
+  queryContext.from = [e];
+  queryContext.where = e.id.gt('100');
+
   var rootNode = new lf.proc.ProjectStep([], null);
   var orderByNode = new lf.proc.OrderByStep([{
     column: sortColumn,
     order: sortOrder
   }]);
-  var selectNode = new lf.proc.SelectStep(e.id.gt('100'));
-  var tableAccessNode = new lf.proc.TableAccessFullStep(hr.db.getGlobal(), e);
+  var selectNode = new lf.proc.SelectStep(queryContext.where.getId());
+  var tableAccessNode = new lf.proc.TableAccessFullStep(
+      hr.db.getGlobal(), queryContext.from[0]);
 
   selectNode.addChild(tableAccessNode);
   orderByNode.addChild(selectNode);
   rootNode.addChild(orderByNode);
 
-  return rootNode;
+  return {
+    queryContext: queryContext,
+    root: rootNode
+  };
 }
 
 
@@ -297,9 +289,14 @@ function constructTree1(sortColumn, sortOrder) {
  * Constructs a tree to be used for testing.
  * @param {!lf.Order} sortOrder1 The sort order for the 1st column.
  * @param {!lf.Order} sortOrder2 The sort order for the 2nd column.
- * @return {!lf.proc.PhysicalQueryPlanNode}
+ * @return {lf.testing.treeutil.Tree} The constructed tree and corresponding
+ *     query context.
  */
 function constructTree2(sortOrder1, sortOrder2) {
+  var queryContext = new lf.query.SelectContext();
+  queryContext.from = [dt];
+  queryContext.where = dt.boolean.eq(false);
+
   var projectNode = new lf.proc.ProjectStep([], null);
   var orderByNode = new lf.proc.OrderByStep([
     {
@@ -310,18 +307,33 @@ function constructTree2(sortOrder1, sortOrder2) {
       order: sortOrder2
     }
   ]);
-  var selectNode = new lf.proc.SelectStep(dt.boolean.eq(false));
-  var tableAccessNode = new lf.proc.TableAccessFullStep(hr.db.getGlobal(), dt);
+  var selectNode = new lf.proc.SelectStep(queryContext.where.getId());
+  var tableAccessNode = new lf.proc.TableAccessFullStep(
+      hr.db.getGlobal(), queryContext.from[0]);
 
   selectNode.addChild(tableAccessNode);
   orderByNode.addChild(selectNode);
   projectNode.addChild(orderByNode);
 
-  return projectNode;
+  return {
+    queryContext: queryContext,
+    root: projectNode
+  };
 }
 
 
+/**
+ * Constructs a tree to be used for testing.
+ * @param {!lf.Order} sortOrder1 The sort order for the 1st column.
+ * @param {!lf.Order} sortOrder2 The sort order for the 2nd column.
+ * @return {lf.testing.treeutil.Tree} The constructed tree and corresponding
+ *     query context.
+ */
 function constructTree3(sortOrder1, sortOrder2) {
+  var queryContext = new lf.query.SelectContext();
+  queryContext.from = [dt];
+  queryContext.where = dt.boolean.eq(false);
+
   var projectNode = new lf.proc.ProjectStep([], null);
   var orderByNode = new lf.proc.OrderByStep([
     {
@@ -332,9 +344,9 @@ function constructTree3(sortOrder1, sortOrder2) {
       order: sortOrder2
     }
   ]);
-  var selectNode = new lf.proc.SelectStep(dt.boolean.eq(false));
+  var selectNode = new lf.proc.SelectStep(queryContext.where.getId());
   var tableAccessByRowIdNode = new lf.proc.TableAccessByRowIdStep(
-      hr.db.getGlobal(), dt);
+      hr.db.getGlobal(), queryContext.from[0]);
   var indexRangeScanNode = new lf.proc.IndexRangeScanStep(
       hr.db.getGlobal(), dt.getIndices()[0],
       [lf.index.SingleKeyRange.all(), lf.index.SingleKeyRange.upperBound(10)],
@@ -345,5 +357,8 @@ function constructTree3(sortOrder1, sortOrder2) {
   orderByNode.addChild(selectNode);
   projectNode.addChild(orderByNode);
 
-  return projectNode;
+  return {
+    queryContext: queryContext,
+    root: projectNode
+  };
 }

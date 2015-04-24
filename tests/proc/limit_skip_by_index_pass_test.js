@@ -128,6 +128,8 @@ function testTree_SelectStep_Unaffected() {
 
   queryContext.limit = 100;
   queryContext.skip = 200;
+  queryContext.from = [e];
+  queryContext.where = e.id.lt('300');
   var toStringFn = function(node) {
     return node.toContextString(queryContext) + '\n';
   };
@@ -137,10 +139,10 @@ function testTree_SelectStep_Unaffected() {
   limitNode.addChild(skipNode);
   var projectNode = new lf.proc.ProjectStep([], null);
   skipNode.addChild(projectNode);
-  var selectNode = new lf.proc.SelectStep(e.id.lt('300'));
+  var selectNode = new lf.proc.SelectStep(queryContext.where.getId());
   projectNode.addChild(selectNode);
   var tableAccessByRowIdNode = new lf.proc.TableAccessByRowIdStep(
-      hr.db.getGlobal(), e);
+      hr.db.getGlobal(), queryContext.from[0]);
   selectNode.addChild(tableAccessByRowIdNode);
   var indexRangeScanStep = new lf.proc.IndexRangeScanStep(
       hr.db.getGlobal(), e.getIndices()[1], [lf.index.SingleKeyRange.all()],
@@ -148,6 +150,8 @@ function testTree_SelectStep_Unaffected() {
   tableAccessByRowIdNode.addChild(indexRangeScanStep);
 
   var rootNodeBefore = limitNode;
+  // TODO(dpapad): Update this file to use the helper assertTreeTransformation
+  // method.
   assertEquals(treeBefore, lf.tree.toString(rootNodeBefore, toStringFn));
 
   var pass = new lf.proc.LimitSkipByIndexPass();
