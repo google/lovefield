@@ -22,6 +22,7 @@ goog.require('lf.Row');
 goog.require('lf.cache.Journal');
 goog.require('lf.proc.Relation');
 goog.require('lf.proc.SkipStep');
+goog.require('lf.query.SelectContext');
 goog.require('lf.testing.MockEnv');
 goog.require('lf.testing.proc.DummyStep');
 
@@ -73,11 +74,13 @@ function checkExec(sampleDataCount, skip) {
   var childStep = new lf.testing.proc.DummyStep([
     lf.proc.Relation.fromRows(rows, [tableName])]);
 
-  var step = new lf.proc.SkipStep(skip);
+  var queryContext = new lf.query.SelectContext();
+  queryContext.skip = skip;
+  var step = new lf.proc.SkipStep();
   step.addChild(childStep);
 
   var journal = new lf.cache.Journal(lf.Global.get(), []);
-  step.exec(journal).then(function(relations) {
+  step.exec(journal, queryContext).then(function(relations) {
     var relation = relations[0];
     var expectedResults = Math.max(sampleDataCount - skip, 0);
     assertEquals(expectedResults, relation.entries.length);

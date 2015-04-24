@@ -28546,6 +28546,16 @@ lf.proc.PhysicalQueryPlanNode.prototype.toString = function() {
 
 
 /**
+ * @param {!lf.query.Context} context
+ * @return {string} A string representation of this node taking into account the
+ *     given context.
+ */
+lf.proc.PhysicalQueryPlanNode.prototype.toContextString = function(context) {
+  return this.toString();
+};
+
+
+/**
  * @param {!Array<!lf.proc.Relation>} relations
  * @private
  */
@@ -30456,7 +30466,12 @@ lf.query.BaseBuilder.prototype.exec = function() {
  * @export
  */
 lf.query.BaseBuilder.prototype.explain = function() {
-  return lf.tree.toString(this.queryEngine_.getPlan(this.query).getRoot());
+  var context = this.query;
+  var stringFn = function(node) {
+    return node.toContextString(context) + '\n';
+  };
+  return lf.tree.toString(
+      this.queryEngine_.getPlan(this.query).getRoot(), stringFn);
 };
 
 
@@ -32808,7 +32823,6 @@ function calculateCartesianProduct(keyRangeSets) {
  */
 goog.provide('lf.proc.IndexRangeScanStep');
 
-goog.require('goog.Promise');
 goog.require('lf.Row');
 goog.require('lf.proc.PhysicalQueryPlanNode');
 goog.require('lf.proc.Relation');
@@ -32843,11 +32857,11 @@ lf.proc.IndexRangeScanStep = function(global, index, keyRanges, reverseOrder) {
   /** @type {boolean} */
   this.reverseOrder = reverseOrder;
 
-  /** @type {?number} */
-  this.limit = null;
+  /** @type {boolean} */
+  this.useLimit = false;
 
-  /** @type {?number} */
-  this.skip = null;
+  /** @type {boolean} */
+  this.useSkip = false;
 };
 goog.inherits(lf.proc.IndexRangeScanStep, lf.proc.PhysicalQueryPlanNode);
 
@@ -32858,21 +32872,36 @@ lf.proc.IndexRangeScanStep.prototype.toString = function() {
       this.index.getNormalizedName() + ', ' +
       this.keyRanges.toString() + ', ' +
       (this.reverseOrder ? 'reverse' : 'natural') +
-      (!goog.isNull(this.limit) ? ', limit:' + this.limit : '') +
-      (!goog.isNull(this.skip) ? ', skip:' + this.skip : '') +
+      (this.useLimit ? ', limit:?' : '') +
+      (this.useSkip ? ', skip:?' : '') +
       ')';
 };
 
 
 /** @override */
+lf.proc.IndexRangeScanStep.prototype.toContextString = function(context) {
+  var string = this.toString();
+  if (this.useLimit) {
+    string = string.replace('?', context.limit.toString());
+  }
+
+  if (this.useSkip) {
+    string = string.replace('?', context.skip.toString());
+  }
+
+  return string;
+};
+
+
+/** @override */
 lf.proc.IndexRangeScanStep.prototype.execInternal = function(
-    journal, relations) {
+    journal, relations, context) {
   var index = this.indexStore_.get(this.index.getNormalizedName());
   var rowIds = index.getRange(
       this.keyRanges,
       this.reverseOrder,
-      !goog.isNull(this.limit) ? this.limit : undefined,
-      !goog.isNull(this.skip) ? this.skip : undefined);
+      this.useLimit ? context.limit : undefined,
+      this.useSkip ? context.skip : undefined);
 
   var rows = rowIds.map(function(rowId) {
     return new lf.Row(rowId, {});
@@ -33450,29 +33479,31 @@ goog.require('lf.proc.PhysicalQueryPlanNode');
 /**
  * @constructor @struct
  * @extends {lf.proc.PhysicalQueryPlanNode}
- *
- * @param {number} limit
  */
-lf.proc.LimitStep = function(limit) {
+lf.proc.LimitStep = function() {
   lf.proc.LimitStep.base(this, 'constructor',
       1,
       lf.proc.PhysicalQueryPlanNode.ExecType.FIRST_CHILD);
-
-  /** @type {number} */
-  this.limit = limit;
 };
 goog.inherits(lf.proc.LimitStep, lf.proc.PhysicalQueryPlanNode);
 
 
 /** @override */
 lf.proc.LimitStep.prototype.toString = function() {
-  return 'limit(' + this.limit + ')';
+  return 'limit(?)';
 };
 
 
 /** @override */
-lf.proc.LimitStep.prototype.execInternal = function(journal, relations) {
-  relations[0].entries.splice(this.limit);
+lf.proc.LimitStep.prototype.toContextString = function(context) {
+  return this.toString().replace('?', context.limit.toString());
+};
+
+
+/** @override */
+lf.proc.LimitStep.prototype.execInternal = function(
+    journal, relations, context) {
+  relations[0].entries.splice(context.limit);
   return relations;
 };
 
@@ -33943,30 +33974,32 @@ goog.require('lf.proc.Relation');
 /**
  * @constructor @struct
  * @extends {lf.proc.PhysicalQueryPlanNode}
- *
- * @param {number} skip
  */
-lf.proc.SkipStep = function(skip) {
+lf.proc.SkipStep = function() {
   lf.proc.SkipStep.base(this, 'constructor',
       1,
       lf.proc.PhysicalQueryPlanNode.ExecType.FIRST_CHILD);
-
-  /** @type {number} */
-  this.skip = skip;
 };
 goog.inherits(lf.proc.SkipStep, lf.proc.PhysicalQueryPlanNode);
 
 
 /** @override */
 lf.proc.SkipStep.prototype.toString = function() {
-  return 'skip(' + this.skip + ')';
+  return 'skip(?)';
 };
 
 
 /** @override */
-lf.proc.SkipStep.prototype.execInternal = function(journal, relations) {
+lf.proc.SkipStep.prototype.toContextString = function(context) {
+  return this.toString().replace('?', context.skip.toString());
+};
+
+
+/** @override */
+lf.proc.SkipStep.prototype.execInternal = function(
+    journal, relations, context) {
   return [new lf.proc.Relation(
-      relations[0].entries.slice(this.skip), relations[0].getTables())];
+      relations[0].entries.slice(context.skip), relations[0].getTables())];
 };
 
 /**
@@ -33987,7 +34020,6 @@ lf.proc.SkipStep.prototype.execInternal = function(journal, relations) {
  */
 goog.provide('lf.proc.LimitSkipByIndexPass');
 
-goog.require('goog.asserts');
 goog.require('lf.proc.IndexRangeScanStep');
 goog.require('lf.proc.LimitStep');
 goog.require('lf.proc.OrderByStep');
@@ -34054,9 +34086,9 @@ lf.proc.LimitSkipByIndexPass.prototype.rewrite = function(rootNode) {
 lf.proc.LimitSkipByIndexPass.prototype.mergeToIndexRangeScanStep_ = function(
     node, indexRangeScanStep) {
   if (node instanceof lf.proc.LimitStep) {
-    indexRangeScanStep.limit = node.limit;
+    indexRangeScanStep.useLimit = true;
   } else {
-    indexRangeScanStep.skip = node.skip;
+    indexRangeScanStep.useSkip = true;
   }
 
   return /** @type {!lf.proc.PhysicalQueryPlanNode} */ (
@@ -34681,9 +34713,9 @@ lf.proc.PhysicalPlanFactory.prototype.mapFn_ = function(node) {
   } else if (node instanceof lf.proc.OrderByNode) {
     return new lf.proc.OrderByStep(node.orderBy);
   } else if (node instanceof lf.proc.SkipNode) {
-    return new lf.proc.SkipStep(node.skip);
+    return new lf.proc.SkipStep();
   } else if (node instanceof lf.proc.LimitNode) {
-    return new lf.proc.LimitStep(node.limit);
+    return new lf.proc.LimitStep();
   } else if (node instanceof lf.proc.SelectNode) {
     return new lf.proc.SelectStep(node.predicate);
   } else if (node instanceof lf.proc.CrossProductNode) {

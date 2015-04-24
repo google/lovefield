@@ -22,6 +22,7 @@ goog.require('lf.Row');
 goog.require('lf.cache.Journal');
 goog.require('lf.proc.LimitStep');
 goog.require('lf.proc.Relation');
+goog.require('lf.query.SelectContext');
 goog.require('lf.testing.MockEnv');
 goog.require('lf.testing.proc.DummyStep');
 
@@ -73,11 +74,14 @@ function checkExec(sampleDataCount, limit) {
   var childStep = new lf.testing.proc.DummyStep(
       [lf.proc.Relation.fromRows(rows, [tableName])]);
 
-  var step = new lf.proc.LimitStep(limit);
+  var queryContext = new lf.query.SelectContext();
+  queryContext.limit = limit;
+
+  var step = new lf.proc.LimitStep();
   step.addChild(childStep);
 
   var journal = new lf.cache.Journal(lf.Global.get(), []);
-  step.exec(journal).then(function(relations) {
+  step.exec(journal, queryContext).then(function(relations) {
     assertEquals(
         Math.min(limit, sampleDataCount),
         relations[0].entries.length);

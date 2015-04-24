@@ -30,6 +30,7 @@ goog.require('lf.proc.OrderByStep');
 goog.require('lf.proc.ProjectStep');
 goog.require('lf.proc.SelectStep');
 goog.require('lf.proc.TableAccessFullStep');
+goog.require('lf.query.SelectContext');
 goog.require('lf.schema.DataStoreType');
 goog.require('lf.service');
 goog.require('lf.testing.util');
@@ -105,7 +106,14 @@ function testSimpleTree() {
 
   // Generating a simple tree that has just one SelectNode corresponding to an
   // AND predicate.
-  var limitNode = new lf.proc.LimitStep(20);
+  var queryContext = new lf.query.SelectContext();
+  queryContext.limit = 20;
+
+  var toStringFn = function(node) {
+    return node.toContextString(queryContext) + '\n';
+  };
+
+  var limitNode = new lf.proc.LimitStep();
   var projectNode = new lf.proc.ProjectStep([], null);
   limitNode.addChild(projectNode);
   var predicate = e.id.gt('100');
@@ -115,11 +123,11 @@ function testSimpleTree() {
   selectNode.addChild(tableAccessNode);
 
   var rootNodeBefore = limitNode;
-  assertEquals(treeBefore, lf.tree.toString(rootNodeBefore));
+  assertEquals(treeBefore, lf.tree.toString(rootNodeBefore, toStringFn));
 
   var pass = new lf.proc.IndexRangeScanPass(hr.db.getGlobal());
   var rootNodeAfter = pass.rewrite(rootNodeBefore);
-  assertEquals(treeAfter, lf.tree.toString(rootNodeAfter));
+  assertEquals(treeAfter, lf.tree.toString(rootNodeAfter, toStringFn));
 }
 
 
