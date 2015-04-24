@@ -59,6 +59,7 @@ function testCopy() {
   assertEquals(original.column, copy.column);
   assertEquals(original.value, copy.value);
   assertEquals(original.evaluatorType, copy.evaluatorType);
+  assertEquals(original.getId(), copy.getId());
 }
 
 

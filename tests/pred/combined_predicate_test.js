@@ -73,6 +73,7 @@ function testCopy_Simple() {
       lf.op.and(e.salary.gte(200), e.salary.lte(600)));
   var copy = original.copy();
   assertTreesIdentical(expectedTree, original, copy);
+  assertEquals(original.getId(), copy.getId());
 }
 
 
@@ -96,6 +97,7 @@ function testCopy_VarArgs() {
           e.commissionPercent.gt(0.1)));
   var copy = original.copy();
   assertTreesIdentical(expectedTree, original, copy);
+  assertEquals(original.getId(), copy.getId());
 }
 
 
@@ -118,6 +120,7 @@ function testCopy_Nested() {
           e.departmentId.eq(d.id))));
   var copy = original.copy();
   assertTreesIdentical(expectedTree, original, copy);
+  assertEquals(original.getId(), copy.getId());
 }
 
 

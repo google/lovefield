@@ -25940,6 +25940,14 @@ lf.Predicate.prototype.copy;
 lf.Predicate.prototype.getColumns;
 
 
+/** @param {number} id */
+lf.Predicate.prototype.setId;
+
+
+/** @return {number} */
+lf.Predicate.prototype.getId;
+
+
 
 /**
  * @template T
@@ -26004,7 +26012,7 @@ lf.PredicateProvider.prototype.gte;
 
 /**
  * Returns JavaScript regex matching test predicate.
- * @param {(!lf.Binder|RegExp)} regex
+ * @param {(!lf.Binder|!RegExp)} regex
  * @return {!lf.Predicate}
  * @throws {!lf.Exception}
  */
@@ -26074,8 +26082,20 @@ goog.require('lf.Predicate');
  */
 lf.pred.PredicateNode = function() {
   lf.pred.PredicateNode.base(this, 'constructor', '', '');
+
+  /** @private {number} */
+  this.id_ = lf.pred.PredicateNode.nextId_++;
 };
 goog.inherits(lf.pred.PredicateNode, goog.structs.TreeNode);
+
+
+/**
+ * The ID to assign to the next predicate that will be created. Note that
+ * predicates are constructed with unique IDs, but when a predicate is cloned
+ * the ID is also purposefully cloned.
+ * @private {number}
+ */
+lf.pred.PredicateNode.nextId_ = 0;
 
 
 /** @override */
@@ -26092,6 +26112,18 @@ lf.pred.PredicateNode.prototype.copy = goog.abstractMethod;
 
 /** @override */
 lf.pred.PredicateNode.prototype.getColumns = goog.abstractMethod;
+
+
+/** @override */
+lf.pred.PredicateNode.prototype.getId = function() {
+  return this.id_;
+};
+
+
+/** @override */
+lf.pred.PredicateNode.prototype.setId = function(id) {
+  this.id_ = id;
+};
 
 /**
  * @license
@@ -26111,7 +26143,6 @@ lf.pred.PredicateNode.prototype.getColumns = goog.abstractMethod;
  */
 goog.provide('lf.pred.CombinedPredicate');
 
-goog.require('goog.structs.Map');
 goog.require('goog.structs.Set');
 goog.require('lf.pred.Operator');
 goog.require('lf.pred.PredicateNode');
@@ -26157,6 +26188,7 @@ lf.pred.CombinedPredicate.prototype.copy = function() {
             if (node instanceof lf.pred.CombinedPredicate) {
               var tempCopy = new lf.pred.CombinedPredicate(node.operator);
               tempCopy.isComplement_ = node.isComplement_;
+              tempCopy.setId(node.getId());
               return tempCopy;
             } else {
               return node.copy();
@@ -27250,8 +27282,10 @@ goog.inherits(lf.pred.JoinPredicate, lf.pred.PredicateNode);
 
 /** @override */
 lf.pred.JoinPredicate.prototype.copy = function() {
-  return new lf.pred.JoinPredicate(
+  var clone = new lf.pred.JoinPredicate(
       this.leftColumn, this.rightColumn, this.evaluatorType);
+  clone.setId(this.getId());
+  return clone;
 };
 
 
@@ -27600,6 +27634,7 @@ lf.pred.ValuePredicate.prototype.copy = function() {
       this.column, this.value, this.evaluatorType);
   clone.setBinder(this.binder_);
   clone.setComplement(this.isComplement_);
+  clone.setId(this.getId());
   return clone;
 };
 
