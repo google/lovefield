@@ -23,6 +23,7 @@ goog.require('lf.proc.DeleteNode');
 goog.require('lf.proc.PhysicalPlanFactory');
 goog.require('lf.proc.SelectNode');
 goog.require('lf.proc.TableAccessNode');
+goog.require('lf.query.DeleteContext');
 goog.require('lf.testing.MockEnv');
 goog.require('lf.testing.util');
 goog.require('lf.tree');
@@ -97,6 +98,7 @@ function testCreate_DeletePlan() {
 
   assertEquals(logicalTree, lf.tree.toString(deleteNode));
 
-  var physicalPlan = physicalPlanFactory.create(deleteNode);
+  var physicalPlan = physicalPlanFactory.create(
+      deleteNode, new lf.query.DeleteContext());
   assertEquals(physicalTree, lf.tree.toString(physicalPlan.getRoot()));
 }

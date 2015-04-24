@@ -29282,6 +29282,7 @@ lf.proc.RewritePass = function() {
 /**
  * Rewrites the query plan.
  * @param {!T} rootNode
+ * @param {!lf.query.Context=} opt_queryContext
  * @return {!T} The root of the tree after rewriting.
  */
 lf.proc.RewritePass.prototype.rewrite = goog.abstractMethod;
@@ -34473,12 +34474,16 @@ goog.provide('lf.proc.PhysicalPlanRewriter');
  * @struct
  *
  * @param {!lf.proc.PhysicalQueryPlanNode} rootNode
+ * @param {!lf.query.Context} queryContext
  * @param {!Array<!lf.proc.RewritePass.<!lf.proc.PhysicalQueryPlanNode>>}
  *   rewritePasses The rewrite passes to be applied on the physical query tree.
  */
-lf.proc.PhysicalPlanRewriter = function(rootNode, rewritePasses) {
+lf.proc.PhysicalPlanRewriter = function(rootNode, queryContext, rewritePasses) {
   /** @private {!lf.proc.PhysicalQueryPlanNode} */
   this.rootNode_ = rootNode;
+
+  /** @private {!lf.query.Context} */
+  this.queryContext_ = queryContext;
 
   /**
    * @private {!Array<
@@ -34495,7 +34500,8 @@ lf.proc.PhysicalPlanRewriter = function(rootNode, rewritePasses) {
 lf.proc.PhysicalPlanRewriter.prototype.generate = function() {
   this.rewritePasses_.forEach(
       function(rewritePass) {
-        this.rootNode_ = rewritePass.rewrite(this.rootNode_);
+        this.rootNode_ = rewritePass.rewrite(
+            this.rootNode_, this.queryContext_);
       }, this);
 
   return this.rootNode_;
@@ -34643,20 +34649,21 @@ lf.proc.PhysicalPlanFactory = function(global) {
 
 /**
  * @param {!lf.proc.LogicalQueryPlanNode} logicalQueryPlanRoot
+ * @param {!lf.query.Context} queryContext
  * @return {!lf.proc.PhysicalQueryPlan}
  */
 lf.proc.PhysicalPlanFactory.prototype.create = function(
-    logicalQueryPlanRoot) {
+    logicalQueryPlanRoot, queryContext) {
   if ((logicalQueryPlanRoot instanceof lf.proc.InsertOrReplaceNode) ||
       (logicalQueryPlanRoot instanceof lf.proc.InsertNode)) {
-    return this.createPlan_(logicalQueryPlanRoot);
+    return this.createPlan_(logicalQueryPlanRoot, queryContext);
   }
 
   if (logicalQueryPlanRoot instanceof lf.proc.ProjectNode ||
       logicalQueryPlanRoot instanceof lf.proc.LimitNode ||
       logicalQueryPlanRoot instanceof lf.proc.SkipNode) {
     return this.createPlan_(
-        logicalQueryPlanRoot, [
+        logicalQueryPlanRoot, queryContext, [
           new lf.proc.IndexRangeScanPass(this.global_),
           new lf.proc.OrderByIndexPass(this.global_),
           new lf.proc.LimitSkipByIndexPass()
@@ -34666,7 +34673,8 @@ lf.proc.PhysicalPlanFactory.prototype.create = function(
   if ((logicalQueryPlanRoot instanceof lf.proc.DeleteNode) ||
       (logicalQueryPlanRoot instanceof lf.proc.UpdateNode)) {
     return this.createPlan_(
-        logicalQueryPlanRoot, [new lf.proc.IndexRangeScanPass(this.global_)]);
+        logicalQueryPlanRoot, queryContext,
+        [new lf.proc.IndexRangeScanPass(this.global_)]);
   }
 
   // Should never get here since all cases are handled above.
@@ -34677,17 +34685,18 @@ lf.proc.PhysicalPlanFactory.prototype.create = function(
 
 /**
  * @param {!lf.proc.LogicalQueryPlanNode} rootNode
+ * @param {!lf.query.Context} queryContext
  * @param {!Array<!lf.proc.RewritePass>=} opt_rewritePasses
  * @return {!lf.proc.PhysicalQueryPlan}
  * @private
  */
 lf.proc.PhysicalPlanFactory.prototype.createPlan_ = function(
-    rootNode, opt_rewritePasses) {
+    rootNode, queryContext, opt_rewritePasses) {
   var rootStep = lf.tree.map(rootNode, goog.bind(this.mapFn_, this));
 
   if (goog.isDefAndNotNull(opt_rewritePasses)) {
     var planRewriter = new lf.proc.PhysicalPlanRewriter(
-        rootStep, opt_rewritePasses);
+        rootStep, queryContext, opt_rewritePasses);
     return new lf.proc.PhysicalQueryPlan(planRewriter.generate());
   } else {
     return new lf.proc.PhysicalQueryPlan(rootStep);
@@ -34812,29 +34821,8 @@ lf.proc.DefaultQueryEngine = function(global) {
 
 /** @override */
 lf.proc.DefaultQueryEngine.prototype.getPlan = function(query) {
-  var logicalQueryPlan = this.convertToLogicalPlan_(query);
-  return this.convertToPhysicalPlan_(logicalQueryPlan);
-};
-
-
-/**
- * @param {!lf.query.Context} query
- * @return {!lf.proc.LogicalQueryPlanNode} The root of the logical plan tree.
- * @private
- */
-lf.proc.DefaultQueryEngine.prototype.convertToLogicalPlan_ = function(query) {
-  return this.logicalPlanFactory_.create(query);
-};
-
-
-/**
- * @param {!lf.proc.LogicalQueryPlanNode} logicalQueryPlan
- * @return {!lf.proc.PhysicalQueryPlan}
- * @private
- */
-lf.proc.DefaultQueryEngine.prototype.convertToPhysicalPlan_ = function(
-    logicalQueryPlan) {
-  return this.physicalPlanFactory_.create(logicalQueryPlan);
+  var logicalQueryPlan = this.logicalPlanFactory_.create(query);
+  return this.physicalPlanFactory_.create(logicalQueryPlan, query);
 };
 
 /**
