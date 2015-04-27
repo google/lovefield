@@ -31,7 +31,7 @@ goog.require('lf.proc.SkipStep');
 goog.require('lf.proc.TableAccessByRowIdStep');
 goog.require('lf.query.SelectContext');
 goog.require('lf.schema.DataStoreType');
-goog.require('lf.tree');
+goog.require('lf.testing.treeutil');
 
 
 /** @type {!goog.testing.AsyncTestCase} */
@@ -43,16 +43,16 @@ var asyncTestCase = goog.testing.AsyncTestCase.createAndInstall(
 var e;
 
 
-/** @type {!lf.query.Context} */
-var queryContext;
+/** @type {!lf.proc.LimitSkipByIndexPass} */
+var pass;
 
 
 function setUp() {
   asyncTestCase.waitForAsync('setUp');
 
-  queryContext = new lf.query.SelectContext();
   hr.db.connect({storeType: lf.schema.DataStoreType.MEMORY}).then(function(db) {
     e = db.getSchema().getEmployee();
+    pass = new lf.proc.LimitSkipByIndexPass();
   }).then(function() {
     asyncTestCase.continueTesting();
   }, fail);
@@ -78,36 +78,35 @@ function testTree1() {
       '--index_range_scan(Employee.idx_salary, ' +
           '[unbound, 1000],[2000, unbound], reverse, limit:100, skip:200)\n';
 
-  queryContext.limit = 100;
-  queryContext.skip = 200;
-  var toStringFn = function(node) {
-    return node.toContextString(queryContext) + '\n';
+
+  var constructTree = function() {
+    var queryContext = new lf.query.SelectContext();
+    queryContext.limit = 100;
+    queryContext.skip = 200;
+
+    var limitNode = new lf.proc.LimitStep();
+    var skipNode = new lf.proc.SkipStep();
+    limitNode.addChild(skipNode);
+    var projectNode = new lf.proc.ProjectStep([], null);
+    skipNode.addChild(projectNode);
+    var tableAccessByRowIdNode = new lf.proc.TableAccessByRowIdStep(
+        hr.db.getGlobal(), e);
+    projectNode.addChild(tableAccessByRowIdNode);
+    var indexRangeScanStep = new lf.proc.IndexRangeScanStep(
+        hr.db.getGlobal(),
+        e.getIndices()[1],
+        [
+          lf.index.SingleKeyRange.upperBound(1000),
+          lf.index.SingleKeyRange.lowerBound(2000)
+        ],
+        true);
+    tableAccessByRowIdNode.addChild(indexRangeScanStep);
+
+    return {queryContext: queryContext, root: limitNode};
   };
 
-  var limitNode = new lf.proc.LimitStep();
-  var skipNode = new lf.proc.SkipStep();
-  limitNode.addChild(skipNode);
-  var projectNode = new lf.proc.ProjectStep([], null);
-  skipNode.addChild(projectNode);
-  var tableAccessByRowIdNode = new lf.proc.TableAccessByRowIdStep(
-      hr.db.getGlobal(), e);
-  projectNode.addChild(tableAccessByRowIdNode);
-  var indexRangeScanStep = new lf.proc.IndexRangeScanStep(
-      hr.db.getGlobal(),
-      e.getIndices()[1],
-      [
-        lf.index.SingleKeyRange.upperBound(1000),
-        lf.index.SingleKeyRange.lowerBound(2000)
-      ],
-      true);
-  tableAccessByRowIdNode.addChild(indexRangeScanStep);
-
-  var rootNodeBefore = limitNode;
-  assertEquals(treeBefore, lf.tree.toString(rootNodeBefore, toStringFn));
-
-  var pass = new lf.proc.LimitSkipByIndexPass();
-  var rootNodeAfter = pass.rewrite(rootNodeBefore);
-  assertEquals(treeAfter, lf.tree.toString(rootNodeAfter, toStringFn));
+  lf.testing.treeutil.assertTreeTransformation(
+      constructTree(), treeBefore, treeAfter, pass);
 }
 
 
@@ -126,37 +125,33 @@ function testTree_SelectStep_Unaffected() {
       '-----index_range_scan(Employee.idx_salary, ' +
           '[unbound, unbound], reverse)\n';
 
-  queryContext.limit = 100;
-  queryContext.skip = 200;
-  queryContext.from = [e];
-  queryContext.where = e.id.lt('300');
-  var toStringFn = function(node) {
-    return node.toContextString(queryContext) + '\n';
+  var constructTree = function() {
+    var queryContext = new lf.query.SelectContext();
+    queryContext.limit = 100;
+    queryContext.skip = 200;
+    queryContext.from = [e];
+    queryContext.where = e.id.lt('300');
+
+    var limitNode = new lf.proc.LimitStep();
+    var skipNode = new lf.proc.SkipStep();
+    limitNode.addChild(skipNode);
+    var projectNode = new lf.proc.ProjectStep([], null);
+    skipNode.addChild(projectNode);
+    var selectNode = new lf.proc.SelectStep(queryContext.where.getId());
+    projectNode.addChild(selectNode);
+    var tableAccessByRowIdNode = new lf.proc.TableAccessByRowIdStep(
+        hr.db.getGlobal(), queryContext.from[0]);
+    selectNode.addChild(tableAccessByRowIdNode);
+    var indexRangeScanStep = new lf.proc.IndexRangeScanStep(
+        hr.db.getGlobal(), e.getIndices()[1], [lf.index.SingleKeyRange.all()],
+        true);
+    tableAccessByRowIdNode.addChild(indexRangeScanStep);
+
+    return {queryContext: queryContext, root: limitNode};
   };
 
-  var limitNode = new lf.proc.LimitStep();
-  var skipNode = new lf.proc.SkipStep();
-  limitNode.addChild(skipNode);
-  var projectNode = new lf.proc.ProjectStep([], null);
-  skipNode.addChild(projectNode);
-  var selectNode = new lf.proc.SelectStep(queryContext.where.getId());
-  projectNode.addChild(selectNode);
-  var tableAccessByRowIdNode = new lf.proc.TableAccessByRowIdStep(
-      hr.db.getGlobal(), queryContext.from[0]);
-  selectNode.addChild(tableAccessByRowIdNode);
-  var indexRangeScanStep = new lf.proc.IndexRangeScanStep(
-      hr.db.getGlobal(), e.getIndices()[1], [lf.index.SingleKeyRange.all()],
-      true);
-  tableAccessByRowIdNode.addChild(indexRangeScanStep);
-
-  var rootNodeBefore = limitNode;
-  // TODO(dpapad): Update this file to use the helper assertTreeTransformation
-  // method.
-  assertEquals(treeBefore, lf.tree.toString(rootNodeBefore, toStringFn));
-
-  var pass = new lf.proc.LimitSkipByIndexPass();
-  var rootNodeAfter = pass.rewrite(rootNodeBefore);
-  assertEquals(treeBefore, lf.tree.toString(rootNodeAfter, toStringFn));
+  lf.testing.treeutil.assertTreeTransformation(
+      constructTree(), treeBefore, treeBefore, pass);
 }
 
 
@@ -174,31 +169,29 @@ function testTree_GroupBy_Unaffected() {
       '----index_range_scan(Employee.idx_salary, ' +
           '[unbound, unbound], reverse)\n';
 
-  queryContext.limit = 100;
-  queryContext.skip = 200;
-  var toStringFn = function(node) {
-    return node.toContextString(queryContext) + '\n';
+  var constructTree = function() {
+    var queryContext = new lf.query.SelectContext();
+    queryContext.limit = 100;
+    queryContext.skip = 200;
+
+    var limitNode = new lf.proc.LimitStep();
+    var skipNode = new lf.proc.SkipStep();
+    limitNode.addChild(skipNode);
+    var projectNode = new lf.proc.ProjectStep([e.id], [e.jobId]);
+    skipNode.addChild(projectNode);
+    var tableAccessByRowIdNode = new lf.proc.TableAccessByRowIdStep(
+        hr.db.getGlobal(), e);
+    projectNode.addChild(tableAccessByRowIdNode);
+    var indexRangeScanStep = new lf.proc.IndexRangeScanStep(
+        hr.db.getGlobal(), e.getIndices()[1], [lf.index.SingleKeyRange.all()],
+        true);
+    tableAccessByRowIdNode.addChild(indexRangeScanStep);
+
+    return {queryContext: queryContext, root: limitNode};
   };
 
-  var limitNode = new lf.proc.LimitStep();
-  var skipNode = new lf.proc.SkipStep();
-  limitNode.addChild(skipNode);
-  var projectNode = new lf.proc.ProjectStep([e.id], [e.jobId]);
-  skipNode.addChild(projectNode);
-  var tableAccessByRowIdNode = new lf.proc.TableAccessByRowIdStep(
-      hr.db.getGlobal(), e);
-  projectNode.addChild(tableAccessByRowIdNode);
-  var indexRangeScanStep = new lf.proc.IndexRangeScanStep(
-      hr.db.getGlobal(), e.getIndices()[1], [lf.index.SingleKeyRange.all()],
-      true);
-  tableAccessByRowIdNode.addChild(indexRangeScanStep);
-
-  var rootNodeBefore = limitNode;
-  assertEquals(treeBefore, lf.tree.toString(rootNodeBefore, toStringFn));
-
-  var pass = new lf.proc.LimitSkipByIndexPass();
-  var rootNodeAfter = pass.rewrite(rootNodeBefore);
-  assertEquals(treeBefore, lf.tree.toString(rootNodeAfter, toStringFn));
+  lf.testing.treeutil.assertTreeTransformation(
+      constructTree(), treeBefore, treeBefore, pass);
 }
 
 
@@ -216,34 +209,32 @@ function testTree_Aggregators_Unaffected() {
       '----index_range_scan(Employee.idx_salary, ' +
           '[unbound, unbound], reverse)\n';
 
-  queryContext.limit = 100;
-  queryContext.skip = 200;
-  var toStringFn = function(node) {
-    return node.toContextString(queryContext) + '\n';
+  var constructTree = function() {
+    var queryContext = new lf.query.SelectContext();
+    queryContext.limit = 100;
+    queryContext.skip = 200;
+
+    var limitNode = new lf.proc.LimitStep();
+    var skipNode = new lf.proc.SkipStep();
+    limitNode.addChild(skipNode);
+    var projectNode = new lf.proc.ProjectStep([
+      lf.fn.max(e.salary),
+      lf.fn.min(e.salary)
+    ], null);
+    skipNode.addChild(projectNode);
+    var tableAccessByRowIdNode = new lf.proc.TableAccessByRowIdStep(
+        hr.db.getGlobal(), e);
+    projectNode.addChild(tableAccessByRowIdNode);
+    var indexRangeScanStep = new lf.proc.IndexRangeScanStep(
+        hr.db.getGlobal(), e.getIndices()[1], [lf.index.SingleKeyRange.all()],
+        true);
+    tableAccessByRowIdNode.addChild(indexRangeScanStep);
+
+    return {queryContext: queryContext, root: limitNode};
   };
 
-  var limitNode = new lf.proc.LimitStep();
-  var skipNode = new lf.proc.SkipStep();
-  limitNode.addChild(skipNode);
-  var projectNode = new lf.proc.ProjectStep([
-    lf.fn.max(e.salary),
-    lf.fn.min(e.salary)
-  ], null);
-  skipNode.addChild(projectNode);
-  var tableAccessByRowIdNode = new lf.proc.TableAccessByRowIdStep(
-      hr.db.getGlobal(), e);
-  projectNode.addChild(tableAccessByRowIdNode);
-  var indexRangeScanStep = new lf.proc.IndexRangeScanStep(
-      hr.db.getGlobal(), e.getIndices()[1], [lf.index.SingleKeyRange.all()],
-      true);
-  tableAccessByRowIdNode.addChild(indexRangeScanStep);
-
-  var rootNodeBefore = limitNode;
-  assertEquals(treeBefore, lf.tree.toString(rootNodeBefore, toStringFn));
-
-  var pass = new lf.proc.LimitSkipByIndexPass();
-  var rootNodeAfter = pass.rewrite(rootNodeBefore);
-  assertEquals(treeBefore, lf.tree.toString(rootNodeAfter, toStringFn));
+  lf.testing.treeutil.assertTreeTransformation(
+      constructTree(), treeBefore, treeBefore, pass);
 }
 
 
@@ -261,34 +252,32 @@ function testTree_OrderBy_Unaffected() {
       '-----index_range_scan(Employee.idx_salary, ' +
           '[unbound, unbound], reverse)\n';
 
-  queryContext.limit = 100;
-  queryContext.skip = 200;
-  var toStringFn = function(node) {
-    return node.toContextString(queryContext) + '\n';
+  var constructTree = function() {
+    var queryContext = new lf.query.SelectContext();
+    queryContext.limit = 100;
+    queryContext.skip = 200;
+
+    var limitNode = new lf.proc.LimitStep();
+    var skipNode = new lf.proc.SkipStep();
+    limitNode.addChild(skipNode);
+    var projectNode = new lf.proc.ProjectStep([], null);
+    skipNode.addChild(projectNode);
+    var orderByNode = new lf.proc.OrderByStep([{
+      column: e.salary,
+      order: lf.Order.DESC
+    }]);
+    projectNode.addChild(orderByNode);
+    var tableAccessByRowIdNode = new lf.proc.TableAccessByRowIdStep(
+        hr.db.getGlobal(), e);
+    orderByNode.addChild(tableAccessByRowIdNode);
+    var indexRangeScanStep = new lf.proc.IndexRangeScanStep(
+        hr.db.getGlobal(), e.getIndices()[1], [lf.index.SingleKeyRange.all()],
+        true);
+    tableAccessByRowIdNode.addChild(indexRangeScanStep);
+
+    return {queryContext: queryContext, root: limitNode};
   };
 
-  var limitNode = new lf.proc.LimitStep();
-  var skipNode = new lf.proc.SkipStep();
-  limitNode.addChild(skipNode);
-  var projectNode = new lf.proc.ProjectStep([], null);
-  skipNode.addChild(projectNode);
-  var orderByNode = new lf.proc.OrderByStep([{
-    column: e.salary,
-    order: lf.Order.DESC
-  }]);
-  projectNode.addChild(orderByNode);
-  var tableAccessByRowIdNode = new lf.proc.TableAccessByRowIdStep(
-      hr.db.getGlobal(), e);
-  orderByNode.addChild(tableAccessByRowIdNode);
-  var indexRangeScanStep = new lf.proc.IndexRangeScanStep(
-      hr.db.getGlobal(), e.getIndices()[1], [lf.index.SingleKeyRange.all()],
-      true);
-  tableAccessByRowIdNode.addChild(indexRangeScanStep);
-
-  var rootNodeBefore = limitNode;
-  assertEquals(treeBefore, lf.tree.toString(rootNodeBefore, toStringFn));
-
-  var pass = new lf.proc.LimitSkipByIndexPass();
-  var rootNodeAfter = pass.rewrite(rootNodeBefore);
-  assertEquals(treeBefore, lf.tree.toString(rootNodeAfter, toStringFn));
+  lf.testing.treeutil.assertTreeTransformation(
+      constructTree(), treeBefore, treeBefore, pass);
 }
