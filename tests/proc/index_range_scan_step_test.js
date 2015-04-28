@@ -23,6 +23,7 @@ goog.require('lf.cache.Journal');
 goog.require('lf.index.SingleKeyRange');
 goog.require('lf.proc.IndexRangeScanStep');
 goog.require('lf.testing.MockEnv');
+goog.require('lf.testing.proc.MockKeyRangeCalculator');
 
 
 /** @type {!goog.testing.AsyncTestCase} */
@@ -74,7 +75,8 @@ function checkIndexRangeScan(order, description) {
       new lf.index.SingleKeyRange(
           'dummyName' + 5, 'dummyName' + 8, false, false);
   var step = new lf.proc.IndexRangeScanStep(
-      lf.Global.get(), index, [keyRange], false);
+      lf.Global.get(), index,
+      new lf.testing.proc.MockKeyRangeCalculator([keyRange]), false);
 
   var journal = new lf.cache.Journal(lf.Global.get(), [table]);
   step.exec(journal).then(

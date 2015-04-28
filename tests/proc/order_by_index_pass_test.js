@@ -29,8 +29,8 @@ goog.require('lf.proc.TableAccessByRowIdStep');
 goog.require('lf.proc.TableAccessFullStep');
 goog.require('lf.query.SelectContext');
 goog.require('lf.schema.DataStoreType');
+goog.require('lf.testing.proc.MockKeyRangeCalculator');
 goog.require('lf.testing.treeutil');
-goog.require('lf.tree');
 
 
 /** @type {!goog.testing.AsyncTestCase} */
@@ -101,25 +101,35 @@ function testTree2() {
       '-table_access_by_row_id(Employee)\n' +
       '--index_range_scan(Employee.idx_salary, [10000, unbound], natural)\n';
 
-  var rootNodeBefore = new lf.proc.ProjectStep([], null);
-  var orderByNode = new lf.proc.OrderByStep([{
-    column: e.salary,
-    order: lf.Order.DESC
-  }]);
-  var tableAccessByRowIdNode = new lf.proc.TableAccessByRowIdStep(
-      hr.db.getGlobal(), e);
-  var indexRangeScanNode = new lf.proc.IndexRangeScanStep(
-      hr.db.getGlobal(), e.getIndices()[1],
-      [lf.index.SingleKeyRange.lowerBound(10000)], true);
-  tableAccessByRowIdNode.addChild(indexRangeScanNode);
-  orderByNode.addChild(tableAccessByRowIdNode);
-  rootNodeBefore.addChild(orderByNode);
+  var constructTree = function() {
+    var queryContext = new lf.query.SelectContext();
+    queryContext.from = [e];
+    queryContext.where = e.salary.gte(10000);
+    queryContext.orderBy = [{
+      column: e.salary,
+      order: lf.Order.DESC
+    }];
 
-  assertEquals(treeBefore, lf.tree.toString(rootNodeBefore));
+    var rootNode = new lf.proc.ProjectStep([], null);
+    var orderByNode = new lf.proc.OrderByStep(queryContext.orderBy);
+    var tableAccessByRowIdNode = new lf.proc.TableAccessByRowIdStep(
+        hr.db.getGlobal(), queryContext.from[0]);
+    var indexRangeScanNode = new lf.proc.IndexRangeScanStep(
+        hr.db.getGlobal(), e.getIndices()[1],
+        new lf.testing.proc.MockKeyRangeCalculator(
+            queryContext.where.toKeyRange()), true);
+    tableAccessByRowIdNode.addChild(indexRangeScanNode);
+    orderByNode.addChild(tableAccessByRowIdNode);
+    rootNode.addChild(orderByNode);
 
-  var pass = new lf.proc.OrderByIndexPass(hr.db.getGlobal());
-  var rootNodeAfter = pass.rewrite(rootNodeBefore);
-  assertEquals(treeAfter, lf.tree.toString(rootNodeAfter));
+    return {
+      queryContext: queryContext,
+      root: rootNode
+    };
+  };
+
+  lf.testing.treeutil.assertTreeTransformation(
+      constructTree(), treeBefore, treeAfter, pass);
 }
 
 
@@ -349,7 +359,10 @@ function constructTree3(sortOrder1, sortOrder2) {
       hr.db.getGlobal(), queryContext.from[0]);
   var indexRangeScanNode = new lf.proc.IndexRangeScanStep(
       hr.db.getGlobal(), dt.getIndices()[0],
-      [lf.index.SingleKeyRange.all(), lf.index.SingleKeyRange.upperBound(10)],
+      new lf.testing.proc.MockKeyRangeCalculator([
+        lf.index.SingleKeyRange.all(),
+        lf.index.SingleKeyRange.upperBound(10)
+      ]),
       false);
 
   tableAccessByRowIdNode.addChild(indexRangeScanNode);

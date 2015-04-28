@@ -21,6 +21,7 @@ goog.require('hr.db');
 goog.require('lf.Order');
 goog.require('lf.fn');
 goog.require('lf.index.SingleKeyRange');
+goog.require('lf.op');
 goog.require('lf.proc.IndexRangeScanStep');
 goog.require('lf.proc.LimitSkipByIndexPass');
 goog.require('lf.proc.LimitStep');
@@ -31,6 +32,7 @@ goog.require('lf.proc.SkipStep');
 goog.require('lf.proc.TableAccessByRowIdStep');
 goog.require('lf.query.SelectContext');
 goog.require('lf.schema.DataStoreType');
+goog.require('lf.testing.proc.MockKeyRangeCalculator');
 goog.require('lf.testing.treeutil');
 
 
@@ -81,8 +83,10 @@ function testTree1() {
 
   var constructTree = function() {
     var queryContext = new lf.query.SelectContext();
+    queryContext.from = [e];
     queryContext.limit = 100;
     queryContext.skip = 200;
+    queryContext.where = lf.op.or(e.salary.lte(1000), e.salary.gte(2000));
 
     var limitNode = new lf.proc.LimitStep();
     var skipNode = new lf.proc.SkipStep();
@@ -90,15 +94,17 @@ function testTree1() {
     var projectNode = new lf.proc.ProjectStep([], null);
     skipNode.addChild(projectNode);
     var tableAccessByRowIdNode = new lf.proc.TableAccessByRowIdStep(
-        hr.db.getGlobal(), e);
+        hr.db.getGlobal(), queryContext.from[0]);
     projectNode.addChild(tableAccessByRowIdNode);
     var indexRangeScanStep = new lf.proc.IndexRangeScanStep(
         hr.db.getGlobal(),
         e.getIndices()[1],
-        [
-          lf.index.SingleKeyRange.upperBound(1000),
-          lf.index.SingleKeyRange.lowerBound(2000)
-        ],
+        new lf.testing.proc.MockKeyRangeCalculator([
+          /** @type {!lf.pred.PredicateNode} */ (
+              queryContext.where).getChildAt(0).toKeyRange()[0],
+          /** @type {!lf.pred.PredicateNode} */ (
+              queryContext.where).getChildAt(1).toKeyRange()[0]
+        ]),
         true);
     tableAccessByRowIdNode.addChild(indexRangeScanStep);
 
@@ -143,7 +149,9 @@ function testTree_SelectStep_Unaffected() {
         hr.db.getGlobal(), queryContext.from[0]);
     selectNode.addChild(tableAccessByRowIdNode);
     var indexRangeScanStep = new lf.proc.IndexRangeScanStep(
-        hr.db.getGlobal(), e.getIndices()[1], [lf.index.SingleKeyRange.all()],
+        hr.db.getGlobal(), e.getIndices()[1],
+        new lf.testing.proc.MockKeyRangeCalculator(
+            [lf.index.SingleKeyRange.all()]),
         true);
     tableAccessByRowIdNode.addChild(indexRangeScanStep);
 
@@ -183,7 +191,9 @@ function testTree_GroupBy_Unaffected() {
         hr.db.getGlobal(), e);
     projectNode.addChild(tableAccessByRowIdNode);
     var indexRangeScanStep = new lf.proc.IndexRangeScanStep(
-        hr.db.getGlobal(), e.getIndices()[1], [lf.index.SingleKeyRange.all()],
+        hr.db.getGlobal(), e.getIndices()[1],
+        new lf.testing.proc.MockKeyRangeCalculator(
+            [lf.index.SingleKeyRange.all()]),
         true);
     tableAccessByRowIdNode.addChild(indexRangeScanStep);
 
@@ -226,7 +236,9 @@ function testTree_Aggregators_Unaffected() {
         hr.db.getGlobal(), e);
     projectNode.addChild(tableAccessByRowIdNode);
     var indexRangeScanStep = new lf.proc.IndexRangeScanStep(
-        hr.db.getGlobal(), e.getIndices()[1], [lf.index.SingleKeyRange.all()],
+        hr.db.getGlobal(), e.getIndices()[1],
+        new lf.testing.proc.MockKeyRangeCalculator(
+            [lf.index.SingleKeyRange.all()]),
         true);
     tableAccessByRowIdNode.addChild(indexRangeScanStep);
 
@@ -271,7 +283,9 @@ function testTree_OrderBy_Unaffected() {
         hr.db.getGlobal(), e);
     orderByNode.addChild(tableAccessByRowIdNode);
     var indexRangeScanStep = new lf.proc.IndexRangeScanStep(
-        hr.db.getGlobal(), e.getIndices()[1], [lf.index.SingleKeyRange.all()],
+        hr.db.getGlobal(), e.getIndices()[1],
+        new lf.testing.proc.MockKeyRangeCalculator(
+            [lf.index.SingleKeyRange.all()]),
         true);
     tableAccessByRowIdNode.addChild(indexRangeScanStep);
 
