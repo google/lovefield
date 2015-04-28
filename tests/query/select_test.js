@@ -22,6 +22,7 @@ goog.require('hr.db');
 goog.require('lf.Exception');
 goog.require('lf.bind');
 goog.require('lf.fn');
+goog.require('lf.op');
 goog.require('lf.query.SelectBuilder');
 goog.require('lf.schema.DataStoreType');
 goog.require('lf.testing.util');
@@ -477,4 +478,17 @@ function testInvalidBindingRejects() {
     assertEquals(lf.Exception.Type.SYNTAX, e.name);
     asyncTestCase.continueTesting();
   });
+}
+
+
+function testContext_Clone() {
+  var j = db.getSchema().getJob();
+  var query = /** @type {!lf.query.SelectBuilder} */ (
+      db.select(j.title).from(j).where(lf.op.or(
+      j.minSalary.lt(lf.bind(0)), j.maxSalary.gt(lf.bind(1)))).
+      limit(10).skip(2));
+  var context = query.getQuery();
+  var context2 = context.clone();
+  assertObjectEquals(context, context2);
+  assertTrue(goog.getUid(context) != goog.getUid(context2));
 }

@@ -136,3 +136,21 @@ function testValues_ThrowMissingBinding() {
     asyncTestCase.continueTesting();
   });
 }
+
+
+function testContext_Clone() {
+  var j = db.getSchema().getJob();
+  var query = /** @type {!lf.query.InsertBuilder} */ (
+      db.insert().into(j).values(lf.bind(0)));
+  var context = query.getQuery();
+  var context2 = context.clone();
+  assertObjectEquals(context, context2);
+  assertTrue(goog.getUid(context) != goog.getUid(context2));
+
+  var query2 = /** @type {!lf.query.InsertBuilder} */ (
+      db.insertOrReplace().into(j).values(lf.bind(0)));
+  var context3 = query2.getQuery();
+  var context4 = context3.clone();
+  assertObjectEquals(context3, context4);
+  assertTrue(goog.getUid(context3) != goog.getUid(context4));
+}

@@ -17260,6 +17260,21 @@ lf.query.Context.buildPredicateMap_ = function(rootPredicate) {
   return predicateMap;
 };
 
+
+/** @return {!lf.query.Context} */
+lf.query.Context.prototype.clone = goog.abstractMethod;
+
+
+/**
+ * @param {!lf.query.Context} context
+ * @protected
+ */
+lf.query.Context.prototype.cloneBase = function(context) {
+  if (context.where) {
+    this.where = context.where.copy();
+  }
+};
+
 /**
  * @license
  * Copyright 2014 Google Inc. All Rights Reserved.
@@ -17337,6 +17352,28 @@ lf.query.SelectContext.orderByToString = function(orderBy) {
   });
 
   return out;
+};
+
+
+/** @override */
+lf.query.SelectContext.prototype.clone = function() {
+  var context = new lf.query.SelectContext();
+  context.cloneBase(this);
+  if (this.columns) {
+    context.columns = this.columns.slice();
+  }
+  if (this.from) {
+    context.from = this.from.slice();
+  }
+  context.limit = this.limit;
+  context.skip = this.skip;
+  if (this.orderBy) {
+    context.orderBy = this.orderBy.slice();
+  }
+  if (this.groupBy) {
+    context.groupBy = this.groupBy.slice();
+  }
+  return context;
 };
 
 /**
@@ -30006,6 +30043,15 @@ lf.query.DeleteContext = function() {
 };
 goog.inherits(lf.query.DeleteContext, lf.query.Context);
 
+
+/** @override */
+lf.query.DeleteContext.prototype.clone = function() {
+  var context = new lf.query.DeleteContext();
+  context.cloneBase(this);
+  context.from = this.from;
+  return context;
+};
+
 /**
  * @license
  * Copyright 2014 Google Inc. All Rights Reserved.
@@ -30043,9 +30089,22 @@ lf.query.InsertContext = function() {
   this.values;
 
   /** @type {boolean} */
-  this.allowReplace = false;
+  this.allowReplace;
 };
 goog.inherits(lf.query.InsertContext, lf.query.Context);
+
+
+/** @override */
+lf.query.InsertContext.prototype.clone = function() {
+  var context = new lf.query.InsertContext();
+  context.cloneBase(this);
+  context.into = this.into;
+  if (this.values) {
+    context.values = this.values.slice();
+  }
+  context.allowReplace = this.allowReplace;
+  return context;
+};
 
 /**
  * @license
@@ -30094,6 +30153,16 @@ goog.inherits(lf.query.UpdateContext, lf.query.Context);
  *     value: *}}
  */
 lf.query.UpdateContext.Set;
+
+
+/** @override */
+lf.query.UpdateContext.prototype.clone = function() {
+  var context = new lf.query.UpdateContext();
+  context.cloneBase(this);
+  context.table = this.table;
+  context.set = this.set ? this.set.slice() : this.set;
+  return context;
+};
 
 /**
  * @license

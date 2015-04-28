@@ -86,3 +86,14 @@ function testSet_ThrowsMissingBinding() {
         asyncTestCase.continueTesting();
       });
 }
+
+
+function testContext_Clone() {
+  var j = db.getSchema().getJob();
+  var query = /** @type {!lf.query.UpdateBuilder} */ (
+      db.update(j).set(j.minSalary, lf.bind(1)).where(j.id.eq(lf.bind(0))));
+  var context = query.getQuery();
+  var context2 = context.clone();
+  assertObjectEquals(context, context2);
+  assertTrue(goog.getUid(context) != goog.getUid(context2));
+}

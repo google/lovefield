@@ -18,6 +18,7 @@ goog.setTestOnly();
 goog.require('goog.testing.AsyncTestCase');
 goog.require('goog.testing.jsunit');
 goog.require('hr.db');
+goog.require('lf.bind');
 goog.require('lf.query.DeleteBuilder');
 goog.require('lf.schema.DataStoreType');
 
@@ -84,4 +85,15 @@ function testWhere_ThrowsAlreadyCalled() {
   };
 
   assertThrows(buildQuery);
+}
+
+
+function testContext_Clone() {
+  var j = db.getSchema().getJob();
+  var query = /** @type {!lf.query.DeleteBuilder} */ (
+      db.delete().from(j).where(j.id.eq(lf.bind(0))));
+  var context = query.getQuery();
+  var context2 = context.clone();
+  assertObjectEquals(context, context2);
+  assertTrue(goog.getUid(context) != goog.getUid(context2));
 }
