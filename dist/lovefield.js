@@ -33553,7 +33553,6 @@ lf.proc.IndexRangeScanPass.prototype.replaceWithIndexRangeScanStep_ = function(
 goog.provide('lf.proc.InsertOrReplaceStep');
 goog.provide('lf.proc.InsertStep');
 
-goog.require('goog.Promise');
 goog.require('lf.proc.PhysicalQueryPlanNode');
 goog.require('lf.proc.Relation');
 goog.require('lf.service');
@@ -33566,18 +33565,14 @@ goog.require('lf.service');
  *
  * @param {!lf.Global} global
  * @param {!lf.schema.Table} table
- * @param {!Array<!lf.Row>} values
  */
-lf.proc.InsertStep = function(global, table, values) {
+lf.proc.InsertStep = function(global, table) {
   lf.proc.InsertStep.base(this, 'constructor',
       0,
       lf.proc.PhysicalQueryPlanNode.ExecType.NO_CHILD);
 
   /** @private {!lf.index.IndexStore} */
   this.indexStore_ = global.getService(lf.service.INDEX_STORE);
-
-  /** @private {!Array<!lf.Row>} */
-  this.values_ = values;
 
   /** @private {!lf.schema.Table} */
   this.table_ = table;
@@ -33598,12 +33593,15 @@ lf.proc.InsertStep.prototype.getScope = function() {
 
 
 /** @override */
-lf.proc.InsertStep.prototype.execInternal = function(journal, relations) {
+lf.proc.InsertStep.prototype.execInternal = function(
+    journal, relations, context) {
+  var queryContext = /** @type {!lf.query.InsertContext} */ (context);
   lf.proc.InsertStep.assignAutoIncrementPks_(
-      this.table_, this.values_, this.indexStore_);
-  journal.insert(this.table_, this.values_);
+      this.table_, queryContext.values, this.indexStore_);
+  journal.insert(this.table_, queryContext.values);
 
-  return [lf.proc.Relation.fromRows(this.values_, [this.table_.getName()])];
+  return [lf.proc.Relation.fromRows(
+      queryContext.values, [this.table_.getName()])];
 };
 
 
@@ -33646,18 +33644,14 @@ lf.proc.InsertStep.assignAutoIncrementPks_ = function(
  *
  * @param {!lf.Global} global
  * @param {!lf.schema.Table} table
- * @param {!Array<!lf.Row>} values
  */
-lf.proc.InsertOrReplaceStep = function(global, table, values) {
+lf.proc.InsertOrReplaceStep = function(global, table) {
   lf.proc.InsertOrReplaceStep.base(this, 'constructor',
       0,
       lf.proc.PhysicalQueryPlanNode.ExecType.NO_CHILD);
 
   /** @private {!lf.index.IndexStore} */
   this.indexStore_ = global.getService(lf.service.INDEX_STORE);
-
-  /** @private {!Array<!lf.Row>} */
-  this.values_ = values;
 
   /** @private {!lf.schema.Table} */
   this.table_ = table;
@@ -33679,12 +33673,14 @@ lf.proc.InsertOrReplaceStep.prototype.getScope = function() {
 
 /** @override */
 lf.proc.InsertOrReplaceStep.prototype.execInternal = function(
-    journal, relations) {
+    journal, relations, context) {
+  var queryContext = /** @type {!lf.query.InsertContext} */ (context);
   lf.proc.InsertStep.assignAutoIncrementPks_(
-      this.table_, this.values_, this.indexStore_);
-  journal.insertOrReplace(this.table_, this.values_);
+      this.table_, queryContext.values, this.indexStore_);
+  journal.insertOrReplace(this.table_, queryContext.values);
 
-  return [lf.proc.Relation.fromRows(this.values_, [this.table_.getName()])];
+  return [lf.proc.Relation.fromRows(
+      queryContext.values, [this.table_.getName()])];
 };
 
 /**
@@ -35017,9 +35013,9 @@ lf.proc.PhysicalPlanFactory.prototype.mapFn_ = function(node) {
     return new lf.proc.UpdateStep(node.table, node.updates);
   } else if (node instanceof lf.proc.InsertOrReplaceNode) {
     return new lf.proc.InsertOrReplaceStep(
-        this.global_, node.table, node.values);
+        this.global_, node.table);
   } else if (node instanceof lf.proc.InsertNode) {
-    return new lf.proc.InsertStep(this.global_, node.table, node.values);
+    return new lf.proc.InsertStep(this.global_, node.table);
   }
 
   throw new lf.Exception(lf.Exception.Type.NOT_SUPPORTED,
