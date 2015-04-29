@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <script src="../lib/angular.min.js"></script>
+  <!-- Lovefield -->
+  <script src="../lib/lovefield.min.js"></script>
+  <link href="../lib//bootstrap.min.css" rel="stylesheet">
+  <link href="resources/demo_angular.css" rel="stylesheet">
+</head>
+
+<body ng-app="myApp">
+  <div  id="query-builder" ng-controller="QueryBuilderController as queryBuilder">
+    <form novalidate>
+      <div class="form-group">
+        <label for="fromYearSelect">From year:</label>
+        <select id="fromYearSelect" class="form-control" ng-model="fromYearSelection">
+          <option ng-repeat="year in queryBuilder.fromYears">{{year}}</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label for="toYearSelect">To year:</label>
+        <select id="toYearSelect" class="form-control" ng-model="toYearSelection">
+          <option ng-repeat="year in queryBuilder.toYears">{{year}}</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label for="citySelect">Hosting city:</label>
+        <select id="citySelect" class="form-control" ng-model="citySelection">
+          <option ng-repeat="city in queryBuilder.cities">{{city}}</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label for="disciplineSelect">Discipline:</label>
+        <select id="disciplineSelect" class="form-control" ng-model="disciplineSelection">
+          <option ng-repeat="discipline in queryBuilder.disciplines">{{discipline}}</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label for="eventSelect">Event:</label>
+        <select id="eventSelect" class="form-control" ng-model="eventSelection">
+          <option ng-repeat="event in queryBuilder.events">{{event}}</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label for="countrySelect">Country:</label>
+        <select id="countrySelect" class="form-control" ng-model="countrySelection">
+          <option ng-repeat="country in queryBuilder.countries">{{country}}</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label for="colorSelect">Color:</label>
+        <select id="colorSelect" class="form-control" ng-model="colorSelection">
+          <option ng-repeat="color in queryBuilder.colors">{{color}}</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label>Gender:</label>
+        <select ng-model="genderSelection" class="form-control" >
+          <option ng-repeat="gender in queryBuilder.genders">{{gender}}</option>
+        </select>
+      </div>
+
+      <button type="reset" class="btn btn-default" ng-click="queryBuilder.clear()">Clear</button>
+      <button type="submit" class="btn btn-primary" ng-click="queryBuilder.search()">Search</button>
+    </form>
+
+    <textarea class="form-control" rows="5" readonly ng-model="sqlQuery"></textarea>
+
+  </div>
+
+  <div id="results" ng-controller="ResultsController as resultsController">
+    <h1>Found {{resultsController.getResults().length}} results.</h1>
+    <table class="table table-striped table-bordered table-hover table-condensed"
+           data-pagination="true" data-search="true">
+      <tr>
+        <th ng-repeat="columnName in
+          resultsController.getColumnNames() | filter:'!$$hashKey'">{{columnName}}</th>
+      </tr>
+      <tr ng-repeat="x in resultsController.getResults()">
+        <td ng-repeat="(key, data) in x">{{data}}</td>
+      </tr>
+    </table>
+
+  </div>
+
+  <script type="text/javascript" src="demo_angular.js"></script>
+</body>
+
+</html>
