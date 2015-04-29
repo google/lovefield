@@ -1,9 +1,0 @@
-%YAML 1.2
----
-name: Transaction  # Should throw: Transaction is reserved
-version: 1
-table:
-  Employee:
-    column:
-      id: string
-      name: string

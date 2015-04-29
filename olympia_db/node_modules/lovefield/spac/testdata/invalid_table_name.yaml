@@ -1,9 +1,0 @@
-%YAML 1.2
----
-name: db
-version: 1
-table:
-  Employee.Here:  # Should throw, illegal name.
-    column:
-      id: string
-      name: string

@@ -1,9 +1,0 @@
-%YAML 1.2
----
-name: sample
-version: not_a_number  # Should throw: not a number
-table:
-  Employee:
-    column:
-      id: string
-      name: string
