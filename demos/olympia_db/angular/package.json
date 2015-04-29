@@ -16,7 +16,6 @@
   "devDependencies": {
     "gulp": "^3.8.10",
     "gulp-webserver": "^0.9.0",
-    "lovefield": "git://github.com/google/lovefield",
     "rimraf": "*"
   }
 }

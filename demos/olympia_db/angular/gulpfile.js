@@ -22,7 +22,7 @@ var rmdir = require('rimraf').sync;
 
 gulp.task('copy_dependencies', function() {
   if (!fs.existsSync('lib')) { fs.mkdirSync('lib'); }
-  fs.createReadStream('node_modules/lovefield/dist/lovefield.min.js').
+  fs.createReadStream('bower_components/lovefield/dist/lovefield.min.js').
       pipe(fs.createWriteStream('lib/lovefield.min.js'));
   fs.createReadStream('bower_components/bootstrap/dist/css/bootstrap.min.css').
       pipe(fs.createWriteStream('lib/bootstrap.min.css'));
