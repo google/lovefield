@@ -231,13 +231,18 @@ function testGroupBy_ThrowsAlreadyCalled() {
  */
 function testLimit_ThrowsAlreadyCalled() {
   var query = new lf.query.SelectBuilder(hr.db.getGlobal(), []);
+  var emp = db.getSchema().getEmployee();
 
   var buildQuery = function() {
-    var employeeTable = db.getSchema().getEmployee();
-    query.from(employeeTable).limit(100).limit(100);
+    query.from(emp).limit(100).limit(100);
+  };
+
+  var buildQuery2 = function() {
+    query.from(emp).limit(lf.bind(0)).limit(lf.bind(1));
   };
 
   lf.testing.util.assertThrowsSyntaxError(buildQuery);
+  lf.testing.util.assertThrowsSyntaxError(buildQuery2);
 }
 
 
@@ -260,13 +265,18 @@ function testLimit_ThrowsInvalidParameter() {
  */
 function testSkip_ThrowsAlreadyCalled() {
   var query = new lf.query.SelectBuilder(hr.db.getGlobal(), []);
+  var emp = db.getSchema().getEmployee();
 
   var buildQuery = function() {
-    var employeeTable = db.getSchema().getEmployee();
-    query.from(employeeTable).skip(100).skip(100);
+    query.from(emp).skip(100).skip(100);
+  };
+
+  var buildQuery2 = function() {
+    query.from(emp).skip(lf.bind(0)).skip(lf.bind(1));
   };
 
   lf.testing.util.assertThrowsSyntaxError(buildQuery);
+  lf.testing.util.assertThrowsSyntaxError(buildQuery2);
 }
 
 

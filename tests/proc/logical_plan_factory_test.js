@@ -66,7 +66,7 @@ function testCreate_DeletePlan() {
       from(table).
       where(lf.op.and(table['id'].eq('id'), table['name'].eq('name')));
 
-  var query = queryBuilder.query;
+  var query = queryBuilder.getQuery();
   assertEquals(
       2,
       /** @type {!lf.pred.PredicateNode} */ (query.where).getChildCount());
@@ -99,7 +99,7 @@ function testCreate_SelectPlan() {
       from(table).
       where(lf.op.and(table['id'].eq('id'), table['name'].eq('name')));
 
-  var query = queryBuilder.query;
+  var query = queryBuilder.getQuery();
   assertEquals(
       2,
       /** @type {!lf.pred.PredicateNode} */ (query.where).getChildCount());
@@ -128,7 +128,7 @@ function testCreate_SelectPlan_SkipZero() {
   var queryBuilder = new lf.query.SelectBuilder(lf.Global.get(), []);
   queryBuilder.from(table).skip(0);
 
-  var query = queryBuilder.query;
+  var query = queryBuilder.getQuery();
 
   var expectedTree =
       'project()\n' +
@@ -148,7 +148,7 @@ function testCreate_SelectPlan_LimitZero() {
   var queryBuilder = new lf.query.SelectBuilder(lf.Global.get(), []);
   queryBuilder.from(table).limit(0);
 
-  var query = queryBuilder.query;
+  var query = queryBuilder.getQuery();
 
   var expectedTree =
       'limit(0)\n' +
@@ -173,7 +173,7 @@ function testCreate_UpdatePlan() {
       set(table['name'], 'NewName').
       where(lf.op.and(table['id'].eq('id'), table['name'].eq('name')));
 
-  var query = queryBuilder.query;
+  var query = queryBuilder.getQuery();
   assertEquals(
       2,
       /** @type {!lf.pred.PredicateNode} */ (query.where).getChildCount());

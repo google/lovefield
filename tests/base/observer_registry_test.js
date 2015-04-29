@@ -108,11 +108,15 @@ function testGetQueriesForTable() {
   registry.addObserver(builder3, callback);
 
   var queries = registry.getQueriesForTables([tables[0]]);
-  assertArrayEquals([builder1.getQuery(), builder2.getQuery()], queries);
+  assertArrayEquals(
+      [builder1.getObservableQuery(), builder2.getObservableQuery()], queries);
   queries = registry.getQueriesForTables([tables[1]]);
-  assertArrayEquals([builder2.getQuery(), builder3.getQuery()], queries);
+  assertArrayEquals(
+      [builder2.getObservableQuery(), builder3.getObservableQuery()], queries);
   queries = registry.getQueriesForTables([tables[0], tables[1]]);
   assertArrayEquals(
-      [builder1.getQuery(), builder2.getQuery(), builder3.getQuery()],
+      [builder1.getObservableQuery(),
+       builder2.getObservableQuery(),
+       builder3.getObservableQuery()],
       queries);
 }

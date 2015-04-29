@@ -91,7 +91,7 @@ function getSampleQuery() {
     rows.push(job);
   }
   return /** @type {!lf.query.InsertBuilder} */ (
-      db.insert().into(j).values(rows)).query;
+      db.insert().into(j).values(rows)).getQuery();
 }
 
 
@@ -132,7 +132,7 @@ function testSinglePlan_Update() {
   queryTask.exec().then(function() {
     assertEquals(ROW_COUNT, cache.getCount());
     var query = /** @type {!lf.query.UpdateBuilder} */ (
-        db.update(j).set(j.title, newTitle)).query;
+        db.update(j).set(j.title, newTitle)).getQuery();
     var updateQueryTask = new lf.proc.UserQueryTask(
         hr.db.getGlobal(), [query]);
     return updateQueryTask.exec();
@@ -163,7 +163,7 @@ function testSinglePlan_Delete() {
   queryTask.exec().then(function() {
     assertEquals(ROW_COUNT, cache.getCount());
     var query = /** @type {!lf.query.DeleteBuilder} */ (
-        db.delete().from(j)).query;
+        db.delete().from(j)).getQuery();
     var deleteQueryTask = new lf.proc.UserQueryTask(
         hr.db.getGlobal(), [query]);
     return deleteQueryTask.exec();

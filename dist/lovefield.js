@@ -17193,6 +17193,2158 @@ lf.Order = {
 
 /**
  * @license
+ * Copyright 2014 Google Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+goog.provide('lf.index.KeyRange');
+goog.provide('lf.index.SingleKeyRange');
+
+goog.require('lf.index.Favor');
+
+goog.forwardDeclare('lf.index.Index.SingleKey');
+
+
+
+/**
+ * A SingleKeyRange represents a key range of a single column, used for querying
+ * various lf.index.Index implementations.
+ * @constructor
+ * @struct
+ *
+ * @param {?lf.index.Index.SingleKey} from The lower bound of this range. Null
+ *     means  that there is no lower bound.
+ * @param {?lf.index.Index.SingleKey} to The upper bound of this range. Null
+ *     means that there is no upper bound.
+ * @param {boolean} excludeLower Whether the lower bound should be excluded.
+ *     Ignored if no lower bound exists.
+ * @param {boolean} excludeUpper Whether the upper bound should be excluded.
+ *     Ignored if no upper bound exists.
+ */
+lf.index.SingleKeyRange = function(from, to, excludeLower, excludeUpper) {
+  /** @type {?lf.index.Index.SingleKey} */
+  this.from = from;
+
+  /** @type {?lf.index.Index.SingleKey} */
+  this.to = to;
+
+  /** @type {boolean} */
+  this.excludeLower = !goog.isNull(this.from) ? excludeLower : false;
+
+  /** @type {boolean} */
+  this.excludeUpper = !goog.isNull(this.to) ? excludeUpper : false;
+};
+
+
+/**
+ * A KeyRange is more generic than a SingleKeyRange since it can express a key
+ * range of a cross-column key. The SingleKeyRange instances in the array
+ * represent a key range for each dimension of the cross-column key range.
+ * Example for a lf.index.Index.Key (x, y) a KeyRange of [[0, 100], [50, 70]]
+ * represents the 2D area where 0 >= x >= 100 AND 50 <= y <=100.
+ * @typedef {!Array<!lf.index.SingleKeyRange>}
+ */
+lf.index.KeyRange;
+
+
+/**
+ * A text representation of this key range, useful for tests.
+ * Example: [a, b] means from a to b, with both a and be included in the range.
+ * Example: (a, b] means from a to b, with a excluded, b included.
+ * Example: (a, b) means from a to b, with both a and b excluded.
+ * Example: [unbound, b) means anything less than b, with b not included.
+ * Example: [a, unbound] means anything greater than a, with a included.
+ * @override
+ */
+lf.index.SingleKeyRange.prototype.toString = function() {
+  return (this.excludeLower ? '(' : '[') +
+      (goog.isNull(this.from) ? 'unbound' : this.from) + ', ' +
+      (goog.isNull(this.to) ? 'unbound' : this.to) +
+      (this.excludeUpper ? ')' : ']');
+};
+
+
+/**
+ * Finds the complement key range. Note that in some cases the complement is
+ * composed of two disjoint key ranges. For example complementing [10, 20] would
+ * result in [unbound, 10) and (20, unbound].
+ * @return {!Array<!lf.index.SingleKeyRange>} The complement key ranges. An
+ *     empty array will be returned in the case where the complement is empty.
+ */
+lf.index.SingleKeyRange.prototype.complement = function() {
+  // Complement of lf.index.SingleKeyRange.all() is empty.
+  if (goog.isNull(this.from) && goog.isNull(this.to)) {
+    return [];
+  }
+
+  var keyRangeLow = null;
+  var keyRangeHigh = null;
+
+  if (!goog.isNull(this.from)) {
+    keyRangeLow = new lf.index.SingleKeyRange(
+        null, this.from, false, !this.excludeLower);
+  }
+
+  if (!goog.isNull(this.to)) {
+    keyRangeHigh = new lf.index.SingleKeyRange(
+        this.to, null, !this.excludeUpper, false);
+  }
+
+  return [keyRangeLow, keyRangeHigh].filter(function(keyRange) {
+    return !goog.isNull(keyRange);
+  });
+};
+
+
+/**
+ * Reverses a keyRange such that "lower" refers to larger values and "upper"
+ * refers to smaller values. Note: This is different than what complement()
+ * does.
+ * @return {!lf.index.SingleKeyRange}
+ */
+lf.index.SingleKeyRange.prototype.reverse = function() {
+  return new lf.index.SingleKeyRange(
+      this.to, this.from, this.excludeUpper, this.excludeLower);
+};
+
+
+/**
+ * Determines if this range overlaps with the given one.
+ * @param {!lf.index.SingleKeyRange} range
+ * @return {boolean}
+ */
+lf.index.SingleKeyRange.prototype.overlaps = function(range) {
+  var favor = lf.index.SingleKeyRange.compareKey_(
+      this.from, range.from, true, this.excludeLower, range.excludeLower);
+  if (favor == lf.index.Favor.TIE) {
+    return true;
+  }
+  var left = (favor == lf.index.Favor.RHS) ? this : range;
+  var right = (favor == lf.index.Favor.LHS) ? this : range;
+
+  return goog.isNull(left.to) ||
+      left.to > right.from ||
+      (left.to == right.from && !left.excludeUpper && !right.excludeLower);
+};
+
+
+/**
+ * @param {!lf.index.Index.SingleKey} key The upper bound.
+ * @param {boolean=} opt_shouldExclude Whether the upper bound should be
+ *     excluded. Defaults to false.
+ * @return {!lf.index.SingleKeyRange}
+ */
+lf.index.SingleKeyRange.upperBound = function(key, opt_shouldExclude) {
+  return new lf.index.SingleKeyRange(
+      null, key, false, opt_shouldExclude || false);
+};
+
+
+/**
+ * @param {!lf.index.Index.SingleKey} key The lower bound.
+ * @param {boolean=} opt_shouldExclude Whether the lower bound should be
+ *     excluded. Defaults to false.
+ * @return {!lf.index.SingleKeyRange}
+ */
+lf.index.SingleKeyRange.lowerBound = function(key, opt_shouldExclude) {
+  return new lf.index.SingleKeyRange(
+      key, null, opt_shouldExclude || false, false);
+};
+
+
+/**
+ * Creates a range that includes a single key.
+ * @param {!lf.index.Index.SingleKey} key
+ * @return {!lf.index.SingleKeyRange}
+ */
+lf.index.SingleKeyRange.only = function(key) {
+  return new lf.index.SingleKeyRange(key, key, false, false);
+};
+
+
+/**
+ * Creates a range that includes all keys.
+ * @return {!lf.index.SingleKeyRange}
+ */
+lf.index.SingleKeyRange.all = function() {
+  return new lf.index.SingleKeyRange(null, null, false, false);
+};
+
+
+/**
+ * Returns if the range is all.
+ * @return {boolean}
+ */
+lf.index.SingleKeyRange.prototype.isAll = function() {
+  return goog.isNull(this.from) && goog.isNull(this.to);
+};
+
+
+/**
+ * @param {!lf.index.Index.SingleKey} key
+ * @return {boolean}
+ */
+lf.index.SingleKeyRange.prototype.contains = function(key) {
+  var left = goog.isNull(this.from) || (key > this.from) ||
+      (key == this.from && !this.excludeLower);
+  var right = goog.isNull(this.to) || (key < this.to) ||
+      (key == this.to && !this.excludeUpper);
+  return left && right;
+};
+
+
+/**
+ * Bound the range with [min, max] and return the newly bounded range.
+ * @param {!lf.index.Index.SingleKey} min
+ * @param {!lf.index.Index.SingleKey} max
+ * @return {?lf.index.SingleKeyRange} When the given bound has no intersection
+ *     with this range, or the range/bound is reversed, return null.
+ */
+lf.index.SingleKeyRange.prototype.getBounded = function(min, max) {
+  // Eliminate out of range scenarios.
+  if ((goog.isNull(this.from) && !this.contains(min)) ||
+      (goog.isNull(this.to) && !this.contains(max))) {
+    return null;
+  }
+
+  var range = new lf.index.SingleKeyRange(min, max, false, false);
+  if (!goog.isNull(this.from) && this.from >= min) {
+    range.from = this.from;
+    range.excludeLower = this.excludeLower;
+  }
+  if (!goog.isNull(this.to) && this.to <= max) {
+    range.to = this.to;
+    range.excludeUpper = this.excludeUpper;
+  }
+
+  if (range.from > range.to ||
+      (range.from == range.to && (range.excludeUpper || range.excludeLower))) {
+    return null;
+  }
+  return range;
+};
+
+
+/**
+ * @param {!lf.index.SingleKeyRange} range
+ * @return {boolean}
+ */
+lf.index.SingleKeyRange.prototype.equals = function(range) {
+  return this.from == range.from &&
+      this.excludeLower == range.excludeLower &&
+      this.to == range.to &&
+      this.excludeUpper == range.excludeUpper;
+};
+
+
+/**
+ * @param {boolean} a
+ * @param {boolean} b
+ * @return {boolean}
+ */
+lf.index.SingleKeyRange.xor = function(a, b) {
+  return a ? !b : b;
+};
+
+
+/**
+ * Directionally compare two keys.
+ * Left hand side key comparison logic: null is considered left, exclusion
+ * is considered right.
+ * Right hand side key comparison logic: null is considered right, exclusion
+ * is considered left.
+ * @param {?lf.index.Index.SingleKey} l
+ * @param {?lf.index.Index.SingleKey} r
+ * @param {boolean} isLeftHandSide
+ * @param {boolean=} opt_excludeL
+ * @param {boolean=} opt_excludeR
+ * @return {!lf.index.Favor}
+ * @private
+ */
+lf.index.SingleKeyRange.compareKey_ = function(
+    l, r, isLeftHandSide, opt_excludeL, opt_excludeR) {
+  var Favor = lf.index.Favor;
+  var excludeL = opt_excludeL || false;
+  var excludeR = opt_excludeR || false;
+  var flip = function(favor) {
+    return isLeftHandSide ? favor :
+        (favor == Favor.LHS) ? Favor.RHS : Favor.LHS;
+  };
+
+  // The following logic is implemented for LHS. RHS is achieved using flip().
+  var tieLogic = function() {
+    return !lf.index.SingleKeyRange.xor(excludeL, excludeR) ? Favor.TIE :
+        excludeL ? flip(Favor.LHS) : flip(Favor.RHS);
+  };
+
+  if (goog.isNull(l)) {
+    return !goog.isNull(r) ? flip(Favor.RHS) : tieLogic();
+  }
+  return goog.isNull(r) ? flip(Favor.LHS) :
+      (l < r) ? Favor.RHS :
+      (l == r) ? tieLogic() : Favor.LHS;
+};
+
+
+/**
+ * Compares two ranges, meant to be used in Array#sort.
+ * @param {!lf.index.SingleKeyRange} lhs
+ * @param {!lf.index.SingleKeyRange} rhs
+ * @return {!lf.index.Favor}
+ */
+lf.index.SingleKeyRange.compare = function(lhs, rhs) {
+  var result = lf.index.SingleKeyRange.compareKey_(
+      lhs.from, rhs.from, true, lhs.excludeLower, rhs.excludeLower);
+  if (result == lf.index.Favor.TIE) {
+    result = lf.index.SingleKeyRange.compareKey_(
+        lhs.to, rhs.to, false, lhs.excludeUpper, rhs.excludeUpper);
+  }
+  return result;
+};
+
+
+/**
+ * Returns a new range that is the minimum range that covers both ranges given.
+ * @param {!lf.index.SingleKeyRange} r1
+ * @param {!lf.index.SingleKeyRange} r2
+ * @return {!lf.index.SingleKeyRange}
+ */
+lf.index.SingleKeyRange.getBoundingRange = function(r1, r2) {
+  var r = lf.index.SingleKeyRange.all();
+  if (!goog.isNull(r1.from) && !goog.isNull(r2.from)) {
+    var favor = lf.index.SingleKeyRange.compareKey_(r1.from, r2.from, true);
+    if (favor != lf.index.Favor.LHS) {
+      r.from = r1.from;
+      r.excludeLower = (favor != lf.index.Favor.TIE) ? r1.excludeLower :
+          r1.excludeLower && r2.excludeLower;
+    } else {
+      r.from = r2.from;
+      r.excludeLower = r2.excludeLower;
+    }
+  }
+  if (!goog.isNull(r1.to) && !goog.isNull(r2.to)) {
+    var favor = lf.index.SingleKeyRange.compareKey_(r1.to, r2.to, false);
+    if (favor != lf.index.Favor.RHS) {
+      r.to = r1.to;
+      r.excludeUpper = (favor != lf.index.Favor.TIE) ? r1.excludeUpper :
+          r1.excludeUpper && r2.excludeUpper;
+    } else {
+      r.to = r2.to;
+      r.excludeUpper = r2.excludeUpper;
+    }
+  }
+  return r;
+};
+
+
+/**
+ * Intersects two ranges and return their intersection.
+ * @param {!lf.index.SingleKeyRange} r1
+ * @param {!lf.index.SingleKeyRange} r2
+ * @return {?lf.index.SingleKeyRange} Returns null if intersection is empty.
+ */
+lf.index.SingleKeyRange.and = function(r1, r2) {
+  if (!r1.overlaps(r2)) {
+    return null;
+  }
+
+  var r = lf.index.SingleKeyRange.all();
+  var favor = lf.index.SingleKeyRange.compareKey_(r1.from, r2.from, true);
+  var left = (favor == lf.index.Favor.TIE) ? (r1.excludeLower ? r1 : r2) :
+      (favor != lf.index.Favor.RHS) ? r1 : r2;
+  r.from = left.from;
+  r.excludeLower = left.excludeLower;
+
+  // right side boundary test is different, null is considered greater.
+  var right;
+  if (goog.isNull(r1.to) || goog.isNull(r2.to)) {
+    right = goog.isNull(r1.to) ? r2 : r1;
+  } else {
+    favor = lf.index.SingleKeyRange.compareKey_(r1.to, r2.to, false);
+    right = (favor == lf.index.Favor.TIE) ? (r1.excludeUpper ? r1 : r2) :
+        (favor == lf.index.Favor.RHS) ? r1 : r2;
+  }
+  r.to = right.to;
+  r.excludeUpper = right.excludeUpper;
+  return r;
+};
+
+/**
+ * @license
+ * Copyright 2014 Google Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+goog.provide('lf.proc.AggregationResult');
+goog.provide('lf.proc.Relation');
+goog.provide('lf.proc.RelationEntry');
+
+goog.require('goog.asserts');
+goog.require('goog.structs.Map');
+goog.require('goog.structs.Set');
+goog.require('lf.Row');
+
+goog.forwardDeclare('lf.schema.Column');
+
+
+
+/**
+ * A Relation instance represents the input/output of a query execution step. It
+ * is passed from one step to the next one during query execution.
+ * @constructor
+ * @struct
+ *
+ * @param {!Array<!lf.proc.RelationEntry>} entries
+ * @param {!Array<string>} tables The names of the source tables of this
+ *     relation.
+ */
+lf.proc.Relation = function(entries, tables) {
+  /**
+   * @type {!Array<!lf.proc.RelationEntry>}
+   * @const
+   */
+  this.entries = entries;
+
+  /** @private {!goog.structs.Set<string>} */
+  this.tables_ = new goog.structs.Set(tables);
+
+  /**
+   * A map holding any aggregations that have been calculated for this relation.
+   * Null if no aggregations have been calculated. The keys of the map
+   * correspond to the normalized name of the aggregated column, for example
+   * 'COUNT(*)' or 'MIN(Employee.salary)'.
+   * @private {?goog.structs.Map<string, !lf.proc.AggregationResult>}
+   */
+  this.aggregationResults_ = null;
+};
+
+
+/**
+ * @typedef {(!lf.proc.Relation|string|number)}
+ */
+lf.proc.AggregationResult;
+
+
+/**
+ * @param {!lf.proc.Relation} relation The relation to check against.
+ * @return {boolean} Whether this relation is compatible with the given
+ *     relation, in terms of calculating union/intersection.
+ */
+lf.proc.Relation.prototype.isCompatible = function(relation) {
+  return this.tables_.equals(relation.tables_);
+};
+
+
+/**
+ * Asserts that two relations are compatible with regards to union/intersection
+ * operations.
+ * @param {!lf.proc.Relation} lhs The relation to check against.
+ * @param {!lf.proc.Relation} rhs The relation to check against.
+ * @private
+ */
+lf.proc.Relation.assertCompatible_ = function(lhs, rhs) {
+  goog.asserts.assert(
+      lhs.isCompatible(rhs),
+      'Intersection/union operations only apply to compatible relations.');
+};
+
+
+/**
+ * @return {!Array<string>} The names of all source tables of this relation.
+ */
+lf.proc.Relation.prototype.getTables = function() {
+  return this.tables_.getValues();
+};
+
+
+/**
+ * @return {boolean} Whether prefixes have been applied to the payloads in this
+ *     relation.
+ */
+lf.proc.Relation.prototype.isPrefixApplied = function() {
+  return this.tables_.getCount() > 1;
+};
+
+
+/** @return {!Array<!Object>} */
+lf.proc.Relation.prototype.getPayloads = function() {
+  return this.entries.map(function(entry) {
+    return entry.row.payload();
+  });
+};
+
+
+/** @return {!Array<number>} */
+lf.proc.Relation.prototype.getRowIds = function() {
+  return this.entries.map(function(entry) {
+    return entry.row.id();
+  });
+};
+
+
+/**
+ * Adds an aggregated result to this relation.
+ * @param {!lf.schema.Column} column The aggregated column.
+ * @param {!lf.proc.AggregationResult} result The result of the aggregated
+ *     column.
+ */
+lf.proc.Relation.prototype.setAggregationResult = function(column, result) {
+  if (goog.isNull(this.aggregationResults_)) {
+    this.aggregationResults_ = new goog.structs.Map();
+  }
+
+  this.aggregationResults_.set(column.getNormalizedName(), result);
+};
+
+
+/**
+ * Gets an already calculated aggregated result for this relation.
+ * @param {!lf.schema.Column} column The aggregated column.
+ * @return {!lf.proc.AggregationResult}
+ */
+lf.proc.Relation.prototype.getAggregationResult = function(column) {
+  goog.asserts.assert(
+      !goog.isNull(this.aggregationResults_),
+      'getAggregationResult called before any results have been calculated.');
+
+  var result = this.aggregationResults_.get(
+      column.getNormalizedName(), undefined);
+  goog.asserts.assert(
+      goog.isDef(result),
+      'Could not find result for ' + column.getNormalizedName());
+
+  return result;
+};
+
+
+/**
+ * @param {!lf.schema.Column} column
+ * @return {boolean} Whether an aggregation result for the given aggregated
+ *     column has been calculated.
+ */
+lf.proc.Relation.prototype.hasAggregationResult = function(column) {
+  return !goog.isNull(this.aggregationResults_) &&
+      this.aggregationResults_.containsKey(column.getNormalizedName());
+};
+
+
+/** @private {?lf.proc.Relation} */
+lf.proc.Relation.emptyRelation_ = null;
+
+
+/**
+ * Creates an empty Relation instance. Since a relation is immutable, a
+ * singleton "empty" relation instance is lazily instantiated and returned in
+ * all subsequent calls.
+ * @return {!lf.proc.Relation}
+ */
+lf.proc.Relation.createEmpty = function() {
+  if (goog.isNull(lf.proc.Relation.emptyRelation_)) {
+    lf.proc.Relation.emptyRelation_ = new lf.proc.Relation([], []);
+  }
+
+  return lf.proc.Relation.emptyRelation_;
+};
+
+
+/**
+ * Finds the intersection of a given list of relations.
+ * @param {!Array<!lf.proc.Relation>} relations The instances to be
+ *     intersected.
+ * @return {!lf.proc.Relation} A relation containing only those entries that
+ *     exist in all input relations.
+ */
+lf.proc.Relation.intersect = function(relations) {
+  if (relations.length == 0) {
+    return lf.proc.Relation.createEmpty();
+  }
+
+  var totalCount = relations.reduce(function(soFar, relation) {
+    lf.proc.Relation.assertCompatible_(relations[0], relation);
+    return soFar + relation.entries.length;
+  }, 0);
+  var allEntries = new Array(totalCount);
+
+  var entryCounter = 0;
+  // Creating a map [entry.id --> entry] for each relation, and at the same time
+  // populating the allEntries array.
+  var relationMaps = relations.map(function(relation) {
+    var map = new goog.structs.Map();
+    relation.entries.forEach(function(entry) {
+      allEntries[entryCounter++] = entry;
+      map.set(entry.id, entry);
+    });
+    return map;
+  });
+
+  var intersection = new goog.structs.Map();
+  for (var i = 0; i < allEntries.length; i++) {
+    var existsInAll = relationMaps.every(function(relation) {
+      return relation.containsKey(allEntries[i].id);
+    });
+    if (existsInAll) {
+      intersection.set(allEntries[i].id, allEntries[i]);
+    }
+  }
+
+  return new lf.proc.Relation(
+      intersection.getValues(), relations[0].tables_.getValues());
+};
+
+
+/**
+ * Finds the union of a given list of relations.
+ * @param {!Array<!lf.proc.Relation>} relations The instances to be
+ *     intersected.
+ * @return {!lf.proc.Relation} A relation containing all entries from all input
+ *     relations.
+ */
+lf.proc.Relation.union = function(relations) {
+  if (relations.length == 0) {
+    return lf.proc.Relation.createEmpty();
+  }
+
+  var union = new goog.structs.Map();
+  relations.forEach(function(relation) {
+    lf.proc.Relation.assertCompatible_(relations[0], relation);
+    relation.entries.forEach(function(entry) {
+      union.set(entry.id, entry);
+    });
+  });
+
+  return new lf.proc.Relation(
+      union.getValues(), relations[0].tables_.getValues());
+};
+
+
+/**
+ * Creates an lf.proc.Relation instance from a set of lf.Row instances.
+ * @param {!Array<!lf.Row>} rows
+ * @param {!Array<string>} tables The names of the tables where these rows
+ *     belong.
+ * @return {!lf.proc.Relation}
+ */
+lf.proc.Relation.fromRows = function(rows, tables) {
+  var isPrefixApplied = tables.length > 1;
+  var entries = rows.map(function(row) {
+    return new lf.proc.RelationEntry(row, isPrefixApplied);
+  });
+
+  return new lf.proc.Relation(entries, tables);
+};
+
+
+
+/**
+ * Each RelationEntry represents a row that is passed from one execution step
+ * to another and does not necessarilly correspond to a physical row in a DB
+ * table (as it can be the result of a cross-product/join operation).
+ * @constructor
+ * @struct
+ *
+ * @param {!lf.Row} row
+ * @param {boolean} isPrefixApplied Whether the payload in this entry is using
+ *     prefixes for each attribute. This happens when this entry is the result
+ *     of a relation join.
+ */
+lf.proc.RelationEntry = function(row, isPrefixApplied) {
+  /** @type {!lf.Row} */
+  this.row = row;
+
+  /** @type {number} */
+  this.id = lf.proc.RelationEntry.getNextId_();
+
+  /** @private {boolean} */
+  this.isPrefixApplied_ = isPrefixApplied;
+};
+
+
+/**
+ * The ID to assign to the next entry that will be created.
+ * @private {number}
+ */
+lf.proc.RelationEntry.id_ = 0;
+
+
+/**
+ * @return {number} The next unique entry ID to use for creating a new instance.
+ * @private
+ */
+lf.proc.RelationEntry.getNextId_ = function() {
+  return lf.proc.RelationEntry.id_++;
+};
+
+
+/**
+ * @param {!lf.schema.Column} column The column to be retrieved.
+ * @return {*} The value of the requested column for this entry.
+ */
+lf.proc.RelationEntry.prototype.getField = function(column) {
+  // Attempting to get the field from the aliased location first, since it is
+  // not guaranteed that setField() has been called for this instance. If not
+  // found then look for it in its normal location.
+  var alias = column.getAlias();
+  if (!goog.isNull(alias) && this.row.payload().hasOwnProperty(alias)) {
+    return this.row.payload()[alias];
+  }
+
+  if (this.isPrefixApplied_) {
+    return this.row.payload()[
+        column.getTable().getEffectiveName()][column.getName()];
+  } else {
+    return this.row.payload()[column.getName()];
+  }
+};
+
+
+/**
+ * Sets the value of the given field on this entry.
+ * @param {!lf.schema.Column} column The column to be retrieved.
+ * @param {*} value The value to be set.
+ */
+lf.proc.RelationEntry.prototype.setField = function(column, value) {
+  var alias = column.getAlias();
+  if (goog.isDefAndNotNull(alias)) {
+    this.row.payload()[alias] = value;
+    return;
+  }
+
+  if (this.isPrefixApplied_) {
+    var tableName = column.getTable().getEffectiveName();
+    var containerObj = this.row.payload()[tableName];
+    if (!goog.isDefAndNotNull(containerObj)) {
+      containerObj = {};
+      this.row.payload()[tableName] = containerObj;
+    }
+    containerObj[column.getName()] = value;
+  } else {
+    this.row.payload()[column.getName()] = value;
+  }
+};
+
+
+/**
+ * Combines two entries into a single entry.
+ * @param {!lf.proc.RelationEntry} leftEntry
+ * @param {!Array<string>} leftEntryTables The names of all source tables for
+ *     the attributes in leftEntry.
+ * @param {!lf.proc.RelationEntry} rightEntry
+ * @param {!Array<string>} rightEntryTables The names of all source tables for
+ *     the attributes in rightEntry.
+ * @return {!lf.proc.RelationEntry} The combined entry.
+ */
+lf.proc.RelationEntry.combineEntries = function(
+    leftEntry, leftEntryTables, rightEntry, rightEntryTables) {
+  var result = {};
+
+  var mergeEntry = function(entry, entryTables) {
+    if (entry.isPrefixApplied_) {
+      var payload = entry.row.payload();
+      for (var prefix in payload) {
+        result[prefix] = payload[prefix];
+      }
+    } else {
+      goog.asserts.assert(
+          !result.hasOwnProperty(entryTables[0]),
+          'Attempted to join table with itself, without using table alias, ' +
+          'or same alias ' + entryTables[0] + 'is reused for multiple tables.');
+
+      // Since the entry is not prefixed, all attributes come from a single
+      // table.
+      result[entryTables[0]] = entry.row.payload();
+    }
+  };
+
+  mergeEntry(leftEntry, leftEntryTables);
+  mergeEntry(rightEntry, rightEntryTables);
+
+  var row = new lf.Row(lf.Row.DUMMY_ID, result);
+  return new lf.proc.RelationEntry(row, true);
+};
+
+/**
+ * @license
+ * Copyright 2014 Google Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+goog.provide('lf.Binder');
+goog.provide('lf.bind');
+
+
+/**
+ * @param {number} index Position in bound array.
+ * @return {!lf.Binder}
+ * @export
+ */
+lf.bind = function(index) {
+  return new lf.Binder(index);
+};
+
+
+
+/**
+ * Binder class that instructs the query engine to evaluate bound value at
+ * execution time.
+ * @param {number} index
+ * @constructor
+ * @struct
+ * @final
+ * @export
+ */
+lf.Binder = function(index) {
+  /** @private {number} */
+  this.index_ = index;
+};
+
+
+/** @return {number} */
+lf.Binder.prototype.getIndex = function() {
+  return this.index_;
+};
+
+/**
+ * @license
+ * Copyright 2014 Google Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+goog.provide('lf.Type');
+goog.provide('lf.type');
+
+
+/** @export @enum {number} */
+lf.Type = {
+  ARRAY_BUFFER: 0,
+  BOOLEAN: 1,
+  DATE_TIME: 2,
+  INTEGER: 3,
+  NUMBER: 4,
+  STRING: 5,
+  OBJECT: 6
+};
+
+
+/** @export @const */
+lf.type.DEFAULT_VALUES = {
+  0: new ArrayBuffer(0),  // lf.Type.ARRAY_BUFFER
+  1: false,  // lf.Type.BOOLEAN
+  2: Object.freeze(new Date(0)),  // lf.Type.DATE_TIME
+  3: 0,  // lf.Type.INTEGER
+  4: 0,  // lf.Type.NUMBER
+  5: '',  // lf.Type.STRING
+  6: Object.freeze({})  // lf.Type.OBJECT
+};
+
+/**
+ * @license
+ * Copyright 2014 Google Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+goog.provide('lf.eval.Registry');
+goog.provide('lf.eval.Type');
+
+goog.require('goog.asserts');
+goog.require('goog.structs.Map');
+goog.require('lf.Type');
+
+
+/**
+ * An enum holding all evaluator types.
+ * @enum {string}
+ */
+lf.eval.Type = {
+  BETWEEN: 'between',
+  EQ: 'eq',
+  GTE: 'gte',
+  GT: 'gt',
+  IN: 'in',
+  LTE: 'lte',
+  LT: 'lt',
+  MATCH: 'match',
+  NEQ: 'neq'
+};
+
+
+/** @typedef {function(*, *):boolean} */
+lf.eval.EvalFunction_;
+
+
+
+/**
+ * @constructor
+ * @struct
+ */
+lf.eval.Registry = function() {
+  var numberOrIntegerEvalMap = lf.eval.buildNumberEvaluatorMap_();
+
+  /**
+   * A two-level map, associating a column type to the correpsonding evaluation
+   * functions map.
+   * NOTE: No evaluation map exists for lf.Type.ARRAY_BUFFER since predicates
+   * involving such a column do not make sense.
+   *
+   * @private {!goog.structs.Map<
+   *     !lf.Type, !goog.structs.Map<!lf.eval.Type, !lf.eval.EvalFunction_>>}
+   */
+  this.evaluationMaps_ = new goog.structs.Map(
+      lf.Type.BOOLEAN,
+      lf.eval.buildBooleanEvaluatorMap_(),
+      lf.Type.DATE_TIME,
+      lf.eval.buildDateEvaluatorMap_(),
+      lf.Type.NUMBER,
+      numberOrIntegerEvalMap,
+      lf.Type.INTEGER,
+      numberOrIntegerEvalMap,
+      lf.Type.STRING,
+      lf.eval.buildStringEvaluatorMap_());
+};
+goog.addSingletonGetter(lf.eval.Registry);
+
+
+/**
+ * @param {!lf.Type} columnType
+ * @param {!lf.eval.Type} evaluatorType
+ * @return {!lf.eval.EvalFunction_} The evaluator corresponding to the given
+ *     type.
+ */
+lf.eval.Registry.prototype.getEvaluator = function(columnType, evaluatorType) {
+  // TODO(dpapad): Throw lf.Exception instead of goog.asserting here.
+
+  var evaluationMap = this.evaluationMaps_.get(columnType, null);
+  goog.asserts.assert(
+      !goog.isNull(evaluationMap),
+      'Could not find evaluation map for ' + columnType);
+  var evaluatorFn = evaluationMap.get(evaluatorType, null);
+  goog.asserts.assert(
+      !goog.isNull(evaluatorFn),
+      'Could not find evaluator for ' + columnType + ', ' + evaluatorType);
+  return evaluatorFn;
+};
+
+
+/**
+ * Builds a map associating evaluator types with the evaluator functions, for
+ * the case of a column of type 'number'.
+ * NOTE: lf.eval.Type.MATCH is not available for numbers.
+ *
+ * @return {!goog.structs.Map<!lf.eval.Type, !lf.eval.EvalFunction_>}
+ * @private
+ */
+lf.eval.buildNumberEvaluatorMap_ = function() {
+  return new goog.structs.Map(
+      lf.eval.Type.BETWEEN,
+      function(a, range) {
+        return a >= range[0] && a <= range[1];
+      },
+      lf.eval.Type.EQ,
+      function(a, b) { return a == b; },
+      lf.eval.Type.GTE,
+      function(a, b) { return a >= b; },
+      lf.eval.Type.GT,
+      function(a, b) { return a > b; },
+      lf.eval.Type.IN,
+      function(rowValue, values) {
+        return values.indexOf(rowValue) != -1;
+      },
+      lf.eval.Type.LTE,
+      function(a, b) { return a <= b; },
+      lf.eval.Type.LT,
+      function(a, b) { return a < b; },
+      lf.eval.Type.NEQ,
+      function(a, b) { return a != b; });
+};
+
+
+/**
+ * Builds a map associating evaluator types with the evaluator functions, for
+ * the case of a column of type 'string'.
+ * @return {!goog.structs.Map<!lf.eval.Type, !lf.eval.EvalFunction_>}
+ * @private
+ */
+lf.eval.buildStringEvaluatorMap_ = function() {
+  return new goog.structs.Map(
+      lf.eval.Type.BETWEEN,
+      function(a, range) {
+        return a >= range[0] && a <= range[1];
+      },
+      lf.eval.Type.EQ,
+      function(a, b) { return a == b; },
+      lf.eval.Type.GTE,
+      function(a, b) { return a >= b; },
+      lf.eval.Type.GT,
+      function(a, b) { return a > b; },
+      lf.eval.Type.IN,
+      function(rowValue, values) {
+        return values.indexOf(rowValue) != -1;
+      },
+      lf.eval.Type.LTE,
+      function(a, b) { return a <= b; },
+      lf.eval.Type.LT,
+      function(a, b) { return a < b; },
+      lf.eval.Type.MATCH,
+      function(value, regex) {
+        var re = new RegExp(regex);
+        return re.test(value);
+      },
+      lf.eval.Type.NEQ,
+      function(a, b) { return a != b; });
+};
+
+
+/**
+ * Builds a map associating evaluator types with the evaluator functions, for
+ * the case of a column of type 'Date'.
+ * NOTE: lf.eval.Type.MATCH is not available for Date objects.
+ *
+ * @return {!goog.structs.Map<!lf.eval.Type, !lf.eval.EvalFunction_>}
+ * @private
+ */
+lf.eval.buildDateEvaluatorMap_ = function() {
+  return new goog.structs.Map(
+      lf.eval.Type.BETWEEN,
+      function(a, range) {
+        return a.getTime() >= range[0].getTime() &&
+            a.getTime() <= range[1].getTime();
+      },
+      lf.eval.Type.EQ,
+      function(a, b) {
+        var aTime = goog.isNull(a) ? -1 : a.getTime();
+        var bTime = goog.isNull(b) ? -1 : b.getTime();
+        return aTime == bTime;
+      },
+      lf.eval.Type.GTE,
+      function(a, b) { return a.getTime() >= b.getTime(); },
+      lf.eval.Type.GT,
+      function(a, b) { return a.getTime() > b.getTime(); },
+      lf.eval.Type.IN,
+      function(targetValue, values) {
+        return values.some(
+            function(value) {
+              return value.getTime() == targetValue.getTime();
+            });
+      },
+      lf.eval.Type.LTE,
+      function(a, b) { return a.getTime() <= b.getTime(); },
+      lf.eval.Type.LT,
+      function(a, b) { return a.getTime() < b.getTime(); },
+      lf.eval.Type.NEQ,
+      function(a, b) {
+        var aTime = goog.isNull(a) ? -1 : a.getTime();
+        var bTime = goog.isNull(b) ? -1 : b.getTime();
+        return aTime != bTime;
+      });
+};
+
+
+/**
+ * Builds a map associating evaluator types with the evaluator functions, for
+ * the case of a column of type 'boolean'.
+ * NOTE: lf.eval.Type.BETWEEN, MATCH, GTE, GT, LTE, LT, are not available for
+ * boolean objects.
+ *
+ * @return {!goog.structs.Map<!lf.eval.Type, !lf.eval.EvalFunction_>}
+ * @private
+ */
+lf.eval.buildBooleanEvaluatorMap_ = function() {
+  return new goog.structs.Map(
+      lf.eval.Type.EQ,
+      function(a, b) { return a == b; },
+      lf.eval.Type.NEQ,
+      function(a, b) { return a != b });
+};
+
+// Copyright 2006 The Closure Library Authors. All Rights Reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS-IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+/**
+ * @fileoverview Generic immutable node object to be used in collections.
+ *
+ */
+
+
+goog.provide('goog.structs.Node');
+
+
+
+/**
+ * A generic immutable node. This can be used in various collections that
+ * require a node object for its item (such as a heap).
+ * @param {K} key Key.
+ * @param {V} value Value.
+ * @constructor
+ * @template K, V
+ */
+goog.structs.Node = function(key, value) {
+  /**
+   * The key.
+   * @private {K}
+   */
+  this.key_ = key;
+
+  /**
+   * The value.
+   * @private {V}
+   */
+  this.value_ = value;
+};
+
+
+/**
+ * Gets the key.
+ * @return {K} The key.
+ */
+goog.structs.Node.prototype.getKey = function() {
+  return this.key_;
+};
+
+
+/**
+ * Gets the value.
+ * @return {V} The value.
+ */
+goog.structs.Node.prototype.getValue = function() {
+  return this.value_;
+};
+
+
+/**
+ * Clones a node and returns a new node.
+ * @return {!goog.structs.Node<K, V>} A new goog.structs.Node with the same
+ *     key value pair.
+ */
+goog.structs.Node.prototype.clone = function() {
+  return new goog.structs.Node(this.key_, this.value_);
+};
+
+// Copyright 2010 The Closure Library Authors. All Rights Reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS-IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+/**
+ * @fileoverview Generic tree node data structure with arbitrary number of child
+ * nodes.
+ *
+ */
+
+goog.provide('goog.structs.TreeNode');
+
+goog.require('goog.array');
+goog.require('goog.asserts');
+goog.require('goog.structs.Node');
+
+
+
+/**
+ * Generic tree node data structure with arbitrary number of child nodes.
+ * It is possible to create a dynamic tree structure by overriding
+ * {@link #getParent} and {@link #getChildren} in a subclass. All other getters
+ * will automatically work.
+ *
+ * @param {KEY} key Key.
+ * @param {VALUE} value Value.
+ * @constructor
+ * @extends {goog.structs.Node<KEY, VALUE>}
+ * @template KEY, VALUE
+ */
+goog.structs.TreeNode = function(key, value) {
+  goog.structs.Node.call(this, key, value);
+
+  /**
+   * Reference to the parent node or null if it has no parent.
+   * @private {goog.structs.TreeNode<KEY, VALUE>}
+   */
+  this.parent_ = null;
+
+  /**
+   * Child nodes or null in case of leaf node.
+   * @private {Array<!goog.structs.TreeNode<KEY, VALUE>>}
+   */
+  this.children_ = null;
+};
+goog.inherits(goog.structs.TreeNode, goog.structs.Node);
+
+
+/**
+ * Constant for empty array to avoid unnecessary allocations.
+ * @private
+ */
+goog.structs.TreeNode.EMPTY_ARRAY_ = [];
+
+
+/**
+ * @return {!goog.structs.TreeNode} Clone of the tree node without its parent
+ *     and child nodes. The key and the value are copied by reference.
+ * @override
+ */
+goog.structs.TreeNode.prototype.clone = function() {
+  return new goog.structs.TreeNode(this.getKey(), this.getValue());
+};
+
+
+/**
+ * @return {!goog.structs.TreeNode} Clone of the subtree with this node as root.
+ */
+goog.structs.TreeNode.prototype.deepClone = function() {
+  var clone = this.clone();
+  this.forEachChild(function(child) {
+    clone.addChild(child.deepClone());
+  });
+  return clone;
+};
+
+
+/**
+ * @return {goog.structs.TreeNode<KEY, VALUE>} Parent node or null if it has no
+ *     parent.
+ */
+goog.structs.TreeNode.prototype.getParent = function() {
+  return this.parent_;
+};
+
+
+/**
+ * @return {boolean} Whether the node is a leaf node.
+ */
+goog.structs.TreeNode.prototype.isLeaf = function() {
+  return !this.getChildCount();
+};
+
+
+/**
+ * Tells if the node is the last child of its parent. This method helps how to
+ * connect the tree nodes with lines: L shapes should be used before the last
+ * children and |- shapes before the rest. Schematic tree visualization:
+ *
+ * <pre>
+ * Node1
+ * |-Node2
+ * | L-Node3
+ * |   |-Node4
+ * |   L-Node5
+ * L-Node6
+ * </pre>
+ *
+ * @return {boolean} Whether the node has parent and is the last child of it.
+ */
+goog.structs.TreeNode.prototype.isLastChild = function() {
+  var parent = this.getParent();
+  return Boolean(parent && this == goog.array.peek(parent.getChildren()));
+};
+
+
+/**
+ * @return {!Array<!goog.structs.TreeNode<KEY, VALUE>>} Immutable child nodes.
+ */
+goog.structs.TreeNode.prototype.getChildren = function() {
+  return this.children_ || goog.structs.TreeNode.EMPTY_ARRAY_;
+};
+
+
+/**
+ * Gets the child node of this node at the given index.
+ * @param {number} index Child index.
+ * @return {goog.structs.TreeNode<KEY, VALUE>} The node at the given index or
+ *     null if not found.
+ */
+goog.structs.TreeNode.prototype.getChildAt = function(index) {
+  return this.getChildren()[index] || null;
+};
+
+
+/**
+ * @return {number} The number of children.
+ */
+goog.structs.TreeNode.prototype.getChildCount = function() {
+  return this.getChildren().length;
+};
+
+
+/**
+ * @return {number} The number of ancestors of the node.
+ */
+goog.structs.TreeNode.prototype.getDepth = function() {
+  var depth = 0;
+  var node = this;
+  while (node.getParent()) {
+    depth++;
+    node = node.getParent();
+  }
+  return depth;
+};
+
+
+/**
+ * @return {!Array<!goog.structs.TreeNode<KEY, VALUE>>} All ancestor nodes in
+ *     bottom-up order.
+ */
+goog.structs.TreeNode.prototype.getAncestors = function() {
+  var ancestors = [];
+  var node = this.getParent();
+  while (node) {
+    ancestors.push(node);
+    node = node.getParent();
+  }
+  return ancestors;
+};
+
+
+/**
+ * @return {!goog.structs.TreeNode<KEY, VALUE>} The root of the tree structure,
+ *     i.e. the farthest ancestor of the node or the node itself if it has no
+ *     parents.
+ */
+goog.structs.TreeNode.prototype.getRoot = function() {
+  var root = this;
+  while (root.getParent()) {
+    root = root.getParent();
+  }
+  return root;
+};
+
+
+/**
+ * Builds a nested array structure from the node keys in this node's subtree to
+ * facilitate testing tree operations that change the hierarchy.
+ * @return {!Array<KEY>} The structure of this node's descendants as nested
+ *     array of node keys. The number of unclosed opening brackets up to a
+ *     particular node is proportional to the indentation of that node in the
+ *     graphical representation of the tree. Example:
+ *     <pre>
+ *       this
+ *       |- child1
+ *       |  L- grandchild
+ *       L- child2
+ *     </pre>
+ *     is represented as ['child1', ['grandchild'], 'child2'].
+ */
+goog.structs.TreeNode.prototype.getSubtreeKeys = function() {
+  var ret = [];
+  this.forEachChild(function(child) {
+    ret.push(child.getKey());
+    if (!child.isLeaf()) {
+      ret.push(child.getSubtreeKeys());
+    }
+  });
+  return ret;
+};
+
+
+/**
+ * Tells whether this node is the ancestor of the given node.
+ * @param {!goog.structs.TreeNode<KEY, VALUE>} node A node.
+ * @return {boolean} Whether this node is the ancestor of {@code node}.
+ */
+goog.structs.TreeNode.prototype.contains = function(node) {
+  var current = node;
+  do {
+    current = current.getParent();
+  } while (current && current != this);
+  return Boolean(current);
+};
+
+
+/**
+ * Finds the deepest common ancestor of the given nodes. The concept of
+ * ancestor is not strict in this case, it includes the node itself.
+ * @param {...!goog.structs.TreeNode<KEY, VALUE>} var_args The nodes.
+ * @return {goog.structs.TreeNode<KEY, VALUE>} The common ancestor of the nodes
+ *     or null if they are from different trees.
+ * @template KEY, VALUE
+ */
+goog.structs.TreeNode.findCommonAncestor = function(var_args) {
+  /** @type {goog.structs.TreeNode} */
+  var ret = arguments[0];
+  if (!ret) {
+    return null;
+  }
+
+  var retDepth = ret.getDepth();
+  for (var i = 1; i < arguments.length; i++) {
+    /** @type {goog.structs.TreeNode} */
+    var node = arguments[i];
+    var depth = node.getDepth();
+    while (node != ret) {
+      if (depth <= retDepth) {
+        ret = ret.getParent();
+        retDepth--;
+      }
+      if (depth > retDepth) {
+        node = node.getParent();
+        depth--;
+      }
+    }
+  }
+
+  return ret;
+};
+
+
+/**
+ * Returns a node whose key matches the given one in the hierarchy rooted at
+ * this node. The hierarchy is searched using an in-order traversal.
+ * @param {KEY} key The key to search for.
+ * @return {goog.structs.TreeNode<KEY, VALUE>} The node with the given key, or
+ *     null if no node with the given key exists in the hierarchy.
+ */
+goog.structs.TreeNode.prototype.getNodeByKey = function(key) {
+  if (this.getKey() == key) {
+    return this;
+  }
+  var children = this.getChildren();
+  for (var i = 0; i < children.length; i++) {
+    var descendant = children[i].getNodeByKey(key);
+    if (descendant) {
+      return descendant;
+    }
+  }
+  return null;
+};
+
+
+/**
+ * Traverses all child nodes.
+ * @param {function(this:THIS, !goog.structs.TreeNode<KEY, VALUE>, number,
+ *     !Array<!goog.structs.TreeNode<KEY, VALUE>>)} f Callback function. It
+ *     takes the node, its index and the array of all child nodes as arguments.
+ * @param {THIS=} opt_this The object to be used as the value of {@code this}
+ *     within {@code f}.
+ * @template THIS
+ */
+goog.structs.TreeNode.prototype.forEachChild = function(f, opt_this) {
+  goog.array.forEach(this.getChildren(), f, opt_this);
+};
+
+
+/**
+ * Traverses all child nodes recursively in preorder.
+ * @param {function(this:THIS, !goog.structs.TreeNode<KEY, VALUE>)} f Callback
+ *     function.  It takes the node as argument.
+ * @param {THIS=} opt_this The object to be used as the value of {@code this}
+ *     within {@code f}.
+ * @template THIS
+ */
+goog.structs.TreeNode.prototype.forEachDescendant = function(f, opt_this) {
+  var children = this.getChildren();
+  for (var i = 0; i < children.length; i++) {
+    f.call(opt_this, children[i]);
+    children[i].forEachDescendant(f, opt_this);
+  }
+};
+
+
+/**
+ * Traverses the subtree with the possibility to skip branches. Starts with
+ * this node, and visits the descendant nodes depth-first, in preorder.
+ * @param {function(this:THIS, !goog.structs.TreeNode<KEY, VALUE>):
+ *     (boolean|undefined)} f Callback function. It takes the node as argument.
+ *     The children of this node will be visited if the callback returns true or
+ *     undefined, and will be skipped if the callback returns false.
+ * @param {THIS=} opt_this The object to be used as the value of {@code this}
+ *     within {@code f}.
+ * @template THIS
+ */
+goog.structs.TreeNode.prototype.traverse = function(f, opt_this) {
+  if (f.call(opt_this, this) !== false) {
+    var children = this.getChildren();
+    for (var i = 0; i < children.length; i++) {
+      children[i].traverse(f, opt_this);
+    }
+  }
+};
+
+
+/**
+ * Sets the parent node of this node. The callers must ensure that the parent
+ * node and only that has this node among its children.
+ * @param {goog.structs.TreeNode<KEY, VALUE>} parent The parent to set. If
+ *     null, the node will be detached from the tree.
+ * @protected
+ */
+goog.structs.TreeNode.prototype.setParent = function(parent) {
+  this.parent_ = parent;
+};
+
+
+/**
+ * Appends a child node to this node.
+ * @param {!goog.structs.TreeNode<KEY, VALUE>} child Orphan child node.
+ */
+goog.structs.TreeNode.prototype.addChild = function(child) {
+  this.addChildAt(child, this.children_ ? this.children_.length : 0);
+};
+
+
+/**
+ * Inserts a child node at the given index.
+ * @param {!goog.structs.TreeNode<KEY, VALUE>} child Orphan child node.
+ * @param {number} index The position to insert at.
+ */
+goog.structs.TreeNode.prototype.addChildAt = function(child, index) {
+  goog.asserts.assert(!child.getParent());
+  child.setParent(this);
+  this.children_ = this.children_ || [];
+  goog.asserts.assert(index >= 0 && index <= this.children_.length);
+  goog.array.insertAt(this.children_, child, index);
+};
+
+
+/**
+ * Replaces a child node at the given index.
+ * @param {!goog.structs.TreeNode<KEY, VALUE>} newChild Child node to set. It
+ *     must not have parent node.
+ * @param {number} index Valid index of the old child to replace.
+ * @return {!goog.structs.TreeNode<KEY, VALUE>} The original child node,
+ *     detached from its parent.
+ */
+goog.structs.TreeNode.prototype.replaceChildAt = function(newChild, index) {
+  goog.asserts.assert(!newChild.getParent(),
+      'newChild must not have parent node');
+  var children = this.getChildren();
+  var oldChild = children[index];
+  goog.asserts.assert(oldChild, 'Invalid child or child index is given.');
+  oldChild.setParent(null);
+  children[index] = newChild;
+  newChild.setParent(this);
+  return oldChild;
+};
+
+
+/**
+ * Replaces the given child node.
+ * @param {!goog.structs.TreeNode<KEY, VALUE>} newChild New node to replace
+ *     {@code oldChild}. It must not have parent node.
+ * @param {!goog.structs.TreeNode<KEY, VALUE>} oldChild Existing child node to
+ *     be replaced.
+ * @return {!goog.structs.TreeNode<KEY, VALUE>} The replaced child node
+ *     detached from its parent.
+ */
+goog.structs.TreeNode.prototype.replaceChild = function(newChild, oldChild) {
+  return this.replaceChildAt(newChild,
+      goog.array.indexOf(this.getChildren(), oldChild));
+};
+
+
+/**
+ * Removes the child node at the given index.
+ * @param {number} index The position to remove from.
+ * @return {goog.structs.TreeNode<KEY, VALUE>} The removed node if any.
+ */
+goog.structs.TreeNode.prototype.removeChildAt = function(index) {
+  var child = this.children_ && this.children_[index];
+  if (child) {
+    child.setParent(null);
+    goog.array.removeAt(this.children_, index);
+    if (this.children_.length == 0) {
+      this.children_ = null;
+    }
+    return child;
+  }
+  return null;
+};
+
+
+/**
+ * Removes the given child node of this node.
+ * @param {goog.structs.TreeNode<KEY, VALUE>} child The node to remove.
+ * @return {goog.structs.TreeNode<KEY, VALUE>} The removed node if any.
+ */
+goog.structs.TreeNode.prototype.removeChild = function(child) {
+  return this.removeChildAt(goog.array.indexOf(this.getChildren(), child));
+};
+
+
+/**
+ * Removes all child nodes of this node.
+ */
+goog.structs.TreeNode.prototype.removeChildren = function() {
+  if (this.children_) {
+    for (var i = 0; i < this.children_.length; i++) {
+      this.children_[i].setParent(null);
+    }
+    this.children_ = null;
+  }
+};
+
+/**
+ * @license
+ * Copyright 2014 Google Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+goog.provide('lf.Predicate');
+goog.provide('lf.PredicateProvider');
+
+goog.forwardDeclare('lf.Binder');
+
+
+
+/**
+ * @interface
+ */
+lf.Predicate = function() {};
+
+
+/**
+ * @param {!lf.proc.Relation} relation The relation to be checked.
+ * @return {!lf.proc.Relation} A relation that holds only the entries that
+ *     satisfy the predicate.
+ */
+lf.Predicate.prototype.eval;
+
+
+/**
+ * Reverses this predicate.
+ * @param {boolean} isComplement Whether the original predicate should be
+ *     reversed. Reversing a predicate means that the predicate evaluates to
+ *     true where before it was evaluating to false, and vice versa.
+ */
+lf.Predicate.prototype.setComplement;
+
+
+/**
+ * @return {!lf.Predicate} A clone of this predicate.
+ */
+lf.Predicate.prototype.copy;
+
+
+/**
+ * @param {!Array<!lf.schema.Column>=} opt_results An optional array holding
+ *     previous results, given that this function is called recursively. If
+ *     provided any columns will be added on that array. If not provided a new
+ *     array will be allocated.
+ * @return {!Array<!lf.schema.Column>} An array of all columns involved in this
+ *     predicate.
+ */
+lf.Predicate.prototype.getColumns;
+
+
+/** @param {number} id */
+lf.Predicate.prototype.setId;
+
+
+/** @return {number} */
+lf.Predicate.prototype.getId;
+
+
+
+/**
+ * @template T
+ * @interface
+ */
+lf.PredicateProvider = function() {};
+
+
+/**
+ * Returns equality test predicate.
+ * @param {(!lf.schema.Column|!lf.Binder|T)} operand
+ * @return {!lf.Predicate}
+ * @throws {!lf.Exception}
+ */
+lf.PredicateProvider.prototype.eq;
+
+
+/**
+ * Returns inequality test predicate.
+ * @param {(!lf.schema.Column|!lf.Binder|T)} operand
+ * @return {!lf.Predicate}
+ * @throws {!lf.Exception}
+ */
+lf.PredicateProvider.prototype.neq;
+
+
+/**
+ * Returns less than test predicate.
+ * @param {(!lf.schema.Column|!lf.Binder|T)} operand
+ * @return {!lf.Predicate}
+ * @throws {!lf.Exception}
+ */
+lf.PredicateProvider.prototype.lt;
+
+
+/**
+ * Returns less than or equals to test predicate.
+ * @param {(!lf.schema.Column|!lf.Binder|T)} operand
+ * @return {!lf.Predicate}
+ * @throws {!lf.Exception}
+ */
+lf.PredicateProvider.prototype.lte;
+
+
+/**
+ * Returns greater than test predicate.
+ * @param {(!lf.schema.Column|!lf.Binder|T)} operand
+ * @return {!lf.Predicate}
+ * @throws {!lf.Exception}
+ */
+lf.PredicateProvider.prototype.gt;
+
+
+/**
+ * Returns greater than or equals to test predicate.
+ * @param {(!lf.schema.Column|!lf.Binder|T)} operand
+ * @return {!lf.Predicate}
+ * @throws {!lf.Exception}
+ */
+lf.PredicateProvider.prototype.gte;
+
+
+/**
+ * Returns JavaScript regex matching test predicate.
+ * @param {(!lf.Binder|!RegExp)} regex
+ * @return {!lf.Predicate}
+ * @throws {!lf.Exception}
+ */
+lf.PredicateProvider.prototype.match;
+
+
+/**
+ * Returns between test predicate.
+ * @param {(!lf.Binder|T)} from
+ * @param {(!lf.Binder|T)} to Must be greater or equals to from.
+ * @return {!lf.Predicate}
+ * @throws {!lf.Exception}
+ */
+lf.PredicateProvider.prototype.between;
+
+
+/**
+ * Returns array finding test predicate.
+ * @param {(!lf.Binder|!Array<T>)} values
+ * @return {!lf.Predicate}
+ */
+lf.PredicateProvider.prototype.in;
+
+
+/**
+ * Returns nullity test predicate.
+ * @return {!lf.Predicate}
+ */
+lf.PredicateProvider.prototype.isNull;
+
+
+/**
+ * Returns non-nullity test predicate.
+ * @return {!lf.Predicate}
+ */
+lf.PredicateProvider.prototype.isNotNull;
+
+/**
+ * @license
+ * Copyright 2014 Google Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+goog.provide('lf.pred.PredicateNode');
+
+goog.require('goog.structs.TreeNode');
+goog.require('lf.Predicate');
+
+
+
+/**
+ * @constructor
+ * @struct
+ * @suppress {checkStructDictInheritance}
+ * @implements {lf.Predicate}
+ * @extends {goog.structs.TreeNode}
+ */
+lf.pred.PredicateNode = function() {
+  lf.pred.PredicateNode.base(this, 'constructor', '', '');
+
+  /** @private {number} */
+  this.id_ = lf.pred.PredicateNode.nextId_++;
+};
+goog.inherits(lf.pred.PredicateNode, goog.structs.TreeNode);
+
+
+/**
+ * The ID to assign to the next predicate that will be created. Note that
+ * predicates are constructed with unique IDs, but when a predicate is cloned
+ * the ID is also purposefully cloned.
+ * @private {number}
+ */
+lf.pred.PredicateNode.nextId_ = 0;
+
+
+/** @override */
+lf.pred.PredicateNode.prototype.eval = goog.abstractMethod;
+
+
+/** @override */
+lf.pred.PredicateNode.prototype.setComplement = goog.abstractMethod;
+
+
+/** @override */
+lf.pred.PredicateNode.prototype.copy = goog.abstractMethod;
+
+
+/** @override */
+lf.pred.PredicateNode.prototype.getColumns = goog.abstractMethod;
+
+
+/** @override */
+lf.pred.PredicateNode.prototype.getId = function() {
+  return this.id_;
+};
+
+
+/** @override */
+lf.pred.PredicateNode.prototype.setId = function(id) {
+  this.id_ = id;
+};
+
+/**
+ * @license
+ * Copyright 2014 Google Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+goog.provide('lf.pred.ValuePredicate');
+
+goog.require('goog.asserts');
+goog.require('goog.structs.Set');
+goog.require('lf.Binder');
+goog.require('lf.Exception');
+goog.require('lf.eval.Registry');
+goog.require('lf.eval.Type');
+goog.require('lf.index.SingleKeyRange');
+goog.require('lf.pred.PredicateNode');
+goog.require('lf.proc.Relation');
+
+
+
+/**
+ * @constructor @struct
+ * @extends {lf.pred.PredicateNode}
+ *
+ * @template T
+ * @param {!lf.schema.Column} column
+ * @param {!T} value
+ * @param {!lf.eval.Type} evaluatorType
+ */
+lf.pred.ValuePredicate = function(column, value, evaluatorType) {
+  lf.pred.ValuePredicate.base(this, 'constructor');
+
+  /** @type {!lf.schema.Column} */
+  this.column = column;
+
+  /** @type {!T} */
+  this.value = value;
+
+  /** @type {!lf.eval.Type} */
+  this.evaluatorType = evaluatorType;
+
+  var registry = /** @type {!lf.eval.Registry} */ (
+      lf.eval.Registry.getInstance());
+
+  /** @private {!function(!T, !T):boolean} */
+  this.evaluatorFn_ = registry.getEvaluator(
+      this.column.getType(), this.evaluatorType);
+
+  /**
+   * Whether this predicate should be applied reversed (return false where the
+   * original predicate returns true and vice versa).
+   * @private
+   */
+  this.isComplement_ = false;
+
+  /** @private {!T} */
+  this.binder_ = value;
+};
+goog.inherits(lf.pred.ValuePredicate, lf.pred.PredicateNode);
+
+
+/** @override */
+lf.pred.ValuePredicate.prototype.copy = function() {
+  var clone = new lf.pred.ValuePredicate(
+      this.column, this.value, this.evaluatorType);
+  clone.setBinder(this.binder_);
+  clone.setComplement(this.isComplement_);
+  clone.setId(this.getId());
+  return clone;
+};
+
+
+/** @override */
+lf.pred.ValuePredicate.prototype.getColumns = function(opt_results) {
+  if (goog.isDefAndNotNull(opt_results)) {
+    opt_results.push(this.column);
+    return opt_results;
+  } else {
+    return [this.column];
+  }
+};
+
+
+/** @override */
+lf.pred.ValuePredicate.prototype.setComplement = function(isComplement) {
+  this.isComplement_ = isComplement;
+};
+
+
+/** @param {!T} binder */
+lf.pred.ValuePredicate.prototype.setBinder = function(binder) {
+  this.binder_ = binder;
+};
+
+
+/**
+ * @private
+ * @throws {!lf.Exception}
+ */
+lf.pred.ValuePredicate.prototype.checkBinding_ = function() {
+  var bound = false;
+  if (!(this.value instanceof lf.Binder)) {
+    if (goog.isArray(this.value)) {
+      bound = !this.value.some(function(val) {
+        return val instanceof lf.Binder;
+      });
+    } else {
+      bound = true;
+    }
+  }
+
+  if (!bound) {
+    throw new lf.Exception(lf.Exception.Type.SYNTAX, 'Value is not bounded');
+  }
+};
+
+
+/** @override */
+lf.pred.ValuePredicate.prototype.eval = function(relation) {
+  this.checkBinding_();
+
+  // Ignoring this.evaluatorFn_() for the case of the IN, in favor of a faster
+  // evaluation implementation.
+  if (this.evaluatorType == lf.eval.Type.IN) {
+    return this.evalAsIn_(relation);
+  }
+
+  var entries = relation.entries.filter(function(entry) {
+    return this.evaluatorFn_(
+        entry.getField(this.column),
+        this.value) != this.isComplement_;
+  }, this);
+
+  return new lf.proc.Relation(entries, relation.getTables());
+};
+
+
+/** @param {!Array<*>} values */
+lf.pred.ValuePredicate.prototype.bind = function(values) {
+  /** @param {number} index */
+  var checkIndexWithinRange = function(index) {
+    if (values.length <= index) {
+      throw new lf.Exception(lf.Exception.Type.SYNTAX,
+          'Cannot bind to given array: out of range.');
+    }
+  };
+
+  if (this.binder_ instanceof lf.Binder) {
+    var index = this.binder_.getIndex();
+    checkIndexWithinRange(index);
+    this.value = /** @type {!T} */ (values[index]);
+  } else if (goog.isArray(this.binder_)) {
+    this.value = this.binder_.map(function(val) {
+      if (val instanceof lf.Binder) {
+        checkIndexWithinRange(val.getIndex());
+        return values[val.getIndex()];
+      } else {
+        return val;
+      }
+    });
+  }
+};
+
+
+/**
+ * Evaluates this predicate as an lf.eval.Type.IN. The execution time of this
+ * operation is O(N) where N is the number of entries to be evaluated.
+ * @param {!lf.proc.Relation} relation The relation to be checked.
+ * @return {!lf.proc.Relation} A relation that holds only the entries that
+ *     satisfy the predicate.
+ * @private
+ */
+lf.pred.ValuePredicate.prototype.evalAsIn_ = function(relation) {
+  goog.asserts.assert(
+      this.evaluatorType == lf.eval.Type.IN,
+      'ValuePredicate#evalAsIn_() called for wrong predicate type.');
+
+  var valueSet = new goog.structs.Set(this.value);
+  var evaluatorFn = goog.bind(function(rowValue) {
+    return valueSet.contains(rowValue) != this.isComplement_;
+  }, this);
+
+  var entries = relation.entries.filter(function(entry) {
+    return evaluatorFn(entry.getField(this.column));
+  }, this);
+
+  return new lf.proc.Relation(entries, relation.getTables());
+};
+
+
+/** @override */
+lf.pred.ValuePredicate.prototype.toString = function() {
+  return 'value_pred(' +
+      this.column.getNormalizedName() + ' ' +
+      this.evaluatorType + (this.isComplement_ ? '(complement)' : '') + ' ' +
+      this.value + ')';
+};
+
+
+/**
+ * @return {boolean} Whether this predicate can be converted to a KeyRange
+ *     instance.
+ */
+lf.pred.ValuePredicate.prototype.isKeyRangeCompatible = function() {
+  this.checkBinding_();
+  return !goog.isNull(this.value) &&
+      (this.evaluatorType == lf.eval.Type.BETWEEN ||
+      this.evaluatorType == lf.eval.Type.EQ ||
+      this.evaluatorType == lf.eval.Type.GT ||
+      this.evaluatorType == lf.eval.Type.GTE ||
+      this.evaluatorType == lf.eval.Type.LT ||
+      this.evaluatorType == lf.eval.Type.LTE);
+};
+
+
+/**
+ * Converts this predicate to a key range.
+ * NOTE: Not all predicates can be converted to a key range, callers must call
+ * isKeyRangeCompatible() before calling this method.
+ * @return {!Array<!lf.index.SingleKeyRange>} The key ranges corresponding to
+ *     this predicate. The length of the array is at most two.
+ */
+lf.pred.ValuePredicate.prototype.toKeyRange = function() {
+  goog.asserts.assert(
+      this.isKeyRangeCompatible(),
+      'Could not convert predicate to key range.');
+
+  var keyRange = null;
+  if (this.evaluatorType == lf.eval.Type.BETWEEN) {
+    keyRange = new lf.index.SingleKeyRange(
+        this.value[0], this.value[1], false, false);
+  } else if (this.evaluatorType == lf.eval.Type.EQ) {
+    keyRange = lf.index.SingleKeyRange.only(this.value);
+  } else if (this.evaluatorType == lf.eval.Type.GTE) {
+    keyRange = lf.index.SingleKeyRange.lowerBound(this.value);
+  } else if (this.evaluatorType == lf.eval.Type.GT) {
+    keyRange = lf.index.SingleKeyRange.lowerBound(this.value, true);
+  } else if (this.evaluatorType == lf.eval.Type.LTE) {
+    keyRange = lf.index.SingleKeyRange.upperBound(this.value);
+  } else {
+    // Must be this.evaluatorType == lf.eval.Type.LT.
+    keyRange = lf.index.SingleKeyRange.upperBound(this.value, true);
+  }
+
+  return this.isComplement_ ? keyRange.complement() : [keyRange];
+};
+
+/**
+ * @license
  * Copyright 2015 Google Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -17211,6 +19363,7 @@ goog.provide('lf.query.Context');
 
 goog.require('goog.asserts');
 goog.require('goog.structs.Map');
+goog.require('lf.pred.ValuePredicate');
 
 
 
@@ -17279,6 +19432,32 @@ lf.query.Context.prototype.cloneBase = function(context) {
   this.clonedFrom = context;
 };
 
+
+/**
+ * @param {!Array<*>} values
+ * @return {!lf.query.Context}
+ */
+lf.query.Context.prototype.bind = function(values) {
+  goog.asserts.assert(!goog.isDefAndNotNull(this.clonedFrom));
+  return this;
+};
+
+
+/**
+ * @param {!Array<*>} values
+ */
+lf.query.Context.prototype.bindValuesInSearchCondition = function(values) {
+  var searchCondition =
+      /** @type {?lf.pred.PredicateNode} */ (this.where);
+  if (goog.isDefAndNotNull(searchCondition)) {
+    searchCondition.traverse(function(node) {
+      if (node instanceof lf.pred.ValuePredicate) {
+        node.bind(values);
+      }
+    });
+  }
+};
+
 /**
  * @license
  * Copyright 2014 Google Inc. All Rights Reserved.
@@ -17328,6 +19507,12 @@ lf.query.SelectContext = function() {
 
   /** @type {!Array<!lf.schema.Column>} */
   this.groupBy;
+
+  /** @type {!lf.Binder} */
+  this.limitBinder;
+
+  /** @type {!lf.Binder} */
+  this.skipBinder;
 };
 goog.inherits(lf.query.SelectContext, lf.query.Context);
 
@@ -17377,7 +19562,28 @@ lf.query.SelectContext.prototype.clone = function() {
   if (this.groupBy) {
     context.groupBy = this.groupBy.slice();
   }
+  if (this.limitBinder) {
+    context.limitBinder = this.limitBinder;
+  }
+  if (this.skipBinder) {
+    context.skipBinder = this.skipBinder;
+  }
   return context;
+};
+
+
+/** @override */
+lf.query.SelectContext.prototype.bind = function(values) {
+  lf.query.SelectContext.base(this, 'bind', values);
+
+  if (goog.isDefAndNotNull(this.limitBinder)) {
+    this.limit = /** @type {number} */ (values[this.limitBinder.getIndex()]);
+  }
+  if (goog.isDefAndNotNull(this.skipBinder)) {
+    this.skip = /** @type {number} */ (values[this.skipBinder.getIndex()]);
+  }
+  this.bindValuesInSearchCondition(values);
+  return this;
 };
 
 /**
@@ -22398,394 +24604,6 @@ lf.index.BTreeNode_.deserialize = function(rows, tree) {
 
 /**
  * @license
- * Copyright 2014 Google Inc. All Rights Reserved.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-goog.provide('lf.index.KeyRange');
-goog.provide('lf.index.SingleKeyRange');
-
-goog.require('lf.index.Favor');
-
-goog.forwardDeclare('lf.index.Index.SingleKey');
-
-
-
-/**
- * A SingleKeyRange represents a key range of a single column, used for querying
- * various lf.index.Index implementations.
- * @constructor
- * @struct
- *
- * @param {?lf.index.Index.SingleKey} from The lower bound of this range. Null
- *     means  that there is no lower bound.
- * @param {?lf.index.Index.SingleKey} to The upper bound of this range. Null
- *     means that there is no upper bound.
- * @param {boolean} excludeLower Whether the lower bound should be excluded.
- *     Ignored if no lower bound exists.
- * @param {boolean} excludeUpper Whether the upper bound should be excluded.
- *     Ignored if no upper bound exists.
- */
-lf.index.SingleKeyRange = function(from, to, excludeLower, excludeUpper) {
-  /** @type {?lf.index.Index.SingleKey} */
-  this.from = from;
-
-  /** @type {?lf.index.Index.SingleKey} */
-  this.to = to;
-
-  /** @type {boolean} */
-  this.excludeLower = !goog.isNull(this.from) ? excludeLower : false;
-
-  /** @type {boolean} */
-  this.excludeUpper = !goog.isNull(this.to) ? excludeUpper : false;
-};
-
-
-/**
- * A KeyRange is more generic than a SingleKeyRange since it can express a key
- * range of a cross-column key. The SingleKeyRange instances in the array
- * represent a key range for each dimension of the cross-column key range.
- * Example for a lf.index.Index.Key (x, y) a KeyRange of [[0, 100], [50, 70]]
- * represents the 2D area where 0 >= x >= 100 AND 50 <= y <=100.
- * @typedef {!Array<!lf.index.SingleKeyRange>}
- */
-lf.index.KeyRange;
-
-
-/**
- * A text representation of this key range, useful for tests.
- * Example: [a, b] means from a to b, with both a and be included in the range.
- * Example: (a, b] means from a to b, with a excluded, b included.
- * Example: (a, b) means from a to b, with both a and b excluded.
- * Example: [unbound, b) means anything less than b, with b not included.
- * Example: [a, unbound] means anything greater than a, with a included.
- * @override
- */
-lf.index.SingleKeyRange.prototype.toString = function() {
-  return (this.excludeLower ? '(' : '[') +
-      (goog.isNull(this.from) ? 'unbound' : this.from) + ', ' +
-      (goog.isNull(this.to) ? 'unbound' : this.to) +
-      (this.excludeUpper ? ')' : ']');
-};
-
-
-/**
- * Finds the complement key range. Note that in some cases the complement is
- * composed of two disjoint key ranges. For example complementing [10, 20] would
- * result in [unbound, 10) and (20, unbound].
- * @return {!Array<!lf.index.SingleKeyRange>} The complement key ranges. An
- *     empty array will be returned in the case where the complement is empty.
- */
-lf.index.SingleKeyRange.prototype.complement = function() {
-  // Complement of lf.index.SingleKeyRange.all() is empty.
-  if (goog.isNull(this.from) && goog.isNull(this.to)) {
-    return [];
-  }
-
-  var keyRangeLow = null;
-  var keyRangeHigh = null;
-
-  if (!goog.isNull(this.from)) {
-    keyRangeLow = new lf.index.SingleKeyRange(
-        null, this.from, false, !this.excludeLower);
-  }
-
-  if (!goog.isNull(this.to)) {
-    keyRangeHigh = new lf.index.SingleKeyRange(
-        this.to, null, !this.excludeUpper, false);
-  }
-
-  return [keyRangeLow, keyRangeHigh].filter(function(keyRange) {
-    return !goog.isNull(keyRange);
-  });
-};
-
-
-/**
- * Reverses a keyRange such that "lower" refers to larger values and "upper"
- * refers to smaller values. Note: This is different than what complement()
- * does.
- * @return {!lf.index.SingleKeyRange}
- */
-lf.index.SingleKeyRange.prototype.reverse = function() {
-  return new lf.index.SingleKeyRange(
-      this.to, this.from, this.excludeUpper, this.excludeLower);
-};
-
-
-/**
- * Determines if this range overlaps with the given one.
- * @param {!lf.index.SingleKeyRange} range
- * @return {boolean}
- */
-lf.index.SingleKeyRange.prototype.overlaps = function(range) {
-  var favor = lf.index.SingleKeyRange.compareKey_(
-      this.from, range.from, true, this.excludeLower, range.excludeLower);
-  if (favor == lf.index.Favor.TIE) {
-    return true;
-  }
-  var left = (favor == lf.index.Favor.RHS) ? this : range;
-  var right = (favor == lf.index.Favor.LHS) ? this : range;
-
-  return goog.isNull(left.to) ||
-      left.to > right.from ||
-      (left.to == right.from && !left.excludeUpper && !right.excludeLower);
-};
-
-
-/**
- * @param {!lf.index.Index.SingleKey} key The upper bound.
- * @param {boolean=} opt_shouldExclude Whether the upper bound should be
- *     excluded. Defaults to false.
- * @return {!lf.index.SingleKeyRange}
- */
-lf.index.SingleKeyRange.upperBound = function(key, opt_shouldExclude) {
-  return new lf.index.SingleKeyRange(
-      null, key, false, opt_shouldExclude || false);
-};
-
-
-/**
- * @param {!lf.index.Index.SingleKey} key The lower bound.
- * @param {boolean=} opt_shouldExclude Whether the lower bound should be
- *     excluded. Defaults to false.
- * @return {!lf.index.SingleKeyRange}
- */
-lf.index.SingleKeyRange.lowerBound = function(key, opt_shouldExclude) {
-  return new lf.index.SingleKeyRange(
-      key, null, opt_shouldExclude || false, false);
-};
-
-
-/**
- * Creates a range that includes a single key.
- * @param {!lf.index.Index.SingleKey} key
- * @return {!lf.index.SingleKeyRange}
- */
-lf.index.SingleKeyRange.only = function(key) {
-  return new lf.index.SingleKeyRange(key, key, false, false);
-};
-
-
-/**
- * Creates a range that includes all keys.
- * @return {!lf.index.SingleKeyRange}
- */
-lf.index.SingleKeyRange.all = function() {
-  return new lf.index.SingleKeyRange(null, null, false, false);
-};
-
-
-/**
- * Returns if the range is all.
- * @return {boolean}
- */
-lf.index.SingleKeyRange.prototype.isAll = function() {
-  return goog.isNull(this.from) && goog.isNull(this.to);
-};
-
-
-/**
- * @param {!lf.index.Index.SingleKey} key
- * @return {boolean}
- */
-lf.index.SingleKeyRange.prototype.contains = function(key) {
-  var left = goog.isNull(this.from) || (key > this.from) ||
-      (key == this.from && !this.excludeLower);
-  var right = goog.isNull(this.to) || (key < this.to) ||
-      (key == this.to && !this.excludeUpper);
-  return left && right;
-};
-
-
-/**
- * Bound the range with [min, max] and return the newly bounded range.
- * @param {!lf.index.Index.SingleKey} min
- * @param {!lf.index.Index.SingleKey} max
- * @return {?lf.index.SingleKeyRange} When the given bound has no intersection
- *     with this range, or the range/bound is reversed, return null.
- */
-lf.index.SingleKeyRange.prototype.getBounded = function(min, max) {
-  // Eliminate out of range scenarios.
-  if ((goog.isNull(this.from) && !this.contains(min)) ||
-      (goog.isNull(this.to) && !this.contains(max))) {
-    return null;
-  }
-
-  var range = new lf.index.SingleKeyRange(min, max, false, false);
-  if (!goog.isNull(this.from) && this.from >= min) {
-    range.from = this.from;
-    range.excludeLower = this.excludeLower;
-  }
-  if (!goog.isNull(this.to) && this.to <= max) {
-    range.to = this.to;
-    range.excludeUpper = this.excludeUpper;
-  }
-
-  if (range.from > range.to ||
-      (range.from == range.to && (range.excludeUpper || range.excludeLower))) {
-    return null;
-  }
-  return range;
-};
-
-
-/**
- * @param {!lf.index.SingleKeyRange} range
- * @return {boolean}
- */
-lf.index.SingleKeyRange.prototype.equals = function(range) {
-  return this.from == range.from &&
-      this.excludeLower == range.excludeLower &&
-      this.to == range.to &&
-      this.excludeUpper == range.excludeUpper;
-};
-
-
-/**
- * @param {boolean} a
- * @param {boolean} b
- * @return {boolean}
- */
-lf.index.SingleKeyRange.xor = function(a, b) {
-  return a ? !b : b;
-};
-
-
-/**
- * Directionally compare two keys.
- * Left hand side key comparison logic: null is considered left, exclusion
- * is considered right.
- * Right hand side key comparison logic: null is considered right, exclusion
- * is considered left.
- * @param {?lf.index.Index.SingleKey} l
- * @param {?lf.index.Index.SingleKey} r
- * @param {boolean} isLeftHandSide
- * @param {boolean=} opt_excludeL
- * @param {boolean=} opt_excludeR
- * @return {!lf.index.Favor}
- * @private
- */
-lf.index.SingleKeyRange.compareKey_ = function(
-    l, r, isLeftHandSide, opt_excludeL, opt_excludeR) {
-  var Favor = lf.index.Favor;
-  var excludeL = opt_excludeL || false;
-  var excludeR = opt_excludeR || false;
-  var flip = function(favor) {
-    return isLeftHandSide ? favor :
-        (favor == Favor.LHS) ? Favor.RHS : Favor.LHS;
-  };
-
-  // The following logic is implemented for LHS. RHS is achieved using flip().
-  var tieLogic = function() {
-    return !lf.index.SingleKeyRange.xor(excludeL, excludeR) ? Favor.TIE :
-        excludeL ? flip(Favor.LHS) : flip(Favor.RHS);
-  };
-
-  if (goog.isNull(l)) {
-    return !goog.isNull(r) ? flip(Favor.RHS) : tieLogic();
-  }
-  return goog.isNull(r) ? flip(Favor.LHS) :
-      (l < r) ? Favor.RHS :
-      (l == r) ? tieLogic() : Favor.LHS;
-};
-
-
-/**
- * Compares two ranges, meant to be used in Array#sort.
- * @param {!lf.index.SingleKeyRange} lhs
- * @param {!lf.index.SingleKeyRange} rhs
- * @return {!lf.index.Favor}
- */
-lf.index.SingleKeyRange.compare = function(lhs, rhs) {
-  var result = lf.index.SingleKeyRange.compareKey_(
-      lhs.from, rhs.from, true, lhs.excludeLower, rhs.excludeLower);
-  if (result == lf.index.Favor.TIE) {
-    result = lf.index.SingleKeyRange.compareKey_(
-        lhs.to, rhs.to, false, lhs.excludeUpper, rhs.excludeUpper);
-  }
-  return result;
-};
-
-
-/**
- * Returns a new range that is the minimum range that covers both ranges given.
- * @param {!lf.index.SingleKeyRange} r1
- * @param {!lf.index.SingleKeyRange} r2
- * @return {!lf.index.SingleKeyRange}
- */
-lf.index.SingleKeyRange.getBoundingRange = function(r1, r2) {
-  var r = lf.index.SingleKeyRange.all();
-  if (!goog.isNull(r1.from) && !goog.isNull(r2.from)) {
-    var favor = lf.index.SingleKeyRange.compareKey_(r1.from, r2.from, true);
-    if (favor != lf.index.Favor.LHS) {
-      r.from = r1.from;
-      r.excludeLower = (favor != lf.index.Favor.TIE) ? r1.excludeLower :
-          r1.excludeLower && r2.excludeLower;
-    } else {
-      r.from = r2.from;
-      r.excludeLower = r2.excludeLower;
-    }
-  }
-  if (!goog.isNull(r1.to) && !goog.isNull(r2.to)) {
-    var favor = lf.index.SingleKeyRange.compareKey_(r1.to, r2.to, false);
-    if (favor != lf.index.Favor.RHS) {
-      r.to = r1.to;
-      r.excludeUpper = (favor != lf.index.Favor.TIE) ? r1.excludeUpper :
-          r1.excludeUpper && r2.excludeUpper;
-    } else {
-      r.to = r2.to;
-      r.excludeUpper = r2.excludeUpper;
-    }
-  }
-  return r;
-};
-
-
-/**
- * Intersects two ranges and return their intersection.
- * @param {!lf.index.SingleKeyRange} r1
- * @param {!lf.index.SingleKeyRange} r2
- * @return {?lf.index.SingleKeyRange} Returns null if intersection is empty.
- */
-lf.index.SingleKeyRange.and = function(r1, r2) {
-  if (!r1.overlaps(r2)) {
-    return null;
-  }
-
-  var r = lf.index.SingleKeyRange.all();
-  var favor = lf.index.SingleKeyRange.compareKey_(r1.from, r2.from, true);
-  var left = (favor == lf.index.Favor.TIE) ? (r1.excludeLower ? r1 : r2) :
-      (favor != lf.index.Favor.RHS) ? r1 : r2;
-  r.from = left.from;
-  r.excludeLower = left.excludeLower;
-
-  // right side boundary test is different, null is considered greater.
-  var right;
-  if (goog.isNull(r1.to) || goog.isNull(r2.to)) {
-    right = goog.isNull(r1.to) ? r2 : r1;
-  } else {
-    favor = lf.index.SingleKeyRange.compareKey_(r1.to, r2.to, false);
-    right = (favor == lf.index.Favor.TIE) ? (r1.excludeUpper ? r1 : r2) :
-        (favor == lf.index.Favor.RHS) ? r1 : r2;
-  }
-  r.to = right.to;
-  r.excludeUpper = right.excludeUpper;
-  return r;
-};
-
-/**
- * @license
  * Copyright 2015 Google Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -24618,409 +26436,6 @@ lf.index.SingleKeyRangeSet.intersect = function(s0, s1) {
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-goog.provide('lf.proc.AggregationResult');
-goog.provide('lf.proc.Relation');
-goog.provide('lf.proc.RelationEntry');
-
-goog.require('goog.asserts');
-goog.require('goog.structs.Map');
-goog.require('goog.structs.Set');
-goog.require('lf.Row');
-
-goog.forwardDeclare('lf.schema.Column');
-
-
-
-/**
- * A Relation instance represents the input/output of a query execution step. It
- * is passed from one step to the next one during query execution.
- * @constructor
- * @struct
- *
- * @param {!Array<!lf.proc.RelationEntry>} entries
- * @param {!Array<string>} tables The names of the source tables of this
- *     relation.
- */
-lf.proc.Relation = function(entries, tables) {
-  /**
-   * @type {!Array<!lf.proc.RelationEntry>}
-   * @const
-   */
-  this.entries = entries;
-
-  /** @private {!goog.structs.Set<string>} */
-  this.tables_ = new goog.structs.Set(tables);
-
-  /**
-   * A map holding any aggregations that have been calculated for this relation.
-   * Null if no aggregations have been calculated. The keys of the map
-   * correspond to the normalized name of the aggregated column, for example
-   * 'COUNT(*)' or 'MIN(Employee.salary)'.
-   * @private {?goog.structs.Map<string, !lf.proc.AggregationResult>}
-   */
-  this.aggregationResults_ = null;
-};
-
-
-/**
- * @typedef {(!lf.proc.Relation|string|number)}
- */
-lf.proc.AggregationResult;
-
-
-/**
- * @param {!lf.proc.Relation} relation The relation to check against.
- * @return {boolean} Whether this relation is compatible with the given
- *     relation, in terms of calculating union/intersection.
- */
-lf.proc.Relation.prototype.isCompatible = function(relation) {
-  return this.tables_.equals(relation.tables_);
-};
-
-
-/**
- * Asserts that two relations are compatible with regards to union/intersection
- * operations.
- * @param {!lf.proc.Relation} lhs The relation to check against.
- * @param {!lf.proc.Relation} rhs The relation to check against.
- * @private
- */
-lf.proc.Relation.assertCompatible_ = function(lhs, rhs) {
-  goog.asserts.assert(
-      lhs.isCompatible(rhs),
-      'Intersection/union operations only apply to compatible relations.');
-};
-
-
-/**
- * @return {!Array<string>} The names of all source tables of this relation.
- */
-lf.proc.Relation.prototype.getTables = function() {
-  return this.tables_.getValues();
-};
-
-
-/**
- * @return {boolean} Whether prefixes have been applied to the payloads in this
- *     relation.
- */
-lf.proc.Relation.prototype.isPrefixApplied = function() {
-  return this.tables_.getCount() > 1;
-};
-
-
-/** @return {!Array<!Object>} */
-lf.proc.Relation.prototype.getPayloads = function() {
-  return this.entries.map(function(entry) {
-    return entry.row.payload();
-  });
-};
-
-
-/** @return {!Array<number>} */
-lf.proc.Relation.prototype.getRowIds = function() {
-  return this.entries.map(function(entry) {
-    return entry.row.id();
-  });
-};
-
-
-/**
- * Adds an aggregated result to this relation.
- * @param {!lf.schema.Column} column The aggregated column.
- * @param {!lf.proc.AggregationResult} result The result of the aggregated
- *     column.
- */
-lf.proc.Relation.prototype.setAggregationResult = function(column, result) {
-  if (goog.isNull(this.aggregationResults_)) {
-    this.aggregationResults_ = new goog.structs.Map();
-  }
-
-  this.aggregationResults_.set(column.getNormalizedName(), result);
-};
-
-
-/**
- * Gets an already calculated aggregated result for this relation.
- * @param {!lf.schema.Column} column The aggregated column.
- * @return {!lf.proc.AggregationResult}
- */
-lf.proc.Relation.prototype.getAggregationResult = function(column) {
-  goog.asserts.assert(
-      !goog.isNull(this.aggregationResults_),
-      'getAggregationResult called before any results have been calculated.');
-
-  var result = this.aggregationResults_.get(
-      column.getNormalizedName(), undefined);
-  goog.asserts.assert(
-      goog.isDef(result),
-      'Could not find result for ' + column.getNormalizedName());
-
-  return result;
-};
-
-
-/**
- * @param {!lf.schema.Column} column
- * @return {boolean} Whether an aggregation result for the given aggregated
- *     column has been calculated.
- */
-lf.proc.Relation.prototype.hasAggregationResult = function(column) {
-  return !goog.isNull(this.aggregationResults_) &&
-      this.aggregationResults_.containsKey(column.getNormalizedName());
-};
-
-
-/** @private {?lf.proc.Relation} */
-lf.proc.Relation.emptyRelation_ = null;
-
-
-/**
- * Creates an empty Relation instance. Since a relation is immutable, a
- * singleton "empty" relation instance is lazily instantiated and returned in
- * all subsequent calls.
- * @return {!lf.proc.Relation}
- */
-lf.proc.Relation.createEmpty = function() {
-  if (goog.isNull(lf.proc.Relation.emptyRelation_)) {
-    lf.proc.Relation.emptyRelation_ = new lf.proc.Relation([], []);
-  }
-
-  return lf.proc.Relation.emptyRelation_;
-};
-
-
-/**
- * Finds the intersection of a given list of relations.
- * @param {!Array<!lf.proc.Relation>} relations The instances to be
- *     intersected.
- * @return {!lf.proc.Relation} A relation containing only those entries that
- *     exist in all input relations.
- */
-lf.proc.Relation.intersect = function(relations) {
-  if (relations.length == 0) {
-    return lf.proc.Relation.createEmpty();
-  }
-
-  var totalCount = relations.reduce(function(soFar, relation) {
-    lf.proc.Relation.assertCompatible_(relations[0], relation);
-    return soFar + relation.entries.length;
-  }, 0);
-  var allEntries = new Array(totalCount);
-
-  var entryCounter = 0;
-  // Creating a map [entry.id --> entry] for each relation, and at the same time
-  // populating the allEntries array.
-  var relationMaps = relations.map(function(relation) {
-    var map = new goog.structs.Map();
-    relation.entries.forEach(function(entry) {
-      allEntries[entryCounter++] = entry;
-      map.set(entry.id, entry);
-    });
-    return map;
-  });
-
-  var intersection = new goog.structs.Map();
-  for (var i = 0; i < allEntries.length; i++) {
-    var existsInAll = relationMaps.every(function(relation) {
-      return relation.containsKey(allEntries[i].id);
-    });
-    if (existsInAll) {
-      intersection.set(allEntries[i].id, allEntries[i]);
-    }
-  }
-
-  return new lf.proc.Relation(
-      intersection.getValues(), relations[0].tables_.getValues());
-};
-
-
-/**
- * Finds the union of a given list of relations.
- * @param {!Array<!lf.proc.Relation>} relations The instances to be
- *     intersected.
- * @return {!lf.proc.Relation} A relation containing all entries from all input
- *     relations.
- */
-lf.proc.Relation.union = function(relations) {
-  if (relations.length == 0) {
-    return lf.proc.Relation.createEmpty();
-  }
-
-  var union = new goog.structs.Map();
-  relations.forEach(function(relation) {
-    lf.proc.Relation.assertCompatible_(relations[0], relation);
-    relation.entries.forEach(function(entry) {
-      union.set(entry.id, entry);
-    });
-  });
-
-  return new lf.proc.Relation(
-      union.getValues(), relations[0].tables_.getValues());
-};
-
-
-/**
- * Creates an lf.proc.Relation instance from a set of lf.Row instances.
- * @param {!Array<!lf.Row>} rows
- * @param {!Array<string>} tables The names of the tables where these rows
- *     belong.
- * @return {!lf.proc.Relation}
- */
-lf.proc.Relation.fromRows = function(rows, tables) {
-  var isPrefixApplied = tables.length > 1;
-  var entries = rows.map(function(row) {
-    return new lf.proc.RelationEntry(row, isPrefixApplied);
-  });
-
-  return new lf.proc.Relation(entries, tables);
-};
-
-
-
-/**
- * Each RelationEntry represents a row that is passed from one execution step
- * to another and does not necessarilly correspond to a physical row in a DB
- * table (as it can be the result of a cross-product/join operation).
- * @constructor
- * @struct
- *
- * @param {!lf.Row} row
- * @param {boolean} isPrefixApplied Whether the payload in this entry is using
- *     prefixes for each attribute. This happens when this entry is the result
- *     of a relation join.
- */
-lf.proc.RelationEntry = function(row, isPrefixApplied) {
-  /** @type {!lf.Row} */
-  this.row = row;
-
-  /** @type {number} */
-  this.id = lf.proc.RelationEntry.getNextId_();
-
-  /** @private {boolean} */
-  this.isPrefixApplied_ = isPrefixApplied;
-};
-
-
-/**
- * The ID to assign to the next entry that will be created.
- * @private {number}
- */
-lf.proc.RelationEntry.id_ = 0;
-
-
-/**
- * @return {number} The next unique entry ID to use for creating a new instance.
- * @private
- */
-lf.proc.RelationEntry.getNextId_ = function() {
-  return lf.proc.RelationEntry.id_++;
-};
-
-
-/**
- * @param {!lf.schema.Column} column The column to be retrieved.
- * @return {*} The value of the requested column for this entry.
- */
-lf.proc.RelationEntry.prototype.getField = function(column) {
-  // Attempting to get the field from the aliased location first, since it is
-  // not guaranteed that setField() has been called for this instance. If not
-  // found then look for it in its normal location.
-  var alias = column.getAlias();
-  if (!goog.isNull(alias) && this.row.payload().hasOwnProperty(alias)) {
-    return this.row.payload()[alias];
-  }
-
-  if (this.isPrefixApplied_) {
-    return this.row.payload()[
-        column.getTable().getEffectiveName()][column.getName()];
-  } else {
-    return this.row.payload()[column.getName()];
-  }
-};
-
-
-/**
- * Sets the value of the given field on this entry.
- * @param {!lf.schema.Column} column The column to be retrieved.
- * @param {*} value The value to be set.
- */
-lf.proc.RelationEntry.prototype.setField = function(column, value) {
-  var alias = column.getAlias();
-  if (goog.isDefAndNotNull(alias)) {
-    this.row.payload()[alias] = value;
-    return;
-  }
-
-  if (this.isPrefixApplied_) {
-    var tableName = column.getTable().getEffectiveName();
-    var containerObj = this.row.payload()[tableName];
-    if (!goog.isDefAndNotNull(containerObj)) {
-      containerObj = {};
-      this.row.payload()[tableName] = containerObj;
-    }
-    containerObj[column.getName()] = value;
-  } else {
-    this.row.payload()[column.getName()] = value;
-  }
-};
-
-
-/**
- * Combines two entries into a single entry.
- * @param {!lf.proc.RelationEntry} leftEntry
- * @param {!Array<string>} leftEntryTables The names of all source tables for
- *     the attributes in leftEntry.
- * @param {!lf.proc.RelationEntry} rightEntry
- * @param {!Array<string>} rightEntryTables The names of all source tables for
- *     the attributes in rightEntry.
- * @return {!lf.proc.RelationEntry} The combined entry.
- */
-lf.proc.RelationEntry.combineEntries = function(
-    leftEntry, leftEntryTables, rightEntry, rightEntryTables) {
-  var result = {};
-
-  var mergeEntry = function(entry, entryTables) {
-    if (entry.isPrefixApplied_) {
-      var payload = entry.row.payload();
-      for (var prefix in payload) {
-        result[prefix] = payload[prefix];
-      }
-    } else {
-      goog.asserts.assert(
-          !result.hasOwnProperty(entryTables[0]),
-          'Attempted to join table with itself, without using table alias, ' +
-          'or same alias ' + entryTables[0] + 'is reused for multiple tables.');
-
-      // Since the entry is not prefixed, all attributes come from a single
-      // table.
-      result[entryTables[0]] = entry.row.payload();
-    }
-  };
-
-  mergeEntry(leftEntry, leftEntryTables);
-  mergeEntry(rightEntry, rightEntryTables);
-
-  var row = new lf.Row(lf.Row.DUMMY_ID, result);
-  return new lf.proc.RelationEntry(row, true);
-};
-
-/**
- * @license
- * Copyright 2014 Google Inc. All Rights Reserved.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
 goog.provide('lf.tree');
 
 goog.require('goog.asserts');
@@ -25423,787 +26838,6 @@ goog.provide('lf.pred.Operator');
 lf.pred.Operator = {
   AND: 'and',
   OR: 'or'
-};
-
-// Copyright 2006 The Closure Library Authors. All Rights Reserved.
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS-IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
-/**
- * @fileoverview Generic immutable node object to be used in collections.
- *
- */
-
-
-goog.provide('goog.structs.Node');
-
-
-
-/**
- * A generic immutable node. This can be used in various collections that
- * require a node object for its item (such as a heap).
- * @param {K} key Key.
- * @param {V} value Value.
- * @constructor
- * @template K, V
- */
-goog.structs.Node = function(key, value) {
-  /**
-   * The key.
-   * @private {K}
-   */
-  this.key_ = key;
-
-  /**
-   * The value.
-   * @private {V}
-   */
-  this.value_ = value;
-};
-
-
-/**
- * Gets the key.
- * @return {K} The key.
- */
-goog.structs.Node.prototype.getKey = function() {
-  return this.key_;
-};
-
-
-/**
- * Gets the value.
- * @return {V} The value.
- */
-goog.structs.Node.prototype.getValue = function() {
-  return this.value_;
-};
-
-
-/**
- * Clones a node and returns a new node.
- * @return {!goog.structs.Node<K, V>} A new goog.structs.Node with the same
- *     key value pair.
- */
-goog.structs.Node.prototype.clone = function() {
-  return new goog.structs.Node(this.key_, this.value_);
-};
-
-// Copyright 2010 The Closure Library Authors. All Rights Reserved.
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS-IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
-/**
- * @fileoverview Generic tree node data structure with arbitrary number of child
- * nodes.
- *
- */
-
-goog.provide('goog.structs.TreeNode');
-
-goog.require('goog.array');
-goog.require('goog.asserts');
-goog.require('goog.structs.Node');
-
-
-
-/**
- * Generic tree node data structure with arbitrary number of child nodes.
- * It is possible to create a dynamic tree structure by overriding
- * {@link #getParent} and {@link #getChildren} in a subclass. All other getters
- * will automatically work.
- *
- * @param {KEY} key Key.
- * @param {VALUE} value Value.
- * @constructor
- * @extends {goog.structs.Node<KEY, VALUE>}
- * @template KEY, VALUE
- */
-goog.structs.TreeNode = function(key, value) {
-  goog.structs.Node.call(this, key, value);
-
-  /**
-   * Reference to the parent node or null if it has no parent.
-   * @private {goog.structs.TreeNode<KEY, VALUE>}
-   */
-  this.parent_ = null;
-
-  /**
-   * Child nodes or null in case of leaf node.
-   * @private {Array<!goog.structs.TreeNode<KEY, VALUE>>}
-   */
-  this.children_ = null;
-};
-goog.inherits(goog.structs.TreeNode, goog.structs.Node);
-
-
-/**
- * Constant for empty array to avoid unnecessary allocations.
- * @private
- */
-goog.structs.TreeNode.EMPTY_ARRAY_ = [];
-
-
-/**
- * @return {!goog.structs.TreeNode} Clone of the tree node without its parent
- *     and child nodes. The key and the value are copied by reference.
- * @override
- */
-goog.structs.TreeNode.prototype.clone = function() {
-  return new goog.structs.TreeNode(this.getKey(), this.getValue());
-};
-
-
-/**
- * @return {!goog.structs.TreeNode} Clone of the subtree with this node as root.
- */
-goog.structs.TreeNode.prototype.deepClone = function() {
-  var clone = this.clone();
-  this.forEachChild(function(child) {
-    clone.addChild(child.deepClone());
-  });
-  return clone;
-};
-
-
-/**
- * @return {goog.structs.TreeNode<KEY, VALUE>} Parent node or null if it has no
- *     parent.
- */
-goog.structs.TreeNode.prototype.getParent = function() {
-  return this.parent_;
-};
-
-
-/**
- * @return {boolean} Whether the node is a leaf node.
- */
-goog.structs.TreeNode.prototype.isLeaf = function() {
-  return !this.getChildCount();
-};
-
-
-/**
- * Tells if the node is the last child of its parent. This method helps how to
- * connect the tree nodes with lines: L shapes should be used before the last
- * children and |- shapes before the rest. Schematic tree visualization:
- *
- * <pre>
- * Node1
- * |-Node2
- * | L-Node3
- * |   |-Node4
- * |   L-Node5
- * L-Node6
- * </pre>
- *
- * @return {boolean} Whether the node has parent and is the last child of it.
- */
-goog.structs.TreeNode.prototype.isLastChild = function() {
-  var parent = this.getParent();
-  return Boolean(parent && this == goog.array.peek(parent.getChildren()));
-};
-
-
-/**
- * @return {!Array<!goog.structs.TreeNode<KEY, VALUE>>} Immutable child nodes.
- */
-goog.structs.TreeNode.prototype.getChildren = function() {
-  return this.children_ || goog.structs.TreeNode.EMPTY_ARRAY_;
-};
-
-
-/**
- * Gets the child node of this node at the given index.
- * @param {number} index Child index.
- * @return {goog.structs.TreeNode<KEY, VALUE>} The node at the given index or
- *     null if not found.
- */
-goog.structs.TreeNode.prototype.getChildAt = function(index) {
-  return this.getChildren()[index] || null;
-};
-
-
-/**
- * @return {number} The number of children.
- */
-goog.structs.TreeNode.prototype.getChildCount = function() {
-  return this.getChildren().length;
-};
-
-
-/**
- * @return {number} The number of ancestors of the node.
- */
-goog.structs.TreeNode.prototype.getDepth = function() {
-  var depth = 0;
-  var node = this;
-  while (node.getParent()) {
-    depth++;
-    node = node.getParent();
-  }
-  return depth;
-};
-
-
-/**
- * @return {!Array<!goog.structs.TreeNode<KEY, VALUE>>} All ancestor nodes in
- *     bottom-up order.
- */
-goog.structs.TreeNode.prototype.getAncestors = function() {
-  var ancestors = [];
-  var node = this.getParent();
-  while (node) {
-    ancestors.push(node);
-    node = node.getParent();
-  }
-  return ancestors;
-};
-
-
-/**
- * @return {!goog.structs.TreeNode<KEY, VALUE>} The root of the tree structure,
- *     i.e. the farthest ancestor of the node or the node itself if it has no
- *     parents.
- */
-goog.structs.TreeNode.prototype.getRoot = function() {
-  var root = this;
-  while (root.getParent()) {
-    root = root.getParent();
-  }
-  return root;
-};
-
-
-/**
- * Builds a nested array structure from the node keys in this node's subtree to
- * facilitate testing tree operations that change the hierarchy.
- * @return {!Array<KEY>} The structure of this node's descendants as nested
- *     array of node keys. The number of unclosed opening brackets up to a
- *     particular node is proportional to the indentation of that node in the
- *     graphical representation of the tree. Example:
- *     <pre>
- *       this
- *       |- child1
- *       |  L- grandchild
- *       L- child2
- *     </pre>
- *     is represented as ['child1', ['grandchild'], 'child2'].
- */
-goog.structs.TreeNode.prototype.getSubtreeKeys = function() {
-  var ret = [];
-  this.forEachChild(function(child) {
-    ret.push(child.getKey());
-    if (!child.isLeaf()) {
-      ret.push(child.getSubtreeKeys());
-    }
-  });
-  return ret;
-};
-
-
-/**
- * Tells whether this node is the ancestor of the given node.
- * @param {!goog.structs.TreeNode<KEY, VALUE>} node A node.
- * @return {boolean} Whether this node is the ancestor of {@code node}.
- */
-goog.structs.TreeNode.prototype.contains = function(node) {
-  var current = node;
-  do {
-    current = current.getParent();
-  } while (current && current != this);
-  return Boolean(current);
-};
-
-
-/**
- * Finds the deepest common ancestor of the given nodes. The concept of
- * ancestor is not strict in this case, it includes the node itself.
- * @param {...!goog.structs.TreeNode<KEY, VALUE>} var_args The nodes.
- * @return {goog.structs.TreeNode<KEY, VALUE>} The common ancestor of the nodes
- *     or null if they are from different trees.
- * @template KEY, VALUE
- */
-goog.structs.TreeNode.findCommonAncestor = function(var_args) {
-  /** @type {goog.structs.TreeNode} */
-  var ret = arguments[0];
-  if (!ret) {
-    return null;
-  }
-
-  var retDepth = ret.getDepth();
-  for (var i = 1; i < arguments.length; i++) {
-    /** @type {goog.structs.TreeNode} */
-    var node = arguments[i];
-    var depth = node.getDepth();
-    while (node != ret) {
-      if (depth <= retDepth) {
-        ret = ret.getParent();
-        retDepth--;
-      }
-      if (depth > retDepth) {
-        node = node.getParent();
-        depth--;
-      }
-    }
-  }
-
-  return ret;
-};
-
-
-/**
- * Returns a node whose key matches the given one in the hierarchy rooted at
- * this node. The hierarchy is searched using an in-order traversal.
- * @param {KEY} key The key to search for.
- * @return {goog.structs.TreeNode<KEY, VALUE>} The node with the given key, or
- *     null if no node with the given key exists in the hierarchy.
- */
-goog.structs.TreeNode.prototype.getNodeByKey = function(key) {
-  if (this.getKey() == key) {
-    return this;
-  }
-  var children = this.getChildren();
-  for (var i = 0; i < children.length; i++) {
-    var descendant = children[i].getNodeByKey(key);
-    if (descendant) {
-      return descendant;
-    }
-  }
-  return null;
-};
-
-
-/**
- * Traverses all child nodes.
- * @param {function(this:THIS, !goog.structs.TreeNode<KEY, VALUE>, number,
- *     !Array<!goog.structs.TreeNode<KEY, VALUE>>)} f Callback function. It
- *     takes the node, its index and the array of all child nodes as arguments.
- * @param {THIS=} opt_this The object to be used as the value of {@code this}
- *     within {@code f}.
- * @template THIS
- */
-goog.structs.TreeNode.prototype.forEachChild = function(f, opt_this) {
-  goog.array.forEach(this.getChildren(), f, opt_this);
-};
-
-
-/**
- * Traverses all child nodes recursively in preorder.
- * @param {function(this:THIS, !goog.structs.TreeNode<KEY, VALUE>)} f Callback
- *     function.  It takes the node as argument.
- * @param {THIS=} opt_this The object to be used as the value of {@code this}
- *     within {@code f}.
- * @template THIS
- */
-goog.structs.TreeNode.prototype.forEachDescendant = function(f, opt_this) {
-  var children = this.getChildren();
-  for (var i = 0; i < children.length; i++) {
-    f.call(opt_this, children[i]);
-    children[i].forEachDescendant(f, opt_this);
-  }
-};
-
-
-/**
- * Traverses the subtree with the possibility to skip branches. Starts with
- * this node, and visits the descendant nodes depth-first, in preorder.
- * @param {function(this:THIS, !goog.structs.TreeNode<KEY, VALUE>):
- *     (boolean|undefined)} f Callback function. It takes the node as argument.
- *     The children of this node will be visited if the callback returns true or
- *     undefined, and will be skipped if the callback returns false.
- * @param {THIS=} opt_this The object to be used as the value of {@code this}
- *     within {@code f}.
- * @template THIS
- */
-goog.structs.TreeNode.prototype.traverse = function(f, opt_this) {
-  if (f.call(opt_this, this) !== false) {
-    var children = this.getChildren();
-    for (var i = 0; i < children.length; i++) {
-      children[i].traverse(f, opt_this);
-    }
-  }
-};
-
-
-/**
- * Sets the parent node of this node. The callers must ensure that the parent
- * node and only that has this node among its children.
- * @param {goog.structs.TreeNode<KEY, VALUE>} parent The parent to set. If
- *     null, the node will be detached from the tree.
- * @protected
- */
-goog.structs.TreeNode.prototype.setParent = function(parent) {
-  this.parent_ = parent;
-};
-
-
-/**
- * Appends a child node to this node.
- * @param {!goog.structs.TreeNode<KEY, VALUE>} child Orphan child node.
- */
-goog.structs.TreeNode.prototype.addChild = function(child) {
-  this.addChildAt(child, this.children_ ? this.children_.length : 0);
-};
-
-
-/**
- * Inserts a child node at the given index.
- * @param {!goog.structs.TreeNode<KEY, VALUE>} child Orphan child node.
- * @param {number} index The position to insert at.
- */
-goog.structs.TreeNode.prototype.addChildAt = function(child, index) {
-  goog.asserts.assert(!child.getParent());
-  child.setParent(this);
-  this.children_ = this.children_ || [];
-  goog.asserts.assert(index >= 0 && index <= this.children_.length);
-  goog.array.insertAt(this.children_, child, index);
-};
-
-
-/**
- * Replaces a child node at the given index.
- * @param {!goog.structs.TreeNode<KEY, VALUE>} newChild Child node to set. It
- *     must not have parent node.
- * @param {number} index Valid index of the old child to replace.
- * @return {!goog.structs.TreeNode<KEY, VALUE>} The original child node,
- *     detached from its parent.
- */
-goog.structs.TreeNode.prototype.replaceChildAt = function(newChild, index) {
-  goog.asserts.assert(!newChild.getParent(),
-      'newChild must not have parent node');
-  var children = this.getChildren();
-  var oldChild = children[index];
-  goog.asserts.assert(oldChild, 'Invalid child or child index is given.');
-  oldChild.setParent(null);
-  children[index] = newChild;
-  newChild.setParent(this);
-  return oldChild;
-};
-
-
-/**
- * Replaces the given child node.
- * @param {!goog.structs.TreeNode<KEY, VALUE>} newChild New node to replace
- *     {@code oldChild}. It must not have parent node.
- * @param {!goog.structs.TreeNode<KEY, VALUE>} oldChild Existing child node to
- *     be replaced.
- * @return {!goog.structs.TreeNode<KEY, VALUE>} The replaced child node
- *     detached from its parent.
- */
-goog.structs.TreeNode.prototype.replaceChild = function(newChild, oldChild) {
-  return this.replaceChildAt(newChild,
-      goog.array.indexOf(this.getChildren(), oldChild));
-};
-
-
-/**
- * Removes the child node at the given index.
- * @param {number} index The position to remove from.
- * @return {goog.structs.TreeNode<KEY, VALUE>} The removed node if any.
- */
-goog.structs.TreeNode.prototype.removeChildAt = function(index) {
-  var child = this.children_ && this.children_[index];
-  if (child) {
-    child.setParent(null);
-    goog.array.removeAt(this.children_, index);
-    if (this.children_.length == 0) {
-      this.children_ = null;
-    }
-    return child;
-  }
-  return null;
-};
-
-
-/**
- * Removes the given child node of this node.
- * @param {goog.structs.TreeNode<KEY, VALUE>} child The node to remove.
- * @return {goog.structs.TreeNode<KEY, VALUE>} The removed node if any.
- */
-goog.structs.TreeNode.prototype.removeChild = function(child) {
-  return this.removeChildAt(goog.array.indexOf(this.getChildren(), child));
-};
-
-
-/**
- * Removes all child nodes of this node.
- */
-goog.structs.TreeNode.prototype.removeChildren = function() {
-  if (this.children_) {
-    for (var i = 0; i < this.children_.length; i++) {
-      this.children_[i].setParent(null);
-    }
-    this.children_ = null;
-  }
-};
-
-/**
- * @license
- * Copyright 2014 Google Inc. All Rights Reserved.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-goog.provide('lf.Predicate');
-goog.provide('lf.PredicateProvider');
-
-goog.forwardDeclare('lf.Binder');
-
-
-
-/**
- * @interface
- */
-lf.Predicate = function() {};
-
-
-/**
- * @param {!lf.proc.Relation} relation The relation to be checked.
- * @return {!lf.proc.Relation} A relation that holds only the entries that
- *     satisfy the predicate.
- */
-lf.Predicate.prototype.eval;
-
-
-/**
- * Reverses this predicate.
- * @param {boolean} isComplement Whether the original predicate should be
- *     reversed. Reversing a predicate means that the predicate evaluates to
- *     true where before it was evaluating to false, and vice versa.
- */
-lf.Predicate.prototype.setComplement;
-
-
-/**
- * @return {!lf.Predicate} A clone of this predicate.
- */
-lf.Predicate.prototype.copy;
-
-
-/**
- * @param {!Array<!lf.schema.Column>=} opt_results An optional array holding
- *     previous results, given that this function is called recursively. If
- *     provided any columns will be added on that array. If not provided a new
- *     array will be allocated.
- * @return {!Array<!lf.schema.Column>} An array of all columns involved in this
- *     predicate.
- */
-lf.Predicate.prototype.getColumns;
-
-
-/** @param {number} id */
-lf.Predicate.prototype.setId;
-
-
-/** @return {number} */
-lf.Predicate.prototype.getId;
-
-
-
-/**
- * @template T
- * @interface
- */
-lf.PredicateProvider = function() {};
-
-
-/**
- * Returns equality test predicate.
- * @param {(!lf.schema.Column|!lf.Binder|T)} operand
- * @return {!lf.Predicate}
- * @throws {!lf.Exception}
- */
-lf.PredicateProvider.prototype.eq;
-
-
-/**
- * Returns inequality test predicate.
- * @param {(!lf.schema.Column|!lf.Binder|T)} operand
- * @return {!lf.Predicate}
- * @throws {!lf.Exception}
- */
-lf.PredicateProvider.prototype.neq;
-
-
-/**
- * Returns less than test predicate.
- * @param {(!lf.schema.Column|!lf.Binder|T)} operand
- * @return {!lf.Predicate}
- * @throws {!lf.Exception}
- */
-lf.PredicateProvider.prototype.lt;
-
-
-/**
- * Returns less than or equals to test predicate.
- * @param {(!lf.schema.Column|!lf.Binder|T)} operand
- * @return {!lf.Predicate}
- * @throws {!lf.Exception}
- */
-lf.PredicateProvider.prototype.lte;
-
-
-/**
- * Returns greater than test predicate.
- * @param {(!lf.schema.Column|!lf.Binder|T)} operand
- * @return {!lf.Predicate}
- * @throws {!lf.Exception}
- */
-lf.PredicateProvider.prototype.gt;
-
-
-/**
- * Returns greater than or equals to test predicate.
- * @param {(!lf.schema.Column|!lf.Binder|T)} operand
- * @return {!lf.Predicate}
- * @throws {!lf.Exception}
- */
-lf.PredicateProvider.prototype.gte;
-
-
-/**
- * Returns JavaScript regex matching test predicate.
- * @param {(!lf.Binder|!RegExp)} regex
- * @return {!lf.Predicate}
- * @throws {!lf.Exception}
- */
-lf.PredicateProvider.prototype.match;
-
-
-/**
- * Returns between test predicate.
- * @param {(!lf.Binder|T)} from
- * @param {(!lf.Binder|T)} to Must be greater or equals to from.
- * @return {!lf.Predicate}
- * @throws {!lf.Exception}
- */
-lf.PredicateProvider.prototype.between;
-
-
-/**
- * Returns array finding test predicate.
- * @param {(!lf.Binder|!Array<T>)} values
- * @return {!lf.Predicate}
- */
-lf.PredicateProvider.prototype.in;
-
-
-/**
- * Returns nullity test predicate.
- * @return {!lf.Predicate}
- */
-lf.PredicateProvider.prototype.isNull;
-
-
-/**
- * Returns non-nullity test predicate.
- * @return {!lf.Predicate}
- */
-lf.PredicateProvider.prototype.isNotNull;
-
-/**
- * @license
- * Copyright 2014 Google Inc. All Rights Reserved.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-goog.provide('lf.pred.PredicateNode');
-
-goog.require('goog.structs.TreeNode');
-goog.require('lf.Predicate');
-
-
-
-/**
- * @constructor
- * @struct
- * @suppress {checkStructDictInheritance}
- * @implements {lf.Predicate}
- * @extends {goog.structs.TreeNode}
- */
-lf.pred.PredicateNode = function() {
-  lf.pred.PredicateNode.base(this, 'constructor', '', '');
-
-  /** @private {number} */
-  this.id_ = lf.pred.PredicateNode.nextId_++;
-};
-goog.inherits(lf.pred.PredicateNode, goog.structs.TreeNode);
-
-
-/**
- * The ID to assign to the next predicate that will be created. Note that
- * predicates are constructed with unique IDs, but when a predicate is cloned
- * the ID is also purposefully cloned.
- * @private {number}
- */
-lf.pred.PredicateNode.nextId_ = 0;
-
-
-/** @override */
-lf.pred.PredicateNode.prototype.eval = goog.abstractMethod;
-
-
-/** @override */
-lf.pred.PredicateNode.prototype.setComplement = goog.abstractMethod;
-
-
-/** @override */
-lf.pred.PredicateNode.prototype.copy = goog.abstractMethod;
-
-
-/** @override */
-lf.pred.PredicateNode.prototype.getColumns = goog.abstractMethod;
-
-
-/** @override */
-lf.pred.PredicateNode.prototype.getId = function() {
-  return this.id_;
-};
-
-
-/** @override */
-lf.pred.PredicateNode.prototype.setId = function(id) {
-  this.id_ = id;
 };
 
 /**
@@ -27047,278 +27681,6 @@ goog.labs.structs.Multimap.prototype.getEntries = function() {
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-goog.provide('lf.Type');
-goog.provide('lf.type');
-
-
-/** @export @enum {number} */
-lf.Type = {
-  ARRAY_BUFFER: 0,
-  BOOLEAN: 1,
-  DATE_TIME: 2,
-  INTEGER: 3,
-  NUMBER: 4,
-  STRING: 5,
-  OBJECT: 6
-};
-
-
-/** @export @const */
-lf.type.DEFAULT_VALUES = {
-  0: new ArrayBuffer(0),  // lf.Type.ARRAY_BUFFER
-  1: false,  // lf.Type.BOOLEAN
-  2: Object.freeze(new Date(0)),  // lf.Type.DATE_TIME
-  3: 0,  // lf.Type.INTEGER
-  4: 0,  // lf.Type.NUMBER
-  5: '',  // lf.Type.STRING
-  6: Object.freeze({})  // lf.Type.OBJECT
-};
-
-/**
- * @license
- * Copyright 2014 Google Inc. All Rights Reserved.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-goog.provide('lf.eval.Registry');
-goog.provide('lf.eval.Type');
-
-goog.require('goog.asserts');
-goog.require('goog.structs.Map');
-goog.require('lf.Type');
-
-
-/**
- * An enum holding all evaluator types.
- * @enum {string}
- */
-lf.eval.Type = {
-  BETWEEN: 'between',
-  EQ: 'eq',
-  GTE: 'gte',
-  GT: 'gt',
-  IN: 'in',
-  LTE: 'lte',
-  LT: 'lt',
-  MATCH: 'match',
-  NEQ: 'neq'
-};
-
-
-/** @typedef {function(*, *):boolean} */
-lf.eval.EvalFunction_;
-
-
-
-/**
- * @constructor
- * @struct
- */
-lf.eval.Registry = function() {
-  var numberOrIntegerEvalMap = lf.eval.buildNumberEvaluatorMap_();
-
-  /**
-   * A two-level map, associating a column type to the correpsonding evaluation
-   * functions map.
-   * NOTE: No evaluation map exists for lf.Type.ARRAY_BUFFER since predicates
-   * involving such a column do not make sense.
-   *
-   * @private {!goog.structs.Map<
-   *     !lf.Type, !goog.structs.Map<!lf.eval.Type, !lf.eval.EvalFunction_>>}
-   */
-  this.evaluationMaps_ = new goog.structs.Map(
-      lf.Type.BOOLEAN,
-      lf.eval.buildBooleanEvaluatorMap_(),
-      lf.Type.DATE_TIME,
-      lf.eval.buildDateEvaluatorMap_(),
-      lf.Type.NUMBER,
-      numberOrIntegerEvalMap,
-      lf.Type.INTEGER,
-      numberOrIntegerEvalMap,
-      lf.Type.STRING,
-      lf.eval.buildStringEvaluatorMap_());
-};
-goog.addSingletonGetter(lf.eval.Registry);
-
-
-/**
- * @param {!lf.Type} columnType
- * @param {!lf.eval.Type} evaluatorType
- * @return {!lf.eval.EvalFunction_} The evaluator corresponding to the given
- *     type.
- */
-lf.eval.Registry.prototype.getEvaluator = function(columnType, evaluatorType) {
-  // TODO(dpapad): Throw lf.Exception instead of goog.asserting here.
-
-  var evaluationMap = this.evaluationMaps_.get(columnType, null);
-  goog.asserts.assert(
-      !goog.isNull(evaluationMap),
-      'Could not find evaluation map for ' + columnType);
-  var evaluatorFn = evaluationMap.get(evaluatorType, null);
-  goog.asserts.assert(
-      !goog.isNull(evaluatorFn),
-      'Could not find evaluator for ' + columnType + ', ' + evaluatorType);
-  return evaluatorFn;
-};
-
-
-/**
- * Builds a map associating evaluator types with the evaluator functions, for
- * the case of a column of type 'number'.
- * NOTE: lf.eval.Type.MATCH is not available for numbers.
- *
- * @return {!goog.structs.Map<!lf.eval.Type, !lf.eval.EvalFunction_>}
- * @private
- */
-lf.eval.buildNumberEvaluatorMap_ = function() {
-  return new goog.structs.Map(
-      lf.eval.Type.BETWEEN,
-      function(a, range) {
-        return a >= range[0] && a <= range[1];
-      },
-      lf.eval.Type.EQ,
-      function(a, b) { return a == b; },
-      lf.eval.Type.GTE,
-      function(a, b) { return a >= b; },
-      lf.eval.Type.GT,
-      function(a, b) { return a > b; },
-      lf.eval.Type.IN,
-      function(rowValue, values) {
-        return values.indexOf(rowValue) != -1;
-      },
-      lf.eval.Type.LTE,
-      function(a, b) { return a <= b; },
-      lf.eval.Type.LT,
-      function(a, b) { return a < b; },
-      lf.eval.Type.NEQ,
-      function(a, b) { return a != b; });
-};
-
-
-/**
- * Builds a map associating evaluator types with the evaluator functions, for
- * the case of a column of type 'string'.
- * @return {!goog.structs.Map<!lf.eval.Type, !lf.eval.EvalFunction_>}
- * @private
- */
-lf.eval.buildStringEvaluatorMap_ = function() {
-  return new goog.structs.Map(
-      lf.eval.Type.BETWEEN,
-      function(a, range) {
-        return a >= range[0] && a <= range[1];
-      },
-      lf.eval.Type.EQ,
-      function(a, b) { return a == b; },
-      lf.eval.Type.GTE,
-      function(a, b) { return a >= b; },
-      lf.eval.Type.GT,
-      function(a, b) { return a > b; },
-      lf.eval.Type.IN,
-      function(rowValue, values) {
-        return values.indexOf(rowValue) != -1;
-      },
-      lf.eval.Type.LTE,
-      function(a, b) { return a <= b; },
-      lf.eval.Type.LT,
-      function(a, b) { return a < b; },
-      lf.eval.Type.MATCH,
-      function(value, regex) {
-        var re = new RegExp(regex);
-        return re.test(value);
-      },
-      lf.eval.Type.NEQ,
-      function(a, b) { return a != b; });
-};
-
-
-/**
- * Builds a map associating evaluator types with the evaluator functions, for
- * the case of a column of type 'Date'.
- * NOTE: lf.eval.Type.MATCH is not available for Date objects.
- *
- * @return {!goog.structs.Map<!lf.eval.Type, !lf.eval.EvalFunction_>}
- * @private
- */
-lf.eval.buildDateEvaluatorMap_ = function() {
-  return new goog.structs.Map(
-      lf.eval.Type.BETWEEN,
-      function(a, range) {
-        return a.getTime() >= range[0].getTime() &&
-            a.getTime() <= range[1].getTime();
-      },
-      lf.eval.Type.EQ,
-      function(a, b) {
-        var aTime = goog.isNull(a) ? -1 : a.getTime();
-        var bTime = goog.isNull(b) ? -1 : b.getTime();
-        return aTime == bTime;
-      },
-      lf.eval.Type.GTE,
-      function(a, b) { return a.getTime() >= b.getTime(); },
-      lf.eval.Type.GT,
-      function(a, b) { return a.getTime() > b.getTime(); },
-      lf.eval.Type.IN,
-      function(targetValue, values) {
-        return values.some(
-            function(value) {
-              return value.getTime() == targetValue.getTime();
-            });
-      },
-      lf.eval.Type.LTE,
-      function(a, b) { return a.getTime() <= b.getTime(); },
-      lf.eval.Type.LT,
-      function(a, b) { return a.getTime() < b.getTime(); },
-      lf.eval.Type.NEQ,
-      function(a, b) {
-        var aTime = goog.isNull(a) ? -1 : a.getTime();
-        var bTime = goog.isNull(b) ? -1 : b.getTime();
-        return aTime != bTime;
-      });
-};
-
-
-/**
- * Builds a map associating evaluator types with the evaluator functions, for
- * the case of a column of type 'boolean'.
- * NOTE: lf.eval.Type.BETWEEN, MATCH, GTE, GT, LTE, LT, are not available for
- * boolean objects.
- *
- * @return {!goog.structs.Map<!lf.eval.Type, !lf.eval.EvalFunction_>}
- * @private
- */
-lf.eval.buildBooleanEvaluatorMap_ = function() {
-  return new goog.structs.Map(
-      lf.eval.Type.EQ,
-      function(a, b) { return a == b; },
-      lf.eval.Type.NEQ,
-      function(a, b) { return a != b });
-};
-
-/**
- * @license
- * Copyright 2014 Google Inc. All Rights Reserved.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
 goog.provide('lf.pred.JoinPredicate');
 
 goog.require('goog.labs.structs.Multimap');
@@ -27585,314 +27947,6 @@ lf.pred.JoinPredicate.prototype.evalRelationsHashJoin_ = function(
 
   var srcTables = leftRelation.getTables().concat(rightRelation.getTables());
   return new lf.proc.Relation(combinedEntries, srcTables);
-};
-
-/**
- * @license
- * Copyright 2014 Google Inc. All Rights Reserved.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-goog.provide('lf.Binder');
-goog.provide('lf.bind');
-
-
-/**
- * @param {number} index Position in bound array.
- * @return {!lf.Binder}
- * @export
- */
-lf.bind = function(index) {
-  return new lf.Binder(index);
-};
-
-
-
-/**
- * Binder class that instructs the query engine to evaluate bound value at
- * execution time.
- * @param {number} index
- * @constructor
- * @struct
- * @final
- * @export
- */
-lf.Binder = function(index) {
-  /** @private {number} */
-  this.index_ = index;
-};
-
-
-/** @return {number} */
-lf.Binder.prototype.getIndex = function() {
-  return this.index_;
-};
-
-/**
- * @license
- * Copyright 2014 Google Inc. All Rights Reserved.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-goog.provide('lf.pred.ValuePredicate');
-
-goog.require('goog.asserts');
-goog.require('goog.structs.Set');
-goog.require('lf.Binder');
-goog.require('lf.Exception');
-goog.require('lf.eval.Registry');
-goog.require('lf.eval.Type');
-goog.require('lf.index.SingleKeyRange');
-goog.require('lf.pred.PredicateNode');
-goog.require('lf.proc.Relation');
-
-
-
-/**
- * @constructor @struct
- * @extends {lf.pred.PredicateNode}
- *
- * @template T
- * @param {!lf.schema.Column} column
- * @param {!T} value
- * @param {!lf.eval.Type} evaluatorType
- */
-lf.pred.ValuePredicate = function(column, value, evaluatorType) {
-  lf.pred.ValuePredicate.base(this, 'constructor');
-
-  /** @type {!lf.schema.Column} */
-  this.column = column;
-
-  /** @type {!T} */
-  this.value = value;
-
-  /** @type {!lf.eval.Type} */
-  this.evaluatorType = evaluatorType;
-
-  var registry = /** @type {!lf.eval.Registry} */ (
-      lf.eval.Registry.getInstance());
-
-  /** @private {!function(!T, !T):boolean} */
-  this.evaluatorFn_ = registry.getEvaluator(
-      this.column.getType(), this.evaluatorType);
-
-  /**
-   * Whether this predicate should be applied reversed (return false where the
-   * original predicate returns true and vice versa).
-   * @private
-   */
-  this.isComplement_ = false;
-
-  /** @private {!T} */
-  this.binder_ = value;
-};
-goog.inherits(lf.pred.ValuePredicate, lf.pred.PredicateNode);
-
-
-/** @override */
-lf.pred.ValuePredicate.prototype.copy = function() {
-  var clone = new lf.pred.ValuePredicate(
-      this.column, this.value, this.evaluatorType);
-  clone.setBinder(this.binder_);
-  clone.setComplement(this.isComplement_);
-  clone.setId(this.getId());
-  return clone;
-};
-
-
-/** @override */
-lf.pred.ValuePredicate.prototype.getColumns = function(opt_results) {
-  if (goog.isDefAndNotNull(opt_results)) {
-    opt_results.push(this.column);
-    return opt_results;
-  } else {
-    return [this.column];
-  }
-};
-
-
-/** @override */
-lf.pred.ValuePredicate.prototype.setComplement = function(isComplement) {
-  this.isComplement_ = isComplement;
-};
-
-
-/** @param {!T} binder */
-lf.pred.ValuePredicate.prototype.setBinder = function(binder) {
-  this.binder_ = binder;
-};
-
-
-/**
- * @private
- * @throws {!lf.Exception}
- */
-lf.pred.ValuePredicate.prototype.checkBinding_ = function() {
-  var bound = false;
-  if (!(this.value instanceof lf.Binder)) {
-    if (goog.isArray(this.value)) {
-      bound = !this.value.some(function(val) {
-        return val instanceof lf.Binder;
-      });
-    } else {
-      bound = true;
-    }
-  }
-
-  if (!bound) {
-    throw new lf.Exception(lf.Exception.Type.SYNTAX, 'Value is not bounded');
-  }
-};
-
-
-/** @override */
-lf.pred.ValuePredicate.prototype.eval = function(relation) {
-  this.checkBinding_();
-
-  // Ignoring this.evaluatorFn_() for the case of the IN, in favor of a faster
-  // evaluation implementation.
-  if (this.evaluatorType == lf.eval.Type.IN) {
-    return this.evalAsIn_(relation);
-  }
-
-  var entries = relation.entries.filter(function(entry) {
-    return this.evaluatorFn_(
-        entry.getField(this.column),
-        this.value) != this.isComplement_;
-  }, this);
-
-  return new lf.proc.Relation(entries, relation.getTables());
-};
-
-
-/** @param {!Array<*>} values */
-lf.pred.ValuePredicate.prototype.bind = function(values) {
-  /** @param {number} index */
-  var checkIndexWithinRange = function(index) {
-    if (values.length <= index) {
-      throw new lf.Exception(lf.Exception.Type.SYNTAX,
-          'Cannot bind to given array: out of range.');
-    }
-  };
-
-  if (this.binder_ instanceof lf.Binder) {
-    var index = this.binder_.getIndex();
-    checkIndexWithinRange(index);
-    this.value = /** @type {!T} */ (values[index]);
-  } else if (goog.isArray(this.binder_)) {
-    this.value = this.binder_.map(function(val) {
-      if (val instanceof lf.Binder) {
-        checkIndexWithinRange(val.getIndex());
-        return values[val.getIndex()];
-      } else {
-        return val;
-      }
-    });
-  }
-};
-
-
-/**
- * Evaluates this predicate as an lf.eval.Type.IN. The execution time of this
- * operation is O(N) where N is the number of entries to be evaluated.
- * @param {!lf.proc.Relation} relation The relation to be checked.
- * @return {!lf.proc.Relation} A relation that holds only the entries that
- *     satisfy the predicate.
- * @private
- */
-lf.pred.ValuePredicate.prototype.evalAsIn_ = function(relation) {
-  goog.asserts.assert(
-      this.evaluatorType == lf.eval.Type.IN,
-      'ValuePredicate#evalAsIn_() called for wrong predicate type.');
-
-  var valueSet = new goog.structs.Set(this.value);
-  var evaluatorFn = goog.bind(function(rowValue) {
-    return valueSet.contains(rowValue) != this.isComplement_;
-  }, this);
-
-  var entries = relation.entries.filter(function(entry) {
-    return evaluatorFn(entry.getField(this.column));
-  }, this);
-
-  return new lf.proc.Relation(entries, relation.getTables());
-};
-
-
-/** @override */
-lf.pred.ValuePredicate.prototype.toString = function() {
-  return 'value_pred(' +
-      this.column.getNormalizedName() + ' ' +
-      this.evaluatorType + (this.isComplement_ ? '(complement)' : '') + ' ' +
-      this.value + ')';
-};
-
-
-/**
- * @return {boolean} Whether this predicate can be converted to a KeyRange
- *     instance.
- */
-lf.pred.ValuePredicate.prototype.isKeyRangeCompatible = function() {
-  this.checkBinding_();
-  return !goog.isNull(this.value) &&
-      (this.evaluatorType == lf.eval.Type.BETWEEN ||
-      this.evaluatorType == lf.eval.Type.EQ ||
-      this.evaluatorType == lf.eval.Type.GT ||
-      this.evaluatorType == lf.eval.Type.GTE ||
-      this.evaluatorType == lf.eval.Type.LT ||
-      this.evaluatorType == lf.eval.Type.LTE);
-};
-
-
-/**
- * Converts this predicate to a key range.
- * NOTE: Not all predicates can be converted to a key range, callers must call
- * isKeyRangeCompatible() before calling this method.
- * @return {!Array<!lf.index.SingleKeyRange>} The key ranges corresponding to
- *     this predicate. The length of the array is at most two.
- */
-lf.pred.ValuePredicate.prototype.toKeyRange = function() {
-  goog.asserts.assert(
-      this.isKeyRangeCompatible(),
-      'Could not convert predicate to key range.');
-
-  var keyRange = null;
-  if (this.evaluatorType == lf.eval.Type.BETWEEN) {
-    keyRange = new lf.index.SingleKeyRange(
-        this.value[0], this.value[1], false, false);
-  } else if (this.evaluatorType == lf.eval.Type.EQ) {
-    keyRange = lf.index.SingleKeyRange.only(this.value);
-  } else if (this.evaluatorType == lf.eval.Type.GTE) {
-    keyRange = lf.index.SingleKeyRange.lowerBound(this.value);
-  } else if (this.evaluatorType == lf.eval.Type.GT) {
-    keyRange = lf.index.SingleKeyRange.lowerBound(this.value, true);
-  } else if (this.evaluatorType == lf.eval.Type.LTE) {
-    keyRange = lf.index.SingleKeyRange.upperBound(this.value);
-  } else {
-    // Must be this.evaluatorType == lf.eval.Type.LT.
-    keyRange = lf.index.SingleKeyRange.upperBound(this.value, true);
-  }
-
-  return this.isComplement_ ? keyRange.complement() : [keyRange];
 };
 
 /**
@@ -30056,6 +30110,15 @@ lf.query.DeleteContext.prototype.clone = function() {
   return context;
 };
 
+
+/** @override */
+lf.query.DeleteContext.prototype.bind = function(values) {
+  lf.query.DeleteContext.base(this, 'bind', values);
+
+  this.bindValuesInSearchCondition(values);
+  return this;
+};
+
 /**
  * @license
  * Copyright 2014 Google Inc. All Rights Reserved.
@@ -30074,6 +30137,7 @@ lf.query.DeleteContext.prototype.clone = function() {
  */
 goog.provide('lf.query.InsertContext');
 
+goog.require('lf.Binder');
 goog.require('lf.query.Context');
 
 
@@ -30088,6 +30152,9 @@ lf.query.InsertContext = function() {
 
   /** @type {!lf.schema.Table} */
   this.into;
+
+  /** @type {!lf.Binder|!Array<!lf.Row|!lf.Binder>} */
+  this.binder;
 
   /** @type {!Array<!lf.Row>} */
   this.values;
@@ -30104,10 +30171,30 @@ lf.query.InsertContext.prototype.clone = function() {
   context.cloneBase(this);
   context.into = this.into;
   if (this.values) {
-    context.values = this.values.slice();
+    context.values = (this.values instanceof lf.Binder) ? this.values :
+        this.values.slice();
   }
   context.allowReplace = this.allowReplace;
+  context.binder = this.binder;
   return context;
+};
+
+
+/** @override */
+lf.query.InsertContext.prototype.bind = function(values) {
+  lf.query.InsertContext.base(this, 'bind', values);
+
+  if (this.binder) {
+    if (this.binder instanceof lf.Binder) {
+      this.values =
+          /** @type {!Array<!lf.Row>} */ (values[this.binder.getIndex()]);
+    } else {
+      this.values = this.binder.map(function(val) {
+        return val instanceof lf.Binder ? values[val.getIndex()] : val;
+      });
+    }
+  }
+  return this;
 };
 
 /**
@@ -30166,6 +30253,20 @@ lf.query.UpdateContext.prototype.clone = function() {
   context.table = this.table;
   context.set = this.set ? this.set.slice() : this.set;
   return context;
+};
+
+
+/** @override */
+lf.query.UpdateContext.prototype.bind = function(values) {
+  lf.query.UpdateContext.base(this, 'bind', values);
+
+  this.set.forEach(function(set) {
+    if (set.binding != -1) {
+      set.value = values[set.binding];
+    }
+  });
+  this.bindValuesInSearchCondition(values);
+  return this;
 };
 
 /**
@@ -30512,8 +30613,9 @@ lf.query.selectToSql_ = function(query, stripValueInfo) {
  * @return {string}
  */
 lf.query.toSql = function(builder, opt_stripValueInfo) {
-  var query = builder.query;
   var stripValueInfo = opt_stripValueInfo || false;
+  var query = builder.getQuery();
+
   if (query instanceof lf.query.InsertContext) {
     return lf.query.insertToSql_(query, stripValueInfo);
   }
@@ -30553,7 +30655,6 @@ lf.query.toSql = function(builder, opt_stripValueInfo) {
 goog.provide('lf.query.BaseBuilder');
 
 goog.require('goog.Promise');
-goog.require('lf.pred.ValuePredicate');
 goog.require('lf.proc.UserQueryTask');
 goog.require('lf.query.Builder');
 goog.require('lf.query.toSql');
@@ -30569,8 +30670,9 @@ goog.require('lf.tree');
  * @struct
  *
  * @param {!lf.Global} global
+ * @param {!lf.query.Context} context
  */
-lf.query.BaseBuilder = function(global) {
+lf.query.BaseBuilder = function(global, context) {
   /** @private {!lf.Global} */
   this.global_ = global;
 
@@ -30580,8 +30682,8 @@ lf.query.BaseBuilder = function(global) {
   /** @private {!lf.proc.Runner} */
   this.runner_ = global.getService(lf.service.RUNNER);
 
-  /** @type {!Context} */
-  this.query;
+  /** @protected {!lf.query.Context} */
+  this.query = context;
 };
 
 
@@ -30597,7 +30699,8 @@ lf.query.BaseBuilder.prototype.exec = function() {
   }
 
   return new goog.Promise(function(resolve, reject) {
-    var queryTask = new lf.proc.UserQueryTask(this.global_, [this.query]);
+    var queryTask = new lf.proc.UserQueryTask(
+        this.global_, [this.query.clone()]);
     this.runner_.scheduleTask(queryTask).then(
         function(results) {
           resolve(results[0].getPayloads());
@@ -30616,7 +30719,7 @@ lf.query.BaseBuilder.prototype.explain = function() {
     return node.toContextString(context) + '\n';
   };
   return lf.tree.toString(
-      this.queryEngine_.getPlan(this.query).getRoot(), stringFn);
+      this.queryEngine_.getPlan(context).getRoot(), stringFn);
 };
 
 
@@ -30625,6 +30728,7 @@ lf.query.BaseBuilder.prototype.explain = function() {
  * @export
  */
 lf.query.BaseBuilder.prototype.bind = function(values) {
+  this.query.bind(values);
   return this;
 };
 
@@ -30648,31 +30752,15 @@ lf.query.BaseBuilder.prototype.assertExecPreconditions = function() {
 };
 
 
-/**
- * @return {!Context}
- */
+/** @return {!Context} */
 lf.query.BaseBuilder.prototype.getQuery = function() {
-  return this.query;
+  return this.query.clone();
 };
 
 
-/**
- * @param {!lf.query.SelectContext|
- *         !lf.query.UpdateContext|
- *         !lf.query.DeleteContext} context
- * @param {!Array<*>} values
- * @protected
- */
-lf.query.BaseBuilder.bindValuesInSearchCondition = function(context, values) {
-  var searchCondition =
-      /** @type {?lf.pred.PredicateNode} */ (context.where);
-  if (goog.isDefAndNotNull(searchCondition)) {
-    searchCondition.traverse(function(node) {
-      if (node instanceof lf.pred.ValuePredicate) {
-        node.bind(values);
-      }
-    });
-  }
+/** @return {!Context} */
+lf.query.BaseBuilder.prototype.getObservableQuery = function() {
+  return this.query;
 };
 
 /**
@@ -30708,9 +30796,8 @@ goog.require('lf.query.DeleteContext');
  * @param {!lf.Global} global
  */
 lf.query.DeleteBuilder = function(global) {
-  lf.query.DeleteBuilder.base(this, 'constructor', global);
-
-  this.query = new lf.query.DeleteContext();
+  lf.query.DeleteBuilder.base(
+      this, 'constructor', global, new lf.query.DeleteContext());
 };
 goog.inherits(lf.query.DeleteBuilder, lf.query.BaseBuilder);
 
@@ -30769,13 +30856,6 @@ lf.query.DeleteBuilder.prototype.assertExecPreconditions = function() {
   }
 };
 
-
-/** @override */
-lf.query.DeleteBuilder.prototype.bind = function(values) {
-  lf.query.BaseBuilder.bindValuesInSearchCondition(this.query, values);
-  return this;
-};
-
 /**
  * @license
  * Copyright 2014 Google Inc. All Rights Reserved.
@@ -30813,12 +30893,9 @@ goog.require('lf.query.InsertContext');
  *    replacing an existing record.
  */
 lf.query.InsertBuilder = function(global, opt_allowReplace) {
-  lf.query.InsertBuilder.base(this, 'constructor', global);
+  lf.query.InsertBuilder.base(
+      this, 'constructor', global, new lf.query.InsertContext());
 
-  /** @private {!lf.Binder|!Array<!lf.Binder>} */
-  this.binder_;
-
-  this.query = new lf.query.InsertContext();
   this.query.allowReplace = opt_allowReplace || false;
 };
 goog.inherits(lf.query.InsertBuilder, lf.query.BaseBuilder);
@@ -30827,8 +30904,10 @@ goog.inherits(lf.query.InsertBuilder, lf.query.BaseBuilder);
 /** @override */
 lf.query.InsertBuilder.prototype.assertExecPreconditions = function() {
   lf.query.InsertBuilder.base(this, 'assertExecPreconditions');
-  if (!goog.isDefAndNotNull(this.query.into) ||
-      !goog.isDefAndNotNull(this.query.values)) {
+  var context = this.query;
+
+  if (!goog.isDefAndNotNull(context.into) ||
+      !goog.isDefAndNotNull(context.values)) {
     throw new lf.Exception(
         lf.Exception.Type.SYNTAX,
         'Invalid usage of insert()');
@@ -30836,8 +30915,8 @@ lf.query.InsertBuilder.prototype.assertExecPreconditions = function() {
 
   // "Insert or replace" makes no sense for tables that do not have a primary
   // key.
-  if (this.query.allowReplace &&
-      goog.isNull(this.query.into.getConstraint().getPrimaryKey())) {
+  if (context.allowReplace &&
+      goog.isNull(context.into.getConstraint().getPrimaryKey())) {
     throw new lf.Exception(
         lf.Exception.Type.SYNTAX,
         'Attemted to insert or replace in a table with no primary key.');
@@ -30849,7 +30928,6 @@ lf.query.InsertBuilder.prototype.assertExecPreconditions = function() {
 lf.query.InsertBuilder.prototype.into = function(table) {
   this.assertIntoPreconditions_();
   this.query.into = table;
-
   return this;
 };
 
@@ -30857,13 +30935,12 @@ lf.query.InsertBuilder.prototype.into = function(table) {
 /** @override */
 lf.query.InsertBuilder.prototype.values = function(rows) {
   this.assertValuesPreconditions_();
-
-  if (rows instanceof lf.Binder || rows[0] instanceof lf.Binder) {
-    this.binder_ = rows;
+  if (rows instanceof lf.Binder ||
+      rows.some(function(r) { return r instanceof lf.Binder; })) {
+    this.query.binder = rows;
   } else {
     this.query.values = rows;
   }
-
   return this;
 };
 
@@ -30891,22 +30968,6 @@ lf.query.InsertBuilder.prototype.assertValuesPreconditions_ = function() {
         lf.Exception.Type.SYNTAX,
         'values() has already been called.');
   }
-};
-
-
-/** @override */
-lf.query.InsertBuilder.prototype.bind = function(values) {
-  if (this.binder_) {
-    if (this.binder_ instanceof lf.Binder) {
-      this.query.values = /** @type {!Array<!lf.Row>} */ (
-          values[this.binder_.getIndex()]);
-    } else {
-      this.query.values = this.binder_.map(function(binder) {
-        return values[binder.getIndex()];
-      });
-    }
-  }
-  return this;
 };
 
 /**
@@ -31020,7 +31081,8 @@ goog.require('lf.query.SelectContext');
  * @param {!Array<!lf.schema.Column>} columns
  */
 lf.query.SelectBuilder = function(global, columns) {
-  lf.query.SelectBuilder.base(this, 'constructor', global);
+  lf.query.SelectBuilder.base(
+      this, 'constructor', global, new lf.query.SelectContext());
 
   /**
    * Tracks whether where() has been called.
@@ -31034,13 +31096,6 @@ lf.query.SelectBuilder = function(global, columns) {
    */
   this.fromAlreadyCalled_ = false;
 
-  /** @private {!lf.Binder} */
-  this.limitBinder_;
-
-  /** @private {!lf.Binder} */
-  this.skipBinder_;
-
-  this.query = new lf.query.SelectContext();
   this.query.columns = columns;
 
   this.checkDistinctColumn_();
@@ -31052,15 +31107,16 @@ goog.inherits(lf.query.SelectBuilder, lf.query.BaseBuilder);
 /** @override */
 lf.query.SelectBuilder.prototype.assertExecPreconditions = function() {
   lf.query.SelectBuilder.base(this, 'assertExecPreconditions');
+  var context = this.query;
 
-  if (!goog.isDefAndNotNull(this.query.from)) {
+  if (!goog.isDefAndNotNull(context.from)) {
     throw new lf.Exception(
         lf.Exception.Type.SYNTAX,
         'Invalid usage of select()');
   }
 
-  if ((goog.isDef(this.limitBinder_) && !goog.isDef(this.query.limit)) ||
-      (goog.isDef(this.skipBinder_) && !goog.isDef(this.query.skip))) {
+  if ((goog.isDef(context.limitBinder) && !goog.isDef(context.limit)) ||
+      (goog.isDef(context.skipBinder) && !goog.isDef(context.skip))) {
     throw new lf.Exception(
         lf.Exception.Type.SYNTAX,
         'Binding parameters of limit/skip without providing values');
@@ -31303,47 +31359,29 @@ lf.query.SelectBuilder.prototype.leftOuterJoin = function(table, predicate) {
 };
 
 
-/**
- * @param {number} numberOfRows
- * @private
- */
-lf.query.SelectBuilder.prototype.setLimit_ = function(numberOfRows) {
-  this.assertNotNegative_(numberOfRows, 'limit');
-  this.query.limit = numberOfRows;
-};
-
-
 /** @override */
 lf.query.SelectBuilder.prototype.limit = function(numberOfRows) {
-  this.assertNotAlreadyCalled_(this.query.limit, 'limit');
-
+  this.assertNotAlreadyCalled_(
+      this.query.limit || this.query.limitBinder, 'limit');
   if (numberOfRows instanceof lf.Binder) {
-    this.limitBinder_ = numberOfRows;
+    this.query.limitBinder = numberOfRows;
   } else {
-    this.setLimit_(numberOfRows);
+    this.assertNotNegative_(numberOfRows, 'limit');
+    this.query.limit = numberOfRows;
   }
   return this;
 };
 
 
-/**
- * @param {number} numberOfRows
- * @private
- */
-lf.query.SelectBuilder.prototype.setSkip_ = function(numberOfRows) {
-  this.assertNotNegative_(numberOfRows, 'skip');
-  this.query.skip = numberOfRows;
-};
-
-
 /** @override */
 lf.query.SelectBuilder.prototype.skip = function(numberOfRows) {
-  this.assertNotAlreadyCalled_(this.query.skip, 'skip');
-
+  this.assertNotAlreadyCalled_(
+      this.query.skip || this.query.skipBinder, 'skip');
   if (numberOfRows instanceof lf.Binder) {
-    this.skipBinder_ = numberOfRows;
+    this.query.skipBinder = numberOfRows;
   } else {
-    this.setSkip_(numberOfRows);
+    this.assertNotNegative_(numberOfRows, 'skip');
+    this.query.skip = numberOfRows;
   }
   return this;
 };
@@ -31406,22 +31444,6 @@ lf.query.SelectBuilder.isAggregationValid_ = function(
   return false;
 };
 
-
-/** @override */
-lf.query.SelectBuilder.prototype.bind = function(values) {
-  lf.query.BaseBuilder.bindValuesInSearchCondition(this.query, values);
-  if (goog.isDefAndNotNull(this.limitBinder_)) {
-    this.setLimit_(
-        /** @type {number} */ (values[this.limitBinder_.getIndex()]));
-  }
-
-  if (goog.isDefAndNotNull(this.skipBinder_)) {
-    this.setSkip_(
-        /** @type {number} */ (values[this.skipBinder_.getIndex()]));
-  }
-  return this;
-};
-
 /**
  * @license
  * Copyright 2014 Google Inc. All Rights Reserved.
@@ -31458,9 +31480,9 @@ goog.require('lf.query.UpdateContext');
  * @param {!lf.schema.Table} table
  */
 lf.query.UpdateBuilder = function(global, table) {
-  lf.query.UpdateBuilder.base(this, 'constructor', global);
+  lf.query.UpdateBuilder.base(
+      this, 'constructor', global, new lf.query.UpdateContext());
 
-  this.query = new lf.query.UpdateContext();
   this.query.table = table;
 };
 goog.inherits(lf.query.UpdateBuilder, lf.query.BaseBuilder);
@@ -31523,18 +31545,6 @@ lf.query.UpdateBuilder.prototype.assertExecPreconditions = function() {
         lf.Exception.Type.SYNTAX,
         'Update set value not bound');
   }
-};
-
-
-/** @override */
-lf.query.UpdateBuilder.prototype.bind = function(values) {
-  lf.query.BaseBuilder.bindValuesInSearchCondition(this.query, values);
-  this.query.set.forEach(function(set) {
-    if (set.binding != -1) {
-      set.value = values[set.binding];
-    }
-  });
-  return this;
 };
 
 /**
@@ -35828,7 +35838,8 @@ lf.ObserverRegistry.prototype.getQueryId_ = function(query) {
  *     the given query are modified.
  */
 lf.ObserverRegistry.prototype.addObserver = function(builder, callback) {
-  var query = /** @type {!lf.query.SelectBuilder} */ (builder).getQuery();
+  var query =
+      /** @type {!lf.query.SelectBuilder} */ (builder).getObservableQuery();
   var queryId = this.getQueryId_(query);
 
   var entry = this.entries_.get(queryId, null);
@@ -35846,7 +35857,8 @@ lf.ObserverRegistry.prototype.addObserver = function(builder, callback) {
  * @param {!Function} callback The callback to be unregistered.
  */
 lf.ObserverRegistry.prototype.removeObserver = function(builder, callback) {
-  var query = /** @type {!lf.query.SelectBuilder} */ (builder).getQuery();
+  var query =
+      /** @type {!lf.query.SelectBuilder} */ (builder).getObservableQuery();
   var queryId = this.getQueryId_(query);
 
   var entry = this.entries_.get(queryId, null);
@@ -35900,7 +35912,9 @@ lf.ObserverRegistry.prototype.getQueriesForTables = function(tables) {
  * @return {boolean} Whether any results were updated.
  */
 lf.ObserverRegistry.prototype.updateResultsForQuery = function(query, results) {
-  var queryId = this.getQueryId_(query);
+  var queryId = this.getQueryId_(
+      goog.isDefAndNotNull(query.clonedFrom) ?
+      /** @type {!lf.query.SelectContext} */ (query.clonedFrom) : query);
   var entry = this.entries_.get(queryId, null);
 
   if (!goog.isNull(entry)) {
