@@ -94,6 +94,10 @@ function testContext_Clone() {
       db.update(j).set(j.minSalary, lf.bind(1)).where(j.id.eq(lf.bind(0))));
   var context = query.getQuery();
   var context2 = context.clone();
-  assertObjectEquals(context, context2);
+  assertObjectEquals(context.table, context2.table);
+  assertObjectEquals(context.set, context2.set);
+  assertObjectEquals(context.where, context2.where);
+  assertTrue(context2.clonedFrom == context);
   assertTrue(goog.getUid(context) != goog.getUid(context2));
+  assertTrue(goog.getUid(context.where) != goog.getUid(context2.where));
 }

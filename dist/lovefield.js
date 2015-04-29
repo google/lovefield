@@ -17227,6 +17227,9 @@ lf.query.Context = function() {
 
   /** @type {!lf.Predicate} */
   this.where;
+
+  /** @type {!lf.query.Context} */
+  this.clonedFrom;
 };
 
 
@@ -17273,6 +17276,7 @@ lf.query.Context.prototype.cloneBase = function(context) {
   if (context.where) {
     this.where = context.where.copy();
   }
+  this.clonedFrom = context;
 };
 
 /**

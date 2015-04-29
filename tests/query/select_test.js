@@ -486,9 +486,18 @@ function testContext_Clone() {
   var query = /** @type {!lf.query.SelectBuilder} */ (
       db.select(j.title).from(j).where(lf.op.or(
       j.minSalary.lt(lf.bind(0)), j.maxSalary.gt(lf.bind(1)))).
+      orderBy(j.title).
+      groupBy(j.minSalary).
       limit(10).skip(2));
   var context = query.getQuery();
   var context2 = context.clone();
-  assertObjectEquals(context, context2);
+  assertObjectEquals(context.from, context2.from);
+  assertObjectEquals(context.where, context2.where);
+  assertTrue(context2.clonedFrom == context);
+  assertObjectEquals(context.orderBy, context2.orderBy);
+  assertObjectEquals(context.groupBy, context2.groupBy);
+  assertArrayEquals(context.columns, context2.columns);
+  assertEquals(context.limit, context2.limit);
+  assertEquals(context.skip, context2.skip);
   assertTrue(goog.getUid(context) != goog.getUid(context2));
 }

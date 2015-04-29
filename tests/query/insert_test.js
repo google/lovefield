@@ -144,13 +144,17 @@ function testContext_Clone() {
       db.insert().into(j).values(lf.bind(0)));
   var context = query.getQuery();
   var context2 = context.clone();
-  assertObjectEquals(context, context2);
+  assertObjectEquals(context.into, context2.into);
+  assertObjectEquals(context.values, context2.values);
+  assertTrue(context2.clonedFrom == context);
   assertTrue(goog.getUid(context) != goog.getUid(context2));
 
   var query2 = /** @type {!lf.query.InsertBuilder} */ (
       db.insertOrReplace().into(j).values(lf.bind(0)));
   var context3 = query2.getQuery();
   var context4 = context3.clone();
-  assertObjectEquals(context3, context4);
+  assertObjectEquals(context3.into, context4.into);
+  assertObjectEquals(context3.values, context4.values);
+  assertTrue(context4.clonedFrom == context3);
   assertTrue(goog.getUid(context3) != goog.getUid(context4));
 }

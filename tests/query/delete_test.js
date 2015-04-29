@@ -94,6 +94,8 @@ function testContext_Clone() {
       db.delete().from(j).where(j.id.eq(lf.bind(0))));
   var context = query.getQuery();
   var context2 = context.clone();
-  assertObjectEquals(context, context2);
+  assertObjectEquals(context.where, context2.where);
+  assertObjectEquals(context.from, context2.from);
+  assertTrue(context2.clonedFrom == context);
   assertTrue(goog.getUid(context) != goog.getUid(context2));
 }
