@@ -19,15 +19,32 @@ var gulp = require('gulp');
 var webserver = require('gulp-webserver');
 
 
-gulp.task('copy_lovefield', function() {
+gulp.task('copy_dependencies', function() {
   if (!fs.existsSync('lib')) { fs.mkdirSync('lib'); }
-  return fs.
-      createReadStream('node_modules/lovefield/dist/lovefield.min.js').
+  // JS dependencies
+  fs.createReadStream('bower_components/lovefield/dist/lovefield.min.js').
       pipe(fs.createWriteStream('lib/lovefield.min.js'));
+  fs.createReadStream('bower_components/lovefield/dist/lovefield.js').
+      pipe(fs.createWriteStream('lib/lovefield.js'));
+  fs.createReadStream('bower_components/bootstrap/dist/js/bootstrap.min.js').
+      pipe(fs.createWriteStream('lib/bootstrap.min.js'));
+  fs.createReadStream(
+      'bower_components/bootstrap-table/dist/bootstrap-table.min.js').
+      pipe(fs.createWriteStream('lib/bootstrap-table.min.js'));
+  fs.createReadStream('bower_components/jquery/dist/jquery.min.js').
+      pipe(fs.createWriteStream('lib/jquery.min.js'));
+
+  // CSS dependencies
+  fs.createReadStream('bower_components/bootstrap/dist/css/bootstrap.min.css').
+      pipe(fs.createWriteStream('lib/bootstrap.min.css'));
+  fs.createReadStream(
+      'bower_components/bootstrap-table/src/bootstrap-table.css').
+      pipe(fs.createWriteStream('lib/bootstrap-table.css'));
+
 });
 
 
-gulp.task('default', ['copy_lovefield']);
+gulp.task('default', ['copy_dependencies']);
 
 
 gulp.task('clean', function() {

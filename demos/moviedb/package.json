@@ -6,17 +6,14 @@
     "type": "git",
     "url": "https://github.com/google/lovefield"
   },
-  "author": "Demetrios Papadopoulos",
+  "author": "Google, Inc.",
   "license": "http://www.apache.org/licenses/LICENSE-2.0",
   "bugs": {
     "url": "https://github.com/google/lovefield/issues"
   },
   "homepage": "https://github.com/google/lovefield",
   "devDependencies": {
-    "datatables": "^1.10.5",
     "gulp": "^3.8.10",
-    "gulp-webserver": "^0.9.0",
-    "jquery": "^2.1.3",
-    "lovefield": "git://github.com/google/lovefield"
+    "gulp-webserver": "^0.9.0"
   }
 }

@@ -147,42 +147,12 @@ function selectAllMovies() {
       function(results) {
         var elapsed = Date.now() - startTime;
         $('#load_time').text(elapsed.toString() + 'ms');
-        $('#master').empty();
-        $('#master').append(createTable(results, ['id', 'title', 'year']));
-        var grid = $('#master').
-            children([0]).
-            addClass('display compact cell-border').
-            dataTable();
-        grid.$('tr').click(function() {
-          var id = grid.fnGetData(this)[0];
-          startTime = Date.now();
-          generateDetails(id);
-        });
+        $('#master').bootstrapTable('load', results).
+            on('click-row.bs.table', function(e, row, $element) {
+              startTime = Date.now();
+              generateDetails(row.id);
+            });
       });
-}
-
-
-/**
- * Creates table.
- * @param {!Array.<!Object>} rows
- * @param {!Array.<string>} fields The fields to be displayed.
- * @return {string} The inner HTML created.
- */
-function createTable(rows, fields) {
-  var content = '<table><thead><tr>';
-  fields.forEach(function(title) {
-    content += '<td>' + title + '</td>';
-  });
-  content += '</tr></thead><tbody>';
-  rows.forEach(function(row) {
-    content += '<tr>';
-    fields.forEach(function(field) {
-      content += '<td>' + row[field].toString() + '</td>';
-    });
-    content += '</tr>';
-  });
-
-  return content;
 }
 
 
@@ -244,19 +214,11 @@ function generateDetails(id) {
  */
 function displayDetails(details) {
   var elapsed = Date.now() - startTime;
-  var fields = ['title', 'year', 'rating', 'company', 'directors', 'actors'];
-  var titles = fields.map(function(item) {
-    return item.charAt(0).toUpperCase() + item.slice(1);
-  });
-  var content = '<table id="details_list"><tbody>';
-  fields.forEach(function(item, i) {
-    content += '<tr><td>' + titles[i] + '</td><td>' +
-        details[item] + '</td></tr>';
-  });
-  content += '</tbody></table>';
-  $('#slave').empty();
-  $('#slave').append('<h2>Movie Details</h2>');
-  $('#slave').append('<p>Query time: ' + elapsed.toString() + ' ms</p>');
-  $('#slave').append(content);
-  $('#details_list').addClass('display compact cell-border').dataTable();
+  $('#slave p').first().text('Query time: ' + elapsed.toString() + ' ms');
+
+  var bootstrapData = Object.keys(details).map(
+      function(key) {
+        return {key: key, value: details[key]};
+      });
+  $('#slave table').bootstrapTable('load', bootstrapData);
 }
