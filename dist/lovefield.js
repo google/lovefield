@@ -237,6 +237,13 @@ goog.define('goog.DISALLOW_TEST_ONLY_CODE', COMPILED && !goog.DEBUG);
 
 
 /**
+ * @define {boolean} Whether to use a Chrome app CSP-compliant method for
+ *     loading scripts via goog.require. @see appendScriptSrcNode_.
+ */
+goog.define('goog.ENABLE_CHROME_APP_SAFE_SCRIPT_LOADING', false);
+
+
+/**
  * Defines a namespace in Closure.
  *
  * A namespace may only be defined once in a codebase. It may be defined using
@@ -1120,6 +1127,50 @@ if (goog.DEPENDENCIES_ENABLED) {
 
 
   /**
+   * Writes a new script pointing to {@code src} directly into the DOM.
+   *
+   * NOTE: This method is not CSP-compliant. @see goog.appendScriptSrcNode_ for
+   * the fallback mechanism.
+   *
+   * @param {string} src The script URL.
+   * @private
+   */
+  goog.writeScriptSrcNode_ = function(src) {
+    goog.global.document.write(
+        '<script type="text/javascript" src="' + src + '"></' + 'script>');
+  };
+
+
+  /**
+   * Appends a new script node to the DOM using a CSP-compliant mechanism. This
+   * method exists as a fallback for document.write (which is not allowed in a
+   * strict CSP context, e.g., Chrome apps).
+   *
+   * NOTE: This method is not analogous to using document.write to insert a
+   * <script> tag; specifically, the user agent will execute a script added by
+   * document.write immediately after the current script block finishes
+   * executing, whereas the DOM-appended script node will not be executed until
+   * the entire document is parsed and executed. That is to say, this script is
+   * added to the end of the script execution queue.
+   *
+   * The page must not attempt to call goog.required entities until after the
+   * document has loaded, e.g., in or after the window.onload callback.
+   *
+   * @param {string} src The script URL.
+   * @private
+   */
+  goog.appendScriptSrcNode_ = function(src) {
+    var doc = goog.global.document;
+    var scriptEl = doc.createElement('script');
+    scriptEl.type = 'text/javascript';
+    scriptEl.src = src;
+    scriptEl.defer = false;
+    scriptEl.async = false;
+    doc.head.appendChild(scriptEl);
+  };
+
+
+  /**
    * The default implementation of the import function. Writes a script tag to
    * import the script.
    *
@@ -1134,8 +1185,10 @@ if (goog.DEPENDENCIES_ENABLED) {
 
       // If the user tries to require a new symbol after document load,
       // something has gone terribly wrong. Doing a document.write would
-      // wipe out the page.
-      if (doc.readyState == 'complete') {
+      // wipe out the page. This does not apply to the CSP-compliant method
+      // of writing script tags.
+      if (!goog.ENABLE_CHROME_APP_SAFE_SCRIPT_LOADING &&
+          doc.readyState == 'complete') {
         // Certain test frameworks load base.js multiple times, which tries
         // to write deps.js each time. If that happens, just fail silently.
         // These frameworks wipe the page between each load of base.js, so this
@@ -1152,9 +1205,11 @@ if (goog.DEPENDENCIES_ENABLED) {
 
       if (opt_sourceText === undefined) {
         if (!isOldIE) {
-          doc.write(
-              '<script type="text/javascript" src="' +
-                  src + '"></' + 'script>');
+          if (goog.ENABLE_CHROME_APP_SAFE_SCRIPT_LOADING) {
+            goog.appendScriptSrcNode_(src);
+          } else {
+            goog.writeScriptSrcNode_(src);
+          }
         } else {
           var state = " onreadystatechange='goog.onScriptLoad_(this, " +
               ++goog.lastNonModuleScriptIndex_ + ")' ";

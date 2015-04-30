@@ -2,24 +2,17 @@
 
 # 0. Introduction
 ## Goal
-WebSQL is deprecated, and IndexedDB does not offer a query engine, which leaves
-both web and Chrome app developers to re-create their own domain-specific or
-generic query engines. The goal of Lovefield is to fill in that gap.
+Lovefield is designed to provide a relational query engine for web apps.
 
 ## Basic Assumptions
-* Lovefield is designed to handle database whose data set is smaller than X
-(current bound is 2GB) but large enough to need a structural query engine.
-* Lovefield will be delivered in the form of JavaScript initially.
-* Lovefield will polyfill features that require browser support when possible.
-* Lovefield provides a limited subset of SQL-03. Lovefield will not support
-  features such as cursors, view, (complex) subquery, and triggers.
-* Lovefield uses existing storage technologies (i.e. IndexedDB) to build its
-  data store. Since there is not a way to prevent user from accessing the data
-  store, it’s the developer’s responsibility to ensure that any data accessed
+* Lovefield is designed to handle databases whose data set is smaller than X
+  (current bound is 2GB) but large enough to need a structural query engine.
+* Lovefield provides a limited subset of [SQL-03](
+  http://savage.net.au/SQL/sql-2003-2.bnf.html) functionalities.
+* Lovefield uses existing storage technologies (e.g. IndexedDB) to persist data
+  if requested. Developers are responsible to ensure that any data accessed
   from Lovefield query engine shall be treated as 'unsafe' and sanitized in some
   way before being sent back to the server.
-* Lovefield assumes existence of Promise and IndexedDB. For IE, Promises are
-  poly-filled by Closure library.
 
 ## Requirements
 1. SQL-like relational database query engine that covers most use cases
@@ -36,12 +29,9 @@ generic query engines. The goal of Lovefield is to fill in that gap.
    JS file to their project and start using it without knowing the internals.
 8. There shall not be any side-effect of using this library.
 9. Cross-browser support: Lovefield shall be compatible with Chrome, Firefox,
-   and Internet Explorer. Safari support will be available if it provided a
-   usable IndexedDB.
+   Internet Explorer, and Safari.
 10. Low-end device support: the library itself shall be able to run on
     low-CPU-power, low memory devices (e.g. HP Chromebook 11).
-11. Stretch goal: the memory requirement shall be independent of the data set
-    managed.
 
 ## Designed Workflow
 
@@ -78,4 +68,5 @@ optimization.
    Google or see [this document provided by Mozilla](
    https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise).
 
-3. Unless necessary, APIs shall be synchronous instead of asynchronous.
+3. All DDL (data definition language) APIs are synchronous.
+   All DML (data manipulation lauguage) APIs are asynchronous.

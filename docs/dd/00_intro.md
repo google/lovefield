@@ -15,46 +15,26 @@ Unfortunately the support of relational databases in browsers is in an
 unsatisfactory state after WebSQL being deprecated, and thus Lovefield is
 created to offer the choice that developers shall be honored to have.
 
-### 0.2 Data Store Selection
+### 0.2 Data Store
 
-To build a relational database, the first thing to pick is to decide what data
-store to use. The decision process is quite simple: enumerate cross-browser
-client-side storage solution and rule out things that does not fit.
+Originally Lovefield was bundled with IndexedDB only. Per popular requests, it
+is now engineered to wrap different storage technologies into a separate layer,
+and is able to couple different storage technologies with the query engine.
 
-  * Local Storage: only 5MB, not really a good idea
-  * Cookie Jars: seriously?
-  * HTML5 File API: FileSystem and FileWriter API are not cross-platform. In
-    fact, they are [discontinued](http://www.w3.org/TR/file-writer-api) and
-    [discontinued](http://www.w3.org/TR/file-system-api/).
-  * IndexedDB: Everybody supports it or will support it. (Safari support is an
-    interesting story, however, that's controlled by Apple.)
+The supported data store types are:
 
-So the choice is obvious: IndexedDB it is.
+* IndexedDB - All data persisted on IndexedDB
+* Memory - All data are transient and stored in-memory
 
-#### 0.2.1 Good Parts of IndexedDB
+There are several experimental data stores:
 
-IndexedDB provides atomic writes and rollback. As a result, there
-is no need to implement [ARIES algorithm](http://en.wikipedia.org/wiki/Algorithms_for_Recovery_and_Isolation_Exploiting_Semantics).
+* WebSQL - Provided to fill in the gap of Safari lacking IndexedDB support
+* Firebase - Provided to test server-to-client end-to-end solution
 
-#### 0.2.2 Constraints of IndexedDB
-
-Using IndexedDB as the data store creates following constraints:
-
-* IndexedDB itself is an object store. It does not have the concept of
-  low-level I/O which was treated as granted in traditional RDBMS.
-
-* Atomic access of IndexedDB is very tricky because of IndexedDB auto-commit
-  behavior. For example, IndexedDB commits all pending writes automatically
-  when an XHR send is initiated, which can easily catch developers off-guard.
-
-* IndexedDB lacks efficient means for bulk loading/writing.
-
-* IndexedDB loves to fire events, which is a performance killer if not handled
-  and tuned carefully.
-
-Lovefield contributors are required to have a good understanding of these
-constraints. The goal of Lovefield is to handle these problems so that the
-users of Lovefield are relieved from such pains.
+Each storage technology has different limitations and constraints. Lovefield
+contributors are required to have a good understanding of these boundary
+conditions and handle them so that the users of Lovefield are relieved from
+such trickiness.
 
 ### 0.3 Constraints of JavaScript/General HTML5
 
@@ -66,17 +46,13 @@ for its users to lower their memory usage and lower Garbage Collector pressure.
 ### 0.4 Use of Closure Library/Compiler
 
 Lovefield is developed using Closure Library, mainly because the original
-developers are more familiar with it. Since Lovefield is designed to be used
-cross-browser and cross-framework, it has to ship with all its dependencies.
-Therefore usage of Closure library is consciously limited to the smallest
-possible set so that size of the shipped library can be smaller.
+developers are more familiar with it. Similar reason for choosing JUnit as
+the test infrastructure. Since Lovefield is designed to be used cross-browser
+and cross-framework, it has to ship with all its dependencies. Therefore usage
+of Closure library is consciously limited to the smallest possible set so that
+size of the shipped library can be smaller.
 
-Codebase of Lovefield is checked by Closure compiler with very strict options.
-The compilation structure is not ported to GitHub yet, and needs development.
-
-Closure testing infrastructure uses JSUnit, which is sort of obsolete. Due to
-the massive number of existing unit tests, the plan is to write Karma plugins
-to support JSUnit tests.
+Lovefield's codebase is checked by Closure compiler with very strict options.
 
 ### 0.5 Components of Lovefield
 
