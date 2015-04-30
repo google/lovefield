@@ -422,6 +422,8 @@ goog.isInModuleLoader_ = function() {
  * that this isn't necessary. Alternately combine this with goog.setTestOnly
  * to minimize boiler plate.
  * @suppress {missingProvide}
+ * @deprecated This approach does not translate to ES6 module syntax, instead
+ *    use goog.testing.testSuite to declare the test methods.
  */
 goog.module.declareTestMethods = function() {
   if (!goog.isInModuleLoader_()) {
@@ -35641,18 +35643,17 @@ lf.ObserverRegistry.prototype.getQueryId_ = function(query) {
 
 /**
  * Registers an observer for the given query.
- * @param {!lf.query.Select} builder The query to be observed.
+ * @param {!lf.query.Select} rawBuilder The query to be observed.
  * @param {!Function} callback The callback to be called whenever the results of
  *     the given query are modified.
  */
-lf.ObserverRegistry.prototype.addObserver = function(builder, callback) {
-  var query =
-      /** @type {!lf.query.SelectBuilder} */ (builder).getObservableQuery();
-  var queryId = this.getQueryId_(query);
+lf.ObserverRegistry.prototype.addObserver = function(rawBuilder, callback) {
+  var builder = /** @type {!lf.query.SelectBuilder} */ (rawBuilder);
+  var queryId = this.getQueryId_(builder.getObservableQuery());
 
   var entry = this.entries_.get(queryId, null);
   if (goog.isNull(entry)) {
-    entry = new lf.ObserverRegistry.Entry_(query);
+    entry = new lf.ObserverRegistry.Entry_(builder);
     this.entries_.set(queryId, entry);
   }
   entry.addObserver(callback);
@@ -35739,11 +35740,11 @@ lf.ObserverRegistry.prototype.updateResultsForQuery = function(query, results) {
  * @constructor
  * @private
  *
- * @param {!lf.query.SelectContext} query
+ * @param {!lf.query.SelectBuilder} builder
  */
-lf.ObserverRegistry.Entry_ = function(query) {
-  /** @private {!lf.query.SelectContext} */
-  this.query_ = query;
+lf.ObserverRegistry.Entry_ = function(builder) {
+  /** @private {!lf.query.SelectBuilder} */
+  this.builder_ = builder;
 
   /** @private {!goog.structs.Set<!Function>} */
   this.observers_ = new goog.structs.Set();
@@ -35755,7 +35756,8 @@ lf.ObserverRegistry.Entry_ = function(query) {
   this.lastResults_ = null;
 
   /** @private {!lf.DiffCalculator} */
-  this.diffCalculator_ = new lf.DiffCalculator(query, this.observable_);
+  this.diffCalculator_ = new lf.DiffCalculator(
+      builder.getObservableQuery(), this.observable_);
 };
 
 
@@ -35783,7 +35785,7 @@ lf.ObserverRegistry.Entry_.prototype.removeObserver = function(callback) {
 
 /** @return {!lf.query.SelectContext} */
 lf.ObserverRegistry.Entry_.prototype.getQuery = function() {
-  return this.query_;
+  return this.builder_.getObservableQuery();
 };
 
 
