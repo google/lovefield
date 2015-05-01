@@ -91,7 +91,7 @@ function testRemoveObserver() {
 }
 
 
-function testGetQueriesForTable() {
+function testGetTaskItemsForTables() {
   var tables = schema.tables();
 
   var builder1 = new lf.query.SelectBuilder(lf.Global.get(), []);
@@ -107,13 +107,21 @@ function testGetQueriesForTable() {
   registry.addObserver(builder2, callback);
   registry.addObserver(builder3, callback);
 
-  var queries = registry.getQueriesForTables([tables[0]]);
+  var getQueriesForTables = function(tables) {
+    return registry.getTaskItemsForTables(tables).map(function(item) {
+      return item.context;
+    });
+  };
+
+  var queries = getQueriesForTables([tables[0]]);
   assertArrayEquals(
       [builder1.getObservableQuery(), builder2.getObservableQuery()], queries);
-  queries = registry.getQueriesForTables([tables[1]]);
+
+  queries = getQueriesForTables([tables[1]]);
   assertArrayEquals(
       [builder2.getObservableQuery(), builder3.getObservableQuery()], queries);
-  queries = registry.getQueriesForTables([tables[0], tables[1]]);
+
+  queries = getQueriesForTables([tables[0], tables[1]]);
   assertArrayEquals(
       [builder1.getObservableQuery(),
        builder2.getObservableQuery(),

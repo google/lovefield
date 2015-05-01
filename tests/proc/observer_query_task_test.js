@@ -101,7 +101,7 @@ function testExec() {
     // Start observing.
     db.observe(selectQuery, observerCallback);
     var observerTask = new lf.proc.ObserverQueryTask(
-        hr.db.getGlobal(), [selectQuery.getQuery()]);
+        hr.db.getGlobal(), [selectQuery.getObservableTaskItem()]);
     return observerTask.exec();
   }, fail);
 }

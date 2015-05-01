@@ -19551,6 +19551,7 @@ lf.proc.PhysicalQueryPlan.getCombinedScope = function(plans) {
  * limitations under the License.
  */
 goog.provide('lf.proc.Task');
+goog.provide('lf.proc.TaskItem');
 goog.provide('lf.proc.TaskPriority');
 
 
@@ -19612,6 +19613,15 @@ lf.proc.TaskPriority = {
   TRANSACTION_TASK: 2
 };
 
+
+/**
+ * @typedef {{
+ *   context: !lf.query.Context,
+ *   plan: !lf.proc.PhysicalQueryPlan
+ * }}
+ */
+lf.proc.TaskItem;
+
 /**
  * @license
  * Copyright 2014 Google Inc. All Rights Reserved.
@@ -19648,9 +19658,9 @@ goog.require('lf.service');
  * @struct
  *
  * @param {!lf.Global} global
- * @param {!Array<!lf.query.Context>} queries
+ * @param {!Array<!lf.proc.TaskItem>} items
  */
-lf.proc.QueryTask = function(global, queries) {
+lf.proc.QueryTask = function(global, items) {
   /** @protected {!lf.Global} */
   this.global = global;
 
@@ -19658,17 +19668,14 @@ lf.proc.QueryTask = function(global, queries) {
   this.backStore_ = global.getService(lf.service.BACK_STORE);
 
   /** @protected {!Array<!lf.query.Context>} */
-  this.queries = queries;
-
-  var queryEngine = /** @type {!lf.proc.QueryEngine} */ (
-      global.getService(lf.service.QUERY_ENGINE));
+  this.queries = items.map(function(item) {
+    return item.context;
+  });
 
   /** @private {!Array<!lf.proc.PhysicalQueryPlan>} */
-  this.plans_ = this.queries.map(
-      function(query) {
-        return queryEngine.getPlan(query);
-      });
-
+  this.plans_ = items.map(function(item) {
+    return item.plan;
+  });
 
   /** @private {!goog.structs.Set<!lf.schema.Table>} */
   this.combinedScope_ = lf.proc.PhysicalQueryPlan.getCombinedScope(this.plans_);
@@ -19801,10 +19808,10 @@ goog.require('lf.service');
  * @struct
  *
  * @param {!lf.Global} global
- * @param {!Array<!lf.query.SelectContext>} queries
+ * @param {!Array<!lf.proc.TaskItem>} items
  */
-lf.proc.ObserverQueryTask = function(global, queries) {
-  lf.proc.ObserverQueryTask.base(this, 'constructor', global, queries);
+lf.proc.ObserverQueryTask = function(global, items) {
+  lf.proc.ObserverQueryTask.base(this, 'constructor', global, items);
 
   /** @private {!lf.ObserverRegistry} */
   this.observerRegistry_ = global.getService(lf.service.OBSERVER_REGISTRY);
@@ -19940,10 +19947,10 @@ lf.proc.ExternalChangeTask.prototype.getPriority = function() {
  * @private
  */
 lf.proc.ExternalChangeTask.prototype.scheduleObserverTask_ = function() {
-  var queries = this.observerRegistry_.getQueriesForTables(
+  var items = this.observerRegistry_.getTaskItemsForTables(
       this.scope_.getValues());
-  if (queries.length != 0) {
-    var observerTask = new lf.proc.ObserverQueryTask(this.global_, queries);
+  if (items.length != 0) {
+    var observerTask = new lf.proc.ObserverQueryTask(this.global_, items);
     this.runner_.scheduleTask(observerTask);
   }
 };
@@ -29872,10 +29879,10 @@ goog.require('lf.service');
  * @struct
  *
  * @param {!lf.Global} global
- * @param {!Array<!lf.query.Context>} queries
+ * @param {!Array<!lf.proc.TaskItem>} items
  */
-lf.proc.UserQueryTask = function(global, queries) {
-  lf.proc.UserQueryTask.base(this, 'constructor', global, queries);
+lf.proc.UserQueryTask = function(global, items) {
+  lf.proc.UserQueryTask.base(this, 'constructor', global, items);
 
   /** @private {!lf.proc.Runner} */
   this.runner_ = global.getService(lf.service.RUNNER);
@@ -29923,10 +29930,10 @@ lf.proc.UserQueryTask.prototype.notifyObserversDirectly_ = function(results) {
  * @private
  */
 lf.proc.UserQueryTask.prototype.scheduleObserverTask_ = function() {
-  var queries = this.observerRegistry_.getQueriesForTables(
+  var items = this.observerRegistry_.getTaskItemsForTables(
       this.getScope().getValues());
-  if (queries.length != 0) {
-    var observerTask = new lf.proc.ObserverQueryTask(this.global, queries);
+  if (items.length != 0) {
+    var observerTask = new lf.proc.ObserverQueryTask(this.global, items);
     this.runner_.scheduleTask(observerTask);
   }
 };
@@ -30549,6 +30556,9 @@ lf.query.BaseBuilder = function(global, context) {
 
   /** @protected {!lf.query.Context} */
   this.query = context;
+
+  /** @private {!lf.proc.PhysicalQueryPlan} */
+  this.plan_;
 };
 
 
@@ -30565,7 +30575,7 @@ lf.query.BaseBuilder.prototype.exec = function() {
 
   return new goog.Promise(function(resolve, reject) {
     var queryTask = new lf.proc.UserQueryTask(
-        this.global_, [this.query.clone()]);
+        this.global_, [this.getTaskItem()]);
     this.runner_.scheduleTask(queryTask).then(
         function(results) {
           resolve(results[0].getPayloads());
@@ -30579,12 +30589,10 @@ lf.query.BaseBuilder.prototype.exec = function() {
  * @export
  */
 lf.query.BaseBuilder.prototype.explain = function() {
-  var context = this.query;
-  var stringFn = function(node) {
-    return node.toContextString(context) + '\n';
-  };
-  return lf.tree.toString(
-      this.queryEngine_.getPlan(context).getRoot(), stringFn);
+  var stringFn = goog.bind(function(node) {
+    return node.toContextString(this.query) + '\n';
+  }, this);
+  return lf.tree.toString(this.getPlan_().getRoot(), stringFn);
 };
 
 
@@ -30626,6 +30634,36 @@ lf.query.BaseBuilder.prototype.getQuery = function() {
 /** @return {!Context} */
 lf.query.BaseBuilder.prototype.getObservableQuery = function() {
   return this.query;
+};
+
+
+/**
+ * @return {!lf.proc.PhysicalQueryPlan}
+ * @private
+ */
+lf.query.BaseBuilder.prototype.getPlan_ = function() {
+  if (!goog.isDefAndNotNull(this.plan_)) {
+    this.plan_ = this.queryEngine_.getPlan(this.query);
+  }
+  return this.plan_;
+};
+
+
+/** @return {!lf.proc.TaskItem} */
+lf.query.BaseBuilder.prototype.getTaskItem = function() {
+  return {
+    context: this.getQuery(),
+    plan: this.getPlan_()
+  };
+};
+
+
+/** @return {!lf.proc.TaskItem} */
+lf.query.BaseBuilder.prototype.getObservableTaskItem = function() {
+  return {
+    context: this.getObservableQuery(),
+    plan: this.getPlan_()
+  };
 };
 
 /**
@@ -35744,27 +35782,27 @@ lf.ObserverRegistry.prototype.removeObserver = function(builder, callback) {
  * Finds all the observed queries that reference at least one of the given
  * tables.
  * @param {!Array<!lf.schema.Table>} tables
- * @return {!Array<!lf.query.SelectContext>}
+ * @return {!Array<!lf.proc.TaskItem>}
  */
-lf.ObserverRegistry.prototype.getQueriesForTables = function(tables) {
+lf.ObserverRegistry.prototype.getTaskItemsForTables = function(tables) {
   var tableSet = new goog.structs.Set();
   tables.forEach(function(table) {
     tableSet.add(table.getName());
   });
 
-  var queries = [];
+  var items = [];
   this.entries_.getValues().forEach(
       function(entry) {
-        var query = entry.getQuery();
-        var refersToTables = query.from.some(
+        var item = entry.getTaskItem();
+        var refersToTables = item.context.from.some(
             function(table) {
               return tableSet.contains(table.getName());
             });
         if (refersToTables) {
-          queries.push(query);
+          items.push(item);
         }
       });
-  return queries;
+  return items;
 };
 
 
@@ -35838,9 +35876,9 @@ lf.ObserverRegistry.Entry_.prototype.removeObserver = function(callback) {
 };
 
 
-/** @return {!lf.query.SelectContext} */
-lf.ObserverRegistry.Entry_.prototype.getQuery = function() {
-  return this.builder_.getObservableQuery();
+/** @return {!lf.proc.TaskItem} */
+lf.ObserverRegistry.Entry_.prototype.getTaskItem = function() {
+  return this.builder_.getObservableTaskItem();
 };
 
 
@@ -36114,9 +36152,6 @@ lf.proc.TransactionTask = function(global, scope) {
   /** @private {!lf.BackStore} */
   this.backStore_ = global.getService(lf.service.BACK_STORE);
 
-  /** @private {!lf.proc.QueryEngine} */
-  this.queryEngine_ = global.getService(lf.service.QUERY_ENGINE);
-
   /** @private {!lf.proc.Runner} */
   this.runner_ = global.getService(lf.service.RUNNER);
 
@@ -36193,10 +36228,9 @@ lf.proc.TransactionTask.prototype.acquireScope = function() {
  * @return {!IThenable}
  */
 lf.proc.TransactionTask.prototype.attachQuery = function(queryBuilder) {
-  var queryContext = queryBuilder.getQuery();
-  var plan = this.queryEngine_.getPlan(queryContext);
+  var taskItem = queryBuilder.getTaskItem();
 
-  return plan.getRoot().exec(this.journal_, queryContext).then(
+  return taskItem.plan.getRoot().exec(this.journal_, taskItem.context).then(
       function(relations) {
         return relations[0].getPayloads();
       }, goog.bind(
@@ -36246,10 +36280,10 @@ lf.proc.TransactionTask.prototype.rollback = function() {
  * @private
  */
 lf.proc.TransactionTask.prototype.scheduleObserverTask_ = function() {
-  var queries = this.observerRegistry_.getQueriesForTables(
+  var items = this.observerRegistry_.getTaskItemsForTables(
       this.scope_.getValues());
-  if (queries.length != 0) {
-    var observerTask = new lf.proc.ObserverQueryTask(this.global_, queries);
+  if (items.length != 0) {
+    var observerTask = new lf.proc.ObserverQueryTask(this.global_, items);
     this.runner_.scheduleTask(observerTask);
   }
 };
@@ -36394,19 +36428,18 @@ lf.proc.Transaction.prototype.exec = function(queryBuilders) {
   this.stateTransition_(
       lf.proc.TransactionState_.EXECUTING_AND_COMMITTING);
 
-  var queries = [];
+  var taskItems = [];
   try {
     queryBuilders.forEach(function(queryBuilder) {
       queryBuilder.assertExecPreconditions();
-      var query = queryBuilder.getQuery();
-      queries.push(query);
+      taskItems.push(queryBuilder.getTaskItem());
     }, this);
   } catch (e) {
     this.stateTransition_(lf.proc.TransactionState_.FINALIZED);
     return goog.Promise.reject(e);
   }
 
-  var queryTask = new lf.proc.UserQueryTask(this.global_, queries);
+  var queryTask = new lf.proc.UserQueryTask(this.global_, taskItems);
   return this.runner_.scheduleTask(queryTask).then(
       goog.bind(function(results) {
         this.stateTransition_(lf.proc.TransactionState_.FINALIZED);

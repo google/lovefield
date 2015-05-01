@@ -81,7 +81,7 @@ function tearDown() {
 
 /**
  * Creates a physical plan that inserts ROW_COUNT rows into the Album table.
- * @return {!lf.query.InsertContext}
+ * @return {!lf.proc.TaskItem}
  */
 function getSampleQuery() {
   rows = [];
@@ -91,7 +91,7 @@ function getSampleQuery() {
     rows.push(job);
   }
   return /** @type {!lf.query.InsertBuilder} */ (
-      db.insert().into(j).values(rows)).getQuery();
+      db.insert().into(j).values(rows)).getTaskItem();
 }
 
 
@@ -132,7 +132,7 @@ function testSinglePlan_Update() {
   queryTask.exec().then(function() {
     assertEquals(ROW_COUNT, cache.getCount());
     var query = /** @type {!lf.query.UpdateBuilder} */ (
-        db.update(j).set(j.title, newTitle)).getQuery();
+        db.update(j).set(j.title, newTitle)).getTaskItem();
     var updateQueryTask = new lf.proc.UserQueryTask(
         hr.db.getGlobal(), [query]);
     return updateQueryTask.exec();
@@ -163,7 +163,7 @@ function testSinglePlan_Delete() {
   queryTask.exec().then(function() {
     assertEquals(ROW_COUNT, cache.getCount());
     var query = /** @type {!lf.query.DeleteBuilder} */ (
-        db.delete().from(j)).getQuery();
+        db.delete().from(j)).getTaskItem();
     var deleteQueryTask = new lf.proc.UserQueryTask(
         hr.db.getGlobal(), [query]);
     return deleteQueryTask.exec();
@@ -196,11 +196,11 @@ function testMultiPlan() {
   var deletedId = 'jobId2';
 
   var insertQuery = /** @type {!lf.query.InsertBuilder} */ (
-      db.insert().into(j).values(rows)).getQuery();
+      db.insert().into(j).values(rows)).getTaskItem();
   var updateQuery = /** @type {!lf.query.UpdateBuilder} */ (
-      db.update(j).set(j.title, newTitle)).getQuery();
+      db.update(j).set(j.title, newTitle)).getTaskItem();
   var removeQuery = /** @type {!lf.query.DeleteBuilder} */ (
-      db.delete().from(j).where(j.id.eq(deletedId))).getQuery();
+      db.delete().from(j).where(j.id.eq(deletedId))).getTaskItem();
 
   var queryTask = new lf.proc.UserQueryTask(
       hr.db.getGlobal(), [insertQuery, updateQuery, removeQuery]);
@@ -234,9 +234,9 @@ function testMultiPlan_Rollback() {
   // query will fail because of a primary key constraint violation. Expecting
   // the entire transaction to be rolled back as if it never happened.
   var insertQuery = /** @type {!lf.query.InsertBuilder} */ (
-      db.insert().into(j).values([job])).getQuery();
+      db.insert().into(j).values([job])).getTaskItem();
   var insertAgainQuery = /** @type {!lf.query.InsertBuilder} */ (
-      db.insert().into(j).values([job])).getQuery();
+      db.insert().into(j).values([job])).getTaskItem();
 
   var queryTask = new lf.proc.UserQueryTask(
       hr.db.getGlobal(), [insertQuery, insertAgainQuery]);
@@ -287,7 +287,7 @@ function testSinglePlan_ParametrizedQuery() {
     selectQueryBuilder.bind(['jobId2', 'jobId4']);
 
     var selectQueryTask = new lf.proc.UserQueryTask(
-        hr.db.getGlobal(), [selectQueryBuilder.getQuery()]);
+        hr.db.getGlobal(), [selectQueryBuilder.getTaskItem()]);
     return selectQueryTask.exec();
   }, fail);
 }
