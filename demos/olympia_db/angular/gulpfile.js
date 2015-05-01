@@ -14,30 +14,44 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-var fs = require('fs');
+var fs = require('fs-extra');
 var gulp = require('gulp');
+var path = require('path');
 var webserver = require('gulp-webserver');
-var rmdir = require('rimraf').sync;
 
 
 gulp.task('copy_dependencies', function() {
-  if (!fs.existsSync('lib')) { fs.mkdirSync('lib'); }
-  fs.createReadStream('bower_components/lovefield/dist/lovefield.min.js').
-      pipe(fs.createWriteStream('lib/lovefield.min.js'));
-  fs.createReadStream('bower_components/bootstrap/dist/css/bootstrap.min.css').
-      pipe(fs.createWriteStream('lib/bootstrap.min.css'));
-  fs.createReadStream('bower_components/angular/angular.min.js').
-      pipe(fs.createWriteStream('lib/angular.min.js'));
+  var libDir = 'lib';
+  if (!fs.existsSync(libDir)) { fs.mkdirSync(libDir); }
 
-  if (!fs.existsSync('data')) { fs.mkdirSync('data'); }
-  fs.createReadStream('../data/olympic_medalists.json').
-      pipe(fs.createWriteStream('data/olympic_medalists.json'));
-  fs.createReadStream('../data/column_domains.json').
-      pipe(fs.createWriteStream('data/column_domains.json'));
+  var filesToCopy = [
+    'bower_components/lovefield/dist/lovefield.min.js',
+    'bower_components/angular/angular.min.js',
+    'bower_components/bootstrap/dist/css/bootstrap.min.css'
+  ];
+
+  filesToCopy.forEach(function(file) {
+    fs.copySync(file, path.join(libDir, path.basename(file)));
+  });
 });
 
 
-gulp.task('default', ['copy_dependencies']);
+gulp.task('copy_data', function() {
+  var dataDir = 'data';
+  if (!fs.existsSync(dataDir)) { fs.mkdirSync(dataDir); }
+
+  var filesToCopy = [
+    '../data/olympic_medalists.json',
+    '../data/column_domains.json'
+  ];
+
+  filesToCopy.forEach(function(file) {
+    fs.copySync(file, path.join(dataDir, path.basename(file)));
+  });
+});
+
+
+gulp.task('default', ['copy_dependencies', 'copy_data']);
 
 
 gulp.task('clean', function() {
@@ -48,7 +62,7 @@ gulp.task('clean', function() {
 
   foldersToDelete.forEach(function(folder) {
     if (fs.existsSync(folder)) {
-      rmdir(folder);
+      fs.removeSync(folder);
     }
   });
 });
@@ -60,4 +74,16 @@ gulp.task('webserver', function() {
     directoryListing: true,
     open: false
   }));
+});
+
+
+gulp.task('export', ['default'], function() {
+  var binDir = 'bin';
+  if (!fs.existsSync(binDir)) { fs.mkdirSync(binDir); }
+
+  fs.copySync('lib', path.join(binDir, 'lib'));
+  fs.copySync('data', path.join(binDir, 'data'));
+  fs.copySync('resources', path.join(binDir, 'resources'));
+  fs.copySync('demo_angular.html', path.join(binDir, 'demo_angular.html'));
+  fs.copySync('demo_angular.js', path.join(binDir, 'demo_angular.js'));
 });
