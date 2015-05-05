@@ -1,3 +1,4 @@
+window.CLOSURE_NO_DEPS=1;
 // Copyright 2006 The Closure Library Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
