@@ -3953,8 +3953,8 @@ goog.addDependency('ui/toolbarseparator.js', ['goog.ui.ToolbarSeparator'], ['goo
 goog.addDependency('ui/toolbarseparatorrenderer.js', ['goog.ui.ToolbarSeparatorRenderer'], ['goog.asserts', 'goog.dom.TagName', 'goog.dom.classlist', 'goog.ui.INLINE_BLOCK_CLASSNAME', 'goog.ui.MenuSeparatorRenderer'], false);
 goog.addDependency('ui/toolbarseparatorrenderer_test.js', ['goog.ui.ToolbarSeparatorRendererTest'], ['goog.dom', 'goog.dom.TagName', 'goog.dom.classlist', 'goog.testing.jsunit', 'goog.ui.Component', 'goog.ui.INLINE_BLOCK_CLASSNAME', 'goog.ui.ToolbarSeparator', 'goog.ui.ToolbarSeparatorRenderer'], false);
 goog.addDependency('ui/toolbartogglebutton.js', ['goog.ui.ToolbarToggleButton'], ['goog.ui.ToggleButton', 'goog.ui.ToolbarButtonRenderer', 'goog.ui.registry'], false);
-goog.addDependency('ui/tooltip.js', ['goog.ui.Tooltip', 'goog.ui.Tooltip.CursorTooltipPosition', 'goog.ui.Tooltip.ElementTooltipPosition', 'goog.ui.Tooltip.State'], ['goog.Timer', 'goog.array', 'goog.dom', 'goog.dom.TagName', 'goog.dom.safe', 'goog.events', 'goog.events.EventType', 'goog.html.legacyconversions', 'goog.math.Box', 'goog.math.Coordinate', 'goog.positioning', 'goog.positioning.AnchoredPosition', 'goog.positioning.Corner', 'goog.positioning.Overflow', 'goog.positioning.OverflowStatus', 'goog.positioning.ViewportPosition', 'goog.structs.Set', 'goog.style', 'goog.ui.Popup', 'goog.ui.PopupBase'], false);
-goog.addDependency('ui/tooltip_test.js', ['goog.ui.TooltipTest'], ['goog.dom', 'goog.dom.TagName', 'goog.events.Event', 'goog.events.EventHandler', 'goog.events.EventType', 'goog.html.testing', 'goog.math.Coordinate', 'goog.positioning.AbsolutePosition', 'goog.style', 'goog.testing.MockClock', 'goog.testing.PropertyReplacer', 'goog.testing.TestQueue', 'goog.testing.events', 'goog.testing.jsunit', 'goog.ui.PopupBase', 'goog.ui.Tooltip', 'goog.userAgent'], false);
+goog.addDependency('ui/tooltip.js', ['goog.ui.Tooltip', 'goog.ui.Tooltip.CursorTooltipPosition', 'goog.ui.Tooltip.ElementTooltipPosition', 'goog.ui.Tooltip.State'], ['goog.Timer', 'goog.array', 'goog.dom', 'goog.dom.TagName', 'goog.dom.safe', 'goog.events', 'goog.events.EventType', 'goog.events.FocusHandler', 'goog.html.legacyconversions', 'goog.math.Box', 'goog.math.Coordinate', 'goog.positioning', 'goog.positioning.AnchoredPosition', 'goog.positioning.Corner', 'goog.positioning.Overflow', 'goog.positioning.OverflowStatus', 'goog.positioning.ViewportPosition', 'goog.structs.Set', 'goog.style', 'goog.ui.Popup', 'goog.ui.PopupBase'], false);
+goog.addDependency('ui/tooltip_test.js', ['goog.ui.TooltipTest'], ['goog.dom', 'goog.dom.TagName', 'goog.events.Event', 'goog.events.EventHandler', 'goog.events.EventType', 'goog.events.FocusHandler', 'goog.html.testing', 'goog.math.Coordinate', 'goog.positioning.AbsolutePosition', 'goog.style', 'goog.testing.MockClock', 'goog.testing.PropertyReplacer', 'goog.testing.TestQueue', 'goog.testing.events', 'goog.testing.jsunit', 'goog.ui.PopupBase', 'goog.ui.Tooltip', 'goog.userAgent'], false);
 goog.addDependency('ui/tree/basenode.js', ['goog.ui.tree.BaseNode', 'goog.ui.tree.BaseNode.EventType'], ['goog.Timer', 'goog.a11y.aria', 'goog.asserts', 'goog.dom.safe', 'goog.events.Event', 'goog.events.KeyCodes', 'goog.html.SafeHtml', 'goog.html.SafeStyle', 'goog.html.legacyconversions', 'goog.string', 'goog.string.StringBuffer', 'goog.style', 'goog.ui.Component'], false);
 goog.addDependency('ui/tree/basenode_test.js', ['goog.ui.tree.BaseNodeTest'], ['goog.dom', 'goog.dom.TagName', 'goog.dom.classlist', 'goog.html.legacyconversions', 'goog.html.testing', 'goog.testing.PropertyReplacer', 'goog.testing.jsunit', 'goog.ui.Component', 'goog.ui.tree.BaseNode', 'goog.ui.tree.TreeControl', 'goog.ui.tree.TreeNode'], false);
 goog.addDependency('ui/tree/treecontrol.js', ['goog.ui.tree.TreeControl'], ['goog.a11y.aria', 'goog.asserts', 'goog.dom.classlist', 'goog.events.EventType', 'goog.events.FocusHandler', 'goog.events.KeyHandler', 'goog.html.SafeHtml', 'goog.log', 'goog.ui.tree.BaseNode', 'goog.ui.tree.TreeNode', 'goog.ui.tree.TypeAhead', 'goog.userAgent'], false);
@@ -23481,6 +23481,10 @@ lf.index.BTree = function(name, comparator, uniqueKeyOnly, opt_data) {
 };
 
 
+/** @const {!Array} */
+lf.index.BTree.EMPTY = [];
+
+
 /** @override */
 lf.index.BTree.prototype.getName = function() {
   return this.name_;
@@ -23534,7 +23538,7 @@ lf.index.BTree.prototype.getRange = function(
     opt_keyRanges, opt_reverseOrder, opt_limit, opt_skip) {
   var leftMostKey = this.root_.getLeftMostNode().keys_[0];
   if (!goog.isDef(leftMostKey)) {  // Tree is empty.
-    return [];
+    return lf.index.BTree.EMPTY;
   }
 
   var sortedKeyRanges = goog.isDef(opt_keyRanges) ?
@@ -23550,10 +23554,9 @@ lf.index.BTree.prototype.getRange = function(
     //         first node will return empty, but we shall not stop there.
     var strikeCount = 0;
     while (goog.isDefAndNotNull(start)) {
-      var tempResults = start.getRange(range);
+      var length = start.getRange(range, results);
       // TODO(arthurhsu): handle limit and skip here.
-      results = results.concat(tempResults);
-      if (tempResults.length != 0) {
+      if (length != 0) {
         strikeCount = 0;
       } else {
         strikeCount++;
@@ -24033,7 +24036,7 @@ lf.index.BTreeNode_.fromData = function(tree, data) {
 lf.index.BTreeNode_.prototype.get = function(key) {
   var pos = this.searchKey_(key);
   if (this.isLeaf_()) {
-    var results = [];
+    var results = lf.index.BTree.EMPTY;
     if (this.tree_.eq(this.keys_[pos], key)) {
       // Use concat here because this.values_[pos] can be number or array.
       results = results.concat(this.values_[pos]);
@@ -24396,13 +24399,17 @@ lf.index.BTreeNode_.prototype.getContainingLeaf = function(key) {
 
 
 /**
+ * The API signature of this function is specially crafted for performance
+ * optimization. Perf results showed that creation of empty array erodes the
+ * benefit of indexing significantly (in some cases >50%). As a result, it
+ * is required to pass in the results array.
+ *
  * @param {!lf.index.KeyRange|!lf.index.SingleKeyRange} keyRange
- * @param {!Array<number>=} opt_results An array holding any results found from
- *     previous calls to getRange(). If specified any new results will be
- *     appended to this array.
- * @return {!Array<number>}
+ * @param {!Array<number>} results An empty array, or an array holding any
+ *     results from previous calls to getRange().
+ * @return {number} Length appended to results.
  */
-lf.index.BTreeNode_.prototype.getRange = function(keyRange, opt_results) {
+lf.index.BTreeNode_.prototype.getRange = function(keyRange, results) {
   var start = -1;
   var end = this.keys_.length - 1;
   var c = this.tree_.comparator();
@@ -24428,9 +24435,8 @@ lf.index.BTreeNode_.prototype.getRange = function(keyRange, opt_results) {
     scanPos(1);
   }
 
-  var results = opt_results || [];
   if (start == -1) {
-    return results;
+    return 0;
   }
 
   if (!c.isInRange(this.keys_[end], keyRange)) {
@@ -24438,12 +24444,12 @@ lf.index.BTreeNode_.prototype.getRange = function(keyRange, opt_results) {
   }
 
   if (end == this.keys_.length - 1) {
-    this.appendResults_(results, this.values_.slice(start));
+    return this.appendResults_(results, this.values_.slice(start));
   } else if (end >= start) {
-    this.appendResults_(results, this.values_.slice(start, end + 1));
+    return this.appendResults_(results, this.values_.slice(start, end + 1));
   }
 
-  return results;
+  return 0;
 };
 
 
@@ -24451,14 +24457,15 @@ lf.index.BTreeNode_.prototype.getRange = function(keyRange, opt_results) {
  * Appends newly found results to an existing bag of results.
  * @param {!Array<number>} currentResults
  * @param {!Array<number>|!Array<!Array<number>>} newResults
+ * @return {number}
  * @private
  */
 lf.index.BTreeNode_.prototype.appendResults_ = function(
     currentResults, newResults) {
-  currentResults.push.apply(
-      currentResults,
-      this.tree_.isUniqueKeyOnly() ?
-          newResults : goog.array.flatten(newResults));
+  var toAppend = this.tree_.isUniqueKeyOnly() ?
+          newResults : goog.array.flatten(newResults);
+  currentResults.push.apply(currentResults, toAppend);
+  return toAppend.length;
 };
 
 
