@@ -1181,6 +1181,47 @@ function testMultiKeyRandomNumbers() {
   assertArrayEquals([], tree.getRange());
 }
 
+function testMultiKeyGetRangeRegression() {
+  var comparator = new lf.index.MultiKeyComparator(
+      lf.index.MultiKeyComparator.createOrders(2, lf.Order.ASC));
+  var tree = new lf.index.BTree('test', comparator, true);
+  var data = [
+    ['F', 'A'], ['F', 'B'], ['F', 'C'], ['F', 'D'],
+    ['G', 'B'], ['G', 'G'], ['G', 'X'],
+    ['P', 'K'], ['P', 'M'], ['P', 'P'],
+    ['S', 'A'], ['S', 'B'], ['S', 'C'], ['S', 'D']
+  ];
+  for (var i = 0; i < data.length; ++i) {
+    tree.add(data[i], i);
+  }
+  var keyRange = [[
+    lf.index.SingleKeyRange.only('G'),
+    lf.index.SingleKeyRange.only('X')
+  ]];
+  assertArrayEquals([6], tree.getRange(keyRange));
+
+  var keyRange2 = [[
+    lf.index.SingleKeyRange.only('P'),
+    lf.index.SingleKeyRange.only('P')
+  ]];
+  assertArrayEquals([9], tree.getRange(keyRange2));
+
+  assertArrayEquals(
+      [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13],
+      tree.getRange());
+
+  var comparator2 = new lf.index.MultiKeyComparator(
+      [lf.Order.ASC, lf.Order.DESC]);
+  var tree2 = new lf.index.BTree('test2', comparator2, true);
+  for (var i = 0; i < data.length; ++i) {
+    tree2.add(data[i], i);
+  }
+  assertArrayEquals([6], tree2.getRange(keyRange));
+  assertArrayEquals([9], tree2.getRange(keyRange2));
+  assertArrayEquals(
+      [3, 2, 1, 0, 6, 5, 4, 9, 8, 7, 13, 12, 11, 10],
+      tree2.getRange());
+}
 
 function manualTestBenchmark() {
   var log = goog.bind(console['log'], console);

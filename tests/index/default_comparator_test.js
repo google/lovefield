@@ -259,44 +259,6 @@ function testSimpleComparator_OrderRange() {
 }
 
 
-function testSimpleComparator_BindKeyRange() {
-  var c = new lf.index.SimpleComparator(lf.Order.ASC);
-
-  /**
-   * @param {string} expected
-   * @param {!lf.index.SingleKeyRange=} opt_range
-   */
-  var check = function(expected, opt_range) {
-    assertEquals(expected, c.bindKeyRange(-100, 100, opt_range).toString());
-  };
-
-  check('[-100, 100]', undefined);
-  check('[-100, 100]', lf.index.SingleKeyRange.all());
-  check('[-100, 100]', new lf.index.SingleKeyRange(-100, 100, false, false));
-  check('[0, 0]', lf.index.SingleKeyRange.only(0));
-
-  check('[-100, 100]', lf.index.SingleKeyRange.upperBound(200));
-  check('[-100, 0]', lf.index.SingleKeyRange.upperBound(0));
-  check('[-100, 100]', lf.index.SingleKeyRange.lowerBound(-200));
-  check('[0, 100]', lf.index.SingleKeyRange.lowerBound(0));
-
-  check('[-100, 100]', new lf.index.SingleKeyRange(-200, 200, false, false));
-  check('[-10, 10]', new lf.index.SingleKeyRange(-10, 10, false, false));
-  check('(-100, 100)', new lf.index.SingleKeyRange(-100, 100, true, true));
-
-  /** @param {!lf.index.SingleKeyRange} range */
-  var checkNull = function(range) {
-    assertNull(c.bindKeyRange(-100, 100, range));
-  };
-
-  checkNull(lf.index.SingleKeyRange.upperBound(-100, true));
-  checkNull(lf.index.SingleKeyRange.lowerBound(100, true));
-  checkNull(new lf.index.SingleKeyRange(-200, -150, false, false));
-  checkNull(new lf.index.SingleKeyRange(150, 200, false, false));
-  checkNull(new lf.index.SingleKeyRange(50, 10, false, false));
-}
-
-
 function testMultiKeyComparator_DefaultOrder() {
   var orders = lf.index.MultiKeyComparator.createOrders(2, lf.Order.ASC);
   var comparator = new lf.index.MultiKeyComparator(orders);
@@ -389,12 +351,9 @@ function testMultiKeyComparator_isInRange() {
 }
 
 
-function testSimpleComparator_BindAndSortKeyRanges() {
+function testSimpleComparator_SortKeyRanges() {
   var c1 = new lf.index.SimpleComparator(lf.Order.ASC);
   var c2 = new lf.index.SimpleComparator(lf.Order.DESC);
-
-  var leftMostKey = 1;
-  var rightMostKey = 100;
 
   var keyRanges = [
     lf.index.SingleKeyRange.lowerBound(5, true),
@@ -402,22 +361,16 @@ function testSimpleComparator_BindAndSortKeyRanges() {
     lf.index.SingleKeyRange.only(5)
   ];
 
-  var keyRangesOverflown = [
-    new lf.index.SingleKeyRange(-100, 5, false, true),
-    new lf.index.SingleKeyRange(5, 200, true, false),
-    lf.index.SingleKeyRange.only(5)
-  ];
-
   var expectations1 = [
-    '[1, 5)',
+    '[unbound, 5)',
     '[5, 5]',
-    '(5, 100]'
+    '(5, unbound]'
   ];
 
   var expectations2 = [
-    '(5, 100]',
+    '(5, unbound]',
     '[5, 5]',
-    '[1, 5)'
+    '[unbound, 5)'
   ];
 
   /**
@@ -426,31 +379,18 @@ function testSimpleComparator_BindAndSortKeyRanges() {
    * @return {!Array<string>}
    */
   var getActual = function(c, range) {
-    return c.bindAndSortKeyRanges(leftMostKey, rightMostKey, range).map(
-        function(range) {
-          return range.toString();
-        });
+    return c.sortKeyRanges(range).map(function(range) {
+      return range.toString();
+    });
   };
 
   assertArrayEquals(expectations1, getActual(c1, keyRanges));
-  assertArrayEquals(expectations1, getActual(c1, keyRangesOverflown));
-  assertArrayEquals(
-      [new lf.index.SingleKeyRange(leftMostKey, rightMostKey, false, false)],
-      c1.bindAndSortKeyRanges(leftMostKey, rightMostKey));
-
   assertArrayEquals(expectations2, getActual(c2, keyRanges));
-  assertArrayEquals(expectations2, getActual(c2, keyRangesOverflown));
-  assertArrayEquals(
-      [new lf.index.SingleKeyRange(leftMostKey, rightMostKey, false, false)],
-      c2.bindAndSortKeyRanges(leftMostKey, rightMostKey));
 }
 
 
-function testMultiKeyComparator_BindAndSortKeyRanges_Asc() {
+function testMultiKeyComparator_SortKeyRanges_Asc() {
   var c = new lf.index.MultiKeyComparator([lf.Order.ASC, lf.Order.ASC]);
-  var leftMostKey = [1, 'A'];
-  var rightMostKey = [100, 'Z'];
-
   var keyRanges = [
     [
       lf.index.SingleKeyRange.upperBound(5, true),
@@ -467,27 +407,21 @@ function testMultiKeyComparator_BindAndSortKeyRanges_Asc() {
   ];
 
   var expectations = [
-    '[1, 5),[A, D)',
+    '[unbound, 5),[unbound, D)',
     '[90, 90],[X, X]',
-    '(90, 100],(X, Z]'
+    '(90, unbound],(X, unbound]'
   ];
 
-  var actual = c.bindAndSortKeyRanges(leftMostKey, rightMostKey, keyRanges).map(
-      function(range) {
-        return range.toString();
-      });
+  var actual = c.sortKeyRanges(keyRanges).map(function(range) {
+    return range.toString();
+  });
 
   assertArrayEquals(expectations, actual);
-  assertEquals(
-      '[1, 100],[A, Z]',
-      c.bindAndSortKeyRanges(leftMostKey, rightMostKey).toString());
 }
 
 
-function testMultiKeyComparator_BindAndSortKeyRanges_MixedOrder() {
+function testMultiKeyComparator_SortKeyRanges_MixedOrder() {
   var c = new lf.index.MultiKeyComparator([lf.Order.ASC, lf.Order.DESC]);
-  var leftMostKey = [0, 'Z'];
-  var rightMostKey = [25, 'A'];
 
   // NOT(BETWEEN([2, 'X'], [24, 'B'])) OR [22, 'D']
   var keyRanges = [
@@ -506,20 +440,16 @@ function testMultiKeyComparator_BindAndSortKeyRanges_MixedOrder() {
   ];
 
   var expectations = [
-    '[0, 2),(X, Z]',
+    '[unbound, 2),(X, unbound]',
     '[22, 22],[D, D]',
-    '(24, 25],[A, B)'
+    '(24, unbound],[unbound, B)'
   ];
 
-  var actual = c.bindAndSortKeyRanges(leftMostKey, rightMostKey, keyRanges).map(
-      function(range) {
-        return range.toString();
-      });
+  var actual = c.sortKeyRanges(keyRanges).map(function(range) {
+    return range.toString();
+  });
 
   assertArrayEquals(expectations, actual);
-  assertEquals(
-      '[0, 25],[A, Z]',
-      c.bindAndSortKeyRanges(leftMostKey, rightMostKey).toString());
 }
 
 

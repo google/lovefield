@@ -1388,6 +1388,24 @@ goog.normalizePath_ = function(path) {
 
 
 /**
+ * Loads file by synchronous XHR. Should not be used in production environments.
+ * @param {string} src Source URL.
+ * @return {string} File contents.
+ * @private
+ */
+goog.loadFileSync_ = function(src) {
+  if (goog.global.CLOSURE_LOAD_FILE_SYNC) {
+    return goog.global.CLOSURE_LOAD_FILE_SYNC(src);
+  } else {
+    var xhr = new goog.global['XMLHttpRequest']();
+    xhr.open('get', src, false);
+    xhr.send();
+    return xhr.responseText;
+  }
+};
+
+
+/**
  * Retrieve and execute a module.
  * @param {string} src Script source URL.
  * @private
@@ -1403,18 +1421,7 @@ goog.retrieveAndExecModule_ = function(src) {
     var importScript = goog.global.CLOSURE_IMPORT_SCRIPT ||
         goog.writeScriptTag_;
 
-    var scriptText = null;
-
-    var xhr = new goog.global['XMLHttpRequest']();
-
-    /** @this {Object} */
-    xhr.onload = function() {
-      scriptText = this.responseText;
-    };
-    xhr.open('get', src, false);
-    xhr.send();
-
-    scriptText = xhr.responseText;
+    var scriptText = goog.loadFileSync_(src);
 
     if (scriptText != null) {
       var execModuleScript = goog.wrapModule_(src, scriptText);
@@ -2593,7 +2600,7 @@ goog.addDependency('async/workqueue.js', ['goog.async.WorkItem', 'goog.async.Wor
 goog.addDependency('async/workqueue_test.js', ['goog.async.WorkQueueTest'], ['goog.async.WorkQueue', 'goog.testing.jsunit'], false);
 goog.addDependency('base.js', ['goog'], [], false);
 goog.addDependency('base_module_test.js', ['goog.baseModuleTest'], ['goog.Timer', 'goog.test_module', 'goog.testing.PropertyReplacer', 'goog.testing.jsunit'], true);
-goog.addDependency('base_test.js', ['an.existing.path', 'dup.base', 'far.out', 'goog.baseTest', 'goog.explicit', 'goog.implicit.explicit', 'goog.test', 'goog.test.name', 'goog.test.name.space', 'goog.xy', 'goog.xy.z', 'ns', 'testDep.bar'], ['goog.Timer', 'goog.dom.TagName', 'goog.functions', 'goog.test_module', 'goog.testing.PropertyReplacer', 'goog.testing.jsunit', 'goog.testing.recordFunction', 'goog.userAgent'], false);
+goog.addDependency('base_test.js', ['an.existing.path', 'dup.base', 'far.out', 'goog.baseTest', 'goog.explicit', 'goog.implicit.explicit', 'goog.test', 'goog.test.name', 'goog.test.name.space', 'goog.xy', 'goog.xy.z', 'ns', 'testDep.bar'], ['goog.Promise', 'goog.Timer', 'goog.dom.TagName', 'goog.functions', 'goog.test_module', 'goog.testing.PropertyReplacer', 'goog.testing.jsunit', 'goog.testing.recordFunction', 'goog.userAgent'], false);
 goog.addDependency('color/alpha.js', ['goog.color.alpha'], ['goog.color'], false);
 goog.addDependency('color/alpha_test.js', ['goog.color.alphaTest'], ['goog.array', 'goog.color', 'goog.color.alpha', 'goog.testing.jsunit'], false);
 goog.addDependency('color/color.js', ['goog.color', 'goog.color.Hsl', 'goog.color.Hsv', 'goog.color.Rgb'], ['goog.color.names', 'goog.math'], false);
@@ -15970,18 +15977,29 @@ lf.index.Comparator.prototype.isInRange;
 
 
 /**
+ * Returns a range that represents all data.
+ * @return {!RangeType}
+ */
+lf.index.Comparator.prototype.getAllRange;
+
+
+/**
  * Binds unbound values to given key ranges, and sorts them so that these ranges
  * will be in the order from left to right.
- * @param {!KeyType} leftMostKey The value to substitute when left boundary
- *     is unbound.
- * @param {!KeyType} rightMostKey The value to substitute when right boundary
- *     is unbound.
- * @param {!Array<!RangeType>=} opt_keyRanges When provided, any two ranges
+ * @param {!Array<!RangeType>} keyRanges When provided, any two ranges
  *     inside the key ranges array shall not overlap each other.
  * @return {!Array<!RangeType>} A new array containing bounded ranges, sorted by
  *     comparator's order from left-most to right-most.
  */
-lf.index.Comparator.prototype.bindAndSortKeyRanges;
+lf.index.Comparator.prototype.sortKeyRanges;
+
+
+/**
+ * Returns true if the given range is open ended on the left-hand-side.
+ * @param {!RangeType} range
+ * @return {boolean}
+ */
+lf.index.Comparator.prototype.isLeftOpen;
 
 
 /**
@@ -23519,22 +23537,28 @@ lf.index.BTree.prototype.getRange = function(
     return [];
   }
 
-  var rightMostKeys = this.root_.getRightMostNode().keys_;
-  var rightMostKey = rightMostKeys[rightMostKeys.length - 1];
-  var sortedKeyRanges = this.comparator_.bindAndSortKeyRanges(
-      leftMostKey, rightMostKey, opt_keyRanges);
-
+  var sortedKeyRanges = goog.isDef(opt_keyRanges) ?
+      this.comparator_.sortKeyRanges(opt_keyRanges) :
+      [this.comparator_.getAllRange()];
   var results = [];
   sortedKeyRanges.forEach(function(range) {
-    // Although the leaf nodes are represented in a linked list, we cannot
-    // use the recursion of BTreeNode.getRange to retrieve the results.
-    // The leaf span can be big enough to cause IE running out of stack.
     var keys = this.comparator_.rangeToKeys(range);
-    var start = this.root_.getContainingLeaf(keys[0]);
-    var end = this.root_.getContainingLeaf(keys[1]);
-    while (start != end.next()) {
-      start.getRange(range, results);
-      start = start.next();
+    var key = this.comparator_.isLeftOpen(range) ? leftMostKey : keys[0];
+    var start = this.root_.getContainingLeaf(key);
+    // Need to have two empty results to stop.
+    // Reason: say the nodes are [12, 15], [16, 18], when look for >15,
+    //         first node will return empty, but we shall not stop there.
+    var strikeCount = 0;
+    while (goog.isDefAndNotNull(start)) {
+      var tempResults = start.getRange(range);
+      // TODO(arthurhsu): handle limit and skip here.
+      results = results.concat(tempResults);
+      if (tempResults.length != 0) {
+        strikeCount = 0;
+      } else {
+        strikeCount++;
+      }
+      start = strikeCount == 2 ? null : start.next();
     }
   }, this);
 
@@ -24499,7 +24523,6 @@ goog.provide('lf.index.ComparatorFactory');
 goog.provide('lf.index.MultiKeyComparator');
 goog.provide('lf.index.SimpleComparator');
 
-goog.require('goog.functions');
 goog.require('lf.Order');
 goog.require('lf.index.Comparator');
 goog.require('lf.index.Favor');
@@ -24665,44 +24688,9 @@ lf.index.SimpleComparator.prototype.isInRange = function(key, range) {
 };
 
 
-/**
- * @param {!lf.index.Comparator} c
- * @param {!lf.index.Index.SingleKey|!Array<!lf.index.Index.SingleKey>} left
- * @param {!lf.index.Index.SingleKey|!Array<!lf.index.Index.SingleKey>} right
- * @return {!Array<!lf.index.Index.SingleKey>|
- *     !Array<!Array<!lf.index.Index.SingleKey>>}
- */
-lf.index.SimpleComparator.getMinMaxKeys = function(c, left, right) {
-  var minKey = left;
-  var maxKey = right;
-  var favor = c.min(left, right);
-  if (favor != lf.index.Favor.LHS) {
-    minKey = right;
-    maxKey = left;
-  }
-  return [minKey, maxKey];
-};
-
-
-/**
- * @param {!lf.index.Index.SingleKey} leftMostKey
- * @param {!lf.index.Index.SingleKey} rightMostKey
- * @param {!lf.index.SingleKeyRange=} opt_keyRange
- * @return {?lf.index.SingleKeyRange} Returns null if provided key range is out
- *     of bound.
- */
-lf.index.SimpleComparator.prototype.bindKeyRange = function(
-    leftMostKey, rightMostKey, opt_keyRange) {
-  var keys = /** @type {!Array<!lf.index.Index.SingleKey>} */ (
-      lf.index.SimpleComparator.getMinMaxKeys(this, leftMostKey, rightMostKey));
-  var range = new lf.index.SingleKeyRange(keys[0], keys[1], false, false);
-
-  // Shortcut the undefined and all() case.
-  if (!goog.isDef(opt_keyRange) || opt_keyRange.isAll()) {
-    return range;
-  }
-
-  return opt_keyRange.getBounded(keys[0], keys[1]);
+/** @override */
+lf.index.SimpleComparator.prototype.getAllRange = function() {
+  return lf.index.SingleKeyRange.all();
 };
 
 
@@ -24717,26 +24705,18 @@ lf.index.SimpleComparator.prototype.orderKeyRange = function(lhs, rhs) {
 
 
 /** @override */
-lf.index.SimpleComparator.prototype.bindAndSortKeyRanges = function(
-    leftMostKey, rightMostKey, opt_keyRanges) {
-  var outputKeyRanges;
+lf.index.SimpleComparator.prototype.sortKeyRanges = function(keyRanges) {
+  return keyRanges.filter(function(range) {
+    return !goog.isNull(range);
+  }).sort(goog.bind(function(lhs, rhs) {
+    return this.orderRange_(lhs, rhs);
+  }, this));
+};
 
-  var keys = lf.index.SimpleComparator.getMinMaxKeys(
-      this, leftMostKey, rightMostKey);
-  if (goog.isDefAndNotNull(opt_keyRanges)) {
-    outputKeyRanges = opt_keyRanges.map(function(range) {
-      var boundKeyRange = this.bindKeyRange(keys[0], keys[1], range);
-      return boundKeyRange;
-    }, this).filter(function(range) {
-      return !goog.isNull(range);
-    }).sort(goog.bind(function(lhs, rhs) {
-      return this.orderRange_(lhs, rhs);
-    }, this));
-  } else {
-    outputKeyRanges = [this.bindKeyRange(keys[0], keys[1])];
-  }
 
-  return outputKeyRanges;
+/** @override */
+lf.index.SimpleComparator.prototype.isLeftOpen = function(range) {
+  return goog.isNull(this.normalizeKeyRange_(range).from);
 };
 
 
@@ -24858,81 +24838,63 @@ lf.index.MultiKeyComparator.prototype.isInRange = function(key, range) {
 };
 
 
-/**
- * @param {Array<!lf.index.Index.SingleKey>} leftMostKey
- * @param {!Array<!lf.index.Index.SingleKey>} rightMostKey
- * @param {!Array<!lf.index.SingleKeyRange>=} opt_keyRange
- * @return {!Array<!lf.index.SingleKeyRange>}
- * @private
- */
-lf.index.MultiKeyComparator.prototype.bindKeyRange_ = function(
-    leftMostKey, rightMostKey, opt_keyRange) {
-  return this.comparators_.map(
-      function(c, i) {
-        return goog.isDefAndNotNull(opt_keyRange) ?
-            c.bindKeyRange(leftMostKey[i], rightMostKey[i], opt_keyRange[i]) :
-            c.bindKeyRange(leftMostKey[i], rightMostKey[i], undefined);
-      }, this);
+/** @override */
+lf.index.MultiKeyComparator.prototype.getAllRange = function() {
+  return this.comparators_.map(function(c) {
+    return c.getAllRange();
+  });
 };
 
 
 /** @override */
-lf.index.MultiKeyComparator.prototype.bindAndSortKeyRanges = function(
-    leftMostKey, rightMostKey, opt_keyRanges) {
-  var keys = /** @type {!Array<!Array<lf.index.Index.SingleKey>>} */ (
-      lf.index.SimpleComparator.getMinMaxKeys(this, leftMostKey, rightMostKey));
-  var minKey = keys[0];
-  var maxKey = keys[1];
+lf.index.MultiKeyComparator.prototype.sortKeyRanges = function(keyRanges) {
+  var outputKeyRanges = keyRanges.filter(function(range) {
+    return range.every(goog.isDefAndNotNull);
+  });
 
-  if (goog.isDefAndNotNull(opt_keyRanges)) {
-    // Bound the given key ranges if they were open-ended.
-    var outputKeyRanges = opt_keyRanges.map(function(range) {
-      var boundKeyRange = this.bindKeyRange_(minKey, maxKey, range);
-      return boundKeyRange;
-    }, this).filter(function(range) {
-      return range.every(goog.isDefAndNotNull);
+  // Ranges are in the format of
+  // [[dim0_range0, dim1_range0, ...], [dim0_range1, dim1_range1, ...], ...]
+  // Reorganize the array to
+  // [[dim0_range0, dim0_range1, ...], [dim1_range0, dim1_range1, ...], ...]
+  var keysPerDimensions = new Array(this.comparators_.length);
+  for (var i = 0; i < keysPerDimensions.length; i++) {
+    keysPerDimensions[i] = outputKeyRanges.map(function(range) {
+      return range[i];
     });
-
-    // Ranges are in the format of
-    // [[dim0_range0, dim1_range0, ...], [dim0_range1, dim1_range1, ...], ...]
-    // Reorganize the array to
-    // [[dim0_range0, dim0_range1, ...], [dim1_range0, dim1_range1, ...], ...]
-    var keysPerDimensions = new Array(this.comparators_.length);
-    for (var i = 0; i < keysPerDimensions.length; i++) {
-      keysPerDimensions[i] = outputKeyRanges.map(function(range) {
-        return range[i];
-      });
-    }
-    // Sort ranges per dimension.
-    keysPerDimensions.forEach(function(keys, i) {
-      keys.sort(goog.bind(function(lhs, rhs) {
-        return this.comparators_[i].orderKeyRange(lhs, rhs);
-      }, this));
-    }, this);
-
-    // Swapping back to original key range format. This time the new ranges
-    // are properly aligned from left to right in each dimension.
-    var finalKeyRanges = new Array(outputKeyRanges.length);
-    for (var i = 0; i < finalKeyRanges.length; i++) {
-      finalKeyRanges[i] = keysPerDimensions.map(function(keys) {
-        return keys[i];
-      });
-    }
-
-    // Perform another sorting to properly arrange order of ranges with either
-    // excludeLower or excludeUpper.
-    return finalKeyRanges.sort(goog.bind(function(lhs, rhs) {
-      var favor = lf.index.Favor.TIE;
-      for (var i = 0;
-          i < this.comparators_.length && favor == lf.index.Favor.TIE;
-          ++i) {
-        favor = this.comparators_[i].orderKeyRange(lhs[i], rhs[i]);
-      }
-      return favor;
-    }, this));
-  } else {
-    return [this.bindKeyRange_(minKey, maxKey)];
   }
+  // Sort ranges per dimension.
+  keysPerDimensions.forEach(function(keys, i) {
+    keys.sort(goog.bind(function(lhs, rhs) {
+      return this.comparators_[i].orderKeyRange(lhs, rhs);
+    }, this));
+  }, this);
+
+  // Swapping back to original key range format. This time the new ranges
+  // are properly aligned from left to right in each dimension.
+  var finalKeyRanges = new Array(outputKeyRanges.length);
+  for (var i = 0; i < finalKeyRanges.length; i++) {
+    finalKeyRanges[i] = keysPerDimensions.map(function(keys) {
+      return keys[i];
+    });
+  }
+
+  // Perform another sorting to properly arrange order of ranges with either
+  // excludeLower or excludeUpper.
+  return finalKeyRanges.sort(goog.bind(function(lhs, rhs) {
+    var favor = lf.index.Favor.TIE;
+    for (var i = 0;
+        i < this.comparators_.length && favor == lf.index.Favor.TIE;
+        ++i) {
+      favor = this.comparators_[i].orderKeyRange(lhs[i], rhs[i]);
+    }
+    return favor;
+  }, this));
+};
+
+
+/** @override */
+lf.index.MultiKeyComparator.prototype.isLeftOpen = function(range) {
+  return this.comparators_[0].isLeftOpen(range[0]);
 };
 
 
@@ -25871,10 +25833,9 @@ lf.index.AATree.prototype.traverse_ = function(node, keyRange, results) {
 /** @override */
 lf.index.AATree.prototype.getRange = function(
     opt_keyRanges, opt_reverseOrder, opt_limit, opt_skip) {
-  var leftMostKey = this.getLeftMostNode_().key;
-  var rightMostKey = this.getRightMostNode_().key;
-  var sortedKeyRanges = this.comparator_.bindAndSortKeyRanges(
-      leftMostKey, rightMostKey, opt_keyRanges);
+  var sortedKeyRanges = goog.isDefAndNotNull(opt_keyRanges) ?
+      this.comparator_.sortKeyRanges(opt_keyRanges) :
+      [this.comparator_.getAllRange()];
 
   var results = [];
   sortedKeyRanges.forEach(function(range) {
