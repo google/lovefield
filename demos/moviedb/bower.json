@@ -1,0 +1,22 @@
+{
+  "name": "movie-db",
+  "version": "0.0.1",
+  "homepage": "https://github.com/google/lovefield",
+  "authors": [
+    "Google, Inc."
+  ],
+  "description": "A demo of te Lovefield library using a small movie database.",
+  "main": "demo-angular.js",
+  "license": "http://www.apache.org/licenses/LICENSE-2.0",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components"
+  ],
+  "dependencies": {
+    "bootstrap": "3.3.2",
+    "bootstrap-table": "~1.7.0",
+    "jquery": "~2.1.4",
+    "lovefield": "lovefield#master"
+  }
+}
