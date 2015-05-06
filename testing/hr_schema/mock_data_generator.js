@@ -85,6 +85,7 @@ lf.testing.hrSchema.MockDataGenerator.EmployeeGroundTruth;
  *   countDistinctMaxSalary: number,
  *   avgDistinctMaxSalary: number,
  *   stddevDistinctMaxSalary: number,
+     geomeanDistinctMaxSalary: number,
  *   selfJoinSalary: !Array<!Array<!lf.Row>>
  * }}
  */
@@ -149,6 +150,8 @@ lf.testing.hrSchema.MockDataGenerator.prototype.extractJobGroundTruth_ =
         goog.math.average.apply(null, this.findJobDistinct_(maxSalary)),
     stddevDistinctMaxSalary: goog.math.standardDeviation.apply(
         null, this.findJobDistinct_(maxSalary)),
+    geomeanDistinctMaxSalary:
+        this.findGeomean_(this.findJobDistinct_(maxSalary)),
     selfJoinSalary: this.findSelfJoinSalary_()
   };
 };
@@ -264,6 +267,21 @@ lf.testing.hrSchema.MockDataGenerator.prototype.findSelfJoinSalary_ =
   });
 
   return result;
+};
+
+
+/**
+ * Finds the GEOMEAN of a given set of values.
+ * @param {!Array<number>} values
+ * @return {number} The geometrical mean.
+ * @private
+ */
+lf.testing.hrSchema.MockDataGenerator.prototype.findGeomean_ =
+    function(values) {
+  var reduced = values.reduce(function(soFar, value) {
+    return soFar += Math.log(value);
+  }, 0);
+  return Math.pow(Math.E, reduced / values.length);
 };
 
 

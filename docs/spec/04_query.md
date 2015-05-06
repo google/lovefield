@@ -279,6 +279,7 @@ Lovefield provides following aggregation functions to be used with group-by:
 |`lf.fn.avg`     |`AVG`          |`number`, `integer`                      |
 |`lf.fn.count`   |`COUNT`        |Any type                                 |
 |`lf.fn.distinct`|`DISTINCT`     |Any type                                 |
+|`lf.fn.geomean` |none           |`number`, `integer`                      |
 |`lf.fn.max`     |`MAX`          |`number`, `integer`, `string`, `datetime`|
 |`lf.fn.min`     |`MIN`          |`number`, `integer`, `string`, `datetime`|
 |`lf.fn.stddev`  |`STDDEV`       |`number`, `integer`                      |
@@ -287,8 +288,7 @@ Lovefield provides following aggregation functions to be used with group-by:
 These functions are defined in the [`lf.fn`](
 https://github.com/google/lovefield/blob/master/lib/fn.js) namespace. A
 `SyntaxError` will be thrown if an aggregation function is used with a column of
-an invalid type. Lovefield supports only single-column group by. Multi-column
-`GROUP BY`, `ROLLUP`, and `CUBE` are not supported for now.
+an invalid type. Multi-column `ROLLUP`, and `CUBE` are not supported for now.
 
 ```js
 db.select(customer.name, lf.fn.count(order.id)).

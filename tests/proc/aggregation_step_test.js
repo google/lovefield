@@ -106,6 +106,15 @@ function testExec_Avg_Distinct() {
 }
 
 
+function testExec_Avg_Empty() {
+  asyncTestCase.waitForAsync('testExec_Avg_Empty');
+  var inputRelation = lf.proc.Relation.createEmpty();
+  checkCalculationForRelation(
+      inputRelation, lf.fn.avg(j.maxSalary), null).
+      then(asyncTestCase.continueTesting.bind(asyncTestCase), fail);
+}
+
+
 function testExec_Sum_Distinct() {
   asyncTestCase.waitForAsync('testExec_Sum_Distinct');
   checkCalculation(
@@ -120,6 +129,24 @@ function testExec_Stddev_Distinct() {
   checkCalculation(
       lf.fn.stddev(lf.fn.distinct(j.minSalary)),
       dataGenerator.jobGroundTruth.stddevDistinctMinSalary).
+      then(asyncTestCase.continueTesting.bind(asyncTestCase), fail);
+}
+
+
+function testExec_Geomean_Distinct() {
+  asyncTestCase.waitForAsync('testExec_Geomean_Distinct');
+  checkCalculation(
+      lf.fn.geomean(lf.fn.distinct(j.maxSalary)),
+      dataGenerator.jobGroundTruth.geomeanDistinctMaxSalary).
+      then(asyncTestCase.continueTesting.bind(asyncTestCase), fail);
+}
+
+
+function testExec_Geomean_Empty() {
+  asyncTestCase.waitForAsync('testExec_Geomean_Empty');
+  var inputRelation = lf.proc.Relation.createEmpty();
+  checkCalculationForRelation(
+      inputRelation, lf.fn.geomean(j.maxSalary), null).
       then(asyncTestCase.continueTesting.bind(asyncTestCase), fail);
 }
 
@@ -180,7 +207,7 @@ function checkCalculationWithJoin(aggregatedColumn, expectedValue) {
 /**
  * @param {!lf.proc.Relation} inputRelation
  * @param {!lf.schema.Column} aggregatedColumn The column to be calculated.
- * @param {number|!Array} expectedValue The expected value for the aggregated
+ * @param {?number|!Array} expectedValue The expected value for the aggregated
  *     column.
  * @return {!IThenable}
  */

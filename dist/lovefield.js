@@ -28369,6 +28369,7 @@ lf.fn.Type = {
   AVG: 'AVG',
   COUNT: 'COUNT',
   DISTINCT: 'DISTINCT',
+  GEOMEAN: 'GEOMEAN',
   MAX: 'MAX',
   MIN: 'MIN',
   STDDEV: 'STDDEV',
@@ -28444,6 +28445,16 @@ lf.fn.stddev = function(col) {
  */
 lf.fn.sum = function(col) {
   return new lf.fn.AggregatedColumn(col, lf.fn.Type.SUM);
+};
+
+
+/**
+ * @export
+ * @param {!lf.schema.Column} col
+ * @return {!lf.schema.Column}
+ */
+lf.fn.geomean = function(col) {
+  return new lf.fn.AggregatedColumn(col, lf.fn.Type.GEOMEAN);
 };
 
 /**
@@ -28780,12 +28791,17 @@ lf.proc.AggregationStep.Calculator_.evalAggregation_ = function(
       result = Calculator.sum_(relation, column);
       break;
     case lf.fn.Type.AVG:
-      result = Calculator.sum_(relation, column) /
-          relation.entries.length;
+      if (relation.entries.length > 0) {
+        result = Calculator.sum_(relation, column) / relation.entries.length;
+      }
+      break;
+    case lf.fn.Type.GEOMEAN:
+      result = Calculator.geomean_(relation, column);
       break;
     default:
       // Must be case of lf.fn.Type.STDDEV.
       result = Calculator.stddev_(relation, column);
+      break;
   }
 
   return /** @type {!lf.proc.AggregationResult} */ (result);
@@ -28860,7 +28876,7 @@ lf.proc.AggregationStep.Calculator_.sum_ = function(relation, column) {
  *     the aggregation.
  * @param {!lf.schema.Column} column The column for which to calculate the
  *     standard deviation.
- * @return {number} The maximum.
+ * @return {number} The standard deviation.
  * @private
  */
 lf.proc.AggregationStep.Calculator_.stddev_ = function(relation, column) {
@@ -28870,6 +28886,37 @@ lf.proc.AggregationStep.Calculator_.stddev_ = function(relation, column) {
   });
 
   return goog.math.standardDeviation.apply(null, values);
+};
+
+
+/**
+ * Calculates the geometrical mean of the given column for the given relation.
+ *
+ * @param {!lf.proc.Relation} relation The relation on which to calculate
+ *     the aggregation.
+ * @param {!lf.schema.Column} column The column for which to calculate the
+ *     geometrical mean.
+ * @return {?number} The geometrical mean. Zero values are ignored. If all
+       values given are zero, or if the input relation is empty, null is
+       returned.
+ * @private
+ */
+lf.proc.AggregationStep.Calculator_.geomean_ = function(relation, column) {
+  var nonZeroEntriesCount = 0;
+
+  var reduced = relation.entries.reduce(
+      function(soFar, entry) {
+        var value = entry.getField(column);
+        if (value != 0) {
+          nonZeroEntriesCount++;
+          return soFar + Math.log(value);
+        } else {
+          return soFar;
+        }
+      }, 0);
+
+  return nonZeroEntriesCount == 0 ?
+      null : Math.pow(Math.E, reduced / nonZeroEntriesCount);
 };
 
 
@@ -31304,6 +31351,7 @@ lf.query.SelectBuilder.isAggregationValid_ = function(
     case lf.fn.Type.DISTINCT:
       return true;
     case lf.fn.Type.AVG:
+    case lf.fn.Type.GEOMEAN:
     case lf.fn.Type.STDDEV:
     case lf.fn.Type.SUM:
       return columnType == lf.Type.NUMBER || columnType == lf.Type.INTEGER;
