@@ -10285,10 +10285,19 @@ goog.async.run.initializeRunner_ = function() {
  * This should only be done in unit tests. It's useful because MockClock
  * replaces nextTick, but not the browser Promise implementation, so it allows
  * Promise-based code to be tested with MockClock.
+ *
+ * However, we also want to run promises if the MockClock is no longer in
+ * control so we schedule a backup "setTimeout" to the unmocked timeout if
+ * provided.
+ *
+ * @param {function(function())=} opt_realSetTimeout
  */
-goog.async.run.forceNextTick = function() {
+goog.async.run.forceNextTick = function(opt_realSetTimeout) {
   goog.async.run.schedule_ = function() {
     goog.async.nextTick(goog.async.run.processWorkQueue);
+    if (opt_realSetTimeout) {
+      opt_realSetTimeout(goog.async.run.processWorkQueue);
+    }
   };
 };
 
