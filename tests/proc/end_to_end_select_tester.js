@@ -60,8 +60,12 @@ lf.testing.EndToEndSelectTester = function(connectFn) {
     this.testAll.bind(this),
     this.testLimit.bind(this),
     this.testLimitZero.bind(this),
+    this.testLimitIndex.bind(this),
+    this.testLimitIndexZero.bind(this),
     this.testSkip.bind(this),
     this.testSkipZero.bind(this),
+    this.testSkipIndex.bind(this),
+    this.testSkipIndexZero.bind(this),
     this.testPredicate.bind(this),
     this.testAs.bind(this),
     this.testColumnFiltering.bind(this),
@@ -204,6 +208,48 @@ lf.testing.EndToEndSelectTester.prototype.checkSelect_Limit_ = function(limit) {
 
 
 /**
+ * Tests that a SELECT query with a specified limit respects that limit.
+ * @return {!IThenable}
+ */
+lf.testing.EndToEndSelectTester.prototype.testLimitIndex = function() {
+  return this.checkSelectIndex_Limit_(Math.floor(
+      this.dataGenerator_.sampleJobs.length / 3));
+};
+
+
+/**
+ * Tests that a SELECT query with a specified limit of zero respects that limit.
+ * @return {!IThenable}
+ */
+lf.testing.EndToEndSelectTester.prototype.testLimitIndexZero = function() {
+  return this.checkSelectIndex_Limit_(0);
+};
+
+
+/**
+ * @param {number} limit
+ * @return {!IThenable}
+ * @private
+ */
+lf.testing.EndToEndSelectTester.prototype.checkSelectIndex_Limit_ = function(
+    limit) {
+  var queryBuilder = /** @type {!lf.query.SelectBuilder} */ (
+      this.db_.select().
+          from(this.j_).
+          where(this.j_.maxSalary.gt(0)).
+          limit(limit));
+  var plan = queryBuilder.explain();
+  assertTrue(plan.indexOf('index_range_scan') != -1);
+  assertTrue(plan.indexOf('skip') == -1);
+
+  return queryBuilder.exec().then(
+      function(results) {
+        assertEquals(limit, results.length);
+      });
+};
+
+
+/**
  * Tests that a SELECT query with a specified SKIP actually skips those rows.
  * @return {!IThenable<!Array<Object>>}
  */
@@ -230,6 +276,49 @@ lf.testing.EndToEndSelectTester.prototype.testSkipZero = function() {
 lf.testing.EndToEndSelectTester.prototype.checkSelect_Skip_ = function(skip) {
   var queryBuilder = /** @type {!lf.query.SelectBuilder} */ (
       this.db_.select().from(this.j_).skip(skip));
+
+  return queryBuilder.exec().then(
+      function(results) {
+        assertEquals(
+            this.dataGenerator_.sampleJobs.length - skip, results.length);
+      }.bind(this));
+};
+
+
+/**
+ * Tests that a SELECT query with a specified SKIP actually skips those rows.
+ * @return {!IThenable<!Array<Object>>}
+ */
+lf.testing.EndToEndSelectTester.prototype.testSkipIndex = function() {
+  return this.checkSelectIndex_Skip_(Math.floor(
+      this.dataGenerator_.sampleJobs.length / 3));
+};
+
+
+/**
+ * Tests that a SELECT query with a specified SKIP of zero skips no rows.
+ * @return {!IThenable<!Array<Object>>}
+ */
+lf.testing.EndToEndSelectTester.prototype.testSkipIndexZero = function() {
+  return this.checkSelectIndex_Skip_(0);
+};
+
+
+/**
+ * @param {number} skip
+ * @return {!IThenable}
+ * @private
+ */
+lf.testing.EndToEndSelectTester.prototype.checkSelectIndex_Skip_ = function(
+    skip) {
+  var queryBuilder = /** @type {!lf.query.SelectBuilder} */ (
+      this.db_.select().
+          from(this.j_).
+          where(this.j_.maxSalary.gt(0)).
+          skip(skip));
+  var plan = queryBuilder.explain();
+  assertTrue(plan.indexOf('index_range_scan') != -1);
+  assertTrue(plan.indexOf('limit') == -1);
 
   return queryBuilder.exec().then(
       function(results) {
