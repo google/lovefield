@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Movie database demo</title>
+    <script src="lib/lovefield.min.js"></script>
+    <script src="lib/jquery.min.js"></script>
+    <script src="lib/bootstrap.min.js"></script>
+    <script src="lib/bootstrap-table.min.js"></script>
+    <link rel="stylesheet" href="lib/bootstrap-table.css">
+    <link rel="stylesheet" href="lib/bootstrap.min.css">
+    <style>
+      body {
+        margin: 20px;
+      }
+      .fixed-table-header {
+        display: none !important;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>IndexedDB: Movie database demo</h1>
+    <script src="schema.js"></script>
+    <script src="demo-pureidb.js"></script>
+    <p>Load time: <span id="load_time"></span></p>
+    <table id="master"
+           data-toggle="table"
+           data-pagination="true"
+           data-search="false"
+           data-search-align="left"
+           class="table table-striped table-bordered table-hover table-condensed">
+      <thead>
+        <tr>
+          <th data-field="id">id</th>
+          <th data-field="title">title</th>
+          <th data-field="year">year</th>
+        </tr>
+      </thead>
+    </table>
+
+    <div id="slave">
+      <h2>Movie Details</h2>
+      <p></p>
+      <table data-toggle="table"
+             data-search="false"
+             data-show-header="false"
+             class="table table-striped table-bordered table-hover table-condensed">
+        <thead>
+          <tr>
+            <th data-field="key">key</th>
+            <th data-field="value">value</th>
+          </tr>
+        </thead>
+      </table>
+    <div>
+
+  </body>
+</html>
