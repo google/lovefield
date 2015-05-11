@@ -18,7 +18,7 @@ var fork = /** @type {{fork: !Function}} */ (require('child_process')).fork;
 var fsMod = require('fs');
 var glob = /** @type {{sync: !Function}} */ (require('glob')).sync;
 var mkdir = /** @type {{sync: !Function}} */ (require('mkdirp')).sync;
-var pathMod = require('path');
+var pathMod = /** @type {{sep: string}} */ (require('path'));
 var rmdir = /** @type {{sync: !Function}} */ (require('rimraf')).sync;
 var temp = /** @type {{Dir: !Function}} */ (require('temporary'));
 
@@ -51,21 +51,36 @@ var SYMLINKS = ['lib', 'perf', 'testing', 'tests'];
 
 /**
  * Creates a temporary directory that is capable of executing tests.
+ * @param {string} testsFolder The folder that contains all the tests.
  * @return {!IThenable<string>} A promise holding the path of the temporary
  *     directory.
  */
-function createTestEnv() {
+function createTestEnv(testsFolder) {
   var tempPath = pathMod.resolve(new temp.Dir().path);
   var origPath = process.cwd();
   process.chdir(tempPath);
 
+  // Generating gen and html folders.
   var genDir = pathMod.join(tempPath, 'gen');
   fsMod.mkdirSync('html');
   var htmlDir = pathMod.join(tempPath, 'html');
+  createSymLinks(config.CLOSURE_LIBRARY_PATH, tempPath);
+
+  // Generating HTML files for each test.
+  createTestFiles(testsFolder);
+
+  // Creating symlinks for any json files such that the generated html files can
+  // refer to them.
+  var jsonFiles = glob(testsFolder + '/**/*.json');
+  jsonFiles.forEach(function(jsonFile) {
+    var link = pathMod.join('html', pathMod.basename(jsonFile));
+    fsMod.symlinkSync(
+        pathMod.resolve(jsonFile),
+        pathMod.join(tempPath, link), 'junction');
+  });
+
   return generateTestSchemas(genDir).then(
       function() {
-        createSymLinks(config.CLOSURE_LIBRARY_PATH, tempPath);
-        createTestFiles();
         var directories = SYMLINKS.map(
             function(dir) {
               return pathMod.join(tempPath, dir);
@@ -110,16 +125,20 @@ function removeSymLinks() {
 }
 
 
-/** Creates stub HTML for test files */
-function createTestFiles() {
-  var testFiles = glob('tests/**/*_test.js');
+/**
+ * Creates stub HTML for test files.
+ * @param {string} testsFolder
+ */
+function createTestFiles(testsFolder) {
+  var testFiles = glob(testsFolder + '/**/*_test.js');
   log('Generating ' + testFiles.length + ' test files ... ');
   var files = testFiles.map(function(name, index) {
     return createTestFile(name);
   });
 
   var links = files.map(function(file) {
-    return '    <a href="' + file + '">' + file.slice(5) + '</a><br />';
+    return '    <a href="' + file + '">' + file.slice('html/'.length) +
+        '</a><br />';
   });
   var contents =
       '<!DOCTYPE html>\r\n' +
@@ -143,7 +162,8 @@ function createTestFiles() {
  * @return {string} Generated file path.
  */
 function createTestFile(script) {
-  var target = 'html/' + script.slice(6, -2) + 'html';
+  var sliceIndex = script.indexOf(pathMod.sep) + 1;
+  var target = 'html/' + script.slice(sliceIndex, -2) + 'html';
   var level = target.match(/\//g).length;
   var prefix = new Array(level).join('../') + '../';
   var fakeName = script.replace('/', '$').replace('.', '_');

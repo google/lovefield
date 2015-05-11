@@ -31,8 +31,11 @@ var runner = /** @type {{
     runSpacTests: function():!IThenable }} */ (
         require(pathMod.resolve(
             pathMod.join(__dirname, 'tools/run_test.js'))));
-var runTestServer = require(pathMod.resolve(
-    pathMod.join(__dirname, 'tools/run_test_server.js'))).runTestServer;
+var testServer = /** @type {{
+    runUnitTestServer: function():!IThenable,
+    runPerfTestServer: function():!IThenable }} */ (
+        require(pathMod.resolve(
+            pathMod.join(__dirname, 'tools/run_test_server.js'))));
 
 
 var log = console['log'];
@@ -75,8 +78,19 @@ gulp.task('build', function() {
 
 
 gulp.task('debug', function() {
+  var knownOpts = {
+    'target': [String, null]
+  };
+
+  var options = nopt(knownOpts);
+  options.target = options.target || 'tests';
+
   // The test server cannot callback. It is terminated by Ctrl-C.
-  runTestServer();
+  if (options.target == 'perf') {
+    testServer.runPerfTestServer();
+  } else {
+    testServer.runUnitTestServer();
+  }
 });
 
 

@@ -32,8 +32,13 @@ var stdin = process.stdin;
 var stdout = process.stdout;
 
 
-function runTestServer() {
-  return createTestEnv().then(function(tempPath) {
+/**
+ * @param {string} testsFolder The folder that contains the test to be included
+ *     in the server.
+ * @return {!IThenable}
+ */
+function runTestServer(testsFolder) {
+  return createTestEnv(testsFolder).then(function(tempPath) {
     var serverStream = webserver({
       livereload: true,
       fallback: 'index.html'
@@ -56,5 +61,19 @@ function runTestServer() {
 }
 
 
-/** @type {Function} */
-exports.runTestServer = runTestServer;
+function runUnitTestServer() {
+  return runTestServer('tests');
+}
+
+
+function runPerfTestServer() {
+  return runTestServer('perf');
+}
+
+
+/** @type {!Function} */
+exports.runUnitTestServer = runUnitTestServer;
+
+
+/** @type {!Function} */
+exports.runPerfTestServer = runPerfTestServer;
