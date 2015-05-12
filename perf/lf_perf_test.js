@@ -44,6 +44,13 @@ var REPETITIONS = 5;
 /** @type {!lf.testing.Capability} */
 var capability;
 
+/**
+ * An array that holds the results from all benchmarks, such that they can be
+ * extracted later using WebDriver.
+ * @type !Array<!lf.testing.Benchmark.Results>
+ */
+var overallResults = [];
+
 
 function setUpPage() {
   capability = lf.testing.Capability.get();
@@ -83,7 +90,8 @@ function test1LoadingEmptyDB() {
       'Init empty DB',
       goog.bind(test1.init, test1),
       goog.bind(test1.validateEmpty, test1));
-  benchmark.run(REPETITIONS).then(function() {
+  benchmark.run(REPETITIONS).then(function(results) {
+    overallResults.push(results);
     asyncTestCase.continueTesting();
   }, fail);
   asyncTestCase.waitForAsync('test1LoadingEmptyDB');
@@ -123,7 +131,9 @@ function fullTableOps(test2, benchmark) {
         goog.bind(test2.validateEmpty, test2));
   }
 
-  return benchmark.run(REPETITIONS);
+  return benchmark.run(REPETITIONS).then(function(results) {
+    overallResults.push(results);
+  });
 }
 
 function test2FullTableOps() {
@@ -205,7 +215,9 @@ function pkTableOps(test3, benchmark) {
         goog.bind(test3.validateEmpty, test3), true);
   }
 
-  return benchmark.run(REPETITIONS);
+  return benchmark.run(REPETITIONS).then(function(results) {
+    overallResults.push(results);
+  });
 }
 
 function test3PKTableOps() {
@@ -328,7 +340,9 @@ function selectRunner(name, db) {
         selectBenchmark.queryJoinTheta.bind(selectBenchmark),
         selectBenchmark.verifyJoinTheta.bind(selectBenchmark));
 
-    return benchmarkRunner.run(REPETITIONS);
+    return benchmarkRunner.run(REPETITIONS).then(function(results) {
+      overallResults.push(results);
+    });
   }).then(tearDown, tearDown);
 }
 
@@ -384,7 +398,8 @@ function test5LoadingPopulatedDB() {
   var benchmark = new lf.testing.Benchmark('Loading Populated DB', preRunSetup);
   benchmark.schedule('Init populated DB', goog.bind(test.init, test));
 
-  benchmark.run(REPETITIONS).then(function() {
+  benchmark.run(REPETITIONS).then(function(results) {
+    overallResults.push(results);
     asyncTestCase.continueTesting();
   }, fail);
 }
@@ -400,7 +415,8 @@ function test6ScenarioSimulations() {
     benchmark.schedule('Select Binding', test.selectBinding.bind(test));
     benchmark.schedule('Teardown', test.tearDown.bind(test), undefined, true);
 
-    benchmark.run(REPETITIONS).then(function() {
+    benchmark.run(REPETITIONS).then(function(results) {
+      overallResults.push(results);
       asyncTestCase.continueTesting();
     }, fail);
   });

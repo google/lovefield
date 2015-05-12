@@ -36,18 +36,38 @@ var JsUnitTestRunner = function(driver, url) {
 
 
 /**
+ * @typedef {{
+ *   pass: boolean,
+ *   results: ?Array
+ * }}
+ */
+JsUnitTestRunner.Result;
+
+
+/**
  * Runs the tests at the given URL.
- * @return {!IThenable<boolean>} Whether the test passed or failed.
+ * @return {!IThenable<!JsUnitTestRunner.Result>} The result.
  */
 JsUnitTestRunner.prototype.run = function() {
+  var result = {
+    pass: false,
+    results: null
+  };
+
   this.driver_.get(this.url_);
   return this.whenTestFinished_().then(
       function() {
         return this.didTestSucceed_();
       }.bind(this)).then(
       function(didSucceed) {
-        console.log('[', didSucceed ? 'PASS' : 'FAIL', ']', this.url_);
-        return didSucceed;
+        result.pass = didSucceed;
+        console['log']('[', didSucceed ? 'PASS' : 'FAIL', ']', this.url_);
+
+        return didSucceed ? this.extractResult_() : false;
+      }.bind(this)).then(
+      function(results) {
+        result.results = results;
+        return result;
       }.bind(this));
 };
 
@@ -75,6 +95,20 @@ JsUnitTestRunner.prototype.didTestSucceed_ = function() {
       }).then(
       function(report) {
         return report.indexOf('FAILED') == -1;
+      });
+};
+
+
+/**
+ * @return {!Array} An array holding the results.
+ * @private
+ */
+JsUnitTestRunner.prototype.extractResult_ = function() {
+  return this.driver_.executeScript(
+      function() {
+        // The JsUnit test should have pushed all results to the
+        // 'overallResults' array, if interested in exporting any results.
+        return window['overallResults'] || null;
       });
 };
 

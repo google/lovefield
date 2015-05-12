@@ -51,6 +51,37 @@ function runSpacTests() {
 
 
 /**
+ * Runs tests in a browser context.
+ * @param {?string} testPrefix Only tests that match the prefix will be
+ *     returned. If null, all tests will run.
+ * @param {string} browser The browser to run the unit tests on. Must be one of
+ *     'chrome' or 'firefox'.
+ * @param {string} testsFolder The tests that contains all the test to be run.
+ * @return {!IThenable}
+ */
+function runBrowserTests(testPrefix, browser, testsFolder) {
+  var testUrls = getTestUrls(testsFolder, testPrefix);
+  log('Found', testUrls.length, 'tests. Running...');
+  var driver = getWebDriver(browser);
+
+  return new Promise(function(resolve, reject) {
+    var startupWaitInterval = 8 * 1000;
+    log(
+        'Waiting', startupWaitInterval,
+        'ms for the browser to get ready.');
+    setTimeout(function() {
+      /** @type {{runMany: !Function}} */ (
+          JsUnitTestRunner).runMany(driver, testUrls).then(
+          function(results) {
+            driver.quit();
+            resolve(results);
+          }, reject);
+    }, startupWaitInterval);
+  });
+}
+
+
+/**
  * Runs JSUnit tests.
  * @param {?string} testPrefix Only tests that match the prefix will be
  *     returned. If null, all tests will run.
@@ -59,80 +90,91 @@ function runSpacTests() {
  * @return {!IThenable}
  */
 function runJsUnitTests(testPrefix, browser) {
-  /**
-   * @return {!Array<string>} A list of all matching testing URLs.
-   */
-  var getTestUrls = function() {
-    var relativeTestUrls = glob.sync('tests/**/*_test.js').map(
-        function(filename) {
-          var prefixLength = 'tests/'.length;
-          return filename.substr(prefixLength);
-        }).filter(
-        function(filename) {
-          return testPrefix == null ?
-              true : (filename.indexOf(testPrefix) != -1);
-        }).map(
-        function(filename) {
-          return filename.replace(/\.js$/, '.html');
-        });
-
-    return relativeTestUrls.map(
-        function(url) {
-          return 'http://localhost:8000/html/' + url;
-        });
-  };
-
-
-  /** @return {!WebDriver} */
-  var getWebDriver = function() {
-    var capabilities = /** @type {!WebDriverCapabilities} */ (
-        new webdriver.Capabilities());
-    capabilities.set('browserName', browser);
-
-    if (browser == 'chrome') {
-      var chromeOptions = /** @type {!ChromeOptions} */ (
-          new chromeMod.Options());
-      chromeOptions.addArguments([
-        '--user-data-dir=/tmp/selenium_chrome_' + new Date().getTime(),
-        '--no-first-run'
-      ]);
-
-      return /** @type {!WebDriverBuilder} */ (new webdriver.Builder()).
-          withCapabilities(capabilities).
-          setChromeOptions(chromeOptions).
-          build();
-    } else if (browser == 'firefox') {
-      var firefoxOptions = /** @type {!FirefoxOptions} */ (
-          new firefoxMod.Options());
-      firefoxOptions.setProfile(new firefoxMod.Profile());
-      return /** @type {!WebDriverBuilder} */ (new webdriver.Builder()).
-          withCapabilities(capabilities).
-          setFirefoxOptions(firefoxOptions).
-          build();
-    } else {
-      throw new Error('Unknown browser:', browser);
-    }
-  };
-
-  var testUrls = getTestUrls();
-  log('Found', testUrls.length, 'JsUnit tests. Running...');
-  var driver = getWebDriver();
-
-  return new Promise(function(resolve, reject) {
-    var startupWaitInterval = 8 * 1000;
-    console.log(
-        'Waiting', startupWaitInterval,
-        'ms for the browser to get ready.');
-    setTimeout(function() {
-      /** @type {{runMany: !Function}} */ (
-          JsUnitTestRunner).runMany(driver, testUrls).then(
-          function() {
-            driver.quit();
-            resolve();
-          }, reject);
-    }, startupWaitInterval);
-  });
+  return runBrowserTests(testPrefix, browser, 'tests');
 }
+
+
+/**
+ * Runs performance regression tests and prints the results in the output.
+ * @return {!IThenable}
+ */
+function runJsPerfTests() {
+  return runBrowserTests('perf', 'chrome', 'perf').then(
+      /**
+       * @param {!Array<{results: !Array}>} totalResults
+       */
+      function(totalResults) {
+        var perfData = [];
+        totalResults.forEach(function(testResults) {
+          perfData.push.apply(perfData, testResults.results);
+        });
+
+        log(JSON.stringify(perfData, null, 2));
+      });
+}
+
+
+/**
+ * @param {string} testFolder The folder where the tests reside.
+ * @param {?string} testPrefix Only tests that match the prefix will be
+ *     returned. If null, all tests will run.
+ * @return {!Array<string>} A list of all matching testing URLs.
+ */
+function getTestUrls(testFolder, testPrefix) {
+  var relativeTestUrls = glob.sync(testFolder + '/**/*_test.js').map(
+      function(filename) {
+        var prefixLength = testFolder.length + 1;
+        return filename.substr(prefixLength);
+      }).filter(
+      function(filename) {
+        return testPrefix == null ?
+            true : (filename.indexOf(testPrefix) != -1);
+      }).map(
+      function(filename) {
+        return filename.replace(/\.js$/, '.html');
+      });
+
+  return relativeTestUrls.map(
+      function(url) {
+        return 'http://localhost:8000/html/' + url;
+      });
+}
+
+
+/**
+ * @param {string} browser
+ * @return {!WebDriver}
+ */
+function getWebDriver(browser) {
+  var capabilities = /** @type {!WebDriverCapabilities} */ (
+      new webdriver.Capabilities());
+  capabilities.set('browserName', browser);
+
+  if (browser == 'chrome') {
+    var chromeOptions = /** @type {!ChromeOptions} */ (
+        new chromeMod.Options());
+    chromeOptions.addArguments([
+      '--user-data-dir=/tmp/selenium_chrome_' + new Date().getTime(),
+      '--no-first-run'
+    ]);
+
+    return /** @type {!WebDriverBuilder} */ (new webdriver.Builder()).
+        withCapabilities(capabilities).
+        setChromeOptions(chromeOptions).
+        build();
+  } else if (browser == 'firefox') {
+    var firefoxOptions = /** @type {!FirefoxOptions} */ (
+        new firefoxMod.Options());
+    firefoxOptions.setProfile(new firefoxMod.Profile());
+    return /** @type {!WebDriverBuilder} */ (new webdriver.Builder()).
+        withCapabilities(capabilities).
+        setFirefoxOptions(firefoxOptions).
+        build();
+  } else {
+    throw new Error('Unknown browser:', browser);
+  }
+}
+
 
 
 /** @type {!Function} */
@@ -141,3 +183,7 @@ exports.runSpacTests = runSpacTests;
 
 /** @type {!Function} */
 exports.runJsUnitTests = runJsUnitTests;
+
+
+/** @type {!Function} */
+exports.runJsPerfTests = runJsPerfTests;

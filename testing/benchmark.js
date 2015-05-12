@@ -87,6 +87,15 @@ lf.testing.Benchmark = function(name, opt_setUp, opt_tearDown) {
 
 
 /**
+ * @typedef {{
+ *   name: string,
+ *   data: !Object
+ * }}
+ */
+lf.testing.Benchmark.Results;
+
+
+/**
  * @enum {number}
  */
 lf.testing.Benchmark.LogLevel = {
@@ -114,7 +123,7 @@ lf.testing.Benchmark.prototype.schedule = function(
 
 /**
  * @param {number=} opt_repetitions Repeitions of test set, default to 1.
- * @return {!IThenable} Signal of test completion.
+ * @return {!IThenable<!lf.testing.Benchmark.Results>} The results.
  */
 lf.testing.Benchmark.prototype.run = function(opt_repetitions) {
   var loopCount = opt_repetitions || 1;
@@ -131,7 +140,7 @@ lf.testing.Benchmark.prototype.run = function(opt_repetitions) {
 };
 
 
-/** @return {!Object} */
+/** @return {!lf.testing.Benchmark.Results} */
 lf.testing.Benchmark.prototype.getResults = function() {
   var result = {};
   this.tests_.forEach(function(test) {

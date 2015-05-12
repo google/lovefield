@@ -50,7 +50,7 @@ function sequentiallyRun(functionItems, opt_onStart) {
           i++;
           runner();
         } else {
-          resolve();
+          resolve(results);
         }
       }, reject);
     };

@@ -28,7 +28,8 @@ var builder = /** @type {{
             pathMod.join(__dirname, 'tools/builder.js'))));
 var runner = /** @type {{
     runJsUnitTests: function(?string, string):!IThenable,
-    runSpacTests: function():!IThenable }} */ (
+    runSpacTests: function():!IThenable,
+    runJsPerfTests: function():!IThenable}} */ (
         require(pathMod.resolve(
             pathMod.join(__dirname, 'tools/run_test.js'))));
 var testServer = /** @type {{
@@ -115,6 +116,9 @@ gulp.task('test', function(callback) {
         function() {
           return runner.runJsUnitTests(null, options.browser);
         });
+  } else if (options.target == 'perf') {
+    // Run only perf regression tests.
+    whenTestsDone = runner.runJsPerfTests();
   } else if (options.target == 'spac') {
     // Run only SPAC.
     whenTestsDone = runner.runSpacTests();
