@@ -511,3 +511,29 @@ function testContext_Clone() {
   assertEquals(context.skip, context2.skip);
   assertTrue(goog.getUid(context) != goog.getUid(context2));
 }
+
+
+function testBuilder_Clone() {
+  var emp = db.getSchema().getEmployee();
+  var builder = db.select().from(emp).
+      limit(lf.bind(0)).
+      skip(lf.bind(1)).
+      where(emp.salary.gt(lf.bind(2)));
+  var builder2 = builder.clone();
+
+  assertTrue(builder2 != builder);
+  builder.bind([22, 33, 20000]);
+  var expected =
+      'project()\n' +
+      '-table_access_by_row_id(Employee)\n' +
+      '--index_range_scan(Employee.idx_salary, (20000, unbound], natural, ' +
+      'limit:22, skip:33)\n';
+  assertEquals(expected, builder.explain());
+  builder2.bind([44, 55, 40000]);
+  var expected2 =
+      'project()\n' +
+      '-table_access_by_row_id(Employee)\n' +
+      '--index_range_scan(Employee.idx_salary, (40000, unbound], natural, ' +
+      'limit:44, skip:55)\n';
+  assertEquals(expected2, builder2.explain());
+}

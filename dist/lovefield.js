@@ -19273,8 +19273,8 @@ lf.query.Context = function() {
   /** @type {!lf.Predicate} */
   this.where;
 
-  /** @type {!lf.query.Context} */
-  this.clonedFrom;
+  /** @type {?lf.query.Context} */
+  this.clonedFrom = null;
 };
 
 
@@ -30582,8 +30582,8 @@ goog.require('lf.tree');
  * @param {!lf.query.Context} context
  */
 lf.query.BaseBuilder = function(global, context) {
-  /** @private {!lf.Global} */
-  this.global_ = global;
+  /** @protected {!lf.Global} */
+  this.global = global;
 
   /** @private {!lf.proc.QueryEngine} */
   this.queryEngine_ = global.getService(lf.service.QUERY_ENGINE);
@@ -30612,7 +30612,7 @@ lf.query.BaseBuilder.prototype.exec = function() {
 
   return new goog.Promise(function(resolve, reject) {
     var queryTask = new lf.proc.UserQueryTask(
-        this.global_, [this.getTaskItem()]);
+        this.global, [this.getTaskItem()]);
     this.runner_.scheduleTask(queryTask).then(
         function(results) {
           resolve(results[0].getPayloads());
@@ -31383,6 +31383,20 @@ lf.query.SelectBuilder.isAggregationValid_ = function(
   }
 
   return false;
+};
+
+
+/**
+ * Provides a clone of this select builder. This is useful when the user needs
+ * to observe the same query with different parameter bindings.
+ * @return {!lf.query.SelectBuilder}
+ * @export
+ */
+lf.query.SelectBuilder.prototype.clone = function() {
+  var builder = new lf.query.SelectBuilder(this.global, this.query.columns);
+  builder.query = this.query.clone();
+  builder.query.clonedFrom = null;  // The two builders are not related.
+  return builder;
 };
 
 /**
