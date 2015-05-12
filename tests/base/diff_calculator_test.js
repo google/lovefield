@@ -101,36 +101,73 @@ function checkDiffCalculation(query, description) {
     switch (currentVersion) {
       case 0:
         assertEquals(1, changes.length);
+        assertEquals(1, changes[0].object.length);
         assertEquals(1, changes[0]['addedCount']);
         assertEquals(0, changes[0].index);
         break;
       case 1:
         assertEquals(2, changes.length);
+        assertEquals(3, changes[0].object.length);
         assertEquals(1, changes[0]['addedCount']);
         assertEquals(0, changes[0].index);
         assertEquals(1, changes[1]['addedCount']);
         assertEquals(2, changes[1].index);
         break;
       case 2:
-        assertEquals(2, changes.length);
-        assertEquals(1, changes[0]['addedCount']);
-        assertEquals(0, changes[0].index);
-        assertEquals(1, changes[1]['addedCount']);
-        assertEquals(3, changes[1].index);
+        assertEquals(4, changes.length);
+        assertEquals(7, changes[0].object.length);
+
+        changes.forEach(function(change, i) {
+          assertEquals(1, change['addedCount']);
+        });
+
+        assertEquals(0, changes[0].index); // row1
+        assertEquals(3, changes[1].index); // row4
+        assertEquals(5, changes[2].index); // row6
+        assertEquals(6, changes[3].index); // row7
         break;
       case 3:
         assertEquals(1, changes.length);
+        assertEquals(6, changes[0].object.length);
         assertEquals(0, changes[0]['addedCount']);
         assertEquals(1, changes[0].removed.length);
         break;
       case 4:
-        assertEquals(3, changes.length);
+        assertEquals(2, changes.length);
+        assertEquals(6, changes[0].object.length);
+
+        // Checking row5 removed.
         assertEquals(0, changes[0]['addedCount']);
         assertEquals(1, changes[0].removed.length);
+        assertEquals(3, changes[0].index);
+
+        // Checking row8 added.
         assertEquals(1, changes[1]['addedCount']);
-        assertEquals(3, changes[1].index);
-        assertEquals(1, changes[2]['addedCount']);
-        assertEquals(4, changes[2].index);
+        assertEquals(0, changes[1].removed.length);
+        assertEquals(5, changes[1].index);
+        break;
+      case 5:
+        assertEquals(4, changes[0].object.length);
+
+        // Checking row6 removed.
+        assertEquals(0, changes[0]['addedCount']);
+        assertEquals(1, changes[0].removed.length);
+        assertEquals(3, changes[0].index);
+
+        // Checking row8 removed.
+        assertEquals(0, changes[1]['addedCount']);
+        assertEquals(1, changes[1].removed.length);
+        assertEquals(5, changes[1].index);
+        break;
+      case 6:
+        // Checking all removed.
+        assertEquals(0, changes[0].object.length);
+
+        changes.forEach(function(change, i) {
+          assertEquals(0, change['addedCount']);
+          assertEquals(1, change.removed.length);
+          assertEquals(i, change.index);
+        });
 
         asyncTestCase.continueTesting();
     }
@@ -142,12 +179,16 @@ function checkDiffCalculation(query, description) {
     [rows[3]],
     // Version1: row2, row5 added.
     [rows[2], rows[3], rows[5]],
-    // Version2: row1, row4 added.
-    [rows[1], rows[2], rows[3], rows[4], rows[5]],
+    // Version2: row1, row4, row6, row7 added.
+    [rows[1], rows[2], rows[3], rows[4], rows[5], rows[6], rows[7]],
     // Version3: row2 removed.
-    [rows[1], rows[3], rows[4], rows[5]],
-    // Version4: row5 removed, row7, row8 added.
-    [rows[1], rows[3], rows[4], rows[7], rows[8]]
+    [rows[1], rows[3], rows[4], rows[5], rows[6], rows[7]],
+    // Version4: row5 removed, row8 added.
+    [rows[1], rows[3], rows[4], rows[6], rows[7], rows[8]],
+    // Version5: row6, row8 removed.
+    [rows[1], rows[3], rows[4], rows[7]],
+    // Version6: row1, row3, row4, row7 removed.
+    [],
   ];
 
   performMutations(rowsPerVersion, query, callback);

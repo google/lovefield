@@ -35652,7 +35652,7 @@ lf.DiffCalculator.prototype.applyDiff = function(oldResults, newResults) {
       commonIndex++;
       continue;
     } else {
-      var removed = this.observableResults_.splice(i, 1);
+      var removed = this.observableResults_.splice(commonIndex, 1);
       var changeRecord = lf.DiffCalculator.createChangeRecord_(
           i, removed, 0, this.observableResults_);
       changeRecords.push(changeRecord);
