@@ -16,7 +16,7 @@
  */
 var pathMod = require('path');
 var gulp = require('gulp');
-var webserver = /** @type {!Function} */ (require('gulp-webserver'));
+var connect = /** @type {{server: !Function}} */ (require('gulp-connect'));
 var config =
     /** @type {!Function} */ (
         require(pathMod.resolve(__dirname + '/config.js')))();
@@ -39,24 +39,11 @@ var stdout = process.stdout;
  */
 function runTestServer(testsFolder) {
   return createTestEnv(testsFolder).then(function(tempPath) {
-    var serverStream = webserver({
+    connect.server({
       livereload: true,
-      fallback: 'index.html'
+      port: 8000,
+      root: tempPath
     });
-
-    stdin.setRawMode(true);
-    stdin.resume();
-    stdin.setEncoding('utf8');
-    stdin.on('data', function(key) {
-      if (key == '\u0003') {
-        serverStream.emit('kill');
-        cleanUp(tempPath);
-        process.exit(0);
-      }
-    });
-
-    stdout.write('Server path: ' + tempPath + '\r\n');
-    gulp.src(tempPath).pipe(serverStream);
   });
 }
 

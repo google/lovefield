@@ -117,8 +117,10 @@ gulp.task('test', function(callback) {
           return runner.runJsUnitTests(null, options.browser);
         });
   } else if (options.target == 'perf') {
-    // Run only perf regression tests.
-    whenTestsDone = runner.runJsPerfTests();
+    // Run only perf regression tests and dump output in the console.
+    whenTestsDone = runner.runJsPerfTests().then(function(perfData) {
+      log(JSON.stringify(perfData, null, 2));
+    });
   } else if (options.target == 'spac') {
     // Run only SPAC.
     whenTestsDone = runner.runSpacTests();

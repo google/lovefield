@@ -109,7 +109,7 @@ function runJsPerfTests() {
           perfData.push.apply(perfData, testResults.results);
         });
 
-        log(JSON.stringify(perfData, null, 2));
+        return perfData;
       });
 }
 
