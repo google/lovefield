@@ -3409,6 +3409,12 @@ goog.structs.Map.prototype.toObject = function() {
   }
   return obj;
 };
+goog.structs.Map.prototype.getKeyIterator = function() {
+  return this.__iterator__(!0);
+};
+goog.structs.Map.prototype.getValueIterator = function() {
+  return this.__iterator__(!1);
+};
 goog.structs.Map.prototype.__iterator__ = function(opt_keys) {
   this.cleanupKeysArray_();
   var i = 0, version = this.version_, selfObj = this, newIter = new goog.iter.Iterator;
@@ -10331,4 +10337,49 @@ lf.schema.create = function(dbName, dbVersion) {
   return new lf.schema.Builder(dbName, dbVersion);
 };
 goog.exportSymbol("lf.schema.create", lf.schema.create);
+
+lf.structs = {};
+$jscomp.scope.MapPolyFill = function() {
+  this.map_ = new goog.structs.Map;
+  Object.defineProperty(this, "size", {get:function() {
+    return this.map_.getCount();
+  }});
+};
+$jscomp.scope.MapPolyFill.prototype.clear = function() {
+  this.map_.clear();
+};
+goog.exportSymbol("$jscomp.scope.MapPolyFill.prototype.clear", $jscomp.scope.MapPolyFill.prototype.clear);
+$jscomp.scope.MapPolyFill.prototype.delete = function(key) {
+  return this.map_.remove(key);
+};
+goog.exportSymbol("$jscomp.scope.MapPolyFill.prototype.delete", $jscomp.scope.MapPolyFill.prototype.delete);
+$jscomp.scope.MapPolyFill.prototype.entries = function() {
+  return this.map_.__iterator__();
+};
+goog.exportSymbol("$jscomp.scope.MapPolyFill.prototype.entries", $jscomp.scope.MapPolyFill.prototype.entries);
+$jscomp.scope.MapPolyFill.prototype.forEach = function(callback, opt_thisArg) {
+  return this.map_.forEach(callback, opt_thisArg);
+};
+goog.exportSymbol("$jscomp.scope.MapPolyFill.prototype.forEach", $jscomp.scope.MapPolyFill.prototype.forEach);
+$jscomp.scope.MapPolyFill.prototype.get = function(key) {
+  return this.map_.get(key);
+};
+goog.exportSymbol("$jscomp.scope.MapPolyFill.prototype.get", $jscomp.scope.MapPolyFill.prototype.get);
+$jscomp.scope.MapPolyFill.prototype.has = function(key) {
+  return this.map_.containsKey(key);
+};
+goog.exportSymbol("$jscomp.scope.MapPolyFill.prototype.has", $jscomp.scope.MapPolyFill.prototype.has);
+$jscomp.scope.MapPolyFill.prototype.keys = function() {
+  return this.map_.getKeyIterator();
+};
+goog.exportSymbol("$jscomp.scope.MapPolyFill.prototype.keys", $jscomp.scope.MapPolyFill.prototype.keys);
+$jscomp.scope.MapPolyFill.prototype.set = function(key, value) {
+  return this.map_.set(key, value);
+};
+goog.exportSymbol("$jscomp.scope.MapPolyFill.prototype.set", $jscomp.scope.MapPolyFill.prototype.set);
+$jscomp.scope.MapPolyFill.prototype.values = function() {
+  return this.map_.getValueIterator();
+};
+goog.exportSymbol("$jscomp.scope.MapPolyFill.prototype.values", $jscomp.scope.MapPolyFill.prototype.values);
+lf.structs.Map = goog.isDef(window.Map) && goog.isDef(window.Map.prototype.keys) ? window.Map : $jscomp.scope.MapPolyFill;
 
