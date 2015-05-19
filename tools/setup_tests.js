@@ -14,7 +14,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-var fork = /** @type {{fork: !Function}} */ (require('child_process')).fork;
 var fsMod = require('fs');
 var glob = /** @type {{sync: !Function}} */ (require('glob')).sync;
 var mkdir = /** @type {{sync: !Function}} */ (require('mkdirp')).sync;
@@ -34,6 +33,8 @@ var config = /** @type {!Function} */ (require(
     pathMod.resolve(__dirname + '/config.js')))();
 var genDeps = /** @type {!Function} */ (require(
     pathMod.join(__dirname, 'scan_deps.js')).genDeps);
+var genModuleDeps = /** @type {!Function} */ (require(
+    pathMod.join(__dirname, 'scan_deps.js')).genModuleDeps);
 var extractRequires = /** @type {!Function} */ (require(
     pathMod.join(__dirname, 'scan_deps.js')).extractRequires);
 var generateTestSchemas = /** @type {!Function} */ (require(
@@ -133,7 +134,7 @@ function createTestFiles(testsFolder) {
   var testFiles = glob(testsFolder + '/**/*_test.js');
   log('Generating ' + testFiles.length + ' test files ... ');
   var files = testFiles.map(function(name, index) {
-    return createTestFile(name);
+    return createTestHtml(name);
   });
 
   var links = files.map(function(file) {
@@ -153,7 +154,60 @@ function createTestFiles(testsFolder) {
       '\r\n  </body>\r\n' +
       '</html>\r\n';
   fsMod.writeFileSync('index.html', contents);
-  log('\nTest files generated. Starting server ...\n');
+  log('\nTest files generated. Starting server @' + process.cwd() + ' ...\n');
+}
+
+
+/**
+ * Generates test HTML for a given test script. Depending on how the test is
+ * written (i.e. goog.module or not), the HTML generated will be different since
+ * different code injection is needed.
+ * @param {string} script Path of the script, e.g. tests/foo_test.js.
+ * @return {string} Generated file path.
+ */
+function createTestHtml(script) {
+  var scriptPath = pathMod.resolve(pathMod.join(__dirname, '../', script));
+  var contents = fsMod.readFileSync(scriptPath, {'encoding': 'utf-8'});
+  var LITERAL = 'goog.module';
+  var pos = contents.indexOf(LITERAL);
+  if (pos != -1) {
+    var pos2 = contents.indexOf(';', pos);
+    var moduleName = contents.substring(pos + LITERAL.length + 2, pos2 - 2);
+    return createTestModule(script, moduleName);
+  } else {
+    return createTestFile(script);
+  }
+}
+
+
+/**
+ * @param {string} script Path of the script, e.g. tests/foo_test.js.
+ * @param {string} moduleName Test module name.
+ * @return {string} Generated file path.
+ */
+function createTestModule(script, moduleName) {
+  var sliceIndex = script.indexOf(pathMod.sep) + 1;
+  var target = 'html/' + script.slice(sliceIndex, -2) + 'html';
+  var level = target.match(/\//g).length;
+  var prefix = new Array(level).join('../') + '../';
+
+  var contents =
+      '<!DOCTYPE html>\r\n' +
+      '<html>\r\n' +
+      '  <head>\r\n' +
+      '    <meta charset="utf-8" />\r\n' +
+      '    <title>' + pathMod.basename(target).slice(0, -5) + '</title>\r\n' +
+      '    <script src="' + prefix + 'closure/goog/base.js"></script>\r\n' +
+      '    <script src="' + prefix + 'deps.js"></script>\r\n' +
+      '    <script>' + genModuleDeps(script) + '</script>\r\n' +
+      '    <script>goog.require(\'' + moduleName + '\');\r\n' +
+      '    </script>\r\n' +
+      '  </head>\r\n' +
+      '</html>\r\n';
+  mkdir(pathMod.dirname(target));
+  fsMod.writeFileSync(target, contents);
+
+  return target;
 }
 
 

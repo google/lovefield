@@ -33,19 +33,22 @@ var config = /** @type {!Function} */ (
 var ProvideMap_ = function() {
   this.map_ = {};
   this.reverse_ = {};
+  this.module_ = {};
 };
 
 
 /**
  * @param {string} ns
  * @param {string} path
+ * @param {boolean=} opt_isModule
  */
-ProvideMap_.prototype.set = function(ns, path) {
+ProvideMap_.prototype.set = function(ns, path, opt_isModule) {
   this.map_[ns] = path;
   if (!this.reverse_.hasOwnProperty(path)) {
     this.reverse_[path] = [];
   }
   this.reverse_[path].push(ns);
+  this.module_[ns] = opt_isModule || false;
 };
 
 
@@ -55,6 +58,15 @@ ProvideMap_.prototype.set = function(ns, path) {
  */
 ProvideMap_.prototype.get = function(ns) {
   return this.map_.hasOwnProperty(ns) ? this.map_[ns] : null;
+};
+
+
+/**
+ * @param {string} ns
+ * @return {boolean}
+ */
+ProvideMap_.prototype.isModule = function(ns) {
+  return this.module_.hasOwnProperty(ns) ? this.module_[ns] : false;
 };
 
 
@@ -157,12 +169,19 @@ function relativeGlob(startPath) {
 function scanFiles(filePaths, provideMap, requireMap) {
   /**
    * @param {string} line
-   * @param {string} pattern
+   * @param {string} pattern Pattern to look for, e.g. goog.module(...).
+   * @param {string=} opt_antiPattern Pattern to ignore if it shared same prefix
+   *     as pattern, e.g. goog.module.declareLegacyNamespace.
    * @return {?string} Extracted namespace or null.
    */
-  var extractNamespace = function(line, pattern) {
-    if (line.slice(0, pattern.length) == pattern) {
-      return line.substring(pattern.length + 2, line.indexOf(';') - 2);
+  var extractNamespace = function(line, pattern, opt_antiPattern) {
+    var pos = line.indexOf(pattern);
+    if (pos != -1) {
+      if (opt_antiPattern && line.indexOf(opt_antiPattern) != -1) {
+        return null;
+      }
+      return line.substring(
+          pos + pattern.length + 2, line.indexOf(';', pos) - 2);
     }
     return null;
   };
@@ -178,6 +197,11 @@ function scanFiles(filePaths, provideMap, requireMap) {
       ns = extractNamespace(line, 'goog.provide');
       if (ns) {
         provideMap.set(ns, realPath);
+      }
+      ns = extractNamespace(line, 'goog.module',
+          'goog.module.declareLegacyNamespace');
+      if (ns) {
+        provideMap.set(ns, realPath, true);
       }
     });
   });
@@ -291,17 +315,21 @@ function genAddDependency(basePath, provideMap, requireMap) {
     }
     var line = 'goog.addDependency("' + relativeServePath + '", ';
 
+    var isModule = false;
     if (provide.hasOwnProperty(key)) {
       line += JSON.stringify(provide[key]) + ', ';
+      isModule = provideMap.isModule(provide[key]);
     } else {
       line += '[], ';
     }
 
     if (require.hasOwnProperty(key)) {
-      line += JSON.stringify(require[key]) + ');';
+      line += JSON.stringify(require[key]);
     } else {
-      line += '[]);';
+      line += '[]';
     }
+
+    line += isModule ? ', true);' : ');';
     results.push(line);
   }
   return results;
@@ -329,6 +357,36 @@ function genDeps(basePath, targets) {
 }
 
 
+/**
+ * Generate addDependency for single module.
+ * @param {string} scriptPath
+ * @return {string}
+ */
+function genModuleDeps(scriptPath) {
+  var provideMap = new ProvideMap_();
+  var requireMap = new RequireMap_();
+  scanFiles([scriptPath], provideMap, requireMap);
+  var dumpValues = function(obj) {
+    var results = [];
+    for (var key in obj) {
+      results = results.concat(obj[key]);
+    }
+    return results;
+  };
+
+  var provide = provideMap.getAllProvides();
+  var require = requireMap.getAllRequires();
+  var relativePath = pathMod.join('../..', scriptPath);
+  if (osMod.platform().indexOf('win') != -1) {
+    relativePath = relativePath.replace(/\\/g, '\\\\');
+  }
+
+  return 'goog.addDependency("' + relativePath + '", ' +
+      JSON.stringify(dumpValues(provide)) + ', ' +
+      JSON.stringify(dumpValues(require)) + ', true);';
+}
+
+
 /** @type {Function} */
 exports.scanDeps = scanDeps;
 
@@ -339,6 +397,10 @@ exports.genDeps = genDeps;
 
 /** @type {Function} */
 exports.extractRequires = extractRequires;
+
+
+/** @type {Function} */
+exports.genModuleDeps = genModuleDeps;
 
 
 
