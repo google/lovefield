@@ -5728,16 +5728,6 @@ lf.backstore.WebSql.prototype.scanRowId_ = function() {
 
 lf.cache.Cache = function() {
 };
-lf.cache.Cache.prototype.set = function() {
-};
-lf.cache.Cache.prototype.get = function() {
-};
-lf.cache.Cache.prototype.getRange = function() {
-};
-lf.cache.Cache.prototype.remove = function() {
-};
-lf.cache.Cache.prototype.getCount = function() {
-};
 
 lf.cache.DefaultCache = function(opt_maxRows) {
   this.map_ = new goog.structs.Map;
@@ -7731,11 +7721,9 @@ lf.proc.JoinNode.prototype.toString = function() {
 };
 
 lf.proc.RewritePass = function() {
-  this.rootNode = void 0;
 };
 
 lf.proc.AndPredicatePass = function() {
-  lf.proc.RewritePass.call(this);
 };
 goog.inherits(lf.proc.AndPredicatePass, lf.proc.RewritePass);
 lf.proc.AndPredicatePass.prototype.rewrite = function(rootNode) {
@@ -7779,16 +7767,15 @@ lf.proc.AndPredicatePass.prototype.createSelectNodeChain_ = function(predicates)
   return [parentNode, lastNode];
 };
 
-$jscomp.scope.CrossProductPass = function() {
-  lf.proc.RewritePass.call(this);
+lf.proc.CrossProductPass = function() {
 };
-goog.inherits($jscomp.scope.CrossProductPass, lf.proc.RewritePass);
-$jscomp.scope.CrossProductPass.prototype.rewrite = function(rootNode) {
+goog.inherits(lf.proc.CrossProductPass, lf.proc.RewritePass);
+lf.proc.CrossProductPass.prototype.rewrite = function(rootNode) {
   this.rootNode = rootNode;
   this.traverse_(this.rootNode);
   return this.rootNode;
 };
-$jscomp.scope.CrossProductPass.prototype.traverse_ = function(rootNode) {
+lf.proc.CrossProductPass.prototype.traverse_ = function(rootNode) {
   if (rootNode instanceof lf.proc.CrossProductNode) {
     for (;2 < rootNode.getChildCount();) {
       for (var crossProduct = new lf.proc.CrossProductNode, i = 0;2 > i;i++) {
@@ -7802,7 +7789,6 @@ $jscomp.scope.CrossProductPass.prototype.traverse_ = function(rootNode) {
     this.traverse_(child);
   }, this);
 };
-lf.proc.CrossProductPass = $jscomp.scope.CrossProductPass;
 
 lf.proc.CrossProductStep = function() {
   lf.proc.PhysicalQueryPlanNode.call(this, 2, lf.proc.PhysicalQueryPlanNode.ExecType.ALL);
@@ -8465,7 +8451,6 @@ lf.proc.DeleteLogicalPlanGenerator.prototype.generateInternal = function() {
 };
 
 lf.proc.ImplicitJoinsPass = function() {
-  lf.proc.RewritePass.call(this);
 };
 goog.inherits(lf.proc.ImplicitJoinsPass, lf.proc.RewritePass);
 lf.proc.ImplicitJoinsPass.prototype.rewrite = function(rootNode) {
@@ -8490,7 +8475,6 @@ lf.proc.ImplicitJoinsPass.prototype.traverse_ = function(rootNode) {
 };
 
 lf.proc.PushDownSelectionsPass = function() {
-  lf.proc.RewritePass.call(this);
   this.alreadyPushedDown_ = new goog.structs.Set;
 };
 goog.inherits(lf.proc.PushDownSelectionsPass, lf.proc.RewritePass);
@@ -8930,7 +8914,6 @@ lf.proc.TableAccessFullStep.prototype.execInternal = function() {
 };
 
 lf.proc.IndexRangeScanPass = function(global) {
-  lf.proc.RewritePass.call(this);
   this.global_ = global;
 };
 goog.inherits(lf.proc.IndexRangeScanPass, lf.proc.RewritePass);
@@ -9191,7 +9174,6 @@ lf.proc.SkipStep.prototype.execInternal = function(journal, relations, context) 
 };
 
 lf.proc.LimitSkipByIndexPass = function() {
-  lf.proc.RewritePass.call(this);
 };
 goog.inherits(lf.proc.LimitSkipByIndexPass, lf.proc.RewritePass);
 lf.proc.LimitSkipByIndexPass.prototype.rewrite = function(rootNode) {
@@ -9225,7 +9207,6 @@ lf.proc.LimitSkipByIndexPass.prototype.findIndexRangeScanStep_ = function(rootNo
 };
 
 lf.proc.OrderByIndexPass = function(global) {
-  lf.proc.RewritePass.call(this);
   this.global_ = global;
 };
 goog.inherits(lf.proc.OrderByIndexPass, lf.proc.RewritePass);
