@@ -14,21 +14,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-goog.setTestOnly();
-goog.require('goog.structs.TreeNode');
-goog.require('goog.testing.jsunit');
-goog.require('lf.tree');
+goog.module('tree.test');
+goog.setTestOnly('tree.test');
+
+var TreeNode = goog.require('goog.structs.TreeNode');
+var jsunit = goog.require('goog.testing.jsunit');
+var testSuite = goog.require('goog.testing.testSuite');
+var tree = goog.require('lf.tree');
 
 
 /**
  * Creates a tree to be used in various tests.
- * @return {!Array<!goog.structs.TreeNode>} An array holding all the nodes in
+ * @return {!Array<!TreeNode>} An array holding all the nodes in
  *     the tree in pre-order traversal order.
  */
 function createTestTree1() {
   var nodes = new Array(11);
   for (var i = 0; i < nodes.length; i++) {
-    nodes[i] = new goog.structs.TreeNode(i, null);
+    nodes[i] = new TreeNode(i, null);
   }
 
   // Creating a tree that has the following structure.
@@ -65,13 +68,13 @@ function createTestTree1() {
 
 /**
  * Creates a different tree to be used in various tests.
- * @return {!Array<!goog.structs.TreeNode>} An array holding all the nodes in
+ * @return {!Array<!TreeNode>} An array holding all the nodes in
  *     the tree in pre-order traversal order.
  */
 function createTestTree2() {
   var nodes = new Array(7);
   for (var i = 0; i < nodes.length; i++) {
-    nodes[i] = new goog.structs.TreeNode(i, null);
+    nodes[i] = new TreeNode(i, null);
   }
 
   // Creating a tree that has the following structure.
@@ -100,13 +103,13 @@ function createTestTree2() {
 
 
 /**
- * Tests that lf.tree.map() is constructing a new tree with the exact same
+ * Tests that tree.map() is constructing a new tree with the exact same
  * structure as the original tree, for a simple tree.
  */
-function testMap1() {
+exports.testMap1 = function() {
   var nodes = new Array(6);
   for (var i = 0; i < nodes.length; i++) {
-    nodes[i] = new goog.structs.TreeNode(i, null);
+    nodes[i] = new TreeNode(i, null);
   }
 
   nodes[2].addChild(nodes[3]);
@@ -116,33 +119,33 @@ function testMap1() {
 
   var rootNode = nodes[0];
   checkMap(rootNode);
-}
+};
 
 
 /**
- * Tests that lf.tree.map() is constructing a new tree with the exact same
+ * Tests that tree.map() is constructing a new tree with the exact same
  * structure as the original tree, for two more complex trees.
  */
-function testMap2() {
+exports.testMap2 = function() {
   checkMap(createTestTree1()[0]);
   checkMap(createTestTree2()[0]);
-}
+};
 
 
 /**
  * Checks that the given tree is producing a tree with an identical structure
  * when cloned.
- * @param {!goog.structs.TreeNode} rootNode
+ * @param {!TreeNode} rootNode
  */
 function checkMap(rootNode) {
   // Attempting to copy the tree.
-  var copy = lf.tree.map(rootNode, function(node) {
-    return new goog.structs.TreeNode(node.getKey(), null);
+  var copy = tree.map(rootNode, function(node) {
+    return new TreeNode(node.getKey(), null);
   });
 
   assertEquals(
-      lf.tree.toString(rootNode, stringFn),
-      lf.tree.toString(copy, stringFn));
+      tree.toString(rootNode, stringFn),
+      tree.toString(copy, stringFn));
 }
 
 
@@ -150,7 +153,7 @@ function checkMap(rootNode) {
  * Testing case where a node that has both parent and children nodes is removed.
  * Ensure that the children of the removed node are re-parented to its parent.
  */
-function testRemoveNode_Intermediate() {
+exports.testRemoveNode_Intermediate = function() {
   var nodes = createTestTree1();
 
   var treeAfter =
@@ -166,19 +169,19 @@ function testRemoveNode_Intermediate() {
       '-[10,null]\n';
 
   // Removing node n1.
-  var removeResult = lf.tree.removeNode(nodes[1]);
+  var removeResult = tree.removeNode(nodes[1]);
   assertEquals(nodes[0], removeResult.parent);
   assertArrayEquals(
       [nodes[2], nodes[3], nodes[4]],
       removeResult.children);
-  assertEquals(treeAfter, lf.tree.toString(nodes[0], stringFn));
-}
+  assertEquals(treeAfter, tree.toString(nodes[0], stringFn));
+};
 
 
 /**
  * Testing case where a leaf node is removed.
  */
-function testRemoveNode_Leaf() {
+exports.testRemoveNode_Leaf = function() {
   var nodes = createTestTree1();
 
   var treeAfter =
@@ -194,17 +197,17 @@ function testRemoveNode_Leaf() {
       '-[10,null]\n';
 
   // Removing node n2.
-  var removeResult = lf.tree.removeNode(nodes[2]);
+  var removeResult = tree.removeNode(nodes[2]);
   assertEquals(nodes[1], removeResult.parent);
   assertArrayEquals([], removeResult.children);
-  assertEquals(treeAfter, lf.tree.toString(nodes[0], stringFn));
-}
+  assertEquals(treeAfter, tree.toString(nodes[0], stringFn));
+};
 
 
 /**
  * Testing case where the root node is removed.
  */
-function testRemoveNode_Root() {
+exports.testRemoveNode_Root = function() {
   var nodes = createTestTree1();
 
   var subTree1After =
@@ -223,19 +226,19 @@ function testRemoveNode_Root() {
   var subTree3After = '[10,null]\n';
 
   // Removing node n0.
-  var removeResult = lf.tree.removeNode(nodes[0]);
+  var removeResult = tree.removeNode(nodes[0]);
   assertNull(removeResult.parent);
   assertArrayEquals([nodes[1], nodes[5], nodes[10]], removeResult.children);
   assertEquals(
-      subTree1After, lf.tree.toString(removeResult.children[0], stringFn));
+      subTree1After, tree.toString(removeResult.children[0], stringFn));
   assertEquals(
-      subTree2After, lf.tree.toString(removeResult.children[1], stringFn));
+      subTree2After, tree.toString(removeResult.children[1], stringFn));
   assertEquals(
-      subTree3After, lf.tree.toString(removeResult.children[2], stringFn));
-}
+      subTree3After, tree.toString(removeResult.children[2], stringFn));
+};
 
 
-function testInsertNodeAt() {
+exports.testInsertNodeAt = function() {
   var nodes = createTestTree1();
 
   var treeAfter =
@@ -252,13 +255,13 @@ function testInsertNodeAt() {
       '-----[9,null]\n' +
       '-[10,null]\n';
 
-  var newNode = new goog.structs.TreeNode(11, null);
-  lf.tree.insertNodeAt(nodes[7], newNode);
-  assertEquals(treeAfter, lf.tree.toString(nodes[0], stringFn));
-}
+  var newNode = new TreeNode(11, null);
+  tree.insertNodeAt(nodes[7], newNode);
+  assertEquals(treeAfter, tree.toString(nodes[0], stringFn));
+};
 
 
-function testReplaceChainWithChain() {
+exports.testReplaceChainWithChain = function() {
   var nodes = createTestTree1();
 
   var treeAfter =
@@ -274,20 +277,20 @@ function testReplaceChainWithChain() {
       '----[9,null]\n' +
       '-[10,null]\n';
 
-  var newHead = new goog.structs.TreeNode(11, null);
-  var intermediate = new goog.structs.TreeNode(12, null);
+  var newHead = new TreeNode(11, null);
+  var intermediate = new TreeNode(12, null);
   newHead.addChild(intermediate);
-  var newTail = new goog.structs.TreeNode(13, null);
+  var newTail = new TreeNode(13, null);
   intermediate.addChild(newTail);
 
   var head = nodes[5];
   var tail = nodes[7];
-  lf.tree.replaceChainWithChain(head, tail, newHead, newTail);
-  assertEquals(treeAfter, lf.tree.toString(nodes[0], stringFn));
-}
+  tree.replaceChainWithChain(head, tail, newHead, newTail);
+  assertEquals(treeAfter, tree.toString(nodes[0], stringFn));
+};
 
 
-function testReplaceChainWithNode() {
+exports.testReplaceChainWithNode = function() {
   var nodes = createTestTree1();
 
   var treeAfter =
@@ -301,15 +304,15 @@ function testReplaceChainWithNode() {
       '--[9,null]\n' +
       '-[10,null]\n';
 
-  var newNode = new goog.structs.TreeNode(11, null);
+  var newNode = new TreeNode(11, null);
   var head = nodes[5];
   var tail = nodes[7];
-  lf.tree.replaceChainWithNode(head, tail, newNode);
-  assertEquals(treeAfter, lf.tree.toString(nodes[0], stringFn));
-}
+  tree.replaceChainWithNode(head, tail, newNode);
+  assertEquals(treeAfter, tree.toString(nodes[0], stringFn));
+};
 
 
-function testReplaceNodeWithChain() {
+exports.testReplaceNodeWithChain = function() {
   var nodes = createTestTree1();
 
   var treeAfter =
@@ -327,18 +330,18 @@ function testReplaceNodeWithChain() {
       '----[9,null]\n' +
       '-[10,null]\n';
 
-  var head = new goog.structs.TreeNode(11, null);
-  var other = new goog.structs.TreeNode(12, null);
+  var head = new TreeNode(11, null);
+  var other = new TreeNode(12, null);
   head.addChild(other);
-  var tail = new goog.structs.TreeNode(13, null);
+  var tail = new TreeNode(13, null);
   other.addChild(tail);
 
-  lf.tree.replaceNodeWithChain(nodes[8], head, tail);
-  assertEquals(treeAfter, lf.tree.toString(nodes[0], stringFn));
-}
+  tree.replaceNodeWithChain(nodes[8], head, tail);
+  assertEquals(treeAfter, tree.toString(nodes[0], stringFn));
+};
 
 
-function testPushNodeBelowChild() {
+exports.testPushNodeBelowChild = function() {
   var nodes = createTestTree1();
 
   var treeAfter =
@@ -356,7 +359,7 @@ function testPushNodeBelowChild() {
 
 
   var cloneFn = function(node) {
-    return new goog.structs.TreeNode(node.getKey(), null);
+    return new TreeNode(node.getKey(), null);
   };
 
   var shouldPushDownFn = function(child) {
@@ -364,12 +367,12 @@ function testPushNodeBelowChild() {
   };
 
   // Pushing down n6, only to above grandchildren that have key == 8.
-  lf.tree.pushNodeBelowChild(nodes[6], shouldPushDownFn, cloneFn);
-  assertEquals(treeAfter, lf.tree.toString(nodes[0], stringFn));
-}
+  tree.pushNodeBelowChild(nodes[6], shouldPushDownFn, cloneFn);
+  assertEquals(treeAfter, tree.toString(nodes[0], stringFn));
+};
 
 
-function testSwapNodeWithChild() {
+exports.testSwapNodeWithChild = function() {
   var nodes = createTestTree1();
 
   var treeAfter =
@@ -384,26 +387,26 @@ function testSwapNodeWithChild() {
       '----[8,null]\n' +
       '----[9,null]\n' +
       '-[10,null]\n';
-  var newSubtreeRoot = lf.tree.swapNodeWithChild(nodes[5]);
+  var newSubtreeRoot = tree.swapNodeWithChild(nodes[5]);
   assertEquals(nodes[6], newSubtreeRoot);
-  assertEquals(treeAfter, lf.tree.toString(nodes[0], stringFn));
-}
+  assertEquals(treeAfter, tree.toString(nodes[0], stringFn));
+};
 
 
-function testGetLeafNodes() {
+exports.testGetLeafNodes = function() {
   var nodes = createTestTree1();
-  var leafNodes = lf.tree.getLeafNodes(nodes[0]);
+  var leafNodes = tree.getLeafNodes(nodes[0]);
   var leafNodeKeys = leafNodes.map(function(node) {
     return node.getKey();
   });
   assertArrayEquals([2, 3, 4, 8 , 9, 10], leafNodeKeys);
-}
+};
 
 
-function testFind() {
+exports.testFind = function() {
   var nodes = createTestTree1();
   var minKey = 6;
-  var retrievedNodes = lf.tree.find(
+  var retrievedNodes = tree.find(
       nodes[0],
       function(node) {
         return node.getKey() >= minKey;
@@ -412,13 +415,13 @@ function testFind() {
     assertTrue(node.getKey() >= minKey);
 
   });
-}
+};
 
 
-function testFind_Stop() {
+exports.testFind_Stop = function() {
   var nodes = createTestTree1();
   var minKey = 4;
-  var retrievedNodes = lf.tree.find(
+  var retrievedNodes = tree.find(
       nodes[0],
       function(node) {
         return node.getKey() >= minKey;
@@ -431,13 +434,16 @@ function testFind_Stop() {
       retrievedNodes.map(function(node) {
         return node.getKey();
       }));
-}
+};
 
 
 /**
- * @param {!goog.structs.TreeNode} node The node to be stringified.
+ * @param {!TreeNode} node The node to be stringified.
  * @return {string} A string representation of the node.
  */
 function stringFn(node) {
   return '[' + node.getKey() + ',' + node.getValue() + ']\n';
 }
+
+
+testSuite(exports);
