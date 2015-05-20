@@ -176,8 +176,8 @@ function scanFiles(filePaths, provideMap, requireMap) {
    */
   var extractNamespace = function(line, pattern, opt_antiPattern) {
     var pos = line.indexOf(pattern);
-    if (pos != -1) {
-      if (opt_antiPattern && line.indexOf(opt_antiPattern) != -1) {
+    if (pos == 0) {
+      if (opt_antiPattern && line.indexOf(opt_antiPattern) == 0) {
         return null;
       }
       return line.substring(
