@@ -14,16 +14,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-goog.module('map.test');
-goog.setTestOnly('map.test');
-
-var jsunit = goog.require('goog.testing.jsunit');
-var Map = goog.require('lf.structs.Map');
-var testSuite = goog.require('goog.testing.testSuite');
+goog.setTestOnly();
+goog.require('goog.testing.jsunit');
+goog.require('lf.structs.Map');
 
 
-exports.testSmoke = function() {
-  var map = new Map();
+function testSmoke() {
+  var map = new lf.structs.Map();
   map.set(1, 2);
   assertEquals(2, map.get(1));
   assertEquals(1, map.size);
@@ -40,6 +37,3 @@ exports.testSmoke = function() {
     assertEquals(value, key * 10);
   });
 }
-
-
-testSuite(exports);
