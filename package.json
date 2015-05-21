@@ -42,7 +42,8 @@
     "request": "^2.55.0",
     "rimraf": "*",
     "selenium-webdriver": "^2.45.1",
-    "temporary": "^0.0.8"
+    "temporary": "^0.0.8",
+    "toposort-class": "^0.3.1"
   },
   "engines": {
     "node": ">=0.12"

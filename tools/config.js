@@ -50,7 +50,7 @@ var Config = function() {
 
   // Compiler options for release mode.
   this.COMPILER_FLAGS_OPT = {
-    compilation_level: 'SIMPLE'
+    compilation_level: 'ADVANCED'
   };
 
   // Compiler options for debug mode.

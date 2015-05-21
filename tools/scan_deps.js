@@ -20,6 +20,11 @@ var glob = /** @type {{sync:!Function}} */ (require('glob'));
 var osMod = /** @type {{platform:!Function}} */ (require('os'));
 
 
+
+/** @constructor */
+var Toposort = /** @type {!Function} */ (require('toposort-class'));
+
+
 /** @type {{CLOSURE_LIBRARY_PATH: string}} */
 var config = /** @type {!Function} */ (
     require(pathMod.resolve(__dirname + '/config.js')))();
@@ -153,6 +158,30 @@ RequireMap_.prototype.getAllRequires = function() {
 
 
 /**
+ * @param {!ProvideMap_} provideMap
+ * @param {!ProvideMap_} closureProvide
+ * @param {!Array<string>=} opt_filter Filter only files specified.
+ * @return {!Array<Object>}
+ */
+RequireMap_.prototype.getTopoSortEntry = function(
+    provideMap, closureProvide, opt_filter) {
+  var results = [];
+  for (var key in this.map_) {
+    if (opt_filter && opt_filter.indexOf(key) == -1) {
+      continue;
+    }
+    var entry = { name: key, depends: [] };
+    for (var ns in this.map_[key]) {
+      var provider = (ns.slice(0, 4) == 'goog') ? closureProvide : provideMap;
+      entry.depends.push(provider.get(ns));
+    }
+    results.push(entry);
+  }
+  return results;
+};
+
+
+/**
  * @param {string} startPath
  * @return {!Array<string>} relativePaths
  */
@@ -224,21 +253,19 @@ function extractRequires(filePath) {
 
 /**
  * @param {!RequireMap_} codeRequire
+ * @param {!RequireMap_} closureRequire
+ * @param {!ProvideMap_} closureProvide
  * @return {!Array.<string>} Associated Closure files
  */
-function extractClosureDependencies(codeRequire) {
-  var closureRequire = new RequireMap_();
-  var closureProvider = new ProvideMap_();
-  var closurePath = config.CLOSURE_LIBRARY_PATH + '/closure/goog';
-  scanFiles(relativeGlob(closurePath), closureProvider, closureRequire);
-
+function extractClosureDependencies(
+    codeRequire, closureRequire, closureProvide) {
   var closureDeps = codeRequire.getAllDependencies().filter(function(element) {
     return element.slice(0, 4) == 'goog';
   });
 
   var map = {};
   closureDeps.forEach(function(ns) {
-    map[ns] = closureProvider.get(ns);
+    map[ns] = closureProvide.get(ns);
   });
 
   var countKeys = function(object) {
@@ -255,7 +282,7 @@ function extractClosureDependencies(codeRequire) {
     for (var key in map) {
       var requires = closureRequire.get(map[key]);
       requires.forEach(function(ns) {
-        map[ns] = closureProvider.get(ns);
+        map[ns] = closureProvide.get(ns);
       });
     }
   } while (countKeys(map) != oldCount);
@@ -276,9 +303,34 @@ function scanDeps() {
   var provideMap = new ProvideMap_();
   var requireMap = new RequireMap_();
   scanFiles(relativeGlob('lib'), provideMap, requireMap);
-  return extractClosureDependencies(requireMap).concat(
-      pathMod.resolve(
-          pathMod.join(config.CLOSURE_LIBRARY_PATH, 'closure/goog/base.js')));
+
+  var closureRequire = new RequireMap_();
+  var closureProvide = new ProvideMap_();
+  var closurePath = config.CLOSURE_LIBRARY_PATH + '/closure/goog';
+  scanFiles(relativeGlob(closurePath), closureProvide, closureRequire);
+
+  var closureDeps =
+      extractClosureDependencies(requireMap, closureRequire, closureProvide);
+
+  var edges = requireMap.getTopoSortEntry(provideMap, closureProvide);
+  var edgesClosure = closureRequire.getTopoSortEntry(
+      closureProvide, closureProvide, closureDeps);
+
+  var topoSorter = new Toposort();
+  edges.forEach(function(entry) {
+    topoSorter.add(entry.name, entry.depends);
+  });
+  var topoSorterClosure = new Toposort();
+  edgesClosure.forEach(function(entry) {
+    topoSorterClosure.add(entry.name, entry.depends);
+  });
+
+  var files = [pathMod.resolve(
+      pathMod.join(config.CLOSURE_LIBRARY_PATH, 'closure/goog/base.js'))];
+  files = files.concat(topoSorterClosure.sort().reverse());
+  files = files.concat(topoSorter.sort().reverse());
+
+  return files;
 }
 
 
