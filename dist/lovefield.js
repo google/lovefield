@@ -4086,8 +4086,12 @@ lf.cache.Journal.prototype.checkScope_ = function(tableSchema) {
   }
 };
 
-lf.Order = {DESC:0, ASC:1};
+lf.Order = {};
 goog.exportSymbol("lf.Order", lf.Order);
+lf.Order.DESC = 0;
+goog.exportProperty(lf.Order, "DESC", lf.Order.DESC);
+lf.Order.ASC = 1;
+goog.exportProperty(lf.Order, "ASC", lf.Order.ASC);
 
 lf.index.SingleKeyRange = function(from, to, excludeLower, excludeUpper) {
   this.from = from;
@@ -4322,8 +4326,22 @@ lf.Binder.prototype.getIndex = function() {
 };
 
 lf.type = {};
-lf.Type = {ARRAY_BUFFER:0, BOOLEAN:1, DATE_TIME:2, INTEGER:3, NUMBER:4, STRING:5, OBJECT:6};
+lf.Type = {};
 goog.exportSymbol("lf.Type", lf.Type);
+lf.Type.ARRAY_BUFFER = 0;
+goog.exportProperty(lf.Type, "ARRAY_BUFFER", lf.Type.ARRAY_BUFFER);
+lf.Type.BOOLEAN = 1;
+goog.exportProperty(lf.Type, "BOOLEAN", lf.Type.BOOLEAN);
+lf.Type.DATE_TIME = 2;
+goog.exportProperty(lf.Type, "DATE_TIME", lf.Type.DATE_TIME);
+lf.Type.INTEGER = 3;
+goog.exportProperty(lf.Type, "INTEGER", lf.Type.INTEGER);
+lf.Type.NUMBER = 4;
+goog.exportProperty(lf.Type, "NUMBER", lf.Type.NUMBER);
+lf.Type.STRING = 5;
+goog.exportProperty(lf.Type, "STRING", lf.Type.STRING);
+lf.Type.OBJECT = 6;
+goog.exportProperty(lf.Type, "OBJECT", lf.Type.OBJECT);
 lf.type.DEFAULT_VALUES = {0:new ArrayBuffer(0), 1:!1, 2:Object.freeze(new Date(0)), 3:0, 4:0, 5:"", 6:Object.freeze({})};
 goog.exportSymbol("lf.type.DEFAULT_VALUES", lf.type.DEFAULT_VALUES);
 
@@ -7273,8 +7291,20 @@ lf.schema.Column = function() {
 };
 lf.schema.Database = function() {
 };
-lf.schema.DataStoreType = {INDEXED_DB:0, MEMORY:1, LOCAL_STORAGE:2, FIREBASE:3, WEB_SQL:4, OBSERVABLE_STORE:99};
+lf.schema.DataStoreType = {};
 goog.exportSymbol("lf.schema.DataStoreType", lf.schema.DataStoreType);
+lf.schema.DataStoreType.INDEXED_DB = 0;
+goog.exportProperty(lf.schema.DataStoreType, "INDEXED_DB", lf.schema.DataStoreType.INDEXED_DB);
+lf.schema.DataStoreType.MEMORY = 1;
+goog.exportProperty(lf.schema.DataStoreType, "MEMORY", lf.schema.DataStoreType.MEMORY);
+lf.schema.DataStoreType.LOCAL_STORAGE = 2;
+goog.exportProperty(lf.schema.DataStoreType, "LOCAL_STORAGE", lf.schema.DataStoreType.LOCAL_STORAGE);
+lf.schema.DataStoreType.FIREBASE = 3;
+goog.exportProperty(lf.schema.DataStoreType, "FIREBASE", lf.schema.DataStoreType.FIREBASE);
+lf.schema.DataStoreType.WEB_SQL = 4;
+goog.exportProperty(lf.schema.DataStoreType, "WEB_SQL", lf.schema.DataStoreType.WEB_SQL);
+lf.schema.DataStoreType.OBSERVABLE_STORE = 5;
+goog.exportProperty(lf.schema.DataStoreType, "OBSERVABLE_STORE", lf.schema.DataStoreType.OBSERVABLE_STORE);
 lf.schema.Index = function(tableName, name, isUnique, columns) {
   this.tableName = tableName;
   this.name = name;
@@ -8064,6 +8094,7 @@ lf.query.BaseBuilder = function(global, context) {
   this.runner_ = global.getService(lf.service.RUNNER);
   this.query = context;
 };
+goog.exportSymbol("lf.query.BaseBuilder", lf.query.BaseBuilder);
 lf.query.BaseBuilder.prototype.exec = function() {
   try {
     this.assertExecPreconditions();
@@ -8077,23 +8108,23 @@ lf.query.BaseBuilder.prototype.exec = function() {
     }, reject);
   }, this);
 };
-goog.exportSymbol("lf.query.BaseBuilder.prototype.exec", lf.query.BaseBuilder.prototype.exec);
+goog.exportProperty(lf.query.BaseBuilder.prototype, "exec", lf.query.BaseBuilder.prototype.exec);
 lf.query.BaseBuilder.prototype.explain = function() {
   var stringFn = goog.bind(function(node) {
     return node.toContextString(this.query) + "\n";
   }, this);
   return lf.tree.toString(this.getPlan_().getRoot(), stringFn);
 };
-goog.exportSymbol("lf.query.BaseBuilder.prototype.explain", lf.query.BaseBuilder.prototype.explain);
+goog.exportProperty(lf.query.BaseBuilder.prototype, "explain", lf.query.BaseBuilder.prototype.explain);
 lf.query.BaseBuilder.prototype.bind = function(values) {
   this.query.bind(values);
   return this;
 };
-goog.exportSymbol("lf.query.BaseBuilder.prototype.bind", lf.query.BaseBuilder.prototype.bind);
+goog.exportProperty(lf.query.BaseBuilder.prototype, "bind", lf.query.BaseBuilder.prototype.bind);
 lf.query.BaseBuilder.prototype.toSql = function(opt_stripValueInfo) {
   return lf.query.toSql(this, opt_stripValueInfo);
 };
-goog.exportSymbol("lf.query.BaseBuilder.prototype.toSql", lf.query.BaseBuilder.prototype.toSql);
+goog.exportProperty(lf.query.BaseBuilder.prototype, "toSql", lf.query.BaseBuilder.prototype.toSql);
 lf.query.BaseBuilder.prototype.assertExecPreconditions = function() {
 };
 lf.query.BaseBuilder.prototype.getQuery = function() {
@@ -8117,16 +8148,19 @@ lf.query.DeleteBuilder = function(global) {
   lf.query.BaseBuilder.call(this, global, new lf.query.DeleteContext);
 };
 goog.inherits(lf.query.DeleteBuilder, lf.query.BaseBuilder);
+goog.exportSymbol("lf.query.DeleteBuilder", lf.query.DeleteBuilder);
 lf.query.DeleteBuilder.prototype.from = function(table) {
   this.assertFromPreconditions_();
   this.query.from = table;
   return this;
 };
+goog.exportProperty(lf.query.DeleteBuilder.prototype, "from", lf.query.DeleteBuilder.prototype.from);
 lf.query.DeleteBuilder.prototype.where = function(predicate) {
   this.assertWherePreconditions_();
   this.query.where = predicate;
   return this;
 };
+goog.exportProperty(lf.query.DeleteBuilder.prototype, "where", lf.query.DeleteBuilder.prototype.where);
 lf.query.DeleteBuilder.prototype.assertFromPreconditions_ = function() {
   if (goog.isDefAndNotNull(this.query.from)) {
     throw new lf.Exception(lf.Exception.Type.SYNTAX, "from() has already been called.");
@@ -8149,6 +8183,7 @@ lf.query.InsertBuilder = function(global, opt_allowReplace) {
   this.query.allowReplace = opt_allowReplace || !1;
 };
 goog.inherits(lf.query.InsertBuilder, lf.query.BaseBuilder);
+goog.exportSymbol("lf.query.InsertBuilder", lf.query.InsertBuilder);
 lf.query.InsertBuilder.prototype.assertExecPreconditions = function() {
   lf.query.InsertBuilder.superClass_.assertExecPreconditions.call(this);
   var context = this.query;
@@ -8164,6 +8199,7 @@ lf.query.InsertBuilder.prototype.into = function(table) {
   this.query.into = table;
   return this;
 };
+goog.exportProperty(lf.query.InsertBuilder.prototype, "into", lf.query.InsertBuilder.prototype.into);
 lf.query.InsertBuilder.prototype.values = function(rows) {
   this.assertValuesPreconditions_();
   rows instanceof lf.Binder || rows.some(function(r) {
@@ -8171,6 +8207,7 @@ lf.query.InsertBuilder.prototype.values = function(rows) {
   }) ? this.query.binder = rows : this.query.values = rows;
   return this;
 };
+goog.exportProperty(lf.query.InsertBuilder.prototype, "values", lf.query.InsertBuilder.prototype.values);
 lf.query.InsertBuilder.prototype.assertIntoPreconditions_ = function() {
   if (goog.isDefAndNotNull(this.query.into)) {
     throw new lf.Exception(lf.Exception.Type.SYNTAX, "into() has already been called.");
@@ -8214,6 +8251,7 @@ lf.query.SelectBuilder = function(global, columns) {
   this.checkAggregations_();
 };
 goog.inherits(lf.query.SelectBuilder, lf.query.BaseBuilder);
+goog.exportSymbol("lf.query.SelectBuilder", lf.query.SelectBuilder);
 lf.query.SelectBuilder.prototype.assertExecPreconditions = function() {
   lf.query.SelectBuilder.superClass_.assertExecPreconditions.call(this);
   var context = this.query;
@@ -8296,6 +8334,7 @@ lf.query.SelectBuilder.prototype.from = function(var_args) {
   this.query.from.push.apply(this.query.from, Array.prototype.slice.call(arguments));
   return this;
 };
+goog.exportProperty(lf.query.SelectBuilder.prototype, "from", lf.query.SelectBuilder.prototype.from);
 lf.query.SelectBuilder.prototype.where = function(predicate) {
   if (this.whereAlreadyCalled_) {
     throw new lf.Exception(lf.Exception.Type.SYNTAX, "where() has already been called.");
@@ -8304,6 +8343,7 @@ lf.query.SelectBuilder.prototype.where = function(predicate) {
   this.augmentWhereClause_(predicate);
   return this;
 };
+goog.exportProperty(lf.query.SelectBuilder.prototype, "where", lf.query.SelectBuilder.prototype.where);
 lf.query.SelectBuilder.prototype.augmentWhereClause_ = function(predicate) {
   if (goog.isDefAndNotNull(this.query.where)) {
     var newPredicate = lf.op.and(predicate, this.query.where);
@@ -8318,27 +8358,36 @@ lf.query.SelectBuilder.prototype.innerJoin = function(table, predicate) {
   this.augmentWhereClause_(predicate);
   return this;
 };
+goog.exportProperty(lf.query.SelectBuilder.prototype, "innerJoin", lf.query.SelectBuilder.prototype.innerJoin);
+lf.query.SelectBuilder.prototype.leftOuterJoin = function() {
+  throw new lf.Exception(lf.Exception.Type.NOT_SUPPORTED, "Not implemented yet");
+};
+goog.exportProperty(lf.query.SelectBuilder.prototype, "leftOuterJoin", lf.query.SelectBuilder.prototype.leftOuterJoin);
 lf.query.SelectBuilder.prototype.limit = function(numberOfRows) {
   this.assertNotAlreadyCalled_(this.query.limit || this.query.limitBinder, "limit");
   numberOfRows instanceof lf.Binder ? this.query.limitBinder = numberOfRows : (this.assertNotNegative_(numberOfRows, "limit"), this.query.limit = numberOfRows);
   return this;
 };
+goog.exportProperty(lf.query.SelectBuilder.prototype, "limit", lf.query.SelectBuilder.prototype.limit);
 lf.query.SelectBuilder.prototype.skip = function(numberOfRows) {
   this.assertNotAlreadyCalled_(this.query.skip || this.query.skipBinder, "skip");
   numberOfRows instanceof lf.Binder ? this.query.skipBinder = numberOfRows : (this.assertNotNegative_(numberOfRows, "skip"), this.query.skip = numberOfRows);
   return this;
 };
+goog.exportProperty(lf.query.SelectBuilder.prototype, "skip", lf.query.SelectBuilder.prototype.skip);
 lf.query.SelectBuilder.prototype.orderBy = function(column, opt_order) {
   goog.isDefAndNotNull(this.query.orderBy) || (this.query.orderBy = []);
   this.query.orderBy.push({column:column, order:goog.isDefAndNotNull(opt_order) ? opt_order : lf.Order.ASC});
   return this;
 };
+goog.exportProperty(lf.query.SelectBuilder.prototype, "orderBy", lf.query.SelectBuilder.prototype.orderBy);
 lf.query.SelectBuilder.prototype.groupBy = function(var_args) {
   this.assertNotAlreadyCalled_(this.query.groupBy, "groupBy");
   goog.isDefAndNotNull(this.query.groupBy) || (this.query.groupBy = []);
   this.query.groupBy.push.apply(this.query.groupBy, Array.prototype.slice.call(arguments));
   return this;
 };
+goog.exportProperty(lf.query.SelectBuilder.prototype, "groupBy", lf.query.SelectBuilder.prototype.groupBy);
 lf.query.SelectBuilder.isAggregationValid_ = function(aggregatorType, columnType) {
   switch(aggregatorType) {
     case lf.fn.Type.COUNT:
@@ -8366,23 +8415,26 @@ lf.query.SelectBuilder.prototype.clone = function() {
   builder.query.clonedFrom = null;
   return builder;
 };
-goog.exportSymbol("lf.query.SelectBuilder.prototype.clone", lf.query.SelectBuilder.prototype.clone);
+goog.exportProperty(lf.query.SelectBuilder.prototype, "clone", lf.query.SelectBuilder.prototype.clone);
 
 lf.query.UpdateBuilder = function(global, table) {
   lf.query.BaseBuilder.call(this, global, new lf.query.UpdateContext);
   this.query.table = table;
 };
 goog.inherits(lf.query.UpdateBuilder, lf.query.BaseBuilder);
+goog.exportSymbol("lf.query.UpdateBuilder", lf.query.UpdateBuilder);
 lf.query.UpdateBuilder.prototype.set = function(column, value) {
   var set = {binding:value instanceof lf.Binder ? value.getIndex() : -1, column:column, value:value};
   goog.isDefAndNotNull(this.query.set) ? this.query.set.push(set) : this.query.set = [set];
   return this;
 };
+goog.exportProperty(lf.query.UpdateBuilder.prototype, "set", lf.query.UpdateBuilder.prototype.set);
 lf.query.UpdateBuilder.prototype.where = function(predicate) {
   this.assertWherePreconditions_();
   this.query.where = predicate;
   return this;
 };
+goog.exportProperty(lf.query.UpdateBuilder.prototype, "where", lf.query.UpdateBuilder.prototype.where);
 lf.query.UpdateBuilder.prototype.assertWherePreconditions_ = function() {
   if (goog.isDefAndNotNull(this.query.where)) {
     throw new lf.Exception(lf.Exception.Type.SYNTAX, "where() has already been called.");
@@ -9829,11 +9881,13 @@ lf.proc.Transaction.prototype.rollback = function() {
   }, this));
 };
 goog.exportSymbol("lf.proc.Transaction.prototype.rollback", lf.proc.Transaction.prototype.rollback);
+
 lf.proc.Database = function(global) {
   this.global_ = global;
   this.schema_ = global.getService(lf.service.SCHEMA);
   this.initialized_ = !1;
 };
+goog.exportSymbol("lf.proc.Database", lf.proc.Database);
 lf.proc.Database.prototype.init = function(opt_options) {
   this.global_.registerService(lf.service.SCHEMA, this.schema_);
   return lf.base.init(this.global_, opt_options).then(goog.bind(function() {
@@ -9841,11 +9895,11 @@ lf.proc.Database.prototype.init = function(opt_options) {
     return this;
   }, this));
 };
-goog.exportSymbol("lf.proc.Database.prototype.init", lf.proc.Database.prototype.init);
+goog.exportProperty(lf.proc.Database.prototype, "init", lf.proc.Database.prototype.init);
 lf.proc.Database.prototype.getSchema = function() {
   return this.schema_;
 };
-goog.exportSymbol("lf.proc.Database.prototype.getSchema", lf.proc.Database.prototype.getSchema);
+goog.exportProperty(lf.proc.Database.prototype, "getSchema", lf.proc.Database.prototype.getSchema);
 lf.proc.Database.prototype.checkInit_ = function() {
   if (!this.initialized_) {
     throw new lf.Exception(lf.Exception.Type.UNINITIALIZED, "Database is not initialized");
@@ -9856,48 +9910,48 @@ lf.proc.Database.prototype.select = function(var_args) {
   var columns = 1 != arguments.length || goog.isDefAndNotNull(arguments[0]) ? Array.prototype.slice.call(arguments) : [];
   return new lf.query.SelectBuilder(this.global_, columns);
 };
-goog.exportSymbol("lf.proc.Database.prototype.select", lf.proc.Database.prototype.select);
+goog.exportProperty(lf.proc.Database.prototype, "select", lf.proc.Database.prototype.select);
 lf.proc.Database.prototype.insert = function() {
   this.checkInit_();
   return new lf.query.InsertBuilder(this.global_);
 };
-goog.exportSymbol("lf.proc.Database.prototype.insert", lf.proc.Database.prototype.insert);
+goog.exportProperty(lf.proc.Database.prototype, "insert", lf.proc.Database.prototype.insert);
 lf.proc.Database.prototype.insertOrReplace = function() {
   this.checkInit_();
   return new lf.query.InsertBuilder(this.global_, !0);
 };
-goog.exportSymbol("lf.proc.Database.prototype.insertOrReplace", lf.proc.Database.prototype.insertOrReplace);
+goog.exportProperty(lf.proc.Database.prototype, "insertOrReplace", lf.proc.Database.prototype.insertOrReplace);
 lf.proc.Database.prototype.update = function(table) {
   this.checkInit_();
   return new lf.query.UpdateBuilder(this.global_, table);
 };
-goog.exportSymbol("lf.proc.Database.prototype.update", lf.proc.Database.prototype.update);
+goog.exportProperty(lf.proc.Database.prototype, "update", lf.proc.Database.prototype.update);
 lf.proc.Database.prototype.delete = function() {
   this.checkInit_();
   return new lf.query.DeleteBuilder(this.global_);
 };
-goog.exportSymbol("lf.proc.Database.prototype.delete", lf.proc.Database.prototype.delete);
+goog.exportProperty(lf.proc.Database.prototype, "delete", lf.proc.Database.prototype.delete);
 lf.proc.Database.prototype.observe = function(query, callback) {
   var observerRegistry = this.global_.getService(lf.service.OBSERVER_REGISTRY);
   observerRegistry.addObserver(query, callback);
 };
-goog.exportSymbol("lf.proc.Database.prototype.observe", lf.proc.Database.prototype.observe);
+goog.exportProperty(lf.proc.Database.prototype, "observe", lf.proc.Database.prototype.observe);
 lf.proc.Database.prototype.unobserve = function(query, callback) {
   var observerRegistry = this.global_.getService(lf.service.OBSERVER_REGISTRY);
   observerRegistry.removeObserver(query, callback);
 };
-goog.exportSymbol("lf.proc.Database.prototype.unobserve", lf.proc.Database.prototype.unobserve);
+goog.exportProperty(lf.proc.Database.prototype, "unobserve", lf.proc.Database.prototype.unobserve);
 lf.proc.Database.prototype.createTransaction = function() {
   this.checkInit_();
   return new lf.proc.Transaction(this.global_);
 };
-goog.exportSymbol("lf.proc.Database.prototype.createTransaction", lf.proc.Database.prototype.createTransaction);
+goog.exportProperty(lf.proc.Database.prototype, "createTransaction", lf.proc.Database.prototype.createTransaction);
 lf.proc.Database.prototype.close = function() {
   lf.base.closeDatabase(this.global_);
   this.global_.clear();
   this.initialized_ = !1;
 };
-goog.exportSymbol("lf.proc.Database.prototype.close", lf.proc.Database.prototype.close);
+goog.exportProperty(lf.proc.Database.prototype, "close", lf.proc.Database.prototype.close);
 
 lf.schema.BaseColumn = function(table, name, isUnique, isNullable, type, opt_alias) {
   this.table_ = table;
@@ -9907,6 +9961,7 @@ lf.schema.BaseColumn = function(table, name, isUnique, isNullable, type, opt_ali
   this.type_ = type;
   this.alias_ = opt_alias || null;
 };
+goog.exportSymbol("lf.schema.BaseColumn", lf.schema.BaseColumn);
 lf.schema.BaseColumn.prototype.getName = function() {
   return this.name_;
 };
@@ -9943,51 +9998,51 @@ lf.schema.BaseColumn.prototype.isUnique = function() {
 lf.schema.BaseColumn.prototype.eq = function(operand) {
   return lf.pred.createPredicate(this, operand, lf.eval.Type.EQ);
 };
-goog.exportSymbol("lf.schema.BaseColumn.prototype.eq", lf.schema.BaseColumn.prototype.eq);
+goog.exportProperty(lf.schema.BaseColumn.prototype, "eq", lf.schema.BaseColumn.prototype.eq);
 lf.schema.BaseColumn.prototype.neq = function(operand) {
   return lf.pred.createPredicate(this, operand, lf.eval.Type.NEQ);
 };
-goog.exportSymbol("lf.schema.BaseColumn.prototype.neq", lf.schema.BaseColumn.prototype.neq);
+goog.exportProperty(lf.schema.BaseColumn.prototype, "neq", lf.schema.BaseColumn.prototype.neq);
 lf.schema.BaseColumn.prototype.lt = function(operand) {
   return lf.pred.createPredicate(this, operand, lf.eval.Type.LT);
 };
-goog.exportSymbol("lf.schema.BaseColumn.prototype.lt", lf.schema.BaseColumn.prototype.lt);
+goog.exportProperty(lf.schema.BaseColumn.prototype, "lt", lf.schema.BaseColumn.prototype.lt);
 lf.schema.BaseColumn.prototype.lte = function(operand) {
   return lf.pred.createPredicate(this, operand, lf.eval.Type.LTE);
 };
-goog.exportSymbol("lf.schema.BaseColumn.prototype.lte", lf.schema.BaseColumn.prototype.lte);
+goog.exportProperty(lf.schema.BaseColumn.prototype, "lte", lf.schema.BaseColumn.prototype.lte);
 lf.schema.BaseColumn.prototype.gt = function(operand) {
   return lf.pred.createPredicate(this, operand, lf.eval.Type.GT);
 };
-goog.exportSymbol("lf.schema.BaseColumn.prototype.gt", lf.schema.BaseColumn.prototype.gt);
+goog.exportProperty(lf.schema.BaseColumn.prototype, "gt", lf.schema.BaseColumn.prototype.gt);
 lf.schema.BaseColumn.prototype.gte = function(operand) {
   return lf.pred.createPredicate(this, operand, lf.eval.Type.GTE);
 };
-goog.exportSymbol("lf.schema.BaseColumn.prototype.gte", lf.schema.BaseColumn.prototype.gte);
+goog.exportProperty(lf.schema.BaseColumn.prototype, "gte", lf.schema.BaseColumn.prototype.gte);
 lf.schema.BaseColumn.prototype.match = function(regex) {
   return lf.pred.createPredicate(this, regex, lf.eval.Type.MATCH);
 };
-goog.exportSymbol("lf.schema.BaseColumn.prototype.match", lf.schema.BaseColumn.prototype.match);
+goog.exportProperty(lf.schema.BaseColumn.prototype, "match", lf.schema.BaseColumn.prototype.match);
 lf.schema.BaseColumn.prototype.between = function(from, to) {
   return lf.pred.createPredicate(this, [from, to], lf.eval.Type.BETWEEN);
 };
-goog.exportSymbol("lf.schema.BaseColumn.prototype.between", lf.schema.BaseColumn.prototype.between);
+goog.exportProperty(lf.schema.BaseColumn.prototype, "between", lf.schema.BaseColumn.prototype.between);
 lf.schema.BaseColumn.prototype.in = function(values) {
   return lf.pred.createPredicate(this, values, lf.eval.Type.IN);
 };
-goog.exportSymbol("lf.schema.BaseColumn.prototype.in", lf.schema.BaseColumn.prototype.in);
+goog.exportProperty(lf.schema.BaseColumn.prototype, "in", lf.schema.BaseColumn.prototype.in);
 lf.schema.BaseColumn.prototype.isNull = function() {
   return this.eq(null);
 };
-goog.exportSymbol("lf.schema.BaseColumn.prototype.isNull", lf.schema.BaseColumn.prototype.isNull);
+goog.exportProperty(lf.schema.BaseColumn.prototype, "isNull", lf.schema.BaseColumn.prototype.isNull);
 lf.schema.BaseColumn.prototype.isNotNull = function() {
   return this.neq(null);
 };
-goog.exportSymbol("lf.schema.BaseColumn.prototype.isNotNull", lf.schema.BaseColumn.prototype.isNotNull);
+goog.exportProperty(lf.schema.BaseColumn.prototype, "isNotNull", lf.schema.BaseColumn.prototype.isNotNull);
 lf.schema.BaseColumn.prototype.as = function(name) {
   return new lf.schema.BaseColumn(this.table_, this.name_, this.isUnique_, this.isNullable_, this.type_, name);
 };
-goog.exportSymbol("lf.schema.BaseColumn.prototype.as", lf.schema.BaseColumn.prototype.as);
+goog.exportProperty(lf.schema.BaseColumn.prototype, "as", lf.schema.BaseColumn.prototype.as);
 
 lf.Global = function() {
   this.services_ = new goog.structs.Map;
@@ -10040,6 +10095,7 @@ lf.schema.TableBuilder = function(tableName) {
   this.persistentIndex_ = !1;
   this.checkName_(tableName);
 };
+goog.exportSymbol("lf.schema.TableBuilder", lf.schema.TableBuilder);
 lf.schema.TableBuilder.NULLABLE_TYPES_BY_DEFAULT = new goog.structs.Set([lf.Type.ARRAY_BUFFER, lf.Type.OBJECT]);
 lf.schema.TableBuilder.toPascal_ = function(name) {
   return name[0].toUpperCase() + name.substring(1);
@@ -10071,7 +10127,7 @@ lf.schema.TableBuilder.prototype.addColumn = function(name, type) {
   lf.schema.TableBuilder.NULLABLE_TYPES_BY_DEFAULT.contains(type) && this.addNullable([name]);
   return this;
 };
-goog.exportSymbol("lf.schema.TableBuilder.prototype.addColumn", lf.schema.TableBuilder.prototype.addColumn);
+goog.exportProperty(lf.schema.TableBuilder.prototype, "addColumn", lf.schema.TableBuilder.prototype.addColumn);
 lf.schema.TableBuilder.prototype.addPrimaryKey = function(columns, opt_autoInc) {
   this.checkName_(this.pkName_);
   var cols = this.normalizeColumns_(columns, !0, void 0, opt_autoInc);
@@ -10083,11 +10139,11 @@ lf.schema.TableBuilder.prototype.addPrimaryKey = function(columns, opt_autoInc) 
   this.indices_.set(this.pkName_, cols);
   return this;
 };
-goog.exportSymbol("lf.schema.TableBuilder.prototype.addPrimaryKey", lf.schema.TableBuilder.prototype.addPrimaryKey);
+goog.exportProperty(lf.schema.TableBuilder.prototype, "addPrimaryKey", lf.schema.TableBuilder.prototype.addPrimaryKey);
 lf.schema.TableBuilder.prototype.addForeignKey = function() {
   return this;
 };
-goog.exportSymbol("lf.schema.TableBuilder.prototype.addForeignKey", lf.schema.TableBuilder.prototype.addForeignKey);
+goog.exportProperty(lf.schema.TableBuilder.prototype, "addForeignKey", lf.schema.TableBuilder.prototype.addForeignKey);
 lf.schema.TableBuilder.prototype.addUnique = function(name, columns) {
   this.checkName_(name);
   var cols = this.normalizeColumns_(columns, !0);
@@ -10095,7 +10151,7 @@ lf.schema.TableBuilder.prototype.addUnique = function(name, columns) {
   this.uniqueIndices_.add(name);
   return this;
 };
-goog.exportSymbol("lf.schema.TableBuilder.prototype.addUnique", lf.schema.TableBuilder.prototype.addUnique);
+goog.exportProperty(lf.schema.TableBuilder.prototype, "addUnique", lf.schema.TableBuilder.prototype.addUnique);
 lf.schema.TableBuilder.prototype.addNullable = function(columns) {
   var cols = this.normalizeColumns_(columns, !1);
   this.checkNullableColumns_(cols);
@@ -10104,7 +10160,7 @@ lf.schema.TableBuilder.prototype.addNullable = function(columns) {
   }, this);
   return this;
 };
-goog.exportSymbol("lf.schema.TableBuilder.prototype.addNullable", lf.schema.TableBuilder.prototype.addNullable);
+goog.exportProperty(lf.schema.TableBuilder.prototype, "addNullable", lf.schema.TableBuilder.prototype.addNullable);
 lf.schema.TableBuilder.prototype.checkNullableColumns_ = function(columns) {
   this.indices_.getKeys().forEach(function(indexName) {
     var indexedColumnNames = new goog.structs.Set;
@@ -10127,7 +10183,7 @@ lf.schema.TableBuilder.prototype.addIndex = function(name, columns, opt_unique, 
   this.indices_.set(name, cols);
   return this;
 };
-goog.exportSymbol("lf.schema.TableBuilder.prototype.addIndex", lf.schema.TableBuilder.prototype.addIndex);
+goog.exportProperty(lf.schema.TableBuilder.prototype, "addIndex", lf.schema.TableBuilder.prototype.addIndex);
 lf.schema.TableBuilder.prototype.checkIndexedColumns_ = function(indexName, columns) {
   if (1 < columns.length) {
     var nullableColumns = columns.filter(function(column) {
@@ -10141,12 +10197,12 @@ lf.schema.TableBuilder.prototype.checkIndexedColumns_ = function(indexName, colu
 lf.schema.TableBuilder.prototype.persistentIndex = function(value) {
   this.persistentIndex_ = value;
 };
-goog.exportSymbol("lf.schema.TableBuilder.prototype.persistentIndex", lf.schema.TableBuilder.prototype.persistentIndex);
+goog.exportProperty(lf.schema.TableBuilder.prototype, "persistentIndex", lf.schema.TableBuilder.prototype.persistentIndex);
 lf.schema.TableBuilder.prototype.getSchema = function() {
   var tableClass = this.generateTableClass_();
   return new tableClass;
 };
-goog.exportSymbol("lf.schema.TableBuilder.prototype.getSchema", lf.schema.TableBuilder.prototype.getSchema);
+goog.exportProperty(lf.schema.TableBuilder.prototype, "getSchema", lf.schema.TableBuilder.prototype.getSchema);
 lf.schema.TableBuilder.prototype.normalizeColumns_ = function(columns, checkIndexable, opt_order, opt_autoInc) {
   var normalized = columns;
   "string" == typeof columns[0] && (normalized = columns.map(function(col) {
@@ -10190,6 +10246,7 @@ lf.schema.TableBuilder.prototype.generateTableClass_ = function() {
   tableClass.prototype.createRow = function(opt_value) {
     return new this.rowClass_(lf.Row.getNextId(), opt_value);
   };
+  goog.exportProperty(tableClass.prototype, "createRow", tableClass.prototype.createRow);
   tableClass.prototype.deserializeRow = function(dbRecord) {
     var obj = {};
     this.getColumns().forEach(function(col) {
@@ -10198,9 +10255,11 @@ lf.schema.TableBuilder.prototype.generateTableClass_ = function() {
     }, this);
     return new this.rowClass_(dbRecord.id, obj);
   };
+  goog.exportProperty(tableClass.prototype, "deserializeRow", tableClass.prototype.deserializeRow);
   tableClass.prototype.getConstraint = function() {
     return this.constraint_;
   };
+  goog.exportProperty(tableClass.prototype, "getConstraint", tableClass.prototype.getConstraint);
   return tableClass;
 };
 lf.schema.TableBuilder.prototype.generateRowClass_ = function(columns$$0, indices) {
@@ -10265,6 +10324,7 @@ lf.schema.Builder = function(dbName, dbVersion) {
   this.tableBuilders_ = new goog.structs.Map;
   this.finalized_ = !1;
 };
+goog.exportSymbol("lf.schema.Builder", lf.schema.Builder);
 lf.schema.Builder.prototype.finalize_ = function() {
   this.finalized_ || (this.tableBuilders_.getKeys().forEach(function(tableName) {
     var builder = this.tableBuilders_.get(tableName);
@@ -10275,20 +10335,20 @@ lf.schema.Builder.prototype.getSchema = function() {
   this.finalized_ || this.finalize_();
   return this.schema_;
 };
-goog.exportSymbol("lf.schema.Builder.prototype.getSchema", lf.schema.Builder.prototype.getSchema);
+goog.exportProperty(lf.schema.Builder.prototype, "getSchema", lf.schema.Builder.prototype.getSchema);
 lf.schema.Builder.prototype.getGlobal = function() {
   var namespacedGlobalId = new lf.service.ServiceId("ns_" + this.schema_.name()), global = lf.Global.get(), namespacedGlobal = null;
   global.isRegistered(namespacedGlobalId) ? namespacedGlobal = global.getService(namespacedGlobalId) : (namespacedGlobal = new lf.Global, global.registerService(namespacedGlobalId, namespacedGlobal));
   return namespacedGlobal;
 };
-goog.exportSymbol("lf.schema.Builder.prototype.getGlobal", lf.schema.Builder.prototype.getGlobal);
+goog.exportProperty(lf.schema.Builder.prototype, "getGlobal", lf.schema.Builder.prototype.getGlobal);
 lf.schema.Builder.prototype.connect = function(opt_options) {
   var global = this.getGlobal();
   global.isRegistered(lf.service.SCHEMA) || global.registerService(lf.service.SCHEMA, this.getSchema());
   var db = new lf.proc.Database(global);
   return db.init(opt_options);
 };
-goog.exportSymbol("lf.schema.Builder.prototype.connect", lf.schema.Builder.prototype.connect);
+goog.exportProperty(lf.schema.Builder.prototype, "connect", lf.schema.Builder.prototype.connect);
 lf.schema.Builder.prototype.createTable = function(tableName) {
   if (this.tableBuilders_.containsKey(tableName) || this.finalized_) {
     throw new lf.Exception(lf.Exception.Type.SYNTAX, "Table is already created or schema is already finalized.");
@@ -10296,7 +10356,7 @@ lf.schema.Builder.prototype.createTable = function(tableName) {
   this.tableBuilders_.set(tableName, new lf.schema.TableBuilder(tableName));
   return this.tableBuilders_.get(tableName);
 };
-goog.exportSymbol("lf.schema.Builder.prototype.createTable", lf.schema.Builder.prototype.createTable);
+goog.exportProperty(lf.schema.Builder.prototype, "createTable", lf.schema.Builder.prototype.createTable);
 lf.schema.Builder.prototype.setPragma = function(pragma) {
   if (this.finalized_) {
     throw new lf.Exception(lf.Exception.Type.SYNTAX, "Schema is already finalized.");
@@ -10304,7 +10364,7 @@ lf.schema.Builder.prototype.setPragma = function(pragma) {
   this.schema_.setPragma(pragma);
   return this;
 };
-goog.exportSymbol("lf.schema.Builder.prototype.setPragma", lf.schema.Builder.prototype.setPragma);
+goog.exportProperty(lf.schema.Builder.prototype, "setPragma", lf.schema.Builder.prototype.setPragma);
 lf.schema.DatabaseSchema_ = function(name, version) {
   this.name_ = name;
   this.version_ = version;
