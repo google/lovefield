@@ -7326,6 +7326,7 @@ lf.schema.Table = function(name, cols, indices, persistentIndex) {
   this.persistentIndex_ = persistentIndex;
   this.alias_ = null;
 };
+goog.exportSymbol("lf.schema.Table", lf.schema.Table);
 lf.schema.Table.prototype.getName = function() {
   return this.name_;
 };
@@ -7340,15 +7341,16 @@ lf.schema.Table.prototype.as = function(name) {
   clone.alias_ = name;
   return clone;
 };
-goog.exportSymbol("lf.schema.Table.prototype.createRow", lf.schema.Table.prototype.createRow);
-goog.exportSymbol("lf.schema.Table.prototype.deserializeRow", lf.schema.Table.prototype.deserializeRow);
+goog.exportProperty(lf.schema.Table.prototype, "as", lf.schema.Table.prototype.as);
+goog.exportProperty(lf.schema.Table.prototype, "createRow", lf.schema.Table.prototype.createRow);
+goog.exportProperty(lf.schema.Table.prototype, "deserializeRow", lf.schema.Table.prototype.deserializeRow);
 lf.schema.Table.prototype.getIndices = function() {
   return this.indices_;
 };
 lf.schema.Table.prototype.getColumns = function() {
   return this.columns_;
 };
-goog.exportSymbol("lf.schema.Table.prototype.getConstraint", lf.schema.Table.prototype.getConstraint);
+goog.exportProperty(lf.schema.Table.prototype, "getConstraint", lf.schema.Table.prototype.getConstraint);
 lf.schema.Table.prototype.persistentIndex = function() {
   return this.persistentIndex_;
 };
