@@ -5577,19 +5577,21 @@ lf.backstore.WebSqlTx.prototype.queue = function(statement, params, opt_transfor
 };
 lf.backstore.WebSqlTx.prototype.commit = function() {
   lf.backstore.WebSqlTx.superClass_.commit.call(this);
-  var lastResults, transformer, onError = this.resolver.reject.bind(this.resolver), callback = goog.bind(function(tx, results) {
+  var lastResults, transformer, onTxError = this.resolver.reject.bind(this.resolver), onExecError = function(tx, e) {
+    this.resolver.reject(e);
+  }.bind(this), callback = goog.bind(function(tx, results) {
     lastResults = results;
     if (this.commands_.length) {
       var command = this.commands_.shift();
       transformer = command.transform;
-      tx.executeSql(command.statement, command.params, callback, onError);
+      tx.executeSql(command.statement, command.params, callback, onExecError);
     } else {
       var ret = lastResults;
       goog.isDefAndNotNull(transformer) && goog.isDefAndNotNull(lastResults) && (ret = transformer(lastResults));
       this.resolver.resolve(ret);
     }
   }, this);
-  this.txType == lf.TransactionType.READ_ONLY ? this.db_.readTransaction(callback, onError) : this.db_.transaction(callback, onError);
+  this.txType == lf.TransactionType.READ_ONLY ? this.db_.readTransaction(callback, onTxError) : this.db_.transaction(callback, onTxError);
   return this.resolver.promise;
 };
 
@@ -5620,7 +5622,7 @@ lf.backstore.WebSqlRawBackStore.queueListTables = function(tx) {
 lf.backstore.WebSql = function(global, schema, opt_size) {
   this.global_ = global;
   this.schema_ = schema;
-  this.size_ = opt_size || 5E6;
+  this.size_ = opt_size || 4194304;
 };
 lf.backstore.WebSql.prototype.getEmptyJournal_ = function() {
   return new lf.cache.Journal(this.global_, []);
