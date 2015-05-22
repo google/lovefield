@@ -183,11 +183,13 @@ function populateOldData() {
  * @param {string} version
  * @param {string} desc
  * @param {number} size
- * @param {!function(?Database)} callback
+ * @param {!function(?Database)=} opt_callback
  * @return {?Database}
  */
-function openDatabaseStub(name, version, desc, size, callback) {
-  callback(upgradeDb);
+function openDatabaseStub(name, version, desc, size, opt_callback) {
+  if (goog.isDefAndNotNull(opt_callback)) {
+    opt_callback(upgradeDb);
+  }
   return upgradeDb;
 }
 

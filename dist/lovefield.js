@@ -5654,10 +5654,12 @@ lf.backstore.WebSql.prototype.init = function(opt_onUpgrade) {
   };
   return new goog.Promise(goog.bind(function(resolve, reject) {
     try {
-      window.openDatabase(this.schema_.name(), "", this.schema_.name(), this.size_, goog.bind(function(db) {
-        this.db_ = db;
-        this.checkVersion_(onUpgrade).then(resolve, reject);
-      }, this));
+      var db = window.openDatabase(this.schema_.name(), "", this.schema_.name(), this.size_);
+      if (goog.isDefAndNotNull(db)) {
+        this.db_ = db, this.checkVersion_(onUpgrade).then(resolve, reject);
+      } else {
+        throw new lf.Exception(lf.Exception.Type.NOT_SUPPORTED, "Unable to open database.");
+      }
     } catch (e) {
       reject(e);
     }
@@ -9712,13 +9714,13 @@ lf.base.init = function(global, opt_options) {
       backStore = new lf.backstore.IndexedDB(global, schema);
   }
   global.registerService(lf.service.BACK_STORE, backStore);
+  var indexStore = new lf.index.MemoryIndexStore;
+  global.registerService(lf.service.INDEX_STORE, indexStore);
   return backStore.init(options.onUpgrade).then(function() {
     var queryEngine = new lf.proc.DefaultQueryEngine(global);
     global.registerService(lf.service.QUERY_ENGINE, queryEngine);
     var runner = new lf.proc.Runner;
     global.registerService(lf.service.RUNNER, runner);
-    var indexStore = new lf.index.MemoryIndexStore;
-    global.registerService(lf.service.INDEX_STORE, indexStore);
     var observerRegistry = new lf.ObserverRegistry;
     global.registerService(lf.service.OBSERVER_REGISTRY, observerRegistry);
     return indexStore.init(schema);
