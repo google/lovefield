@@ -2325,7 +2325,7 @@ goog.Promise.returnEntry_ = function(entry) {
 goog.Promise.RESOLVE_FAST_PATH_ = function() {
 };
 goog.Promise.resolve = function(opt_value) {
-  return new goog.Promise(goog.Promise.RESOLVE_FAST_PATH_, opt_value);
+  return opt_value instanceof goog.Promise ? opt_value : new goog.Promise(goog.Promise.RESOLVE_FAST_PATH_, opt_value);
 };
 goog.Promise.reject = function(opt_reason) {
   return new goog.Promise(function(resolve, reject) {
