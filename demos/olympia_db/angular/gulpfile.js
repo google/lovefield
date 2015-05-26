@@ -68,7 +68,7 @@ gulp.task('clean', function() {
 });
 
 
-gulp.task('webserver', function() {
+gulp.task('webserver', ['copy_dependencies', 'copy_data'], function() {
   gulp.src('.').pipe(webserver({
     livereload: true,
     directoryListing: true,
@@ -84,6 +84,6 @@ gulp.task('export', ['default'], function() {
   fs.copySync('lib', path.join(binDir, 'lib'));
   fs.copySync('data', path.join(binDir, 'data'));
   fs.copySync('resources', path.join(binDir, 'resources'));
-  fs.copySync('demo_angular.html', path.join(binDir, 'demo_angular.html'));
-  fs.copySync('demo_angular.js', path.join(binDir, 'demo_angular.js'));
+  fs.copySync('demo.html', path.join(binDir, 'demo.html'));
+  fs.copySync('demo.js', path.join(binDir, 'demo.js'));
 });

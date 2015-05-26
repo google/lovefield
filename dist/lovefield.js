@@ -8195,7 +8195,7 @@ lf.query.InsertBuilder.prototype.assertExecPreconditions = function() {
     throw new lf.Exception(lf.Exception.Type.SYNTAX, "Invalid usage of insert()");
   }
   if (context.allowReplace && goog.isNull(context.into.getConstraint().getPrimaryKey())) {
-    throw new lf.Exception(lf.Exception.Type.SYNTAX, "Attemted to insert or replace in a table with no primary key.");
+    throw new lf.Exception(lf.Exception.Type.SYNTAX, "Attempted to insert or replace in a table with no primary key.");
   }
 };
 lf.query.InsertBuilder.prototype.into = function(table) {
@@ -8614,7 +8614,7 @@ lf.proc.SelectLogicalPlanGenerator.prototype.generateInternal = function() {
   return planRewriter.generate();
 };
 lf.proc.SelectLogicalPlanGenerator.prototype.generateNodes_ = function() {
-  this.generateTableAcessNodes_();
+  this.generateTableAccessNodes_();
   this.generateCrossProductNode_();
   this.generateSelectNode_();
   this.generateOrderByNode_();
@@ -8634,7 +8634,7 @@ lf.proc.SelectLogicalPlanGenerator.prototype.connectNodes_ = function() {
   });
   return rootNode;
 };
-lf.proc.SelectLogicalPlanGenerator.prototype.generateTableAcessNodes_ = function() {
+lf.proc.SelectLogicalPlanGenerator.prototype.generateTableAccessNodes_ = function() {
   this.tableAccessNodes_ = this.query.from.map(function(table) {
     return new lf.proc.TableAccessNode(table);
   }, this);

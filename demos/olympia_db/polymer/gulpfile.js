@@ -20,7 +20,7 @@ var webserver = require('gulp-webserver');
 var rmdir = require('rimraf').sync;
 
 
-gulp.task('copy_dependencies', function() {
+gulp.task('copy_data', function() {
   if (!fs.existsSync('data')) { fs.mkdirSync('data'); }
   fs.createReadStream('../data/olympic_medalists.json').
       pipe(fs.createWriteStream('data/olympic_medalists.json'));
@@ -29,7 +29,7 @@ gulp.task('copy_dependencies', function() {
 });
 
 
-gulp.task('default', ['copy_dependencies']);
+gulp.task('default', ['copy_data']);
 
 
 gulp.task('clean', function() {
@@ -45,7 +45,7 @@ gulp.task('clean', function() {
 });
 
 
-gulp.task('webserver', function() {
+gulp.task('webserver', ['copy_data'], function() {
   gulp.src('.').pipe(webserver({
     livereload: true,
     directoryListing: true,
