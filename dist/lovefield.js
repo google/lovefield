@@ -13,7 +13,7 @@
   See the License for the specific language governing permissions and
   limitations under the License.
 */
-'use strict';var $jscomp = {scope:{}}, goog = goog || {};
+(function(){'use strict';var $jscomp = {scope:{}}, goog = goog || {};
 goog.global = this;
 goog.isDef = function(val) {
   return void 0 !== val;
@@ -10448,4 +10448,4 @@ lf.structs.MapPolyFill_.prototype.values = function() {
 };
 goog.exportSymbol("lf.structs.MapPolyFill_.prototype.values", lf.structs.MapPolyFill_.prototype.values);
 lf.structs.Map = goog.isDef(window.Map) && goog.isDef(window.Map.prototype.keys) ? window.Map : lf.structs.MapPolyFill_;
-
+}.bind(window))()

@@ -44,7 +44,7 @@ var log = console['log'];
 
 gulp.task('default', function() {
   log('Usage: ');
-  log('  gulp build --target=<target>: build library or tests');
+  log('  gulp build --target=<target>: build lib or tests');
   log('  gulp test --target=<target> --browser=<broswer>: run Lovefield tests');
   log('  gulp debug: start a debug server at port 4000');
 });

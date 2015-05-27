@@ -45,7 +45,8 @@ var Config = function() {
     warning_level: 'VERBOSE',
     externs: [
       'builddef/firebase_externs.js'
-    ]
+    ],
+    output_wrapper: '(function(){%output%}.bind(window))()'
   };
 
   // Compiler options for release mode.
