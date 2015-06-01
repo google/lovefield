@@ -1,0 +1,64 @@
+<link rel="import" href="../bower_components/polymer/polymer.html" />
+<link rel="import" href="../bower_components/core-menu/core-menu.html" />
+<link rel="import" href="../bower_components/paper-dropdown/paper-dropdown.html" />
+<link rel="import" href="../bower_components/paper-dropdown-menu/paper-dropdown-menu.html" />
+<link rel="import" href="../bower_components/paper-item/paper-item.html" />
+<link rel="import" href="../bower_components/font-roboto/roboto.html" />
+
+
+<polymer-element name="scrum-filter" attributes="owners priorities uiModel">
+  <template>
+    <style>
+      :host {
+        font-family: RobotoDraft, Helvetica, Arial;
+      }
+      paper-dropdown-menu {
+        box-sizing: border-box;
+        width: 170px;
+      }
+      core-menu {
+        box-sizing: border-box;
+        width: 170px;
+      }
+      paper-item {
+        overflow: hidden;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+      }
+    </style>
+    <paper-dropdown-menu label="Filter by Owner">
+      <paper-dropdown class="dropdown" duration="100">
+        <core-menu class="menu" on-core-select="{{onOwnerChange}}">
+          <template repeat="{{owners}}">
+            <paper-item name="{{}}">{{}}</paper-item>
+          </template>
+        </core-menu>
+      </paper-dropdown>
+    </paper-dropdown-menu>
+    <paper-dropdown-menu label="Filter by Priority">
+      <paper-dropdown class="dropdown" duration="100">
+        <core-menu class="menu" on-core-select="{{onPriorityChange}}">
+          <template repeat="{{priorities}}">
+            <paper-item name="{{}}">{{}}</paper-item>
+          </template>
+        </core-menu>
+      </paper-dropdown>
+    </paper-dropdown-menu>
+  </template>
+  <script>
+    Polymer('scrum-filter', {
+      onOwnerChange: function(e, details) {
+        if (!details.isSelected) {
+          return;
+        }
+        this.uiModel.owners = [details.item.getAttribute('name')];
+      },
+      onPriorityChange: function(e, details) {
+        if (!details.isSelected) {
+          return;
+        }
+        this.uiModel.priorities = [details.item.getAttribute('name')];
+      }
+    });
+  </script>
+</polymer-element>

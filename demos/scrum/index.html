@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <script src="bower_components/lovefield/dist/lovefield.min.js"></script>
+    <script src="bower_components/webcomponentsjs/webcomponents.js"></script>
+
+    <link rel="import" href="bower_components/polymer/polymer.html" />
+    <link rel="import" href="bower_components/font-roboto/roboto.html" />
+
+    <link rel="import" href="src/scrum-filter.html" />
+    <link rel="import" href="src/scrum-panel.html" />
+
+    <style>
+      html {
+        height: 100%;
+        overflow: hidden;
+      }
+      body {
+        font-family: RobotoDraft, Helvetica, Arial;
+        font-size: 14px;
+        height: 100%;
+      }
+      .panel {
+        height: 93%;
+      }
+      scrum-panel {
+        border: 2px solid lightgrey;
+        margin-bottom: 10px;
+      }
+      #ns {
+        background-color: #FFCDD2;
+      }
+      #working {
+        background-color: #B3E5FC;
+      }
+    </style>
+  </head>
+  <body>
+    <div>
+      <scrum-filter id="filter"></scrum-filter>
+    </div>
+    <div class="panel" vertical layout>
+      <scrum-panel id="ns" _title="Not Started"></scrum-panel>
+      <scrum-panel id="working" _title="Working"></scrum-panel>
+    </div>
+    <script src="src/mock_data.js"></script>
+    <script src="src/data_model.js"></script>
+    <script src="src/main.js"></script>
+  </body>
+</html>
+

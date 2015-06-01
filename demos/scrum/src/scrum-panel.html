@@ -1,0 +1,51 @@
+<link rel="import" href="../bower_components/polymer/polymer.html" />
+<link rel="import" href="../bower_components/core-header-panel/core-header-panel.html" />
+<link rel="import" href="../bower_components/core-toolbar/core-toolbar.html" />
+<link rel="import" href="../bower_components/core-list/core-list.html" />
+<link rel="import" href="scrum-task.html" />
+
+
+<polymer-element name="scrum-panel" attributes="tasks _title" layout horizontal>
+  <template>
+    <style>
+      :host {
+        display: block;
+        height: 100%;
+      }
+      .title {
+        font-size: 14px;
+        font-weight: bold;
+        text-align: center;
+      }
+      .item {
+        box-sizing: border-box;
+        padding: 10px;
+        overflow: hidden;
+      }
+      core-toolbar {
+        height: 40px;
+      }
+      .panelTitle {
+        height: 44px;
+      }
+    </style>
+    <core-header-panel id="hPanel" flex>
+      <core-toolbar><div class="panelTitle">{{_title}}</div></core-toolbar>
+      <core-list id="list" data="{{tasks}}" fit grid width="220">
+        <template>
+          <div class="item">
+            <scrum-task task="{{model}}"></scrum-task>
+          </div>
+        </template>
+      </core-list>
+    </core-header-panel>
+
+  </template>
+  <script>
+    Polymer('scrum-panel', {
+      ready: function() {
+        this.$.list.scrollTarget = this.$.hPanel.scroller;
+     }
+    });
+  </script>
+</polymer-element>

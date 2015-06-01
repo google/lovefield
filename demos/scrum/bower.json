@@ -1,0 +1,24 @@
+{
+  "name": "scrum",
+  "version": "0.0.1",
+  "homepage": "https://github.com/google/lovefield",
+  "authors": [
+    "Google, Inc."
+  ],
+  "description": "A demo of Lovefield library using fake scrum task data",
+  "main": "index.html",
+  "license": "http://www.apache.org/licenses/LICENSE-2.0",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components"
+  ],
+  "dependencies": {
+    "lovefield": "lovefield#master",
+    "polymer": "Polymer/polymer#^0.5",
+    "core-elements": "Polymer/core-elements#^0.5",
+    "font-roboto": "Polymer/font-roboto",
+    "paper-dropdown-menu": "Polymer/paper-dropdown-menu#^0.5",
+    "paper-shadow": "Polymer/paper-shadow#^0.5"
+  }
+}

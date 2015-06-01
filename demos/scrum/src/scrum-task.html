@@ -1,0 +1,71 @@
+<link rel="import" href="../bower_components/polymer/polymer.html" />
+<link rel="import" href="../bower_components/paper-shadow/paper-shadow.html" />
+<link rel="import" href="../bower_components/font-roboto/roboto.html" />
+
+
+<polymer-element name="scrum-task" attributes="task">
+  <template>
+    <style>
+    paper-shadow {
+      display: block;
+      width: 200px;
+      height: 100px;
+      background-color: #ffffc0;
+      font-family: RobotoDraft, Helvetica, Arial;
+      position: relative;
+    }
+    .title {
+      font-size: 16px;
+      font-weight: bold;
+    }
+    .header-footer {
+      height: 1.2em;
+      overflow: hidden;
+      font-size: .8em;
+      font-weight: bold;
+    }
+    .pri-tag {
+      background-color: #ffc82c;
+      color: #fff;
+      float: left;
+      margin: 0;
+    }
+    .task-id {
+      padding-left: 10px;
+    }
+    .bottom {
+      position: absolute;
+      padding-left: 5px;
+      bottom: 0;
+    }
+    .right {
+      position: absolute;
+      right: 5px;
+    }
+    .desc {
+      padding: 5px;
+    }
+    </style>
+    <paper-shadow z="2">
+      <div class=card">
+        <div class="header-footer">
+          <span class="pri-tag">P{{task.pri}}</span>
+          <span class="task-id">{{task.id}}</span>
+        </div>
+        <div class="desc"><span>{{task.desc}}</span></div>
+        <div class="header-footer">
+          <div class="bottom">ETA:&nbsp;{{eta}}</div>
+          <div class="bottom right">{{task.owner}}</div>
+        </div>
+    </paper-shadow>
+  </template>
+  <script>
+    Polymer('scrum-task', {
+      taskChanged: function(oldValue, newValue) {
+        if (this.task && this.task.eta) {
+          this.eta = this.task.eta.toLocaleDateString();
+        }
+      }
+    });
+  </script>
+</polymer-element>
