@@ -1,0 +1,21 @@
+{
+  "name": "lovefield-dashboard",
+  "version": "0.0.1",
+  "homepage": "https://github.com/google/lovefield",
+  "authors": [
+    "Google Inc"
+  ],
+  "description": "Performance monitoring dashboard for Lovefield",
+  "license": "http://www.apache.org/licenses/LICENSE-2.0",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components"
+  ],
+  "dependencies": {
+    "angular": "1.3.10",
+    "bootstrap": "3.3.2",
+    "lovefield": "lovefield#master",
+    "promise-polyfill": "~2.0.2"
+  }
+}

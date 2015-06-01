@@ -1,0 +1,12 @@
+{
+  "name": "lovefield-dashboard",
+  "version": "0.0.1",
+  "description": "Performance monitoring dashboard for Lovefield",
+  "devDependencies": {
+    "d3": "^3.5.5",
+    "fs-extra": "^0.18.2",
+    "gulp": "^3.8.11",
+    "gulp-gjslint": "^0.1.4",
+    "gulp-webserver": "^0.9.0"
+  }
+}
