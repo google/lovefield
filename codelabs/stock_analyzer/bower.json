@@ -1,0 +1,21 @@
+{
+  "name": "stock-analyzer",
+  "version": "0.0.1",
+  "homepage": "https://github.com/google/lovefield",
+  "authors": [
+    "Demetrios Papadopoulos"
+  ],
+  "description": "A demo of te Lovefield library using a database of historical stock data.",
+  "main": "demo-angular.js",
+  "license": "http://www.apache.org/licenses/LICENSE-2.0",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components"
+  ],
+  "dependencies": {
+    "angular": "1.3.10",
+    "bootstrap": "3.3.2",
+    "lovefield": "lovefield#master"
+  }
+}

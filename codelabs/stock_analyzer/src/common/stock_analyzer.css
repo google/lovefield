@@ -1,0 +1,112 @@
+body {
+  background-color: slategray;
+  font-size: 12px;
+}
+
+
+label {
+  color: white;
+  font-size: 13px;
+  margin-bottom: 0;
+  margin-right: 10px;
+}
+
+
+#query-builder {
+  margin: 20px;
+}
+
+
+#chart-container {
+  background-color: ghostwhite;
+  box-shadow: 0px 1px 4px 0px rgba(0, 0, 0, 0.2);
+  border-radius: 10px;
+  margin: 20px;
+  overflow-x: auto;
+  padding: 20px;
+}
+
+
+svg {
+  display: block;
+  margin: auto;
+}
+
+
+path {
+  fill: none;
+  stroke: steelblue;
+  stroke-width: 2;
+}
+
+
+.axis path,
+.axis line {
+    fill: none;
+    shape-rendering: crispEdges;
+    stroke: grey;
+    stroke-width: 1;
+}
+
+
+.grid .tick {
+  opacity: 0.7;
+  stroke: lightgrey;
+}
+
+
+.grid path {
+  stroke-width: 0;
+}
+
+
+#overlay {
+  fill: none;
+  pointer-events: all;
+}
+
+
+.focus-overlay circle {
+  fill: none;
+  stroke: steelblue;
+}
+
+
+.focus-overlay line {
+  stroke: black;
+  stroke-dasharray: 3 3;
+  stroke-width: 0.65px;
+}
+
+
+.focus-info {
+  background-color: rgba(255, 255, 255, 0.4);
+  border: 1px solid black;
+  border-radius: 3px;
+  padding: 5px;
+}
+
+
+.focus-info .info-label {
+  color: rgb(140, 144, 149);
+  text-align: right;
+}
+
+
+.focus-info .info-value{
+  font-weight: bold;
+  padding-left: 10px;
+}
+
+
+.data-points-overlay circle {
+  fill: red;
+  stroke: steelblue;
+}
+
+
+.area {
+  fill: lightsteelblue;
+  opacity: 0.5;
+  stroke-width: 0;
+}

@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <script src="../../lib/angular.min.js"></script>
+  <script src="../../lib/d3.min.js" charset="utf-8"></script>
+  <!-- Lovefield -->
+  <script src="../../lib/lovefield.js"></script>
+  <link href="../../lib/bootstrap.min.css" rel="stylesheet">
+  <link href="../common/stock_analyzer.css" rel="stylesheet">
+</head>
+
+<body ng-app="myApp">
+  <div  id="query-builder" ng-controller="QueryBuilderController as queryBuilder">
+    <form novalidate>
+      <div class="form-group">
+        <label>Select search mode
+          <select class="form-control" ng-model="searchMode"
+              ng-init="searchMode = 'Stocks'"
+              ng-change="queryBuilder.onSearchModeChanged()">
+            <option ng-repeat="item in queryBuilder.searchModes">{{item}}</option>
+          </select>
+        </label>
+
+        <label>Select {{searchMode}}
+          <select class="form-control" ng-model="itemSelection"
+              ng-init="itemSelection = null"
+              ng-change="queryBuilder.search()">
+            <option ng-repeat="item in queryBuilder.dropDownList">{{item}}</option>
+          </select>
+        </label>
+
+        <label>Select time window
+          <select class="form-control" ng-model="timeSelection"
+              ng-init="timeSelection = queryBuilder.timeWindows[4]"
+              ng-change="queryBuilder.search()">
+            <option ng-repeat="item in queryBuilder.timeWindows">{{item}}</option>
+          </select>
+        </label>
+      </div>
+    </form>
+  </div>
+
+  <div id="chart-container"></div>
+  <script type="text/javascript" src="../common/data_fetcher.js"></script>
+  <script type="text/javascript" src="../common/graph_plotter.js"></script>
+  <script type="text/javascript" src="lovefield_service.js"></script>
+  <script type="text/javascript" src="../common/fetcher_service.js"></script>
+  <script type="text/javascript" src="../common/query_builder_controller.js"></script>
+  <script type="text/javascript" src="../common/main.js"></script>
+</body>
+
+</html>
