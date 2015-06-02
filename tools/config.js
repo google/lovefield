@@ -40,13 +40,41 @@ var Config = function() {
 
   // Compiler options for all configurations.
   this.COMPILER_FLAGS_COMMON = {
+    externs: ['builddef/firebase_externs.js'],
     generate_exports: null,
-    language_in: 'ECMASCRIPT5_STRICT',
-    warning_level: 'VERBOSE',
-    externs: [
-      'builddef/firebase_externs.js'
+    jscomp_error: [
+      'accessControls',
+      'ambiguousFunctionDecl',
+      'checkDebuggerStatement',
+      'checkRegExp',
+      'checkTypes',
+      'checkVars',
+      'const',
+      'constantProperty',
+      'duplicate',
+      'es5Strict',
+      'externsValidation',
+      'fileoverviewTags',
+      'globalThis',
+      'internetExplorerChecks',
+      'invalidCasts',
+      'missingProperties',
+      'missingProvide',
+      'missingRequire',
+      'missingReturn',
+      'nonStandardJsDocs',
+      'strictModuleDepCheck',
+      'suspiciousCode',
+      'undefinedNames',
+      'undefinedVars',
+      'unknownDefines',
+      'uselessCode',
+      'visibility'
     ],
-    output_wrapper: '(function(){%output%}.bind(window))()'
+    jscomp_warning: 'deprecated',
+    language_in: 'ECMASCRIPT5_STRICT',
+    output_wrapper: '(function(){%output%}.bind(window))()',
+    warning_level: 'VERBOSE'
   };
 
   // Compiler options for release mode.
@@ -56,7 +84,6 @@ var Config = function() {
 
   // Compiler options for debug mode.
   this.COMPILER_FLAGS_DEBUG = {
-    compilation_level: 'WHITESPACE_ONLY',
     debug: null,
     formatting: 'PRETTY_PRINT'
   };
