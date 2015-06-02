@@ -1,0 +1,207 @@
+/**
+ * @license
+ * Copyright 2015 The Lovefield Project Authors. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+// Type definitions for Lovefield
+// Project: http://google.github.io/lovefield/
+
+declare module lf {
+  export enum Order { ASC, DESC }
+
+  export enum Type {
+    ARRAY_BUFFER,
+    BOOLEAN,
+    DATE_TIME,
+    INTEGER,
+    NUMBER,
+    OBJECT,
+    STRING
+  }
+
+  export interface Binder {
+    getIndex(): number
+  }
+
+  export interface Predicate {}
+  export interface Row {}
+  type ValueLiteral = string|number|boolean|Date;
+
+  export interface PredicateProvider {
+    eq(operand: ValueLiteral|schema.Column|Binder): Predicate
+    neq(operand: ValueLiteral|schema.Column|Binder): Predicate
+    lt(operand: ValueLiteral|schema.Column|Binder): Predicate
+    lte(operand: ValueLiteral|schema.Column|Binder): Predicate
+    gt(operand: ValueLiteral|schema.Column|Binder): Predicate
+    gte(operand: ValueLiteral|schema.Column|Binder): Predicate
+    match(operand: RegExp|Binder): Predicate
+    between(from: ValueLiteral|Binder, to: ValueLiteral|Binder): Predicate
+    in(values: Binder|Array<ValueLiteral>): Predicate
+    isNull(): Predicate
+    isNotNull(): Predicate
+  }
+
+  function bind(index: number): Binder;
+
+  export interface Transaction {
+    attach(query: query.Builder): Promise<Array<Object>>
+    begin(scope: Array<schema.Table>): Promise<void>
+    commit(): Promise<void>
+    exec(queries: Array<query.Builder>): Promise<Array<Array<Object>>>
+    rollback(): Promise<void>
+  }
+
+  export enum TransactionType { READ_ONLY, READ_WRITE }
+
+  export interface Database {
+    close(): void
+    createTransaction(type?: TransactionType): Transaction
+    delete(): query.Delete
+    getSchema(): schema.Database
+    insertOrReplace(): query.Insert
+    insert(): query.Insert
+    observe(query: query.Select, callback: Function): void
+    select(): query.Select
+    unobserve(query: query.Select, callback: Function): void
+    update(): query.Update
+  }
+
+  module query {
+    export interface Builder {
+      bind(...values: any[]): Builder
+      exec(): Promise<Array<Object>>
+      explain(): string
+      toSql(): string
+    }
+
+    export interface Delete extends Builder {
+      from(table: schema.Table): Delete
+      where(predicate: Predicate): Delete
+    }
+
+    export interface Insert extends Builder {
+      into(table: schema.Table): Insert
+      values(rows: Array<Row>|Binder|Array<Binder>): Insert
+    }
+
+    export interface Select extends Builder {
+      from(...tables: schema.Table[]): Select
+      groupBy(...columns: schema.Column[]): Select
+      innerJoin(table: schema.Table, predicate: Predicate): Select
+      leftOuterJoin(table: schema.Table, predicate: Predicate): Select
+      limit(numberOfRows: Binder|number): Select
+      orderBy(column: schema.Column, order?: Order): Select
+      skip(numberOfRows: Binder|number): Select
+      where(predicate: Predicate): Select
+    }
+
+    export interface Update extends Builder {
+      set(column: schema.Column, value: any): Update
+      where(predicate: Predicate): Update
+    }
+
+  }  // module query
+
+
+  module schema {
+    export enum DataStoreType {
+      FIREBASE,
+      INDEXED_DB,
+      LOCAL_STORAGE,
+      MEMORY,
+      WEB_SQL
+    }
+
+    export interface DatabasePragma {
+      enableBundledMode: boolean
+    }
+
+    export interface Database {
+      name(): string
+      pragma(): DatabasePragma
+      tables(): Array<schema.Table>
+      table(tableName: string): schema.Table
+      version(): number
+    }
+
+    export interface Column extends PredicateProvider {
+      as(name: string): Column
+      getName(): string
+      getNormalizedName(): string
+    }
+
+    export interface Table {
+      as(name: string): Table
+      createRow(value: Object): Row
+      getName(): string
+    }
+
+    export interface ConnectOptions {
+      onUpgrade?: Function
+      storeType?: DataStoreType
+      webSqlDbSize?: number
+      // TODO(dpapad): firebase?
+    }
+
+    export interface Builder {
+      connect(options: ConnectOptions): Promise<lf.Database>
+      createTable(tableName: string): TableBuilder
+      getSchema(): Database
+      setPragma(pragma: DatabasePragma): void
+    }
+
+    export interface IndexedColumn {
+      autoIncrement: boolean
+      name: string
+      order: Order
+    }
+
+    export interface TableBuilder {
+      addColumn(name: string, type: lf.Type): TableBuilder
+      addForeignKey(): TableBuilder
+      addIndex(
+          name: string, columns: Array<string>|Array<IndexedColumn>,
+          unique?: boolean, order?: Order): TableBuilder
+      addNullable(columns: Array<Column>): TableBuilder
+      addPrimaryKey(columns: Array<string>|Array<IndexedColumn>): TableBuilder
+      addUnique(name: string, columns: Array<Column>): TableBuilder
+    }
+
+    function create(dbName: string, dbVersion: number): Builder
+  }  // module schema
+
+
+  module op {
+    function and(...args: Predicate[]): Predicate;
+    function not(operand: Predicate): Predicate;
+    function or(...args: Predicate[]): Predicate;
+  }  // module op
+
+
+  module fn {
+    function avg(column: schema.Column): schema.Column
+    function count(column?: schema.Column): schema.Column
+    function distinct(column: schema.Column): schema.Column
+    function geomean(column: schema.Column): schema.Column
+    function max(column: schema.Column): schema.Column
+    function min(column: schema.Column): schema.Column
+    function stddev(column: schema.Column): schema.Column
+    function sum(column: schema.Column): schema.Column
+  }  // module fn
+
+}  // module lf
+
+declare module 'lf' {
+  export = lf;
+}
