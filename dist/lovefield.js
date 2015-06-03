@@ -10460,4 +10460,28 @@ lf.structs.MapPolyFill_.prototype.values = function() {
 };
 goog.exportSymbol("lf.structs.MapPolyFill_.prototype.values", lf.structs.MapPolyFill_.prototype.values);
 lf.structs.Map = goog.isDef(window.Map) && goog.isDef(window.Map.prototype.keys) ? window.Map : lf.structs.MapPolyFill_;
+
+lf.structs.SetPolyFill_ = function() {
+  this.set_ = new goog.structs.Set;
+  Object.defineProperty(this, "size", {get:function() {
+    return this.set_.getCount();
+  }});
+};
+lf.structs.SetPolyFill_.prototype.add = function(value) {
+  this.set_.add(value);
+};
+goog.exportSymbol("lf.structs.SetPolyFill_.prototype.add", lf.structs.SetPolyFill_.prototype.add);
+lf.structs.SetPolyFill_.prototype.clear = function() {
+  this.set_.clear();
+};
+goog.exportSymbol("lf.structs.SetPolyFill_.prototype.clear", lf.structs.SetPolyFill_.prototype.clear);
+lf.structs.SetPolyFill_.prototype.delete = function(value) {
+  return this.set_.remove(value);
+};
+goog.exportSymbol("lf.structs.SetPolyFill_.prototype.delete", lf.structs.SetPolyFill_.prototype.delete);
+lf.structs.SetPolyFill_.prototype.has = function(value) {
+  return this.set_.contains(value);
+};
+goog.exportSymbol("lf.structs.SetPolyFill_.prototype.has", lf.structs.SetPolyFill_.prototype.has);
+lf.structs.Set = goog.isDef(window.Set) && goog.isDef(window.Set.prototype.values) ? window.Set : lf.structs.SetPolyFill_;
 }.bind(window))()
