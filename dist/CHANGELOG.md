@@ -1,3 +1,9 @@
+Version: 2.0.56
+Publish date: 20150602
+Changes:
+ - Fixed lovefield.min.js. It was missing various public API endpoints.
+ - Added lovefield.d.ts TypeScript definitions in dist/ folder.
+
 Version: 2.0.55
 Publish date: 20150526
 Changes:

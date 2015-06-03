@@ -16,6 +16,7 @@
  */
 
 
+
 /**
  * Need a custom test reporter such that WebDriver can detect test completion.
  * @constructor
@@ -30,7 +31,7 @@ function TestReporter() {
 /** @return {boolean} */
 TestReporter.prototype.isInitialized = function() {
   return true;
-}
+};
 
 
 /** @return {boolean} */
@@ -69,14 +70,14 @@ function assertMethods(obj, methodNames, message) {
     if (!hasMethod) {
       throw new Error('Missing method \'' + methodName + '\' from ' + message);
     }
-  }, this);
+  });
 }
 
 
 /**
  * Checks that the given attributes exist on the given object.
  * @param {!*} obj
- * @param {!Array<string>} methodNames
+ * @param {!Array<string>} attributeNames
  * @param {string} message Debug message.
  */
 function assertAttributes(obj, attributeNames, message) {
@@ -85,7 +86,7 @@ function assertAttributes(obj, attributeNames, message) {
       throw new Error(
           'Missing attribute \'' + attributeName + '\' from ' + message);
     }
-  }, this);
+  });
 }
 
 
@@ -125,22 +126,27 @@ Tester.prototype.createSchema_ = function() {
  */
 Tester.prototype.run = function() {
   try {
-    assertAttributes(lf, ['bind', 'schema']);
+    assertAttributes(
+        lf, ['bind', 'schema', 'Type', 'Order', 'TransactionType'], 'lf');
 
     this.testEnum_Type();
     this.testEnum_Order();
+    this.testEnum_TransactionType();
     this.testEnum_DataStoreType();
 
     this.testApi_Fn();
     this.testApi_Op();
     this.testApi_SchemaBuilder();
   } catch (e) {
-    Promise.reject(e);
+    return Promise.reject(e);
   }
 
   // The following tests require a DB connection to have been established first.
   return this.getDbConnection_().then(function() {
     this.testApi_Db();
+    this.testApi_Schema();
+    this.testApi_Transaction();
+
     this.testApi_SelectBuilder();
     this.testApi_InsertBuilder();
     this.testApi_DeleteBuilder();
@@ -152,7 +158,10 @@ Tester.prototype.run = function() {
 };
 
 
-/** @return {!IThenable} */
+/**
+ * @return {!IThenable}
+ * @private
+ */
 Tester.prototype.getDbConnection_ = function() {
   var schemaBuilder = this.createSchema_();
   var connectOptions = {storeType: lf.schema.DataStoreType.MEMORY};
@@ -161,7 +170,7 @@ Tester.prototype.getDbConnection_ = function() {
         this.db_ = db;
         this.table_ = db.getSchema().table('DummyTable');
       }.bind(this));
-}
+};
 
 
 /** Tests lf.fn */
@@ -217,6 +226,14 @@ Tester.prototype.testEnum_DataStoreType = function() {
 };
 
 
+/** Tests lf.TransactionType */
+Tester.prototype.testEnum_TransactionType = function() {
+  var attributeNames = ['READ_ONLY', 'READ_WRITE'];
+  assertAttributes(
+      lf.TransactionType, attributeNames, 'lf.TransactionType');
+};
+
+
 /** Tests lf.schema.create API */
 Tester.prototype.testApi_SchemaBuilder = function() {
   assertAttributes(lf.schema, ['create']);
@@ -245,6 +262,27 @@ Tester.prototype.testApi_Db = function() {
   assertMethods(this.db_, methodNames, 'db');
 };
 
+
+/** Tests db connection API */
+Tester.prototype.testApi_Schema = function() {
+  var methodNames = [
+    'name', 'version', 'tables', 'table', 'pragma'
+  ];
+
+  var schema = this.db_.getSchema();
+  assertMethods(schema, methodNames, 'schema');
+};
+
+
+/** Tests transaction API */
+Tester.prototype.testApi_Transaction = function() {
+  var methodNames = [
+    'exec', 'begin', 'attach', 'commit', 'rollback'
+  ];
+
+  var tx = this.db_.createTransaction();
+  assertMethods(tx, methodNames, 'lf.Transaction');
+};
 
 
 /** Tests select builder API */
@@ -289,15 +327,17 @@ Tester.prototype.testApi_UpdateBuilder = function() {
 };
 
 
+/** Tests lf.schema.Table API */
 Tester.prototype.testApi_Table = function() {
   // Tests that all declared colums actually appear in the table schema.
   assertAttributes(this.table_, [
-      'number', 'dateTime', 'string', 'boolean', 'arrayBuffer', 'object',
+    'number', 'dateTime', 'string', 'boolean', 'arrayBuffer', 'object',
   ], 'tableSchema');
   assertMethods(this.table_, ['getName', 'as'], 'tableSchema');
 };
 
 
+/** Tests lf.schema.Column API */
 Tester.prototype.testApi_Column = function() {
   var column = this.table_.number;
 

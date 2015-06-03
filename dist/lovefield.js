@@ -2666,7 +2666,12 @@ lf.index.IndexMetadataRow.forType = function(indexType) {
   return new lf.index.IndexMetadataRow(indexMetadata);
 };
 
-lf.TransactionType = {READ_ONLY:0, READ_WRITE:1};
+lf.TransactionType = {};
+goog.exportSymbol("lf.TransactionType", lf.TransactionType);
+lf.TransactionType.READ_ONLY = 0;
+goog.exportProperty(lf.TransactionType, "READ_ONLY", lf.TransactionType.READ_ONLY);
+lf.TransactionType.READ_WRITE = 1;
+goog.exportProperty(lf.TransactionType, "READ_WRITE", lf.TransactionType.READ_WRITE);
 lf.Transaction = function() {
 };
 
@@ -9819,6 +9824,7 @@ lf.proc.Transaction = function(global) {
   this.transactionTask_ = null;
   this.state_ = lf.proc.TransactionState_.CREATED;
 };
+goog.exportSymbol("lf.proc.Transaction", lf.proc.Transaction);
 lf.proc.TransactionState_ = {CREATED:0, ACQUIRING_SCOPE:1, ACQUIRED_SCOPE:2, EXECUTING_QUERY:3, EXECUTING_AND_COMMITTING:4, COMMITTING:5, ROLLING_BACK:6, FINALIZED:7};
 lf.proc.StateTransitions_ = new goog.structs.Map(lf.proc.TransactionState_.CREATED, new goog.structs.Set([lf.proc.TransactionState_.ACQUIRING_SCOPE, lf.proc.TransactionState_.EXECUTING_AND_COMMITTING]), lf.proc.TransactionState_.ACQUIRING_SCOPE, new goog.structs.Set([lf.proc.TransactionState_.ACQUIRED_SCOPE]), lf.proc.TransactionState_.ACQUIRED_SCOPE, new goog.structs.Set([lf.proc.TransactionState_.EXECUTING_QUERY, lf.proc.TransactionState_.COMMITTING, lf.proc.TransactionState_.ROLLING_BACK]), lf.proc.TransactionState_.EXECUTING_QUERY, 
 new goog.structs.Set([lf.proc.TransactionState_.ACQUIRED_SCOPE, lf.proc.TransactionState_.FINALIZED]), lf.proc.TransactionState_.EXECUTING_AND_COMMITTING, new goog.structs.Set([lf.proc.TransactionState_.FINALIZED]), lf.proc.TransactionState_.COMMITTING, new goog.structs.Set([lf.proc.TransactionState_.FINALIZED]), lf.proc.TransactionState_.ROLLING_BACK, new goog.structs.Set([lf.proc.TransactionState_.FINALIZED]));
@@ -9851,7 +9857,7 @@ lf.proc.Transaction.prototype.exec = function(queryBuilders) {
     throw e;
   }, this));
 };
-goog.exportSymbol("lf.proc.Transaction.prototype.exec", lf.proc.Transaction.prototype.exec);
+goog.exportProperty(lf.proc.Transaction.prototype, "exec", lf.proc.Transaction.prototype.exec);
 lf.proc.Transaction.prototype.begin = function(scope) {
   this.stateTransition_(lf.proc.TransactionState_.ACQUIRING_SCOPE);
   this.transactionTask_ = new lf.proc.TransactionTask(this.global_, scope);
@@ -9859,7 +9865,7 @@ lf.proc.Transaction.prototype.begin = function(scope) {
     this.stateTransition_(lf.proc.TransactionState_.ACQUIRED_SCOPE);
   }, this));
 };
-goog.exportSymbol("lf.proc.Transaction.prototype.begin", lf.proc.Transaction.prototype.begin);
+goog.exportProperty(lf.proc.Transaction.prototype, "begin", lf.proc.Transaction.prototype.begin);
 lf.proc.Transaction.prototype.attach = function(query) {
   this.stateTransition_(lf.proc.TransactionState_.EXECUTING_QUERY);
   return this.transactionTask_.attachQuery(query).then(goog.bind(function(result) {
@@ -9870,21 +9876,21 @@ lf.proc.Transaction.prototype.attach = function(query) {
     throw e;
   }, this));
 };
-goog.exportSymbol("lf.proc.Transaction.prototype.attach", lf.proc.Transaction.prototype.attach);
+goog.exportProperty(lf.proc.Transaction.prototype, "attach", lf.proc.Transaction.prototype.attach);
 lf.proc.Transaction.prototype.commit = function() {
   this.stateTransition_(lf.proc.TransactionState_.COMMITTING);
   return this.transactionTask_.commit().then(goog.bind(function() {
     this.stateTransition_(lf.proc.TransactionState_.FINALIZED);
   }, this));
 };
-goog.exportSymbol("lf.proc.Transaction.prototype.commit", lf.proc.Transaction.prototype.commit);
+goog.exportProperty(lf.proc.Transaction.prototype, "commit", lf.proc.Transaction.prototype.commit);
 lf.proc.Transaction.prototype.rollback = function() {
   this.stateTransition_(lf.proc.TransactionState_.ROLLING_BACK);
   return this.transactionTask_.rollback().then(goog.bind(function() {
     this.stateTransition_(lf.proc.TransactionState_.FINALIZED);
   }, this));
 };
-goog.exportSymbol("lf.proc.Transaction.prototype.rollback", lf.proc.Transaction.prototype.rollback);
+goog.exportProperty(lf.proc.Transaction.prototype, "rollback", lf.proc.Transaction.prototype.rollback);
 
 lf.proc.Database = function(global) {
   this.global_ = global;
@@ -10324,7 +10330,7 @@ lf.schema.TableBuilder.prototype.generateRowClass_ = function(columns$$0, indice
 };
 
 lf.schema.Builder = function(dbName, dbVersion) {
-  this.schema_ = new lf.schema.DatabaseSchema_(dbName, dbVersion);
+  this.schema_ = new lf.schema.DatabaseSchema(dbName, dbVersion);
   this.tableBuilders_ = new goog.structs.Map;
   this.finalized_ = !1;
 };
@@ -10369,34 +10375,40 @@ lf.schema.Builder.prototype.setPragma = function(pragma) {
   return this;
 };
 goog.exportProperty(lf.schema.Builder.prototype, "setPragma", lf.schema.Builder.prototype.setPragma);
-lf.schema.DatabaseSchema_ = function(name, version) {
+lf.schema.DatabaseSchema = function(name, version) {
   this.name_ = name;
   this.version_ = version;
   this.tables_ = new goog.structs.Map;
   this.pragma_ = {enableBundledMode:!1};
 };
-lf.schema.DatabaseSchema_.prototype.name = function() {
+goog.exportSymbol("lf.schema.DatabaseSchema", lf.schema.DatabaseSchema);
+lf.schema.DatabaseSchema.prototype.name = function() {
   return this.name_;
 };
-lf.schema.DatabaseSchema_.prototype.version = function() {
+goog.exportProperty(lf.schema.DatabaseSchema.prototype, "name", lf.schema.DatabaseSchema.prototype.name);
+lf.schema.DatabaseSchema.prototype.version = function() {
   return this.version_;
 };
-lf.schema.DatabaseSchema_.prototype.tables = function() {
+goog.exportProperty(lf.schema.DatabaseSchema.prototype, "version", lf.schema.DatabaseSchema.prototype.version);
+lf.schema.DatabaseSchema.prototype.tables = function() {
   return this.tables_.getValues();
 };
-lf.schema.DatabaseSchema_.prototype.table = function(tableName) {
+goog.exportProperty(lf.schema.DatabaseSchema.prototype, "tables", lf.schema.DatabaseSchema.prototype.tables);
+lf.schema.DatabaseSchema.prototype.table = function(tableName) {
   if (!this.tables_.containsKey(tableName)) {
     throw new lf.Exception(lf.Exception.Type.NOT_FOUND, tableName + " is not found in database");
   }
   return this.tables_.get(tableName);
 };
-lf.schema.DatabaseSchema_.prototype.setTable = function(table) {
+goog.exportProperty(lf.schema.DatabaseSchema.prototype, "table", lf.schema.DatabaseSchema.prototype.table);
+lf.schema.DatabaseSchema.prototype.setTable = function(table) {
   this.tables_.set(table.getName(), table);
 };
-lf.schema.DatabaseSchema_.prototype.pragma = function() {
+lf.schema.DatabaseSchema.prototype.pragma = function() {
   return this.pragma_;
 };
-lf.schema.DatabaseSchema_.prototype.setPragma = function(pragma) {
+goog.exportProperty(lf.schema.DatabaseSchema.prototype, "pragma", lf.schema.DatabaseSchema.prototype.pragma);
+lf.schema.DatabaseSchema.prototype.setPragma = function(pragma) {
   this.pragma_ = pragma;
 };
 lf.schema.create = function(dbName, dbVersion) {
