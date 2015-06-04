@@ -10,7 +10,7 @@ Please visit our
 [public forum](https://groups.google.com/forum/#!forum/lovefield-users) for
 general Q&A, feedback, and discussions.
 
-[Quick Start](docs/quick_start.md)
+[Quick Start](demos/todo/README.md)
 
 [Specification](docs/spec_index.md) The spec is not fully implemented yet,
 please see the

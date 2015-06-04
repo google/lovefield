@@ -37,7 +37,7 @@ Lovefield is designed to provide a relational query engine for web apps.
 
 ### Basic Flow
 
-Grab and use. See [Quick Start](../quick_start.md).
+Grab and use. See [Quick Start](../../demos/todo/README.md).
 
 ### Advanced Flow
 

@@ -181,7 +181,7 @@ and then go ahead and implement the `buildSchema_()` method on LovefieldService
 class (search for `LovefieldService.prototype.buildSchema_` inside the
 `lovefield_service.js` file). If you get stuck, you can take a look at
 [Lovefield's "Quick Start"](
-https://github.com/google/lovefield/blob/master/docs/quick_start.md) for some
+https://github.com/google/lovefield/blob/master/demos/todo/README.md) for some
 help.
 
 *Hints:*
@@ -519,7 +519,7 @@ can be done by modifying the schema to create an index on the
 `HistoricalData#Stock` column. Go ahead and modify the
 `LovefieldService#buildSchema()` method by adding the proposed index.  If you
 get stuck, you can take a look at [Lovefield's "Quick Start"](
-https://github.com/google/lovefield/blob/master/docs/quick_start.md)
+https://github.com/google/lovefield/blob/master/demos/todo/README.md)
 for an example schema definition that uses an index.
 
 Once done reload the app and re-examine the execution plan. It should now look
