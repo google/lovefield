@@ -20,8 +20,9 @@
 /**
  * Need a custom test reporter such that WebDriver can detect test completion.
  * @constructor
+ * @private
  */
-function TestReporter() {
+function TestReporter_() {
   this.finished = false;
   this.success = false;
   this.report = '';
@@ -29,31 +30,31 @@ function TestReporter() {
 
 
 /** @return {boolean} */
-TestReporter.prototype.isInitialized = function() {
+TestReporter_.prototype.isInitialized = function() {
   return true;
 };
 
 
 /** @return {boolean} */
-TestReporter.prototype.isFinished = function() {
+TestReporter_.prototype.isFinished = function() {
   return this.finished;
 };
 
 
 /** @return {boolean} */
-TestReporter.prototype.isSuccess = function() {
+TestReporter_.prototype.isSuccess = function() {
   return this.success;
 };
 
 
 /** @return {string} */
-TestReporter.prototype.getReport = function() {
+TestReporter_.prototype.getReport = function() {
   return this.report;
 };
 
 
 /** @return {number} */
-TestReporter.prototype.getRunTime = function() {
+TestReporter_.prototype.getRunTime = function() {
   return 0;
 };
 
@@ -126,8 +127,14 @@ Tester.prototype.createSchema_ = function() {
  */
 Tester.prototype.run = function() {
   try {
-    assertAttributes(
-        lf, ['bind', 'schema', 'Type', 'Order', 'TransactionType'], 'lf');
+    assertAttributes(lf, [
+      // enums
+      'Type', 'Order', 'TransactionType',
+      // namespaces
+      'fn', 'op', 'schema', 'query',
+      // methods
+      'bind'
+    ], 'lf');
 
     this.testEnum_Type();
     this.testEnum_Order();
@@ -175,7 +182,6 @@ Tester.prototype.getDbConnection_ = function() {
 
 /** Tests lf.fn */
 Tester.prototype.testApi_Fn = function() {
-  assertAttributes(lf, ['fn']);
   var methodNames = [
     'avg', 'count', 'distinct', 'max', 'min', 'stddev', 'sum', 'geomean'
   ];
@@ -186,7 +192,6 @@ Tester.prototype.testApi_Fn = function() {
 
 /** Tests lf.op */
 Tester.prototype.testApi_Op = function() {
-  assertAttributes(lf, ['op']);
   var methodNames = [
     'and', 'or', 'not'
   ];
@@ -197,8 +202,6 @@ Tester.prototype.testApi_Op = function() {
 
 /** Tests lf.Type */
 Tester.prototype.testEnum_Type = function() {
-  assertAttributes(lf, ['Type']);
-
   var attributeNames = [
     'ARRAY_BUFFER', 'BOOLEAN', 'DATE_TIME', 'INTEGER', 'NUMBER', 'STRING',
     'OBJECT'
@@ -210,7 +213,6 @@ Tester.prototype.testEnum_Type = function() {
 
 /** Tests lf.Order */
 Tester.prototype.testEnum_Order = function() {
-  assertAttributes(lf, ['Order']);
   var attributeNames = ['ASC', 'DESC'];
   assertAttributes(lf.Order, attributeNames, 'lf.Order');
 };
@@ -236,7 +238,7 @@ Tester.prototype.testEnum_TransactionType = function() {
 
 /** Tests lf.schema.create API */
 Tester.prototype.testApi_SchemaBuilder = function() {
-  assertAttributes(lf.schema, ['create']);
+  assertAttributes(lf.schema, ['create'], 'lf.schema');
   var schemaBuilder = lf.schema.create('apicheck', 1);
   var methodNames = [
     'createTable', 'connect', 'setPragma', 'getSchema'
@@ -339,7 +341,7 @@ Tester.prototype.testApi_Table = function() {
 
 /** Tests lf.schema.Column API */
 Tester.prototype.testApi_Column = function() {
-  var column = this.table_.number;
+  var column = this.table_['number'];
 
   assertMethods(column, [
     'eq', 'neq', 'lt', 'lte', 'gt', 'gte', 'match', 'between', 'in', 'as'
@@ -348,7 +350,7 @@ Tester.prototype.testApi_Column = function() {
 
 
 function main() {
-  var testReporter = new TestReporter();
+  var testReporter = new TestReporter_();
   window['G_testRunner'] = testReporter;
   var tester = new Tester();
   var header = document.getElementById('header');
