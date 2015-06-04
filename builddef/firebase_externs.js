@@ -118,6 +118,13 @@ Firebase.prototype.off;
 Firebase.prototype.once;
 
 
+/**
+ * @param {string} token
+ * @param {!function(?Error, ?Object)} onComplete
+ */
+Firebase.prototype.authWithCustomToken;
+
+
 /** @type {!function()} */
 Firebase.goOffline;
 

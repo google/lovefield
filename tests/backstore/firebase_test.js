@@ -62,6 +62,10 @@ var schema;
 var FB_URL = 'https://torrid-inferno-8867.firebaseIO.com/test';
 
 
+/** @const {string} */
+var FB_TOKEN = '<secret_token_here>';
+
+
 /** @type {boolean} */
 var manualMode;
 
@@ -73,6 +77,15 @@ function setUpPage() {
   }
 
   fb = new Firebase(FB_URL);
+  asyncTestCase.waitForAsync('setUpPage');
+
+  fb.authWithCustomToken(FB_TOKEN, function(err, authData) {
+    if (err) {
+      fail(err);
+    } else {
+      asyncTestCase.continueTesting();
+    }
+  });
 }
 
 function setUp() {
