@@ -31,6 +31,8 @@ var childProcess = require('child_process');
  *   COMPILER_FLAGS_COMMON: !Object,
  *   COMPILER_FLAGS_DEBUG: !Object,
  *   COMPILER_FLAGS_OPT: !Object,
+ *   FIREBASE_EXTERNS: string,
+ *   LOVEFIELD_EXTERNS: string,
  *   TEST_SCHEMAS: !Array<{file: string, namespace: string}>
  * }}
  */
@@ -54,7 +56,9 @@ function buildLib(options) {
       pipe(closureCompiler({
         compilerPath: config.CLOSURE_COMPILER_PATH,
         fileName: 'lf.js',
-        compilerFlags: getCompilerFlags(options.mode)
+        compilerFlags: mergeObjects(
+            {externs: [config.FIREBASE_EXTERNS]},
+            getCompilerFlags(options.mode))
       })).
       pipe(new StripLicense({objectMode: true})).
       pipe(gulp.dest('dist'));
@@ -62,17 +66,28 @@ function buildLib(options) {
 
 
 function buildTest(options) {
-  var flags = {
-    export_local_property_definitions: null
-  };
-  var compilerFlags = mergeObjects(flags, getCompilerFlags('compiled'));
+  var testFile = pathMod.resolve(options.target);
+  if (!fsMod.existsSync(testFile)) {
+    return Promise.reject(new Error('No such test file: ' + testFile));
+  }
+
+  // Some tests are built against the distritbuted lovefield.min.js and require
+  // different setup.
+  if (testFile.indexOf('lovefield_min_test.js') != -1) {
+    return buildMinJsTest_(options);
+  }
+
+  var compilerFlags = mergeObjects({
+    export_local_property_definitions: null,
+    externs: [config.FIREBASE_EXTERNS]
+  }, getCompilerFlags('compiled'));
 
   return new Promise(function(resolve, reject) {
     var spacTemporaryDir = new temporary.Dir().path;
     generateTestSchemas(spacTemporaryDir).then(
         function() {
           var transitiveDeps = depsHelper.getTransitiveDeps(
-              options.target, spacTemporaryDir);
+              testFile, spacTemporaryDir);
 
           gulp.src(transitiveDeps).pipe(closureCompiler({
             compilerPath: config.CLOSURE_COMPILER_PATH,
@@ -82,6 +97,28 @@ function buildTest(options) {
             resolve();
           });
         }, reject);
+  });
+}
+
+
+/**
+ * Builds tests that pull lovefield.min.js as an external script.
+ * @param {{target: string}} options
+ * @return {!IThenable}
+ */
+function buildMinJsTest_(options) {
+  var testFile = pathMod.resolve(options.target);
+  var compilerFlags = mergeObjects({
+    export_local_property_definitions: null,
+    externs: [config.LOVEFIELD_EXTERNS]
+  }, getCompilerFlags('compiled'));
+
+  return new Promise(function(resolve, reject) {
+    gulp.src([testFile]).pipe(closureCompiler({
+      compilerPath: config.CLOSURE_COMPILER_PATH,
+      fileName: new temporary.File().path,
+      compilerFlags: compilerFlags
+    })).on('end', resolve, reject);
   });
 }
 
@@ -99,7 +136,7 @@ function buildAllTests() {
   var counter = 0;
   var onStart = function(functionItem) {
     counter++;
-    console.log(
+    log(
         'Building...', counter, 'of',
         functionItems.length, functionItem.name);
   };

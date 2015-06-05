@@ -32,15 +32,16 @@ var Config = function() {
           __dirname,
           '../node_modules/google-closure-library'));
 
-  // Externs declarations for third party APIs.
-  this.EXTERNS = [
-    '--externs=' + pathMod.resolve(pathMod.join(
-        __dirname, '../builddef/firebase_externs.js'))
-  ];
+  // Externs declarations for Firebase API.
+  this.FIREBASE_EXTERNS = pathMod.resolve(
+      pathMod.join(__dirname, '../builddef/firebase_externs.js'));
+
+  // Externs declarations for lovefield.min.js.
+  this.LOVEFIELD_EXTERNS = pathMod.resolve(
+      pathMod.join(__dirname, '../dist/lovefield.externs.js'));
 
   // Compiler options for all configurations.
   this.COMPILER_FLAGS_COMMON = {
-    externs: ['builddef/firebase_externs.js'],
     generate_exports: null,
     jscomp_error: [
       'accessControls',
@@ -111,8 +112,17 @@ var Config = function() {
   ];
 };
 
+
+var config = null;
+
+
+/** @return {!Config} */
 function createConfig() {
-  return new Config();
+  if (config == null) {
+    config = new Config();
+  }
+
+  return config;
 }
 
 
