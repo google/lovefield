@@ -17,6 +17,8 @@
 // Type definitions for Lovefield
 // Project: http://google.github.io/lovefield/
 
+/// <reference path="../es6-promise/es6-promise.d.ts"/>
+
 declare module lf {
   export enum Order { ASC, DESC }
 
@@ -72,9 +74,9 @@ declare module lf {
     insertOrReplace(): query.Insert
     insert(): query.Insert
     observe(query: query.Select, callback: Function): void
-    select(): query.Select
+    select(...columns: schema.Column[]): query.Select
     unobserve(query: query.Select, callback: Function): void
-    update(): query.Update
+    update(table: schema.Table): query.Update
   }
 
   module query {
