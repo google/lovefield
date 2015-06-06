@@ -10461,6 +10461,7 @@ lf.structs.MapPolyFill_.prototype.values = function() {
 goog.exportSymbol("lf.structs.MapPolyFill_.prototype.values", lf.structs.MapPolyFill_.prototype.values);
 lf.structs.Map = goog.isDef(window.Map) && goog.isDef(window.Map.prototype.keys) ? window.Map : lf.structs.MapPolyFill_;
 
+lf.structs.set = {};
 lf.structs.SetPolyFill_ = function() {
   this.set_ = new goog.structs.Set;
   Object.defineProperty(this, "size", {get:function() {
@@ -10483,5 +10484,39 @@ lf.structs.SetPolyFill_.prototype.has = function(value) {
   return this.set_.contains(value);
 };
 goog.exportSymbol("lf.structs.SetPolyFill_.prototype.has", lf.structs.SetPolyFill_.prototype.has);
-lf.structs.Set = goog.isDef(window.Set) && goog.isDef(window.Set.prototype.values) ? window.Set : lf.structs.SetPolyFill_;
+lf.structs.SetPolyFill_.prototype.getValues = function() {
+  return this.set_.getValues();
+};
+goog.exportSymbol("lf.structs.SetPolyFill_.prototype.getValues", lf.structs.SetPolyFill_.prototype.getValues);
+lf.structs.SetPolyFill_.prototype.difference = function(col) {
+  var result = new lf.structs.SetPolyFill_;
+  result.set_ = this.set_.difference(col);
+  return result;
+};
+goog.exportSymbol("lf.structs.SetPolyFill_.prototype.difference", lf.structs.SetPolyFill_.prototype.difference);
+lf.structs.Set = window.Set && window.Set.prototype.values && window.Set.prototype.forEach ? window.Set : lf.structs.SetPolyFill_;
+lf.structs.set.create_ = function() {
+  var constructorFn = window.Set && window.Set.prototype.values && window.Set.prototype.forEach ? window.Set : lf.structs.SetPolyFill_;
+  return new constructorFn;
+};
+lf.structs.set.values = function(set) {
+  if (goog.isDef(set.getValues)) {
+    return set.getValues();
+  }
+  var array = [];
+  set.forEach(function(v) {
+    array.push(v);
+  });
+  return array;
+};
+lf.structs.set.diff = function(set1, set2) {
+  if (goog.isDef(set1.difference)) {
+    return set1.difference(set2);
+  }
+  var result = lf.structs.set.create_();
+  lf.structs.set.values(set1).forEach(function(v) {
+    set2.has(v) || result.add(v);
+  });
+  return result;
+};
 }.bind(window))()
