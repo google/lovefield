@@ -102,11 +102,32 @@ Firebase.prototype.on;
 
 
 /**
- * @param {string} eventType
- * @param {!Function} callback
+ * @param {string=} opt_eventType
+ * @param {!Function=} opt_callback
  * @param {!Object=} opt_context The "this" object for callbacks.
  */
 Firebase.prototype.off;
+
+
+/**
+ * @param {string} key
+ * @return {!Firebase}
+ */
+Firebase.prototype.orderByChild;
+
+
+/**
+ * @param {string|number|boolean} condition
+ * @return {!Firebase}
+ */
+Firebase.prototype.equalTo;
+
+
+/**
+ * @param {string|number|boolean|null} value
+ * @return {!Firebase}
+ */
+Firebase.prototype.startAt;
 
 
 /**
@@ -123,6 +144,13 @@ Firebase.prototype.once;
  * @param {!function(?Error, ?Object)} onComplete
  */
 Firebase.prototype.authWithCustomToken;
+
+
+/**
+ * @param {!Object} value
+ * @param {!Function=} opt_callback
+ */
+Firebase.prototype.update;
 
 
 /** @type {!function()} */
@@ -145,7 +173,7 @@ function DataSnapshot() {}
 DataSnapshot.prototype.exists;
 
 
-/** @return {!Object} */
+/** @return {null|boolean|number|string|!Object} */
 DataSnapshot.prototype.val;
 
 

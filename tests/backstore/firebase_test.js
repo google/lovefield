@@ -63,11 +63,28 @@ var FB_URL = 'https://torrid-inferno-8867.firebaseIO.com/test';
 
 
 /** @const {string} */
-var FB_TOKEN = '<secret_token_here>';
+var FB_TOKEN = '';
 
 
 /** @type {boolean} */
 var manualMode;
+
+
+/** @return {!IThenable<!Firebase>} */
+function getFirebaseRef() {
+  var resolver = goog.Promise.withResolver();
+
+  var ref = new Firebase(FB_URL);
+  ref.authWithCustomToken(FB_TOKEN, function(err, authData) {
+    if (err) {
+      resolver.reject(err);
+    } else {
+      resolver.resolve(ref);
+    }
+  });
+
+  return resolver.promise;
+}
 
 
 function setUpPage() {
@@ -76,15 +93,10 @@ function setUpPage() {
     return;
   }
 
-  fb = new Firebase(FB_URL);
   asyncTestCase.waitForAsync('setUpPage');
-
-  fb.authWithCustomToken(FB_TOKEN, function(err, authData) {
-    if (err) {
-      fail(err);
-    } else {
-      asyncTestCase.continueTesting();
-    }
+  getFirebaseRef().then(function(ref) {
+    fb = ref;
+    asyncTestCase.continueTesting();
   });
 }
 
@@ -164,9 +176,14 @@ function testSCUD() {
     var actual = db.getTableInternal(t2.getName()).getSync([]);
     assertEquals(expected.length, actual.length);
     actual.forEach(function(row, index) {
-      var expectedRow = expected[index];
-      assertEquals(expectedRow.id(), row.id());
-      assertObjectEquals(expectedRow.payload(), row.payload());
+      var matched = false;
+      expected.forEach(function(fact) {
+        if (fact.id() == row.id()) {
+          assertObjectEquals(fact.payload(), row.payload());
+          matched = true;
+        }
+      });
+      assertTrue(matched);
     });
   };
 
@@ -182,6 +199,18 @@ function testSCUD() {
   }).then(function() {
     checkRows([row0, row2]);
     journal = new lf.cache.Journal(global, [t2]);
+    journal.remove(t2, [row0]);
+    tx = db.createTx(lf.TransactionType.READ_WRITE, journal);
+    return tx.commit();
+  }).then(function() {
+    checkRows([row2]);
+    journal = new lf.cache.Journal(global, [t2]);
+    journal.insert(t2, [row0]);
+    tx = db.createTx(lf.TransactionType.READ_WRITE, journal);
+    return tx.commit();
+  }).then(function() {
+    checkRows([row0, row2]);
+    journal = new lf.cache.Journal(global, [t2]);
     journal.remove(t2, [row0, row2]);
     tx = db.createTx(lf.TransactionType.READ_WRITE, journal);
     return tx.commit();
@@ -189,6 +218,35 @@ function testSCUD() {
     checkRows([]);
     asyncTestCase.continueTesting();
   });
+}
+
+
+/**
+ * @param {!function(!Object): !Object} callback
+ * @return {!IThenable}
+ */
+function updateFirebase(callback) {
+  var resolver = goog.Promise.withResolver();
+  var resolver2 = goog.Promise.withResolver();
+  var dbRef;
+  getFirebaseRef().then(function(ref) {
+    dbRef = ref.child(schema.name());
+    dbRef.on('value', function(data) {
+      var data2 = callback(/** @type {!Object} */ (data.val()));
+      resolver2.resolve(data2);
+    });
+    resolver2.promise.then(function(data) {
+      dbRef.transaction(function() {
+        return data;
+      }, function(error, committed, snapshot) {
+        if (error || !committed) {
+          resolver.reject(error);
+        }
+        resolver.resolve();
+      });
+    });
+  });
+  return resolver.promise;
 }
 
 
@@ -205,7 +263,6 @@ function testExternalChange() {
 
   var testAdd = function() {
     var resolver = goog.Promise.withResolver();
-
     var handler1 = function(diffs) {
       assertEquals(1, diffs.length);
       assertEquals('tableC', diffs[0].getName());
@@ -218,18 +275,13 @@ function testExternalChange() {
     };
 
     db.subscribe(handler1);
-
-    new Firebase(FB_URL).child(schema.name()).transaction(function(data) {
-      var rev = data['__revision__'];
-      data['__revision__'] = rev + 1;
-      data['tableC']['1'] = CONTENTS0;
-      data['tableC']['2'] = CONTENTS1;
+    updateFirebase(function(data) {
+      var rev = data['@rev']['R'];
+      data['@rev']['R'] = rev + 1;
+      data['1'] = { 'R': rev + 1, 'T': 2, 'P': CONTENTS0 };
+      data['2'] = { 'R': rev + 1, 'T': 2, 'P': CONTENTS1 };
       return data;
-    }, function(error, committed, snapshot) {
-      if (error || !committed) {
-        resolver.reject(error);
-      }
-    });
+    }).thenCatch(resolver.reject.bind(resolver));
 
     return resolver.promise;
   };
@@ -247,17 +299,12 @@ function testExternalChange() {
     };
 
     db.subscribe(handler2);
-
-    new Firebase(FB_URL).child(schema.name()).transaction(function(data) {
-      var rev = data['__revision__'];
-      data['__revision__'] = rev + 1;
-      data['tableC']['2'] = CONTENTS2;
+    updateFirebase(function(data) {
+      var rev = data['@rev']['R'];
+      data['@rev']['R'] = rev + 1;
+      data['2'] = { 'R': rev + 1, 'T': 2, 'P': CONTENTS2 };
       return data;
-    }, function(error, committed, snapshot) {
-      if (error || !committed) {
-        resolver.reject(error);
-      }
-    });
+    }).thenCatch(resolver.reject.bind(resolver));
 
     return resolver.promise;
   };
@@ -276,24 +323,22 @@ function testExternalChange() {
 
     db.subscribe(handler3);
 
-    new Firebase(FB_URL).child(schema.name()).transaction(function(data) {
-      var rev = data['__revision__'];
-      data['__revision__'] = rev + 1;
-      data['tableC']['1'] = null;
-      data['tableC']['2'] = null;
+    updateFirebase(function(data) {
+      var rev = data['@rev']['R'];
+      data['@rev']['R'] = rev + 1;
+      data['1'] = null;
+      data['2'] = null;
       return data;
-    }, function(error, committed, snapshot) {
-      if (error || !committed) {
-        resolver.reject(error);
-      }
-    });
+    }).thenCatch(resolver.reject.bind(resolver));
 
     return resolver.promise;
   };
 
   testAdd().then(function() {
+    db.unsubscribe();
     return testModify();
   }).then(function() {
+    db.unsubscribe();
     return testDelete();
   }).then(function() {
     db.unsubscribe();
