@@ -329,6 +329,62 @@ lf.raw = {};
 lf.raw.BackStore = function() {};
 
 
+/** @return {!Object} */
+lf.raw.BackStore.prototype.getRawDBInstance;
+
+
+/** @return {!Object} */
+lf.raw.BackStore.prototype.getRawTransaction;
+
+
+/**
+ * @param {string} tableName
+ * @return {!IThenable}
+ */
+lf.raw.BackStore.prototype.dropTable;
+
+
+/**
+ * @param {string} tableName
+ * @param {string} columnName
+ * @param {string|number|boolean|Date|ArrayBuffer|null} defaultValue
+ * @return {!IThenable}
+ */
+lf.raw.BackStore.prototype.addTableColumn;
+
+
+/**
+ * @param {string} tableName
+ * @param {string} columnName
+ * @return {!IThenable}
+ */
+lf.raw.BackStore.prototype.dropTableColumn;
+
+
+/**
+ * @param {string} tableName
+ * @param {string} oldColumnName
+ * @param {string} newColumnName
+ * @return {!IThenable}
+ */
+lf.raw.BackStore.prototype.renameTableColumn;
+
+
+/**
+ * @param {!Object} payload
+ * @return {!lf.Row}
+ */
+lf.raw.BackStore.prototype.createRow;
+
+
+/** @return {number} */
+lf.raw.BackStore.prototype.getVersion;
+
+
+/** @return {!IThenable<!Object>} */
+lf.raw.BackStore.prototype.dump;
+
+
 lf.schema = {};
 
 

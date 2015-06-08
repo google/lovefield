@@ -1,3 +1,8 @@
+Version: 2.0.57
+Publish date: 20150608
+Changes:
+ - Fixed lovefield.min.js. It was missing lf.raw.BackStore public API.
+
 Version: 2.0.56
 Publish date: 20150602
 Changes:

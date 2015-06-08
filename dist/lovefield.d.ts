@@ -116,6 +116,25 @@ declare module lf {
   }  // module query
 
 
+  module raw {
+    export interface BackStore {
+      getRawDBInstance(): any
+      getRawTransaction(): any
+      dropTable(tableName: string): Promise<void>
+      addTableColumn(
+          tableName: string, columnName: string,
+          defaultValue: string|boolean|number|Date|ArrayBuffer): Promise<void>
+      dropTableColumn(tableName: string, columnName:string): Promise<void>
+      renameTableColumn(
+          tableName: string, oldColumnName: string,
+          newColumnName:string) : Promise<void>
+      createRow(payload: Object): Row
+      getVersion(): number
+      dump(): Array<Object>
+    }
+  }  // module raw
+
+
   module schema {
     export enum DataStoreType {
       FIREBASE,
@@ -150,7 +169,7 @@ declare module lf {
     }
 
     export interface ConnectOptions {
-      onUpgrade?: Function
+      onUpgrade?: (rawDb: raw.BackStore) => Promise<void>
       storeType?: DataStoreType
       webSqlDbSize?: number
       // TODO(dpapad): firebase?
