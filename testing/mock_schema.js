@@ -97,6 +97,9 @@ lf.testing.MockSchema = function() {
   /** @private {number} */
   this.version_ = 1;
 
+  /** @private {boolean} */
+  this.simulateDropTableA_ = false;
+
   /** @private {!lf.schema.Database.Pragma} */
   this.pragma_ = {
     enableBundledMode: false
@@ -107,9 +110,12 @@ lf.testing.MockSchema = function() {
 /** @override */
 lf.testing.MockSchema.prototype.tables = function() {
   var tables = [
-    this.tableA_, this.tableB_, this.tableC_,
+    this.tableB_, this.tableC_,
     this.tableD_, this.tableE_, this.tableF_
   ];
+  if (!this.simulateDropTableA_) {
+    tables.unshift(this.tableA_);
+  }
   if (this.version_ > 1) {
     tables.push(this.tablePlusOne_);
   }
@@ -132,13 +138,15 @@ lf.testing.MockSchema.prototype.version = function() {
 /** @override */
 lf.testing.MockSchema.prototype.table = function(tableName) {
   var tables = {
-    'tableA': this.tableA_,
     'tableB': this.tableB_,
     'tableC': this.tableC_,
     'tableD': this.tableD_,
     'tableE': this.tableE_,
     'tableF': this.tableF_
   };
+  if (!this.simulateDropTableA_) {
+    tables['tableA'] = this.tableA_;
+  }
   if (this.version_ > 1) {
     tables['tablePlusOne'] = this.tablePlusOne_;
   }
@@ -167,4 +175,10 @@ lf.testing.MockSchema.prototype.setVersion = function(version) {
 /** @param {boolean} mode */
 lf.testing.MockSchema.prototype.setBundledMode = function(mode) {
   this.pragma_.enableBundledMode = mode;
+};
+
+
+/** @param {boolean} mode */
+lf.testing.MockSchema.prototype.setDropTableA = function(mode) {
+  this.simulateDropTableA_ = mode;
 };

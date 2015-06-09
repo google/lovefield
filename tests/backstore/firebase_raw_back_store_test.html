@@ -1,0 +1,38 @@
+<!doctype html>
+<html>
+<head>
+
+  <title>Test for Firebase Raw Back Store.</title>
+  <script>
+function includeTestScript(src) {
+  document.write(
+      '<script type="text/javascript" src="' + src + '"><' + '/script>');
+}
+
+(function() {
+  var realBase = '../../../../../';
+  window.CLOSURE_BASE_PATH = realBase + 'javascript/closure/';
+
+  includeTestScript(CLOSURE_BASE_PATH + 'base.js');
+  includeTestScript('test_js_deps-runfiles.js');
+})();
+
+  </script>
+  <script>
+
+goog.require('goog.testing.AsyncTestCase');
+goog.require('goog.testing.jsunit');
+
+
+/** @type {boolean} */
+window.MANUAL_MODE = false;
+
+if (window.MANUAL_MODE) {
+  includeTestScript('https://cdn.firebase.com/js/client/2.2.6/firebase.js');
+}
+  </script>
+</head>
+<body>
+  <script src="firebase_raw_back_store_test.js"></script>
+</body>
+</html>

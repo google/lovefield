@@ -4861,6 +4861,135 @@ lf.backstore.ExternalChangeObserver.prototype.onChange_ = function(tableDiffs) {
 lf.BackStore = function() {
 };
 
+lf.raw = {};
+lf.raw.BackStore = function() {
+};
+
+lf.backstore.FirebaseRawBackStore = function(version, dbRef) {
+  this.version_ = version;
+  this.db_ = dbRef;
+  this.tableIds_ = new goog.structs.Map;
+};
+goog.exportSymbol("lf.backstore.FirebaseRawBackStore", lf.backstore.FirebaseRawBackStore);
+lf.backstore.FirebaseRawBackStore.getValue = function(ref, path) {
+  var resolver = goog.Promise.withResolver(), valRef = ref;
+  path.length && (valRef = ref.child(path));
+  valRef.once("value", function(snapshot) {
+    resolver.resolve(snapshot.val());
+  }, function(e) {
+    resolver.reject(e);
+  });
+  return resolver.promise;
+};
+lf.backstore.FirebaseRawBackStore.setValue = function(ref, value, opt_overwrite) {
+  var overwrite = opt_overwrite || !1, resolver = goog.Promise.withResolver(), handler = function(e) {
+    e ? resolver.reject(e) : resolver.resolve();
+  };
+  overwrite ? ref.set(value, handler) : ref.update(value, handler);
+  return resolver.promise;
+};
+lf.backstore.FirebaseRawBackStore.prototype.init = function(schema) {
+  return lf.backstore.FirebaseRawBackStore.getValue(this.db_, "@rev/R").then(function(revision) {
+    this.revision_ = revision;
+    return lf.backstore.FirebaseRawBackStore.getValue(this.db_, "@table");
+  }.bind(this)).then(function(tableIdMap) {
+    var maxTableId = 0, t;
+    for (t in tableIdMap) {
+      this.tableIds_.set(t, tableIdMap[t]), tableIdMap[t] > maxTableId && (maxTableId = tableIdMap[t]);
+    }
+    schema.tables().forEach(function(table) {
+      this.tableIds_.containsKey(table.getName()) || (tableIdMap[table.getName()] = ++maxTableId);
+    }, this);
+    var ref = this.db_.child("@table");
+    return lf.backstore.FirebaseRawBackStore.setValue(ref, tableIdMap);
+  }.bind(this));
+};
+lf.backstore.FirebaseRawBackStore.prototype.transform_ = function(tableName, callback) {
+  var tableId = this.tableIds_.get(tableName);
+  if (!goog.isDefAndNotNull(tableId)) {
+    return goog.Promise.resolve();
+  }
+  var getRowUpdates = function() {
+    var toUpdate = {}, resolver = goog.Promise.withResolver();
+    this.db_.orderByChild("T").equalTo(tableId).once("value", function(snapshot) {
+      snapshot.forEach(function(row) {
+        var newRow = callback(row.val());
+        toUpdate[parseInt(row.key(), 10)] = newRow;
+      });
+      resolver.resolve(toUpdate);
+    });
+    return resolver.promise;
+  }.bind(this);
+  return getRowUpdates().then(function(toUpdate) {
+    toUpdate["@rev"] = {R:++this.revision_};
+    return lf.backstore.FirebaseRawBackStore.setValue(this.db_, toUpdate);
+  }.bind(this));
+};
+lf.backstore.FirebaseRawBackStore.prototype.dropTable = function(tableName) {
+  return this.transform_(tableName, function() {
+    return null;
+  }).then(function() {
+    this.tableIds_.remove(tableName);
+    return lf.backstore.FirebaseRawBackStore.setValue(this.db_.child("@table/" + tableName), null, !0);
+  }.bind(this));
+};
+goog.exportProperty(lf.backstore.FirebaseRawBackStore.prototype, "dropTable", lf.backstore.FirebaseRawBackStore.prototype.dropTable);
+lf.backstore.FirebaseRawBackStore.prototype.addTableColumn = function(tableName, columnName, defaultValue) {
+  return this.transform_(tableName, function(row) {
+    var payload = row.P;
+    payload[columnName] = defaultValue;
+    return {R:this.revision_ + 1, T:row.T, P:payload};
+  }.bind(this));
+};
+goog.exportProperty(lf.backstore.FirebaseRawBackStore.prototype, "addTableColumn", lf.backstore.FirebaseRawBackStore.prototype.addTableColumn);
+lf.backstore.FirebaseRawBackStore.prototype.dropTableColumn = function(tableName, columnName) {
+  return this.transform_(tableName, function(row) {
+    var payload = row.P;
+    delete payload[columnName];
+    return {R:this.revision_ + 1, T:row.T, P:payload};
+  }.bind(this));
+};
+goog.exportProperty(lf.backstore.FirebaseRawBackStore.prototype, "dropTableColumn", lf.backstore.FirebaseRawBackStore.prototype.dropTableColumn);
+lf.backstore.FirebaseRawBackStore.prototype.renameTableColumn = function(tableName, oldColumnName, newColumnName) {
+  return this.transform_(tableName, function(row) {
+    var payload = row.P;
+    payload[newColumnName] = payload[oldColumnName];
+    delete payload[oldColumnName];
+    return {R:this.revision_ + 1, T:row.T, P:payload};
+  }.bind(this));
+};
+goog.exportProperty(lf.backstore.FirebaseRawBackStore.prototype, "renameTableColumn", lf.backstore.FirebaseRawBackStore.prototype.renameTableColumn);
+lf.backstore.FirebaseRawBackStore.prototype.createRow = function() {
+  throw new lf.Exception(lf.Exception.Type.NOT_SUPPORTED, "Firebase does not have raw transaction.");
+};
+goog.exportProperty(lf.backstore.FirebaseRawBackStore.prototype, "createRow", lf.backstore.FirebaseRawBackStore.prototype.createRow);
+lf.backstore.FirebaseRawBackStore.prototype.getVersion = function() {
+  return this.version_;
+};
+goog.exportProperty(lf.backstore.FirebaseRawBackStore.prototype, "getVersion", lf.backstore.FirebaseRawBackStore.prototype.getVersion);
+lf.backstore.FirebaseRawBackStore.prototype.dumpTable_ = function(tableName) {
+  var resolver = goog.Promise.withResolver(), tableId = this.tableIds_.get(tableName);
+  this.db_.orderByChild("T").equalTo(tableId).once("value", function(snapshot) {
+    var values = [];
+    snapshot.forEach(function(row) {
+      values.push(row.val().P);
+    });
+    resolver.resolve(values);
+  });
+  return resolver.promise;
+};
+lf.backstore.FirebaseRawBackStore.prototype.dump = function() {
+  var contents = {}, promises = this.tableIds_.getKeys().map(function(tableName) {
+    return this.dumpTable_(tableName).then(function(rows) {
+      contents[tableName] = rows;
+    });
+  }.bind(this));
+  return goog.Promise.all(promises).then(function() {
+    return contents;
+  });
+};
+goog.exportProperty(lf.backstore.FirebaseRawBackStore.prototype, "dump", lf.backstore.FirebaseRawBackStore.prototype.dump);
+
 lf.backstore.FirebaseTx = function(db, type, journal) {
   lf.backstore.BaseTx.call(this, journal, type);
   this.db_ = db;
@@ -4964,48 +5093,48 @@ lf.backstore.Firebase.prototype.getRevision = function() {
 lf.backstore.Firebase.prototype.setRevision = function(revision) {
   this.revision_ = revision;
 };
-lf.backstore.Firebase.prototype.getValue_ = function(path) {
-  var resolver = goog.Promise.withResolver(), valRef = this.db_;
-  path.length && (valRef = this.db_.child(path));
-  valRef.once("value", function(snapshot) {
-    resolver.resolve(snapshot.val());
-  }, function(e) {
-    resolver.reject(e);
-  });
-  return resolver.promise;
-};
-lf.backstore.Firebase.prototype.setValue_ = function(value) {
-  var resolver = goog.Promise.withResolver();
-  this.db_.set(value, function(e) {
-    e ? resolver.reject(e) : resolver.resolve();
-  });
-  return resolver.promise;
-};
-lf.backstore.Firebase.prototype.init = function() {
+lf.backstore.Firebase.prototype.init = function(opt_onUpgrade) {
   this.db_ = this.app_.child(this.schema_.name());
-  return this.getValue_("@db/version").then(function(version) {
-    if (goog.isNull(version)) {
-      return this.setValue_(this.createNewDb_());
-    }
-    if (version == this.schema_.version()) {
-      return this.getValue_("@rev/R").then(function(revision) {
-        this.revision_ = revision;
-        return this.getValue_("@table");
-      }.bind(this)).then(function(tableIdMap) {
-        for (var t in tableIdMap) {
-          this.tableIds_.set(t, tableIdMap[t]);
-        }
-        var promises = this.schema_.tables().map(function(table) {
-          return this.reloadTable(table.getName());
-        }, this);
-        return goog.Promise.all(promises);
-      }.bind(this)).then(function() {
-        this.initRowId_();
-        this.listen_();
-        return goog.Promise.resolve();
-      }.bind(this));
-    }
+  var getValue = lf.backstore.FirebaseRawBackStore.getValue, onUpgrade = opt_onUpgrade || function() {
+    return goog.Promise.resolve();
+  };
+  return getValue(this.db_, "@db/version").then(function(version) {
+    return goog.isNull(version) ? lf.backstore.FirebaseRawBackStore.setValue(this.db_, this.createNewDb_(), !0).then(function() {
+      var rawDb = new lf.backstore.FirebaseRawBackStore(0, this.db_);
+      return onUpgrade(rawDb);
+    }.bind(this)) : version == this.schema_.version() ? getValue(this.db_, "@rev/R").then(function(revision) {
+      this.revision_ = revision;
+      return getValue(this.db_, "@table");
+    }.bind(this)).then(function(tableIdMap) {
+      for (var t in tableIdMap) {
+        this.tableIds_.set(t, tableIdMap[t]);
+      }
+      var promises = this.schema_.tables().map(function(table) {
+        return this.reloadTable(table.getName());
+      }, this);
+      return goog.Promise.all(promises);
+    }.bind(this)).then(function() {
+      this.initRowId_();
+      this.listen_();
+      return goog.Promise.resolve();
+    }.bind(this)) : this.onUpgrade_(version, onUpgrade).then(function() {
+      return this.init();
+    }.bind(this));
   }.bind(this));
+};
+lf.backstore.Firebase.prototype.onUpgrade_ = function(oldVersion, onUpgrade) {
+  var rawDb = new lf.backstore.FirebaseRawBackStore(oldVersion, this.db_);
+  return rawDb.init(this.schema_).then(function() {
+    return this.updateIndexTables_();
+  }.bind(this)).then(function() {
+    return onUpgrade(rawDb);
+  }).then(function() {
+    var ref = this.db_.child("@db");
+    return lf.backstore.FirebaseRawBackStore.setValue(ref, {version:this.schema_.version()}, !0);
+  }.bind(this));
+};
+lf.backstore.Firebase.prototype.updateIndexTables_ = function() {
+  return goog.Promise.resolve();
 };
 lf.backstore.Firebase.prototype.listen_ = function() {
   this.db_.off();
@@ -5123,19 +5252,106 @@ lf.backstore.Firebase.prototype.notify = function(changes) {
   goog.isDefAndNotNull(this.changeHandler_) && this.changeHandler_(changes);
 };
 
-lf.raw = {};
-lf.raw.BackStore = function() {
-};
-
 lf.backstore.IndexedDBRawBackStore = function(version, db, tx, bundledMode) {
   this.db_ = db;
   this.tx_ = tx;
   this.version_ = version;
   this.bundleMode_ = bundledMode;
 };
+lf.backstore.IndexedDBRawBackStore.prototype.dropTable = function(tableName) {
+  return new goog.Promise(function(resolve, reject) {
+    try {
+      this.db_.deleteObjectStore(tableName);
+    } catch (e) {
+      reject(e);
+      return;
+    }
+    resolve();
+  }, this);
+};
+lf.backstore.IndexedDBRawBackStore.prototype.openCursorForWrite_ = function(tableName, loopFunc, endFunc) {
+  return new goog.Promise(function(resolve, reject) {
+    var req;
+    try {
+      var store = this.tx_.objectStore(tableName);
+      req = store.openCursor();
+    } catch (e) {
+      reject(e);
+      return;
+    }
+    req.onsuccess = function() {
+      var cursor = req.result;
+      cursor ? (loopFunc(cursor), cursor.continue()) : (endFunc(store), resolve());
+    };
+    req.onerror = reject;
+  }, this);
+};
 lf.backstore.IndexedDBRawBackStore.convert = function(value) {
   var ret = null;
   return ret = value instanceof ArrayBuffer ? lf.Row.binToHex(value) : value instanceof Date ? value.getTime() : value;
+};
+lf.backstore.IndexedDBRawBackStore.prototype.transformRows_ = function(tableName, rowFn) {
+  var loopFunc = function(cursor) {
+    var row = lf.Row.deserialize(cursor.value);
+    rowFn(row);
+    cursor.update(row.serialize());
+  }, loopFuncBundle = function(cursor) {
+    var page = lf.backstore.Page.deserialize(cursor.value), data = page.getPayload(), rowId;
+    for (rowId in data) {
+      var row = lf.Row.deserialize(data[rowId]);
+      rowFn(row);
+      data[rowId] = row.serialize();
+    }
+    cursor.update(page.serialize());
+  }, endFunc = function() {
+  };
+  return this.openCursorForWrite_(tableName, this.bundleMode_ ? loopFuncBundle : loopFunc, endFunc);
+};
+lf.backstore.IndexedDBRawBackStore.prototype.addTableColumn = function(tableName, columnName, defaultValue) {
+  var value = lf.backstore.IndexedDBRawBackStore.convert(defaultValue);
+  return this.transformRows_(tableName, function(row) {
+    row.payload()[columnName] = value;
+  });
+};
+lf.backstore.IndexedDBRawBackStore.prototype.dropTableColumn = function(tableName, columnName) {
+  return this.transformRows_(tableName, function(row) {
+    delete row.payload()[columnName];
+  });
+};
+lf.backstore.IndexedDBRawBackStore.prototype.renameTableColumn = function(tableName, oldColumnName, newColumnName) {
+  return this.transformRows_(tableName, function(row) {
+    row.payload()[newColumnName] = row.payload()[oldColumnName];
+    delete row.payload()[oldColumnName];
+  });
+};
+lf.backstore.IndexedDBRawBackStore.prototype.getTableRows_ = function(tableName) {
+  var results = [];
+  return new goog.Promise(function(resolve, reject) {
+    var req;
+    try {
+      req = this.tx_.objectStore(tableName).openCursor();
+    } catch (e) {
+      reject(e);
+      return;
+    }
+    req.onsuccess = goog.bind(function() {
+      var cursor = req.result;
+      if (cursor) {
+        if (this.bundleMode_) {
+          var page = lf.backstore.Page.deserialize(cursor.value), data = page.getPayload(), rowId;
+          for (rowId in data) {
+            results.push(data[rowId]);
+          }
+        } else {
+          results.push(cursor.value);
+        }
+        cursor.continue();
+      } else {
+        resolve(results);
+      }
+    }, this);
+    req.onerror = reject;
+  }, this);
 };
 lf.backstore.IndexedDBRawBackStore.prototype.createRow = function(payload) {
   var data = {};
@@ -5146,6 +5362,26 @@ lf.backstore.IndexedDBRawBackStore.prototype.createRow = function(payload) {
 };
 lf.backstore.IndexedDBRawBackStore.prototype.getVersion = function() {
   return this.version_;
+};
+lf.backstore.IndexedDBRawBackStore.prototype.dump = function() {
+  for (var tables = this.db_.objectStoreNames, promises = [], i = 0;i < tables.length;++i) {
+    var tableName = tables.item(i);
+    promises.push(this.dumpTable_(tableName));
+  }
+  return goog.Promise.all(promises).then(function(tableDumps) {
+    var results = {};
+    tableDumps.forEach(function(tableDump, index) {
+      results[tables.item(index)] = tableDump;
+    });
+    return results;
+  });
+};
+lf.backstore.IndexedDBRawBackStore.prototype.dumpTable_ = function(tableName) {
+  return this.getTableRows_(tableName).then(function(rawRows) {
+    return rawRows.map(function(rawRow) {
+      return rawRow.value;
+    });
+  });
 };
 
 lf.backstore.ObjectStore = function(store, deserializeFn) {
@@ -5671,6 +5907,54 @@ lf.backstore.WebSqlRawBackStore = function(global, oldVersion, db) {
   this.global_ = global;
   this.version_ = oldVersion;
 };
+lf.backstore.WebSqlRawBackStore.prototype.createTx_ = function() {
+  return new lf.backstore.WebSqlTx(this.db_, new lf.cache.Journal(this.global_, []), lf.TransactionType.READ_WRITE);
+};
+lf.backstore.WebSqlRawBackStore.prototype.dropTable = function(tableName) {
+  var tx = this.createTx_();
+  tx.queue("DROP TABLE " + tableName, []);
+  return tx.commit();
+};
+lf.backstore.WebSqlRawBackStore.prototype.dumpTable_ = function(tableName) {
+  var tx = this.createTx_();
+  tx.queue("SELECT id, value FROM " + tableName, []);
+  return tx.commit().then(function(results) {
+    for (var length = results.rows.length, rows = Array(length), i = 0;i < length;++i) {
+      rows[i] = {id:results.rows.item(i).id, value:JSON.parse(results.rows.item(i).value)};
+    }
+    return goog.Promise.resolve(rows);
+  });
+};
+lf.backstore.WebSqlRawBackStore.prototype.transformColumn_ = function(tableName, transformer) {
+  var tx = this.createTx_(), sql = "UPDATE " + tableName + " SET value=? WHERE id=?";
+  return this.dumpTable_(tableName).then(function(rows) {
+    rows.forEach(function(row) {
+      var newRow = transformer(row);
+      tx.queue(sql, [JSON.stringify(newRow.value), newRow.id]);
+    });
+    return tx.commit();
+  });
+};
+lf.backstore.WebSqlRawBackStore.prototype.addTableColumn = function(tableName, columnName, defaultValue) {
+  var value = lf.backstore.IndexedDBRawBackStore.convert(defaultValue);
+  return this.transformColumn_(tableName, function(row) {
+    row.value[columnName] = value;
+    return row;
+  });
+};
+lf.backstore.WebSqlRawBackStore.prototype.dropTableColumn = function(tableName, columnName) {
+  return this.transformColumn_(tableName, function(row) {
+    delete row.value[columnName];
+    return row;
+  });
+};
+lf.backstore.WebSqlRawBackStore.prototype.renameTableColumn = function(tableName, oldColumnName, newColumnName) {
+  return this.transformColumn_(tableName, function(row) {
+    row.value[newColumnName] = row.value[oldColumnName];
+    delete row.value[oldColumnName];
+    return row;
+  });
+};
 lf.backstore.WebSqlRawBackStore.prototype.createRow = function(payload) {
   var data = {}, key;
   for (key in payload) {
@@ -5688,6 +5972,24 @@ lf.backstore.WebSqlRawBackStore.queueListTables = function(tx) {
     }
     return tableNames;
   });
+};
+lf.backstore.WebSqlRawBackStore.prototype.dump = function() {
+  var resolver = goog.Promise.withResolver(), tx = this.createTx_();
+  lf.backstore.WebSqlRawBackStore.queueListTables(tx);
+  var ret = {};
+  tx.commit().then(goog.bind(function(results) {
+    var tables = results.filter(function(name) {
+      return "__lf_ver" != name && "__WebKitDatabaseInfoTable__" != name;
+    }), promises = tables.map(function(tableName) {
+      return this.dumpTable_(tableName).then(function(rows) {
+        ret[tableName] = rows;
+      });
+    }, this);
+    goog.Promise.all(promises).then(function() {
+      resolver.resolve(ret);
+    });
+  }, this));
+  return resolver.promise;
 };
 
 lf.backstore.WebSql = function(global, schema, opt_size) {

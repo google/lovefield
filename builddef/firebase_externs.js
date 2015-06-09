@@ -58,7 +58,7 @@ Firebase.prototype.set;
 
 
 /**
- * @param {!Object} value
+ * @param {?Object} value
  * @param {!Function=} opt_onComplete
  */
 Firebase.prototype.update;
@@ -116,6 +116,10 @@ Firebase.prototype.off;
 Firebase.prototype.orderByChild;
 
 
+/** @return {!Firebase} */
+Firebase.prototype.orderByKey;
+
+
 /**
  * @param {string|number|boolean} condition
  * @return {!Firebase}
@@ -144,13 +148,6 @@ Firebase.prototype.once;
  * @param {!function(?Error, ?Object)} onComplete
  */
 Firebase.prototype.authWithCustomToken;
-
-
-/**
- * @param {!Object} value
- * @param {!Function=} opt_callback
- */
-Firebase.prototype.update;
 
 
 /** @type {!function()} */
