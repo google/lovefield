@@ -5,7 +5,6 @@
   "main": "todo.html",
   "license": "http://www.apache.org/licenses/LICENSE-2.0",
   "devDependencies": {
-    "fs-extra": "^0.18.2",
     "gulp": "^3.8.10",
     "gulp-typescript": "^2.7.6",
     "gulp-webserver": "^0.9.0",

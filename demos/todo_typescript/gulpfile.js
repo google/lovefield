@@ -15,28 +15,11 @@
  * limitations under the License.
  */
 var gulp = require('gulp');
-var path = require('path');
 var ts = require('gulp-typescript');
-var fs = require('fs-extra');
 var webserver = require('gulp-webserver');
 
 
-// TODO(dpapad): Remove this target once
-// https://github.com/borisyankov/DefinitelyTyped/pull/4558 has been merged and
-// grab lovefield externs via tsd instead.
-gulp.task('copy_lovefield_definitions', function () {
-  var lovefieldTypingsDir = 'typings/lovefield';
-  if (!fs.existsSync(lovefieldTypingsDir)) {
-    fs.mkdirpSync(lovefieldTypingsDir);
-  }
-
-  var fileToCopy = 'bower_components/lovefield/dist/lovefield.d.ts';
-  fs.copySync(
-      fileToCopy, path.join(lovefieldTypingsDir, path.basename(fileToCopy)));
-});
-
-
-gulp.task('build', ['copy_lovefield_definitions'], function () {
+gulp.task('build', function () {
   var tsResult = gulp.src('todo.ts')
     .pipe(ts({
         noEmitOnError: true,
