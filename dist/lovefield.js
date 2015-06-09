@@ -7448,7 +7448,7 @@ lf.fn.AggregatedColumn.prototype.as = function(name) {
   this.alias_ = name;
   return this;
 };
-goog.exportSymbol("lf.fn.AggregatedColumn.prototype.as", lf.fn.AggregatedColumn.prototype.as);
+goog.exportProperty(lf.fn.AggregatedColumn.prototype, "as", lf.fn.AggregatedColumn.prototype.as);
 lf.fn.AggregatedColumn.prototype.getColumnChain = function() {
   for (var columnChain = [this], currentColumn = this;currentColumn instanceof lf.fn.AggregatedColumn;) {
     columnChain.push(currentColumn.child), currentColumn = currentColumn.child;
@@ -10112,12 +10112,12 @@ lf.Global.get = function() {
 lf.Global.prototype.clear = function() {
   this.services_.clear();
 };
-goog.exportSymbol("lf.Global.prototype.clear", lf.Global.prototype.clear);
+goog.exportProperty(lf.Global.prototype, "clear", lf.Global.prototype.clear);
 lf.Global.prototype.registerService = function(serviceId, service) {
   this.services_.set(serviceId.toString(), service);
   return service;
 };
-goog.exportSymbol("lf.Global.prototype.registerService", lf.Global.prototype.registerService);
+goog.exportProperty(lf.Global.prototype, "registerService", lf.Global.prototype.registerService);
 lf.Global.prototype.getService = function(serviceId) {
   var service = this.services_.get(serviceId.toString(), null);
   if (null == service) {
@@ -10125,11 +10125,11 @@ lf.Global.prototype.getService = function(serviceId) {
   }
   return service;
 };
-goog.exportSymbol("lf.Global.prototype.getService", lf.Global.prototype.getService);
+goog.exportProperty(lf.Global.prototype, "getService", lf.Global.prototype.getService);
 lf.Global.prototype.isRegistered = function(serviceId) {
   return this.services_.containsKey(serviceId.toString());
 };
-goog.exportSymbol("lf.Global.prototype.isRegistered", lf.Global.prototype.isRegistered);
+goog.exportProperty(lf.Global.prototype, "isRegistered", lf.Global.prototype.isRegistered);
 
 lf.schema.Constraint = function(primaryKey, notNullable) {
   this.primaryKey_ = primaryKey;
@@ -10474,39 +10474,39 @@ lf.structs.MapPolyFill_ = function() {
 lf.structs.MapPolyFill_.prototype.clear = function() {
   this.map_.clear();
 };
-goog.exportSymbol("lf.structs.MapPolyFill_.prototype.clear", lf.structs.MapPolyFill_.prototype.clear);
+goog.exportProperty(lf.structs.MapPolyFill_.prototype, "clear", lf.structs.MapPolyFill_.prototype.clear);
 lf.structs.MapPolyFill_.prototype.delete = function(key) {
   return this.map_.remove(key);
 };
-goog.exportSymbol("lf.structs.MapPolyFill_.prototype.delete", lf.structs.MapPolyFill_.prototype.delete);
+goog.exportProperty(lf.structs.MapPolyFill_.prototype, "delete", lf.structs.MapPolyFill_.prototype.delete);
 lf.structs.MapPolyFill_.prototype.entries = function() {
   return this.map_.__iterator__();
 };
-goog.exportSymbol("lf.structs.MapPolyFill_.prototype.entries", lf.structs.MapPolyFill_.prototype.entries);
+goog.exportProperty(lf.structs.MapPolyFill_.prototype, "entries", lf.structs.MapPolyFill_.prototype.entries);
 lf.structs.MapPolyFill_.prototype.forEach = function(callback, opt_thisArg) {
   return this.map_.forEach(callback, opt_thisArg);
 };
-goog.exportSymbol("lf.structs.MapPolyFill_.prototype.forEach", lf.structs.MapPolyFill_.prototype.forEach);
+goog.exportProperty(lf.structs.MapPolyFill_.prototype, "forEach", lf.structs.MapPolyFill_.prototype.forEach);
 lf.structs.MapPolyFill_.prototype.get = function(key) {
   return this.map_.get(key);
 };
-goog.exportSymbol("lf.structs.MapPolyFill_.prototype.get", lf.structs.MapPolyFill_.prototype.get);
+goog.exportProperty(lf.structs.MapPolyFill_.prototype, "get", lf.structs.MapPolyFill_.prototype.get);
 lf.structs.MapPolyFill_.prototype.has = function(key) {
   return this.map_.containsKey(key);
 };
-goog.exportSymbol("lf.structs.MapPolyFill_.prototype.has", lf.structs.MapPolyFill_.prototype.has);
+goog.exportProperty(lf.structs.MapPolyFill_.prototype, "has", lf.structs.MapPolyFill_.prototype.has);
 lf.structs.MapPolyFill_.prototype.keys = function() {
   return this.map_.getKeyIterator();
 };
-goog.exportSymbol("lf.structs.MapPolyFill_.prototype.keys", lf.structs.MapPolyFill_.prototype.keys);
+goog.exportProperty(lf.structs.MapPolyFill_.prototype, "keys", lf.structs.MapPolyFill_.prototype.keys);
 lf.structs.MapPolyFill_.prototype.set = function(key, value) {
   return this.map_.set(key, value);
 };
-goog.exportSymbol("lf.structs.MapPolyFill_.prototype.set", lf.structs.MapPolyFill_.prototype.set);
+goog.exportProperty(lf.structs.MapPolyFill_.prototype, "set", lf.structs.MapPolyFill_.prototype.set);
 lf.structs.MapPolyFill_.prototype.values = function() {
   return this.map_.getValueIterator();
 };
-goog.exportSymbol("lf.structs.MapPolyFill_.prototype.values", lf.structs.MapPolyFill_.prototype.values);
+goog.exportProperty(lf.structs.MapPolyFill_.prototype, "values", lf.structs.MapPolyFill_.prototype.values);
 lf.structs.Map = goog.isDef(window.Map) && goog.isDef(window.Map.prototype.keys) ? window.Map : lf.structs.MapPolyFill_;
 
 lf.structs.set = {};
@@ -10519,37 +10519,27 @@ lf.structs.SetPolyFill_ = function() {
 lf.structs.SetPolyFill_.prototype.add = function(value) {
   this.set_.add(value);
 };
-goog.exportSymbol("lf.structs.SetPolyFill_.prototype.add", lf.structs.SetPolyFill_.prototype.add);
+goog.exportProperty(lf.structs.SetPolyFill_.prototype, "add", lf.structs.SetPolyFill_.prototype.add);
 lf.structs.SetPolyFill_.prototype.clear = function() {
   this.set_.clear();
 };
-goog.exportSymbol("lf.structs.SetPolyFill_.prototype.clear", lf.structs.SetPolyFill_.prototype.clear);
+goog.exportProperty(lf.structs.SetPolyFill_.prototype, "clear", lf.structs.SetPolyFill_.prototype.clear);
 lf.structs.SetPolyFill_.prototype.delete = function(value) {
   return this.set_.remove(value);
 };
-goog.exportSymbol("lf.structs.SetPolyFill_.prototype.delete", lf.structs.SetPolyFill_.prototype.delete);
+goog.exportProperty(lf.structs.SetPolyFill_.prototype, "delete", lf.structs.SetPolyFill_.prototype.delete);
 lf.structs.SetPolyFill_.prototype.has = function(value) {
   return this.set_.contains(value);
 };
-goog.exportSymbol("lf.structs.SetPolyFill_.prototype.has", lf.structs.SetPolyFill_.prototype.has);
-lf.structs.SetPolyFill_.prototype.getValues = function() {
-  return this.set_.getValues();
-};
-goog.exportSymbol("lf.structs.SetPolyFill_.prototype.getValues", lf.structs.SetPolyFill_.prototype.getValues);
-lf.structs.SetPolyFill_.prototype.difference = function(col) {
-  var result = new lf.structs.SetPolyFill_;
-  result.set_ = this.set_.difference(col);
-  return result;
-};
-goog.exportSymbol("lf.structs.SetPolyFill_.prototype.difference", lf.structs.SetPolyFill_.prototype.difference);
+goog.exportProperty(lf.structs.SetPolyFill_.prototype, "has", lf.structs.SetPolyFill_.prototype.has);
 lf.structs.Set = window.Set && window.Set.prototype.values && window.Set.prototype.forEach ? window.Set : lf.structs.SetPolyFill_;
 lf.structs.set.create_ = function() {
   var constructorFn = window.Set && window.Set.prototype.values && window.Set.prototype.forEach ? window.Set : lf.structs.SetPolyFill_;
   return new constructorFn;
 };
 lf.structs.set.values = function(set) {
-  if (goog.isDef(set.getValues)) {
-    return set.getValues();
+  if (set instanceof lf.structs.SetPolyFill_) {
+    return set.set_.getValues();
   }
   var array = [];
   set.forEach(function(v) {
@@ -10558,13 +10548,14 @@ lf.structs.set.values = function(set) {
   return array;
 };
 lf.structs.set.diff = function(set1, set2) {
-  if (goog.isDef(set1.difference)) {
-    return set1.difference(set2);
+  if (set1 instanceof lf.structs.SetPolyFill_) {
+    var result = new lf.structs.SetPolyFill_;
+    result.set_ = set1.set_.difference(set2.set_);
+  } else {
+    result = lf.structs.set.create_(), lf.structs.set.values(set1).forEach(function(v) {
+      set2.has(v) || result.add(v);
+    });
   }
-  var result = lf.structs.set.create_();
-  lf.structs.set.values(set1).forEach(function(v) {
-    set2.has(v) || result.add(v);
-  });
   return result;
 };
 }.bind(window))()

@@ -20,6 +20,7 @@ goog.provide('lf.testing.perf.DefaultBenchmark');
 goog.require('goog.Promise');
 goog.require('goog.net.XhrIo');
 goog.require('hr.db');
+goog.require('lf.Order');
 goog.require('lf.Row');
 goog.require('lf.schema.DataStoreType');
 goog.require('lf.testing.hrSchema.EmployeeDataGenerator');
@@ -127,7 +128,11 @@ lf.testing.perf.DefaultBenchmark.prototype.insert = function(rowCount) {
 
 /** @return {!IThenable} */
 lf.testing.perf.DefaultBenchmark.prototype.select = function() {
-  return this.db_.select().from(this.e_).exec();
+  return this.db_.
+      select().
+      from(this.e_).
+      orderBy(this.e_.id, lf.Order.ASC).
+      exec();
 };
 
 
