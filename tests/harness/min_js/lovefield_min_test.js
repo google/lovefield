@@ -103,15 +103,11 @@ var Tester = function() {
 
 
 /**
- * @param {string=} opt_dbName
- * @param {number=} opt_version
  * @return {!lf.schema.Builder}
  * @private
  */
-Tester.prototype.createSchema_ = function(opt_dbName, opt_version) {
-  var schemaBuilder = lf.schema.create(
-      opt_dbName || 'apicheck',
-      opt_version || 1);
+Tester.prototype.createSchema_ = function() {
+  var schemaBuilder = lf.schema.create('apicheck', 1);
   schemaBuilder.createTable('DummyTable').
       addColumn('number', lf.Type.NUMBER).
       addColumn('dateTime', lf.Type.DATE_TIME).
@@ -152,11 +148,8 @@ Tester.prototype.run = function() {
     return Promise.reject(e);
   }
 
-  return this.testApi_RawBackStore().then(function() {
-    // The following tests require a DB connection to have been established
-    // first.
-    return this.getDbConnection_();
-  }.bind(this)).then(function() {
+  // The following tests require a DB connection to have been established first.
+  return this.getDbConnection_().then(function() {
     this.testApi_Db();
     this.testApi_Schema();
     this.testApi_Transaction();
@@ -351,46 +344,8 @@ Tester.prototype.testApi_Column = function() {
   var column = this.table_['number'];
 
   assertMethods(column, [
-    'eq', 'neq', 'lt', 'lte', 'gt', 'gte', 'match', 'between', 'in',
-    'isNull', 'isNotNull', 'as',
+    'eq', 'neq', 'lt', 'lte', 'gt', 'gte', 'match', 'between', 'in', 'as'
   ], 'columnSchema');
-};
-
-
-/**
- * Tests lf.raw.BackStore API.
- * @return {!IThenable}
- */
-Tester.prototype.testApi_RawBackStore = function() {
-  var onUpgrade = function(rawDb) {
-    return new Promise(function(resolve, reject) {
-      try {
-        assertMethods(rawDb, [
-          'getRawDBInstance', 'getRawTransaction', 'dropTable',
-          'addTableColumn', 'dropTableColumn', 'renameTableColumn',
-          'createRow', 'getVersion', 'dump'
-        ], 'raw.BackStore');
-      } catch (e) {
-        reject(e);
-      }
-      resolve();
-    });
-  };
-
-  // NOTE: This test is only testing IndexedDBRawBackStore.
-  var connectOptions = {
-    storeType: lf.schema.DataStoreType.INDEXED_DB,
-    onUpgrade: onUpgrade
-  };
-  var initialVersion = 1;
-  var dbName = 'rawapicheck_' + new Date().getTime();
-  var schemaBuilder = this.createSchema_(dbName, initialVersion);
-  return schemaBuilder.connect(connectOptions).then(
-      function(db) {
-        db.close();
-        schemaBuilder = this.createSchema_(dbName, initialVersion + 1);
-        return schemaBuilder.connect(connectOptions);
-      }.bind(this));
 };
 
 
