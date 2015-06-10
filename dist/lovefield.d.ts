@@ -199,9 +199,8 @@ declare module lf {
     }
 
     type ReferentialConstraintSpec = {
-      childColumn: string
-      parentTable: string
-      parentColumn: string
+      local: string
+      ref: string
       action: lf.ConstraintAction
       timing: lf.ConstraintAction
     }
