@@ -3978,7 +3978,7 @@ lf.cache.Journal = function(global, scope) {
   }, this);
   this.cache_ = global.getService(lf.service.CACHE);
   this.indexStore_ = global.getService(lf.service.INDEX_STORE);
-  this.contstraintChecker_ = new lf.cache.ConstraintChecker(global);
+  this.constraintChecker_ = new lf.cache.ConstraintChecker(global);
   this.inMemoryUpdater_ = new lf.cache.InMemoryUpdater(global);
   this.pendingRollback_ = this.terminated_ = !1;
   this.tableDiffs_ = new goog.structs.Map;
@@ -4020,7 +4020,7 @@ lf.cache.Journal.prototype.getIndexScope = function() {
 lf.cache.Journal.prototype.insert = function(table, rows) {
   this.assertJournalWritable_();
   this.checkScope_(table);
-  this.contstraintChecker_.checkNotNullable(table, rows);
+  this.constraintChecker_.checkNotNullable(table, rows);
   for (var i = 0;i < rows.length;i++) {
     this.modifyRow_(table, null, rows[i]);
   }
@@ -4039,7 +4039,7 @@ lf.cache.Journal.prototype.modifyRow_ = function(table, rowBefore, rowNow) {
 lf.cache.Journal.prototype.update = function(table, rows) {
   this.assertJournalWritable_();
   this.checkScope_(table);
-  this.contstraintChecker_.checkNotNullable(table, rows);
+  this.constraintChecker_.checkNotNullable(table, rows);
   for (var i = 0;i < rows.length;i++) {
     var row = rows[i], rowBefore = this.cache_.get([row.id()])[0];
     this.modifyRow_(table, rowBefore, row);
@@ -4048,9 +4048,9 @@ lf.cache.Journal.prototype.update = function(table, rows) {
 lf.cache.Journal.prototype.insertOrReplace = function(table, rows) {
   this.assertJournalWritable_();
   this.checkScope_(table);
-  this.contstraintChecker_.checkNotNullable(table, rows);
+  this.constraintChecker_.checkNotNullable(table, rows);
   for (var i = 0;i < rows.length;i++) {
-    var rowNow = rows[i], rowBefore = null, existingRowId = this.contstraintChecker_.findExistingRowIdInPkIndex(table, rowNow);
+    var rowNow = rows[i], rowBefore = null, existingRowId = this.constraintChecker_.findExistingRowIdInPkIndex(table, rowNow);
     goog.isDefAndNotNull(existingRowId) && (rowBefore = this.cache_.get([existingRowId])[0], rowNow.assignRowId(existingRowId));
     this.modifyRow_(table, rowBefore, rowNow);
   }
