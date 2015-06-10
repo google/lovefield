@@ -16,6 +16,7 @@
  */
 goog.setTestOnly();
 goog.require('goog.testing.jsunit');
+goog.require('lf.ConstraintAction');
 goog.require('lf.Order');
 goog.require('lf.Row');
 goog.require('lf.Type');
@@ -43,8 +44,16 @@ function createBuilder() {
       addColumn('endDate', lf.Type.DATE_TIME).
       addColumn('jobId', lf.Type.STRING).
       addColumn('departmentId', lf.Type.STRING).
-      addForeignKey('fk_EmployeeId', 'employeeId', 'Employee', 'id', true).
-      addForeignKey('fk_DeptId', 'departmentId', 'Department', 'id', true);
+      addForeignKey('fk_EmployeeId', {
+        local: 'employeeId',
+        ref: 'Employee.id',
+        action: lf.ConstraintAction.CASCADE
+      }).
+      addForeignKey('fk_DeptId', {
+        local: 'departmentId',
+        ref: 'Department.id',
+        action: lf.ConstraintAction.CASCADE
+      });
 
   ds.createTable('Employee').
       addColumn('id', lf.Type.INTEGER).
@@ -61,8 +70,16 @@ function createBuilder() {
       addColumn('photo', lf.Type.ARRAY_BUFFER).
       addPrimaryKey([{'name': 'id', 'autoIncrement': true}]).
       addIndex('idx_salary', [{'name': 'salary', 'order': lf.Order.DESC}]).
-      addForeignKey('fk_JobId', 'jobId', 'Job', 'id', true).
-      addForeignKey('fk_DeptId', 'departmentId', 'Department', 'id', true).
+      addForeignKey('fk_JobId', {
+        local: 'jobId',
+        ref: 'Job.id',
+        action: lf.ConstraintAction.CASCADE
+      }).
+      addForeignKey('fk_DeptId', {
+        local: 'departmentId',
+        ref: 'Department.id',
+        action: lf.ConstraintAction.CASCADE
+      }).
       addNullable(['hireDate']);
 
   ds.createTable('Department').
@@ -70,7 +87,10 @@ function createBuilder() {
       addColumn('name', lf.Type.STRING).
       addColumn('managerId', lf.Type.STRING).
       addPrimaryKey([{'name': 'id', 'order': lf.Order.DESC}]).
-      addForeignKey('fk_ManagerId', 'managerId', 'Employee', 'id');
+      addForeignKey('fk_ManagerId', {
+        local: 'managerId',
+        ref: 'Employee.id'
+      });
 
   ds.createTable('DummyTable').
       addColumn('arraybuffer', lf.Type.ARRAY_BUFFER).

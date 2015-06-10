@@ -130,6 +130,7 @@ Tester.prototype.run = function() {
     assertAttributes(lf, [
       // enums
       'Type', 'Order', 'TransactionType',
+      'ConstraintAction', 'ConstraintTiming',
       // namespaces
       'fn', 'op', 'schema', 'query',
       // methods
@@ -140,6 +141,8 @@ Tester.prototype.run = function() {
     this.testEnum_Order();
     this.testEnum_TransactionType();
     this.testEnum_DataStoreType();
+    this.testEnum_ConstraintAction();
+    this.testEnum_ConstraintTiming();
 
     this.testApi_Fn();
     this.testApi_Op();
@@ -233,6 +236,22 @@ Tester.prototype.testEnum_TransactionType = function() {
   var attributeNames = ['READ_ONLY', 'READ_WRITE'];
   assertAttributes(
       lf.TransactionType, attributeNames, 'lf.TransactionType');
+};
+
+
+/** Tests lf.ConstraintAction */
+Tester.prototype.testEnum_ConstraintAction = function() {
+  var attributeNames = [ 'RESTRICT', 'CASCADE' ];
+  assertAttributes(
+      lf.ConstraintAction, attributeNames, 'lf.ConstraintAction');
+};
+
+
+/** Tests lf.ConstraintTiming */
+Tester.prototype.testEnum_ConstraintTiming = function() {
+  var attributeNames = [ 'IMMEDIATE', 'DEFERRABLE' ];
+  assertAttributes(
+      lf.ConstraintTiming, attributeNames, 'lf.ConstraintTiming');
 };
 
 

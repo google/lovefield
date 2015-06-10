@@ -17,6 +17,7 @@
 goog.setTestOnly();
 goog.provide('lf.testing.hrSchema.getSchemaBuilder');
 
+goog.require('lf.ConstraintAction');
 goog.require('lf.Order');
 goog.require('lf.Type');
 goog.require('lf.schema');
@@ -39,9 +40,16 @@ lf.testing.hrSchema.getSchemaBuilder = function() {
       addColumn('endDate', lf.Type.DATE_TIME).
       addColumn('jobId', lf.Type.STRING).
       addColumn('departmentId', lf.Type.STRING).
-      addForeignKey('fk_EmployeeId', 'employeeId', 'Employee', 'id', true).
-      addForeignKey(
-          'fk_DepartmentId', 'departmentId', 'Department', 'id', true);
+      addForeignKey('fk_EmployeeId', {
+        local: 'employeeId',
+        ref: 'Employee.id',
+        action: lf.ConstraintAction.CASCADE
+      }).
+      addForeignKey('fk_DepartmentId', {
+        local: 'departmentId',
+        ref: 'Department.id',
+        action: lf.ConstraintAction.CASCADE
+      });
 
   schemaBuilder.createTable('Employee').
       addColumn('id', lf.Type.STRING).
@@ -57,9 +65,16 @@ lf.testing.hrSchema.getSchemaBuilder = function() {
       addColumn('departmentId', lf.Type.STRING).
       addColumn('photo', lf.Type.ARRAY_BUFFER).
       addPrimaryKey(['id']).
-      addForeignKey('fk_JobId', 'jobId', 'Job', 'id', true).
-      addForeignKey(
-          'fk_DepartmentId', 'departmentId', 'Department', 'id', true).
+      addForeignKey('fk_JobId', {
+        local: 'jobId',
+        ref: 'Job.id',
+        action: lf.ConstraintAction.CASCADE
+      }).
+      addForeignKey('fk_DepartmentId', {
+        local: 'departmentId',
+        ref: 'Department.id',
+        action: lf.ConstraintAction.CASCADE
+      }).
       addIndex('idx_salary', ['salary'], false, lf.Order.DESC).
       addNullable(['hireDate']);
 
@@ -69,8 +84,15 @@ lf.testing.hrSchema.getSchemaBuilder = function() {
       addColumn('managerId', lf.Type.STRING).
       addColumn('locationId', lf.Type.STRING).
       addPrimaryKey(['id']).
-      addForeignKey('fk_ManagerId', 'managerId', 'Employee', 'id', false).
-      addForeignKey('fk_LocationId', 'locationId', 'Location', 'id', true);
+      addForeignKey('fk_ManagerId', {
+        local: 'managerId',
+        ref: 'Employee.id'
+      }).
+      addForeignKey('fk_LocationId', {
+        local: 'locationId',
+        ref: 'Location.id',
+        action: lf.ConstraintAction.CASCADE
+      });
 
   schemaBuilder.createTable('Location').
       addColumn('id', lf.Type.STRING).
@@ -80,14 +102,22 @@ lf.testing.hrSchema.getSchemaBuilder = function() {
       addColumn('stateProvince', lf.Type.STRING).
       addColumn('countryId', lf.Type.STRING).
       addPrimaryKey(['id']).
-      addForeignKey('fk_CountryId', 'countryId', 'Country', 'id', true);
+      addForeignKey('fk_CountryId', {
+        local: 'countryId',
+        ref: 'Country.id',
+        action: lf.ConstraintAction.CASCADE
+      });
 
   schemaBuilder.createTable('Country').
       addColumn('id', lf.Type.INTEGER).
       addColumn('name', lf.Type.STRING).
       addColumn('regionId', lf.Type.STRING).
       addPrimaryKey(['id'], true).
-      addForeignKey('fk_RegionId', 'regionId', 'Region', 'id', true);
+      addForeignKey('fk_RegionId', {
+        local: 'regionId',
+        ref: 'Region.id',
+        action: lf.ConstraintAction.CASCADE
+      });
 
   schemaBuilder.createTable('Region').
       addColumn('id', lf.Type.STRING).

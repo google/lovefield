@@ -10433,6 +10433,19 @@ lf.Global.prototype.isRegistered = function(serviceId) {
 };
 goog.exportProperty(lf.Global.prototype, "isRegistered", lf.Global.prototype.isRegistered);
 
+lf.ConstraintAction = {};
+goog.exportSymbol("lf.ConstraintAction", lf.ConstraintAction);
+lf.ConstraintAction.RESTRICT = 0;
+goog.exportProperty(lf.ConstraintAction, "RESTRICT", lf.ConstraintAction.RESTRICT);
+lf.ConstraintAction.CASCADE = 1;
+goog.exportProperty(lf.ConstraintAction, "CASCADE", lf.ConstraintAction.CASCADE);
+lf.ConstraintTiming = {};
+goog.exportSymbol("lf.ConstraintTiming", lf.ConstraintTiming);
+lf.ConstraintTiming.IMMEDIATE = 0;
+goog.exportProperty(lf.ConstraintTiming, "IMMEDIATE", lf.ConstraintTiming.IMMEDIATE);
+lf.ConstraintTiming.DEFERRABLE = 1;
+goog.exportProperty(lf.ConstraintTiming, "DEFERRABLE", lf.ConstraintTiming.DEFERRABLE);
+
 lf.schema.Constraint = function(primaryKey, notNullable) {
   this.primaryKey_ = primaryKey;
   this.notNullable_ = notNullable;
@@ -10500,7 +10513,12 @@ lf.schema.TableBuilder.prototype.addPrimaryKey = function(columns, opt_autoInc) 
   return this;
 };
 goog.exportProperty(lf.schema.TableBuilder.prototype, "addPrimaryKey", lf.schema.TableBuilder.prototype.addPrimaryKey);
-lf.schema.TableBuilder.prototype.addForeignKey = function() {
+lf.schema.TableBuilder.prototype.addForeignKey = function(name, spec) {
+  goog.isDef(spec.action) || (spec.action = lf.ConstraintAction.RESTRICT);
+  goog.isDef(spec.timing) || (spec.timing = lf.ConstraintTiming.IMMEDIATE);
+  if (spec.action == lf.ConstraintAction.CASCADE && spec.timing == lf.ConstraintTiming.DEFERRABLE) {
+    throw new lf.Exception(lf.Exception.Type.SYNTAX, "Lovefield allows only immediate evaluation of cascading constraints");
+  }
   return this;
 };
 goog.exportProperty(lf.schema.TableBuilder.prototype, "addForeignKey", lf.schema.TableBuilder.prototype.addForeignKey);

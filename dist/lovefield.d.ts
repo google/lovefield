@@ -32,6 +32,16 @@ declare module lf {
     STRING
   }
 
+  export enum ConstraintAction {
+    RESTRICT,
+    CASCADE
+  }
+
+  export enum ConstraintTiming {
+    IMMEDIATE,
+    DEFERRABLE
+  }
+
   export interface Binder {
     getIndex(): number
   }
@@ -188,9 +198,17 @@ declare module lf {
       order: Order
     }
 
+    type ReferentialConstraintSpec = {
+      childColumn: string
+      parentTable: string
+      parentColumn: string
+      action: lf.ConstraintAction
+      timing: lf.ConstraintAction
+    }
+
     export interface TableBuilder {
       addColumn(name: string, type: lf.Type): TableBuilder
-      addForeignKey(): TableBuilder
+      addForeignKey(name: string, spec: ReferentialConstraintSpec): TableBuilder
       addIndex(
           name: string, columns: Array<string>|Array<IndexedColumn>,
           unique?: boolean, order?: Order): TableBuilder

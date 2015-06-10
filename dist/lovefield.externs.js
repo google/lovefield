@@ -45,6 +45,17 @@ lf.TransactionType.READ_ONLY;
 lf.TransactionType.READ_WRITE;
 
 
+/** @enum {number} */
+lf.ConstraintAction = {};
+lf.ConstraintAction.RESTRICT;
+lf.ConstraintAction.CASCADE;
+
+
+/** @enum {number} */
+lf.ConstraintTiming = {};
+lf.ConstraintTiming.IMMEDIATE;
+lf.ConstraintTiming.DEFERRABLE;
+
 
 /** @interface */
 lf.Binder = function() {};
@@ -534,14 +545,15 @@ lf.schema.TableBuilder.prototype.addColumn = function(name, type) {};
 
 /**
  * @param {string} name
- * @param {string} localColumn
- * @param {string} remoteTable
- * @param {string} remoteColumn
- * @param {boolean=} opt_cascade
+ * @param {{
+ *   local: string,
+ *   ref: string,
+ *   action: (lf.ConstraintAction|undefined),
+ *   timing: (lf.ConstraintTiming|undefined)
+ * }} spec
  * @return {!lf.schema.TableBuilder}
  */
-lf.schema.TableBuilder.prototype.addForeignKey = function(
-    name, localColumn, remoteTable, remoteColumn, opt_cascade) {};
+lf.schema.TableBuilder.prototype.addForeignKey = function(name, spec) {};
 
 
 /**

@@ -58,20 +58,32 @@ movie.db.createSchema_ = function() {
   ds.createTable('MovieGenre').
       addColumn('movieId', lf.Type.INTEGER).
       addColumn('genre', lf.Type.STRING).
-      addForeignKey('fk_MovieId', 'movieId', 'Movie', 'id');
+      addForeignKey('fk_MovieId', {
+        local: 'movieId',
+        ref: 'Movie.id'
+      });
 
   ds.createTable('MovieDirector').
       addColumn('movieId', lf.Type.INTEGER).
       addColumn('directorId', lf.Type.INTEGER).
       addForeignKey('fk_MovieId', 'movieId', 'Movie', 'id').
-      addForeignKey('fk_DirectorId', 'directorId', 'Director', 'id');
+      addForeignKey('fk_DirectorId', {
+        local: 'directorId',
+        ref: 'Director.id'
+      });
 
   ds.createTable('MovieActor').
       addColumn('movieId', lf.Type.INTEGER).
       addColumn('actorId', lf.Type.INTEGER).
       addColumn('role', lf.Type.STRING).
-      addForeignKey('fk_MovieId', 'movieId', 'Movie', 'id').
-      addForeignKey('fk_ActorId', 'actorId', 'Actor', 'id');
+      addForeignKey('fk_MovieId', {
+        local: 'movieId',
+        ref: 'Movie.id'
+      }).
+      addForeignKey('fk_ActorId', {
+        local: 'actorId',
+        ref: 'Actor.id'
+      });
 
   return ds;
 };
