@@ -17,6 +17,7 @@
 goog.setTestOnly();
 goog.require('goog.testing.jsunit');
 goog.require('lf.structs.Map');
+goog.require('lf.structs.map');
 
 
 function testSmoke() {
@@ -24,7 +25,7 @@ function testSmoke() {
   map.set(1, 2);
   assertEquals(2, map.get(1));
   assertEquals(1, map.size);
-  map.delete(1);
+  assertTrue(map.delete(1));
   assertEquals(0, map.size);
 
   for (var i = 0; i < 10; ++i) {
@@ -36,4 +37,97 @@ function testSmoke() {
   map.forEach(function(value, key) {
     assertEquals(value, key * 10);
   });
+}
+
+function testMapUtilsForInteger() {
+  var map = new lf.structs.Map();
+  map.set(1, 2);
+  assertEquals(2, map.get(1));
+  assertEquals(1, map.size);
+  assertTrue(map.delete(1));
+  assertEquals(0, map.size);
+
+  for (var i = 0; i < 10; ++i) {
+    map.set(i, i * 10);
+  }
+  assertTrue(map.has(1));
+
+  map.set(10, null);
+  map.set(11, undefined);
+  var keys = lf.structs.map.keys(map);
+  for (var i = 0; i < 12; ++i) {
+    assertEquals(i, keys[i]);
+  }
+
+  var values = lf.structs.map.values(map);
+  for (var i = 0; i < 10; ++i) {
+    assertEquals(i * 10, values[i]);
+  }
+  assertEquals(null, values[10]);
+  assertEquals(undefined, values[11]);
+}
+
+function testMapUtilsForString() {
+  var map = new lf.structs.Map();
+  map.set(1, 2 + '-str');
+  assertEquals(2 + '-str', map.get(1));
+  assertEquals(1, map.size);
+  assertTrue(map.delete(1));
+  assertEquals(0, map.size);
+
+  for (var i = 0; i < 10; ++i) {
+    map.set(i, i * 10 + '-str');
+  }
+  assertTrue(map.has(1));
+
+  map.set(10, '');
+  map.set(11, null);
+  map.set(12, undefined);
+  assertEquals(13, map.size);
+
+  var keys = lf.structs.map.keys(map);
+  for (var i = 0; i < 13; ++i) {
+    assertEquals(i, keys[i]);
+  }
+
+  var values = lf.structs.map.values(map);
+  for (var i = 0; i < 10; ++i) {
+    assertEquals(i * 10 + '-str', values[i]);
+  }
+  assertEquals('', values[10]);
+  assertEquals(null, values[11]);
+  assertEquals(undefined, values[12]);
+}
+
+function testMapUtilsForObjects() {
+  var rows = new Array(10);
+  var map = new lf.structs.Map();
+  for (var i = 0; i < 10; ++i) {
+    rows[i] = {id: i, name: i + '-string'};
+  }
+
+  map.set(1, rows[1]);
+  assertEquals(rows[1], map.get(1));
+  assertEquals(1, map.size);
+  assertTrue(map.delete(1));
+  assertEquals(0, map.size);
+
+  for (var i = 0; i < 10; ++i) {
+    map.set(i, rows[i]);
+  }
+  assertTrue(map.has(1));
+
+  map.set(10, null);
+  assertEquals(11, map.size);
+
+  var keys = lf.structs.map.keys(map);
+  for (var i = 0; i < 11; ++i) {
+    assertEquals(i, keys[i]);
+  }
+
+  var values = lf.structs.map.values(map);
+  for (var i = 0; i < 10; ++i) {
+    assertEquals(rows[i], values[i]);
+  }
+  assertEquals(null, values[10]);
 }

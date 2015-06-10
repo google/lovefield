@@ -25,7 +25,7 @@ function testSmoke() {
   set.add(1);
   assertEquals(1, set.size);
 
-  set.delete(1);
+  assertTrue(set.delete(1));
   assertEquals(0, set.size);
 
   for (var i = 0; i < 10; ++i) {
@@ -51,8 +51,7 @@ function testSetUtilsForInteger() {
   }
   set.add(1000);
   set.add(null);
-  var undefinedVar;
-  set.add(undefinedVar);
+  set.add(undefined);
   assertEquals(13, set.size);
 
   var values = lf.structs.set.values(set);
@@ -61,7 +60,7 @@ function testSetUtilsForInteger() {
   }
   assertEquals(1000, values[10]);
   assertEquals(null, values[11]);
-  assertEquals(undefinedVar, values[12]);
+  assertEquals(undefined, values[12]);
 
   var set2 = new lf.structs.Set();
   for (var i = 0; i < 10; ++i) {
@@ -104,9 +103,7 @@ function testSetUtilsForObjects() {
   var rows = new Array(10);
   var set = new lf.structs.Set();
   for (var i = 0; i < 10; ++i) {
-    rows[i] = new Object();
-    rows[i].id = i;
-    rows[i].name = i + '-string';
+    rows[i] = {id: i, name: i + '-string'};
     set.add(rows[i]);
   }
   set.add(null);

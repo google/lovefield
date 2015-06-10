@@ -3414,12 +3414,6 @@ goog.structs.Map.prototype.toObject = function() {
   }
   return obj;
 };
-goog.structs.Map.prototype.getKeyIterator = function() {
-  return this.__iterator__(!0);
-};
-goog.structs.Map.prototype.getValueIterator = function() {
-  return this.__iterator__(!1);
-};
 goog.structs.Map.prototype.__iterator__ = function(opt_keys) {
   this.cleanupKeysArray_();
   var i = 0, version = this.version_, selfObj = this, newIter = new goog.iter.Iterator;
@@ -10785,6 +10779,7 @@ lf.schema.create = function(dbName, dbVersion) {
 goog.exportSymbol("lf.schema.create", lf.schema.create);
 
 lf.structs = {};
+lf.structs.map = {};
 lf.structs.MapPolyFill_ = function() {
   this.map_ = new goog.structs.Map;
   Object.defineProperty(this, "size", {get:function() {
@@ -10799,10 +10794,6 @@ lf.structs.MapPolyFill_.prototype.delete = function(key) {
   return this.map_.remove(key);
 };
 goog.exportProperty(lf.structs.MapPolyFill_.prototype, "delete", lf.structs.MapPolyFill_.prototype.delete);
-lf.structs.MapPolyFill_.prototype.entries = function() {
-  return this.map_.__iterator__();
-};
-goog.exportProperty(lf.structs.MapPolyFill_.prototype, "entries", lf.structs.MapPolyFill_.prototype.entries);
 lf.structs.MapPolyFill_.prototype.forEach = function(callback, opt_thisArg) {
   return this.map_.forEach(callback, opt_thisArg);
 };
@@ -10815,19 +10806,31 @@ lf.structs.MapPolyFill_.prototype.has = function(key) {
   return this.map_.containsKey(key);
 };
 goog.exportProperty(lf.structs.MapPolyFill_.prototype, "has", lf.structs.MapPolyFill_.prototype.has);
-lf.structs.MapPolyFill_.prototype.keys = function() {
-  return this.map_.getKeyIterator();
-};
-goog.exportProperty(lf.structs.MapPolyFill_.prototype, "keys", lf.structs.MapPolyFill_.prototype.keys);
 lf.structs.MapPolyFill_.prototype.set = function(key, value) {
   return this.map_.set(key, value);
 };
 goog.exportProperty(lf.structs.MapPolyFill_.prototype, "set", lf.structs.MapPolyFill_.prototype.set);
-lf.structs.MapPolyFill_.prototype.values = function() {
-  return this.map_.getValueIterator();
+lf.structs.Map = window.Map && window.Map.prototype.values && window.Map.prototype.forEach ? window.Map : lf.structs.MapPolyFill_;
+lf.structs.map.keys = function(map) {
+  if (map instanceof lf.structs.MapPolyFill_) {
+    return map.map_.getKeys();
+  }
+  var i = 0, array = Array(map.size);
+  map.forEach(function(v, k) {
+    array[i++] = k;
+  });
+  return array;
 };
-goog.exportProperty(lf.structs.MapPolyFill_.prototype, "values", lf.structs.MapPolyFill_.prototype.values);
-lf.structs.Map = goog.isDef(window.Map) && goog.isDef(window.Map.prototype.keys) ? window.Map : lf.structs.MapPolyFill_;
+lf.structs.map.values = function(map) {
+  if (map instanceof lf.structs.MapPolyFill_) {
+    return map.map_.getValues();
+  }
+  var i = 0, array = Array(map.size);
+  map.forEach(function(v) {
+    array[i++] = v;
+  });
+  return array;
+};
 
 lf.structs.set = {};
 lf.structs.SetPolyFill_ = function() {
@@ -10861,9 +10864,9 @@ lf.structs.set.values = function(set) {
   if (set instanceof lf.structs.SetPolyFill_) {
     return set.set_.getValues();
   }
-  var array = [];
+  var i = 0, array = Array(set.size);
   set.forEach(function(v) {
-    array.push(v);
+    array[i++] = v;
   });
   return array;
 };
