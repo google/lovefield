@@ -18,4 +18,6 @@
 
 [7. SPAC](spec/07_spac.md)
 
+[8. Referential integrity](spec/08_referential_integrity.md)
+
 [Future Features and References](spec/99_postfix.md)
