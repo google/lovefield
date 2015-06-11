@@ -36,9 +36,14 @@ var config = /** @type {!Function} */ (
  * @private
  */
 var ProvideMap_ = function() {
-  this.map_ = {};
-  this.reverse_ = {};
-  this.module_ = {};
+  /** @private {!Map<string, string>} */
+  this.map_ = new Map();
+
+  /** @private {!Map<string, !Array<string>>} */
+  this.reverse_ = new Map();
+
+  /** @private {!Map<string, boolean>} */
+  this.module_ = new Map();
 };
 
 
@@ -48,12 +53,12 @@ var ProvideMap_ = function() {
  * @param {boolean=} opt_isModule
  */
 ProvideMap_.prototype.set = function(ns, path, opt_isModule) {
-  this.map_[ns] = path;
-  if (!this.reverse_.hasOwnProperty(path)) {
-    this.reverse_[path] = [];
+  this.map_.set(ns, path);
+  if (!this.reverse_.has(path)) {
+    this.reverse_.set(path, []);
   }
-  this.reverse_[path].push(ns);
-  this.module_[ns] = opt_isModule || false;
+  this.reverse_.get(path).push(ns);
+  this.module_.set(ns, opt_isModule || false);
 };
 
 
@@ -62,7 +67,8 @@ ProvideMap_.prototype.set = function(ns, path, opt_isModule) {
  * @return {?string}
  */
 ProvideMap_.prototype.get = function(ns) {
-  return this.map_.hasOwnProperty(ns) ? this.map_[ns] : null;
+  return /** @type {?string} */ (
+      this.map_.has(ns) ? this.map_.get(ns) : null);
 };
 
 
@@ -71,12 +77,13 @@ ProvideMap_.prototype.get = function(ns) {
  * @return {boolean}
  */
 ProvideMap_.prototype.isModule = function(ns) {
-  return this.module_.hasOwnProperty(ns) ? this.module_[ns] : false;
+  return /** @type {boolean} */ (
+      this.module_.has(ns) ? this.module_.get(ns) : false);
 };
 
 
 /**
- * @return {!Object}
+ * @return {!Map<string, !Array<string>>}
  */
 ProvideMap_.prototype.getAllProvides = function() {
   return this.reverse_;
@@ -89,7 +96,8 @@ ProvideMap_.prototype.getAllProvides = function() {
  * @private
  */
 var RequireMap_ = function() {
-  this.map_ = {};
+  /** @private {!Map<string, !Set<string>>} */
+  this.map_ = new Map();
 };
 
 
@@ -98,61 +106,49 @@ var RequireMap_ = function() {
  * @param {string} ns
  */
 RequireMap_.prototype.set = function(path, ns) {
-  if (!this.map_.hasOwnProperty(path)) {
-    this.map_[path] = {};
+  if (!this.map_.has(path)) {
+    this.map_.set(path, new Set());
   }
-  this.map_[path][ns] = true;
-};
-
-
-/**
- * @param {!Object} obj
- * @return {!Array.<string>}
- * @private
- */
-RequireMap_.prototype.objectKeys_ = function(obj) {
-  var results = [];
-  for (var key in obj) {
-    results.push(key);
-  }
-  return results;
+  this.map_.get(path).add(ns);
 };
 
 
 /**
  * @param {string} path
- * @return {!Array.<string>}
+ * @return {!Array<string>}
  */
 RequireMap_.prototype.get = function(path) {
-  if (this.map_.hasOwnProperty(path)) {
-    return this.objectKeys_(this.map_[path]);
+  if (this.map_.has(path)) {
+    return setToArray(/** @type {!Set} */ (this.map_.get(path)));
   }
   return [];
 };
 
 
-/** @return {!Array.<string>} */
+/** @return {!Array<string>} */
 RequireMap_.prototype.getAllDependencies = function() {
-  var results = {};
-  for (var path in this.map_) {
-    for (var key in this.map_[path]) {
-      results[key] = true;
-    }
-  }
+  var results = new Set();
+  this.map_.forEach(function(set, key) {
+    set.forEach(function(value) {
+      results.add(value);
+    });
+  }, this);
 
-  return this.objectKeys_(results);
+  return setToArray(results);
 };
 
 
-/** @return {!Object} */
+/** @return {!Map<string, !Array<string>>} */
 RequireMap_.prototype.getAllRequires = function() {
-  var results = {};
-  for (var key in this.map_) {
-    results[key] = [];
-    for (var value in this.map_[key]) {
-      results[key].push(value);
-    }
-  }
+  var results = new Map();
+  this.map_.forEach(function(set, key) {
+    var array = [];
+    results.set(key, array);
+    set.forEach(function(value) {
+      array.push(value);
+    });
+  }, this);
+
   return results;
 };
 
@@ -166,17 +162,19 @@ RequireMap_.prototype.getAllRequires = function() {
 RequireMap_.prototype.getTopoSortEntry = function(
     provideMap, closureProvide, opt_filter) {
   var results = [];
-  for (var key in this.map_) {
+  this.map_.forEach(function(set, key) {
     if (opt_filter && opt_filter.indexOf(key) == -1) {
-      continue;
+      return;
     }
     var entry = { name: key, depends: [] };
-    for (var ns in this.map_[key]) {
+
+    set.forEach(function(ns) {
       var provider = (ns.slice(0, 4) == 'goog') ? closureProvide : provideMap;
       entry.depends.push(provider.get(ns));
-    }
+    });
     results.push(entry);
-  }
+  });
+
   return results;
 };
 
@@ -191,7 +189,7 @@ function relativeGlob(startPath) {
 
 
 /**
- * @param {!Array.<string>} filePaths
+ * @param {!Array<string>} filePaths
  * @param {!ProvideMap_} provideMap
  * @param {!RequireMap_} requireMap
  */
@@ -255,7 +253,7 @@ function extractRequires(filePath) {
  * @param {!RequireMap_} codeRequire
  * @param {!RequireMap_} closureRequire
  * @param {!ProvideMap_} closureProvide
- * @return {!Array.<string>} Associated Closure files
+ * @return {!Array<string>} Associated Closure files
  */
 function extractClosureDependencies(
     codeRequire, closureRequire, closureProvide) {
@@ -263,41 +261,33 @@ function extractClosureDependencies(
     return element.slice(0, 4) == 'goog';
   });
 
-  var map = {};
+  var map = new Map();
   closureDeps.forEach(function(ns) {
-    map[ns] = closureProvide.get(ns);
+    map.set(ns, closureProvide.get(ns));
   });
-
-  var countKeys = function(object) {
-    var keys = [];
-    for (var key in object) {
-      keys.push(key);
-    }
-    return keys.length;
-  };
 
   var oldCount;
   do {
-    oldCount = countKeys(map);
-    for (var key in map) {
-      var requires = closureRequire.get(map[key]);
+    oldCount = map.size;
+    map.forEach(function(value, key) {
+      var requires = closureRequire.get(value);
       requires.forEach(function(ns) {
-        map[ns] = closureProvide.get(ns);
+        map.set(ns, closureProvide.get(ns));
       });
-    }
-  } while (countKeys(map) != oldCount);
+    });
+  } while (map.size != oldCount);
 
   var closureFiles = [];
-  for (var key in map) {
-    closureFiles.push(map[key]);
-  }
+  map.forEach(function(value, key) {
+    closureFiles.push(value);
+  });
   return closureFiles;
 }
 
 
 /**
  * Find Closure dependency files for the lib.
- * @return {!Array.<string>}
+ * @return {!Array<string>}
  */
 function scanDeps() {
   var provideMap = new ProvideMap_();
@@ -339,22 +329,22 @@ function scanDeps() {
  * @param {string} basePath
  * @param {!ProvideMap_} provideMap
  * @param {!RequireMap_} requireMap
- * @return {!Array.<string>}
+ * @return {!Array<string>}
  */
 function genAddDependency(basePath, provideMap, requireMap) {
   var provide = provideMap.getAllProvides();
   var require = requireMap.getAllRequires();
-  var set = {};
+  var set = new Set();
 
-  for (var key in provide) {
-    set[key] = true;
-  }
-  for (var key in require) {
-    set[key] = true;
-  }
+  provide.forEach(function(value, key) {
+    set.add(key);
+  });
+  require.forEach(function(value, key) {
+    set.add(key);
+  });
 
   var results = [];
-  for (var key in set) {
+  set.forEach(function(key) {
     var relativeServePath = pathMod.join(
         '../../', pathMod.relative(basePath, key));
 
@@ -368,22 +358,24 @@ function genAddDependency(basePath, provideMap, requireMap) {
     var line = 'goog.addDependency("' + relativeServePath + '", ';
 
     var isModule = false;
-    if (provide.hasOwnProperty(key)) {
-      line += JSON.stringify(provide[key]) + ', ';
-      isModule = provideMap.isModule(provide[key]);
+    if (provide.has(key)) {
+      var value = /** @type {!Array<string>} */ (provide.get(key));
+      line += JSON.stringify(value) + ', ';
+      isModule = provideMap.isModule(key);
     } else {
       line += '[], ';
     }
 
-    if (require.hasOwnProperty(key)) {
-      line += JSON.stringify(require[key]);
+    if (require.has(key)) {
+      line += JSON.stringify(require.get(key));
     } else {
       line += '[]';
     }
 
     line += isModule ? ', true);' : ');';
     results.push(line);
-  }
+  });
+
   return results;
 }
 
@@ -391,7 +383,7 @@ function genAddDependency(basePath, provideMap, requireMap) {
 /**
  * Generates deps.js used for testing.
  * @param {string} basePath
- * @param {!Array.<string>} targets
+ * @param {!Array<string>} targets
  * @return {string}
  */
 function genDeps(basePath, targets) {
@@ -418,21 +410,21 @@ function genModuleDeps(scriptPath) {
   var provideMap = new ProvideMap_();
   var requireMap = new RequireMap_();
   scanFiles([scriptPath], provideMap, requireMap);
-  var dumpValues = function(obj) {
+  var dumpValues = function(map) {
     var results = [];
-    for (var key in obj) {
-      results = results.concat(obj[key]);
-    }
+    map.forEach(function(value, key) {
+      results = results.concat(value);
+    });
     return results;
   };
 
-  var provide = provideMap.getAllProvides();
-  var require = requireMap.getAllRequires();
   var relativePath = pathMod.join('../..', scriptPath);
   if (osMod.platform().indexOf('win') != -1) {
     relativePath = relativePath.replace(/\\/g, '\\\\');
   }
 
+  var provide = provideMap.getAllProvides();
+  var require = requireMap.getAllRequires();
   return 'goog.addDependency("' + relativePath + '", ' +
       JSON.stringify(dumpValues(provide)) + ', ' +
       JSON.stringify(dumpValues(require)) + ', true);';

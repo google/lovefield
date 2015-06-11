@@ -16,6 +16,7 @@
  */
 goog.setTestOnly();
 goog.require('goog.Promise');
+goog.require('goog.structs.Set');
 goog.require('goog.testing.AsyncTestCase');
 goog.require('goog.testing.jsunit');
 goog.require('hr.db');
