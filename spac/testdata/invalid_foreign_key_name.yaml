@@ -19,6 +19,5 @@ table:
       primaryKey: [id]
       foreignKey:
         fk#Dept:  # Should throw: invalid name.
-          localColumn: fkDept
-          reference: Department
-          remoteColumn: id
+          local: fkDept
+          ref: Department.id

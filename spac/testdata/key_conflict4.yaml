@@ -20,7 +20,6 @@ table:
           column: [id]
       foreignKey:
         fk_Id:
-          localColumn: id
-          reference: Person
-          remoteColumn: id
+          local: id
+          ref: Person.id
 

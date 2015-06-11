@@ -198,18 +198,17 @@ Foreign key is defined as a YAML object
 
 ```yaml
 <foreignKey_name>:
-  localColumn: <local_column>  # required
-  reference: <remote_table>  # required
-  remoteColumn: <remote_column>  # required
-  cascade: <boolean>  # optional
+  local: <local_column>  # required
+  ref: <remote_table>.<remote_column>  # required
+  action: < restrict | cascade >  # optional
+  timing: < immediate | deferrable >  # optional
 ```
 
 Primary key and foreign key constraint violations will cause transaction
-rejection, just like what happens in SQL.
+rejection, just like what happens in SQL. Please refer to
+[Referential Integrity](08_referential_integrity.md) for detailed information
+with respect to foreign key definition.
 
-When the `cascade` field is true for a foreign key, Lovefield query engine will
-perform cascade delete and update. `cascade` field is optional and defaulted to
-false.
 
 ### 7.4 Index Definition
 
@@ -282,10 +281,9 @@ table:
     constraint:
       foreignKey:
         fkId:
-          localColumn: id
-          reference: Asset
-          remoteColumn: id
-          cascade: true
+          local: id
+          ref: Asset.id
+          action: cascade
 
   InfoCard:
     column:

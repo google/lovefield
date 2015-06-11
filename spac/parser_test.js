@@ -127,9 +127,30 @@ describe('YAML Parser Test', function() {
     thrower('foreign_key_invalid_reference.yaml');
   });
 
+  it('should throw if foreign key had invalid reference 2', function() {
+    thrower('foreign_key_invalid_reference2.yaml');
+  });
+
+  it('should throw if foreign key had invalid reference 3', function() {
+    thrower('foreign_key_invalid_reference3.yaml');
+  });
+
   it('should throw if foreign key had invalid remote column', function() {
     thrower('foreign_key_invalid_remote_column.yaml');
   });
+
+  it('should throw if foreign key had invalid action', function() {
+    thrower('foreign_key_invalid_action.yaml');
+  });
+
+  it('should throw if foreign key had invalid timing', function() {
+    thrower('foreign_key_invalid_timing.yaml');
+  });
+
+  it('should throw if foreign key had invalid action/timing combination',
+      function() {
+        thrower('foreign_key_invalid_remote_column.yaml');
+      });
 
   it('should throw if foreign key name conflicted', function() {
     thrower('foreign_key_name_conflict.yaml');

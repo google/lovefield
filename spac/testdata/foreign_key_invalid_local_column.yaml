@@ -19,6 +19,5 @@ table:
       primaryKey: [id]
       foreignKey:
         fkDept:
-          localColumn: dept  # Should throw: non-existing column
-          reference: Department
-          remoteColumn: id
+          local: dept  # Should throw: non-existing column
+          ref: Department.id

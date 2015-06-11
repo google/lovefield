@@ -68,10 +68,10 @@ var UNIQUE_SCHEMA = {
 
 /** @const {!Object} */
 var FOREIGN_KEY_SCHEMA = {
-  'localColumn': 'string',
-  'reference': 'string',
-  'remoteColumn': 'string',
-  'cascade=': 'boolean'
+  'local': 'string',
+  'ref': 'string',
+  'action=': 'string',
+  'timing=': 'string'
 };
 
 
@@ -104,6 +104,14 @@ var NON_INDEXABLE_TYPE = [
 
 /** @const {!Array<string>} */
 var VALID_INDEX_ORDER = ['asc', 'desc'];
+
+
+/** @const {!Array<string>} */
+var VALID_CONSTRAINT_ACTION = ['restrict', 'cascade'];
+
+
+/** @const {!Array<string>} */
+var VALID_CONSTRAINT_TIMING = ['immediate', 'deferrable'];
 
 
 /** @const {!Array<string>} */
@@ -327,8 +335,9 @@ function checkForeignKey(tableName, schemas, schema, colNames, names, keyed) {
     var fkName = tableName + '.' + fk;
     checkObject(fkName, FOREIGN_KEY_SCHEMA, schema[fk]);
 
-    var local = schema[fk].localColumn;
+    var local = schema[fk].local;
     checkIndexable(schemas[tableName], [local]);
+    var localColumnType = schemas[tableName].column[local];
     if (colNames.indexOf(local) == -1) {
       throw new Error(fkName + ' has invalid local column');
     }
@@ -337,18 +346,33 @@ function checkForeignKey(tableName, schemas, schema, colNames, names, keyed) {
     }
     notNullable.push(local);
 
-    var targetTable = schema[fk].reference;
-    if (tableNames.indexOf(targetTable) == -1) {
+    var referenced = schema[fk].ref.split('.');
+    var parentTable = referenced[0];
+    if (referenced.length != 2 || tableNames.indexOf(parentTable) == -1) {
       throw new Error(fkName + ' has invalid reference');
     }
 
-    var cols = [];
-    for (var col in schemas[targetTable].column) {
-      cols.push(col);
+    var parentColumn = referenced[1];
+    if (!schemas[parentTable].column.hasOwnProperty(parentColumn)) {
+      throw new Error(fkName + ' has invalid ref column');
     }
-    if (cols.indexOf(schema[fk].remoteColumn) == -1) {
-      throw new Error(fkName + ' has invalid remote column');
+    if (localColumnType != schemas[parentTable].column[parentColumn]) {
+      throw new Error(fkName + ' referring column of different type');
     }
+
+    var action = schema[fk].action;
+    if (action && VALID_CONSTRAINT_ACTION.indexOf(action) == -1) {
+      throw new Error(fkName + ' has invalid action');
+    }
+    var timing = schema[fk].timing;
+    if (timing && VALID_CONSTRAINT_TIMING.indexOf(timing) == -1) {
+      throw new Error(fkName + ' has invalid timing');
+    }
+    if (timing == 'deferrable' && action == 'cascade') {
+      throw new Error(fkName + ': cascade shall only be immediate');
+    }
+
+    // TODO(arthurhsu): detect FK chain, FK loop, and uniqueness
 
     if (names.indexOf(fk) != -1) {
       throw new Error(fkName + ' has name conflict');

@@ -19,6 +19,5 @@ table:
       primaryKey: [id]
       foreignKey:
         fkDept:  # Should throw: name conflict
-          localColumn: fkDept
-          reference: Department
-          remoteColumn: id
+          local: fkDept
+          ref: Department.id

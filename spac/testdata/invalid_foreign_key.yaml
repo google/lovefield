@@ -20,6 +20,5 @@ table:
       primaryKey: [id]
       foreignKey:
         fkProto:
-          localColumn: proto
-          reference: Department
-          remoteColumn: proto
+          local: proto
+          ref: Department.proto

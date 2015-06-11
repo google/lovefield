@@ -48,10 +48,9 @@ table:
           order: asc
       foreignKey:
         fk_albumId:
-          localColumn: albumId
-          reference: Album
-          remoteColumn: id
-          cascade: true
+          local: albumId
+          ref: Album.id
+          action: cascade
       nullable: [ proto, tacotownJspb, accessTimestamp, createdByAction ]
 
   Details:
@@ -65,15 +64,13 @@ table:
       primaryKey: [id1, id2]
       foreignKey:
         fk_photoId:
-          localColumn: photoId
-          reference: Photo
-          remoteColumn: id
-          cascade: true
+          local: photoId
+          ref: Photo.id
+          action: cascade
         fk_albumId:
-          localColumn: albumId
-          reference: Album
-          remoteColumn: id
-          cascade: true
+          local: albumId
+          ref: Album.id
+          action: cascade
 
   Curator:
     column:
@@ -96,15 +93,13 @@ table:
     constraint:
       foreignKey:
         fk_photoId:
-          localColumn: photoId
-          reference: Photo
-          remoteColumn: id
-          cascade: true
+          local: photoId
+          ref: Photo.id
+          action: cascade
         fk_curator:
-          localColumn: curator
-          reference: Curator
-          remoteColumn: id
-          cascade: true
+          local: curator
+          ref: Curator.id
+          action: cascade
       unique:
         uq_topic:
           column: [ topic ]

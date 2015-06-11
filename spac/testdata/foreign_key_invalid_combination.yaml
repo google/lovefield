@@ -3,7 +3,7 @@
 name: sample
 version: 1
 table:
-  Person:
+  Department:
     column:
       id: string
       name: string
@@ -14,9 +14,12 @@ table:
     column:
       id: string
       name: string
+      department: string
     constraint:
       primaryKey: [id]
       foreignKey:
-        fkId:  # Should throw: a column cannot be both PK and FK
-          local: id
-          ref: Person.id
+        fkDept:
+          local: department
+          ref: Department.id
+          action: cascade
+          timing: deferrable  # Should throw: invalid action/timing combination

@@ -3,9 +3,9 @@
 name: sample
 version: 1
 table:
-  Person:
+  Department:
     column:
-      id: string
+      id: number
       name: string
     constraint:
       primaryKey: [id]
@@ -14,9 +14,10 @@ table:
     column:
       id: string
       name: string
+      department: string
     constraint:
       primaryKey: [id]
       foreignKey:
-        fkId:  # Should throw: a column cannot be both PK and FK
-          local: id
-          ref: Person.id
+        fkDept:
+          local: department
+          ref: Department.id  # Should throw: type inconsistent

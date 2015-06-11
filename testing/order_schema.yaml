@@ -44,10 +44,9 @@ table:
       primaryKey: [ id ]
       foreignKey:
         fk_CountryId:
-          localColumn: country
-          reference: Country
-          remoteColumn: id
-          cascade: true
+          local: country
+          ref: Country.id
+          action: cascade
 
   Country:
     column:
@@ -58,10 +57,9 @@ table:
       primaryKey: [ id ]
       foreignKey:
         fk_RegionId:
-          localColumn: region
-          reference: Region
-          remoteColumn: id
-          cascade: true
+          local: region
+          ref: Region.id
+          action: cascade
 
   Region:
     column:
@@ -73,25 +71,23 @@ table:
   CustomerAddress:
     column:
       customer: string
-      address: number
+      address: string
     constraint:
       foreignKey:
         fk_customer:
-          localColumn: customer
-          reference: Customer
-          remoteColumn: id
-          cascade: true
+          local: customer
+          ref: Customer.id
+          action: cascade
         fk_address:
-          localColumn: address
-          reference: Address
-          remoteColumn: id
-          cascade: true
+          local: address
+          ref: Address.id
+          action: cascade
 
   Order:
     column:
       id: string
       customer: string
-      shippingAddress: number
+      shippingAddress: string
       deliveryStatus: string
       placedTime: number
       deliveryTime: number
@@ -99,15 +95,13 @@ table:
       primaryKey: [ id ]
       foreignKey:
         fk_customer:
-          localColumn: customer
-          reference: Customer
-          remoteColumn: id
-          cascade: true
+          local: customer
+          ref: Customer.id
+          action: cascade
         fk_address:
-          localColumn: shippingAddress
-          reference: Address
-          remoteColumn: id
-          cascade: true
+          local: shippingAddress
+          ref: Address.id
+          action: cascade
 
   OrderProduct:
     column:
@@ -116,15 +110,13 @@ table:
     constraint:
       foreignKey:
         fk_order:
-          localColumn: order
-          reference: Order
-          remoteColumn: id
-          cascade: true
+          local: order
+          ref: Order.id
+          action: cascade
         fk_product:
-          localColumn: product
-          reference: Product
-          remoteColumn: id
-          cascade: true
+          local: product
+          ref: Product.id
+          action: cascade
 
   DummyTable:
     column:

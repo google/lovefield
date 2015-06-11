@@ -19,6 +19,5 @@ table:
       primaryKey: [id]
       foreignKey:
         fkDept:
-          localColumn: department
-          reference: department  # Should throw: misspelled
-          remoteColumn: id
+          local: department
+          ref: department.id  # Should throw: misspelled

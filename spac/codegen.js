@@ -62,10 +62,10 @@
  *   }>,
  *   foreignKey: !Array<{
  *     name: string,
- *     localColumn: string,
- *     reference: string,
- *     remoteColumn: string,
- *     cascade: ?boolean
+ *     local: string,
+ *     ref: string,
+ *     action: ?string,
+ *     timing: ?string
  *   }>
  * }}
  */

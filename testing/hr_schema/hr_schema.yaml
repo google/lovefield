@@ -27,15 +27,13 @@ table:
     constraint:
       foreignKey:
         fk_EmployeeId:
-          localColumn: employeeId
-          reference: Employee
-          remoteColumn: id
-          cascade: true
+          local: employeeId
+          ref: Employee.id
+          action: cascade
         fk_DepartmentId:
-          localColumn: departmentId
-          reference: Department
-          remoteColumn: id
-          cascade: true
+          local: departmentId
+          ref: Department.id
+          action: cascade
 
   Employee:
     column:
@@ -59,15 +57,13 @@ table:
       primaryKey: [ id ]
       foreignKey:
         fk_JobId:
-          localColumn: jobId
-          reference: Job
-          remoteColumn: id
-          cascade: true
+          local: jobId
+          ref: Job.id
+          action: cascade
         fk_DepartmentId:
-          localColumn: departmentId
-          reference: Department
-          remoteColumn: id
-          cascade: true
+          local: departmentId
+          ref: Department.id
+          action: cascade
       nullable: [ hireDate ]
 
   Department:
@@ -80,15 +76,13 @@ table:
       primaryKey: [ id ]
       foreignKey:
         fk_ManagerId:
-          localColumn: managerId
-          reference: Employee
-          remoteColumn: id
+          local: managerId
+          ref: Employee.id
           cascade: false
         fk_LocationId:
-          localColumn: locationId
-          reference: Location
-          remoteColumn: id
-          cascade: true
+          local: locationId
+          ref: Location.id
+          action: cascade
 
   Location:
     column:
@@ -97,15 +91,14 @@ table:
       postalCode: string
       city: string
       stateProvince: string
-      countryId: string
+      countryId: integer
     constraint:
       primaryKey: [ id ]
       foreignKey:
         fk_CountryId:
-          localColumn: countryId
-          reference: Country
-          remoteColumn: id
-          cascade: true
+          local: countryId
+          ref: Country.id
+          action: cascade
 
   Country:
     column:
@@ -118,10 +111,9 @@ table:
           autoIncrement: true
       foreignKey:
         fk_RegionId:
-          localColumn: regionId
-          reference: Region
-          remoteColumn: id
-          cascade: true
+          local: regionId
+          ref: Region.id
+          action: cascade
 
   Region:
     column:
