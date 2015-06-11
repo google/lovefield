@@ -42,6 +42,19 @@ function testSmoke() {
   }
   set.add(1000);
   assertEquals(11, set.size);
+
+
+  // Testing forEach.
+  set.clear();
+  for (var i = 0; i < 5; ++i) {
+    set.add(i);
+  }
+
+  var values = [];
+  set.forEach(function(value) {
+    values.push(value);
+  });
+  assertArrayEquals([0, 1, 2, 3, 4], values);
 }
 
 function testSetUtilsForInteger() {

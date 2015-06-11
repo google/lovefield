@@ -456,7 +456,18 @@ goog.globalEval = function(script) {
     goog.global.execScript(script, "JavaScript");
   } else {
     if (goog.global.eval) {
-      if (null == goog.evalWorksForGlobals_ && (goog.global.eval("var _et_ = 1;"), "undefined" != typeof goog.global._et_ ? (delete goog.global._et_, goog.evalWorksForGlobals_ = !0) : goog.evalWorksForGlobals_ = !1), goog.evalWorksForGlobals_) {
+      if (null == goog.evalWorksForGlobals_) {
+        if (goog.global.eval("var _evalTest_ = 1;"), "undefined" != typeof goog.global._evalTest_) {
+          try {
+            delete goog.global._evalTest_;
+          } catch (ignore) {
+          }
+          goog.evalWorksForGlobals_ = !0;
+        } else {
+          goog.evalWorksForGlobals_ = !1;
+        }
+      }
+      if (goog.evalWorksForGlobals_) {
         goog.global.eval(script);
       } else {
         var doc = goog.global.document, scriptElt = doc.createElement("SCRIPT");
@@ -6100,14 +6111,120 @@ lf.backstore.WebSql.prototype.scanRowId_ = function() {
 lf.cache.Cache = function() {
 };
 
-lf.cache.DefaultCache = function(opt_maxRows) {
+lf.structs = {};
+lf.structs.map = {};
+lf.structs.MapPolyFill_ = function() {
   this.map_ = new goog.structs.Map;
-  this.tableRows_ = new goog.structs.Map;
-  this.limit_ = opt_maxRows || Number.MAX_VALUE;
+  Object.defineProperty(this, "size", {get:function() {
+    return this.map_.getCount();
+  }});
+};
+lf.structs.MapPolyFill_.prototype.clear = function() {
+  this.map_.clear();
+};
+goog.exportProperty(lf.structs.MapPolyFill_.prototype, "clear", lf.structs.MapPolyFill_.prototype.clear);
+lf.structs.MapPolyFill_.prototype.delete = function(key) {
+  return this.map_.remove(key);
+};
+goog.exportProperty(lf.structs.MapPolyFill_.prototype, "delete", lf.structs.MapPolyFill_.prototype.delete);
+lf.structs.MapPolyFill_.prototype.forEach = function(callback, opt_thisArg) {
+  return this.map_.forEach(callback, opt_thisArg);
+};
+goog.exportProperty(lf.structs.MapPolyFill_.prototype, "forEach", lf.structs.MapPolyFill_.prototype.forEach);
+lf.structs.MapPolyFill_.prototype.get = function(key) {
+  return this.map_.get(key);
+};
+goog.exportProperty(lf.structs.MapPolyFill_.prototype, "get", lf.structs.MapPolyFill_.prototype.get);
+lf.structs.MapPolyFill_.prototype.has = function(key) {
+  return this.map_.containsKey(key);
+};
+goog.exportProperty(lf.structs.MapPolyFill_.prototype, "has", lf.structs.MapPolyFill_.prototype.has);
+lf.structs.MapPolyFill_.prototype.set = function(key, value) {
+  return this.map_.set(key, value);
+};
+goog.exportProperty(lf.structs.MapPolyFill_.prototype, "set", lf.structs.MapPolyFill_.prototype.set);
+lf.structs.Map = window.Map && window.Map.prototype.values && window.Map.prototype.forEach ? window.Map : lf.structs.MapPolyFill_;
+lf.structs.map.keys = function(map) {
+  if (map instanceof lf.structs.MapPolyFill_) {
+    return map.map_.getKeys();
+  }
+  var i = 0, array = Array(map.size);
+  map.forEach(function(v, k) {
+    array[i++] = k;
+  });
+  return array;
+};
+lf.structs.map.values = function(map) {
+  if (map instanceof lf.structs.MapPolyFill_) {
+    return map.map_.getValues();
+  }
+  var i = 0, array = Array(map.size);
+  map.forEach(function(v) {
+    array[i++] = v;
+  });
+  return array;
+};
+
+lf.structs.set = {};
+lf.structs.SetPolyFill_ = function() {
+  this.set_ = new goog.structs.Set;
+  Object.defineProperty(this, "size", {get:function() {
+    return this.set_.getCount();
+  }});
+};
+lf.structs.SetPolyFill_.prototype.add = function(value) {
+  this.set_.add(value);
+};
+goog.exportProperty(lf.structs.SetPolyFill_.prototype, "add", lf.structs.SetPolyFill_.prototype.add);
+lf.structs.SetPolyFill_.prototype.clear = function() {
+  this.set_.clear();
+};
+goog.exportProperty(lf.structs.SetPolyFill_.prototype, "clear", lf.structs.SetPolyFill_.prototype.clear);
+lf.structs.SetPolyFill_.prototype.delete = function(value) {
+  return this.set_.remove(value);
+};
+goog.exportProperty(lf.structs.SetPolyFill_.prototype, "delete", lf.structs.SetPolyFill_.prototype.delete);
+lf.structs.SetPolyFill_.prototype.forEach = function(fn, opt_this) {
+  this.set_.getValues().forEach(fn, opt_this);
+};
+lf.structs.SetPolyFill_.prototype.has = function(value) {
+  return this.set_.contains(value);
+};
+goog.exportProperty(lf.structs.SetPolyFill_.prototype, "has", lf.structs.SetPolyFill_.prototype.has);
+lf.structs.Set = window.Set && window.Set.prototype.values && window.Set.prototype.forEach ? window.Set : lf.structs.SetPolyFill_;
+lf.structs.set.create_ = function() {
+  var constructorFn = window.Set && window.Set.prototype.values && window.Set.prototype.forEach ? window.Set : lf.structs.SetPolyFill_;
+  return new constructorFn;
+};
+lf.structs.set.values = function(set) {
+  if (set instanceof lf.structs.SetPolyFill_) {
+    return set.set_.getValues();
+  }
+  var i = 0, array = Array(set.size);
+  set.forEach(function(v) {
+    array[i++] = v;
+  });
+  return array;
+};
+lf.structs.set.diff = function(set1, set2) {
+  if (set1 instanceof lf.structs.SetPolyFill_) {
+    var result = new lf.structs.SetPolyFill_;
+    result.set_ = set1.set_.difference(set2.set_);
+  } else {
+    result = lf.structs.set.create_(), lf.structs.set.values(set1).forEach(function(v) {
+      set2.has(v) || result.add(v);
+    });
+  }
+  return result;
+};
+
+lf.cache.DefaultCache = function() {
+  this.map_ = new lf.structs.Map;
+  this.tableRows_ = new lf.structs.Map;
 };
 lf.cache.DefaultCache.prototype.getTableSet_ = function(tableName) {
-  var set = this.tableRows_.get(tableName, null);
-  goog.isNull(set) && (set = new goog.structs.Set, this.tableRows_.set(tableName, set));
+  var set = this.tableRows_.get(tableName);
+  goog.isDef(set) || (set = new lf.structs.Set, this.tableRows_.set(tableName, set));
   return set;
 };
 lf.cache.DefaultCache.prototype.set = function(tableName, rows) {
@@ -6116,17 +6233,16 @@ lf.cache.DefaultCache.prototype.set = function(tableName, rows) {
     this.map_.set(row.id(), row);
     tableSet.add(row.id());
   }, this));
-  this.map_.getCount();
 };
 lf.cache.DefaultCache.prototype.get = function(ids) {
   return ids.map(goog.bind(function(id) {
-    return this.map_.get(id, null);
+    return this.map_.get(id) || null;
   }, this));
 };
 lf.cache.DefaultCache.prototype.getRange = function(tableName, fromId, toId) {
   var data = [], min = Math.min(fromId, toId), max = Math.max(fromId, toId), tableSet = this.getTableSet_(tableName);
-  if (tableSet.getCount() < max - min) {
-    tableSet.getValues().forEach(function(key) {
+  if (tableSet.size < max - min) {
+    tableSet.forEach(function(key) {
       if (key >= min && key <= max) {
         var value = this.map_.get(key);
         goog.asserts.assert(goog.isDefAndNotNull(value), "Inconsistent cache");
@@ -6135,7 +6251,7 @@ lf.cache.DefaultCache.prototype.getRange = function(tableName, fromId, toId) {
     }, this);
   } else {
     for (var i = min;i <= max;++i) {
-      if (tableSet.contains(i)) {
+      if (tableSet.has(i)) {
         var value$$0 = this.map_.get(i);
         goog.asserts.assert(goog.isDefAndNotNull(value$$0), "Inconsistent cache");
         data.push(value$$0);
@@ -6147,12 +6263,12 @@ lf.cache.DefaultCache.prototype.getRange = function(tableName, fromId, toId) {
 lf.cache.DefaultCache.prototype.remove = function(tableName, ids) {
   var tableSet = this.getTableSet_(tableName);
   ids.forEach(function(id) {
-    this.map_.remove(id);
-    tableSet.remove(id);
+    this.map_.delete(id);
+    tableSet.delete(id);
   }, this);
 };
 lf.cache.DefaultCache.prototype.getCount = function(opt_tableName) {
-  return goog.isDefAndNotNull(opt_tableName) ? this.getTableSet_(opt_tableName).getCount() : this.map_.getCount();
+  return goog.isDefAndNotNull(opt_tableName) ? this.getTableSet_(opt_tableName).size : this.map_.size;
 };
 
 lf.index.hashCode = function(value) {
@@ -6817,7 +6933,7 @@ lf.index.NullableIndex.deserialize = function(deserializeFn, rows) {
 
 lf.index.RowId = function(name) {
   this.name_ = name;
-  this.rows_ = new goog.structs.Set;
+  this.rows_ = new lf.structs.Set;
   this.comparator_ = new lf.index.SimpleComparator(lf.Order.ASC);
 };
 lf.index.RowId.ROW_ID = 0;
@@ -6834,7 +6950,7 @@ lf.index.RowId.prototype.set = function(key, value) {
   this.add(key, value);
 };
 lf.index.RowId.prototype.remove = function(key) {
-  this.rows_.remove(key);
+  this.rows_.delete(key);
 };
 lf.index.RowId.prototype.get = function(key) {
   return this.containsKey(key) ? [key] : [];
@@ -6846,19 +6962,19 @@ lf.index.RowId.prototype.max = function() {
   return this.minMax_(goog.bind(this.comparator_.max, this.comparator_));
 };
 lf.index.RowId.prototype.minMax_ = function(compareFn) {
-  if (this.rows_.isEmpty()) {
+  if (0 == this.rows_.size) {
     return [null, null];
   }
-  var key$$0 = this.rows_.getValues().reduce(goog.bind(function(keySoFar, key) {
+  var key$$0 = lf.structs.set.values(this.rows_).reduce(goog.bind(function(keySoFar, key) {
     return goog.isNull(keySoFar) || compareFn(key, keySoFar) == lf.index.Favor.LHS ? key : keySoFar;
   }, this), null);
   return [key$$0, [key$$0]];
 };
 lf.index.RowId.prototype.cost = function() {
-  return this.rows_.getCount();
+  return this.rows_.size;
 };
 lf.index.RowId.prototype.getRange = function(opt_keyRanges, opt_reverseOrder, opt_limit, opt_skip) {
-  var keyRanges = opt_keyRanges || [lf.index.SingleKeyRange.all()], values = this.rows_.getValues().filter(function(value) {
+  var keyRanges = opt_keyRanges || [lf.index.SingleKeyRange.all()], values = lf.structs.set.values(this.rows_).filter(function(value) {
     return keyRanges.some(function(range) {
       return this.comparator_.isInRange(value, range);
     }, this);
@@ -6869,10 +6985,10 @@ lf.index.RowId.prototype.clear = function() {
   this.rows_.clear();
 };
 lf.index.RowId.prototype.containsKey = function(key) {
-  return this.rows_.contains(key);
+  return this.rows_.has(key);
 };
 lf.index.RowId.prototype.serialize = function() {
-  return [new lf.Row(lf.index.RowId.ROW_ID, this.rows_.getValues())];
+  return [new lf.Row(lf.index.RowId.ROW_ID, lf.structs.set.values(this.rows_))];
 };
 lf.index.RowId.prototype.comparator = function() {
   return this.comparator_;
@@ -10777,108 +10893,4 @@ lf.schema.create = function(dbName, dbVersion) {
   return new lf.schema.Builder(dbName, dbVersion);
 };
 goog.exportSymbol("lf.schema.create", lf.schema.create);
-
-lf.structs = {};
-lf.structs.map = {};
-lf.structs.MapPolyFill_ = function() {
-  this.map_ = new goog.structs.Map;
-  Object.defineProperty(this, "size", {get:function() {
-    return this.map_.getCount();
-  }});
-};
-lf.structs.MapPolyFill_.prototype.clear = function() {
-  this.map_.clear();
-};
-goog.exportProperty(lf.structs.MapPolyFill_.prototype, "clear", lf.structs.MapPolyFill_.prototype.clear);
-lf.structs.MapPolyFill_.prototype.delete = function(key) {
-  return this.map_.remove(key);
-};
-goog.exportProperty(lf.structs.MapPolyFill_.prototype, "delete", lf.structs.MapPolyFill_.prototype.delete);
-lf.structs.MapPolyFill_.prototype.forEach = function(callback, opt_thisArg) {
-  return this.map_.forEach(callback, opt_thisArg);
-};
-goog.exportProperty(lf.structs.MapPolyFill_.prototype, "forEach", lf.structs.MapPolyFill_.prototype.forEach);
-lf.structs.MapPolyFill_.prototype.get = function(key) {
-  return this.map_.get(key);
-};
-goog.exportProperty(lf.structs.MapPolyFill_.prototype, "get", lf.structs.MapPolyFill_.prototype.get);
-lf.structs.MapPolyFill_.prototype.has = function(key) {
-  return this.map_.containsKey(key);
-};
-goog.exportProperty(lf.structs.MapPolyFill_.prototype, "has", lf.structs.MapPolyFill_.prototype.has);
-lf.structs.MapPolyFill_.prototype.set = function(key, value) {
-  return this.map_.set(key, value);
-};
-goog.exportProperty(lf.structs.MapPolyFill_.prototype, "set", lf.structs.MapPolyFill_.prototype.set);
-lf.structs.Map = window.Map && window.Map.prototype.values && window.Map.prototype.forEach ? window.Map : lf.structs.MapPolyFill_;
-lf.structs.map.keys = function(map) {
-  if (map instanceof lf.structs.MapPolyFill_) {
-    return map.map_.getKeys();
-  }
-  var i = 0, array = Array(map.size);
-  map.forEach(function(v, k) {
-    array[i++] = k;
-  });
-  return array;
-};
-lf.structs.map.values = function(map) {
-  if (map instanceof lf.structs.MapPolyFill_) {
-    return map.map_.getValues();
-  }
-  var i = 0, array = Array(map.size);
-  map.forEach(function(v) {
-    array[i++] = v;
-  });
-  return array;
-};
-
-lf.structs.set = {};
-lf.structs.SetPolyFill_ = function() {
-  this.set_ = new goog.structs.Set;
-  Object.defineProperty(this, "size", {get:function() {
-    return this.set_.getCount();
-  }});
-};
-lf.structs.SetPolyFill_.prototype.add = function(value) {
-  this.set_.add(value);
-};
-goog.exportProperty(lf.structs.SetPolyFill_.prototype, "add", lf.structs.SetPolyFill_.prototype.add);
-lf.structs.SetPolyFill_.prototype.clear = function() {
-  this.set_.clear();
-};
-goog.exportProperty(lf.structs.SetPolyFill_.prototype, "clear", lf.structs.SetPolyFill_.prototype.clear);
-lf.structs.SetPolyFill_.prototype.delete = function(value) {
-  return this.set_.remove(value);
-};
-goog.exportProperty(lf.structs.SetPolyFill_.prototype, "delete", lf.structs.SetPolyFill_.prototype.delete);
-lf.structs.SetPolyFill_.prototype.has = function(value) {
-  return this.set_.contains(value);
-};
-goog.exportProperty(lf.structs.SetPolyFill_.prototype, "has", lf.structs.SetPolyFill_.prototype.has);
-lf.structs.Set = window.Set && window.Set.prototype.values && window.Set.prototype.forEach ? window.Set : lf.structs.SetPolyFill_;
-lf.structs.set.create_ = function() {
-  var constructorFn = window.Set && window.Set.prototype.values && window.Set.prototype.forEach ? window.Set : lf.structs.SetPolyFill_;
-  return new constructorFn;
-};
-lf.structs.set.values = function(set) {
-  if (set instanceof lf.structs.SetPolyFill_) {
-    return set.set_.getValues();
-  }
-  var i = 0, array = Array(set.size);
-  set.forEach(function(v) {
-    array[i++] = v;
-  });
-  return array;
-};
-lf.structs.set.diff = function(set1, set2) {
-  if (set1 instanceof lf.structs.SetPolyFill_) {
-    var result = new lf.structs.SetPolyFill_;
-    result.set_ = set1.set_.difference(set2.set_);
-  } else {
-    result = lf.structs.set.create_(), lf.structs.set.values(set1).forEach(function(v) {
-      set2.has(v) || result.add(v);
-    });
-  }
-  return result;
-};
 }.bind(window))()
