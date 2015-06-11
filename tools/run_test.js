@@ -61,6 +61,11 @@ function runSpacTests() {
  */
 function runBrowserTests(testPrefix, browser, testsFolder) {
   var testUrls = getTestUrls(testsFolder, testPrefix);
+  if (testUrls.length == 0) {
+    return Promise.reject(
+        new Error('Did not find any tests for prefix ' + testPrefix));
+  }
+
   log('Found', testUrls.length, 'tests. Running...');
   var driver = getWebDriver(browser);
 
@@ -174,7 +179,6 @@ function getWebDriver(browser) {
     throw new Error('Unknown browser:', browser);
   }
 }
-
 
 
 /** @type {!Function} */

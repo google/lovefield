@@ -101,7 +101,7 @@ gulp.task('debug', function() {
  *     default.
  *  2) Gather the output of the tests and display something useful (summary).
  */
-gulp.task('test', function(callback) {
+gulp.task('test', function() {
   var knownOpts = {
     'browser': [String, null],
     'target': [String, null]
@@ -128,7 +128,5 @@ gulp.task('test', function(callback) {
     // Run only JSUnit tests.
     whenTestsDone = runner.runJsUnitTests(options.target, options.browser);
   }
-  whenTestsDone.then(function() {
-    callback();
-  });
+  return whenTestsDone;
 });
