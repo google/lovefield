@@ -69,6 +69,7 @@ function createBuilder() {
       addColumn('departmentId', lf.Type.STRING).
       addColumn('photo', lf.Type.ARRAY_BUFFER).
       addPrimaryKey([{'name': 'id', 'autoIncrement': true}]).
+      addUnique('uq_email', ['email']).
       addIndex('idx_salary', [{'name': 'salary', 'order': lf.Order.DESC}]).
       addForeignKey('fk_JobId', {
         local: 'jobId',
@@ -193,11 +194,13 @@ function testSchemaCorrectness() {
   var emp = schema.table('Employee');
   assertTrue(emp instanceof lf.schema.Table);
   assertEquals('Employee', emp.getEffectiveName());
+  assertTrue(emp['id'].isUnique());
+  assertTrue(emp['email'].isUnique());
   assertTrue(emp['hireDate'].isNullable());
 
   var e = emp.as('e');
   assertEquals('e', e.getEffectiveName());
-  assertEquals(2, emp.getIndices().length);
+  assertEquals(3, emp.getIndices().length);
   assertEquals(12, emp.getColumns().length);
   assertTrue(emp['id'] instanceof lf.schema.BaseColumn);
   assertEquals('Employee.#', e.getRowIdIndexName());
@@ -421,4 +424,21 @@ function testKeyOfIndex_CrossColumnKey() {
   assertArrayEquals(
       [1, 'bar'],
       row.keyOfIndex(booleanStringIndexSchema.getNormalizedName()));
+}
+
+
+function testIsUnique_CrossColumnPk() {
+  var schemaBuilder = lf.schema.create('hr', 1);
+
+  schemaBuilder.createTable('DummyTable').
+      addColumn('id1', lf.Type.NUMBER).
+      addColumn('id2', lf.Type.NUMBER).
+      addColumn('email', lf.Type.STRING).
+      addColumn('maxSalary', lf.Type.NUMBER).
+      addPrimaryKey(['id1', 'id2']);
+
+  var schema = schemaBuilder.getSchema();
+  var tableSchema = schema.table('DummyTable');
+  assertFalse(tableSchema['id1'].isUnique());
+  assertFalse(tableSchema['id2'].isUnique());
 }

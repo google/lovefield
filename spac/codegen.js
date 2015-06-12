@@ -1161,10 +1161,9 @@ CodeGenerator.prototype.getUniqueColumns_ = function(table) {
 
   if (table.hasOwnProperty('constraint')) {
     var constraint = table.constraint;
-    if (constraint.hasOwnProperty('primaryKey')) {
-      constraint.primaryKey.forEach(function(keyCol) {
-        ret.push(keyCol.name);
-      });
+    if (constraint.hasOwnProperty('primaryKey') &&
+        constraint.primaryKey.length == 1) {
+      ret.push(constraint.primaryKey[0].name);
     }
     if (constraint.hasOwnProperty('unique')) {
       constraint.unique.forEach(function(unq) {

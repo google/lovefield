@@ -863,12 +863,12 @@ lovefield.db.schema.Details = function() {
 
   /** @type {!lf.schema.BaseColumn.<string>} */
   this.id1 = new lf.schema.BaseColumn(
-      this, 'id1', true, false, lf.Type.STRING);
+      this, 'id1', false, false, lf.Type.STRING);
   cols.push(this.id1);
 
   /** @type {!lf.schema.BaseColumn.<number>} */
   this.id2 = new lf.schema.BaseColumn(
-      this, 'id2', true, false, lf.Type.NUMBER);
+      this, 'id2', false, false, lf.Type.NUMBER);
   cols.push(this.id2);
 
   /** @type {!lf.schema.BaseColumn.<string>} */

@@ -10668,9 +10668,7 @@ lf.schema.TableBuilder.prototype.addPrimaryKey = function(columns, opt_autoInc) 
   this.checkName_(this.pkName_);
   var cols = this.normalizeColumns_(columns, !0, void 0, opt_autoInc);
   this.checkPrimaryKey_(cols);
-  cols.forEach(function(col) {
-    this.uniqueColumns_.add(col.name);
-  }, this);
+  1 == cols.length && this.uniqueColumns_.add(cols[0].name);
   this.uniqueIndices_.add(this.pkName_);
   this.indices_.set(this.pkName_, cols);
   return this;
@@ -10688,6 +10686,7 @@ goog.exportProperty(lf.schema.TableBuilder.prototype, "addForeignKey", lf.schema
 lf.schema.TableBuilder.prototype.addUnique = function(name, columns) {
   this.checkName_(name);
   var cols = this.normalizeColumns_(columns, !0);
+  1 == cols.length && this.uniqueColumns_.add(cols[0].name);
   this.indices_.set(name, cols);
   this.uniqueIndices_.add(name);
   return this;
