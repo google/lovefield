@@ -156,14 +156,14 @@ RequireMap_.prototype.getAllRequires = function() {
 /**
  * @param {!ProvideMap_} provideMap
  * @param {!ProvideMap_} closureProvide
- * @param {!Array<string>=} opt_filter Filter only files specified.
+ * @param {!Set<string>=} opt_filter Filter only files specified.
  * @return {!Array<Object>}
  */
 RequireMap_.prototype.getTopoSortEntry = function(
     provideMap, closureProvide, opt_filter) {
   var results = [];
   this.map_.forEach(function(set, key) {
-    if (opt_filter && opt_filter.indexOf(key) == -1) {
+    if (opt_filter && opt_filter.has(key) == -1) {
       return;
     }
     var entry = { name: key, depends: [] };
@@ -253,7 +253,7 @@ function extractRequires(filePath) {
  * @param {!RequireMap_} codeRequire
  * @param {!RequireMap_} closureRequire
  * @param {!ProvideMap_} closureProvide
- * @return {!Array<string>} Associated Closure files
+ * @return {!Set<string>} Associated Closure files
  */
 function extractClosureDependencies(
     codeRequire, closureRequire, closureProvide) {
@@ -277,9 +277,9 @@ function extractClosureDependencies(
     });
   } while (map.size != oldCount);
 
-  var closureFiles = [];
+  var closureFiles = new Set();
   map.forEach(function(value, key) {
-    closureFiles.push(value);
+    closureFiles.add(value);
   });
   return closureFiles;
 }
