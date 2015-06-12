@@ -63,3 +63,17 @@ function testGetNormalizedName() {
   var jobAlias = jobNoAlias.as(alias);
   assertEquals(alias + '.title', jobAlias.title.getNormalizedName());
 }
+
+
+/**
+ * Test that if no foreign key exist getParent and getChildren return null.
+ */
+function testGetParentChildren_NoForeignKeys() {
+  var schema = new lf.testing.MockSchema();
+  schema.tables().forEach(function(table) {
+    table.getColumns().forEach(function(column) {
+      assertNull(column.getParent());
+      assertNull(column.getChildren());
+    });
+  });
+}

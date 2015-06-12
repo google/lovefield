@@ -10468,6 +10468,7 @@ lf.schema.BaseColumn = function(table, name, isUnique, isNullable, type, opt_ali
   this.isNullable_ = isNullable;
   this.type_ = type;
   this.alias_ = opt_alias || null;
+  this.children_ = this.parent_ = null;
 };
 goog.exportSymbol("lf.schema.BaseColumn", lf.schema.BaseColumn);
 lf.schema.BaseColumn.prototype.getName = function() {
@@ -10502,6 +10503,15 @@ lf.schema.BaseColumn.prototype.isNullable = function() {
 };
 lf.schema.BaseColumn.prototype.isUnique = function() {
   return this.isUnique_;
+};
+lf.schema.BaseColumn.prototype.setParent = function(parent) {
+  this.parent_ = parent;
+};
+lf.schema.BaseColumn.prototype.getParent = function() {
+  return this.parent_;
+};
+lf.schema.BaseColumn.prototype.getChildren = function() {
+  return this.children_;
 };
 lf.schema.BaseColumn.prototype.eq = function(operand) {
   return lf.pred.createPredicate(this, operand, lf.eval.Type.EQ);
