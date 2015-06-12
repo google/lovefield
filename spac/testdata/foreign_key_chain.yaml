@@ -1,0 +1,38 @@
+%YAML 1.2
+---
+name: sample
+version: 1
+table:
+  Department:
+    column:
+      id: string
+      name: string
+    constraint:
+      primaryKey: [id]
+
+  Employee:
+    column:
+      id: string
+      name: string
+      department: string
+    constraint:
+      primaryKey: [id]
+      foreignKey:
+        fkDept:
+          local: department
+          ref: Department.id
+          action: cascade
+
+  Salary:
+    column:
+      eid: string
+      did: string
+      salary: number
+    constraint:
+      foreignKey:
+        fkEid:
+          local: eid
+          ref: Employee.id
+        fkDid:
+          local: did
+          ref: Employee.department  # Should throw, FK chain.

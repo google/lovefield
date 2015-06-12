@@ -314,6 +314,62 @@ function convertUnique(tableName, tableSchema, colNames, names, unique) {
 
 
 /**
+ * Check the parent (i.e. referenced) column in parent table for a foreign key.
+ * This column must be expected type, unique, and not referencing other columns.
+ * @param {string} fkName Name of the foreign key
+ * @param {!Object} tableSchema
+ * @param {string} column
+ * @param {string} expectedType
+ */
+function checkParent(fkName, tableSchema, column, expectedType) {
+  if (!tableSchema.column.hasOwnProperty(column)) {
+    throw new Error(fkName + ' has invalid ref column');
+  }
+  if (expectedType != tableSchema.column[column]) {
+    throw new Error(fkName + ' referring column of different type');
+  }
+  if (tableSchema.constraint) {
+    var c = /** @type {!Object} */ (tableSchema.constraint);
+    var pk = /** @type {!Array<string|!Object>|undefined} */ (c.primaryKey);
+    if (pk && pk.length == 1 &&  // Must has only one column in key
+        // There are two formats for primaryKey spec:
+        // primaryKey: [column] or primaryKey: - column: column
+        // After checkPrimaryKey, both will be normalized to name
+        (pk[0] == column || pk[0].column == column || pk[0].name == column)) {
+      return;  // Referenced column is the primary key.
+    }
+    var fk = /** @type {!Object|undefined} */ (c.foreignKey);
+    if (fk) {
+      for (var key in fk) {
+        if (fk[key].local == column) {
+          throw new Error(fkName + ' referenced another foreign key');
+        }
+      }
+    }
+    var uq = /** @type {!Array<!Object>|undefined} */ (c.unique);
+    if (uq) {
+      uq.forEach(function(key) {
+        var keyCol = /** @type {!Array<string>} */ (key.column);
+        if (keyCol.length == 1 && keyCol[0] == column) {
+          return;  // Referenced column is unique
+        }
+      });
+    }
+  }
+  if (tableSchema.index) {
+    for (var index in tableSchema.index) {
+      if (index.unique && index.column.length == 1) {
+        if (index.column[0] == column || index.column[0].name == column) {
+          return;  // Referenced column is unique
+        }
+      }
+    }
+  }
+  throw new Error(fkName + ' referring non-unique column');
+}
+
+
+/**
  * @param {string} tableName
  * @param {!Object} schemas Schema of the whole database.
  * @param {!Object} schema Schema of the foreign key constraint.
@@ -352,13 +408,7 @@ function checkForeignKey(tableName, schemas, schema, colNames, names, keyed) {
       throw new Error(fkName + ' has invalid reference');
     }
 
-    var parentColumn = referenced[1];
-    if (!schemas[parentTable].column.hasOwnProperty(parentColumn)) {
-      throw new Error(fkName + ' has invalid ref column');
-    }
-    if (localColumnType != schemas[parentTable].column[parentColumn]) {
-      throw new Error(fkName + ' referring column of different type');
-    }
+    checkParent(fkName, schemas[parentTable], referenced[1], localColumnType);
 
     var action = schema[fk].action;
     if (action && VALID_CONSTRAINT_ACTION.indexOf(action) == -1) {
@@ -372,7 +422,7 @@ function checkForeignKey(tableName, schemas, schema, colNames, names, keyed) {
       throw new Error(fkName + ': cascade shall only be immediate');
     }
 
-    // TODO(arthurhsu): detect FK chain, FK loop, and uniqueness
+    // TODO(arthurhsu): detect FK loop
 
     if (names.indexOf(fk) != -1) {
       throw new Error(fkName + ' has name conflict');

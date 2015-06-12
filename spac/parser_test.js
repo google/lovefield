@@ -152,8 +152,28 @@ describe('YAML Parser Test', function() {
         thrower('foreign_key_invalid_remote_column.yaml');
       });
 
+  it('should throw if discovered foreign key chain', function() {
+    thrower('foreign_key_chain.yaml');
+  });
+
   it('should throw if foreign key name conflicted', function() {
     thrower('foreign_key_name_conflict.yaml');
+  });
+
+  it('should throw if detected foreign key chain', function() {
+    thrower('foreign_key_chain.yaml');
+  });
+
+  it('should throw if ref column is not unique', function() {
+    thrower('foreign_key_non_unique.yaml');
+  });
+
+  it('should throw if ref column is not unique 2', function() {
+    thrower('foreign_key_non_unique2.yaml');
+  });
+
+  it('should throw if ref column is not unique 3', function() {
+    thrower('foreign_key_non_unique3.yaml');
   });
 
   it('should throw if foreign key on non-indexable column', function() {

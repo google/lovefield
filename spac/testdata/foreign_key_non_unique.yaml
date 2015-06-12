@@ -1,0 +1,21 @@
+%YAML 1.2
+---
+name: sample
+version: 1
+table:
+  Department:
+    column:
+      id: string
+      name: string
+
+  Employee:
+    column:
+      id: string
+      name: string
+      department: string
+    constraint:
+      primaryKey: [id]
+      foreignKey:
+        fkDept:
+          local: department
+          ref: Department.id  # Should throw, Department.id is not unique
