@@ -1,0 +1,21 @@
+{
+  "name": "lovefield-error-lookup",
+  "version": "0.0.1",
+  "homepage": "https://github.com/google/lovefield",
+  "authors": [
+    "Google Inc"
+  ],
+  "description": "Lovefield error code lookup",
+  "license": "http://www.apache.org/licenses/LICENSE-2.0",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components"
+  ],
+  "dependencies": {
+    "bootstrap": "3.3.2",
+    "jquery": "2.1.4",
+    "lovefield": "lovefield#master"
+  }
+}
+

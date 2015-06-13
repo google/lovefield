@@ -1,0 +1,11 @@
+{
+  "name": "lovefield-error-lookup",
+  "version": "0.0.1",
+  "description": "Lovefield error code lookup",
+  "devDependencies": {
+    "fs-extra": "^0.18.2",
+    "gulp": "^3.8.11",
+    "gulp-gjslint": "^0.1.4",
+    "gulp-webserver": "^0.9.0"
+  }
+}
