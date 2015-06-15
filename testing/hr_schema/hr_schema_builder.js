@@ -100,7 +100,7 @@ lf.testing.hrSchema.getSchemaBuilder = function() {
       addColumn('postalCode', lf.Type.STRING).
       addColumn('city', lf.Type.STRING).
       addColumn('stateProvince', lf.Type.STRING).
-      addColumn('countryId', lf.Type.STRING).
+      addColumn('countryId', lf.Type.INTEGER).
       addPrimaryKey(['id']).
       addForeignKey('fk_CountryId', {
         local: 'countryId',

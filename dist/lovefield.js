@@ -10622,8 +10622,21 @@ lf.schema.TableBuilder = function(tableName) {
   this.indices_ = new goog.structs.Map;
   this.persistentIndex_ = !1;
   this.checkName_(tableName);
+  this.fkSpecs_ = [];
 };
 goog.exportSymbol("lf.schema.TableBuilder", lf.schema.TableBuilder);
+lf.schema.TableBuilder.ForeignkeySpec = function(rawSpec, name) {
+  var array = rawSpec.ref.split(".");
+  if (2 != array.length) {
+    throw new lf.Exception(lf.Exception.Type.SYNTAX, "Foreign key {" + name + "} does not have a valid form 'table.column'");
+  }
+  this.localColumn = rawSpec.local;
+  this.parentTable = array[0];
+  this.parentColumn = array[1];
+  this.fkName = name;
+  this.action = rawSpec.action;
+  this.timing = rawSpec.timing;
+};
 lf.schema.TableBuilder.IndexedColumn_ = function(raw) {
   this.name = raw.name;
   this.order = raw.order;
@@ -10671,12 +10684,18 @@ lf.schema.TableBuilder.prototype.addPrimaryKey = function(columns, opt_autoInc) 
   return this;
 };
 goog.exportProperty(lf.schema.TableBuilder.prototype, "addPrimaryKey", lf.schema.TableBuilder.prototype.addPrimaryKey);
-lf.schema.TableBuilder.prototype.addForeignKey = function(name, spec) {
+lf.schema.TableBuilder.prototype.addForeignKey = function(name, rawSpec) {
+  this.checkName_(name);
+  var spec = new lf.schema.TableBuilder.ForeignkeySpec(rawSpec, name);
   goog.isDef(spec.action) || (spec.action = lf.ConstraintAction.RESTRICT);
   goog.isDef(spec.timing) || (spec.timing = lf.ConstraintTiming.IMMEDIATE);
   if (spec.action == lf.ConstraintAction.CASCADE && spec.timing == lf.ConstraintTiming.DEFERRABLE) {
     throw new lf.Exception(lf.Exception.Type.SYNTAX, "Lovefield allows only immediate evaluation of cascading constraints");
   }
+  if (!this.columns_.containsKey(spec.localColumn)) {
+    throw new lf.Exception(lf.Exception.Type.SYNTAX, "Enter a valid column name for theforeign key in local table");
+  }
+  this.fkSpecs_.push(spec);
   return this;
 };
 goog.exportProperty(lf.schema.TableBuilder.prototype, "addForeignKey", lf.schema.TableBuilder.prototype.addForeignKey);
@@ -10740,6 +10759,10 @@ lf.schema.TableBuilder.prototype.getSchema = function() {
   return new tableClass;
 };
 goog.exportProperty(lf.schema.TableBuilder.prototype, "getSchema", lf.schema.TableBuilder.prototype.getSchema);
+lf.schema.TableBuilder.prototype.getFkSpecs = function() {
+  return this.fkSpecs_;
+};
+goog.exportProperty(lf.schema.TableBuilder.prototype, "getFkSpecs", lf.schema.TableBuilder.prototype.getFkSpecs);
 lf.schema.TableBuilder.prototype.normalizeColumns_ = function(columns, checkIndexable, opt_order, opt_autoInc) {
   var normalized = columns, normalized = "string" == typeof columns[0] ? columns.map(function(col) {
     return new lf.schema.TableBuilder.IndexedColumn_({name:col, order:opt_order || lf.Order.ASC, autoIncrement:opt_autoInc || !1});
@@ -10863,9 +10886,30 @@ lf.schema.Builder = function(dbName, dbVersion) {
   this.finalized_ = !1;
 };
 goog.exportSymbol("lf.schema.Builder", lf.schema.Builder);
+lf.schema.Builder.prototype.checkForeignKeyValidity_ = function(builder) {
+  var fkSpecArray = builder.getFkSpecs();
+  0 != fkSpecArray.length && fkSpecArray.forEach(function(specs) {
+    var parentTableName = specs.parentTable;
+    if (!this.tableBuilders_.containsKey(parentTableName)) {
+      throw new lf.Exception(lf.Exception.Type.SYNTAX, "Foreign Key {" + specs.fkName + "} refers to invalid table");
+    }
+    var table = this.tableBuilders_.get(parentTableName), parentSchema = table.getSchema(), parentColName = specs.parentColumn;
+    if (!parentSchema.hasOwnProperty(parentColName)) {
+      throw new lf.Exception(lf.Exception.Type.SYNTAX, "Foreign Key {" + specs.fkName + "} refers to invalid column ");
+    }
+    var localSchema = builder.getSchema(), localColName = specs.localColumn;
+    if (localSchema[localColName].getType() != parentSchema[parentColName].getType()) {
+      throw new lf.Exception(lf.Exception.Type.SYNTAX, "Foreign Key {" + specs.fkName + "} refers to a column of different type");
+    }
+    if (!parentSchema[parentColName].isUnique()) {
+      throw new lf.Exception(lf.Exception.Type.SYNTAX, "Foreign Key {" + specs.fkName + "} refers to a non-unique column");
+    }
+  }, this);
+};
 lf.schema.Builder.prototype.finalize_ = function() {
   this.finalized_ || (this.tableBuilders_.getKeys().forEach(function(tableName) {
     var builder = this.tableBuilders_.get(tableName);
+    this.checkForeignKeyValidity_(builder);
     this.schema_.setTable(builder.getSchema());
   }, this), this.tableBuilders_.clear(), this.finalized_ = !0);
 };

@@ -29,7 +29,6 @@ goog.require('lf.testing.util');
 /** @return {!lf.schema.Builder} */
 function createBuilder() {
   var ds = lf.schema.create('hr', 1);
-
   ds.createTable('Job').
       addColumn('id', lf.Type.STRING).
       addColumn('title', lf.Type.STRING).
@@ -39,11 +38,11 @@ function createBuilder() {
       addIndex('idx_maxSalary', ['maxSalary'], false, lf.Order.DESC);
 
   ds.createTable('JobHistory').
-      addColumn('employeeId', lf.Type.STRING).
+      addColumn('employeeId', lf.Type.INTEGER).
       addColumn('startDate', lf.Type.DATE_TIME).
       addColumn('endDate', lf.Type.DATE_TIME).
       addColumn('jobId', lf.Type.STRING).
-      addColumn('departmentId', lf.Type.STRING).
+      addColumn('departmentId', lf.Type.INTEGER).
       addForeignKey('fk_EmployeeId', {
         local: 'employeeId',
         ref: 'Employee.id',
@@ -66,7 +65,7 @@ function createBuilder() {
       addColumn('salary', lf.Type.NUMBER).
       addColumn('commissionPercent', lf.Type.NUMBER).
       addColumn('managerId', lf.Type.STRING).
-      addColumn('departmentId', lf.Type.STRING).
+      addColumn('departmentId', lf.Type.INTEGER).
       addColumn('photo', lf.Type.ARRAY_BUFFER).
       addPrimaryKey([{'name': 'id', 'autoIncrement': true}]).
       addUnique('uq_email', ['email']).
@@ -84,9 +83,9 @@ function createBuilder() {
       addNullable(['hireDate']);
 
   ds.createTable('Department').
-      addColumn('id', lf.Type.STRING).
+      addColumn('id', lf.Type.INTEGER).
       addColumn('name', lf.Type.STRING).
-      addColumn('managerId', lf.Type.STRING).
+      addColumn('managerId', lf.Type.INTEGER).
       addPrimaryKey([{'name': 'id', 'order': lf.Order.DESC}]).
       addForeignKey('fk_ManagerId', {
         local: 'managerId',
@@ -104,10 +103,8 @@ function createBuilder() {
       addIndex('idx_string', ['string'], true, lf.Order.ASC).
       addIndex('idx_number', [{'name': 'number'}], true).
       addNullable(['arraybuffer', 'object']);
-
   return ds;
 }
-
 
 function testThrows_DuplicateTable() {
   var ds = createBuilder();
@@ -115,7 +112,6 @@ function testThrows_DuplicateTable() {
     ds.createTable('DummyTable');
   });
 }
-
 
 function testThrows_DuplicateColumn() {
   var ds = createBuilder();
@@ -126,6 +122,112 @@ function testThrows_DuplicateColumn() {
   });
 }
 
+function testThrows_InValidFKLocalColName() {
+  var ds = createBuilder();
+  var testFn = function() {
+    ds.createTable('fktable1').
+        addColumn('employeeId', lf.Type.STRING).
+        addColumn('startDate', lf.Type.DATE_TIME).
+        addColumn('endDate', lf.Type.DATE_TIME).
+        addColumn('jobId', lf.Type.STRING).
+        addColumn('departmentId', lf.Type.STRING).
+        addForeignKey('fkemployeeId', {
+          local: 'employeeId1',
+          ref: 'Employee.id'
+        });
+  };
+  lf.testing.util.assertThrowsSyntaxError(testFn);
+}
+
+function testThrows_InValidFKRefTableName() {
+  var ds = createBuilder();
+  ds.createTable('fkTable2').
+      addColumn('employeeId', lf.Type.STRING).
+      addColumn('startDate', lf.Type.DATE_TIME).
+      addColumn('endDate', lf.Type.DATE_TIME).
+      addColumn('jobId', lf.Type.STRING).
+      addColumn('departmentId', lf.Type.STRING).
+      addForeignKey('fkemployeeId', {
+        local: 'employeeId',
+        ref: 'Employee1.id'
+      });
+  lf.testing.util.assertThrowsSyntaxError(function() {
+    ds.getSchema();
+  });
+}
+
+function testThrows_ColumnTypeMismatch() {
+  var ds = createBuilder();
+  ds.createTable('fkTable3').
+      addColumn('employeeId', lf.Type.STRING).
+      addColumn('startDate', lf.Type.DATE_TIME).
+      addColumn('endDate', lf.Type.DATE_TIME).
+      addColumn('jobId', lf.Type.STRING).
+      addColumn('departmentId', lf.Type.STRING).
+      addForeignKey('fkemployeeId', {
+        local: 'employeeId',
+        ref: 'fkTable4.employeeId'
+      });
+  ds.createTable('fkTable4').
+      addColumn('employeeId', lf.Type.INTEGER).
+      addColumn('startDate', lf.Type.DATE_TIME).
+      addColumn('endDate', lf.Type.DATE_TIME).
+      addColumn('jobId', lf.Type.STRING).
+      addColumn('departmentId', lf.Type.STRING);
+  lf.testing.util.assertThrowsSyntaxError(function() {
+    ds.getSchema();
+  });
+}
+
+function testThrows_InValidFKRefColName() {
+  var ds = createBuilder();
+  ds.createTable('fkTable5').
+      addColumn('employeeId', lf.Type.STRING).
+      addColumn('startDate', lf.Type.DATE_TIME).
+      addColumn('endDate', lf.Type.DATE_TIME).
+      addColumn('jobId', lf.Type.STRING).
+      addColumn('departmentId', lf.Type.STRING).
+      addForeignKey('fkemployeeId', {
+        local: 'employeeId',
+        ref: 'Employee.id1'
+      });
+  lf.testing.util.assertThrowsSyntaxError(function() {
+    ds.getSchema();
+  });
+}
+
+function testThrows_InValidFKRefName() {
+  var ds = createBuilder();
+  lf.testing.util.assertThrowsSyntaxError(function() {
+    ds.createTable('fkTable5').
+        addColumn('employeeId', lf.Type.STRING).
+        addColumn('startDate', lf.Type.DATE_TIME).
+        addColumn('endDate', lf.Type.DATE_TIME).
+        addColumn('jobId', lf.Type.STRING).
+        addColumn('departmentId', lf.Type.STRING).
+        addForeignKey('fkemployeeId', {
+          local: 'employeeId',
+          ref: 'Employeeid'
+        });
+  });
+}
+
+function testThrows_FKRefKeyNonUnique() {
+  var ds = createBuilder();
+  ds.createTable('fkTable5').
+      addColumn('employeeId', lf.Type.STRING).
+      addColumn('startDate', lf.Type.DATE_TIME).
+      addColumn('endDate', lf.Type.DATE_TIME).
+      addColumn('jobId', lf.Type.STRING).
+      addColumn('departmentId', lf.Type.STRING).
+      addForeignKey('fkemployeeId', {
+        local: 'employeeId',
+        ref: 'Employee.firstName'
+      });
+  lf.testing.util.assertThrowsSyntaxError(function() {
+    ds.getSchema();
+  });
+}
 
 function testThrows_ModificationAfterFinalization() {
   var ds = createBuilder();
@@ -134,7 +236,6 @@ function testThrows_ModificationAfterFinalization() {
     ds.createTable('NewTable');
   });
 }
-
 
 function testThrows_CrossColumnPkWithAutoInc() {
   var ds = lf.schema.create('hr', 1);
@@ -148,7 +249,6 @@ function testThrows_CrossColumnPkWithAutoInc() {
         ]);
   });
 }
-
 
 function testThrows_NonIntegerPkWithAutoInc() {
   var ds = lf.schema.create('hr', 1);
@@ -184,7 +284,6 @@ function testThrows_CrossColumnNullableIndex() {
   });
 }
 
-
 function testSchemaCorrectness() {
   var ds = createBuilder();
   var schema = ds.getSchema();
@@ -219,7 +318,6 @@ function testSchemaCorrectness() {
   assertObjectEquals(row.payload(), row2.payload());
 }
 
-
 function testThrows_NonIndexableColumns() {
   lf.testing.util.assertThrowsSyntaxError(function() {
     var ds = lf.schema.create('d1', 1);
@@ -235,7 +333,6 @@ function testThrows_NonIndexableColumns() {
         addIndex('idx_arraybuffer', ['arraybuffer']);
   });
 }
-
 
 function testThrows_IllegalName() {
   lf.testing.util.assertThrowsSyntaxError(function() {
@@ -293,7 +390,7 @@ function testCreateRow_DefaultValues() {
     salary: 0,
     commissionPercent: 0,
     managerId: '',
-    departmentId: '',
+    departmentId: 0,
     photo: null
   };
   assertObjectEquals(expectedEmployeeRow, employeeRow.payload());
@@ -425,7 +522,6 @@ function testKeyOfIndex_CrossColumnKey() {
       [1, 'bar'],
       row.keyOfIndex(booleanStringIndexSchema.getNormalizedName()));
 }
-
 
 function testIsUnique_CrossColumnPk() {
   var schemaBuilder = lf.schema.create('hr', 1);
