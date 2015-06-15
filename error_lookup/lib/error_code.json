@@ -1,0 +1,21 @@
+{
+  "0": "Unknown error.",
+  "1": "Lovefield library version mismatch.",
+  "2": "The database has not initialized yet.",
+  "3": "Operation timeout.",
+  "4": "Operation blocked.",
+  "5": "Storage quota exceeded.",
+  "6": "Too many rows: B-Tree implementation supports at most {0} rows.",
+
+  "50": "Not supported",
+  "51": "Not supported: Firebase does not have raw transaction.",
+  "52": "IndexedDB is not supported by platform",
+
+  "100": "Data error",
+  "101": "Table {0} not found.",
+
+  "106": "Attempt to access {0} outside of specified scope.",
+  "107": "Invalid transaction state transition: {0} -> {1}",
+
+  "999": "Simulated error."
+}
