@@ -47,74 +47,190 @@ var log = console['log'];
 
 
 /** @const {!Array<string>} */
-var SYMLINKS = ['lib', 'perf', 'testing', 'tests'];
+var SYMLINKS = ['lib', 'perf', 'testing', 'tests', 'dist'];
+
+
+// TODO(dpapad): Firebase tests currently will not work. because they modify
+// Closure's library expected path, so they are ignored.
+var EXCLUDE_TESTS = [
+  'tests/backstore/firebase_raw_back_store_test.js',
+  'tests/backstore/firebase_test.js'
+];
+
 
 
 /**
- * Creates a temporary directory that is capable of executing tests.
- * @param {string} testsFolder The folder that contains all the tests.
+ * @constructor
+ * A helper class for creating a temporary directory that is capable of
+ * executing tests.
+ * @param {string} testsDir The folder that contains all the tests.
+ */
+var TestEnv = function(testsDir) {
+  /** @type {string} */
+  this.testsDir = testsDir;
+
+  /** @type {string} */
+  this.tempPath = pathMod.resolve(new temp.Dir().path);
+
+  /** @type {string} */
+  this.origPath = process.cwd();
+
+  /** @type {string} */
+  this.genDir = pathMod.join(this.tempPath, 'gen');
+
+  /** @type {string} */
+  this.htmlDir = pathMod.join(this.tempPath, 'html');
+};
+
+
+/**
  * @return {!IThenable<string>} A promise holding the path of the temporary
  *     directory.
  */
-function createTestEnv(testsFolder) {
-  var tempPath = pathMod.resolve(new temp.Dir().path);
-  var origPath = process.cwd();
-  process.chdir(tempPath);
+TestEnv.prototype.create = function() {
+  process.chdir(this.tempPath);
 
   // Generating gen and html folders.
-  var genDir = pathMod.join(tempPath, 'gen');
   fsMod.mkdirSync('html');
-  var htmlDir = pathMod.join(tempPath, 'html');
-  createSymLinks(config.CLOSURE_LIBRARY_PATH, tempPath);
+  this.createSymLinks(config.CLOSURE_LIBRARY_PATH);
 
-  // Generating HTML files for each test.
-  createTestFiles(testsFolder);
+  var allHtmlFiles = this.setupTestsWitoutHtml();
+  allHtmlFiles.push.apply(
+      allHtmlFiles,
+      this.setupTestsWithHtml());
+  this.setupTestResources();
+  allHtmlFiles.sort();
+  generateIndexHtml(allHtmlFiles);
 
-  // Creating symlinks for any json files such that the generated html files can
-  // refer to them.
-  var jsonFiles = glob(testsFolder + '/**/*.json');
+  return generateTestSchemas(this.genDir).then(
+      function() {
+        this.setupTestDeps();
+        return this.tempPath;
+      }.bind(this),
+      function(e) {
+        process.chdir(this.origPath);
+        cleanUp(this.tempPath);
+        throw e;
+      }.bind(this));
+};
+
+
+/**
+ * Performs necessary setup for tests that do not provide their own HTML file.
+ * @return {!Array<string>} A list of all HTML files in the temp directory.
+ */
+TestEnv.prototype.setupTestsWitoutHtml = function() {
+  // Generating HTML files for tests that don't already have one.
+  var testFilesWithoutHtml = this.queryTestFiles(false);
+  log('Generating', testFilesWithoutHtml.length, 'HTML test files ... ');
+  return testFilesWithoutHtml.map(function(name) {
+    return generateHtmlFile(name);
+  });
+};
+
+
+/**
+ * Performs necessary setup for tests that provide their own HTML file.
+ * @return {!Array<string>} A list of all HTML files in the temp directory.
+ */
+TestEnv.prototype.setupTestsWithHtml = function() {
+  // Creating symlinks for existing HTML files.
+  var testFilesWithHtml = this.queryTestFiles(true).filter(function(test) {
+    return EXCLUDE_TESTS.indexOf(test) == -1;
+  });
+  log('Found', testFilesWithHtml.length, 'test files with existing HTML... ');
+  return testFilesWithHtml.map(function(testFile) {
+    var htmlFile = testFile.substr(0, testFile.length - 3) + '.html';
+    // Replacing tests/ with html/ in the name.
+    var link = pathMod.join(
+        'html', htmlFile.split(pathMod.sep).slice(1).join(pathMod.sep));
+
+    // Creating a symlink for the HTML file.
+    var src = pathMod.join(this.origPath, htmlFile);
+    var dst = pathMod.join(this.tempPath, link);
+    // Ensure that the entire dir path is cosntructed.
+    mkdir(pathMod.dirname(dst));
+    fsMod.symlinkSync(src, dst, 'file');
+
+    // Creating a symlink for the JS file, because existing HTML files expect
+    // the JS file to be in the same folder.
+    var link2 = pathMod.join(
+        'html', testFile.split(pathMod.sep).slice(1).join(pathMod.sep));
+    var src2 = pathMod.join(this.origPath, testFile);
+    var dst2 = pathMod.join(this.tempPath, link2);
+    fsMod.symlinkSync(src2, dst2, 'file');
+
+    return link;
+  }, this);
+};
+
+
+/**
+ * Creates symlinks for any json files such that the HTML files can refer to
+ * them (used when running perf tests).
+ */
+TestEnv.prototype.setupTestResources = function() {
+  var jsonFiles = glob(this.testsDir + '/**/*.json');
   jsonFiles.forEach(function(jsonFile) {
     var link = pathMod.join('html', pathMod.basename(jsonFile));
     fsMod.symlinkSync(
         pathMod.resolve(jsonFile),
-        pathMod.join(tempPath, link), 'junction');
+        pathMod.join(this.tempPath, link), 'junction');
   });
+};
 
-  return generateTestSchemas(genDir).then(
-      function() {
-        var directories = SYMLINKS.map(
-            function(dir) {
-              return pathMod.join(tempPath, dir);
-            }).concat([htmlDir, genDir]);
-        var deps = genDeps(tempPath, directories);
-        fsMod.writeFileSync('deps.js', deps);
-        return tempPath;
-      },
-      function(e) {
-        process.chdir(origPath);
-        cleanUp(tempPath);
-        throw e;
-      });
-}
+
+/**
+ * Sets up the deps.js file needed for the tests to run.
+ */
+TestEnv.prototype.setupTestDeps = function() {
+  var directories = SYMLINKS.map(
+      function(dir) {
+        return pathMod.join(this.tempPath, dir);
+      }, this).concat([this.htmlDir, this.genDir]);
+  var deps = genDeps(this.tempPath, directories);
+  fsMod.writeFileSync('deps.js', deps);
+};
+
+
+/**
+ * @param {boolean} withHtml Whether to look for files that already have an
+ *     associating HTML file.
+ * @return {!Array<string>}
+ */
+TestEnv.prototype.queryTestFiles = function(withHtml) {
+  var testFiles = glob(this.testsDir + '/**/*_test.js');
+  var htmlFiles = glob(this.testsDir + '/**/*_test.html');
+
+  var existingHtmlFilesSet = new Set();
+  htmlFiles.forEach(function(file) {
+    // Stripping away the '.html' suffix and adding to the set.
+    existingHtmlFilesSet.add(file.substr(0, file.length - '.html'.length));
+  });
+  return testFiles.filter(function(jsFileName) {
+    // Stripping away the '.js'.
+    var testName = jsFileName.substr(0, jsFileName.length - '.js'.length);
+    return existingHtmlFilesSet.has(testName) == withHtml;
+  });
+};
 
 
 /**
  * Creates symbolic links to Closure and Lovefield.
  * @param {string} libraryPath Closure library path.
- * @param {string} tempPath Test environment path.
  */
-function createSymLinks(libraryPath, tempPath) {
+TestEnv.prototype.createSymLinks = function(libraryPath) {
   fsMod.symlinkSync(
       pathMod.resolve(pathMod.join(libraryPath, 'closure')),
-      pathMod.join(tempPath, 'closure'),
+      pathMod.join(this.tempPath, 'closure'),
       'junction');
   SYMLINKS.forEach(function(link) {
     fsMod.symlinkSync(
         pathMod.resolve(pathMod.join(__dirname, '../' + link)),
-        pathMod.join(tempPath, link),
+        pathMod.join(this.tempPath, link),
         'junction');
-  });
-}
+  }, this);
+};
 
 
 /** Removes previously created symbolic links */
@@ -127,17 +243,11 @@ function removeSymLinks() {
 
 
 /**
- * Creates stub HTML for test files.
- * @param {string} testsFolder
+ * Creates stub HTML file with links to all individual tests.
+ * @param {!Array<string>} testFiles
  */
-function createTestFiles(testsFolder) {
-  var testFiles = glob(testsFolder + '/**/*_test.js');
-  log('Generating ' + testFiles.length + ' test files ... ');
-  var files = testFiles.map(function(name, index) {
-    return createTestHtml(name);
-  });
-
-  var links = files.map(function(file) {
+function generateIndexHtml(testFiles) {
+  var links = testFiles.map(function(file) {
     return '    <a href="' + file + '">' + file.slice('html/'.length) +
         '</a><br />';
   });
@@ -165,7 +275,7 @@ function createTestFiles(testsFolder) {
  * @param {string} script Path of the script, e.g. tests/foo_test.js.
  * @return {string} Generated file path.
  */
-function createTestHtml(script) {
+function generateHtmlFile(script) {
   var scriptPath = pathMod.resolve(pathMod.join(__dirname, '../', script));
   var contents = fsMod.readFileSync(scriptPath, {'encoding': 'utf-8'});
   var LITERAL = 'goog.module';
@@ -261,9 +371,23 @@ function cleanUp(tempPath) {
 }
 
 
+/**
+ * @param {string} testsDir
+ * @return {!IThenable<string>}
+ */
+function createTestEnv(testsDir) {
+  var testEnv = new TestEnv(testsDir);
+  return testEnv.create();
+}
+
+
 /** @type {!Function} */
 exports.createTestEnv = createTestEnv;
 
 
 /** @type {!Function} */
 exports.cleanUp = cleanUp;
+
+
+/** @type {!Array<string>} */
+exports.EXCLUDE_TESTS = EXCLUDE_TESTS;
