@@ -4095,12 +4095,43 @@ lf.cache.Journal.prototype.checkScope_ = function(tableSchema) {
   }
 };
 
+lf.type = {};
+lf.ConstraintAction = {};
+goog.exportSymbol("lf.ConstraintAction", lf.ConstraintAction);
+lf.ConstraintAction.RESTRICT = 0;
+goog.exportProperty(lf.ConstraintAction, "RESTRICT", lf.ConstraintAction.RESTRICT);
+lf.ConstraintAction.CASCADE = 1;
+goog.exportProperty(lf.ConstraintAction, "CASCADE", lf.ConstraintAction.CASCADE);
+lf.ConstraintTiming = {};
+goog.exportSymbol("lf.ConstraintTiming", lf.ConstraintTiming);
+lf.ConstraintTiming.IMMEDIATE = 0;
+goog.exportProperty(lf.ConstraintTiming, "IMMEDIATE", lf.ConstraintTiming.IMMEDIATE);
+lf.ConstraintTiming.DEFERRABLE = 1;
+goog.exportProperty(lf.ConstraintTiming, "DEFERRABLE", lf.ConstraintTiming.DEFERRABLE);
 lf.Order = {};
 goog.exportSymbol("lf.Order", lf.Order);
 lf.Order.DESC = 0;
 goog.exportProperty(lf.Order, "DESC", lf.Order.DESC);
 lf.Order.ASC = 1;
 goog.exportProperty(lf.Order, "ASC", lf.Order.ASC);
+lf.Type = {};
+goog.exportSymbol("lf.Type", lf.Type);
+lf.Type.ARRAY_BUFFER = 0;
+goog.exportProperty(lf.Type, "ARRAY_BUFFER", lf.Type.ARRAY_BUFFER);
+lf.Type.BOOLEAN = 1;
+goog.exportProperty(lf.Type, "BOOLEAN", lf.Type.BOOLEAN);
+lf.Type.DATE_TIME = 2;
+goog.exportProperty(lf.Type, "DATE_TIME", lf.Type.DATE_TIME);
+lf.Type.INTEGER = 3;
+goog.exportProperty(lf.Type, "INTEGER", lf.Type.INTEGER);
+lf.Type.NUMBER = 4;
+goog.exportProperty(lf.Type, "NUMBER", lf.Type.NUMBER);
+lf.Type.STRING = 5;
+goog.exportProperty(lf.Type, "STRING", lf.Type.STRING);
+lf.Type.OBJECT = 6;
+goog.exportProperty(lf.Type, "OBJECT", lf.Type.OBJECT);
+lf.type.DEFAULT_VALUES = {0:new ArrayBuffer(0), 1:!1, 2:Object.freeze(new Date(0)), 3:0, 4:0, 5:"", 6:Object.freeze({})};
+goog.exportSymbol("lf.type.DEFAULT_VALUES", lf.type.DEFAULT_VALUES);
 
 lf.index.SingleKeyRange = function(from, to, excludeLower, excludeUpper) {
   this.from = from;
@@ -4333,26 +4364,6 @@ goog.exportSymbol("lf.Binder", lf.Binder);
 lf.Binder.prototype.getIndex = function() {
   return this.index_;
 };
-
-lf.type = {};
-lf.Type = {};
-goog.exportSymbol("lf.Type", lf.Type);
-lf.Type.ARRAY_BUFFER = 0;
-goog.exportProperty(lf.Type, "ARRAY_BUFFER", lf.Type.ARRAY_BUFFER);
-lf.Type.BOOLEAN = 1;
-goog.exportProperty(lf.Type, "BOOLEAN", lf.Type.BOOLEAN);
-lf.Type.DATE_TIME = 2;
-goog.exportProperty(lf.Type, "DATE_TIME", lf.Type.DATE_TIME);
-lf.Type.INTEGER = 3;
-goog.exportProperty(lf.Type, "INTEGER", lf.Type.INTEGER);
-lf.Type.NUMBER = 4;
-goog.exportProperty(lf.Type, "NUMBER", lf.Type.NUMBER);
-lf.Type.STRING = 5;
-goog.exportProperty(lf.Type, "STRING", lf.Type.STRING);
-lf.Type.OBJECT = 6;
-goog.exportProperty(lf.Type, "OBJECT", lf.Type.OBJECT);
-lf.type.DEFAULT_VALUES = {0:new ArrayBuffer(0), 1:!1, 2:Object.freeze(new Date(0)), 3:0, 4:0, 5:"", 6:Object.freeze({})};
-goog.exportSymbol("lf.type.DEFAULT_VALUES", lf.type.DEFAULT_VALUES);
 
 lf.eval = {};
 lf.eval.Type = {BETWEEN:"between", EQ:"eq", GTE:"gte", GT:"gt", IN:"in", LTE:"lte", LT:"lt", MATCH:"match", NEQ:"neq"};
@@ -10589,19 +10600,6 @@ lf.Global.prototype.isRegistered = function(serviceId) {
   return this.services_.containsKey(serviceId.toString());
 };
 goog.exportProperty(lf.Global.prototype, "isRegistered", lf.Global.prototype.isRegistered);
-
-lf.ConstraintAction = {};
-goog.exportSymbol("lf.ConstraintAction", lf.ConstraintAction);
-lf.ConstraintAction.RESTRICT = 0;
-goog.exportProperty(lf.ConstraintAction, "RESTRICT", lf.ConstraintAction.RESTRICT);
-lf.ConstraintAction.CASCADE = 1;
-goog.exportProperty(lf.ConstraintAction, "CASCADE", lf.ConstraintAction.CASCADE);
-lf.ConstraintTiming = {};
-goog.exportSymbol("lf.ConstraintTiming", lf.ConstraintTiming);
-lf.ConstraintTiming.IMMEDIATE = 0;
-goog.exportProperty(lf.ConstraintTiming, "IMMEDIATE", lf.ConstraintTiming.IMMEDIATE);
-lf.ConstraintTiming.DEFERRABLE = 1;
-goog.exportProperty(lf.ConstraintTiming, "DEFERRABLE", lf.ConstraintTiming.DEFERRABLE);
 
 lf.schema.Constraint = function(primaryKey, notNullable) {
   this.primaryKey_ = primaryKey;
