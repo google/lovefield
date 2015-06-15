@@ -57,12 +57,12 @@ var MedalSchema_;
 var DbService = function($http) {
   this.http_ = $http;
   this.db = null;
-  this.initialized = false;
 
-  // Trigger DB initialization.
-  this.init_().then(function() {
-    this.initialized = true;
-  }.bind(this));
+  /** @private {!IThenable<!lf.Database>} */
+  this.whenInitialized_ = this.init_().then(
+      function() {
+        return this.db;
+      }.bind(this));
 };
 
 
@@ -112,16 +112,10 @@ DbService.prototype.init_ = function() {
 
 /**
  * Gets the db connection.
- * @return {!IThenable.<!lf.proc.Database>}
+ * @return {!IThenable.<!lf.Database>}
  */
 DbService.prototype.get = function() {
-  if (this.initialized) {
-    return Promise.resolve(this.db);
-  }
-
-  return this.init_().then(function() {
-    return this.db;
-  }.bind(this));
+  return this.whenInitialized_;
 };
 
 
@@ -161,9 +155,6 @@ DbService.prototype.insertData_ = function() {
 var ResultsService = function() {
   /** @private {!Array<!Object>} */
   this.results_ = [];
-
-  /** @private {!Array<string>} */
-  this.columnNames_ = [];
 };
 
 
@@ -175,23 +166,31 @@ ResultsService.prototype.getResults = function() {
 
 /** @param {!Array<!Object>} results */
 ResultsService.prototype.setResults = function(results) {
-  this.columnNames_ = [];
-
-  if (results.length > 0) {
-    Object.keys(results[0]).forEach(
-        function(columnName) {
-          this.columnNames_.push(columnName);
-        }, this);
-    this.columnNames_.sort();
-  }
-
   this.results_ = results;
-};
 
+  var headerData = results.length > 0 ?
+      Object.keys(results[0]).map(
+          function(columnName) {
+            var columnOptions = {field: columnName, title: columnName};
+            if (columnName == 'color') {
+              columnOptions.cellStyle = function(value) {
+                return {classes: [value.toLowerCase()]};
+              };
+            }
+            return columnOptions;
+          }) : [];
 
-/** @return {!Array<string>} */
-ResultsService.prototype.getColumnNames = function() {
-  return this.columnNames_;
+  /** @type {{bootstrapTable: !Function}} */ ($('#results-table')).
+      bootstrapTable('destroy');
+  /** @type {{bootstrapTable: !Function}} */ ($('#results-table')).
+      bootstrapTable({
+        columns: headerData,
+        data: results,
+        pageSize: 25,
+        pagination: true,
+        paginationVAlign: 'top',
+        sortable: false
+      });
 };
 
 
@@ -377,14 +376,6 @@ var ResultsController = function(resultsService) {
  */
 ResultsController.prototype.getResults = function() {
   return this.resultsService_.getResults();
-};
-
-
-/**
- * @return {!Array<string>}
- */
-ResultsController.prototype.getColumnNames = function() {
-  return this.resultsService_.getColumnNames();
 };
 
 

@@ -2,11 +2,18 @@
 <html>
 
 <head>
-  <script src="../lib/angular.min.js"></script>
+  <script src="./lib/angular.min.js"></script>
+  <script src="./lib/jquery.min.js"></script>
+  <script src="./lib/bootstrap.min.js"></script>
+  <script src="./lib/bootstrap-table.min.js"></script>
+
   <!-- Lovefield -->
-  <script src="../lib/lovefield.min.js"></script>
-  <link href="../lib/bootstrap.min.css" rel="stylesheet">
-  <link href="resources/demo.css" rel="stylesheet">
+  <script src="./lib/lovefield.min.js"></script>
+
+  <!-- CSS -->
+  <link rel="stylesheet" href="./lib/bootstrap.min.css">
+  <link rel="stylesheet" href="./lib/bootstrap-table.min.css">
+  <link rel="stylesheet" href="./resources/demo.css">
 </head>
 
 <body ng-app="myApp">
@@ -78,18 +85,9 @@
 
   <div id="results" ng-controller="ResultsController as resultsController">
     <h1>Found {{resultsController.getResults().length}} results.</h1>
-    <table class="table table-striped table-bordered table-hover table-condensed"
-           data-pagination="true" data-search="true">
-      <tr>
-        <th ng-repeat="columnName in
-          resultsController.getColumnNames() | filter:'!$$hashKey'">{{columnName}}</th>
-      </tr>
-      <tr ng-repeat="x in resultsController.getResults()">
-        <td ng-repeat="(key, data) in x">{{data}}</td>
-      </tr>
-    </table>
-
+    <table id="results-table"></table>
   </div>
+
 
   <script type="text/javascript" src="demo.js"></script>
 </body>

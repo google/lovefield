@@ -2282,9 +2282,7 @@ goog.Promise = function(resolver, opt_context) {
   this.executing_ = !1;
   0 < goog.Promise.UNHANDLED_REJECTION_DELAY ? this.unhandledRejectionId_ = 0 : 0 == goog.Promise.UNHANDLED_REJECTION_DELAY && (this.hadUnhandledRejection_ = !1);
   goog.Promise.LONG_STACK_TRACES && (this.stack_ = [], this.addStackTrace_(Error("created")), this.currentStep_ = 0);
-  if (resolver == goog.Promise.RESOLVE_FAST_PATH_) {
-    this.resolve_(goog.Promise.State_.FULFILLED, opt_context);
-  } else {
+  if (resolver != goog.nullFunction) {
     try {
       var self = this;
       resolver.call(opt_context, function(value) {
@@ -2333,21 +2331,28 @@ goog.Promise.getCallbackEntry_ = function(onFulfilled, onRejected, context) {
 goog.Promise.returnEntry_ = function(entry) {
   goog.Promise.freelist_.put(entry);
 };
-goog.Promise.RESOLVE_FAST_PATH_ = function() {
-};
 goog.Promise.resolve = function(opt_value) {
-  return opt_value instanceof goog.Promise ? opt_value : new goog.Promise(goog.Promise.RESOLVE_FAST_PATH_, opt_value);
+  if (opt_value instanceof goog.Promise) {
+    return opt_value;
+  }
+  var promise = new goog.Promise(goog.nullFunction);
+  promise.resolve_(goog.Promise.State_.FULFILLED, opt_value);
+  return promise;
 };
 goog.Promise.reject = function(opt_reason) {
   return new goog.Promise(function(resolve, reject) {
     reject(opt_reason);
   });
 };
+goog.Promise.resolveThen_ = function(value, onFulfilled, onRejected) {
+  var isThenable = goog.Promise.maybeThen_(value, onFulfilled, onRejected, null);
+  isThenable || goog.async.run(goog.partial(onFulfilled, value));
+};
 goog.Promise.race = function(promises) {
   return new goog.Promise(function(resolve, reject) {
     promises.length || resolve(void 0);
     for (var i = 0, promise;promise = promises[i];i++) {
-      goog.Promise.maybeThenVoid_(promise, resolve, reject);
+      goog.Promise.resolveThen_(promise, resolve, reject);
     }
   });
 };
@@ -2362,7 +2367,7 @@ goog.Promise.all = function(promises) {
       }, onReject = function(reason) {
         reject(reason);
       }, i = 0, promise;promise = promises[i];i++) {
-        goog.Promise.maybeThenVoid_(promise, goog.partial(onFulfill, i), onReject);
+        goog.Promise.resolveThen_(promise, goog.partial(onFulfill, i), onReject);
       }
     } else {
       resolve(values);
@@ -2378,7 +2383,7 @@ goog.Promise.allSettled = function(promises) {
         results[index] = fulfilled ? {fulfilled:!0, value:result} : {fulfilled:!1, reason:result};
         0 == toSettle && resolve(results);
       }, i = 0, promise;promise = promises[i];i++) {
-        goog.Promise.maybeThenVoid_(promise, goog.partial(onSettled, i, !0), goog.partial(onSettled, i, !1));
+        goog.Promise.resolveThen_(promise, goog.partial(onSettled, i, !0), goog.partial(onSettled, i, !1));
       }
     } else {
       resolve(results);
@@ -2396,7 +2401,7 @@ goog.Promise.firstFulfilled = function(promises) {
         reasons[index] = reason;
         0 == toReject && reject(reasons);
       }, i = 0, promise;promise = promises[i];i++) {
-        goog.Promise.maybeThenVoid_(promise, onFulfill, goog.partial(onReject, i));
+        goog.Promise.resolveThen_(promise, onFulfill, goog.partial(onReject, i));
       }
     } else {
       resolve(void 0);
@@ -2422,9 +2427,6 @@ goog.Promise.prototype.thenVoid = function(opt_onFulfilled, opt_onRejected, opt_
   null != opt_onRejected && goog.asserts.assertFunction(opt_onRejected, "opt_onRejected should be a function. Did you pass opt_context as the second argument instead of the third?");
   goog.Promise.LONG_STACK_TRACES && this.addStackTrace_(Error("then"));
   this.addCallbackEntry_(goog.Promise.getCallbackEntry_(opt_onFulfilled || goog.nullFunction, opt_onRejected || null, opt_context));
-};
-goog.Promise.maybeThenVoid_ = function(promise, onFulfilled, onRejected, opt_context) {
-  promise instanceof goog.Promise ? promise.thenVoid(onFulfilled, onRejected, opt_context) : promise.then(onFulfilled, onRejected, opt_context);
 };
 goog.Promise.prototype.thenCatch = function(onRejected, opt_context) {
   goog.Promise.LONG_STACK_TRACES && this.addStackTrace_(Error("thenCatch"));
@@ -2470,39 +2472,36 @@ goog.Promise.prototype.unblockAndReject_ = function(reason) {
 };
 goog.Promise.prototype.resolve_ = function(state, x) {
   if (this.state_ == goog.Promise.State_.PENDING) {
-    if (this == x) {
-      state = goog.Promise.State_.REJECTED, x = new TypeError("Promise cannot resolve to itself");
-    } else {
-      if (goog.Thenable.isImplementedBy(x)) {
-        this.state_ = goog.Promise.State_.BLOCKED;
-        goog.Promise.maybeThenVoid_(x, this.unblockAndFulfill_, this.unblockAndReject_, this);
-        return;
-      }
-      if (goog.isObject(x)) {
-        try {
-          var then = x.then;
-          if (goog.isFunction(then)) {
-            this.tryThen_(x, then);
-            return;
-          }
-        } catch (e) {
-          state = goog.Promise.State_.REJECTED, x = e;
-        }
-      }
-    }
-    this.result_ = x;
-    this.state_ = state;
-    this.parent_ = null;
-    this.scheduleCallbacks_();
-    state != goog.Promise.State_.REJECTED || x instanceof goog.Promise.CancellationError || goog.Promise.addUnhandledRejection_(this, x);
+    this == x && (state = goog.Promise.State_.REJECTED, x = new TypeError("Promise cannot resolve to itself"));
+    this.state_ = goog.Promise.State_.BLOCKED;
+    var isThenable = goog.Promise.maybeThen_(x, this.unblockAndFulfill_, this.unblockAndReject_, this);
+    isThenable || (this.result_ = x, this.state_ = state, this.parent_ = null, this.scheduleCallbacks_(), state != goog.Promise.State_.REJECTED || x instanceof goog.Promise.CancellationError || goog.Promise.addUnhandledRejection_(this, x));
   }
 };
-goog.Promise.prototype.tryThen_ = function(thenable, then) {
-  this.state_ = goog.Promise.State_.BLOCKED;
-  var promise = this, called = !1, resolve = function(value) {
-    called || (called = !0, promise.unblockAndFulfill_(value));
+goog.Promise.maybeThen_ = function(value, onFulfilled, onRejected, context) {
+  if (value instanceof goog.Promise) {
+    return value.thenVoid(onFulfilled, onRejected, context), !0;
+  }
+  if (goog.Thenable.isImplementedBy(value)) {
+    return value.then(onFulfilled, onRejected, context), !0;
+  }
+  if (goog.isObject(value)) {
+    try {
+      var then = value.then;
+      if (goog.isFunction(then)) {
+        return goog.Promise.tryThen_(value, then, onFulfilled, onRejected, context), !0;
+      }
+    } catch (e) {
+      return onRejected.call(context, e), !0;
+    }
+  }
+  return !1;
+};
+goog.Promise.tryThen_ = function(thenable, then, onFulfilled, onRejected, context) {
+  var called = !1, resolve = function(value) {
+    called || (called = !0, onFulfilled.call(context, value));
   }, reject = function(reason) {
-    called || (called = !0, promise.unblockAndReject_(reason));
+    called || (called = !0, onRejected.call(context, reason));
   };
   try {
     then.call(thenable, resolve, reject);

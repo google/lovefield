@@ -25,9 +25,16 @@ gulp.task('copy_dependencies', function() {
   if (!fs.existsSync(libDir)) { fs.mkdirSync(libDir); }
 
   var filesToCopy = [
-    'bower_components/lovefield/dist/lovefield.min.js',
+    // JS dependencies
     'bower_components/angular/angular.min.js',
-    'bower_components/bootstrap/dist/css/bootstrap.min.css'
+    'bower_components/bootstrap/dist/js/bootstrap.min.js',
+    'bower_components/bootstrap-table/dist/bootstrap-table.min.js',
+    'bower_components/jquery/dist/jquery.min.js',
+    'bower_components/lovefield/dist/lovefield.min.js',
+
+    // CSS dependencies
+    'bower_components/bootstrap/dist/css/bootstrap.min.css',
+    'bower_components/bootstrap-table/dist/bootstrap-table.min.css'
   ];
 
   filesToCopy.forEach(function(file) {

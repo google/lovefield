@@ -15,7 +15,7 @@
   "homepage": "https://github.com/google/lovefield",
   "devDependencies": {
     "fs-extra": "^0.18.2",
-    "gulp": "^3.8.10",
+    "gulp": "^3.9.0",
     "gulp-webserver": "^0.9.0"
   }
 }
