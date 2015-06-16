@@ -14,12 +14,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-goog.provide('movie.db');
-goog.provide('movie.db.schema.Actor');
-goog.provide('movie.db.schema.Director');
-
-goog.require('lf.Type');
-goog.require('lf.schema');
+// Define movie.db namespace
+var movie = { db: {} };
 
 
 /**
@@ -66,7 +62,10 @@ movie.db.createSchema_ = function() {
   ds.createTable('MovieDirector').
       addColumn('movieId', lf.Type.INTEGER).
       addColumn('directorId', lf.Type.INTEGER).
-      addForeignKey('fk_MovieId', 'movieId', 'Movie', 'id').
+      addForeignKey('fk_MovieId', {
+        local: 'movieId',
+        ref: 'Movie.id'
+      }).
       addForeignKey('fk_DirectorId', {
         local: 'directorId',
         ref: 'Director.id'
