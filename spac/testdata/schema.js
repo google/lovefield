@@ -16,6 +16,9 @@ goog.provide('lovefield.db.row.PhotoCuratorDbType');
 goog.provide('lovefield.db.row.PhotoCuratorType');
 goog.provide('lovefield.db.row.PhotoDbType');
 goog.provide('lovefield.db.row.PhotoType');
+goog.provide('lovefield.db.row.SelfLoop');
+goog.provide('lovefield.db.row.SelfLoopDbType');
+goog.provide('lovefield.db.row.SelfLoopType');
 goog.provide('lovefield.db.schema.Album');
 goog.provide('lovefield.db.schema.Curator');
 goog.provide('lovefield.db.schema.Database');
@@ -23,6 +26,7 @@ goog.provide('lovefield.db.schema.Details');
 goog.provide('lovefield.db.schema.NullableTable');
 goog.provide('lovefield.db.schema.Photo');
 goog.provide('lovefield.db.schema.PhotoCurator');
+goog.provide('lovefield.db.schema.SelfLoop');
 
 /** @suppress {extraRequire} */
 goog.require('lf.Order');
@@ -73,6 +77,10 @@ lovefield.db.schema.Database = function() {
   this.nullableTable_ = new lovefield.db.schema.NullableTable();
   this.tableMap_['NullableTable'] = this.nullableTable_;
 
+  /** @private {!lovefield.db.schema.SelfLoop} */
+  this.selfLoop_ = new lovefield.db.schema.SelfLoop();
+  this.tableMap_['SelfLoop'] = this.selfLoop_;
+
 };
 
 
@@ -96,7 +104,8 @@ lovefield.db.schema.Database.prototype.tables = function() {
     this.details_,
     this.curator_,
     this.photoCurator_,
-    this.nullableTable_
+    this.nullableTable_,
+    this.selfLoop_
   ];
 };
 
@@ -146,6 +155,12 @@ lovefield.db.schema.Database.prototype.getPhotoCurator = function() {
 /** @return {!lovefield.db.schema.NullableTable} */
 lovefield.db.schema.Database.prototype.getNullableTable = function() {
   return this.nullableTable_;
+};
+
+
+/** @return {!lovefield.db.schema.SelfLoop} */
+lovefield.db.schema.Database.prototype.getSelfLoop = function() {
+  return this.selfLoop_;
 };
 
 
@@ -1805,5 +1820,178 @@ lovefield.db.row.NullableTable.prototype.getString = function() {
 */
 lovefield.db.row.NullableTable.prototype.setString = function(value) {
   this.payload().string = value;
+  return this;
+};
+
+
+
+/**
+ * @extends {lf.schema.Table.<!lovefield.db.row.SelfLoopType,
+ *     !lovefield.db.row.SelfLoopDbType>}
+ * @constructor
+ */
+lovefield.db.schema.SelfLoop = function() {
+  var cols = [];
+
+  /** @type {!lf.schema.BaseColumn.<string>} */
+  this.id = new lf.schema.BaseColumn(
+      this, 'id', true, false, lf.Type.STRING);
+  cols.push(this.id);
+
+  /** @type {!lf.schema.BaseColumn.<string>} */
+  this.associate = new lf.schema.BaseColumn(
+      this, 'associate', false, false, lf.Type.STRING);
+  cols.push(this.associate);
+
+  var indices = [
+    new lf.schema.Index('SelfLoop', 'pkSelfLoop', true,
+        [
+          {schema: this.id, order: lf.Order.ASC, autoIncrement: false}
+        ])
+  ];
+
+  lovefield.db.schema.SelfLoop.base(
+      this, 'constructor', 'SelfLoop', cols, indices, false);
+};
+goog.inherits(lovefield.db.schema.SelfLoop, lf.schema.Table);
+
+
+/** @override */
+lovefield.db.schema.SelfLoop.prototype.createRow = function(opt_value) {
+  return new lovefield.db.row.SelfLoop(lf.Row.getNextId(), opt_value);
+};
+
+
+/** @override */
+lovefield.db.schema.SelfLoop.prototype.deserializeRow =
+    function(dbRecord) {
+  var data = dbRecord['value'];
+  return new lovefield.db.row.SelfLoop(dbRecord['id'], data);
+};
+
+
+/** @override */
+lovefield.db.schema.SelfLoop.prototype.getConstraint = function() {
+  var pk = new lf.schema.Index('SelfLoop', 'pkSelfLoop', true,
+      [
+        {schema: this.id, order: lf.Order.ASC, autoIncrement: false}
+      ]);
+  var notNullable = [
+    this.id,
+    this.associate
+  ];
+  var foreignKeys = [];
+  var unique = [
+  ];
+  return new lf.schema.Constraint(pk, notNullable, foreignKeys, unique);
+};
+
+
+
+/**
+ * @export
+ * @constructor
+ * @struct
+ * @final
+ */
+lovefield.db.row.SelfLoopType = function() {
+  /** @export @type {string} */
+  this.id;
+  /** @export @type {string} */
+  this.associate;
+};
+
+
+
+/**
+ * @export
+ * @constructor
+ * @struct
+ * @final
+ */
+lovefield.db.row.SelfLoopDbType = function() {
+  /** @export @type {string} */
+  this.id;
+  /** @export @type {string} */
+  this.associate;
+};
+
+
+
+/**
+ * Constructs a new SelfLoop row.
+ * @constructor
+ * @extends {lf.Row.<!lovefield.db.row.SelfLoopType,
+ *     !lovefield.db.row.SelfLoopDbType>}
+ *
+ * @param {number} rowId The row ID.
+ * @param {!lovefield.db.row.SelfLoopType=} opt_payload
+ */
+lovefield.db.row.SelfLoop = function(rowId, opt_payload) {
+  lovefield.db.row.SelfLoop.base(this, 'constructor', rowId, opt_payload);
+};
+goog.inherits(lovefield.db.row.SelfLoop, lf.Row);
+
+
+/** @override */
+lovefield.db.row.SelfLoop.prototype.defaultPayload = function() {
+  var payload = new lovefield.db.row.SelfLoopType();
+  payload.id = '';
+  payload.associate = '';
+  return payload;
+};
+
+
+/** @override */
+lovefield.db.row.SelfLoop.prototype.toDbPayload = function() {
+  var payload = new lovefield.db.row.SelfLoopDbType();
+  payload.id = this.payload().id;
+  payload.associate = this.payload().associate;
+  return payload;
+};
+
+
+/** @override */
+lovefield.db.row.SelfLoop.prototype.keyOfIndex = function(indexName) {
+  switch (indexName) {
+    case 'SelfLoop.pkSelfLoop':
+      return this.payload().id;
+    case 'SelfLoop.#':
+      return this.id();
+    default:
+      break;
+  }
+  return null;
+};
+
+
+/** @return {string} */
+lovefield.db.row.SelfLoop.prototype.getId = function() {
+  return this.payload().id;
+};
+
+
+/**
+ * @param {string} value
+ * @return {!lovefield.db.row.SelfLoop}
+*/
+lovefield.db.row.SelfLoop.prototype.setId = function(value) {
+  this.payload().id = value;
+  return this;
+};
+
+
+/** @return {string} */
+lovefield.db.row.SelfLoop.prototype.getAssociate = function() {
+  return this.payload().associate;
+};
+
+
+/**
+ * @param {string} value
+ * @return {!lovefield.db.row.SelfLoop}
+*/
+lovefield.db.row.SelfLoop.prototype.setAssociate = function(value) {
+  this.payload().associate = value;
   return this;
 };

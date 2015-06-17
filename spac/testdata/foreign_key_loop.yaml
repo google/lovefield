@@ -1,0 +1,40 @@
+%YAML 1.2
+---
+name: sample
+version: 1
+table:
+  Region:
+    column:
+      id: string
+      name: string
+      manager: string
+    constraint:
+      primaryKey: [id]
+      foreignKey:
+        fkManager:
+          local: manager
+          ref: Employee.id
+
+  Department:
+    column:
+      id: string
+      name: string
+      region: string
+    constraint:
+      primaryKey: [id]
+      foreignKey:
+        fkRegion:
+          local: region
+          ref: Region.id
+
+  Employee:
+    column:
+      id: string
+      name: string
+      department: string
+    constraint:
+      primaryKey: [id]
+      foreignKey:
+        fkDept:
+          local: department
+          ref: Department.id

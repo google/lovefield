@@ -156,6 +156,10 @@ describe('YAML Parser Test', function() {
     thrower('foreign_key_chain.yaml');
   });
 
+  it('should throw if detected foreign key loop', function() {
+    thrower('foreign_key_loop.yaml');
+  });
+
   it('should throw if foreign key name conflicted', function() {
     thrower('foreign_key_name_conflict.yaml');
   });

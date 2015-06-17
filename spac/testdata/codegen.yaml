@@ -124,3 +124,15 @@ table:
         column: [ number ]
       idx_string:
         column: [ string ]
+
+  SelfLoop:
+    column:
+      id: string
+      associate: string
+    constraint:
+      primaryKey: [ id ]
+      foreignKey:
+        fkAssociate:
+          local: associate
+          ref: SelfLoop.id
+          action: cascade

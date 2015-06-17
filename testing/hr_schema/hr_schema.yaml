@@ -75,10 +75,6 @@ table:
     constraint:
       primaryKey: [ id ]
       foreignKey:
-        fk_ManagerId:
-          local: managerId
-          ref: Employee.id
-          cascade: false
         fk_LocationId:
           local: locationId
           ref: Location.id

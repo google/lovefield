@@ -422,8 +422,6 @@ function checkForeignKey(tableName, schemas, schema, colNames, names, keyed) {
       throw new Error(fkName + ': cascade shall only be immediate');
     }
 
-    // TODO(arthurhsu): detect FK loop
-
     if (names.indexOf(fk) != -1) {
       throw new Error(fkName + ' has name conflict');
     }
@@ -660,6 +658,77 @@ function checkTable(tableName, schemas) {
 }
 
 
+/**
+ * @typedef {{
+ *   visited: boolean,
+ *   onStack: boolean,
+ *   edges: Object,
+ *   name: string
+ * }}
+ * @private
+ */
+var GraphNode_;
+
+
+/**
+ * Checks for loop in the graph recursively. Ignores self loops.
+ * This algorithm is based on Lemma 22.11 in "Introduction To Algorithms
+ * 3rd Edition By Cormen et Al". It says that a directed graph G
+ * can be acyclic if and only DFS of G yields no back edges.
+ * @param {!GraphNode_} node
+ * @param {!Object} nodeMap
+ */
+function checkCycle(node, nodeMap) {
+  if (!node.visited) {
+    node.visited = true;
+    node.onStack = true;
+    for (var edge in node.edges) {
+      var childNode = nodeMap[edge];
+      if (!childNode.visited) {
+        checkCycle(childNode, nodeMap);
+      } else if (childNode.onStack) {
+        // Throws exception if it's not a self-loop.
+        if (node != childNode) {
+          throw new Error('Foreign key loop detected.');
+        }
+      }
+    }
+  }
+  node.onStack = false;
+}
+
+
+/** @param {!Object} schema */
+function detectForeignKeyLoop(schema) {
+  // Build the graph.
+  var nodeMap = {};
+  for (var table in schema.table) {
+    nodeMap[table] = /** @type {!GraphNode_} */ ({
+      visited: false,
+      onStack: false,
+      edges: {},
+      name: table
+    });
+  }
+
+  for (var tableName in schema.table) {
+    var t = schema.table[tableName];
+    if (t.constraint && t.constraint.foreignKey) {
+      for (var fkName in t.constraint.foreignKey) {
+        var spec = t.constraint.foreignKey[fkName];
+        var refTable = spec.ref.split('.')[0];
+        nodeMap[refTable].edges[tableName] = true;
+      }
+    }
+  }
+
+  // Graph built, check loop.
+  for (var key in nodeMap) {
+    checkCycle(nodeMap[key], nodeMap);
+  }
+}
+
+
 /** @param {!Object} schema */
 function checkSchema(schema) {
   checkObject('DB', DB_SCHEMA, schema);
@@ -670,6 +739,8 @@ function checkSchema(schema) {
   for (var table in schema.table) {
     checkTable(table, schema.table);
   }
+
+  detectForeignKeyLoop(schema);
 }
 
 
