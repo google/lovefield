@@ -84,10 +84,6 @@ lf.testing.hrSchema.getSchemaBuilder = function() {
       addColumn('managerId', lf.Type.STRING).
       addColumn('locationId', lf.Type.STRING).
       addPrimaryKey(['id']).
-      addForeignKey('fk_ManagerId', {
-        local: 'managerId',
-        ref: 'Employee.id'
-      }).
       addForeignKey('fk_LocationId', {
         local: 'locationId',
         ref: 'Location.id',

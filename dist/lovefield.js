@@ -10762,7 +10762,6 @@ goog.exportProperty(lf.schema.TableBuilder.prototype, "getSchema", lf.schema.Tab
 lf.schema.TableBuilder.prototype.getFkSpecs = function() {
   return this.fkSpecs_;
 };
-goog.exportProperty(lf.schema.TableBuilder.prototype, "getFkSpecs", lf.schema.TableBuilder.prototype.getFkSpecs);
 lf.schema.TableBuilder.prototype.normalizeColumns_ = function(columns, checkIndexable, opt_order, opt_autoInc) {
   var normalized = columns, normalized = "string" == typeof columns[0] ? columns.map(function(col) {
     return new lf.schema.TableBuilder.IndexedColumn_({name:col, order:opt_order || lf.Order.ASC, autoIncrement:opt_autoInc || !1});
@@ -10888,7 +10887,7 @@ lf.schema.Builder = function(dbName, dbVersion) {
 goog.exportSymbol("lf.schema.Builder", lf.schema.Builder);
 lf.schema.Builder.prototype.checkForeignKeyValidity_ = function(builder) {
   var fkSpecArray = builder.getFkSpecs();
-  0 != fkSpecArray.length && fkSpecArray.forEach(function(specs) {
+  fkSpecArray.forEach(function(specs) {
     var parentTableName = specs.parentTable;
     if (!this.tableBuilders_.containsKey(parentTableName)) {
       throw new lf.Exception(lf.Exception.Type.SYNTAX, "Foreign Key {" + specs.fkName + "} refers to invalid table");
@@ -10906,12 +10905,57 @@ lf.schema.Builder.prototype.checkForeignKeyValidity_ = function(builder) {
     }
   }, this);
 };
+lf.schema.Builder.prototype.checkForeignKeyChain_ = function(builder) {
+  var fkSpecArray = builder.getFkSpecs();
+  fkSpecArray.forEach(function(specs) {
+    var parentBuilder = this.tableBuilders_.get(specs.parentTable);
+    parentBuilder.getFkSpecs().forEach(function(parentSpecs) {
+      if (parentSpecs.localColumn == specs.parentColumn) {
+        throw new lf.Exception(lf.Exception.Type.SYNTAX, "Foreign Key {" + specs.fkName + "} refers to the source of other foreign key.");
+      }
+    }, this);
+  }, this);
+};
 lf.schema.Builder.prototype.finalize_ = function() {
-  this.finalized_ || (this.tableBuilders_.getKeys().forEach(function(tableName) {
-    var builder = this.tableBuilders_.get(tableName);
+  this.finalized_ || (this.tableBuilders_.getValues().forEach(function(builder) {
     this.checkForeignKeyValidity_(builder);
     this.schema_.setTable(builder.getSchema());
-  }, this), this.tableBuilders_.clear(), this.finalized_ = !0);
+  }, this), this.tableBuilders_.getValues().forEach(function(builder) {
+    this.checkForeignKeyChain_(builder);
+  }, this), this.checkFkCycle_(), this.tableBuilders_.clear(), this.finalized_ = !0);
+};
+lf.schema.Builder.prototype.checkCycleUtil_ = function(graphNode, nodeMap) {
+  graphNode.visited || (graphNode.visited = !0, graphNode.onStack = !0, graphNode.edges.forEach(function(edge) {
+    var childNode = nodeMap.get(edge);
+    if (!childNode.visited) {
+      this.checkCycleUtil_(childNode, nodeMap);
+    } else {
+      if (childNode.onStack && graphNode != childNode) {
+        throw new lf.Exception(lf.Exception.Type.SYNTAX, "There is a loop in the schema");
+      }
+    }
+  }, this));
+  graphNode.onStack = !1;
+};
+lf.schema.Builder.prototype.checkFkCycle_ = function() {
+  var nodeMap = new lf.structs.Map;
+  this.schema_.tables_.getKeys().forEach(function(tableName) {
+    nodeMap.set(tableName, new lf.schema.GraphNode_(tableName));
+  }, this);
+  this.tableBuilders_.forEach(function(builder, tableName) {
+    builder.getFkSpecs().forEach(function(spec) {
+      var parentNode = nodeMap.get(spec.parentTable);
+      parentNode.edges.add(tableName);
+    });
+  });
+  lf.structs.map.values(nodeMap).forEach(function(graphNode) {
+    this.checkCycleUtil_(graphNode, nodeMap);
+  }, this);
+};
+lf.schema.GraphNode_ = function(tableName) {
+  this.onStack = this.visited = !1;
+  this.edges = new lf.structs.Set;
+  this.tableName = tableName;
 };
 lf.schema.Builder.prototype.getSchema = function() {
   this.finalized_ || this.finalize_();

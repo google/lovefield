@@ -75,11 +75,6 @@ function createBuilder() {
         ref: 'Job.id',
         action: lf.ConstraintAction.CASCADE
       }).
-      addForeignKey('fk_DeptId', {
-        local: 'departmentId',
-        ref: 'Department.id',
-        action: lf.ConstraintAction.CASCADE
-      }).
       addNullable(['hireDate']);
 
   ds.createTable('Department').
@@ -210,6 +205,165 @@ function testThrows_InValidFKRefName() {
           ref: 'Employeeid'
         });
   });
+}
+
+function test_checkForeignKeyChainOnSameColumn() {
+  var ds = createBuilder();
+  ds.createTable('fkTable8').
+      addColumn('employeeId', lf.Type.INTEGER).
+      addColumn('startDate', lf.Type.DATE_TIME).
+      addColumn('endDate', lf.Type.DATE_TIME).
+      addColumn('jobId', lf.Type.STRING).
+      addColumn('departmentId', lf.Type.STRING).
+      addForeignKey('fkemployeeId1', {
+        local: 'employeeId',
+        ref: 'fkTable10.employeeId'
+      });
+  ds.createTable('fkTable9').
+      addColumn('employeeId', lf.Type.INTEGER).
+      addColumn('startDate', lf.Type.DATE_TIME).
+      addColumn('endDate', lf.Type.DATE_TIME).
+      addColumn('jobId', lf.Type.STRING).
+      addColumn('departmentId', lf.Type.STRING).
+      addForeignKey('fkemployeeId2', {
+        local: 'employeeId',
+        ref: 'fkTable10.employeeId'
+      });
+  ds.createTable('fkTable10').
+      addColumn('employeeId', lf.Type.INTEGER).
+      addColumn('employeeId2', lf.Type.INTEGER).
+      addColumn('startDate', lf.Type.DATE_TIME).
+      addColumn('endDate', lf.Type.DATE_TIME).
+      addColumn('jobId', lf.Type.STRING).
+      addColumn('departmentId', lf.Type.STRING).
+      addPrimaryKey([{'name': 'employeeId', 'order': lf.Order.DESC}]).
+      addForeignKey('fkemployeeId3', {
+        local: 'employeeId',
+        ref: 'fkTable11.employeeId'
+      });
+  ds.createTable('fkTable11').
+      addColumn('employeeId', lf.Type.INTEGER).
+      addColumn('startDate', lf.Type.DATE_TIME).
+      addColumn('endDate', lf.Type.DATE_TIME).
+      addColumn('jobId', lf.Type.STRING).
+      addColumn('departmentId', lf.Type.STRING).
+      addPrimaryKey([{'name': 'employeeId', 'order': lf.Order.DESC}]);
+
+  lf.testing.util.assertThrowsSyntaxError(function() {
+    ds.getSchema();
+  });
+}
+
+function test_checkForeignKeyLoop() {
+  var ds = createBuilder();
+  ds.createTable('fkTable8').
+      addColumn('employeeId', lf.Type.INTEGER).
+      addColumn('employeeId2', lf.Type.INTEGER).
+      addColumn('startDate', lf.Type.DATE_TIME).
+      addColumn('endDate', lf.Type.DATE_TIME).
+      addColumn('jobId', lf.Type.STRING).
+      addColumn('departmentId', lf.Type.STRING).
+      addPrimaryKey([{'name': 'employeeId2', 'order': lf.Order.DESC}]).
+      addForeignKey('fkemployeeId1', {
+        local: 'employeeId',
+        ref: 'fkTable10.employeeId'
+      });
+  ds.createTable('fkTable9').
+      addColumn('employeeId', lf.Type.INTEGER).
+      addColumn('startDate', lf.Type.DATE_TIME).
+      addColumn('endDate', lf.Type.DATE_TIME).
+      addColumn('jobId', lf.Type.STRING).
+      addColumn('departmentId', lf.Type.STRING).
+      addForeignKey('fkemployeeId2', {
+        local: 'employeeId',
+        ref: 'fkTable10.employeeId'
+      });
+  ds.createTable('fkTable10').
+      addColumn('employeeId', lf.Type.INTEGER).
+      addColumn('employeeId2', lf.Type.INTEGER).
+      addColumn('startDate', lf.Type.DATE_TIME).
+      addColumn('endDate', lf.Type.DATE_TIME).
+      addColumn('jobId', lf.Type.STRING).
+      addColumn('departmentId', lf.Type.STRING).
+      addPrimaryKey([{'name': 'employeeId', 'order': lf.Order.DESC}]).
+      addForeignKey('fkemployeeId3', {
+        local: 'employeeId2',
+        ref: 'fkTable11.employeeId'
+      });
+  ds.createTable('fkTable11').
+      addColumn('employeeId', lf.Type.INTEGER).
+      addColumn('employeeId2', lf.Type.INTEGER).
+      addColumn('startDate', lf.Type.DATE_TIME).
+      addColumn('endDate', lf.Type.DATE_TIME).
+      addColumn('jobId', lf.Type.STRING).
+      addColumn('departmentId', lf.Type.STRING).
+      addPrimaryKey([{'name': 'employeeId', 'order': lf.Order.DESC}]).
+      addForeignKey('fkemployeeId4', {
+        local: 'employeeId2',
+        ref: 'fkTable8.employeeId2'
+      });
+  lf.testing.util.assertThrowsSyntaxError(function() {
+    ds.getSchema();
+  });
+}
+
+function test_checkForeignKeySelfLoop() {
+  var ds = createBuilder();
+  ds.createTable('fkTable8').
+      addColumn('employeeId', lf.Type.INTEGER).
+      addColumn('employeeId2', lf.Type.INTEGER).
+      addColumn('startDate', lf.Type.DATE_TIME).
+      addColumn('endDate', lf.Type.DATE_TIME).
+      addColumn('jobId', lf.Type.STRING).
+      addColumn('departmentId', lf.Type.STRING).
+      addPrimaryKey([{'name': 'employeeId', 'order': lf.Order.DESC}]).
+      addForeignKey('fkemployeeId1', {
+        local: 'employeeId2',
+        ref: 'fkTable8.employeeId'
+      });
+  ds.getSchema();
+}
+
+function test_checkForeignKeySelfLoopOfBiggerGraph() {
+  var ds = createBuilder();
+  ds.createTable('fkTable8').
+      addColumn('employeeId', lf.Type.INTEGER).
+      addColumn('employeeId2', lf.Type.INTEGER).
+      addColumn('startDate', lf.Type.DATE_TIME).
+      addColumn('endDate', lf.Type.DATE_TIME).
+      addColumn('jobId', lf.Type.STRING).
+      addColumn('departmentId', lf.Type.STRING).
+      addPrimaryKey([{'name': 'employeeId2', 'order': lf.Order.DESC}]).
+      addForeignKey('fkemployeeId1', {
+        local: 'employeeId',
+        ref: 'fkTable9.employeeId2'
+      });
+  ds.createTable('fkTable9').
+      addColumn('employeeId', lf.Type.INTEGER).
+      addColumn('employeeId2', lf.Type.INTEGER).
+      addColumn('startDate', lf.Type.DATE_TIME).
+      addColumn('endDate', lf.Type.DATE_TIME).
+      addColumn('jobId', lf.Type.STRING).
+      addColumn('departmentId', lf.Type.STRING).
+      addPrimaryKey([{'name': 'employeeId2', 'order': lf.Order.DESC}]);
+  // Self loop on table11
+  ds.createTable('fkTable11').
+      addColumn('employeeId', lf.Type.INTEGER).
+      addColumn('employeeId2', lf.Type.INTEGER).
+      addColumn('startDate', lf.Type.DATE_TIME).
+      addColumn('endDate', lf.Type.DATE_TIME).
+      addColumn('jobId', lf.Type.STRING).
+      addColumn('departmentId', lf.Type.STRING).
+      addPrimaryKey([{'name': 'employeeId', 'order': lf.Order.DESC}]).
+      addForeignKey('fkemployeeId4', {
+        local: 'employeeId2',
+        ref: 'fkTable8.employeeId2'
+      }).
+      addForeignKey('fkemployeeId2', {
+        local: 'employeeId2',
+        ref: 'fkTable11.employeeId'
+      });
+  ds.getSchema();
 }
 
 function testThrows_FKRefKeyNonUnique() {
