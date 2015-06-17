@@ -1,3 +1,14 @@
+Version: 2.0.58
+Publish date: 20150617
+Changes:
+ - Change lf.Exception to be error-code based.
+ - Foreign key declaration syntax change, and add more checks for the validity.
+ - Consolidate top-level enums into one single file.
+ - Gulp improvements: unify all gulp command lines, update gulp to 3.9.0, and
+   fix various bugs.
+ - Fix a bug that SPAC wrongly placed arraybuffer/object columns as not
+   nullable.
+
 Version: 2.0.57
 Publish date: 20150608
 Changes:
