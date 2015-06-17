@@ -1,4 +1,5 @@
 #query-builder {
+  background-color: gray;
   border-right-color: whitesmoke;
   border-right-style: solid;
   border-right-width: 4px;
@@ -11,18 +12,21 @@
   flex: 5;
 }
 
+html {
+  height: 100%;
+}
+
 body {
   display: flex;
-  background: url('chalk.png');
   font-size: 18px;
+  min-height: 100%;
 }
 
 label,td {
-  color: white;
+  font-weight: bold;
 }
 
 h1 {
-  color: white;
   font-weight: bold;
 }
 
@@ -30,14 +34,21 @@ th {
   background-color: yellow;
 }
 
-
-.table-hover>tbody>tr:hover,
-.table-striped>tbody>tr:nth-of-type(odd):hover {
-  background-color: black
+td.gold {
+  color: gold;
 }
 
-.table-striped>tbody>tr:nth-of-type(odd) {
-  background-color: rgba(19,80,90, 0.7);
+td.silver {
+  color: silver;
+}
+
+td.bronze {
+  color: rgb(140, 120, 83);
+}
+
+
+.table-hover>tbody>tr:hover {
+  background-color: lightblue;
 }
 
 textarea {
