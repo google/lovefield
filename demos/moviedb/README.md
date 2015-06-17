@@ -9,9 +9,8 @@ http://oak.cs.ucla.edu/cs143/project/data/data.zip.
 
 * Step 1: Install gulp (if you have not already), ```npm install -g gulp```
 * Step 2: Pull dependencies in package.json, ```npm install .```
-* Step 3: Copy dependencies to output folder, ```gulp default```
-* Step 4: Start a local webserver, ```gulp webserver```
-* Step 5: Navigate to [http://localhost:8000](http://localhost:8000),
+* Step 3: Start a local webserver, ```gulp debug```
+* Step 4: Navigate to [http://localhost:8000](http://localhost:8000),
 
 ## demo-jquery
 

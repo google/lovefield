@@ -44,9 +44,12 @@ var log = console['log'];
 
 gulp.task('default', function() {
   log('Usage: ');
-  log('  gulp build --target=<target>: build lib or tests');
-  log('  gulp test --target=<target> --browser=<broswer>: run Lovefield tests');
+  log('  gulp build --target=<all|lib|tests> --mode=<opt|debug>:');
+  log('      compile source files using Closure compiler');
   log('  gulp debug: start a debug server at port 4000');
+  log('  gulp lint: lint against source files');
+  log('  gulp test --target=<perf|spac|jsunit> --browser=<chrome|firefox>:');
+  log('      run Lovefield tests using webdriver (need to install separately)');
 });
 
 

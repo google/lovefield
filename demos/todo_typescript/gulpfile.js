@@ -16,10 +16,19 @@
  */
 var gulp = require('gulp');
 var ts = require('gulp-typescript');
+var tsd = require('gulp-tsd');
 var webserver = require('gulp-webserver');
 
 
-gulp.task('build', function () {
+gulp.task('tsd', function(callback) {
+  tsd({
+    command: 'reinstall',
+    config: 'tsd.json'
+  }, callback);
+});
+
+
+gulp.task('build', ['tsd'], function () {
   var tsResult = gulp.src('todo.ts')
     .pipe(ts({
         noEmitOnError: true,
@@ -30,7 +39,7 @@ gulp.task('build', function () {
 });
 
 
-gulp.task('webserver', ['build'], function() {
+gulp.task('debug', ['build'], function() {
   gulp.src('.').pipe(webserver({
     directoryListing: true,
     open: false

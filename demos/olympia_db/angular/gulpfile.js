@@ -18,6 +18,15 @@ var fs = require('fs-extra');
 var gulp = require('gulp');
 var path = require('path');
 var webserver = require('gulp-webserver');
+var log = console['log'];
+
+
+gulp.task('default', function() {
+  log('Usage:');
+  log(' gulp clean: clean all temporary files');
+  log(' gulp debug: start a debug server at port 4000');
+  log(' gulp export: export the demo to dist');
+});
 
 
 gulp.task('copy_dependencies', function() {
@@ -58,9 +67,6 @@ gulp.task('copy_data', function() {
 });
 
 
-gulp.task('default', ['copy_dependencies', 'copy_data']);
-
-
 gulp.task('clean', function() {
   var foldersToDelete = [
     'lib',
@@ -75,7 +81,7 @@ gulp.task('clean', function() {
 });
 
 
-gulp.task('webserver', ['copy_dependencies', 'copy_data'], function() {
+gulp.task('debug', ['copy_dependencies', 'copy_data'], function() {
   gulp.src('.').pipe(webserver({
     livereload: true,
     directoryListing: true,
@@ -84,13 +90,13 @@ gulp.task('webserver', ['copy_dependencies', 'copy_data'], function() {
 });
 
 
-gulp.task('export', ['default'], function() {
-  var binDir = 'bin';
-  if (!fs.existsSync(binDir)) { fs.mkdirSync(binDir); }
+gulp.task('export', ['copy_dependencies', 'copy_data'], function() {
+  var distDir = 'dist';
+  if (!fs.existsSync(distDir)) { fs.mkdirSync(distDir); }
 
-  fs.copySync('lib', path.join(binDir, 'lib'));
-  fs.copySync('data', path.join(binDir, 'data'));
-  fs.copySync('resources', path.join(binDir, 'resources'));
-  fs.copySync('demo.html', path.join(binDir, 'demo.html'));
-  fs.copySync('demo.js', path.join(binDir, 'demo.js'));
+  fs.copySync('lib', path.join(distDir, 'lib'));
+  fs.copySync('data', path.join(distDir, 'data'));
+  fs.copySync('resources', path.join(distDir, 'resources'));
+  fs.copySync('demo.html', path.join(distDir, 'demo.html'));
+  fs.copySync('demo.js', path.join(distDir, 'demo.js'));
 });

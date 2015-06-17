@@ -19,6 +19,16 @@ var gjslint = require('gulp-gjslint');
 var gulp = require('gulp');
 var path = require('path');
 var webserver = require('gulp-webserver');
+var log = console['log'];
+
+
+gulp.task('default', function() {
+  log('Usage:');
+  log(' gulp clean: clean all temporary files');
+  log(' gulp debug: start a debug server at port 4000');
+  log(' gulp export: export the codelab to dist');
+  log(' gulp lint: lint all source files');
+});
 
 
 gulp.task('lint', function() {
@@ -49,9 +59,6 @@ gulp.task('copy_dependencies', function() {
 });
 
 
-gulp.task('default', ['copy_dependencies']);
-
-
 gulp.task('clean', function() {
   var foldersToDelete = [
     'lib'
@@ -65,7 +72,7 @@ gulp.task('clean', function() {
 });
 
 
-gulp.task('webserver', ['copy_dependencies'], function() {
+gulp.task('debug', ['copy_dependencies'], function() {
   gulp.src('.').pipe(webserver({
     //livereload: true,
     directoryListing: true,

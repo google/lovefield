@@ -14,22 +14,33 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-var fs = require('fs');
+var fs = require('fs-extra');
 var gulp = require('gulp');
+var path = require('path');
 var webserver = require('gulp-webserver');
-var rmdir = require('rimraf').sync;
+var log = console['log'];
 
 
-gulp.task('copy_data', function() {
-  if (!fs.existsSync('data')) { fs.mkdirSync('data'); }
-  fs.createReadStream('../data/olympic_medalists.json').
-      pipe(fs.createWriteStream('data/olympic_medalists.json'));
-  fs.createReadStream('../data/column_domains.json').
-      pipe(fs.createWriteStream('data/column_domains.json'));
+gulp.task('default', function() {
+  log('Usage:');
+  log(' gulp clean: clean all temporary files');
+  log(' gulp debug: start a debug server at port 4000');
 });
 
 
-gulp.task('default', ['copy_data']);
+gulp.task('copy_data', function() {
+  var dataDir = 'data';
+  if (!fs.existsSync(dataDir)) { fs.mkdirSync(dataDir); }
+
+  var filesToCopy = [
+    '../data/olympic_medalists.json',
+    '../data/column_domains.json'
+  ];
+
+  filesToCopy.forEach(function(file) {
+    fs.copySync(file, path.join(dataDir, path.basename(file)));
+  });
+});
 
 
 gulp.task('clean', function() {
@@ -39,13 +50,13 @@ gulp.task('clean', function() {
 
   foldersToDelete.forEach(function(folder) {
     if (fs.existsSync(folder)) {
-      rmdir(folder);
+      fs.removeSync(folder);
     }
   });
 });
 
 
-gulp.task('webserver', ['copy_data'], function() {
+gulp.task('debug', ['copy_data'], function() {
   gulp.src('.').pipe(webserver({
     livereload: true,
     directoryListing: true,

@@ -23,7 +23,7 @@ gulp.task('default', function() {
   var log = console['log'];
   log('Usage:');
   log('gulp lint: check js files');
-  log('gulp webserver: starts an web server');
+  log('gulp debug: starts an web server');
 });
 
 gulp.task('lint', function() {
@@ -32,7 +32,7 @@ gulp.task('lint', function() {
       pipe(gjslint.reporter('console'), {fail: true});
 });
 
-gulp.task('webserver', function() {
+gulp.task('debug', function() {
   gulp.src('.').pipe(webserver({
     livereload: true
   }));
