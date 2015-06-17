@@ -103,14 +103,16 @@ function createBuilder() {
 
 function testThrows_DuplicateTable() {
   var ds = createBuilder();
-  lf.testing.util.assertThrowsSyntaxError(function() {
+  // 503: Name {0} is already defined.
+  lf.testing.util.assertThrowsError(503, function() {
     ds.createTable('DummyTable');
   });
 }
 
 function testThrows_DuplicateColumn() {
   var ds = createBuilder();
-  lf.testing.util.assertThrowsSyntaxError(function() {
+  // 503: Name {0} is already defined.
+  lf.testing.util.assertThrowsError(503, function() {
     ds.createTable('Table2').
         addColumn('col', lf.Type.STRING).
         addColumn('col', lf.Type.STRING);
@@ -131,7 +133,8 @@ function testThrows_InValidFKLocalColName() {
           ref: 'Employee.id'
         });
   };
-  lf.testing.util.assertThrowsSyntaxError(testFn);
+  // 540: Foreign key {0} has invalid reference syntax.
+  lf.testing.util.assertThrowsError(540, testFn);
 }
 
 function testThrows_InValidFKRefTableName() {
@@ -146,7 +149,8 @@ function testThrows_InValidFKRefTableName() {
         local: 'employeeId',
         ref: 'Employee1.id'
       });
-  lf.testing.util.assertThrowsSyntaxError(function() {
+  // 536: Foreign key {0} refers to invalid table.
+  lf.testing.util.assertThrowsError(536, function() {
     ds.getSchema();
   });
 }
@@ -169,7 +173,8 @@ function testThrows_ColumnTypeMismatch() {
       addColumn('endDate', lf.Type.DATE_TIME).
       addColumn('jobId', lf.Type.STRING).
       addColumn('departmentId', lf.Type.STRING);
-  lf.testing.util.assertThrowsSyntaxError(function() {
+  // 538: Foreign key {0} column type mismatch.
+  lf.testing.util.assertThrowsError(538, function() {
     ds.getSchema();
   });
 }
@@ -186,14 +191,16 @@ function testThrows_InValidFKRefColName() {
         local: 'employeeId',
         ref: 'Employee.id1'
       });
-  lf.testing.util.assertThrowsSyntaxError(function() {
+  // 537: Foreign key {0} refers to invalid column.
+  lf.testing.util.assertThrowsError(537, function() {
     ds.getSchema();
   });
 }
 
 function testThrows_InValidFKRefName() {
   var ds = createBuilder();
-  lf.testing.util.assertThrowsSyntaxError(function() {
+  // 540: Foreign key {0} has invalid reference syntax.
+  lf.testing.util.assertThrowsError(540, function() {
     ds.createTable('fkTable5').
         addColumn('employeeId', lf.Type.STRING).
         addColumn('startDate', lf.Type.DATE_TIME).
@@ -249,7 +256,8 @@ function test_checkForeignKeyChainOnSameColumn() {
       addColumn('departmentId', lf.Type.STRING).
       addPrimaryKey([{'name': 'employeeId', 'order': lf.Order.DESC}]);
 
-  lf.testing.util.assertThrowsSyntaxError(function() {
+  // 534: Foreign key {0} refers to source column of another foreign key.
+  lf.testing.util.assertThrowsError(534, function() {
     ds.getSchema();
   });
 }
@@ -302,7 +310,8 @@ function test_checkForeignKeyLoop() {
         local: 'employeeId2',
         ref: 'fkTable8.employeeId2'
       });
-  lf.testing.util.assertThrowsSyntaxError(function() {
+  // 533: Foreign key loop detected.
+  lf.testing.util.assertThrowsError(533, function() {
     ds.getSchema();
   });
 }
@@ -378,7 +387,8 @@ function testThrows_FKRefKeyNonUnique() {
         local: 'employeeId',
         ref: 'Employee.firstName'
       });
-  lf.testing.util.assertThrowsSyntaxError(function() {
+  // 539: Foreign key {0} refers to non-unique column.
+  lf.testing.util.assertThrowsError(539, function() {
     ds.getSchema();
   });
 }
@@ -386,14 +396,16 @@ function testThrows_FKRefKeyNonUnique() {
 function testThrows_ModificationAfterFinalization() {
   var ds = createBuilder();
   ds.getSchema();
-  lf.testing.util.assertThrowsSyntaxError(function() {
+  // 535: Schema is already finalized.
+  lf.testing.util.assertThrowsError(535, function() {
     ds.createTable('NewTable');
   });
 }
 
 function testThrows_CrossColumnPkWithAutoInc() {
   var ds = lf.schema.create('hr', 1);
-  lf.testing.util.assertThrowsSyntaxError(function() {
+  // 505: Can not use autoIncrement with a cross-column primary key.
+  lf.testing.util.assertThrowsError(505, function() {
     ds.createTable('Employee').
         addColumn('id1', lf.Type.INTEGER).
         addColumn('id2', lf.Type.INTEGER).
@@ -406,7 +418,8 @@ function testThrows_CrossColumnPkWithAutoInc() {
 
 function testThrows_NonIntegerPkWithAutoInc() {
   var ds = lf.schema.create('hr', 1);
-  lf.testing.util.assertThrowsSyntaxError(function() {
+  // 504: Can not use autoIncrement with a non-integer primary key.
+  lf.testing.util.assertThrowsError(504, function() {
     ds.createTable('Employee').
         addColumn('id', lf.Type.STRING).
         addPrimaryKey([{'name': 'id', 'autoIncrement': true}]);
@@ -420,7 +433,8 @@ function testThrows_NonIntegerPkWithAutoInc() {
  */
 function testThrows_CrossColumnNullableIndex() {
   var tableBuilder1 = lf.schema.create('hr', 1);
-  lf.testing.util.assertThrowsSyntaxError(function() {
+  // 507: Cross-column index {0} refers to nullable columns: {1}.
+  lf.testing.util.assertThrowsError(507, function() {
     tableBuilder1.createTable('Employee').
         addColumn('id1', lf.Type.STRING).
         addColumn('id2', lf.Type.STRING).
@@ -429,7 +443,7 @@ function testThrows_CrossColumnNullableIndex() {
   });
 
   var tableBuilder2 = lf.schema.create('hr', 1);
-  lf.testing.util.assertThrowsSyntaxError(function() {
+  lf.testing.util.assertThrowsError(507, function() {
     tableBuilder2.createTable('Employee').
         addColumn('id1', lf.Type.STRING).
         addColumn('id2', lf.Type.STRING).
@@ -473,14 +487,15 @@ function testSchemaCorrectness() {
 }
 
 function testThrows_NonIndexableColumns() {
-  lf.testing.util.assertThrowsSyntaxError(function() {
+  // 509: Attempt to index table {0} on non-indexable column {1}.
+  lf.testing.util.assertThrowsError(509, function() {
     var ds = lf.schema.create('d1', 1);
     ds.createTable('NewTable').
         addColumn('object', lf.Type.OBJECT).
         addPrimaryKey(['object']);
   });
 
-  lf.testing.util.assertThrowsSyntaxError(function() {
+  lf.testing.util.assertThrowsError(509, function() {
     var ds = lf.schema.create('d2', 1);
     ds.createTable('NameTable').
         addColumn('arraybuffer', lf.Type.ARRAY_BUFFER).
@@ -489,31 +504,32 @@ function testThrows_NonIndexableColumns() {
 }
 
 function testThrows_IllegalName() {
-  lf.testing.util.assertThrowsSyntaxError(function() {
+  // 502: Naming rule violation: {0}.
+  lf.testing.util.assertThrowsError(502, function() {
     var ds = lf.schema.create('d1', 1);
     ds.createTable('#NewTable');
   });
 
-  lf.testing.util.assertThrowsSyntaxError(function() {
+  lf.testing.util.assertThrowsError(502, function() {
     var ds = lf.schema.create('d2', 1);
     ds.createTable('NameTable').
         addColumn('22arraybuffer', lf.Type.ARRAY_BUFFER);
   });
 
-  lf.testing.util.assertThrowsSyntaxError(function() {
+  lf.testing.util.assertThrowsError(502, function() {
     var ds = lf.schema.create('d3', 1);
     ds.createTable('NameTable').
         addColumn('_obj_#ect', lf.Type.OBJECT);
   });
 
-  lf.testing.util.assertThrowsSyntaxError(function() {
+  lf.testing.util.assertThrowsError(502, function() {
     var ds = lf.schema.create('d4', 1);
     ds.createTable('NameTable').
         addColumn('name', lf.Type.STRING).
         addIndex('idx.name', ['name']);
   });
 
-  lf.testing.util.assertThrowsSyntaxError(function() {
+  lf.testing.util.assertThrowsError(502, function() {
     var ds = lf.schema.create('d4', 1);
     ds.createTable('NameTable').
         addColumn('name', lf.Type.STRING).

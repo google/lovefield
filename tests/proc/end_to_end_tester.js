@@ -18,10 +18,7 @@ goog.setTestOnly();
 goog.provide('lf.testing.EndToEndTester');
 
 goog.require('goog.Promise');
-goog.require('goog.array');
-goog.require('goog.object');
 goog.require('goog.testing.jsunit');
-goog.require('lf.Exception');
 goog.require('lf.bind');
 goog.require('lf.schema.DataStoreType');
 goog.require('lf.testing.hrSchema.JobDataGenerator');
@@ -196,7 +193,8 @@ lf.testing.EndToEndTester.prototype.testInsert_CrossColumnPrimaryKey =
       }).then(
       fail,
       function(e) {
-        assertEquals(lf.Exception.Type.CONSTRAINT, e.name);
+        // 201: Duplicate keys are not allowed.
+        assertEquals(201, e.code);
         lf.testing.EndToEndTester.markDone_(
                 'testInsert_CrossColumnPrimaryKey');
       });
@@ -232,7 +230,8 @@ lf.testing.EndToEndTester.prototype.testInsert_CrossColumnUniqueKey =
       }).then(
       fail,
       function(e) {
-        assertEquals(lf.Exception.Type.CONSTRAINT, e.name);
+        // 201: Duplicate keys are not allowed.
+        assertEquals(201, e.code);
         lf.testing.EndToEndTester.markDone_(
                 'testInsert_CrossColumnUniqueKey');
       });
@@ -528,7 +527,8 @@ lf.testing.EndToEndTester.prototype.testDelete_UnboundPredicateReject =
       this.db_.delete().from(this.j_).where(this.j_.id.eq(lf.bind(1)));
 
   return queryBuilder.exec().then(fail, function(e) {
-    assertEquals(lf.Exception.Type.SYNTAX, e.name);
+    // 501: Value is not bounded.
+    assertEquals(501, e.code);
     lf.testing.EndToEndTester.markDone_('testDelete_UnboundPredicateReject');
   });
 };

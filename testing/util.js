@@ -17,7 +17,6 @@
 goog.provide('lf.testing.util');
 
 goog.require('goog.Promise');
-goog.require('lf.Exception');
 goog.require('lf.TransactionType');
 goog.require('lf.cache.Journal');
 goog.require('lf.service');
@@ -59,36 +58,18 @@ lf.testing.util.sequentiallyRun = function(functions) {
 
 /**
  * Asserts that the given exception type is thrown.
+ * @param {number} exceptionCode The expected exception type.
  * @param {!function()} fn The function to be checked.
- * @param {lf.Exception.Type} exceptionType The expected exception type.
  */
-lf.testing.util.assertThrowsError = function(fn, exceptionType) {
+lf.testing.util.assertThrowsError = function(exceptionCode, fn) {
   var thrown = false;
   try {
     fn.call();
   } catch (e) {
     thrown = true;
-    assertEquals(e.name, exceptionType);
+    assertEquals(exceptionCode, e.code);
   }
   assertTrue(thrown);
-};
-
-
-/**
- * Asserts that an lf.Exception.Type.SYNTAX error is thrown.
- * @param {!function()} fn The function to be checked.
- */
-lf.testing.util.assertThrowsSyntaxError = function(fn) {
-  lf.testing.util.assertThrowsError(fn, lf.Exception.Type.SYNTAX);
-};
-
-
-/**
- * Asserts that an lf.Exception.Type.CONTSTRAINT error is thrown.
- * @param {!function()} fn The function to be checked.
- */
-lf.testing.util.assertThrowsConstraintError = function(fn) {
-  lf.testing.util.assertThrowsError(fn, lf.Exception.Type.CONSTRAINT);
 };
 
 

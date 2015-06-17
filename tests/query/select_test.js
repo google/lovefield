@@ -19,7 +19,6 @@ goog.require('goog.Promise');
 goog.require('goog.testing.AsyncTestCase');
 goog.require('goog.testing.jsunit');
 goog.require('hr.db');
-goog.require('lf.Exception');
 goog.require('lf.bind');
 goog.require('lf.fn');
 goog.require('lf.op');
@@ -73,7 +72,8 @@ function testExec_ThrowsInvalidProjectionList() {
   query.from(e).exec().then(
       fail,
       function(e) {
-        assertEquals(e.name, lf.Exception.Type.SYNTAX);
+        // 526: Invalid projection list: mixing aggregated with non-aggregated.
+        assertEquals(526, e.code);
         asyncTestCase.continueTesting();
       });
 }
@@ -92,7 +92,8 @@ function testExec_ThrowsInvalidProjectionList_GroupBy() {
   query.from(e).groupBy(e.jobId).exec().then(
       fail,
       function(e) {
-        assertEquals(e.name, lf.Exception.Type.SYNTAX);
+        // 525: Invalid projection list or groupBy columns.
+        assertEquals(525, e.code);
         asyncTestCase.continueTesting();
       });
 }
@@ -110,7 +111,8 @@ function testExec_ThrowsGroupByNonIndexableColumn() {
   query.from(e).groupBy(e.photo).exec().then(
       fail,
       function(e) {
-        assertEquals(e.name, lf.Exception.Type.SYNTAX);
+        // 525: Invalid projection list or groupBy columns.
+        assertEquals(525, e.code);
         asyncTestCase.continueTesting();
       });
 }
@@ -173,7 +175,8 @@ function testExec_UnboundPredicateThrows() {
   var query = new lf.query.SelectBuilder(hr.db.getGlobal(), [emp.jobId]);
   query.from(emp).where(emp.jobId.eq(lf.bind(0))).exec().then(fail,
       function(e) {
-        assertEquals(lf.Exception.Type.SYNTAX, e.name);
+        // 501: Value is not bounded.
+        assertEquals(501, e.code);
         asyncTestCase.continueTesting();
       });
 }
@@ -191,7 +194,8 @@ function testFrom_ThrowsAlreadyCalled() {
     query.from(jobTable).from(employeeTable);
   };
 
-  lf.testing.util.assertThrowsSyntaxError(buildQuery);
+  // 515: from() has already been called.
+  lf.testing.util.assertThrowsError(515, buildQuery);
 }
 
 
@@ -207,7 +211,8 @@ function testWhere_ThrowsAlreadyCalled() {
     query.where(predicate).where(predicate);
   };
 
-  lf.testing.util.assertThrowsSyntaxError(buildQuery);
+  // 516: where() has already been called.
+  lf.testing.util.assertThrowsError(516, buildQuery);
 }
 
 
@@ -222,7 +227,8 @@ function testGroupBy_ThrowsAlreadyCalled() {
     query.groupBy(employeeTable.id).groupBy(employeeTable.jobId);
   };
 
-  lf.testing.util.assertThrowsSyntaxError(buildQuery);
+  // 530: groupBy() has already been called.
+  lf.testing.util.assertThrowsError(530, buildQuery);
 }
 
 
@@ -231,6 +237,7 @@ function testGroupBy_ThrowsAlreadyCalled() {
  */
 function testLimit_ThrowsAlreadyCalled() {
   var query = new lf.query.SelectBuilder(hr.db.getGlobal(), []);
+  var query2 = new lf.query.SelectBuilder(hr.db.getGlobal(), []);
   var emp = db.getSchema().getEmployee();
 
   var buildQuery = function() {
@@ -238,11 +245,12 @@ function testLimit_ThrowsAlreadyCalled() {
   };
 
   var buildQuery2 = function() {
-    query.from(emp).limit(lf.bind(0)).limit(lf.bind(1));
+    query2.from(emp).limit(lf.bind(0)).limit(lf.bind(1));
   };
 
-  lf.testing.util.assertThrowsSyntaxError(buildQuery);
-  lf.testing.util.assertThrowsSyntaxError(buildQuery2);
+  // 528: limit() has already been called.
+  lf.testing.util.assertThrowsError(528, buildQuery);
+  lf.testing.util.assertThrowsError(528, buildQuery2);
 }
 
 
@@ -256,7 +264,9 @@ function testLimit_ThrowsInvalidParameter() {
   var buildQuery = function() {
     query.from(employeeTable).limit(-100);
   };
-  lf.testing.util.assertThrowsSyntaxError(buildQuery);
+
+  // 531: Number of rows must not be negative for limit/skip.
+  lf.testing.util.assertThrowsError(531, buildQuery);
 }
 
 
@@ -265,6 +275,7 @@ function testLimit_ThrowsInvalidParameter() {
  */
 function testSkip_ThrowsAlreadyCalled() {
   var query = new lf.query.SelectBuilder(hr.db.getGlobal(), []);
+  var query2 = new lf.query.SelectBuilder(hr.db.getGlobal(), []);
   var emp = db.getSchema().getEmployee();
 
   var buildQuery = function() {
@@ -272,11 +283,12 @@ function testSkip_ThrowsAlreadyCalled() {
   };
 
   var buildQuery2 = function() {
-    query.from(emp).skip(lf.bind(0)).skip(lf.bind(1));
+    query2.from(emp).skip(lf.bind(0)).skip(lf.bind(1));
   };
 
-  lf.testing.util.assertThrowsSyntaxError(buildQuery);
-  lf.testing.util.assertThrowsSyntaxError(buildQuery2);
+  // 529: skip() has already been called.
+  lf.testing.util.assertThrowsError(529, buildQuery);
+  lf.testing.util.assertThrowsError(529, buildQuery2);
 }
 
 
@@ -290,7 +302,9 @@ function testSkip_ThrowsInvalidParameter() {
   var buildQuery = function() {
     query.from(employeeTable).skip(-100);
   };
-  lf.testing.util.assertThrowsSyntaxError(buildQuery);
+
+  // 531: Number of rows must not be negative for limit/skip.
+  lf.testing.util.assertThrowsError(531, buildQuery);
 }
 
 
@@ -304,7 +318,8 @@ function testProject_ThrowsInvalidColumns() {
     ]);
     query.from(job);
   };
-  lf.testing.util.assertThrowsSyntaxError(buildQuery1);
+  // 524: Invalid usage of lf.fn.distinct().
+  lf.testing.util.assertThrowsError(524, buildQuery1);
 
   var buildQuery2 = function() {
     var query = new lf.query.SelectBuilder(hr.db.getGlobal(), [
@@ -313,7 +328,8 @@ function testProject_ThrowsInvalidColumns() {
     ]);
     query.from(job);
   };
-  lf.testing.util.assertThrowsSyntaxError(buildQuery2);
+  // 524: Invalid usage of lf.fn.distinct().
+  lf.testing.util.assertThrowsError(524, buildQuery2);
 }
 
 
@@ -432,7 +448,8 @@ function checkAggregators(invalidAggregators, validAggregators, table) {
       return new lf.query.SelectBuilder(
           hr.db.getGlobal(), [aggregator]).from(table);
     };
-    lf.testing.util.assertThrowsSyntaxError(buildQuery);
+    // 527: Invalid aggregation detected: {0}.
+    lf.testing.util.assertThrowsError(527, buildQuery);
   });
 
   validAggregators.forEach(function(aggregator) {
@@ -485,7 +502,8 @@ function testInvalidBindingRejects() {
 
   asyncTestCase.waitForAsync('testInvalidBindingRejects');
   query.exec().then(fail, function(e) {
-    assertEquals(lf.Exception.Type.SYNTAX, e.name);
+    // 523: Binding parameters of limit/skip without providing values.
+    assertEquals(523, e.code);
     asyncTestCase.continueTesting();
   });
 }

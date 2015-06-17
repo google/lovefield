@@ -15,13 +15,9 @@
  * limitations under the License.
  */
 goog.setTestOnly();
-goog.require('goog.Promise');
-goog.require('goog.array');
-goog.require('goog.object');
 goog.require('goog.testing.AsyncTestCase');
 goog.require('goog.testing.jsunit');
 goog.require('hr.db');
-goog.require('lf.Exception');
 goog.require('lf.fn');
 goog.require('lf.schema.DataStoreType');
 goog.require('lf.testing.hrSchema.JobDataGenerator');
@@ -134,9 +130,10 @@ function execFn() { tx.exec([db.select().from(e)]); }
  *  - Attempting to rollback the transaction.
  */
 function testThrows_StateCreated() {
-  assertThrowsTransactionError(attachFn);
-  assertThrowsTransactionError(commitFn);
-  assertThrowsTransactionError(rollbackFn);
+  // 107: Invalid transaction state transition: {0} -> {1}.
+  lf.testing.util.assertThrowsError(107, attachFn);
+  lf.testing.util.assertThrowsError(107, commitFn);
+  lf.testing.util.assertThrowsError(107, rollbackFn);
 }
 
 
@@ -147,14 +144,15 @@ function testThrows_StateCreated() {
 function testThrows_StateExecutingQuery() {
   asyncTestCase.waitForAsync('testThrows_StateExecutingQuery');
 
+  // 107: Invalid transaction state transition: {0} -> {1}.
   tx.begin([j, e]).then(function() {
     tx.attach(db.select().from(e));
 
-    assertThrowsTransactionError(attachFn);
-    assertThrowsTransactionError(beginFn);
-    assertThrowsTransactionError(commitFn);
-    assertThrowsTransactionError(rollbackFn);
-    assertThrowsTransactionError(execFn);
+    lf.testing.util.assertThrowsError(107, attachFn);
+    lf.testing.util.assertThrowsError(107, beginFn);
+    lf.testing.util.assertThrowsError(107, commitFn);
+    lf.testing.util.assertThrowsError(107, rollbackFn);
+    lf.testing.util.assertThrowsError(107, execFn);
     asyncTestCase.continueTesting();
   }, fail);
 }
@@ -167,13 +165,14 @@ function testThrows_StateExecutingQuery() {
 function testThrows_StateFinalized() {
   asyncTestCase.waitForAsync('testThrows_StateFinalized');
 
+  // 107: Invalid transaction state transition: {0} -> {1}.
   tx.begin([e]).then(function() {
     var whenDone = tx.commit();
-    assertThrowsTransactionError(beginFn);
-    assertThrowsTransactionError(attachFn);
-    assertThrowsTransactionError(commitFn);
-    assertThrowsTransactionError(rollbackFn);
-    assertThrowsTransactionError(execFn);
+    lf.testing.util.assertThrowsError(107, beginFn);
+    lf.testing.util.assertThrowsError(107, attachFn);
+    lf.testing.util.assertThrowsError(107, commitFn);
+    lf.testing.util.assertThrowsError(107, rollbackFn);
+    lf.testing.util.assertThrowsError(107, execFn);
 
     return whenDone;
   }).then(function() {
@@ -189,12 +188,12 @@ function testThrows_StateFinalized() {
 function testThrows_StateAcquiringScope() {
   asyncTestCase.waitForAsync('testThrows_StateAcquiringScope');
   var whenDone = tx.begin([e]);
-
-  assertThrowsTransactionError(beginFn);
-  assertThrowsTransactionError(attachFn);
-  assertThrowsTransactionError(commitFn);
-  assertThrowsTransactionError(rollbackFn);
-  assertThrowsTransactionError(execFn);
+  // 107: Invalid transaction state transition: {0} -> {1}.
+  lf.testing.util.assertThrowsError(107, beginFn);
+  lf.testing.util.assertThrowsError(107, attachFn);
+  lf.testing.util.assertThrowsError(107, commitFn);
+  lf.testing.util.assertThrowsError(107, rollbackFn);
+  lf.testing.util.assertThrowsError(107, execFn);
 
   whenDone.then(function() {
     asyncTestCase.continueTesting();
@@ -209,12 +208,12 @@ function testThrows_StateAcquiringScope() {
 function testThrows_StateExecutingAndCommitting() {
   asyncTestCase.waitForAsync('testThrows_StateExecutingAndCommitting');
   var whenDone = tx.exec([db.select().from(e)]);
-
-  assertThrowsTransactionError(beginFn);
-  assertThrowsTransactionError(attachFn);
-  assertThrowsTransactionError(commitFn);
-  assertThrowsTransactionError(rollbackFn);
-  assertThrowsTransactionError(execFn);
+  // 107: Invalid transaction state transition: {0} -> {1}.
+  lf.testing.util.assertThrowsError(107, beginFn);
+  lf.testing.util.assertThrowsError(107, attachFn);
+  lf.testing.util.assertThrowsError(107, commitFn);
+  lf.testing.util.assertThrowsError(107, rollbackFn);
+  lf.testing.util.assertThrowsError(107, execFn);
 
   whenDone.then(function() {
     asyncTestCase.continueTesting();
@@ -334,13 +333,15 @@ function testAttach_Error() {
     var q4 = db.insert().into(e).values([sampleEmployees[0]]);
     return tx.attach(q4);
   }).thenCatch(function(e) {
-    assertEquals(lf.Exception.Type.CONSTRAINT, e.name);
+    // 201: Duplicate keys are not allowed.
+    assertEquals(201, e.code);
 
     // Checking that the transaction has been finalized.
-    assertThrowsTransactionError(attachFn);
-    assertThrowsTransactionError(commitFn);
-    assertThrowsTransactionError(rollbackFn);
-    assertThrowsTransactionError(beginFn);
+    // 107: Invalid transaction state transition: {0} -> {1}.
+    lf.testing.util.assertThrowsError(107, attachFn);
+    lf.testing.util.assertThrowsError(107, commitFn);
+    lf.testing.util.assertThrowsError(107, rollbackFn);
+    lf.testing.util.assertThrowsError(107, beginFn);
 
     return lf.testing.util.selectAll(global, j);
   }).then(function(results) {
@@ -388,10 +389,11 @@ function testRollback() {
     return tx.rollback();
   }).then(function() {
     // Checking that the transaction has been finalized.
-    assertThrowsTransactionError(attachFn);
-    assertThrowsTransactionError(commitFn);
-    assertThrowsTransactionError(rollbackFn);
-    assertThrowsTransactionError(beginFn);
+    // 107: Invalid transaction state transition: {0} -> {1}.
+    lf.testing.util.assertThrowsError(107, attachFn);
+    lf.testing.util.assertThrowsError(107, commitFn);
+    lf.testing.util.assertThrowsError(107, rollbackFn);
+    lf.testing.util.assertThrowsError(107, beginFn);
 
     return lf.testing.util.selectAll(global, j);
   }).then(function(results) {
@@ -451,22 +453,4 @@ function testAttach_WithObservers() {
   }).then(function() {
     return tx.commit();
   }, fail);
-}
-
-
-/**
- * Asserts that an lf.Exception.Type.SYNTAX error is thrown.
- * @param {!function()} fn The function to be checked.
- * TODO(dpapad): Modify lf.testing.util.assertThrowsSyntaxError, to be more
- * generic and remove this function.
- */
-function assertThrowsTransactionError(fn) {
-  var thrown = false;
-  try {
-    fn.call();
-  } catch (e) {
-    thrown = true;
-    assertEquals(lf.Exception.Type.TRANSACTION, e.name);
-  }
-  assertTrue(thrown);
 }

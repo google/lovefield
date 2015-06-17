@@ -18,7 +18,6 @@ goog.setTestOnly();
 goog.require('goog.testing.AsyncTestCase');
 goog.require('goog.testing.jsunit');
 goog.require('lf.Binder');
-goog.require('lf.Exception');
 goog.require('lf.bind');
 goog.require('lf.eval.Type');
 goog.require('lf.pred.JoinPredicate');
@@ -321,7 +320,8 @@ function testUnboundPredicate() {
   try {
     p.bind([8888]);
   } catch (e) {
-    assertEquals(lf.Exception.Type.SYNTAX, e.name);
+    // 510: Cannot bind to given array: out of range.
+    assertEquals(510, e.code);
   }
 }
 

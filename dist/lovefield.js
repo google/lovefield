@@ -3865,11 +3865,15 @@ lf.cache.InMemoryUpdater.prototype.updateTableIndicesForRow = function(table, mo
   });
 };
 
-lf.Exception = function(name, message) {
-  this.name = name;
-  this.message = message;
+lf.Exception = function(code, var_args) {
+  this.code = code;
+  this.message = "http://sn.im/2a0j3wn?c=" + code;
+  if (1 < arguments.length) {
+    for (var i = 1;i <= Math.min(4, arguments.length - 1);++i) {
+      this.message += "&p" + (i - 1) + "=" + goog.string.urlEncode(arguments[i].toString().slice(0, 64));
+    }
+  }
 };
-lf.Exception.Type = {BLOCKING:"BlockingError", CONSTRAINT:"ConstraintError", DATA:"DataError", FORCED:"ForcedError", NOT_FOUND:"NotFoundError", NOT_SUPPORTED:"NotSupportedError", QUOTA_EXCEEDED:"QuotaExceededError", SYNTAX:"SyntaxError", SCOPE_ERROR:"ScopeError", TIMEOUT:"TimeoutError", TOO_MANY_ROWS:"TooManyRowsError", TRANSACTION:"TransactionError", UNKNOWN:"UnknownError", UNINITIALIZED:"UninitializedError", VERSION:"VersionError"};
 
 lf.cache.ConstraintChecker = function(global) {
   this.indexStore_ = global.getService(lf.service.INDEX_STORE);
@@ -3887,7 +3891,7 @@ lf.cache.ConstraintChecker.prototype.checkNotNullable = function(table, rows) {
   rows.forEach(function(row) {
     notNullable.forEach(function(column) {
       if (goog.isNull(row.payload()[column.getName()])) {
-        throw new lf.Exception(lf.Exception.Type.CONSTRAINT, "Attempted to insert NULL value to non-nullable field " + column.getNormalizedName());
+        throw new lf.Exception(202, column.getNormalizedName());
       }
     }, this);
   }, this);
@@ -4091,7 +4095,7 @@ lf.cache.Journal.prototype.rollback = function() {
 };
 lf.cache.Journal.prototype.checkScope_ = function(tableSchema) {
   if (!this.scope_.containsKey(tableSchema.getName())) {
-    throw new lf.Exception(lf.Exception.Type.SCOPE_ERROR, tableSchema.getName() + " is not in the journal's scope.");
+    throw new lf.Exception(106, tableSchema.getName());
   }
 };
 
@@ -4598,7 +4602,7 @@ lf.pred.ValuePredicate.prototype.checkBinding_ = function() {
     return val instanceof lf.Binder;
   }) : !0);
   if (!bound) {
-    throw new lf.Exception(lf.Exception.Type.SYNTAX, "Value is not bounded");
+    throw new lf.Exception(501);
   }
 };
 lf.pred.ValuePredicate.prototype.eval = function(relation) {
@@ -4614,7 +4618,7 @@ lf.pred.ValuePredicate.prototype.eval = function(relation) {
 lf.pred.ValuePredicate.prototype.bind = function(values) {
   var checkIndexWithinRange = function(index) {
     if (values.length <= index) {
-      throw new lf.Exception(lf.Exception.Type.SYNTAX, "Cannot bind to given array: out of range.");
+      throw new lf.Exception(510);
     }
   };
   if (this.binder_ instanceof lf.Binder) {
@@ -4890,7 +4894,7 @@ lf.backstore.FirebaseRawBackStore.prototype.getRawDBInstance = function() {
   return this.db_;
 };
 lf.backstore.FirebaseRawBackStore.prototype.getRawTransaction = function() {
-  throw new lf.Exception(lf.Exception.Type.NOT_SUPPORTED, "Firebase does not have raw transaction.");
+  throw new lf.Exception(51);
 };
 lf.backstore.FirebaseRawBackStore.getValue = function(ref, path) {
   var resolver = goog.Promise.withResolver(), valRef = ref;
@@ -4981,7 +4985,7 @@ lf.backstore.FirebaseRawBackStore.prototype.renameTableColumn = function(tableNa
 };
 goog.exportProperty(lf.backstore.FirebaseRawBackStore.prototype, "renameTableColumn", lf.backstore.FirebaseRawBackStore.prototype.renameTableColumn);
 lf.backstore.FirebaseRawBackStore.prototype.createRow = function() {
-  throw new lf.Exception(lf.Exception.Type.NOT_SUPPORTED, "Firebase does not have raw transaction.");
+  throw new lf.Exception(51);
 };
 goog.exportProperty(lf.backstore.FirebaseRawBackStore.prototype, "createRow", lf.backstore.FirebaseRawBackStore.prototype.createRow);
 lf.backstore.FirebaseRawBackStore.prototype.getVersion = function() {
@@ -5259,7 +5263,7 @@ lf.backstore.Firebase.prototype.getTableInternal = function(tableName) {
   if (!goog.isNull(table)) {
     return table;
   }
-  throw new lf.Exception(lf.Exception.Type.DATA, "Table " + tableName + " not found");
+  throw new lf.Exception(101, tableName);
 };
 lf.backstore.Firebase.prototype.getRef = function() {
   return this.db_;
@@ -5531,7 +5535,7 @@ lf.backstore.IndexedDB = function(global, schema) {
 lf.backstore.IndexedDB.prototype.init = function(opt_onUpgrade) {
   var indexedDB = window.indexedDB || window.mozIndexedDB || window.webkitIndexedDB || window.msIndexedDB;
   if (!goog.isDefAndNotNull(indexedDB)) {
-    throw new lf.Exception(lf.Exception.Type.NOT_SUPPORTED, "IndexedDB not supported by platform.");
+    throw new lf.Exception(52);
   }
   var onUpgrade = opt_onUpgrade || function() {
     return goog.Promise.resolve();
@@ -5653,7 +5657,7 @@ lf.backstore.IndexedDB.prototype.close = function() {
   this.db_.close();
 };
 lf.backstore.IndexedDB.prototype.getTableInternal = function() {
-  throw new lf.Exception(lf.Exception.Type.SYNTAX, "IndexedDB tables needs to be acquired from transactions");
+  throw new lf.Exception(511);
 };
 lf.backstore.IndexedDB.prototype.subscribe = function() {
 };
@@ -5728,12 +5732,12 @@ lf.backstore.LocalStorage = function(schema) {
 };
 lf.backstore.LocalStorage.prototype.initSync = function() {
   if (!window.localStorage) {
-    throw new lf.Exception(lf.Exception.Type.NOT_SUPPORTED, "LocalStorage not supported by platform.");
+    throw new lf.Exception(59);
   }
   var versionKey = this.schema_.name() + ".version#", version = window.localStorage.getItem(versionKey);
   if (goog.isDefAndNotNull(version)) {
     if (version != this.schema_.version().toString()) {
-      throw new lf.Exception(lf.Exception.Type.NOT_SUPPORTED, "LocalStorage upgrade logic not implemented.");
+      throw new lf.Exception(60);
     }
     this.loadTables_();
   } else {
@@ -5762,7 +5766,7 @@ lf.backstore.LocalStorage.prototype.loadTables_ = function() {
 };
 lf.backstore.LocalStorage.prototype.getTableInternal = function(tableName) {
   if (!this.tables_.containsKey(tableName)) {
-    throw new lf.Exception(lf.Exception.Type.DATA, "Table " + tableName + " does not exist.");
+    throw new lf.Exception(101, tableName);
   }
   return this.tables_.get(tableName);
 };
@@ -5825,7 +5829,7 @@ lf.backstore.Memory.prototype.init = function() {
 lf.backstore.Memory.prototype.getTableInternal = function(tableName) {
   var table = this.tables_.get(tableName, null);
   if (goog.isNull(table)) {
-    throw new lf.Exception(lf.Exception.Type.DATA, "Table " + tableName + " does not exist.");
+    throw new lf.Exception(101, tableName);
   }
   return table;
 };
@@ -5950,7 +5954,7 @@ lf.backstore.WebSqlRawBackStore.prototype.getRawDBInstance = function() {
 };
 goog.exportProperty(lf.backstore.WebSqlRawBackStore.prototype, "getRawDBInstance", lf.backstore.WebSqlRawBackStore.prototype.getRawDBInstance);
 lf.backstore.WebSqlRawBackStore.prototype.getRawTransaction = function() {
-  throw new lf.Exception(lf.Exception.Type.NOT_SUPPORTED, "Use the raw instance to create transaction instead.");
+  throw new lf.Exception(56);
 };
 goog.exportProperty(lf.backstore.WebSqlRawBackStore.prototype, "getRawTransaction", lf.backstore.WebSqlRawBackStore.prototype.getRawTransaction);
 lf.backstore.WebSqlRawBackStore.prototype.createTx_ = function() {
@@ -6055,7 +6059,7 @@ lf.backstore.WebSql.prototype.getEmptyJournal_ = function() {
 };
 lf.backstore.WebSql.prototype.init = function(opt_onUpgrade) {
   if (!goog.isDefAndNotNull(window.openDatabase)) {
-    throw new lf.Exception(lf.Exception.Type.NOT_SUPPORTED, "WebSql not supported by platform.");
+    throw new lf.Exception(53);
   }
   var onUpgrade = opt_onUpgrade || function() {
     return goog.Promise.resolve();
@@ -6066,7 +6070,7 @@ lf.backstore.WebSql.prototype.init = function(opt_onUpgrade) {
       if (goog.isDefAndNotNull(db)) {
         this.db_ = db, this.checkVersion_(onUpgrade).then(resolve, reject);
       } else {
-        throw new lf.Exception(lf.Exception.Type.NOT_SUPPORTED, "Unable to open database.");
+        throw new lf.Exception(54);
       }
     } catch (e) {
       reject(e);
@@ -6080,7 +6084,7 @@ lf.backstore.WebSql.prototype.checkVersion_ = function(onUpgrade) {
   tx.commit().then(goog.bind(function(results) {
     var version = 0;
     results.rows.length && (version = results.rows.item(0).v);
-    version < this.schema_.version() ? this.onUpgrade_(onUpgrade, version).then(resolver.resolve.bind(resolver)) : version > this.schema_.version() ? resolver.reject(new lf.Exception(lf.Exception.Type.DATA, "Attempt to open a newer database with old code")) : resolver.resolve();
+    version < this.schema_.version() ? this.onUpgrade_(onUpgrade, version).then(resolver.resolve.bind(resolver)) : version > this.schema_.version() ? resolver.reject(new lf.Exception(108)) : resolver.resolve();
   }, this));
   return resolver.promise;
 };
@@ -6088,15 +6092,15 @@ lf.backstore.WebSql.prototype.createTx = function(type, journal) {
   if (goog.isDefAndNotNull(this.db_)) {
     return new lf.backstore.WebSqlTx(this.db_, journal, type);
   }
-  throw new lf.Exception(lf.Exception.Type.DATA, "Attempt to create transaction from uninitialized DB");
+  throw new lf.Exception(2);
 };
 lf.backstore.WebSql.prototype.close = function() {
 };
 lf.backstore.WebSql.prototype.getTableInternal = function() {
-  throw new lf.Exception(lf.Exception.Type.SYNTAX, "WebSQL tables needs to be acquired from transactions");
+  throw new lf.Exception(512);
 };
 lf.backstore.WebSql.prototype.notSupported_ = function() {
-  throw new lf.Exception(lf.Exception.Type.NOT_SUPPORTED, "WebSQL does not support change notification");
+  throw new lf.Exception(55);
 };
 lf.backstore.WebSql.prototype.subscribe = function() {
   this.notSupported_();
@@ -6536,7 +6540,7 @@ lf.index.BTreeNode_.createInternals_ = function(node) {
 lf.index.BTreeNode_.fromData = function(tree, data) {
   var max = lf.index.BTreeNode_.MAX_KEY_LEN_, max = max * max * max;
   if (data.length >= max) {
-    throw new lf.Exception(lf.Exception.Type.TOO_MANY_ROWS, "B-Tree implementation supports at most " + max + " rows.");
+    throw new lf.Exception(6, max);
   }
   var node = lf.index.BTreeNode_.createLeaves_(tree, data);
   return node = lf.index.BTreeNode_.createInternals_(node);
@@ -6640,7 +6644,7 @@ lf.index.BTreeNode_.prototype.insert = function(key, value, opt_replace) {
         return this.values_[pos] = this.tree_.isUniqueKeyOnly() ? value : [value], this;
       }
       if (this.tree_.isUniqueKeyOnly()) {
-        throw new lf.Exception(lf.Exception.Type.CONSTRAINT, "Duplicate key not allowed");
+        throw new lf.Exception(201);
       }
       if (this.values_[pos]) {
         return goog.array.binaryInsert(this.values_[pos], value), this;
@@ -6970,7 +6974,7 @@ lf.index.NullableIndex.deserialize = function(deserializeFn, rows) {
     }
   }
   if (-1 == index) {
-    throw new lf.Exception(lf.Exception.Type.DATA, "Data corruption detected");
+    throw new lf.Exception(102);
   }
   var nulls = rows[index].payload(), newRows = rows.slice(0);
   newRows.splice(index, 1);
@@ -6990,7 +6994,7 @@ lf.index.RowId.prototype.getName = function() {
 };
 lf.index.RowId.prototype.add = function(key) {
   if ("number" != typeof key) {
-    throw new lf.Exception(lf.Exception.Type.DATA, "Row id must be numbers");
+    throw new lf.Exception(103);
   }
   this.rows_.add(key);
 };
@@ -7169,7 +7173,7 @@ lf.index.AATree.prototype.insert_ = function(node, key, value) {
     if (favor == lf.index.Favor.LHS) {
       node.right = this.insert_(node.right, key, value);
     } else {
-      throw new lf.Exception(lf.Exception.Type.CONSTRAINT, "AA index does not support duplicate keys");
+      throw new lf.Exception(201);
     }
   }
   var ret = this.skew_(node);
@@ -8546,7 +8550,7 @@ lf.query.parseSearchCondition_ = function(pred, stripValueInfo) {
   if (pred instanceof lf.pred.JoinPredicate) {
     return lf.query.joinPredicateToSql_(pred);
   }
-  throw new lf.Exception(lf.Exception.Type.NOT_SUPPORTED, "toSql does not support predicate type: " + typeof pred);
+  throw new lf.Exception(57, typeof pred);
 };
 lf.query.predicateToSql_ = function(pred, stripValueInfo) {
   var whereClause = lf.query.parseSearchCondition_(pred, stripValueInfo);
@@ -8602,7 +8606,7 @@ lf.query.toSql = function(builder, opt_stripValueInfo) {
   if (query instanceof lf.query.SelectContext) {
     return lf.query.selectToSql_(query, stripValueInfo);
   }
-  throw new lf.Exception(lf.Exception.Type.NOT_SUPPORTED, "toSql not implemented for " + typeof query);
+  throw new lf.Exception(58, typeof query);
 };
 
 lf.query.BaseBuilder = function(global, context) {
@@ -8680,18 +8684,18 @@ lf.query.DeleteBuilder.prototype.where = function(predicate) {
 goog.exportProperty(lf.query.DeleteBuilder.prototype, "where", lf.query.DeleteBuilder.prototype.where);
 lf.query.DeleteBuilder.prototype.assertFromPreconditions_ = function() {
   if (goog.isDefAndNotNull(this.query.from)) {
-    throw new lf.Exception(lf.Exception.Type.SYNTAX, "from() has already been called.");
+    throw new lf.Exception(515);
   }
 };
 lf.query.DeleteBuilder.prototype.assertWherePreconditions_ = function() {
   if (goog.isDefAndNotNull(this.query.where)) {
-    throw new lf.Exception(lf.Exception.Type.SYNTAX, "where() has already been called.");
+    throw new lf.Exception(516);
   }
 };
 lf.query.DeleteBuilder.prototype.assertExecPreconditions = function() {
   lf.query.DeleteBuilder.superClass_.assertExecPreconditions.call(this);
   if (!goog.isDefAndNotNull(this.query.from)) {
-    throw new lf.Exception(lf.Exception.Type.SYNTAX, "Invalid usage of delete()");
+    throw new lf.Exception(517);
   }
 };
 
@@ -8705,10 +8709,10 @@ lf.query.InsertBuilder.prototype.assertExecPreconditions = function() {
   lf.query.InsertBuilder.superClass_.assertExecPreconditions.call(this);
   var context = this.query;
   if (!goog.isDefAndNotNull(context.into) || !goog.isDefAndNotNull(context.values)) {
-    throw new lf.Exception(lf.Exception.Type.SYNTAX, "Invalid usage of insert()");
+    throw new lf.Exception(518);
   }
   if (context.allowReplace && goog.isNull(context.into.getConstraint().getPrimaryKey())) {
-    throw new lf.Exception(lf.Exception.Type.SYNTAX, "Attempted to insert or replace in a table with no primary key.");
+    throw new lf.Exception(519);
   }
 };
 lf.query.InsertBuilder.prototype.into = function(table) {
@@ -8727,12 +8731,12 @@ lf.query.InsertBuilder.prototype.values = function(rows) {
 goog.exportProperty(lf.query.InsertBuilder.prototype, "values", lf.query.InsertBuilder.prototype.values);
 lf.query.InsertBuilder.prototype.assertIntoPreconditions_ = function() {
   if (goog.isDefAndNotNull(this.query.into)) {
-    throw new lf.Exception(lf.Exception.Type.SYNTAX, "into() has already been called.");
+    throw new lf.Exception(520);
   }
 };
 lf.query.InsertBuilder.prototype.assertValuesPreconditions_ = function() {
   if (goog.isDefAndNotNull(this.query.values)) {
-    throw new lf.Exception(lf.Exception.Type.SYNTAX, "values() has already been called.");
+    throw new lf.Exception(521);
   }
 };
 
@@ -8773,10 +8777,10 @@ lf.query.SelectBuilder.prototype.assertExecPreconditions = function() {
   lf.query.SelectBuilder.superClass_.assertExecPreconditions.call(this);
   var context = this.query;
   if (!goog.isDefAndNotNull(context.from)) {
-    throw new lf.Exception(lf.Exception.Type.SYNTAX, "Invalid usage of select()");
+    throw new lf.Exception(522);
   }
   if (goog.isDef(context.limitBinder) && !goog.isDef(context.limit) || goog.isDef(context.skipBinder) && !goog.isDef(context.skip)) {
-    throw new lf.Exception(lf.Exception.Type.SYNTAX, "Binding parameters of limit/skip without providing values");
+    throw new lf.Exception(523);
   }
   this.checkProjectionList_();
 };
@@ -8785,7 +8789,7 @@ lf.query.SelectBuilder.prototype.checkDistinctColumn_ = function() {
     return column instanceof lf.fn.AggregatedColumn && column.aggregatorType == lf.fn.Type.DISTINCT;
   }, this), isValidCombination = 0 == distinctColumns.length || 1 == distinctColumns.length && 1 == this.query.columns.length;
   if (!isValidCombination) {
-    throw new lf.Exception(lf.Exception.Type.SYNTAX, "Invalid usage of lf.fn.distinct()");
+    throw new lf.Exception(524);
   }
 };
 lf.query.SelectBuilder.prototype.checkProjectionList_ = function() {
@@ -8811,7 +8815,7 @@ lf.query.SelectBuilder.prototype.checkGroupByColumns_ = function() {
     }));
   }
   if (isInvalid) {
-    throw new lf.Exception(lf.Exception.Type.SYNTAX, "Invalid projection list or groupBy columns");
+    throw new lf.Exception(525);
   }
 };
 lf.query.SelectBuilder.prototype.checkProjectionListNotMixed_ = function() {
@@ -8821,30 +8825,20 @@ lf.query.SelectBuilder.prototype.checkProjectionListNotMixed_ = function() {
     return !(column instanceof lf.fn.AggregatedColumn);
   }, this) || 0 == this.query.columns.length;
   if (aggregatedColumnsExist && nonAggregatedColumnsExist) {
-    throw new lf.Exception(lf.Exception.Type.SYNTAX, "Invalid projection list, aggregated and non-aggregated can't be mixed.");
+    throw new lf.Exception(526);
   }
 };
 lf.query.SelectBuilder.prototype.checkAggregations_ = function() {
   this.query.columns.forEach(function(column) {
     var isValidAggregation = !(column instanceof lf.fn.AggregatedColumn) || lf.query.SelectBuilder.isAggregationValid_(column.aggregatorType, column.getType());
     if (!isValidAggregation) {
-      throw new lf.Exception(lf.Exception.Type.SYNTAX, "Invalid aggregation detected for" + column.getNormalizedName());
+      throw new lf.Exception(527, column.getNormalizedName());
     }
   }, this);
 };
-lf.query.SelectBuilder.prototype.assertNotAlreadyCalled_ = function(field, name) {
-  if (goog.isDefAndNotNull(field)) {
-    throw new lf.Exception(lf.Exception.Type.SYNTAX, name + "() has already been called.");
-  }
-};
-lf.query.SelectBuilder.prototype.assertNotNegative_ = function(numberOfRows, name) {
-  if (0 > numberOfRows) {
-    throw new lf.Exception(lf.Exception.Type.SYNTAX, name + "() does not accept negative values");
-  }
-};
 lf.query.SelectBuilder.prototype.from = function(var_args) {
   if (this.fromAlreadyCalled_) {
-    throw new lf.Exception(lf.Exception.Type.SYNTAX, "from() has already been called.");
+    throw new lf.Exception(515);
   }
   this.fromAlreadyCalled_ = !0;
   goog.isDefAndNotNull(this.query.from) || (this.query.from = []);
@@ -8854,7 +8848,7 @@ lf.query.SelectBuilder.prototype.from = function(var_args) {
 goog.exportProperty(lf.query.SelectBuilder.prototype, "from", lf.query.SelectBuilder.prototype.from);
 lf.query.SelectBuilder.prototype.where = function(predicate) {
   if (this.whereAlreadyCalled_) {
-    throw new lf.Exception(lf.Exception.Type.SYNTAX, "where() has already been called.");
+    throw new lf.Exception(516);
   }
   this.whereAlreadyCalled_ = !0;
   this.augmentWhereClause_(predicate);
@@ -8877,18 +8871,36 @@ lf.query.SelectBuilder.prototype.innerJoin = function(table, predicate) {
 };
 goog.exportProperty(lf.query.SelectBuilder.prototype, "innerJoin", lf.query.SelectBuilder.prototype.innerJoin);
 lf.query.SelectBuilder.prototype.leftOuterJoin = function() {
-  throw new lf.Exception(lf.Exception.Type.NOT_SUPPORTED, "Not implemented yet");
+  throw new lf.Exception(60);
 };
 goog.exportProperty(lf.query.SelectBuilder.prototype, "leftOuterJoin", lf.query.SelectBuilder.prototype.leftOuterJoin);
 lf.query.SelectBuilder.prototype.limit = function(numberOfRows) {
-  this.assertNotAlreadyCalled_(this.query.limit || this.query.limitBinder, "limit");
-  numberOfRows instanceof lf.Binder ? this.query.limitBinder = numberOfRows : (this.assertNotNegative_(numberOfRows, "limit"), this.query.limit = numberOfRows);
+  if (goog.isDefAndNotNull(this.query.limit || this.query.limitBinder)) {
+    throw new lf.Exception(528);
+  }
+  if (numberOfRows instanceof lf.Binder) {
+    this.query.limitBinder = numberOfRows;
+  } else {
+    if (0 > numberOfRows) {
+      throw new lf.Exception(531);
+    }
+    this.query.limit = numberOfRows;
+  }
   return this;
 };
 goog.exportProperty(lf.query.SelectBuilder.prototype, "limit", lf.query.SelectBuilder.prototype.limit);
 lf.query.SelectBuilder.prototype.skip = function(numberOfRows) {
-  this.assertNotAlreadyCalled_(this.query.skip || this.query.skipBinder, "skip");
-  numberOfRows instanceof lf.Binder ? this.query.skipBinder = numberOfRows : (this.assertNotNegative_(numberOfRows, "skip"), this.query.skip = numberOfRows);
+  if (goog.isDefAndNotNull(this.query.skip || this.query.skipBinder)) {
+    throw new lf.Exception(529);
+  }
+  if (numberOfRows instanceof lf.Binder) {
+    this.query.skipBinder = numberOfRows;
+  } else {
+    if (0 > numberOfRows) {
+      throw new lf.Exception(531);
+    }
+    this.query.skip = numberOfRows;
+  }
   return this;
 };
 goog.exportProperty(lf.query.SelectBuilder.prototype, "skip", lf.query.SelectBuilder.prototype.skip);
@@ -8899,7 +8911,9 @@ lf.query.SelectBuilder.prototype.orderBy = function(column, opt_order) {
 };
 goog.exportProperty(lf.query.SelectBuilder.prototype, "orderBy", lf.query.SelectBuilder.prototype.orderBy);
 lf.query.SelectBuilder.prototype.groupBy = function(var_args) {
-  this.assertNotAlreadyCalled_(this.query.groupBy, "groupBy");
+  if (goog.isDefAndNotNull(this.query.groupBy)) {
+    throw new lf.Exception(530);
+  }
   goog.isDefAndNotNull(this.query.groupBy) || (this.query.groupBy = []);
   this.query.groupBy.push.apply(this.query.groupBy, Array.prototype.slice.call(arguments));
   return this;
@@ -8954,19 +8968,19 @@ lf.query.UpdateBuilder.prototype.where = function(predicate) {
 goog.exportProperty(lf.query.UpdateBuilder.prototype, "where", lf.query.UpdateBuilder.prototype.where);
 lf.query.UpdateBuilder.prototype.assertWherePreconditions_ = function() {
   if (goog.isDefAndNotNull(this.query.where)) {
-    throw new lf.Exception(lf.Exception.Type.SYNTAX, "where() has already been called.");
+    throw new lf.Exception(516);
   }
 };
 lf.query.UpdateBuilder.prototype.assertExecPreconditions = function() {
   lf.query.UpdateBuilder.superClass_.assertExecPreconditions.call(this);
   if (!goog.isDefAndNotNull(this.query.set)) {
-    throw new lf.Exception(lf.Exception.Type.SYNTAX, "Invalid usage of update()");
+    throw new lf.Exception(532);
   }
   var notBound = this.query.set.some(function(set) {
     return set.value instanceof lf.Binder;
   });
   if (notBound) {
-    throw new lf.Exception(lf.Exception.Type.SYNTAX, "Update set value not bound");
+    throw new lf.Exception(501);
   }
 };
 
@@ -9199,7 +9213,7 @@ lf.proc.LogicalPlanFactory.prototype.create = function(query) {
         if (query instanceof lf.query.UpdateContext) {
           generator = new lf.proc.UpdateLogicalPlanGenerator(query);
         } else {
-          throw new lf.Exception(lf.Exception.Type.SYNTAX, "Unknown query context");
+          throw new lf.Exception(513);
         }
       }
     }
@@ -9913,7 +9927,7 @@ lf.proc.PhysicalPlanFactory.prototype.create = function(logicalQueryPlanRoot, qu
   if (logicalQueryPlanRoot instanceof lf.proc.DeleteNode || logicalQueryPlanRoot instanceof lf.proc.UpdateNode) {
     return this.createPlan_(logicalQueryPlanRoot, queryContext, [new lf.proc.IndexRangeScanPass(this.global_)]);
   }
-  throw new lf.Exception(lf.Exception.Type.NOT_SUPPORTED, "Unknown query plan node");
+  throw new lf.Exception(8);
 };
 lf.proc.PhysicalPlanFactory.prototype.createPlan_ = function(rootNode, queryContext, opt_rewritePasses) {
   var rootStep = lf.tree.map(rootNode, goog.bind(this.mapFn_, this));
@@ -9966,7 +9980,7 @@ lf.proc.PhysicalPlanFactory.prototype.mapFn_ = function(node) {
   if (node instanceof lf.proc.InsertNode) {
     return new lf.proc.InsertStep(this.global_, node.table);
   }
-  throw new lf.Exception(lf.Exception.Type.NOT_SUPPORTED, "Unknown node type");
+  throw new lf.Exception(514);
 };
 
 lf.proc.QueryEngine = function() {
@@ -10339,7 +10353,7 @@ new goog.structs.Set([lf.proc.TransactionState_.ACQUIRED_SCOPE, lf.proc.Transact
 lf.proc.Transaction.prototype.stateTransition_ = function(newState) {
   var nextStates = lf.proc.StateTransitions_.get(this.state_, null);
   if (goog.isNull(nextStates) || !nextStates.contains(newState)) {
-    throw new lf.Exception(lf.Exception.Type.TRANSACTION, "Invalid transaction state transition, from " + this.state_ + " to " + newState + ".");
+    throw new lf.Exception(107, this.state_, newState);
   }
   this.state_ = newState;
 };
@@ -10420,7 +10434,7 @@ lf.proc.Database.prototype.getSchema = function() {
 goog.exportProperty(lf.proc.Database.prototype, "getSchema", lf.proc.Database.prototype.getSchema);
 lf.proc.Database.prototype.checkInit_ = function() {
   if (!this.initialized_) {
-    throw new lf.Exception(lf.Exception.Type.UNINITIALIZED, "Database is not initialized");
+    throw new lf.Exception(2);
   }
 };
 lf.proc.Database.prototype.select = function(var_args) {
@@ -10591,7 +10605,7 @@ goog.exportProperty(lf.Global.prototype, "registerService", lf.Global.prototype.
 lf.Global.prototype.getService = function(serviceId) {
   var service = this.services_.get(serviceId.toString(), null);
   if (null == service) {
-    throw new lf.Exception(lf.Exception.Type.NOT_FOUND, serviceId.toString());
+    throw new lf.Exception(7, serviceId.toString());
   }
   return service;
 };
@@ -10628,7 +10642,7 @@ goog.exportSymbol("lf.schema.TableBuilder", lf.schema.TableBuilder);
 lf.schema.TableBuilder.ForeignkeySpec = function(rawSpec, name) {
   var array = rawSpec.ref.split(".");
   if (2 != array.length) {
-    throw new lf.Exception(lf.Exception.Type.SYNTAX, "Foreign key {" + name + "} does not have a valid form 'table.column'");
+    throw new lf.Exception(540, name);
   }
   this.localColumn = rawSpec.local;
   this.parentTable = array[0];
@@ -10648,10 +10662,10 @@ lf.schema.TableBuilder.toPascal_ = function(name) {
 };
 lf.schema.TableBuilder.prototype.checkName_ = function(name) {
   if (!/^[A-Za-z_][A-Za-z0-9_]*$/.test(name)) {
-    throw new lf.Exception(lf.Exception.Type.SYNTAX, name + " violates naming rule");
+    throw new lf.Exception(502, name);
   }
   if (this.columns_.containsKey(name) || this.indices_.containsKey(name) || this.uniqueIndices_.contains(name)) {
-    throw new lf.Exception(lf.Exception.Type.SYNTAX, this.name_ + "." + name + " is already defined");
+    throw new lf.Exception(503, this.name_ + "." + name);
   }
 };
 lf.schema.TableBuilder.prototype.checkPrimaryKey_ = function(columns) {
@@ -10660,11 +10674,11 @@ lf.schema.TableBuilder.prototype.checkPrimaryKey_ = function(columns) {
     var columnType = this.columns_.get(column.name);
     hasAutoIncrement = hasAutoIncrement || column.autoIncrement;
     if (column.autoIncrement && columnType != lf.Type.INTEGER) {
-      throw new lf.Exception(lf.Exception.Type.SYNTAX, "Can not use autoIncrement with a non-integer primary key.");
+      throw new lf.Exception(504);
     }
   }, this);
   if (hasAutoIncrement && 1 < columns.length) {
-    throw new lf.Exception(lf.Exception.Type.SYNTAX, "Can not use autoIncrement with a cross-column primary key.");
+    throw new lf.Exception(505);
   }
 };
 lf.schema.TableBuilder.prototype.addColumn = function(name, type) {
@@ -10690,10 +10704,10 @@ lf.schema.TableBuilder.prototype.addForeignKey = function(name, rawSpec) {
   goog.isDef(spec.action) || (spec.action = lf.ConstraintAction.RESTRICT);
   goog.isDef(spec.timing) || (spec.timing = lf.ConstraintTiming.IMMEDIATE);
   if (spec.action == lf.ConstraintAction.CASCADE && spec.timing == lf.ConstraintTiming.DEFERRABLE) {
-    throw new lf.Exception(lf.Exception.Type.SYNTAX, "Lovefield allows only immediate evaluation of cascading constraints");
+    throw new lf.Exception(506);
   }
   if (!this.columns_.containsKey(spec.localColumn)) {
-    throw new lf.Exception(lf.Exception.Type.SYNTAX, "Enter a valid column name for theforeign key in local table");
+    throw new lf.Exception(540, name);
   }
   this.fkSpecs_.push(spec);
   return this;
@@ -10727,7 +10741,7 @@ lf.schema.TableBuilder.prototype.checkNullableColumns_ = function(columns) {
       return indexedColumnNames.contains(nullableColumn.name);
     });
     if (1 < indexedColumnNames.getCount() && 0 < nullableColumns.length) {
-      throw new lf.Exception(lf.Exception.Type.SYNTAX, "Cross-column index " + indexName + " refers to nullable columns: " + nullableColumns.join(","));
+      throw new lf.Exception(507, indexName, nullableColumns.join(","));
     }
   }, this);
 };
@@ -10746,7 +10760,7 @@ lf.schema.TableBuilder.prototype.checkIndexedColumns_ = function(indexName, colu
       return this.nullable_.contains(column.name);
     }, this);
     if (0 < nullableColumns.length) {
-      throw new lf.Exception(lf.Exception.Type.SYNTAX, "Cross-column index " + indexName + " refers to nullable columns: " + nullableColumns.join(","));
+      throw new lf.Exception(507, indexName, nullableColumns.join(","));
     }
   }
 };
@@ -10770,12 +10784,12 @@ lf.schema.TableBuilder.prototype.normalizeColumns_ = function(columns, checkInde
   });
   normalized.forEach(function(col) {
     if (!this.columns_.containsKey(col.name)) {
-      throw new lf.Exception(lf.Exception.Type.SYNTAX, this.name_ + " does not have column: " + col.name);
+      throw new lf.Exception(508, this.name_, col.name);
     }
     if (checkIndexable) {
       var type = this.columns_.get(col.name);
       if (type == lf.Type.ARRAY_BUFFER || type == lf.Type.OBJECT) {
-        throw new lf.Exception(lf.Exception.Type.SYNTAX, this.name_ + " index on non-indexable column: " + col.name);
+        throw new lf.Exception(509, this.name_, col.name);
       }
     }
   }, this);
@@ -10890,18 +10904,18 @@ lf.schema.Builder.prototype.checkForeignKeyValidity_ = function(builder) {
   fkSpecArray.forEach(function(specs) {
     var parentTableName = specs.parentTable;
     if (!this.tableBuilders_.containsKey(parentTableName)) {
-      throw new lf.Exception(lf.Exception.Type.SYNTAX, "Foreign Key {" + specs.fkName + "} refers to invalid table");
+      throw new lf.Exception(536, specs.fkName);
     }
     var table = this.tableBuilders_.get(parentTableName), parentSchema = table.getSchema(), parentColName = specs.parentColumn;
     if (!parentSchema.hasOwnProperty(parentColName)) {
-      throw new lf.Exception(lf.Exception.Type.SYNTAX, "Foreign Key {" + specs.fkName + "} refers to invalid column ");
+      throw new lf.Exception(537, specs.fkName);
     }
     var localSchema = builder.getSchema(), localColName = specs.localColumn;
     if (localSchema[localColName].getType() != parentSchema[parentColName].getType()) {
-      throw new lf.Exception(lf.Exception.Type.SYNTAX, "Foreign Key {" + specs.fkName + "} refers to a column of different type");
+      throw new lf.Exception(538, specs.fkName);
     }
     if (!parentSchema[parentColName].isUnique()) {
-      throw new lf.Exception(lf.Exception.Type.SYNTAX, "Foreign Key {" + specs.fkName + "} refers to a non-unique column");
+      throw new lf.Exception(539, specs.fkName);
     }
   }, this);
 };
@@ -10911,7 +10925,7 @@ lf.schema.Builder.prototype.checkForeignKeyChain_ = function(builder) {
     var parentBuilder = this.tableBuilders_.get(specs.parentTable);
     parentBuilder.getFkSpecs().forEach(function(parentSpecs) {
       if (parentSpecs.localColumn == specs.parentColumn) {
-        throw new lf.Exception(lf.Exception.Type.SYNTAX, "Foreign Key {" + specs.fkName + "} refers to the source of other foreign key.");
+        throw new lf.Exception(534, specs.fkName);
       }
     }, this);
   }, this);
@@ -10931,7 +10945,7 @@ lf.schema.Builder.prototype.checkCycleUtil_ = function(graphNode, nodeMap) {
       this.checkCycleUtil_(childNode, nodeMap);
     } else {
       if (childNode.onStack && graphNode != childNode) {
-        throw new lf.Exception(lf.Exception.Type.SYNTAX, "There is a loop in the schema");
+        throw new lf.Exception(533);
       }
     }
   }, this));
@@ -10976,8 +10990,11 @@ lf.schema.Builder.prototype.connect = function(opt_options) {
 };
 goog.exportProperty(lf.schema.Builder.prototype, "connect", lf.schema.Builder.prototype.connect);
 lf.schema.Builder.prototype.createTable = function(tableName) {
-  if (this.tableBuilders_.containsKey(tableName) || this.finalized_) {
-    throw new lf.Exception(lf.Exception.Type.SYNTAX, "Table is already created or schema is already finalized.");
+  if (this.tableBuilders_.containsKey(tableName)) {
+    throw new lf.Exception(503, tableName);
+  }
+  if (this.finalized_) {
+    throw new lf.Exception(535);
   }
   this.tableBuilders_.set(tableName, new lf.schema.TableBuilder(tableName));
   return this.tableBuilders_.get(tableName);
@@ -10985,7 +11002,7 @@ lf.schema.Builder.prototype.createTable = function(tableName) {
 goog.exportProperty(lf.schema.Builder.prototype, "createTable", lf.schema.Builder.prototype.createTable);
 lf.schema.Builder.prototype.setPragma = function(pragma) {
   if (this.finalized_) {
-    throw new lf.Exception(lf.Exception.Type.SYNTAX, "Schema is already finalized.");
+    throw new lf.Exception(535);
   }
   this.schema_.setPragma(pragma);
   return this;
@@ -11012,7 +11029,7 @@ lf.schema.DatabaseSchema.prototype.tables = function() {
 goog.exportProperty(lf.schema.DatabaseSchema.prototype, "tables", lf.schema.DatabaseSchema.prototype.tables);
 lf.schema.DatabaseSchema.prototype.table = function(tableName) {
   if (!this.tables_.containsKey(tableName)) {
-    throw new lf.Exception(lf.Exception.Type.NOT_FOUND, tableName + " is not found in database");
+    throw new lf.Exception(101, tableName);
   }
   return this.tables_.get(tableName);
 };

@@ -20,7 +20,6 @@ goog.require('goog.testing.AsyncTestCase');
 goog.require('goog.testing.PropertyReplacer');
 goog.require('goog.testing.jsunit');
 goog.require('hr.db');
-goog.require('lf.Exception');
 goog.require('lf.schema.DataStoreType');
 goog.require('lf.testing');
 
@@ -62,7 +61,7 @@ function testBuilderExec() {
       db.select().from(employee).exec().then(
       fail,
       function(error) {
-        assertEquals(error.name, lf.Exception.Type.FORCED);
+        assertEquals(999, error.code);
         propertyReplacer.reset();
         return db.select().from(employee).exec();
       })).then(
@@ -86,7 +85,7 @@ function testTransactionExec() {
       tx1.exec([db.select().from(employee)]).then(
       fail,
       function(error) {
-        assertEquals(error.name, lf.Exception.Type.FORCED);
+        assertEquals(999, error.code);
         propertyReplacer.reset();
 
         var tx2 = db.createTransaction();
@@ -115,7 +114,7 @@ function testTransactionAttach() {
       }).then(
       fail,
       function(error) {
-        assertEquals(error.name, lf.Exception.Type.FORCED);
+        assertEquals(999, error.code);
         propertyReplacer.reset();
         return tx1.attach(db.select().from(employee));
       })).then(

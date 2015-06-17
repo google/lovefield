@@ -21,7 +21,6 @@ goog.require('goog.Promise');
 goog.require('goog.array');
 goog.require('goog.object');
 goog.require('goog.testing.jsunit');
-goog.require('lf.Exception');
 goog.require('lf.Order');
 goog.require('lf.bind');
 goog.require('lf.fn');
@@ -1172,7 +1171,8 @@ lf.testing.EndToEndSelectTester.prototype.testForgetParamBindingRejects =
     function() {
   var q = this.db_.select().from(this.j_).where(this.j_.id.eq(lf.bind(1)));
   return q.exec().then(fail, function(e) {
-    assertEquals(lf.Exception.Type.SYNTAX, e.name);
+    // 501: Value is not bounded.
+    assertEquals(501, e.code);
   });
 };
 
@@ -1188,7 +1188,8 @@ lf.testing.EndToEndSelectTester.prototype.testInvalidParamBindingThrows =
       q.bind([0]);
     } catch (e) {
       thrown = true;
-      assertEquals(lf.Exception.Type.SYNTAX, e.name);
+      // 510: Cannot bind to given array: out of range..
+      assertEquals(510, e.code);
     }
     assertTrue(thrown);
 
@@ -1198,7 +1199,8 @@ lf.testing.EndToEndSelectTester.prototype.testInvalidParamBindingThrows =
       q.bind([0]);
     } catch (e) {
       thrown = true;
-      assertEquals(lf.Exception.Type.SYNTAX, e.name);
+      // 510: Cannot bind to given array: out of range.
+      assertEquals(510, e.code);
     }
     assertTrue(thrown);
     resolve();

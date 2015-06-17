@@ -15,10 +15,10 @@
  * limitations under the License.
  */
 goog.setTestOnly();
+goog.require('goog.Promise');
 goog.require('goog.testing.AsyncTestCase');
 goog.require('goog.testing.jsunit');
 goog.require('hr.db');
-goog.require('lf.Exception');
 goog.require('lf.TransactionType');
 goog.require('lf.backstore.ExternalChangeObserver');
 goog.require('lf.cache.Journal');
@@ -139,7 +139,8 @@ function testExternalChangesApplied() {
       function(e) {
         // Expecting a constraint error. This ensures that indices are updated
         // as a result of external changes.
-        assertEquals(lf.Exception.Type.CONSTRAINT, e.name);
+        // 201: Duplicate keys are not allowed.
+        assertEquals(201, e.code);
         asyncTestCase.continueTesting();
       });
 }

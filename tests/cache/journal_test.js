@@ -135,7 +135,8 @@ function checkInsert_UniqueConstraintViolation(table, rows1, rows2) {
   // Now re-inserting a row with the same primary key that already exists.
   journal = new lf.cache.Journal(lf.Global.get(), [table]);
 
-  lf.testing.util.assertThrowsConstraintError(
+  lf.testing.util.assertThrowsError(
+      201,  // Duplicate keys are not allowed.
       journal.insert.bind(journal, table, rows2));
 }
 
@@ -161,7 +162,8 @@ function testInsert_PrimaryKeyViolation2() {
 
   // Inserting a row with the same primary key.
   var row2 = table.createRow({'id': primaryKey, 'name': 'OtherDummyName'});
-  lf.testing.util.assertThrowsConstraintError(
+  lf.testing.util.assertThrowsError(
+      201,  // Duplicate keys are not allowed.
       journal.insert.bind(journal, table, [row2]));
   journal.rollback();
 
@@ -191,7 +193,8 @@ function testInsert_PrimaryKeyViolation3() {
   }
 
   var journal = new lf.cache.Journal(lf.Global.get(), [table]);
-  lf.testing.util.assertThrowsConstraintError(
+  lf.testing.util.assertThrowsError(
+      201,  // Duplicate keys are not allowed.
       journal.insert.bind(journal, table, rows));
   journal.rollback();
 
@@ -225,7 +228,8 @@ function testInsert_UniqueKeyViolation_SingleColumn() {
 
   journal = new lf.cache.Journal(lf.Global.get(), [table]);
   var row2 = table.createRow({'id': 'pk2', 'email': 'emailAddress1'});
-  lf.testing.util.assertThrowsConstraintError(
+  lf.testing.util.assertThrowsError(
+      201,  // Duplicate keys are not allowed.
       journal.insert.bind(journal, table, [row2]));
   journal.rollback();
 
@@ -265,7 +269,8 @@ function testInsert_NotNullableKeyViolation() {
 
   var journal = new lf.cache.Journal(lf.Global.get(), [table]);
   var row1 = table.createRow({'id': 'pk1', 'email': null});
-  lf.testing.util.assertThrowsConstraintError(
+  lf.testing.util.assertThrowsError(
+      202,  // Attempted to insert NULL value to non-nullable field {0}.
       journal.insert.bind(journal, table, [row1]));
   journal.rollback();
   assertEquals(0, env.cache.getCount());
@@ -283,7 +288,8 @@ function testInsertOrReplace_NotNullableKeyViolation() {
   // Attempting to insert a new invalid row.
   var journal = new lf.cache.Journal(lf.Global.get(), [table]);
   var row1 = table.createRow({'id': 'pk1', 'email': null});
-  lf.testing.util.assertThrowsConstraintError(
+  lf.testing.util.assertThrowsError(
+      202,  // Attempted to insert NULL value to non-nullable field {0}.
       journal.insertOrReplace.bind(journal, table, [row1]));
   journal.rollback();
   assertEquals(0, env.cache.getCount());
@@ -297,7 +303,8 @@ function testInsertOrReplace_NotNullableKeyViolation() {
   // Attempting to replace existing row with an invalid one.
   var row2Updated = table.createRow({'id': 'pk2', 'email': null});
   journal = new lf.cache.Journal(lf.Global.get(), [table]);
-  lf.testing.util.assertThrowsConstraintError(
+  lf.testing.util.assertThrowsError(
+      202,  // Attempted to insert NULL value to non-nullable field {0}.
       journal.insertOrReplace.bind(journal, table, [row2Updated]));
   journal.rollback();
 }
@@ -319,7 +326,8 @@ function testUpdate_NotNullableKeyViolation() {
   journal = new lf.cache.Journal(lf.Global.get(), [table]);
   var rowUpdatedInvalid = table.createRow({'id': 'pk1', 'email': null});
   rowUpdatedInvalid.assignRowId(row.id());
-  lf.testing.util.assertThrowsConstraintError(
+  lf.testing.util.assertThrowsError(
+      202,  // Attempted to insert NULL value to non-nullable field {0}.
       journal.update.bind(journal, table, [rowUpdatedInvalid]));
   journal.rollback();
 
@@ -403,7 +411,8 @@ function testUpdate_PrimaryKeyViolation1() {
   row2Updated.assignRowId(row2.id());
 
   journal = new lf.cache.Journal(lf.Global.get(), [table]);
-  lf.testing.util.assertThrowsConstraintError(
+  lf.testing.util.assertThrowsError(
+      201,  // Duplicate keys are not allowed.
       journal.update.bind(journal, table, [row2Updated]));
   journal.rollback();
 }
@@ -433,7 +442,8 @@ function testUpdate_PrimaryKeyViolation2() {
     'name': 'OtherDummyName'
   });
   row2Updated.assignRowId(row2.id());
-  lf.testing.util.assertThrowsConstraintError(
+  lf.testing.util.assertThrowsError(
+      201,  // Duplicate keys are not allowed.
       journal.update.bind(journal, table, [row2Updated]));
   journal.rollback();
 }
@@ -469,7 +479,8 @@ function testUpdate_PrimaryKeyViolation3() {
   });
 
   journal = new lf.cache.Journal(lf.Global.get(), [table]);
-  lf.testing.util.assertThrowsConstraintError(
+  lf.testing.util.assertThrowsError(
+      201,  // Duplicate keys are not allowed.
       journal.update.bind(journal, table, rowsUpdated));
   journal.rollback();
 }
@@ -564,7 +575,8 @@ function testInsertOrReplace_UniqueKeyViolation() {
   // existing row.
   var row3 = table.createRow({'id': 'pk3', 'email': row1.payload()['email']});
   journal = new lf.cache.Journal(lf.Global.get(), [table]);
-  lf.testing.util.assertThrowsConstraintError(
+  lf.testing.util.assertThrowsError(
+      201,  // Duplicate keys are not allowed.
       journal.insertOrReplace.bind(journal, table, [row3]));
   journal.rollback();
   assertEquals(row1.id(), emailIndex.get(row3.payload()['email'])[0]);
@@ -574,7 +586,8 @@ function testInsertOrReplace_UniqueKeyViolation() {
   var row4 = table.createRow({'id': 'pk4', 'email': 'otherEmailAddress'});
   var row5 = table.createRow({'id': 'pk5', 'email': 'otherEmailAddress'});
   journal = new lf.cache.Journal(lf.Global.get(), [table]);
-  lf.testing.util.assertThrowsConstraintError(
+  lf.testing.util.assertThrowsError(
+      201,  // Duplicate keys are not allowed.
       journal.insertOrReplace.bind(journal, table, [row4, row5]));
   journal.rollback();
   assertFalse(emailIndex.containsKey(row4.payload()['email']));
@@ -588,7 +601,8 @@ function testInsertOrReplace_UniqueKeyViolation() {
   });
   row1Updated.assignRowId(row1.id());
   journal = new lf.cache.Journal(lf.Global.get(), [table]);
-  lf.testing.util.assertThrowsConstraintError(
+  lf.testing.util.assertThrowsError(
+      201,  // Duplicate keys are not allowed.
       journal.insertOrReplace.bind(journal, table, [row1Updated]));
   journal.rollback();
   assertEquals(row1.id(), emailIndex.get(row1.payload()['email'])[0]);

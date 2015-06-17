@@ -81,7 +81,8 @@ function testCheckNotNullable() {
     return table.createRow({'id': primaryKey.toString(), 'email': null});
   });
 
-  lf.testing.util.assertThrowsConstraintError(
+  lf.testing.util.assertThrowsError(
+      202,  // Attempted to insert NULL value to non-nullable field {0}
       function() {
         checker.checkNotNullable(table, invalidRows);
       });

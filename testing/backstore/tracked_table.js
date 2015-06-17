@@ -73,8 +73,8 @@ lf.testing.backstore.TrackedTable.prototype.getDiff = function() {
 lf.testing.backstore.TrackedTable.prototype.checkAcceptingRequests_ =
     function() {
   if (!this.acceptingRequests_) {
-    throw new lf.Exception(lf.Exception.Type.SYNTAX,
-        'Attempt to post requests while waiting transaction to complete.');
+    // 107: Invalid transaction state transition: {0} -> {1}.
+    throw new lf.Exception(107, 7, 0);
   }
 };
 

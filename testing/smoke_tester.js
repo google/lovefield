@@ -19,7 +19,6 @@ goog.provide('lf.testing.SmokeTester');
 
 goog.require('goog.Promise');
 goog.require('goog.testing.jsunit');
-goog.require('lf.Exception');
 goog.require('lf.TransactionType');
 goog.require('lf.cache.Journal');
 goog.require('lf.service');
@@ -241,7 +240,7 @@ lf.testing.SmokeTester.prototype.testTransaction = function() {
       tx.exec([select]);
     } catch (e) {
       thrown = true;
-      assertEquals(e.name, lf.Exception.Type.TRANSACTION);
+      assertEquals(e.code, 107);  // 107: Invalid transaction state transition.
     }
     assertTrue(thrown);
 
@@ -252,7 +251,7 @@ lf.testing.SmokeTester.prototype.testTransaction = function() {
   }).then(function() {
     resolver.reject('transaction shall fail');
   }, function(e) {
-    assertEquals(e.name, lf.Exception.Type.SYNTAX);
+    assertEquals(e.code, 515);  // 515: from() has already been called.
     resolver.resolve();
   });
 

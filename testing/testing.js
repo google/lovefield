@@ -17,6 +17,7 @@
 goog.setTestOnly();
 goog.provide('lf.testing');
 
+goog.require('goog.Promise');
 goog.require('lf.Exception');
 goog.require('lf.proc.Transaction');
 goog.require('lf.query.BaseBuilder');
@@ -28,8 +29,8 @@ goog.require('lf.query.BaseBuilder');
  */
 lf.testing.simulateErrors = function(propertyReplacer) {
   var rejectFn = function() {
-    return goog.Promise.reject(
-        new lf.Exception(lf.Exception.Type.FORCED, 'Bogus error.'));
+    // 999: Simulated error.
+    return goog.Promise.reject(new lf.Exception(999));
   };
 
   propertyReplacer.replace(lf.query.BaseBuilder.prototype, 'exec', rejectFn);

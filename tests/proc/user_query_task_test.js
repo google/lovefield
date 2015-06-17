@@ -15,11 +15,9 @@
  * limitations under the License.
  */
 goog.setTestOnly();
-goog.require('goog.Promise');
 goog.require('goog.testing.AsyncTestCase');
 goog.require('goog.testing.jsunit');
 goog.require('hr.db');
-goog.require('lf.Exception');
 goog.require('lf.bind');
 goog.require('lf.proc.UserQueryTask');
 goog.require('lf.schema.DataStoreType');
@@ -243,7 +241,8 @@ function testMultiPlan_Rollback() {
   queryTask.exec().then(
       fail,
       function(e) {
-        assertEquals(lf.Exception.Type.CONSTRAINT, e.name);
+        // 201: Duplicate keys are not allowed.
+        assertEquals(201, e.code);
         assertEquals(0, cache.getCount());
         lf.testing.util.selectAll(global, j).then(
             function(results) {
