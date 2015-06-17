@@ -231,9 +231,7 @@ lovefield.db.schema.Album.prototype.getConstraint = function() {
     this.id,
     this.isLocal,
     this.createdByAction,
-    this.timestamp,
-    this.tacotownJspb,
-    this.proto
+    this.timestamp
   ];
   var foreignKeys = [];
   var unique = [

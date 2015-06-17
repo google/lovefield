@@ -68,6 +68,7 @@
  *     timing: ?string
  *   }>
  * }}
+ * @private
  */
 var Constraint_;
 
@@ -76,8 +77,49 @@ var Constraint_;
  * @typedef {{
  *   enableBundledMode: boolean
  * }}
+ * @private
  */
 var Pragma_;
+
+
+/**
+ * @typedef {{
+ *  name: string,
+ *  type: string,
+ *  nullable: boolean
+ * }}
+ * @private
+ */
+var Column_;
+
+
+/**
+ * @typedef {{
+ *   name: string,
+ *   column: !Array<{
+ *     name: string,
+ *     order: ?string
+ *   }>,
+ *   unique: ?boolean
+ * }}
+ * @private
+ */
+var Index_;
+
+
+/**
+ * @typedef {{
+ *   name: string,
+ *   column: !Array<!Column_>,
+ *   constraint: Constraint_,
+ *   index: !Array<!Index_>,
+ *   pragma: {
+ *     persistentIndex: ?boolean
+ *   }
+ * }}
+ * @private
+ */
+var Table_;
 
 
 /**
@@ -85,30 +127,15 @@ var Pragma_;
  *   name: string,
  *   version: number,
  *   pragma: Pragma_,
- *   table: !Array<{
- *     name: string,
- *     column: !Array<{
- *       name: string,
- *       type: string,
- *       nullable: boolean
- *     }>,
- *     constraint: Constraint_,
- *     index: !Array<{
- *       name: string,
- *       column: !Array<{
- *         name: string,
- *         order: ?string
- *       }>,
- *       unique: ?boolean
- *     }>,
- *     pragma: {
- *       persistentIndex: ?boolean
- *     }
- *   }>
+ *   table: !Array<!Table_>
  * }}
  * @private
  */
 var Schema_;
+
+
+/** @const {!Array<string>} */
+var NULLABLE = ['arraybuffer', 'object'];
 
 
 /**
@@ -796,7 +823,7 @@ CodeGenerator.columnTypeToEnumType_ = function(columnType) {
 
 
 /**
- * @param {Object} table
+ * @param {!Table_} table
  * @param {string} prefix
  * @return {string}
  * @private
@@ -952,7 +979,7 @@ CodeGenerator.getIndexDefinition_ = function(
 
 
 /**
- * @param {!Object} table
+ * @param {!Table_} table
  * @param {number} indentCount
  * @return {string}
  * @private
@@ -976,7 +1003,7 @@ CodeGenerator.prototype.getPrimaryKeyIndex_ = function(table, indentCount) {
 
 
 /**
- * @param {!Object} table
+ * @param {!Table_} table
  * @return {string}
  * @private
  */
@@ -984,13 +1011,11 @@ CodeGenerator.prototype.getConstraint_ = function(table) {
   var results = [];
 
   var getNotNullable = (function() {
-    var notNullable = [];
-    table.column.forEach(function(column) {
-      if (!table.constraint || !table.constraint.nullable ||
-          table.constraint.nullable.indexOf(column.name) == -1) {
-        notNullable.push('    this.' + column.name);
-      }
-    }, this);
+    var notNullable = table.column.filter(function(column) {
+      return !column.nullable;
+    }).map(function(column) {
+      return '    this.' + column.name;
+    });
     return '  var notNullable = [\n' + notNullable.join(',\n') + '\n  ];';
   }).bind(this);
 
@@ -1027,7 +1052,7 @@ CodeGenerator.prototype.getConstraint_ = function(table) {
 
 
 /**
- * @param {!Object} table
+ * @param {!Table_} table
  * @param {number} indentCount
  * @return {!Array<string>}
  * @private
@@ -1052,7 +1077,7 @@ CodeGenerator.prototype.getUniqueIndices_ = function(table, indentCount) {
 
 
 /**
- * @param {!Object} table
+ * @param {!Table_} table
  * @return {string}
  * @private
  */
@@ -1093,7 +1118,7 @@ CodeGenerator.prototype.getIndices_ = function(table) {
 
 
 /**
- * @param {!Object} table
+ * @param {!Table_} table
  * @return {!Array<string>}
  * @private
  */
@@ -1152,7 +1177,7 @@ CodeGenerator.prototype.getColumnAsMembers_ = function(table) {
 
 
 /**
- * @param {!Object} table
+ * @param {!Table_} table
  * @return {!Array<string>}
  * @private
  */
@@ -1187,14 +1212,14 @@ CodeGenerator.prototype.getUniqueColumns_ = function(table) {
 
 
 /**
- * @param {!Object} table
+ * @param {!Table_} table
  * @return {!Array<string>}
  * @private
  */
-CodeGenerator.prototype.getNullableColums_ = function(table) {
+CodeGenerator.prototype.getNullableColumns_ = function(table) {
   return table.column.filter(
       function(column) {
-        return column.nullable;
+        return column.nullable || (NULLABLE.indexOf(column.type) != -1);
       }).map(
       function(column) {
         return column.name;
@@ -1211,7 +1236,7 @@ CodeGenerator.prototype.processRepeatColumn_ = function(lines) {
   var table = this.schema_.table[this.tableIndex_];
   var columns = table.column;
   var uniqueColumns = this.getUniqueColumns_(table);
-  var nullableColumns = this.getNullableColums_(table);
+  var nullableColumns = this.getNullableColumns_(table);
 
   var results = [];
 
