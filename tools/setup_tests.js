@@ -14,11 +14,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-var fsMod = require('fs');
+var fsMod =
+    /**
+     * @type {{
+     *   ensureDirSync: function(string),
+     *   removeSync: function(string)
+     * }}
+     */ (require('fs-extra'));
 var glob = /** @type {{sync: !Function}} */ (require('glob')).sync;
-var mkdir = /** @type {{sync: !Function}} */ (require('mkdirp')).sync;
 var pathMod = /** @type {{sep: string}} */ (require('path'));
-var rmdir = /** @type {{sync: !Function}} */ (require('rimraf')).sync;
 var temp = /** @type {{Dir: !Function}} */ (require('temporary'));
 
 
@@ -148,8 +152,8 @@ TestEnv.prototype.setupTestsWithHtml = function() {
     // Creating a symlink for the HTML file.
     var src = pathMod.join(this.origPath, htmlFile);
     var dst = pathMod.join(this.tempPath, link);
-    // Ensure that the entire dir path is cosntructed.
-    mkdir(pathMod.dirname(dst));
+    // Ensure that the entire dir path is constructed.
+    fsMod.ensureDirSync(pathMod.dirname(dst));
     fsMod.symlinkSync(src, dst, 'file');
 
     // Creating a symlink for the JS file, because existing HTML files expect
@@ -176,7 +180,7 @@ TestEnv.prototype.setupTestResources = function() {
     fsMod.symlinkSync(
         pathMod.resolve(jsonFile),
         pathMod.join(this.tempPath, link), 'junction');
-  });
+  }, this);
 };
 
 
@@ -314,7 +318,7 @@ function createTestModule(script, moduleName) {
       '    </script>\r\n' +
       '  </head>\r\n' +
       '</html>\r\n';
-  mkdir(pathMod.dirname(target));
+  fsMod.ensureDirSync(pathMod.dirname(target));
   fsMod.writeFileSync(target, contents);
 
   return target;
@@ -353,7 +357,7 @@ function createTestFile(script) {
       '    </script>\r\n' +
       '  </body>\r\n' +
       '</html>\r\n';
-  mkdir(pathMod.dirname(target));
+  fsMod.ensureDirSync(pathMod.dirname(target));
   fsMod.writeFileSync(target, contents);
   return target;
 }
@@ -367,7 +371,7 @@ function cleanUp(tempPath) {
   var origPath = process.cwd();
   removeSymLinks();
   process.chdir(origPath);
-  rmdir(tempPath);
+  fsMod.removeSync(tempPath);
 }
 
 

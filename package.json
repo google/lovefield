@@ -30,6 +30,8 @@
     "nopt": "~2.2.1"
   },
   "devDependencies": {
+    "firebase-token-generator": "*",
+    "fs-extra": "^0.18.2",
     "glob": "~3.2.6",
     "google-closure-compiler": "latest",
     "google-closure-library": "latest",
@@ -37,11 +39,8 @@
     "gulp-closure-compiler": "^0.2.18",
     "gulp-connect": "^2.2.0",
     "gulp-gjslint": "^0.1.4",
-    "firebase-token-generator": "*",
     "minijasminenode": "^1.1.1",
-    "mkdirp": "^0.3.5",
     "request": "^2.55.0",
-    "rimraf": "*",
     "selenium-webdriver": "^2.45.1",
     "temporary": "^0.0.8",
     "toposort-class": "^0.3.1"
