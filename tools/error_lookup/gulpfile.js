@@ -47,7 +47,7 @@ gulp.task('copy_dependencies', function() {
     'bower_components/jquery/dist/jquery.min.js',
 
     // Data dependencies
-    'bower_components/lovefield/dist/error_code.json',
+    '../../dist/error_code.json',
 
     // CSS dependencies
     'bower_components/bootstrap/dist/css/bootstrap.min.css'
@@ -81,7 +81,7 @@ gulp.task('debug', ['copy_dependencies'], function() {
 });
 
 
-gulp.task('export', ['default'], function() {
+gulp.task('export', ['copy_dependencies'], function() {
   var distDir = 'dist';
   if (!fs.existsSync(distDir)) { fs.mkdirSync(distDir); }
 
