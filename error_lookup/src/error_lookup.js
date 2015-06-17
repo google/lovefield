@@ -34,8 +34,8 @@ function getMessage(data) {
     }
   });
 
-  if (input.hasOwnProperty('code') && data.hasOwnProperty(input['code'])) {
-    var message = data[input['code']];
+  if (input.hasOwnProperty('c') && data.hasOwnProperty(input['c'])) {
+    var message = data[input['c']];
     if (message && typeof(message) == 'string') {
       return message.replace(/{([^}]+)}/g, function(match, pattern) {
         return input['p' + pattern] || '';
