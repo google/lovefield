@@ -4699,6 +4699,9 @@ lf.query.SelectContext.orderByToString = function(orderBy) {
   });
   return out;
 };
+lf.query.SelectContext.prototype.getScope = function() {
+  return new goog.structs.Set(this.from);
+};
 lf.query.SelectContext.prototype.clone = function() {
   var context = new lf.query.SelectContext;
   context.cloneBase(this);
@@ -4720,8 +4723,9 @@ lf.query.SelectContext.prototype.bind = function(values) {
   return this;
 };
 
-lf.proc.PhysicalQueryPlan = function(rootNode) {
+lf.proc.PhysicalQueryPlan = function(rootNode, scope) {
   this.rootNode_ = rootNode;
+  this.scope_ = scope;
 };
 lf.proc.PhysicalQueryPlan.prototype.getRoot = function() {
   return this.rootNode_;
@@ -4730,15 +4734,7 @@ lf.proc.PhysicalQueryPlan.prototype.explain = function() {
   return "plan description";
 };
 lf.proc.PhysicalQueryPlan.prototype.getScope = function() {
-  var scope = new goog.structs.Set, traverse = function(node) {
-    var table = node.getScope();
-    table && scope.add(table);
-    node.getChildren().forEach(function(child) {
-      traverse(child);
-    });
-  };
-  traverse(this.rootNode_);
-  return scope.getValues();
+  return this.scope_;
 };
 lf.proc.PhysicalQueryPlan.getCombinedScope = function(plans) {
   var tableSet = new goog.structs.Set;
@@ -7991,9 +7987,6 @@ lf.proc.PhysicalQueryPlanNode = function(numRelations, type) {
 goog.inherits(lf.proc.PhysicalQueryPlanNode, goog.structs.TreeNode);
 lf.proc.PhysicalQueryPlanNode.ExecType = {NO_CHILD:-1, ALL:0, FIRST_CHILD:1};
 lf.proc.PhysicalQueryPlanNode.ANY = -1;
-lf.proc.PhysicalQueryPlanNode.prototype.getScope = function() {
-  return null;
-};
 lf.proc.PhysicalQueryPlanNode.prototype.exec = function(journal, opt_context) {
   switch(this.execType_) {
     case lf.proc.PhysicalQueryPlanNode.ExecType.FIRST_CHILD:
@@ -8149,6 +8142,16 @@ lf.proc.AggregationStep.Calculator_.distinct_ = function(relation, column) {
   return new lf.proc.Relation(distinctMap.getValues(), relation.getTables());
 };
 
+lf.proc.LogicalQueryPlan = function(rootNode, scope) {
+  this.rootNode_ = rootNode;
+  this.scope_ = scope;
+};
+lf.proc.LogicalQueryPlan.prototype.getRoot = function() {
+  return this.rootNode_;
+};
+lf.proc.LogicalQueryPlan.prototype.getScope = function() {
+  return this.scope_;
+};
 lf.proc.LogicalQueryPlanNode = function() {
   goog.structs.TreeNode.call(this, "", "");
 };
@@ -8404,6 +8407,9 @@ lf.query.DeleteContext = function() {
   lf.query.Context.call(this);
 };
 goog.inherits(lf.query.DeleteContext, lf.query.Context);
+lf.query.DeleteContext.prototype.getScope = function() {
+  return new goog.structs.Set([this.from]);
+};
 lf.query.DeleteContext.prototype.clone = function() {
   var context = new lf.query.DeleteContext;
   context.cloneBase(this);
@@ -8420,6 +8426,9 @@ lf.query.InsertContext = function() {
   lf.query.Context.call(this);
 };
 goog.inherits(lf.query.InsertContext, lf.query.Context);
+lf.query.InsertContext.prototype.getScope = function() {
+  return new goog.structs.Set([this.into]);
+};
 lf.query.InsertContext.prototype.clone = function() {
   var context = new lf.query.InsertContext;
   context.cloneBase(this);
@@ -8441,6 +8450,9 @@ lf.query.UpdateContext = function() {
   lf.query.Context.call(this);
 };
 goog.inherits(lf.query.UpdateContext, lf.query.Context);
+lf.query.UpdateContext.prototype.getScope = function() {
+  return new goog.structs.Set([this.table]);
+};
 lf.query.UpdateContext.prototype.clone = function() {
   var context = new lf.query.UpdateContext;
   context.cloneBase(this);
@@ -9218,7 +9230,8 @@ lf.proc.LogicalPlanFactory.prototype.create = function(query) {
       }
     }
   }
-  return generator.generate();
+  var rootNode = generator.generate();
+  return new lf.proc.LogicalQueryPlan(rootNode, query.getScope());
 };
 
 lf.proc.DeleteStep = function(table) {
@@ -9228,9 +9241,6 @@ lf.proc.DeleteStep = function(table) {
 goog.inherits(lf.proc.DeleteStep, lf.proc.PhysicalQueryPlanNode);
 lf.proc.DeleteStep.prototype.toString = function() {
   return "delete(" + this.table_.getName() + ")";
-};
-lf.proc.DeleteStep.prototype.getScope = function() {
-  return this.table_;
 };
 lf.proc.DeleteStep.prototype.execInternal = function(journal, relations) {
   var rows = relations[0].entries.map(function(entry) {
@@ -9471,9 +9481,6 @@ goog.inherits(lf.proc.TableAccessByRowIdStep, lf.proc.PhysicalQueryPlanNode);
 lf.proc.TableAccessByRowIdStep.prototype.toString = function() {
   return "table_access_by_row_id(" + this.table_.getName() + ")";
 };
-lf.proc.TableAccessByRowIdStep.prototype.getScope = function() {
-  return this.table_;
-};
 lf.proc.TableAccessByRowIdStep.prototype.execInternal = function(journal, relations) {
   return [lf.proc.Relation.fromRows(this.cache_.get(relations[0].getRowIds()), [this.table_.getEffectiveName()])];
 };
@@ -9489,9 +9496,6 @@ lf.proc.TableAccessFullStep.prototype.toString = function() {
   var out = "table_access(" + this.table.getName();
   goog.isNull(this.table.getAlias()) || (out += " as " + this.table.getAlias());
   return out += ")";
-};
-lf.proc.TableAccessFullStep.prototype.getScope = function() {
-  return this.table;
 };
 lf.proc.TableAccessFullStep.prototype.execInternal = function() {
   var rowIds = this.indexStore_.get(this.table.getRowIdIndexName()).getRange();
@@ -9550,9 +9554,6 @@ goog.inherits(lf.proc.InsertStep, lf.proc.PhysicalQueryPlanNode);
 lf.proc.InsertStep.prototype.toString = function() {
   return "insert(" + this.table_.getName() + ")";
 };
-lf.proc.InsertStep.prototype.getScope = function() {
-  return this.table_;
-};
 lf.proc.InsertStep.prototype.execInternal = function(journal, relations, context) {
   var queryContext = context;
   lf.proc.InsertStep.assignAutoIncrementPks_(this.table_, queryContext.values, this.indexStore_);
@@ -9576,9 +9577,6 @@ lf.proc.InsertOrReplaceStep = function(global, table) {
 goog.inherits(lf.proc.InsertOrReplaceStep, lf.proc.PhysicalQueryPlanNode);
 lf.proc.InsertOrReplaceStep.prototype.toString = function() {
   return "insert_replace(" + this.table_.getName() + ")";
-};
-lf.proc.InsertOrReplaceStep.prototype.getScope = function() {
-  return this.table_;
 };
 lf.proc.InsertOrReplaceStep.prototype.execInternal = function(journal, relations, context) {
   var queryContext = context;
@@ -9899,9 +9897,6 @@ goog.inherits(lf.proc.UpdateStep, lf.proc.PhysicalQueryPlanNode);
 lf.proc.UpdateStep.prototype.toString = function() {
   return "update(" + this.table_.getName() + ")";
 };
-lf.proc.UpdateStep.prototype.getScope = function() {
-  return this.table_;
-};
 lf.proc.UpdateStep.prototype.execInternal = function(journal, relations) {
   var rows = relations[0].entries.map(function(entry) {
     var clone = this.table_.deserializeRow(entry.row.serialize());
@@ -9917,25 +9912,25 @@ lf.proc.UpdateStep.prototype.execInternal = function(journal, relations) {
 lf.proc.PhysicalPlanFactory = function(global) {
   this.global_ = global;
 };
-lf.proc.PhysicalPlanFactory.prototype.create = function(logicalQueryPlanRoot, queryContext) {
+lf.proc.PhysicalPlanFactory.prototype.create = function(logicalQueryPlan, queryContext) {
+  var logicalQueryPlanRoot = logicalQueryPlan.getRoot();
   if (logicalQueryPlanRoot instanceof lf.proc.InsertOrReplaceNode || logicalQueryPlanRoot instanceof lf.proc.InsertNode) {
-    return this.createPlan_(logicalQueryPlanRoot, queryContext);
+    return this.createPlan_(logicalQueryPlan, queryContext);
   }
   if (logicalQueryPlanRoot instanceof lf.proc.ProjectNode || logicalQueryPlanRoot instanceof lf.proc.LimitNode || logicalQueryPlanRoot instanceof lf.proc.SkipNode) {
-    return this.createPlan_(logicalQueryPlanRoot, queryContext, [new lf.proc.IndexRangeScanPass(this.global_), new lf.proc.OrderByIndexPass(this.global_), new lf.proc.LimitSkipByIndexPass]);
+    return this.createPlan_(logicalQueryPlan, queryContext, [new lf.proc.IndexRangeScanPass(this.global_), new lf.proc.OrderByIndexPass(this.global_), new lf.proc.LimitSkipByIndexPass]);
   }
   if (logicalQueryPlanRoot instanceof lf.proc.DeleteNode || logicalQueryPlanRoot instanceof lf.proc.UpdateNode) {
-    return this.createPlan_(logicalQueryPlanRoot, queryContext, [new lf.proc.IndexRangeScanPass(this.global_)]);
+    return this.createPlan_(logicalQueryPlan, queryContext, [new lf.proc.IndexRangeScanPass(this.global_)]);
   }
   throw new lf.Exception(8);
 };
-lf.proc.PhysicalPlanFactory.prototype.createPlan_ = function(rootNode, queryContext, opt_rewritePasses) {
-  var rootStep = lf.tree.map(rootNode, goog.bind(this.mapFn_, this));
+lf.proc.PhysicalPlanFactory.prototype.createPlan_ = function(logicalPlan, queryContext, opt_rewritePasses) {
+  var rootStep = lf.tree.map(logicalPlan.getRoot(), goog.bind(this.mapFn_, this));
   if (goog.isDefAndNotNull(opt_rewritePasses)) {
-    var planRewriter = new lf.proc.PhysicalPlanRewriter(rootStep, queryContext, opt_rewritePasses);
-    return new lf.proc.PhysicalQueryPlan(planRewriter.generate());
+    var planRewriter = new lf.proc.PhysicalPlanRewriter(rootStep, queryContext, opt_rewritePasses), rootStep = planRewriter.generate()
   }
-  return new lf.proc.PhysicalQueryPlan(rootStep);
+  return new lf.proc.PhysicalQueryPlan(rootStep, logicalPlan.getScope());
 };
 lf.proc.PhysicalPlanFactory.prototype.mapFn_ = function(node) {
   if (node instanceof lf.proc.ProjectNode) {

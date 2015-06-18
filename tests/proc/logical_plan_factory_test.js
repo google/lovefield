@@ -78,7 +78,7 @@ function testCreate_DeletePlan() {
       '---table_access(tableA)\n';
 
   var logicalPlan = logicalPlanFactory.create(query);
-  assertEquals(expectedTree, lf.tree.toString(logicalPlan));
+  assertEquals(expectedTree, lf.tree.toString(logicalPlan.getRoot()));
 
   assertEquals(
       2,
@@ -111,7 +111,7 @@ function testCreate_SelectPlan() {
       '---table_access(tableA)\n';
 
   var logicalPlan = logicalPlanFactory.create(query);
-  assertEquals(expectedTree, lf.tree.toString(logicalPlan));
+  assertEquals(expectedTree, lf.tree.toString(logicalPlan.getRoot()));
 
   assertEquals(
       2,
@@ -135,7 +135,7 @@ function testCreate_SelectPlan_SkipZero() {
       '-table_access(tableA)\n';
 
   var logicalPlan = logicalPlanFactory.create(query);
-  assertEquals(expectedTree, lf.tree.toString(logicalPlan));
+  assertEquals(expectedTree, lf.tree.toString(logicalPlan.getRoot()));
 }
 
 
@@ -156,7 +156,7 @@ function testCreate_SelectPlan_LimitZero() {
       '--table_access(tableA)\n';
 
   var logicalPlan = logicalPlanFactory.create(query);
-  assertEquals(expectedTree, lf.tree.toString(logicalPlan));
+  assertEquals(expectedTree, lf.tree.toString(logicalPlan.getRoot()));
 }
 
 
@@ -184,7 +184,7 @@ function testCreate_UpdatePlan() {
       '--table_access(tableA)\n';
 
   var logicalPlan = logicalPlanFactory.create(query);
-  assertEquals(expectedTree, lf.tree.toString(logicalPlan));
+  assertEquals(expectedTree, lf.tree.toString(logicalPlan.getRoot()));
 
   assertEquals(
       2,
