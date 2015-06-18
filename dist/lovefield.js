@@ -10644,7 +10644,7 @@ lf.schema.TableBuilder.ForeignkeySpec = function(rawSpec, name) {
   if (2 != array.length) {
     throw new lf.Exception(540, name);
   }
-  this.localColumn = rawSpec.local;
+  this.childColumn = rawSpec.local;
   this.parentTable = array[0];
   this.parentColumn = array[1];
   this.fkName = name;
@@ -10706,7 +10706,7 @@ lf.schema.TableBuilder.prototype.addForeignKey = function(name, rawSpec) {
   if (spec.action == lf.ConstraintAction.CASCADE && spec.timing == lf.ConstraintTiming.DEFERRABLE) {
     throw new lf.Exception(506);
   }
-  if (!this.columns_.has(spec.localColumn)) {
+  if (!this.columns_.has(spec.childColumn)) {
     throw new lf.Exception(540, name);
   }
   this.fkSpecs_.push(spec);
@@ -10810,10 +10810,10 @@ lf.schema.TableBuilder.prototype.generateTableClass_ = function() {
     lf.schema.Table.call(this, that.name_, columns, indices, that.persistentIndex_);
     var pk = that.indices_.has(that.pkName_) ? new lf.schema.Index(that.name_, that.pkName_, !0, generateIndexedColumns.call(this, that.pkName_)) : null, notNullable = columns.filter(function(col) {
       return !that.nullable_.has(col.getName());
-    }), foreignKeys = [], unique = lf.structs.set.values(that.uniqueIndices_).map(function(indexName) {
+    }), unique = lf.structs.set.values(that.uniqueIndices_).map(function(indexName) {
       return new lf.schema.Index(that.name_, indexName, !0, generateIndexedColumns.call(this, indexName));
     }, this);
-    this.constraint_ = new lf.schema.Constraint(pk, notNullable, foreignKeys, unique);
+    this.constraint_ = new lf.schema.Constraint(pk, notNullable, that.getFkSpecs(), unique);
     this.rowClass_ = that.generateRowClass_(columns, indices);
   };
   goog.inherits(tableClass, lf.schema.Table);
@@ -10910,7 +10910,7 @@ lf.schema.Builder.prototype.checkForeignKeyValidity_ = function(builder) {
     if (!parentSchema.hasOwnProperty(parentColName)) {
       throw new lf.Exception(537, specs.fkName);
     }
-    var localSchema = builder.getSchema(), localColName = specs.localColumn;
+    var localSchema = builder.getSchema(), localColName = specs.childColumn;
     if (localSchema[localColName].getType() != parentSchema[parentColName].getType()) {
       throw new lf.Exception(538, specs.fkName);
     }
@@ -10924,7 +10924,7 @@ lf.schema.Builder.prototype.checkForeignKeyChain_ = function(builder) {
   fkSpecArray.forEach(function(specs) {
     var parentBuilder = this.tableBuilders_.get(specs.parentTable);
     parentBuilder.getFkSpecs().forEach(function(parentSpecs) {
-      if (parentSpecs.localColumn == specs.parentColumn) {
+      if (parentSpecs.childColumn == specs.parentColumn) {
         throw new lf.Exception(534, specs.fkName);
       }
     }, this);

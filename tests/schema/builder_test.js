@@ -17,12 +17,14 @@
 goog.setTestOnly();
 goog.require('goog.testing.jsunit');
 goog.require('lf.ConstraintAction');
+goog.require('lf.ConstraintTiming');
 goog.require('lf.Order');
 goog.require('lf.Row');
 goog.require('lf.Type');
 goog.require('lf.schema');
 goog.require('lf.schema.BaseColumn');
 goog.require('lf.schema.Table');
+goog.require('lf.schema.TableBuilder');
 goog.require('lf.testing.util');
 
 
@@ -51,7 +53,8 @@ function createBuilder() {
       addForeignKey('fk_DeptId', {
         local: 'departmentId',
         ref: 'Department.id',
-        action: lf.ConstraintAction.CASCADE
+        action: lf.ConstraintAction.CASCADE,
+        timing: lf.ConstraintTiming.IMMEDIATE
       });
 
   ds.createTable('Employee').
@@ -99,6 +102,47 @@ function createBuilder() {
       addIndex('idx_number', [{'name': 'number'}], true).
       addNullable(['arraybuffer', 'object']);
   return ds;
+}
+
+function testGetForeignKeySimpleSpec() {
+  var ds = createBuilder();
+  assertEquals(0, ds.getSchema().table('Job').getConstraint().
+      getForeignKeys().length);
+
+  assertEquals(1, ds.getSchema().table('Department').getConstraint().
+      getForeignKeys().length);
+
+  var specs = new lf.schema.TableBuilder.ForeignkeySpec({
+    local: 'managerId',
+    ref: 'Employee.id',
+    action: lf.ConstraintAction.RESTRICT,
+    timing: lf.ConstraintTiming.IMMEDIATE
+  }, 'fk_ManagerId');
+  assertObjectEquals(specs, ds.getSchema().table('Department').
+      getConstraint().getForeignKeys()[0]);
+}
+
+function testGetForeignKeyTwoSpecs() {
+  var ds = createBuilder();
+  assertEquals(2, ds.getSchema().table('JobHistory').
+      getConstraint().getForeignKeys().length);
+
+  var specs = new lf.schema.TableBuilder.ForeignkeySpec({
+    local: 'employeeId',
+    ref: 'Employee.id',
+    action: lf.ConstraintAction.CASCADE,
+    timing: lf.ConstraintTiming.IMMEDIATE
+  }, 'fk_EmployeeId');
+  assertObjectEquals(specs, ds.getSchema().table('JobHistory').
+      getConstraint().getForeignKeys()[0]);
+  specs = new lf.schema.TableBuilder.ForeignkeySpec({
+    local: 'departmentId',
+    ref: 'Department.id',
+    action: lf.ConstraintAction.CASCADE,
+    timing: lf.ConstraintTiming.IMMEDIATE
+  }, 'fk_DeptId');
+  assertObjectEquals(specs, ds.getSchema().table('JobHistory').
+      getConstraint().getForeignKeys()[1]);
 }
 
 function testThrows_DuplicateTable() {
