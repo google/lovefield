@@ -35,26 +35,35 @@ var stdout = process.stdout;
 /**
  * @param {string} testsFolder The folder that contains the test to be included
  *     in the server.
+ * @param {number} port
  * @return {!IThenable}
  */
-function runTestServer(testsFolder) {
+function runTestServer(testsFolder, port) {
   return createTestEnv(testsFolder).then(function(tempPath) {
     connect.server({
       livereload: true,
-      port: 8000,
+      port: port,
       root: tempPath
     });
   });
 }
 
 
-function runUnitTestServer() {
-  return runTestServer('tests');
+/**
+ * @param {number} port
+ * @return {!IThenable}
+ */
+function runUnitTestServer(port) {
+  return runTestServer('tests', port);
 }
 
 
-function runPerfTestServer() {
-  return runTestServer('perf');
+/**
+ * @param {number} port
+ * @return {!IThenable}
+ */
+function runPerfTestServer(port) {
+  return runTestServer('perf', port);
 }
 
 

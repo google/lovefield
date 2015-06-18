@@ -18,6 +18,7 @@ var fs = require('fs-extra');
 var gjslint = require('gulp-gjslint');
 var gulp = require('gulp');
 var path = require('path');
+var nopt = require('nopt');
 var webserver = require('gulp-webserver');
 var log = console['log'];
 
@@ -25,7 +26,7 @@ var log = console['log'];
 gulp.task('default', function() {
   log('Usage:');
   log(' gulp clean: clean all temporary files');
-  log(' gulp debug: start a debug server at port 4000');
+  log(' gulp debug [--port=<number>]: start debug server (default port 8000)');
   log(' gulp export: export the codelab to dist');
   log(' gulp lint: lint all source files');
 });
@@ -73,10 +74,16 @@ gulp.task('clean', function() {
 
 
 gulp.task('debug', ['copy_dependencies'], function() {
+  var knownOps = {
+    'port': [Number, null]
+  };
+  var portNumber = nopt(knownOps).port || 8000;
+
   gulp.src('.').pipe(webserver({
     //livereload: true,
     directoryListing: true,
-    open: false
+    open: false,
+    port: portNumber
   }));
 });
 

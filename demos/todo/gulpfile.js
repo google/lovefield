@@ -15,12 +15,19 @@
  * limitations under the License.
  */
 var gulp = require('gulp');
+var nopt = require('nopt');
 var webserver = require('gulp-webserver');
 
 gulp.task('debug', function() {
+  var knownOps = {
+    'port': [Number, null]
+  };
+  var portNumber = nopt(knownOps).port || 8000;
+
   gulp.src('.').pipe(webserver({
     livereload: true,
     directoryListing: true,
-    open: false
+    open: false,
+    port: portNumber
   }));
 });

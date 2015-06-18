@@ -33,8 +33,8 @@ var runner = /** @type {{
         require(pathMod.resolve(
             pathMod.join(__dirname, 'tools/run_test.js'))));
 var testServer = /** @type {{
-    runUnitTestServer: function():!IThenable,
-    runPerfTestServer: function():!IThenable }} */ (
+    runUnitTestServer: function(number):!IThenable,
+    runPerfTestServer: function(number):!IThenable }} */ (
         require(pathMod.resolve(
             pathMod.join(__dirname, 'tools/run_test_server.js'))));
 
@@ -46,7 +46,8 @@ gulp.task('default', function() {
   log('Usage: ');
   log('  gulp build --target=<all|lib|tests> --mode=<opt|debug>:');
   log('      compile source files using Closure compiler');
-  log('  gulp debug: start a debug server at port 4000');
+  log('  gulp debug [--target=<tests|perf>] [--port=<number>]:');
+  log('      start a debug server (default is test at port 8000)');
   log('  gulp lint: lint against source files');
   log('  gulp test --target=<perf|spac|jsunit> --browser=<chrome|firefox>:');
   log('      run Lovefield tests using webdriver (need to install separately)');
@@ -83,17 +84,19 @@ gulp.task('build', function() {
 
 gulp.task('debug', function() {
   var knownOpts = {
-    'target': [String, null]
+    'target': [String, null],
+    'port': [Number, null]
   };
 
   var options = nopt(knownOpts);
   options.target = options.target || 'tests';
+  var port = options.port || 8000;
 
   // The test server cannot callback. It is terminated by Ctrl-C.
   if (options.target == 'perf') {
-    testServer.runPerfTestServer();
+    testServer.runPerfTestServer(port);
   } else {
-    testServer.runUnitTestServer();
+    testServer.runUnitTestServer(port);
   }
 });
 

@@ -15,6 +15,7 @@
  * limitations under the License.
  */
 var gulp = require('gulp');
+var nopt = require('nopt');
 var ts = require('gulp-typescript');
 var tsd = require('gulp-tsd');
 var webserver = require('gulp-webserver');
@@ -40,8 +41,14 @@ gulp.task('build', ['tsd'], function () {
 
 
 gulp.task('debug', ['build'], function() {
+  var knownOps = {
+    'port': [Number, null]
+  };
+  var portNumber = nopt(knownOps).port || 8000;
+
   gulp.src('.').pipe(webserver({
     directoryListing: true,
-    open: false
+    open: false,
+    port: portNumber
   }));
 });

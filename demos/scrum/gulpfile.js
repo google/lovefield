@@ -17,13 +17,14 @@
 
 var gjslint = require('gulp-gjslint');
 var gulp = require('gulp');
+var nopt = require('nopt');
 var webserver = require('gulp-webserver');
 
 gulp.task('default', function() {
   var log = console['log'];
   log('Usage:');
   log('gulp lint: check js files');
-  log('gulp debug: starts an web server');
+  log('gulp debug [--port=<number>]: start debug server (default port 8000)');
 });
 
 gulp.task('lint', function() {
@@ -33,7 +34,13 @@ gulp.task('lint', function() {
 });
 
 gulp.task('debug', function() {
+  var knownOps = {
+    'port': [Number, null]
+  };
+  var portNumber = nopt(knownOps).port || 8000;
+
   gulp.src('.').pipe(webserver({
-    livereload: true
+    livereload: true,
+    port: portNumber
   }));
 });

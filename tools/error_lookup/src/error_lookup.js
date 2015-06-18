@@ -18,7 +18,7 @@
 
 /**
  * Translates CGI params into human readable error messages, if applicable.
- * For example, ?code=107&p0=1&p1=3 will maps to error code 107, and two extra
+ * For example, ?c=107&p0=1&p1=3 will maps to error code 107, and two extra
  * parameters 1 and 3 will be used to generate the final message.
  * @param {!Object} data Error messages indexed by error code.
  * @return {?string}

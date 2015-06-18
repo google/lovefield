@@ -9,6 +9,7 @@
     "gulp-tsd": "^0.0.4",
     "gulp-typescript": "^2.7.6",
     "gulp-webserver": "^0.9.0",
+    "nopt": "~2.2.1",
     "tsd": "^0.6.1"
   }
 }
