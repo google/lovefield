@@ -23,8 +23,8 @@ goog.require('lf.Row');
 goog.require('lf.Type');
 goog.require('lf.schema');
 goog.require('lf.schema.BaseColumn');
+goog.require('lf.schema.ForeignKeySpec');
 goog.require('lf.schema.Table');
-goog.require('lf.schema.TableBuilder');
 goog.require('lf.testing.util');
 
 
@@ -112,7 +112,7 @@ function testGetForeignKeySimpleSpec() {
   assertEquals(1, ds.getSchema().table('Department').getConstraint().
       getForeignKeys().length);
 
-  var specs = new lf.schema.TableBuilder.ForeignkeySpec({
+  var specs = new lf.schema.ForeignKeySpec({
     local: 'managerId',
     ref: 'Employee.id',
     action: lf.ConstraintAction.RESTRICT,
@@ -127,7 +127,7 @@ function testGetForeignKeyTwoSpecs() {
   assertEquals(2, ds.getSchema().table('JobHistory').
       getConstraint().getForeignKeys().length);
 
-  var specs = new lf.schema.TableBuilder.ForeignkeySpec({
+  var specs = new lf.schema.ForeignKeySpec({
     local: 'employeeId',
     ref: 'Employee.id',
     action: lf.ConstraintAction.CASCADE,
@@ -135,7 +135,7 @@ function testGetForeignKeyTwoSpecs() {
   }, 'fk_EmployeeId');
   assertObjectEquals(specs, ds.getSchema().table('JobHistory').
       getConstraint().getForeignKeys()[0]);
-  specs = new lf.schema.TableBuilder.ForeignkeySpec({
+  specs = new lf.schema.ForeignKeySpec({
     local: 'departmentId',
     ref: 'Department.id',
     action: lf.ConstraintAction.CASCADE,

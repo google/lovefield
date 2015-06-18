@@ -10621,6 +10621,19 @@ lf.schema.Constraint.prototype.getNotNullable = function() {
   return this.notNullable_;
 };
 
+lf.schema.ForeignKeySpec = function(rawSpec, name) {
+  var array = rawSpec.ref.split(".");
+  if (2 != array.length) {
+    throw new lf.Exception(540, name);
+  }
+  this.childColumn = rawSpec.local;
+  this.parentTable = array[0];
+  this.parentColumn = array[1];
+  this.fkName = name;
+  this.action = rawSpec.action;
+  this.timing = rawSpec.timing;
+};
+
 lf.schema.TableBuilder = function(tableName) {
   this.name_ = tableName;
   this.columns_ = new lf.structs.Map;
@@ -10634,18 +10647,6 @@ lf.schema.TableBuilder = function(tableName) {
   this.fkSpecs_ = [];
 };
 goog.exportSymbol("lf.schema.TableBuilder", lf.schema.TableBuilder);
-lf.schema.TableBuilder.ForeignkeySpec = function(rawSpec, name) {
-  var array = rawSpec.ref.split(".");
-  if (2 != array.length) {
-    throw new lf.Exception(540, name);
-  }
-  this.childColumn = rawSpec.local;
-  this.parentTable = array[0];
-  this.parentColumn = array[1];
-  this.fkName = name;
-  this.action = rawSpec.action;
-  this.timing = rawSpec.timing;
-};
 lf.schema.TableBuilder.IndexedColumn_ = function(raw) {
   this.name = raw.name;
   this.order = raw.order;
@@ -10695,7 +10696,7 @@ lf.schema.TableBuilder.prototype.addPrimaryKey = function(columns, opt_autoInc) 
 goog.exportProperty(lf.schema.TableBuilder.prototype, "addPrimaryKey", lf.schema.TableBuilder.prototype.addPrimaryKey);
 lf.schema.TableBuilder.prototype.addForeignKey = function(name, rawSpec) {
   this.checkName_(name);
-  var spec = new lf.schema.TableBuilder.ForeignkeySpec(rawSpec, name);
+  var spec = new lf.schema.ForeignKeySpec(rawSpec, name);
   goog.isDef(spec.action) || (spec.action = lf.ConstraintAction.RESTRICT);
   goog.isDef(spec.timing) || (spec.timing = lf.ConstraintTiming.IMMEDIATE);
   if (spec.action == lf.ConstraintAction.CASCADE && spec.timing == lf.ConstraintTiming.DEFERRABLE) {

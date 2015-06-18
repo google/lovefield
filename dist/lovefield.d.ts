@@ -198,7 +198,7 @@ declare module lf {
       order: Order
     }
 
-    type ReferentialConstraintSpec = {
+    type RawForeignKeySpec = {
       local: string
       ref: string
       action: lf.ConstraintAction
@@ -207,7 +207,7 @@ declare module lf {
 
     export interface TableBuilder {
       addColumn(name: string, type: lf.Type): TableBuilder
-      addForeignKey(name: string, spec: ReferentialConstraintSpec): TableBuilder
+      addForeignKey(name: string, spec: RawForeignKeySpec): TableBuilder
       addIndex(
           name: string, columns: Array<string>|Array<IndexedColumn>,
           unique?: boolean, order?: Order): TableBuilder
