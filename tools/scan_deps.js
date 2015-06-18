@@ -163,7 +163,7 @@ RequireMap_.prototype.getTopoSortEntry = function(
     provideMap, closureProvide, opt_filter) {
   var results = [];
   this.map_.forEach(function(set, key) {
-    if (opt_filter && opt_filter.has(key) == -1) {
+    if (opt_filter && !opt_filter.has(key)) {
       return;
     }
     var entry = { name: key, depends: [] };
