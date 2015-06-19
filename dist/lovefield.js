@@ -10706,6 +10706,7 @@ lf.schema.TableBuilder.prototype.addForeignKey = function(name, rawSpec) {
     throw new lf.Exception(540, name);
   }
   this.fkSpecs_.push(spec);
+  this.addIndex(name, [spec.childColumn], !1);
   return this;
 };
 goog.exportProperty(lf.schema.TableBuilder.prototype, "addForeignKey", lf.schema.TableBuilder.prototype.addForeignKey);

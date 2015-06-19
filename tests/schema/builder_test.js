@@ -25,13 +25,14 @@ goog.require('lf.schema');
 goog.require('lf.schema.BaseColumn');
 goog.require('lf.schema.ForeignKeySpec');
 goog.require('lf.schema.Table');
+goog.require('lf.structs.Set');
 goog.require('lf.testing.util');
 
 
 /** @return {!lf.schema.Builder} */
 function createBuilder() {
-  var ds = lf.schema.create('hr', 1);
-  ds.createTable('Job').
+  var schemaBuilder = lf.schema.create('hr', 1);
+  schemaBuilder.createTable('Job').
       addColumn('id', lf.Type.STRING).
       addColumn('title', lf.Type.STRING).
       addColumn('minSalary', lf.Type.NUMBER).
@@ -39,7 +40,7 @@ function createBuilder() {
       addPrimaryKey(['id']).
       addIndex('idx_maxSalary', ['maxSalary'], false, lf.Order.DESC);
 
-  ds.createTable('JobHistory').
+  schemaBuilder.createTable('JobHistory').
       addColumn('employeeId', lf.Type.INTEGER).
       addColumn('startDate', lf.Type.DATE_TIME).
       addColumn('endDate', lf.Type.DATE_TIME).
@@ -57,7 +58,7 @@ function createBuilder() {
         timing: lf.ConstraintTiming.IMMEDIATE
       });
 
-  ds.createTable('Employee').
+  schemaBuilder.createTable('Employee').
       addColumn('id', lf.Type.INTEGER).
       addColumn('firstName', lf.Type.STRING).
       addColumn('lastName', lf.Type.STRING).
@@ -80,7 +81,7 @@ function createBuilder() {
       }).
       addNullable(['hireDate']);
 
-  ds.createTable('Department').
+  schemaBuilder.createTable('Department').
       addColumn('id', lf.Type.INTEGER).
       addColumn('name', lf.Type.STRING).
       addColumn('managerId', lf.Type.INTEGER).
@@ -90,7 +91,7 @@ function createBuilder() {
         ref: 'Employee.id'
       });
 
-  ds.createTable('DummyTable').
+  schemaBuilder.createTable('DummyTable').
       addColumn('arraybuffer', lf.Type.ARRAY_BUFFER).
       addColumn('boolean', lf.Type.BOOLEAN).
       addColumn('datetime', lf.Type.DATE_TIME).
@@ -101,15 +102,15 @@ function createBuilder() {
       addIndex('idx_string', ['string'], true, lf.Order.ASC).
       addIndex('idx_number', [{'name': 'number'}], true).
       addNullable(['arraybuffer', 'object']);
-  return ds;
+  return schemaBuilder;
 }
 
 function testGetForeignKeySimpleSpec() {
-  var ds = createBuilder();
-  assertEquals(0, ds.getSchema().table('Job').getConstraint().
+  var schemaBuilder = createBuilder();
+  assertEquals(0, schemaBuilder.getSchema().table('Job').getConstraint().
       getForeignKeys().length);
 
-  assertEquals(1, ds.getSchema().table('Department').getConstraint().
+  assertEquals(1, schemaBuilder.getSchema().table('Department').getConstraint().
       getForeignKeys().length);
 
   var specs = new lf.schema.ForeignKeySpec({
@@ -118,13 +119,13 @@ function testGetForeignKeySimpleSpec() {
     action: lf.ConstraintAction.RESTRICT,
     timing: lf.ConstraintTiming.IMMEDIATE
   }, 'fk_ManagerId');
-  assertObjectEquals(specs, ds.getSchema().table('Department').
+  assertObjectEquals(specs, schemaBuilder.getSchema().table('Department').
       getConstraint().getForeignKeys()[0]);
 }
 
 function testGetForeignKeyTwoSpecs() {
-  var ds = createBuilder();
-  assertEquals(2, ds.getSchema().table('JobHistory').
+  var schemaBuilder = createBuilder();
+  assertEquals(2, schemaBuilder.getSchema().table('JobHistory').
       getConstraint().getForeignKeys().length);
 
   var specs = new lf.schema.ForeignKeySpec({
@@ -133,7 +134,7 @@ function testGetForeignKeyTwoSpecs() {
     action: lf.ConstraintAction.CASCADE,
     timing: lf.ConstraintTiming.IMMEDIATE
   }, 'fk_EmployeeId');
-  assertObjectEquals(specs, ds.getSchema().table('JobHistory').
+  assertObjectEquals(specs, schemaBuilder.getSchema().table('JobHistory').
       getConstraint().getForeignKeys()[0]);
   specs = new lf.schema.ForeignKeySpec({
     local: 'departmentId',
@@ -141,37 +142,33 @@ function testGetForeignKeyTwoSpecs() {
     action: lf.ConstraintAction.CASCADE,
     timing: lf.ConstraintTiming.IMMEDIATE
   }, 'fk_DeptId');
-  assertObjectEquals(specs, ds.getSchema().table('JobHistory').
+  assertObjectEquals(specs, schemaBuilder.getSchema().table('JobHistory').
       getConstraint().getForeignKeys()[1]);
 }
 
 function testThrows_DuplicateTable() {
-  var ds = createBuilder();
+  var schemaBuilder = createBuilder();
   // 503: Name {0} is already defined.
   lf.testing.util.assertThrowsError(503, function() {
-    ds.createTable('DummyTable');
+    schemaBuilder.createTable('DummyTable');
   });
 }
 
 function testThrows_DuplicateColumn() {
-  var ds = createBuilder();
+  var schemaBuilder = createBuilder();
   // 503: Name {0} is already defined.
   lf.testing.util.assertThrowsError(503, function() {
-    ds.createTable('Table2').
+    schemaBuilder.createTable('Table2').
         addColumn('col', lf.Type.STRING).
         addColumn('col', lf.Type.STRING);
   });
 }
 
 function testThrows_InValidFKLocalColName() {
-  var ds = createBuilder();
+  var schemaBuilder = createBuilder();
   var testFn = function() {
-    ds.createTable('fktable1').
+    schemaBuilder.createTable('FkTable1').
         addColumn('employeeId', lf.Type.STRING).
-        addColumn('startDate', lf.Type.DATE_TIME).
-        addColumn('endDate', lf.Type.DATE_TIME).
-        addColumn('jobId', lf.Type.STRING).
-        addColumn('departmentId', lf.Type.STRING).
         addForeignKey('fkemployeeId', {
           local: 'employeeId1',
           ref: 'Employee.id'
@@ -181,76 +178,112 @@ function testThrows_InValidFKLocalColName() {
   lf.testing.util.assertThrowsError(540, testFn);
 }
 
+function test_defaultIndexOnForeignKey() {
+  var schemaBuilder = createBuilder();
+  var indexNames = new lf.structs.Set();
+  // TODO(sowmyasb) : optimize getting index name
+  // without looping through the array.
+  schemaBuilder.getSchema().table('Employee').
+      getIndices().forEach(function(index) {
+        indexNames.add(index.name);
+      });
+  assertTrue(indexNames.has('fk_JobId'));
+}
+
+function testThrows_duplicateIndexName() {
+  var schemaBuilder = createBuilder();
+  var testFn = function() {
+    schemaBuilder.createTable('FkTableDupIndex').
+        addColumn('employeeId', lf.Type.INTEGER).
+        addForeignKey('fkemployeeId', {
+          local: 'employeeId',
+          ref: 'Employee.id'
+        }).
+        addIndex('fkemployeeId', ['employeeId'], true, lf.Order.ASC);
+  };
+  // 503: Name FkTableDupIndex.fkemployeeId is already defined.
+  lf.testing.util.assertThrowsError(503, testFn);
+  testFn = function() {
+    schemaBuilder.createTable('FkTableDupIndex2').
+        addColumn('employeeId', lf.Type.INTEGER).
+        addIndex('fkemployeeId', ['employeeId'], true, lf.Order.ASC).
+        addForeignKey('fkemployeeId', {
+          local: 'employeeId',
+          ref: 'Employee.id'
+        });
+  };
+  // 503: Name FkTableDupIndex.fkemployeeId is already defined.
+  lf.testing.util.assertThrowsError(503, testFn);
+}
+
+function test_addDuplicateIndexOnFK() {
+  var schemaBuilder = createBuilder();
+  schemaBuilder.createTable('FkTableDupIndex').
+      addColumn('employeeId', lf.Type.INTEGER).
+      addForeignKey('fkemployeeId', {
+        local: 'employeeId',
+        ref: 'Employee.id'
+      }).
+      addIndex('idx_employeeId', ['employeeId'], false, lf.Order.ASC);
+  var indexNames = new lf.structs.Set();
+  schemaBuilder.getSchema().table('FkTableDupIndex').
+      getIndices().forEach(function(index) {
+        indexNames.add(index.name);
+      });
+  assertTrue(indexNames.has('fkemployeeId'));
+  assertTrue(indexNames.has('idx_employeeId'));
+}
+
 function testThrows_InValidFKRefTableName() {
-  var ds = createBuilder();
-  ds.createTable('fkTable2').
+  var schemaBuilder = createBuilder();
+  schemaBuilder.createTable('FkTable2').
       addColumn('employeeId', lf.Type.STRING).
-      addColumn('startDate', lf.Type.DATE_TIME).
-      addColumn('endDate', lf.Type.DATE_TIME).
-      addColumn('jobId', lf.Type.STRING).
-      addColumn('departmentId', lf.Type.STRING).
       addForeignKey('fkemployeeId', {
         local: 'employeeId',
         ref: 'Employee1.id'
       });
   // 536: Foreign key {0} refers to invalid table.
   lf.testing.util.assertThrowsError(536, function() {
-    ds.getSchema();
+    schemaBuilder.getSchema();
   });
 }
 
 function testThrows_ColumnTypeMismatch() {
-  var ds = createBuilder();
-  ds.createTable('fkTable3').
+  var schemaBuilder = createBuilder();
+  schemaBuilder.createTable('FkTable3').
       addColumn('employeeId', lf.Type.STRING).
-      addColumn('startDate', lf.Type.DATE_TIME).
-      addColumn('endDate', lf.Type.DATE_TIME).
-      addColumn('jobId', lf.Type.STRING).
-      addColumn('departmentId', lf.Type.STRING).
       addForeignKey('fkemployeeId', {
         local: 'employeeId',
-        ref: 'fkTable4.employeeId'
+        ref: 'FkTable4.employeeId'
       });
-  ds.createTable('fkTable4').
-      addColumn('employeeId', lf.Type.INTEGER).
-      addColumn('startDate', lf.Type.DATE_TIME).
-      addColumn('endDate', lf.Type.DATE_TIME).
-      addColumn('jobId', lf.Type.STRING).
-      addColumn('departmentId', lf.Type.STRING);
+  schemaBuilder.createTable('FkTable4').
+      addColumn('employeeId', lf.Type.INTEGER);
   // 538: Foreign key {0} column type mismatch.
   lf.testing.util.assertThrowsError(538, function() {
-    ds.getSchema();
+    schemaBuilder.getSchema();
   });
 }
 
 function testThrows_InValidFKRefColName() {
-  var ds = createBuilder();
-  ds.createTable('fkTable5').
+  var schemaBuilder = createBuilder();
+  schemaBuilder.createTable('FkTable5').
       addColumn('employeeId', lf.Type.STRING).
-      addColumn('startDate', lf.Type.DATE_TIME).
-      addColumn('endDate', lf.Type.DATE_TIME).
-      addColumn('jobId', lf.Type.STRING).
-      addColumn('departmentId', lf.Type.STRING).
       addForeignKey('fkemployeeId', {
         local: 'employeeId',
         ref: 'Employee.id1'
       });
   // 537: Foreign key {0} refers to invalid column.
   lf.testing.util.assertThrowsError(537, function() {
-    ds.getSchema();
+    schemaBuilder.getSchema();
   });
 }
 
 function testThrows_InValidFKRefName() {
-  var ds = createBuilder();
+  var schemaBuilder = createBuilder();
   // 540: Foreign key {0} has invalid reference syntax.
   lf.testing.util.assertThrowsError(540, function() {
-    ds.createTable('fkTable5').
+    schemaBuilder.createTable('FkTable5').
         addColumn('employeeId', lf.Type.STRING).
-        addColumn('startDate', lf.Type.DATE_TIME).
-        addColumn('endDate', lf.Type.DATE_TIME).
-        addColumn('jobId', lf.Type.STRING).
-        addColumn('departmentId', lf.Type.STRING).
         addForeignKey('fkemployeeId', {
           local: 'employeeId',
           ref: 'Employeeid'
@@ -259,198 +292,146 @@ function testThrows_InValidFKRefName() {
 }
 
 function test_checkForeignKeyChainOnSameColumn() {
-  var ds = createBuilder();
-  ds.createTable('fkTable8').
+  var schemaBuilder = createBuilder();
+  schemaBuilder.createTable('FkTable8').
       addColumn('employeeId', lf.Type.INTEGER).
-      addColumn('startDate', lf.Type.DATE_TIME).
-      addColumn('endDate', lf.Type.DATE_TIME).
-      addColumn('jobId', lf.Type.STRING).
-      addColumn('departmentId', lf.Type.STRING).
       addForeignKey('fkemployeeId1', {
         local: 'employeeId',
-        ref: 'fkTable10.employeeId'
+        ref: 'FkTable10.employeeId'
       });
-  ds.createTable('fkTable9').
+  schemaBuilder.createTable('FkTable9').
       addColumn('employeeId', lf.Type.INTEGER).
-      addColumn('startDate', lf.Type.DATE_TIME).
-      addColumn('endDate', lf.Type.DATE_TIME).
-      addColumn('jobId', lf.Type.STRING).
-      addColumn('departmentId', lf.Type.STRING).
       addForeignKey('fkemployeeId2', {
         local: 'employeeId',
-        ref: 'fkTable10.employeeId'
+        ref: 'FkTable10.employeeId'
       });
-  ds.createTable('fkTable10').
+  schemaBuilder.createTable('FkTable10').
       addColumn('employeeId', lf.Type.INTEGER).
       addColumn('employeeId2', lf.Type.INTEGER).
-      addColumn('startDate', lf.Type.DATE_TIME).
-      addColumn('endDate', lf.Type.DATE_TIME).
-      addColumn('jobId', lf.Type.STRING).
-      addColumn('departmentId', lf.Type.STRING).
       addPrimaryKey([{'name': 'employeeId', 'order': lf.Order.DESC}]).
       addForeignKey('fkemployeeId3', {
         local: 'employeeId',
-        ref: 'fkTable11.employeeId'
+        ref: 'FkTable11.employeeId'
       });
-  ds.createTable('fkTable11').
+  schemaBuilder.createTable('FkTable11').
       addColumn('employeeId', lf.Type.INTEGER).
-      addColumn('startDate', lf.Type.DATE_TIME).
-      addColumn('endDate', lf.Type.DATE_TIME).
-      addColumn('jobId', lf.Type.STRING).
-      addColumn('departmentId', lf.Type.STRING).
       addPrimaryKey([{'name': 'employeeId', 'order': lf.Order.DESC}]);
 
   // 534: Foreign key {0} refers to source column of another foreign key.
   lf.testing.util.assertThrowsError(534, function() {
-    ds.getSchema();
+    schemaBuilder.getSchema();
   });
 }
 
 function test_checkForeignKeyLoop() {
-  var ds = createBuilder();
-  ds.createTable('fkTable8').
+  var schemaBuilder = createBuilder();
+  schemaBuilder.createTable('FkTable8').
       addColumn('employeeId', lf.Type.INTEGER).
       addColumn('employeeId2', lf.Type.INTEGER).
-      addColumn('startDate', lf.Type.DATE_TIME).
-      addColumn('endDate', lf.Type.DATE_TIME).
-      addColumn('jobId', lf.Type.STRING).
-      addColumn('departmentId', lf.Type.STRING).
       addPrimaryKey([{'name': 'employeeId2', 'order': lf.Order.DESC}]).
       addForeignKey('fkemployeeId1', {
         local: 'employeeId',
-        ref: 'fkTable10.employeeId'
+        ref: 'FkTable10.employeeId'
       });
-  ds.createTable('fkTable9').
+  schemaBuilder.createTable('FkTable9').
       addColumn('employeeId', lf.Type.INTEGER).
-      addColumn('startDate', lf.Type.DATE_TIME).
-      addColumn('endDate', lf.Type.DATE_TIME).
-      addColumn('jobId', lf.Type.STRING).
-      addColumn('departmentId', lf.Type.STRING).
       addForeignKey('fkemployeeId2', {
         local: 'employeeId',
-        ref: 'fkTable10.employeeId'
+        ref: 'FkTable10.employeeId'
       });
-  ds.createTable('fkTable10').
+  schemaBuilder.createTable('FkTable10').
       addColumn('employeeId', lf.Type.INTEGER).
       addColumn('employeeId2', lf.Type.INTEGER).
-      addColumn('startDate', lf.Type.DATE_TIME).
-      addColumn('endDate', lf.Type.DATE_TIME).
-      addColumn('jobId', lf.Type.STRING).
-      addColumn('departmentId', lf.Type.STRING).
       addPrimaryKey([{'name': 'employeeId', 'order': lf.Order.DESC}]).
       addForeignKey('fkemployeeId3', {
         local: 'employeeId2',
-        ref: 'fkTable11.employeeId'
+        ref: 'FkTable11.employeeId'
       });
-  ds.createTable('fkTable11').
+  schemaBuilder.createTable('FkTable11').
       addColumn('employeeId', lf.Type.INTEGER).
       addColumn('employeeId2', lf.Type.INTEGER).
-      addColumn('startDate', lf.Type.DATE_TIME).
-      addColumn('endDate', lf.Type.DATE_TIME).
-      addColumn('jobId', lf.Type.STRING).
-      addColumn('departmentId', lf.Type.STRING).
       addPrimaryKey([{'name': 'employeeId', 'order': lf.Order.DESC}]).
       addForeignKey('fkemployeeId4', {
         local: 'employeeId2',
-        ref: 'fkTable8.employeeId2'
+        ref: 'FkTable8.employeeId2'
       });
   // 533: Foreign key loop detected.
   lf.testing.util.assertThrowsError(533, function() {
-    ds.getSchema();
+    schemaBuilder.getSchema();
   });
 }
 
 function test_checkForeignKeySelfLoop() {
-  var ds = createBuilder();
-  ds.createTable('fkTable8').
+  var schemaBuilder = createBuilder();
+  schemaBuilder.createTable('FkTable8').
       addColumn('employeeId', lf.Type.INTEGER).
       addColumn('employeeId2', lf.Type.INTEGER).
-      addColumn('startDate', lf.Type.DATE_TIME).
-      addColumn('endDate', lf.Type.DATE_TIME).
-      addColumn('jobId', lf.Type.STRING).
-      addColumn('departmentId', lf.Type.STRING).
       addPrimaryKey([{'name': 'employeeId', 'order': lf.Order.DESC}]).
       addForeignKey('fkemployeeId1', {
         local: 'employeeId2',
-        ref: 'fkTable8.employeeId'
+        ref: 'FkTable8.employeeId'
       });
-  ds.getSchema();
+  schemaBuilder.getSchema();
 }
 
 function test_checkForeignKeySelfLoopOfBiggerGraph() {
-  var ds = createBuilder();
-  ds.createTable('fkTable8').
+  var schemaBuilder = createBuilder();
+  schemaBuilder.createTable('FkTable8').
       addColumn('employeeId', lf.Type.INTEGER).
       addColumn('employeeId2', lf.Type.INTEGER).
-      addColumn('startDate', lf.Type.DATE_TIME).
-      addColumn('endDate', lf.Type.DATE_TIME).
-      addColumn('jobId', lf.Type.STRING).
-      addColumn('departmentId', lf.Type.STRING).
       addPrimaryKey([{'name': 'employeeId2', 'order': lf.Order.DESC}]).
       addForeignKey('fkemployeeId1', {
         local: 'employeeId',
-        ref: 'fkTable9.employeeId2'
+        ref: 'FkTable9.employeeId2'
       });
-  ds.createTable('fkTable9').
+  schemaBuilder.createTable('FkTable9').
       addColumn('employeeId', lf.Type.INTEGER).
       addColumn('employeeId2', lf.Type.INTEGER).
-      addColumn('startDate', lf.Type.DATE_TIME).
-      addColumn('endDate', lf.Type.DATE_TIME).
-      addColumn('jobId', lf.Type.STRING).
-      addColumn('departmentId', lf.Type.STRING).
       addPrimaryKey([{'name': 'employeeId2', 'order': lf.Order.DESC}]);
   // Self loop on table11
-  ds.createTable('fkTable11').
+  schemaBuilder.createTable('FkTable11').
       addColumn('employeeId', lf.Type.INTEGER).
       addColumn('employeeId2', lf.Type.INTEGER).
-      addColumn('startDate', lf.Type.DATE_TIME).
-      addColumn('endDate', lf.Type.DATE_TIME).
-      addColumn('jobId', lf.Type.STRING).
-      addColumn('departmentId', lf.Type.STRING).
       addPrimaryKey([{'name': 'employeeId', 'order': lf.Order.DESC}]).
       addForeignKey('fkemployeeId4', {
         local: 'employeeId2',
-        ref: 'fkTable8.employeeId2'
+        ref: 'FkTable8.employeeId2'
       }).
       addForeignKey('fkemployeeId2', {
         local: 'employeeId2',
-        ref: 'fkTable11.employeeId'
+        ref: 'FkTable11.employeeId'
       });
-  ds.getSchema();
+  schemaBuilder.getSchema();
 }
 
 function testThrows_FKRefKeyNonUnique() {
-  var ds = createBuilder();
-  ds.createTable('fkTable5').
+  var schemaBuilder = createBuilder();
+  schemaBuilder.createTable('FkTable5').
       addColumn('employeeId', lf.Type.STRING).
-      addColumn('startDate', lf.Type.DATE_TIME).
-      addColumn('endDate', lf.Type.DATE_TIME).
-      addColumn('jobId', lf.Type.STRING).
-      addColumn('departmentId', lf.Type.STRING).
       addForeignKey('fkemployeeId', {
         local: 'employeeId',
         ref: 'Employee.firstName'
       });
   // 539: Foreign key {0} refers to non-unique column.
   lf.testing.util.assertThrowsError(539, function() {
-    ds.getSchema();
+    schemaBuilder.getSchema();
   });
 }
 
 function testThrows_ModificationAfterFinalization() {
-  var ds = createBuilder();
-  ds.getSchema();
+  var schemaBuilder = createBuilder();
+  schemaBuilder.getSchema();
   // 535: Schema is already finalized.
   lf.testing.util.assertThrowsError(535, function() {
-    ds.createTable('NewTable');
+    schemaBuilder.createTable('NewTable');
   });
 }
 
 function testThrows_CrossColumnPkWithAutoInc() {
-  var ds = lf.schema.create('hr', 1);
+  var schemaBuilder = lf.schema.create('hr', 1);
   // 505: Can not use autoIncrement with a cross-column primary key.
   lf.testing.util.assertThrowsError(505, function() {
-    ds.createTable('Employee').
+    schemaBuilder.createTable('Employee').
         addColumn('id1', lf.Type.INTEGER).
         addColumn('id2', lf.Type.INTEGER).
         addPrimaryKey([
@@ -461,10 +442,10 @@ function testThrows_CrossColumnPkWithAutoInc() {
 }
 
 function testThrows_NonIntegerPkWithAutoInc() {
-  var ds = lf.schema.create('hr', 1);
+  var schemaBuilder = lf.schema.create('hr', 1);
   // 504: Can not use autoIncrement with a non-integer primary key.
   lf.testing.util.assertThrowsError(504, function() {
-    ds.createTable('Employee').
+    schemaBuilder.createTable('Employee').
         addColumn('id', lf.Type.STRING).
         addPrimaryKey([{'name': 'id', 'autoIncrement': true}]);
   });
@@ -497,8 +478,8 @@ function testThrows_CrossColumnNullableIndex() {
 }
 
 function testSchemaCorrectness() {
-  var ds = createBuilder();
-  var schema = ds.getSchema();
+  var schemaBuilder = createBuilder();
+  var schema = schemaBuilder.getSchema();
   var tables = schema.tables();
   assertEquals(5, tables.length);
 
@@ -511,7 +492,7 @@ function testSchemaCorrectness() {
 
   var e = emp.as('e');
   assertEquals('e', e.getEffectiveName());
-  assertEquals(3, emp.getIndices().length);
+  assertEquals(4, emp.getIndices().length);
   assertEquals(12, emp.getColumns().length);
   assertTrue(emp['id'] instanceof lf.schema.BaseColumn);
   assertEquals('Employee.#', e.getRowIdIndexName());
@@ -533,15 +514,15 @@ function testSchemaCorrectness() {
 function testThrows_NonIndexableColumns() {
   // 509: Attempt to index table {0} on non-indexable column {1}.
   lf.testing.util.assertThrowsError(509, function() {
-    var ds = lf.schema.create('d1', 1);
-    ds.createTable('NewTable').
+    var schemaBuilder = lf.schema.create('d1', 1);
+    schemaBuilder.createTable('NewTable').
         addColumn('object', lf.Type.OBJECT).
         addPrimaryKey(['object']);
   });
 
   lf.testing.util.assertThrowsError(509, function() {
-    var ds = lf.schema.create('d2', 1);
-    ds.createTable('NameTable').
+    var schemaBuilder = lf.schema.create('d2', 1);
+    schemaBuilder.createTable('NameTable').
         addColumn('arraybuffer', lf.Type.ARRAY_BUFFER).
         addIndex('idx_arraybuffer', ['arraybuffer']);
   });
@@ -550,32 +531,32 @@ function testThrows_NonIndexableColumns() {
 function testThrows_IllegalName() {
   // 502: Naming rule violation: {0}.
   lf.testing.util.assertThrowsError(502, function() {
-    var ds = lf.schema.create('d1', 1);
-    ds.createTable('#NewTable');
+    var schemaBuilder = lf.schema.create('d1', 1);
+    schemaBuilder.createTable('#NewTable');
   });
 
   lf.testing.util.assertThrowsError(502, function() {
-    var ds = lf.schema.create('d2', 1);
-    ds.createTable('NameTable').
+    var schemaBuilder = lf.schema.create('d2', 1);
+    schemaBuilder.createTable('NameTable').
         addColumn('22arraybuffer', lf.Type.ARRAY_BUFFER);
   });
 
   lf.testing.util.assertThrowsError(502, function() {
-    var ds = lf.schema.create('d3', 1);
-    ds.createTable('NameTable').
+    var schemaBuilder = lf.schema.create('d3', 1);
+    schemaBuilder.createTable('NameTable').
         addColumn('_obj_#ect', lf.Type.OBJECT);
   });
 
   lf.testing.util.assertThrowsError(502, function() {
-    var ds = lf.schema.create('d4', 1);
-    ds.createTable('NameTable').
+    var schemaBuilder = lf.schema.create('d4', 1);
+    schemaBuilder.createTable('NameTable').
         addColumn('name', lf.Type.STRING).
         addIndex('idx.name', ['name']);
   });
 
   lf.testing.util.assertThrowsError(502, function() {
-    var ds = lf.schema.create('d4', 1);
-    ds.createTable('NameTable').
+    var schemaBuilder = lf.schema.create('d4', 1);
+    schemaBuilder.createTable('NameTable').
         addColumn('name', lf.Type.STRING).
         addUnique('unq#name', ['name']);
   });
@@ -628,8 +609,8 @@ function testCreateRow_DefaultValues() {
  * single column indices.
  */
 function testKeyOfIndex_SingleKey() {
-  var ds = lf.schema.create('ki', 1);
-  ds.createTable('DummyTable').
+  var schemaBuilder = lf.schema.create('ki', 1);
+  schemaBuilder.createTable('DummyTable').
       addColumn('datetime', lf.Type.DATE_TIME).
       addColumn('integer', lf.Type.INTEGER).
       addColumn('number', lf.Type.NUMBER).
@@ -638,7 +619,7 @@ function testKeyOfIndex_SingleKey() {
       addIndex('idx_integer', ['integer']).
       addIndex('idx_number', ['number']).
       addIndex('idx_string', ['string']);
-  var schema = ds.getSchema();
+  var schema = schemaBuilder.getSchema();
   var dummy = schema.table('DummyTable');
   var row = dummy.createRow({
     'datetime': new Date(999),
