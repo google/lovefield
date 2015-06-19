@@ -32,10 +32,14 @@ var asyncTestCase = goog.testing.AsyncTestCase.createAndInstall(
     'LimitStepTest');
 
 
+/** @type {!lf.testing.MockEnv} */
+var env;
+
+
 function setUp() {
   asyncTestCase.waitForAsync('setUp');
 
-  var env = new lf.testing.MockEnv();
+  env = new lf.testing.MockEnv();
   env.init().then(function() {
     asyncTestCase.continueTesting();
   }, fail);
@@ -74,7 +78,7 @@ function checkExec(sampleDataCount, limit) {
   var childStep = new lf.testing.proc.DummyStep(
       [lf.proc.Relation.fromRows(rows, [tableName])]);
 
-  var queryContext = new lf.query.SelectContext();
+  var queryContext = new lf.query.SelectContext(env.schema);
   queryContext.limit = limit;
 
   var step = new lf.proc.LimitStep();

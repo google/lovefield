@@ -109,7 +109,7 @@ function testSimpleTree() {
       '---index_range_scan(Employee.pkEmployee, (100, unbound], natural)\n';
 
   var constructTree = function() {
-    var queryContext = new lf.query.SelectContext();
+    var queryContext = new lf.query.SelectContext(hr.db.getSchema());
     queryContext.from = [e];
     queryContext.where = e.id.gt('100');
     queryContext.limit = 20;
@@ -222,7 +222,7 @@ function testTree3() {
       '--table_access(Department)\n';
 
   var constructTree = function() {
-    var queryContext = new lf.query.SelectContext();
+    var queryContext = new lf.query.SelectContext(hr.db.getSchema());
     queryContext.from = [j, d];
     queryContext.where = j.id.eq('100');
 
@@ -312,7 +312,7 @@ function testTree_MultipleCrossColumnIndices() {
       propertyReplacer, indexStore, indices[1], 10);
 
   var constructTree = function() {
-    var queryContext = new lf.query.SelectContext();
+    var queryContext = new lf.query.SelectContext(hr.db.getSchema());
     queryContext.from = [dt];
     queryContext.where = lf.op.and(
         dt.string.eq('StringValue'),
@@ -371,7 +371,7 @@ function testTree_MultipleCrossColumnIndices_PartialMatching() {
       propertyReplacer, indexStore, indices[1], 100);
 
   var constructTree = function() {
-    var queryContext = new lf.query.SelectContext();
+    var queryContext = new lf.query.SelectContext(hr.db.getSchema());
     queryContext.from = [dt];
     queryContext.where = lf.op.and(
         dt.string.eq('StringValue'),
@@ -415,7 +415,7 @@ function testTree_Unaffected() {
       '---table_access(DummyTable)\n';
 
   var constructTree = function() {
-    var queryContext = new lf.query.SelectContext();
+    var queryContext = new lf.query.SelectContext(hr.db.getSchema());
     queryContext.from = [dt];
     queryContext.where = lf.op.and(
         dt.boolean.eq(false),
@@ -450,7 +450,7 @@ function testTree_Unaffected() {
  *     query context.
  */
 function constructTree1() {
-  var queryContext = new lf.query.SelectContext();
+  var queryContext = new lf.query.SelectContext(hr.db.getSchema());
   queryContext.from = [e];
   queryContext.where = lf.op.and(e.id.gt('100'), e.salary.eq(10000));
 
@@ -476,7 +476,7 @@ function constructTree1() {
  *     query context.
  */
 function constructTree2() {
-  var queryContext = new lf.query.SelectContext();
+  var queryContext = new lf.query.SelectContext(hr.db.getSchema());
   queryContext.from = [e, j];
   queryContext.where = lf.op.and(
       e.id.gt('100'),
@@ -535,7 +535,7 @@ function constructTree2() {
  *     query context.
  */
 function constructTree3() {
-  var queryContext = new lf.query.SelectContext();
+  var queryContext = new lf.query.SelectContext(hr.db.getSchema());
   queryContext.from = [e];
   queryContext.where = lf.op.and(
       e.salary.lte(200),

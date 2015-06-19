@@ -82,7 +82,7 @@ function testTree1() {
 
 
   var constructTree = function() {
-    var queryContext = new lf.query.SelectContext();
+    var queryContext = new lf.query.SelectContext(hr.db.getSchema());
     queryContext.from = [e];
     queryContext.limit = 100;
     queryContext.skip = 200;
@@ -132,7 +132,7 @@ function testTree_SelectStep_Unaffected() {
           '[unbound, unbound], reverse)\n';
 
   var constructTree = function() {
-    var queryContext = new lf.query.SelectContext();
+    var queryContext = new lf.query.SelectContext(hr.db.getSchema());
     queryContext.limit = 100;
     queryContext.skip = 200;
     queryContext.from = [e];
@@ -178,7 +178,7 @@ function testTree_GroupBy_Unaffected() {
           '[unbound, unbound], reverse)\n';
 
   var constructTree = function() {
-    var queryContext = new lf.query.SelectContext();
+    var queryContext = new lf.query.SelectContext(hr.db.getSchema());
     queryContext.limit = 100;
     queryContext.skip = 200;
 
@@ -220,7 +220,7 @@ function testTree_Aggregators_Unaffected() {
           '[unbound, unbound], reverse)\n';
 
   var constructTree = function() {
-    var queryContext = new lf.query.SelectContext();
+    var queryContext = new lf.query.SelectContext(hr.db.getSchema());
     queryContext.limit = 100;
     queryContext.skip = 200;
 
@@ -265,7 +265,7 @@ function testTree_OrderBy_Unaffected() {
           '[unbound, unbound], reverse)\n';
 
   var constructTree = function() {
-    var queryContext = new lf.query.SelectContext();
+    var queryContext = new lf.query.SelectContext(hr.db.getSchema());
     queryContext.limit = 100;
     queryContext.skip = 200;
 

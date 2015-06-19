@@ -86,7 +86,7 @@ function testCreate_DeletePlan() {
       '---index_range_scan(tableA.idxName, [name, name], natural)\n';
 
   var table = env.schema.tables()[0];
-  var queryContext = new lf.query.DeleteContext();
+  var queryContext = new lf.query.DeleteContext(env.schema);
   queryContext.from = table;
   queryContext.where = lf.op.and(
       table['id'].eq('id'), table['name'].eq('name'));

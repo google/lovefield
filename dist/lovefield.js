@@ -4655,7 +4655,8 @@ lf.pred.ValuePredicate.prototype.toKeyRange = function() {
 };
 
 lf.query = {};
-lf.query.Context = function() {
+lf.query.Context = function(schema) {
+  this.schema = schema;
   this.clonedFrom = this.predicateMap_ = null;
 };
 lf.query.Context.prototype.getPredicate = function(id) {
@@ -4686,8 +4687,8 @@ lf.query.Context.prototype.bindValuesInSearchCondition = function(values) {
   });
 };
 
-lf.query.SelectContext = function() {
-  lf.query.Context.call(this);
+lf.query.SelectContext = function(schema) {
+  lf.query.Context.call(this, schema);
 };
 goog.inherits(lf.query.SelectContext, lf.query.Context);
 lf.query.SelectContext.orderByToString = function(orderBy) {
@@ -4703,7 +4704,7 @@ lf.query.SelectContext.prototype.getScope = function() {
   return new goog.structs.Set(this.from);
 };
 lf.query.SelectContext.prototype.clone = function() {
-  var context = new lf.query.SelectContext;
+  var context = new lf.query.SelectContext(this.schema);
   context.cloneBase(this);
   this.columns && (context.columns = this.columns.slice());
   this.from && (context.from = this.from.slice());
@@ -8403,15 +8404,15 @@ lf.proc.UserQueryTask.prototype.scheduleObserverTask_ = function() {
   }
 };
 
-lf.query.DeleteContext = function() {
-  lf.query.Context.call(this);
+lf.query.DeleteContext = function(schema) {
+  lf.query.Context.call(this, schema);
 };
 goog.inherits(lf.query.DeleteContext, lf.query.Context);
 lf.query.DeleteContext.prototype.getScope = function() {
   return new goog.structs.Set([this.from]);
 };
 lf.query.DeleteContext.prototype.clone = function() {
-  var context = new lf.query.DeleteContext;
+  var context = new lf.query.DeleteContext(this.schema);
   context.cloneBase(this);
   context.from = this.from;
   return context;
@@ -8422,15 +8423,15 @@ lf.query.DeleteContext.prototype.bind = function(values) {
   return this;
 };
 
-lf.query.InsertContext = function() {
-  lf.query.Context.call(this);
+lf.query.InsertContext = function(schema) {
+  lf.query.Context.call(this, schema);
 };
 goog.inherits(lf.query.InsertContext, lf.query.Context);
 lf.query.InsertContext.prototype.getScope = function() {
   return new goog.structs.Set([this.into]);
 };
 lf.query.InsertContext.prototype.clone = function() {
-  var context = new lf.query.InsertContext;
+  var context = new lf.query.InsertContext(this.schema);
   context.cloneBase(this);
   context.into = this.into;
   this.values && (context.values = this.values instanceof lf.Binder ? this.values : this.values.slice());
@@ -8446,15 +8447,15 @@ lf.query.InsertContext.prototype.bind = function(values) {
   return this;
 };
 
-lf.query.UpdateContext = function() {
-  lf.query.Context.call(this);
+lf.query.UpdateContext = function(schema) {
+  lf.query.Context.call(this, schema);
 };
 goog.inherits(lf.query.UpdateContext, lf.query.Context);
 lf.query.UpdateContext.prototype.getScope = function() {
   return new goog.structs.Set([this.table]);
 };
 lf.query.UpdateContext.prototype.clone = function() {
-  var context = new lf.query.UpdateContext;
+  var context = new lf.query.UpdateContext(this.schema);
   context.cloneBase(this);
   context.table = this.table;
   context.set = this.set ? this.set.slice() : this.set;
@@ -8678,7 +8679,7 @@ lf.query.BaseBuilder.prototype.getObservableTaskItem = function() {
 };
 
 lf.query.DeleteBuilder = function(global) {
-  lf.query.BaseBuilder.call(this, global, new lf.query.DeleteContext);
+  lf.query.BaseBuilder.call(this, global, new lf.query.DeleteContext(global.getService(lf.service.SCHEMA)));
 };
 goog.inherits(lf.query.DeleteBuilder, lf.query.BaseBuilder);
 goog.exportSymbol("lf.query.DeleteBuilder", lf.query.DeleteBuilder);
@@ -8712,7 +8713,7 @@ lf.query.DeleteBuilder.prototype.assertExecPreconditions = function() {
 };
 
 lf.query.InsertBuilder = function(global, opt_allowReplace) {
-  lf.query.BaseBuilder.call(this, global, new lf.query.InsertContext);
+  lf.query.BaseBuilder.call(this, global, new lf.query.InsertContext(global.getService(lf.service.SCHEMA)));
   this.query.allowReplace = opt_allowReplace || !1;
 };
 goog.inherits(lf.query.InsertBuilder, lf.query.BaseBuilder);
@@ -8777,7 +8778,7 @@ lf.op.not = function(operand) {
 goog.exportSymbol("lf.op.not", lf.op.not);
 
 lf.query.SelectBuilder = function(global, columns) {
-  lf.query.BaseBuilder.call(this, global, new lf.query.SelectContext);
+  lf.query.BaseBuilder.call(this, global, new lf.query.SelectContext(global.getService(lf.service.SCHEMA)));
   this.fromAlreadyCalled_ = this.whereAlreadyCalled_ = !1;
   this.query.columns = columns;
   this.checkDistinctColumn_();
@@ -8961,7 +8962,7 @@ lf.query.SelectBuilder.prototype.clone = function() {
 goog.exportProperty(lf.query.SelectBuilder.prototype, "clone", lf.query.SelectBuilder.prototype.clone);
 
 lf.query.UpdateBuilder = function(global, table) {
-  lf.query.BaseBuilder.call(this, global, new lf.query.UpdateContext);
+  lf.query.BaseBuilder.call(this, global, new lf.query.UpdateContext(global.getService(lf.service.SCHEMA)));
   this.query.table = table;
 };
 goog.inherits(lf.query.UpdateBuilder, lf.query.BaseBuilder);

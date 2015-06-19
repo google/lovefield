@@ -102,7 +102,7 @@ function testTree2() {
       '--index_range_scan(Employee.idx_salary, [10000, unbound], natural)\n';
 
   var constructTree = function() {
-    var queryContext = new lf.query.SelectContext();
+    var queryContext = new lf.query.SelectContext(hr.db.getSchema());
     queryContext.from = [e];
     queryContext.where = e.salary.gte(10000);
     queryContext.orderBy = [{
@@ -271,7 +271,7 @@ function testTree_IndexRangeScan_CrossColumnIndex_Unaffected() {
  *     query context.
  */
 function constructTree1(sortColumn, sortOrder) {
-  var queryContext = new lf.query.SelectContext();
+  var queryContext = new lf.query.SelectContext(hr.db.getSchema());
   queryContext.from = [e];
   queryContext.where = e.id.gt('100');
 
@@ -303,7 +303,7 @@ function constructTree1(sortColumn, sortOrder) {
  *     query context.
  */
 function constructTree2(sortOrder1, sortOrder2) {
-  var queryContext = new lf.query.SelectContext();
+  var queryContext = new lf.query.SelectContext(hr.db.getSchema());
   queryContext.from = [dt];
   queryContext.where = dt.boolean.eq(false);
 
@@ -340,7 +340,7 @@ function constructTree2(sortOrder1, sortOrder2) {
  *     query context.
  */
 function constructTree3(sortOrder1, sortOrder2) {
-  var queryContext = new lf.query.SelectContext();
+  var queryContext = new lf.query.SelectContext(hr.db.getSchema());
   queryContext.from = [dt];
   queryContext.where = dt.boolean.eq(false);
 
