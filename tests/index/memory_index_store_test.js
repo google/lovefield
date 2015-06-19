@@ -80,11 +80,16 @@ function testMemoryIndexStore() {
     var tableFNameIndex = 'tableF.idxName';
     var tableFRowIdIndex = 'tableF.#';
 
+    // Table G index names.
+    var tableGFkIndex = 'tableG.fk_Id';
+    var tableGFkIndex2 = 'tableG.idx_Id';
 
     assertIndicesType(
         [tableARowIdIndex, tableBRowIdIndex, tableFRowIdIndex],
         lf.index.RowId);
     assertIndicesType([tableAPkIndex], lf.index.BTree);
+    assertIndicesType([tableGFkIndex], lf.index.BTree);
+    assertIndicesType([tableGFkIndex2], lf.index.BTree);
     assertIndicesType([tableANameIndex], lf.index.BTree);
     assertIndicesType([tableBPkIndex, tableBNameIndex], lf.index.BTree);
     assertIndicesType([tableFNameIndex], lf.index.NullableIndex);

@@ -17,7 +17,6 @@
 goog.setTestOnly();
 goog.provide('lf.testing.MockSchema');
 
-goog.require('goog.string');
 goog.require('lf.Order');
 goog.require('lf.Type');
 goog.require('lf.schema.Database');
@@ -89,6 +88,17 @@ lf.testing.MockSchema = function() {
       getSchema();
 
   /** @private {!lf.schema.Table} */
+  this.tableG_ = new lf.schema.TableBuilder('tableG').
+      addColumn('id', lf.Type.STRING).
+      addPrimaryKey(['id']).
+      addForeignKey('fk_Id', {
+        local: 'id',
+        ref: 'tableF.id'
+      }).
+      addIndex('idx_Id', [{'name': 'id', 'order': lf.Order.ASC}]).
+      getSchema();
+
+  /** @private {!lf.schema.Table} */
   this.tablePlusOne_ = createTable('tablePlusOne');
 
   /** @private {string} */
@@ -111,7 +121,7 @@ lf.testing.MockSchema = function() {
 lf.testing.MockSchema.prototype.tables = function() {
   var tables = [
     this.tableB_, this.tableC_,
-    this.tableD_, this.tableE_, this.tableF_
+    this.tableD_, this.tableE_, this.tableF_, this.tableG_
   ];
   if (!this.simulateDropTableA_) {
     tables.unshift(this.tableA_);
@@ -142,7 +152,8 @@ lf.testing.MockSchema.prototype.table = function(tableName) {
     'tableC': this.tableC_,
     'tableD': this.tableD_,
     'tableE': this.tableE_,
-    'tableF': this.tableF_
+    'tableF': this.tableF_,
+    'tableG': this.tableG_
   };
   if (!this.simulateDropTableA_) {
     tables['tableA'] = this.tableA_;
