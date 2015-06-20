@@ -323,6 +323,54 @@ function test_checkForeignKeyChainOnSameColumn() {
   });
 }
 
+function test_checkParentChildrenPointers() {
+  var schemaBuilder = createBuilder();
+  schemaBuilder.createTable('FKTable8').
+      addColumn('employeeId', lf.Type.INTEGER).
+      addForeignKey('fkemployeeId1', {
+        local: 'employeeId',
+        ref: 'FKTable10.employeeId'
+      });
+  schemaBuilder.createTable('FKTable9').
+      addColumn('employeeId', lf.Type.INTEGER).
+      addForeignKey('fkemployeeId2', {
+        local: 'employeeId',
+        ref: 'FKTable10.employeeId'
+      });
+  schemaBuilder.createTable('FKTable10').
+      addColumn('employeeId', lf.Type.INTEGER).
+      addColumn('employeeId2', lf.Type.INTEGER).
+      addPrimaryKey([{'name': 'employeeId', 'order': lf.Order.DESC}]).
+      addForeignKey('fkemployeeId3', {
+        local: 'employeeId2',
+        ref: 'FKTable11.employeeId'
+      });
+  schemaBuilder.createTable('FKTable11').
+      addColumn('employeeId', lf.Type.INTEGER).
+      addPrimaryKey([{'name': 'employeeId', 'order': lf.Order.DESC}]);
+
+  var schema = schemaBuilder.getSchema();
+  var tables = schema.tables();
+  assertEquals(9, tables.length);
+
+  var emp8 = schema.table('FKTable8');
+  var emp9 = schema.table('FKTable9');
+  var emp10 = schema.table('FKTable10');
+  var emp11 = schema.table('FKTable11');
+  assertEquals(emp10['employeeId'], emp8['employeeId'].getParent());
+  assertEquals(emp10['employeeId'], emp9['employeeId'].getParent());
+  assertNull(emp10['employeeId'].getParent());
+  assertNull(emp11['employeeId'].getParent());
+  assertEquals(1, emp11['employeeId'].getChildren().length);
+  assertNull(emp8['employeeId'].getChildren());
+  assertNull(emp9['employeeId'].getChildren());
+  assertEquals(2, emp10['employeeId'].getChildren().length);
+  assertArrayEquals(
+      [emp8['employeeId'], emp9['employeeId']],
+      emp10['employeeId'].getChildren());
+  assertArrayEquals([emp10['employeeId2']], emp11['employeeId'].getChildren());
+}
+
 function test_checkForeignKeyLoop() {
   var schemaBuilder = createBuilder();
   schemaBuilder.createTable('FkTable8').

@@ -573,10 +573,6 @@ goog.MODIFY_FUNCTION_PROTOTYPES && (Function.prototype.bind = Function.prototype
   var args = Array.prototype.slice.call(arguments);
   args.unshift(this, null);
   return goog.bind.apply(null, args);
-}, Function.prototype.inherits = function(parentCtor) {
-  goog.inherits(this, parentCtor);
-}, Function.prototype.mixin = function(source) {
-  goog.mixin(this.prototype, source);
 });
 goog.defineClass = function(superClass, def) {
   var constructor = def.constructor, statics = def.statics;
@@ -1951,13 +1947,16 @@ goog.labs.userAgent.browser.matchOpera_ = function() {
   return goog.labs.userAgent.util.matchUserAgent("Opera") || goog.labs.userAgent.util.matchUserAgent("OPR");
 };
 goog.labs.userAgent.browser.matchIE_ = function() {
-  return goog.labs.userAgent.util.matchUserAgent("Edge") || goog.labs.userAgent.util.matchUserAgent("Trident") || goog.labs.userAgent.util.matchUserAgent("MSIE");
+  return goog.labs.userAgent.util.matchUserAgent("Trident") || goog.labs.userAgent.util.matchUserAgent("MSIE");
+};
+goog.labs.userAgent.browser.matchEdge_ = function() {
+  return goog.labs.userAgent.util.matchUserAgent("Edge");
 };
 goog.labs.userAgent.browser.matchFirefox_ = function() {
   return goog.labs.userAgent.util.matchUserAgent("Firefox");
 };
 goog.labs.userAgent.browser.matchSafari_ = function() {
-  return goog.labs.userAgent.util.matchUserAgent("Safari") && !(goog.labs.userAgent.browser.matchChrome_() || goog.labs.userAgent.browser.matchCoast_() || goog.labs.userAgent.browser.matchOpera_() || goog.labs.userAgent.browser.matchIE_() || goog.labs.userAgent.browser.isSilk() || goog.labs.userAgent.util.matchUserAgent("Android"));
+  return goog.labs.userAgent.util.matchUserAgent("Safari") && !(goog.labs.userAgent.browser.matchChrome_() || goog.labs.userAgent.browser.matchCoast_() || goog.labs.userAgent.browser.matchOpera_() || goog.labs.userAgent.browser.matchEdge_() || goog.labs.userAgent.browser.isSilk() || goog.labs.userAgent.util.matchUserAgent("Android"));
 };
 goog.labs.userAgent.browser.matchCoast_ = function() {
   return goog.labs.userAgent.util.matchUserAgent("Coast");
@@ -1966,13 +1965,14 @@ goog.labs.userAgent.browser.matchIosWebview_ = function() {
   return (goog.labs.userAgent.util.matchUserAgent("iPad") || goog.labs.userAgent.util.matchUserAgent("iPhone")) && !goog.labs.userAgent.browser.matchSafari_() && !goog.labs.userAgent.browser.matchChrome_() && !goog.labs.userAgent.browser.matchCoast_() && goog.labs.userAgent.util.matchUserAgent("AppleWebKit");
 };
 goog.labs.userAgent.browser.matchChrome_ = function() {
-  return (goog.labs.userAgent.util.matchUserAgent("Chrome") || goog.labs.userAgent.util.matchUserAgent("CriOS")) && !goog.labs.userAgent.browser.matchOpera_() && !goog.labs.userAgent.browser.matchIE_();
+  return (goog.labs.userAgent.util.matchUserAgent("Chrome") || goog.labs.userAgent.util.matchUserAgent("CriOS")) && !goog.labs.userAgent.browser.matchOpera_() && !goog.labs.userAgent.browser.matchEdge_();
 };
 goog.labs.userAgent.browser.matchAndroidBrowser_ = function() {
   return goog.labs.userAgent.util.matchUserAgent("Android") && !(goog.labs.userAgent.browser.isChrome() || goog.labs.userAgent.browser.isFirefox() || goog.labs.userAgent.browser.isOpera() || goog.labs.userAgent.browser.isSilk());
 };
 goog.labs.userAgent.browser.isOpera = goog.labs.userAgent.browser.matchOpera_;
 goog.labs.userAgent.browser.isIE = goog.labs.userAgent.browser.matchIE_;
+goog.labs.userAgent.browser.isEdge = goog.labs.userAgent.browser.matchEdge_;
 goog.labs.userAgent.browser.isFirefox = goog.labs.userAgent.browser.matchFirefox_;
 goog.labs.userAgent.browser.isSafari = goog.labs.userAgent.browser.matchSafari_;
 goog.labs.userAgent.browser.isCoast = goog.labs.userAgent.browser.matchCoast_;
@@ -2000,6 +2000,9 @@ goog.labs.userAgent.browser.getVersion = function() {
   if (goog.labs.userAgent.browser.isOpera()) {
     return lookUpValueWithKeys(["Version", "Opera", "OPR"]);
   }
+  if (goog.labs.userAgent.browser.isEdge()) {
+    return lookUpValueWithKeys(["Edge"]);
+  }
   if (goog.labs.userAgent.browser.isChrome()) {
     return lookUpValueWithKeys(["Chrome", "CriOS"]);
   }
@@ -2013,10 +2016,6 @@ goog.labs.userAgent.browser.getIEVersion_ = function(userAgent) {
   var rv = /rv: *([\d\.]*)/.exec(userAgent);
   if (rv && rv[1]) {
     return rv[1];
-  }
-  var edge = /Edge\/([\d\.]+)/.exec(userAgent);
-  if (edge) {
-    return edge[1];
   }
   var version = "", msie = /MSIE +([\d\.]+)/.exec(userAgent);
   if (msie && msie[1]) {
@@ -10530,6 +10529,9 @@ lf.schema.BaseColumn.prototype.setParent = function(parent) {
 lf.schema.BaseColumn.prototype.getParent = function() {
   return this.parent_;
 };
+lf.schema.BaseColumn.prototype.setChildren = function(children) {
+  this.children_ = children;
+};
 lf.schema.BaseColumn.prototype.getChildren = function() {
   return this.children_;
 };
@@ -10932,9 +10934,17 @@ lf.schema.Builder.prototype.finalize_ = function() {
   this.finalized_ || (this.tableBuilders_.getValues().forEach(function(builder) {
     this.checkForeignKeyValidity_(builder);
     this.schema_.setTable(builder.getSchema());
-  }, this), this.tableBuilders_.getValues().forEach(function(builder) {
-    this.checkForeignKeyChain_(builder);
-  }, this), this.checkFkCycle_(), this.tableBuilders_.clear(), this.finalized_ = !0);
+  }, this), this.tableBuilders_.getValues().forEach(this.checkForeignKeyChain_, this), this.tableBuilders_.getKeys().forEach(this.connectParentChildren_, this), this.checkFkCycle_(), this.tableBuilders_.clear(), this.finalized_ = !0);
+};
+lf.schema.Builder.prototype.connectParentChildren_ = function(localTableName) {
+  var builder = this.tableBuilders_.get(localTableName);
+  builder.getFkSpecs().forEach(function(spec) {
+    var localSchema = this.schema_.tables_.get(localTableName), parentSchema = this.schema_.tables_.get(spec.parentTable);
+    localSchema[spec.childColumn].setParent(parentSchema[spec.parentColumn]);
+    var childrenColumns = parentSchema[spec.parentColumn].getChildren() || [];
+    childrenColumns.push(localSchema[spec.childColumn]);
+    parentSchema[spec.parentColumn].setChildren(childrenColumns);
+  }, this);
 };
 lf.schema.Builder.prototype.checkCycleUtil_ = function(graphNode, nodeMap) {
   graphNode.visited || (graphNode.visited = !0, graphNode.onStack = !0, graphNode.edges.forEach(function(edge) {
