@@ -18,14 +18,8 @@ goog.setTestOnly();
 goog.provide('lf.testing.MockEnv');
 
 goog.require('lf.Global');
-goog.require('lf.ObserverRegistry');
-goog.require('lf.TransactionType');
-goog.require('lf.backstore.Memory');
-goog.require('lf.cache.DefaultCache');
-goog.require('lf.cache.Journal');
-goog.require('lf.index.MemoryIndexStore');
-goog.require('lf.proc.DefaultQueryEngine');
-goog.require('lf.proc.Runner');
+goog.require('lf.proc.Database');
+goog.require('lf.schema.DataStoreType');
 goog.require('lf.service');
 goog.require('lf.testing.MockSchema');
 
@@ -41,42 +35,44 @@ lf.testing.MockEnv = function() {
   /** @type {!lf.testing.MockSchema} */
   this.schema = new lf.testing.MockSchema();
 
-  /** @type {!lf.proc.DefaultQueryEngine} */
+  /** @type {!lf.proc.QueryEngine} */
   this.queryEngine;
 
   /** @type {!lf.proc.Runner} */
-  this.runner = new lf.proc.Runner();
+  this.runner;
 
-  /** @type {!lf.backstore.Memory} */
-  this.store = new lf.backstore.Memory(this.schema);
+  /** @type {!lf.BackStore} */
+  this.store;
 
-  /** @type {!lf.cache.DefaultCache} */
-  this.cache = new lf.cache.DefaultCache();
+  /** @type {!lf.cache.Cache} */
+  this.cache;
 
-  /** @type {!lf.index.MemoryIndexStore} */
-  this.indexStore = new lf.index.MemoryIndexStore();
+  /** @type {!lf.index.IndexStore} */
+  this.indexStore;
 
   /** @type {!lf.ObserverRegistry} */
-  this.observerRegistry = new lf.ObserverRegistry();
+  this.observerRegistry;
+
+  /** @type {!lf.proc.Database} */
+  this.db;
 };
 
 
 /** @return {!IThenable} */
 lf.testing.MockEnv.prototype.init = function() {
   var global = lf.Global.get();
-  return this.store.init().then(goog.bind(function() {
-    global.registerService(lf.service.SCHEMA, this.schema);
-    global.registerService(lf.service.BACK_STORE, this.store);
+  global.registerService(lf.service.SCHEMA, this.schema);
 
-    this.queryEngine = new lf.proc.DefaultQueryEngine(global);
-    global.registerService(lf.service.QUERY_ENGINE, this.queryEngine);
-
-    global.registerService(lf.service.RUNNER, this.runner);
-    global.registerService(lf.service.CACHE, this.cache);
-    global.registerService(lf.service.INDEX_STORE, this.indexStore);
-    global.registerService(lf.service.OBSERVER_REGISTRY, this.observerRegistry);
-    return this.indexStore.init(this.schema);
-  }, this));
+  this.db = new lf.proc.Database(global);
+  return this.db.init({storeType: lf.schema.DataStoreType.MEMORY}).then(
+      function() {
+        this.cache = global.getService(lf.service.CACHE);
+        this.store = global.getService(lf.service.BACK_STORE);
+        this.queryEngine = global.getService(lf.service.QUERY_ENGINE);
+        this.runner = global.getService(lf.service.RUNNER);
+        this.indexStore = global.getService(lf.service.INDEX_STORE);
+        this.observerRegistry = global.getService(lf.service.OBSERVER_REGISTRY);
+      }.bind(this));
 };
 
 
@@ -92,15 +88,5 @@ lf.testing.MockEnv.prototype.addSampleData = function() {
     });
     rows[i].assignRowId(i);
   }
-
-  var tx = this.store.createTx(
-      lf.TransactionType.READ_WRITE,
-      new lf.cache.Journal(lf.Global.get(), [table]));
-  var store = tx.getTable(table.getName(), table.deserializeRow);
-  store.put(rows);
-
-  // Updating journals, which will automatically update indices.
-  tx.getJournal().insert(table, rows);
-
-  return tx.commit();
+  return this.db.insert().into(table).values(rows).exec();
 };
