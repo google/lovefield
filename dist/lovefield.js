@@ -4671,23 +4671,25 @@ lf.query.Context.prototype.cloneBase = function(context) {
   context.where && (this.where = context.where.copy());
   this.clonedFrom = context;
 };
-lf.query.Context.prototype.expandParentScope = function(originalScope) {
+lf.query.Context.prototype.expandParentScope = function(originalScope, opt_columns) {
   var extraScope = new goog.structs.Set;
   originalScope.getValues().forEach(function(table) {
     var foreignKeys = table.getConstraint().getForeignKeys();
     foreignKeys.forEach(function(foreignKey) {
-      var parentTable = this.schema.table(foreignKey.parentTable);
-      extraScope.add(parentTable);
+      if (!opt_columns || opt_columns.contains(table[foreignKey.childColumn])) {
+        var parentTable = this.schema.table(foreignKey.parentTable);
+        extraScope.add(parentTable);
+      }
     }, this);
   }, this);
   return extraScope;
 };
-lf.query.Context.prototype.expandChildrenScope = function(originalScope) {
+lf.query.Context.prototype.expandChildrenScope = function(originalScope, opt_columns) {
   var extraScope = new goog.structs.Set;
   originalScope.getValues().forEach(function(table) {
     var columns = table.getColumns();
     columns.forEach(function(column) {
-      goog.isNull(column.getChildren()) || column.getChildren().forEach(function(child) {
+      opt_columns && !opt_columns.contains(column) || goog.isNull(column.getChildren()) || column.getChildren().forEach(function(child) {
         extraScope.add(child.getTable());
       }, this);
     }, this);
@@ -8475,7 +8477,13 @@ lf.query.UpdateContext = function(schema) {
 };
 goog.inherits(lf.query.UpdateContext, lf.query.Context);
 lf.query.UpdateContext.prototype.getScope = function() {
-  return new goog.structs.Set([this.table]);
+  var scope = new goog.structs.Set([this.table]), columnSet = new goog.structs.Set;
+  this.set.forEach(function(setColumn) {
+    columnSet.add(setColumn.column);
+  }, this);
+  scope.addAll(this.expandParentScope(scope, columnSet));
+  scope.addAll(this.expandChildrenScope(scope, columnSet));
+  return scope;
 };
 lf.query.UpdateContext.prototype.clone = function() {
   var context = new lf.query.UpdateContext(this.schema);

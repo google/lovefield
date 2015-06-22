@@ -15,15 +15,16 @@
  * limitations under the License.
  */
 goog.setTestOnly();
+
 goog.require('goog.testing.jsunit');
 goog.require('lf.query.DeleteContext');
 goog.require('lf.query.InsertContext');
+goog.require('lf.query.UpdateContext');
 goog.require('lf.testing.MockSchema');
 
 
 /** @type {!lf.testing.MockSchema} */
 var schema;
-
 
 function setUpPage() {
   schema = new lf.testing.MockSchema();
@@ -38,7 +39,7 @@ function testGetScope_Insert() {
   var scope = context.getScope();
   assertTrue(scope.contains(tableG));
   assertEquals(2, scope.getCount());
-  assertTrue(scope.contains(schema.table('tableF')));
+  assertTrue(scope.contains(schema.table('tableI')));
 }
 
 function testGetScope_InsertNoExpansion() {
@@ -56,7 +57,7 @@ function testGetScope_InsertOrReplace() {
   var context = new lf.query.InsertContext(schema);
   context.allowReplace = true;
   var tableG = schema.table('tableG');
-  var tableF = schema.table('tableF');
+  var tableI = schema.table('tableI');
   var tableH = schema.table('tableH');
   var row = tableG.createRow();
   context.values = [row];
@@ -64,7 +65,7 @@ function testGetScope_InsertOrReplace() {
   var scope = context.getScope();
   assertTrue(scope.contains(tableG));
   assertEquals(3, scope.getCount());
-  assertTrue(scope.contains(tableF));
+  assertTrue(scope.contains(tableI));
   assertTrue(scope.contains(tableH));
 }
 
@@ -95,6 +96,70 @@ function testGetScope_DeleteNoExpansion() {
   var context = new lf.query.DeleteContext(schema);
   var tableC = schema.table('tableC');
   context.from = tableC;
+  var scope = context.getScope();
+  assertTrue(scope.contains(tableC));
+  assertEquals(1, scope.getCount());
+}
+
+function testGetScope_UpdateOneColumn() {
+  var context = new lf.query.UpdateContext(schema);
+  var tableI = schema.table('tableI');
+  var tableH = schema.table('tableH');
+  context.table = tableI;
+  context.set = [{column: tableI['id2'], value: 'test'}];
+  var scope = context.getScope();
+  assertEquals(2, scope.getCount());
+  assertTrue(scope.contains(tableI));
+  assertTrue(scope.contains(tableH));
+}
+
+function testGetScope_UpdateTwoColumns() {
+  var context = new lf.query.UpdateContext(schema);
+  var tableG = schema.table('tableG');
+  var tableI = schema.table('tableI');
+  var tableH = schema.table('tableH');
+  context.table = tableI;
+  context.set = [{column: tableI['id2'], value: 'test'},
+                 {column: tableI['id'], value: 'test'}];
+  var scope = context.getScope();
+  assertEquals(3, scope.getCount());
+  assertTrue(scope.contains(tableG));
+  assertTrue(scope.contains(tableI));
+  assertTrue(scope.contains(tableH));
+}
+
+function testGetScope_UpdateReferredColumn() {
+  var context = new lf.query.UpdateContext(schema);
+  var tableG = schema.table('tableG');
+  var tableH = schema.table('tableH');
+  context.table = tableG;
+  context.set = [{column: tableG['id2'], value: 'test'}];
+  var scope = context.getScope();
+  assertEquals(2, scope.getCount());
+  assertTrue(scope.contains(tableG));
+  assertTrue(scope.contains(tableH));
+}
+
+function testGetScope_UpdateReferredAndReferringColumn() {
+  var context = new lf.query.UpdateContext(schema);
+  var tableG = schema.table('tableG');
+  var tableI = schema.table('tableI');
+  var tableH = schema.table('tableH');
+  context.table = tableG;
+  context.set = [{column: tableG['id2'], value: 'test'},
+                 {column: tableG['id'], value: 'test'}];
+  var scope = context.getScope();
+  assertEquals(3, scope.getCount());
+  assertTrue(scope.contains(tableG));
+  assertTrue(scope.contains(tableH));
+  assertTrue(scope.contains(tableI));
+}
+
+function testGetScope_UpdateNoExpansion() {
+  var context = new lf.query.UpdateContext(schema);
+  var tableC = schema.table('tableC');
+  context.table = tableC;
+  context.set = [{column: tableC['id'], value: 'test'}];
   var scope = context.getScope();
   assertTrue(scope.contains(tableC));
   assertEquals(1, scope.getCount());
