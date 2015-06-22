@@ -118,7 +118,7 @@ function testGetForeignKeySimpleSpec() {
     ref: 'Employee.id',
     action: lf.ConstraintAction.RESTRICT,
     timing: lf.ConstraintTiming.IMMEDIATE
-  }, 'fk_ManagerId');
+  }, 'Department.fk_ManagerId');
   assertObjectEquals(specs, schemaBuilder.getSchema().table('Department').
       getConstraint().getForeignKeys()[0]);
 }
@@ -133,7 +133,7 @@ function testGetForeignKeyTwoSpecs() {
     ref: 'Employee.id',
     action: lf.ConstraintAction.CASCADE,
     timing: lf.ConstraintTiming.IMMEDIATE
-  }, 'fk_EmployeeId');
+  }, 'JobHistory.fk_EmployeeId');
   assertObjectEquals(specs, schemaBuilder.getSchema().table('JobHistory').
       getConstraint().getForeignKeys()[0]);
   specs = new lf.schema.ForeignKeySpec({
@@ -141,10 +141,25 @@ function testGetForeignKeyTwoSpecs() {
     ref: 'Department.id',
     action: lf.ConstraintAction.CASCADE,
     timing: lf.ConstraintTiming.IMMEDIATE
-  }, 'fk_DeptId');
+  }, 'JobHistory.fk_DeptId');
   assertObjectEquals(specs, schemaBuilder.getSchema().table('JobHistory').
       getConstraint().getForeignKeys()[1]);
 }
+
+
+function testGetParentForeignKeys() {
+  var schema = createBuilder().getSchema();
+  var parentForeignKeys = schema.table('Job').getReferencingForeignKeys();
+  var spec = new lf.schema.ForeignKeySpec({
+    local: 'jobId',
+    ref: 'Job.id',
+    action: lf.ConstraintAction.CASCADE,
+    timing: lf.ConstraintTiming.IMMEDIATE
+  }, 'Employee.fk_JobId');
+  assertEquals(1, parentForeignKeys.length);
+  assertObjectEquals(spec, parentForeignKeys[0]);
+}
+
 
 function testThrows_DuplicateTable() {
   var schemaBuilder = createBuilder();

@@ -17,22 +17,25 @@
 goog.setTestOnly();
 goog.require('goog.testing.jsunit');
 goog.require('hr.db');
+goog.require('lf.testing.hrSchema.getSchemaBuilder');
 
 
-/** @type {!lf.schema.Database} */
-var schema;
+function testAlias_StaticSchema() {
+  checkAlias(hr.db.getSchema(), false);
+}
 
 
-function setUpPage() {
-  schema = hr.db.getSchema();
+function testAlias_DynamicSchema() {
+  checkAlias(lf.testing.hrSchema.getSchemaBuilder().getSchema(), true);
 }
 
 
 /**
- * Test an aliased version of a Table instance.
+ * @param {!lf.schema.Database} schema
+ * @param {boolean} checkForeignKeys
  */
-function testAlias() {
-  var noAliasTable = schema.getJob();
+function checkAlias(schema, checkForeignKeys) {
+  var noAliasTable = schema.table('Job');
   var name = noAliasTable.getName();
   var alias = 'OtherJob';
   var aliasTable = noAliasTable.as(alias);
@@ -44,9 +47,24 @@ function testAlias() {
   assertEquals(name, noAliasTable.getName());
   assertEquals(name, noAliasTable.getEffectiveName());
 
+  // TODO(dpapad): Remove this check once foreign-keys are fully implemented for
+  // SPAC schemas.
+  if (checkForeignKeys) {
+    var referencingForeignKeys = noAliasTable.getReferencingForeignKeys();
+    assertEquals(1, referencingForeignKeys.length);
+    assertEquals('Employee.fk_JobId', referencingForeignKeys[0].fkName);
+  }
+
   // Assertions about aliased instance.
   assertEquals(alias, aliasTable.getAlias());
   assertEquals(name, aliasTable.getName());
   assertEquals(alias, aliasTable.getEffectiveName());
   assertEquals(noAliasTable.constructor, aliasTable.constructor);
+
+  // TODO(dpapad): See previous TODO.
+  if (checkForeignKeys) {
+    referencingForeignKeys = aliasTable.getReferencingForeignKeys();
+    assertEquals(1, referencingForeignKeys.length);
+    assertEquals('Employee.fk_JobId', referencingForeignKeys[0].fkName);
+  }
 }

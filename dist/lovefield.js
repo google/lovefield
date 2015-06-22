@@ -7875,9 +7875,13 @@ lf.schema.Table.prototype.getEffectiveName = function() {
 lf.schema.Table.prototype.as = function(name) {
   var clone = new this.constructor(this.name_);
   clone.alias_ = name;
+  clone.referencingForeignKeys_ = this.referencingForeignKeys_;
   return clone;
 };
 goog.exportProperty(lf.schema.Table.prototype, "as", lf.schema.Table.prototype.as);
+lf.schema.Table.prototype.setReferencingForeignKeys = function(referencingForeignKeys) {
+  this.referencingForeignKeys_ = referencingForeignKeys;
+};
 goog.exportProperty(lf.schema.Table.prototype, "createRow", lf.schema.Table.prototype.createRow);
 goog.exportProperty(lf.schema.Table.prototype, "deserializeRow", lf.schema.Table.prototype.deserializeRow);
 lf.schema.Table.prototype.getIndices = function() {
@@ -10660,15 +10664,15 @@ lf.schema.Constraint.prototype.getForeignKeys = function() {
   return this.foreignKeys_;
 };
 
-lf.schema.ForeignKeySpec = function(rawSpec, name) {
+lf.schema.ForeignKeySpec = function(rawSpec, fkName) {
   var array = rawSpec.ref.split(".");
   if (2 != array.length) {
-    throw new lf.Exception(540, name);
+    throw new lf.Exception(540, fkName);
   }
   this.childColumn = rawSpec.local;
   this.parentTable = array[0];
   this.parentColumn = array[1];
-  this.fkName = name;
+  this.fkName = fkName;
   this.action = rawSpec.action;
   this.timing = rawSpec.timing;
 };
@@ -10733,19 +10737,19 @@ lf.schema.TableBuilder.prototype.addPrimaryKey = function(columns, opt_autoInc) 
   return this;
 };
 goog.exportProperty(lf.schema.TableBuilder.prototype, "addPrimaryKey", lf.schema.TableBuilder.prototype.addPrimaryKey);
-lf.schema.TableBuilder.prototype.addForeignKey = function(name, rawSpec) {
-  this.checkName_(name);
-  var spec = new lf.schema.ForeignKeySpec(rawSpec, name);
+lf.schema.TableBuilder.prototype.addForeignKey = function(fkName, rawSpec) {
+  this.checkName_(fkName);
+  var spec = new lf.schema.ForeignKeySpec(rawSpec, this.name_ + "." + fkName);
   goog.isDef(spec.action) || (spec.action = lf.ConstraintAction.RESTRICT);
   goog.isDef(spec.timing) || (spec.timing = lf.ConstraintTiming.IMMEDIATE);
   if (spec.action == lf.ConstraintAction.CASCADE && spec.timing == lf.ConstraintTiming.DEFERRABLE) {
     throw new lf.Exception(506);
   }
   if (!this.columns_.has(spec.childColumn)) {
-    throw new lf.Exception(540, name);
+    throw new lf.Exception(540, fkName);
   }
   this.fkSpecs_.push(spec);
-  this.addIndex(name, [spec.childColumn], !1);
+  this.addIndex(fkName, [spec.childColumn], !1);
   return this;
 };
 goog.exportProperty(lf.schema.TableBuilder.prototype, "addForeignKey", lf.schema.TableBuilder.prototype.addForeignKey);
@@ -10966,11 +10970,20 @@ lf.schema.Builder.prototype.checkForeignKeyChain_ = function(builder) {
     }, this);
   }, this);
 };
+lf.schema.Builder.prototype.setParentForeignKeys_ = function(tableSchema) {
+  var referencingKeys = [];
+  this.tableBuilders_.getValues().forEach(function(builder) {
+    builder.getFkSpecs().filter(function(foreignKeySpec) {
+      foreignKeySpec.parentTable == tableSchema.getName() && referencingKeys.push(foreignKeySpec);
+    });
+  });
+  tableSchema.setReferencingForeignKeys(referencingKeys);
+};
 lf.schema.Builder.prototype.finalize_ = function() {
   this.finalized_ || (this.tableBuilders_.getValues().forEach(function(builder) {
     this.checkForeignKeyValidity_(builder);
     this.schema_.setTable(builder.getSchema());
-  }, this), this.tableBuilders_.getValues().forEach(this.checkForeignKeyChain_, this), this.tableBuilders_.getKeys().forEach(this.connectParentChildren_, this), this.checkFkCycle_(), this.tableBuilders_.clear(), this.finalized_ = !0);
+  }, this), this.tableBuilders_.getValues().forEach(this.checkForeignKeyChain_, this), this.tableBuilders_.getKeys().forEach(this.connectParentChildren_, this), this.schema_.tables().forEach(this.setParentForeignKeys_, this), this.checkFkCycle_(), this.tableBuilders_.clear(), this.finalized_ = !0);
 };
 lf.schema.Builder.prototype.connectParentChildren_ = function(localTableName) {
   var builder = this.tableBuilders_.get(localTableName);
