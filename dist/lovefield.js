@@ -4671,6 +4671,29 @@ lf.query.Context.prototype.cloneBase = function(context) {
   context.where && (this.where = context.where.copy());
   this.clonedFrom = context;
 };
+lf.query.Context.prototype.expandParentScope = function(originalScope) {
+  var extraScope = new goog.structs.Set;
+  originalScope.getValues().forEach(function(table) {
+    var foreignKeys = table.getConstraint().getForeignKeys();
+    foreignKeys.forEach(function(foreignKey) {
+      var parentTable = this.schema.table(foreignKey.parentTable);
+      extraScope.add(parentTable);
+    }, this);
+  }, this);
+  return extraScope;
+};
+lf.query.Context.prototype.expandChildrenScope = function(originalScope) {
+  var extraScope = new goog.structs.Set;
+  originalScope.getValues().forEach(function(table) {
+    var columns = table.getColumns();
+    columns.forEach(function(column) {
+      goog.isNull(column.getChildren()) || column.getChildren().forEach(function(child) {
+        extraScope.add(child.getTable());
+      }, this);
+    }, this);
+  }, this);
+  return extraScope;
+};
 lf.query.Context.prototype.bind = function() {
   goog.asserts.assert(!goog.isDefAndNotNull(this.clonedFrom));
   return this;
@@ -8404,7 +8427,9 @@ lf.query.DeleteContext = function(schema) {
 };
 goog.inherits(lf.query.DeleteContext, lf.query.Context);
 lf.query.DeleteContext.prototype.getScope = function() {
-  return new goog.structs.Set([this.from]);
+  var scope = new goog.structs.Set([this.from]);
+  scope.addAll(this.expandChildrenScope(scope));
+  return scope;
 };
 lf.query.DeleteContext.prototype.clone = function() {
   var context = new lf.query.DeleteContext(this.schema);
@@ -8423,7 +8448,10 @@ lf.query.InsertContext = function(schema) {
 };
 goog.inherits(lf.query.InsertContext, lf.query.Context);
 lf.query.InsertContext.prototype.getScope = function() {
-  return new goog.structs.Set([this.into]);
+  var scope = new goog.structs.Set([this.into]);
+  scope.addAll(this.expandParentScope(scope));
+  this.allowReplace && scope.addAll(this.expandChildrenScope(scope));
+  return scope;
 };
 lf.query.InsertContext.prototype.clone = function() {
   var context = new lf.query.InsertContext(this.schema);
@@ -10609,15 +10637,19 @@ lf.Global.prototype.isRegistered = function(serviceId) {
 };
 goog.exportProperty(lf.Global.prototype, "isRegistered", lf.Global.prototype.isRegistered);
 
-lf.schema.Constraint = function(primaryKey, notNullable) {
+lf.schema.Constraint = function(primaryKey, notNullable, foreignKeys) {
   this.primaryKey_ = primaryKey;
   this.notNullable_ = notNullable;
+  this.foreignKeys_ = foreignKeys;
 };
 lf.schema.Constraint.prototype.getPrimaryKey = function() {
   return this.primaryKey_;
 };
 lf.schema.Constraint.prototype.getNotNullable = function() {
   return this.notNullable_;
+};
+lf.schema.Constraint.prototype.getForeignKeys = function() {
+  return this.foreignKeys_;
 };
 
 lf.schema.ForeignKeySpec = function(rawSpec, name) {

@@ -90,13 +90,31 @@ lf.testing.MockSchema = function() {
   /** @private {!lf.schema.Table} */
   this.tableG_ = new lf.schema.TableBuilder('tableG').
       addColumn('id', lf.Type.STRING).
+      addColumn('id2', lf.Type.STRING).
       addPrimaryKey(['id']).
+      addUnique('uq_id2', ['id2']).
       addForeignKey('fk_Id', {
         local: 'id',
         ref: 'tableF.id'
       }).
       addIndex('idx_Id', [{'name': 'id', 'order': lf.Order.ASC}]).
       getSchema();
+
+  /** @private {!lf.schema.Table} */
+  this.tableH_ = new lf.schema.TableBuilder('tableH').
+      addColumn('id', lf.Type.STRING).
+      addPrimaryKey(['id']).
+      addForeignKey('fk_Id', {
+        local: 'id',
+        ref: 'tableG.id2'
+      }).
+      addIndex('idx_Id', [{'name': 'id', 'order': lf.Order.ASC}]).
+      getSchema();
+
+  this.tableG_['id'].setParent(this.tableF_['id']);
+  this.tableF_['id'].setChildren([this.tableG_['id']]);
+  this.tableG_['id2'].setChildren([this.tableH_['id']]);
+  this.tableH_['id'].setParent(this.tableG_['id2']);
 
   /** @private {!lf.schema.Table} */
   this.tablePlusOne_ = createTable('tablePlusOne');
@@ -121,7 +139,7 @@ lf.testing.MockSchema = function() {
 lf.testing.MockSchema.prototype.tables = function() {
   var tables = [
     this.tableB_, this.tableC_,
-    this.tableD_, this.tableE_, this.tableF_, this.tableG_
+    this.tableD_, this.tableE_, this.tableF_, this.tableG_, this.tableH_
   ];
   if (!this.simulateDropTableA_) {
     tables.unshift(this.tableA_);
@@ -153,7 +171,8 @@ lf.testing.MockSchema.prototype.table = function(tableName) {
     'tableD': this.tableD_,
     'tableE': this.tableE_,
     'tableF': this.tableF_,
-    'tableG': this.tableG_
+    'tableG': this.tableG_,
+    'tableH': this.tableH_
   };
   if (!this.simulateDropTableA_) {
     tables['tableA'] = this.tableA_;

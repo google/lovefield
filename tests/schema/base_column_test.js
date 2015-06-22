@@ -70,10 +70,8 @@ function testGetNormalizedName() {
  */
 function testGetParentChildren_NoForeignKeys() {
   var schema = new lf.testing.MockSchema();
-  schema.tables().forEach(function(table) {
-    table.getColumns().forEach(function(column) {
-      assertNull(column.getParent());
-      assertNull(column.getChildren());
-    });
+  schema.table('tableA').getColumns().forEach(function(column) {
+    assertNull(column.getParent());
+    assertNull(column.getChildren());
   });
 }
