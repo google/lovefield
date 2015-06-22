@@ -3869,6 +3869,7 @@ lf.Exception = function(code, var_args) {
     }
   }
 };
+goog.inherits(lf.Exception, Error);
 
 lf.cache.ConstraintChecker = function(global) {
   this.indexStore_ = global.getService(lf.service.INDEX_STORE);
