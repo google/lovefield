@@ -25,7 +25,6 @@ goog.require('lf.cache.Journal');
 goog.require('lf.schema.DataStoreType');
 goog.require('lf.service');
 goog.require('lf.testing.Capability');
-goog.require('lf.testing.hrSchemaSampleData');
 
 
 /** @type {!goog.testing.AsyncTestCase} */
@@ -78,19 +77,25 @@ function clearDb() {
 function testConversions() {
   asyncTestCase.waitForAsync('testConversions');
 
-  var employeeRow =
-      lf.testing.hrSchemaSampleData.generateSampleEmployeeData(db);
-  var employee = db.getSchema().getEmployee();
+  var tableSchema = db.getSchema().getDummyTable();
+  var row = tableSchema.createRow();
+  row.arrayBuffer = new ArrayBuffer(0);
+  row.boolean = false;
+  row.datetime = new Date();
+  row.integer = 3;
+  row.number = Math.PI;
+  row.string = 'dummystring';
+
 
   /**
-   * Inserts a records to the database.
+   * Inserts a record to the database.
    * @return {!IThenable}
    */
   var insertFn = function() {
     return db.
         insert().
-        into(employee).
-        values([employeeRow]).
+        into(tableSchema).
+        values([row]).
         exec();
   };
 
@@ -102,7 +107,6 @@ function testConversions() {
   var selectWithoutCacheFn = function() {
     var backStore = /** @type {!lf.BackStore} */ (
         hr.db.getGlobal().getService(lf.service.BACK_STORE));
-    var tableSchema = db.getSchema().getEmployee();
     var tx = backStore.createTx(
         lf.TransactionType.READ_ONLY,
         new lf.cache.Journal(hr.db.getGlobal(), [tableSchema]));
@@ -117,25 +121,19 @@ function testConversions() {
       }).then(
       function(result) {
         assertEquals(1, result.length);
-        assertTrue(result[0] instanceof hr.db.row.Employee);
+        assertTrue(result[0] instanceof hr.db.row.DummyTable);
 
-        var insertedRow = employeeRow.payload();
+        var insertedRow = row.payload();
         var retrievedRow = result[0].payload();
-        // Checking string conversion.
-        assertEquals(insertedRow.id, retrievedRow.id);
-        // Checking number conversion.
+        assertEquals(insertedRow.boolean, retrievedRow.boolean);
+        assertEquals(insertedRow.string, retrievedRow.string);
+        assertEquals(insertedRow.number, retrievedRow.number);
+        assertEquals(insertedRow.integer, retrievedRow.integer);
         assertEquals(
-            insertedRow.commissionPercent,
-            retrievedRow.commissionPercent);
-        // Checking Date conversion.
+            insertedRow.datetime.getTime(), retrievedRow.datetime.getTime());
         assertEquals(
-            insertedRow.hireDate.getTime(),
-            retrievedRow.hireDate.getTime());
-
-        // Checking ArrayBuffer conversion.
-        assertEquals(
-            lf.Row.binToHex(insertedRow.photo),
-            lf.Row.binToHex(retrievedRow.photo));
+            lf.Row.binToHex(insertedRow.arraybuffer),
+            lf.Row.binToHex(retrievedRow.arraybuffer));
 
         asyncTestCase.continueTesting();
       }, fail);
