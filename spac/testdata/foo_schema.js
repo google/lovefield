@@ -1,16 +1,23 @@
 goog.provide('foo.db.row.Foo');
 goog.provide('foo.db.row.FooDbType');
 goog.provide('foo.db.row.FooType');
+goog.provide('foo.db.row.Location');
+goog.provide('foo.db.row.LocationDbType');
+goog.provide('foo.db.row.LocationType');
 goog.provide('foo.db.schema.Database');
 goog.provide('foo.db.schema.Foo');
+goog.provide('foo.db.schema.Location');
 
 /** @suppress {extraRequire} */
+goog.require('lf.ConstraintAction');
+goog.require('lf.ConstraintTiming');
 goog.require('lf.Order');
 goog.require('lf.Row');
 goog.require('lf.Type');
 goog.require('lf.schema.BaseColumn');
 goog.require('lf.schema.Constraint');
 goog.require('lf.schema.Database');
+goog.require('lf.schema.ForeignKeySpec');
 goog.require('lf.schema.Index');
 goog.require('lf.schema.Table');
 
@@ -28,6 +35,10 @@ foo.db.schema.Database = function() {
   this.pragma_ = {
     enableBundledMode: true
   };
+
+  /** @private {!foo.db.schema.Location} */
+  this.location_ = new foo.db.schema.Location();
+  this.tableMap_['Location'] = this.location_;
 
   /** @private {!foo.db.schema.Foo} */
   this.foo_ = new foo.db.schema.Foo();
@@ -51,6 +62,7 @@ foo.db.schema.Database.prototype.version = function() {
 /** @override */
 foo.db.schema.Database.prototype.tables = function() {
   return [
+    this.location_,
     this.foo_
   ];
 };
@@ -68,9 +80,170 @@ foo.db.schema.Database.prototype.pragma = function() {
 };
 
 
+/** @return {!foo.db.schema.Location} */
+foo.db.schema.Database.prototype.getLocation = function() {
+  return this.location_;
+};
+
+
 /** @return {!foo.db.schema.Foo} */
 foo.db.schema.Database.prototype.getFoo = function() {
   return this.foo_;
+};
+
+
+
+/**
+ * @extends {lf.schema.Table.<!foo.db.row.LocationType,
+ *     !foo.db.row.LocationDbType>}
+ * @constructor
+ */
+foo.db.schema.Location = function() {
+  var cols = [];
+
+  /** @type {!lf.schema.BaseColumn.<string>} */
+  this.id = new lf.schema.BaseColumn(
+      this, 'id', true, false, lf.Type.STRING);
+  cols.push(this.id);
+
+  var indices = [
+    new lf.schema.Index('Location', 'pkLocation', true,
+        [
+          {schema: this.id, order: lf.Order.ASC, autoIncrement: false}
+        ])
+  ];
+
+  /** @private {!lf.schema.Constraint} */
+  this.constraint_;
+
+  foo.db.schema.Location.base(
+      this, 'constructor', 'Location', cols, indices, false);
+};
+goog.inherits(foo.db.schema.Location, lf.schema.Table);
+
+
+/** @override */
+foo.db.schema.Location.prototype.createRow = function(opt_value) {
+  return new foo.db.row.Location(lf.Row.getNextId(), opt_value);
+};
+
+
+/** @override */
+foo.db.schema.Location.prototype.deserializeRow =
+    function(dbRecord) {
+  var data = dbRecord['value'];
+  return new foo.db.row.Location(dbRecord['id'], data);
+};
+
+
+/** @override */
+foo.db.schema.Location.prototype.getConstraint = function() {
+  if (goog.isDefAndNotNull(this.constraint_)) {
+    return this.constraint_;
+  }
+
+  var pk = new lf.schema.Index('Location', 'pkLocation', true,
+      [
+        {schema: this.id, order: lf.Order.ASC, autoIncrement: false}
+      ]);
+  var notNullable = [
+    this.id
+  ];
+  var foreignKeys = [
+  ];
+  var unique = [
+  ];
+  this.constraint_ = new lf.schema.Constraint(
+      pk, notNullable, foreignKeys, unique);
+  return this.constraint_;
+};
+
+
+
+/**
+ * @export
+ * @constructor
+ * @struct
+ * @final
+ */
+foo.db.row.LocationType = function() {
+  /** @export @type {string} */
+  this.id;
+};
+
+
+
+/**
+ * @export
+ * @constructor
+ * @struct
+ * @final
+ */
+foo.db.row.LocationDbType = function() {
+  /** @export @type {string} */
+  this.id;
+};
+
+
+
+/**
+ * Constructs a new Location row.
+ * @constructor
+ * @extends {lf.Row.<!foo.db.row.LocationType,
+ *     !foo.db.row.LocationDbType>}
+ *
+ * @param {number} rowId The row ID.
+ * @param {!foo.db.row.LocationType=} opt_payload
+ */
+foo.db.row.Location = function(rowId, opt_payload) {
+  foo.db.row.Location.base(this, 'constructor', rowId, opt_payload);
+};
+goog.inherits(foo.db.row.Location, lf.Row);
+
+
+/** @override */
+foo.db.row.Location.prototype.defaultPayload = function() {
+  var payload = new foo.db.row.LocationType();
+  payload.id = '';
+  return payload;
+};
+
+
+/** @override */
+foo.db.row.Location.prototype.toDbPayload = function() {
+  var payload = new foo.db.row.LocationDbType();
+  payload.id = this.payload().id;
+  return payload;
+};
+
+
+/** @override */
+foo.db.row.Location.prototype.keyOfIndex = function(indexName) {
+  switch (indexName) {
+    case 'Location.pkLocation':
+      return this.payload().id;
+    case 'Location.#':
+      return this.id();
+    default:
+      break;
+  }
+  return null;
+};
+
+
+/** @return {string} */
+foo.db.row.Location.prototype.getId = function() {
+  return this.payload().id;
+};
+
+
+/**
+ * @param {string} value
+ * @return {!foo.db.row.Location}
+*/
+foo.db.row.Location.prototype.setId = function(value) {
+  this.payload().id = value;
+  return this;
 };
 
 
@@ -98,6 +271,11 @@ foo.db.schema.Foo = function() {
       this, 'bar', true, false, lf.Type.STRING);
   cols.push(this.bar);
 
+  /** @type {!lf.schema.BaseColumn.<string>} */
+  this.location = new lf.schema.BaseColumn(
+      this, 'location', false, false, lf.Type.STRING);
+  cols.push(this.location);
+
   var indices = [
     new lf.schema.Index('Foo', 'pkFoo', true,
         [
@@ -112,6 +290,9 @@ foo.db.schema.Foo = function() {
           {schema: this.name, order: lf.Order.ASC}
         ])
   ];
+
+  /** @private {!lf.schema.Constraint} */
+  this.constraint_;
 
   foo.db.schema.Foo.base(
       this, 'constructor', 'Foo', cols, indices, true);
@@ -135,6 +316,10 @@ foo.db.schema.Foo.prototype.deserializeRow =
 
 /** @override */
 foo.db.schema.Foo.prototype.getConstraint = function() {
+  if (goog.isDefAndNotNull(this.constraint_)) {
+    return this.constraint_;
+  }
+
   var pk = new lf.schema.Index('Foo', 'pkFoo', true,
       [
         {schema: this.id, order: lf.Order.ASC, autoIncrement: false}
@@ -142,16 +327,27 @@ foo.db.schema.Foo.prototype.getConstraint = function() {
   var notNullable = [
     this.id,
     this.name,
-    this.bar
+    this.bar,
+    this.location
   ];
-  var foreignKeys = [];
+  var foreignKeys = [
+    new lf.schema.ForeignKeySpec(
+        {
+          'local': 'location',
+          'ref': 'Location.id',
+          'action': lf.ConstraintAction.RESTRICT,
+          'timing': lf.ConstraintTiming.IMMEDIATE
+        }, 'fk_loc')
+  ];
   var unique = [
     new lf.schema.Index('Foo', 'uq_bar', true,
         [
           {schema: this.bar, order: lf.Order.ASC}
         ])
   ];
-  return new lf.schema.Constraint(pk, notNullable, foreignKeys, unique);
+  this.constraint_ = new lf.schema.Constraint(
+      pk, notNullable, foreignKeys, unique);
+  return this.constraint_;
 };
 
 
@@ -169,6 +365,8 @@ foo.db.row.FooType = function() {
   this.name;
   /** @export @type {string} */
   this.bar;
+  /** @export @type {string} */
+  this.location;
 };
 
 
@@ -186,6 +384,8 @@ foo.db.row.FooDbType = function() {
   this.name;
   /** @export @type {string} */
   this.bar;
+  /** @export @type {string} */
+  this.location;
 };
 
 
@@ -211,6 +411,7 @@ foo.db.row.Foo.prototype.defaultPayload = function() {
   payload.id = '';
   payload.name = '';
   payload.bar = '';
+  payload.location = '';
   return payload;
 };
 
@@ -221,6 +422,7 @@ foo.db.row.Foo.prototype.toDbPayload = function() {
   payload.id = this.payload().id;
   payload.name = this.payload().name;
   payload.bar = this.payload().bar;
+  payload.location = this.payload().location;
   return payload;
 };
 
@@ -287,5 +489,21 @@ foo.db.row.Foo.prototype.getBar = function() {
 */
 foo.db.row.Foo.prototype.setBar = function(value) {
   this.payload().bar = value;
+  return this;
+};
+
+
+/** @return {string} */
+foo.db.row.Foo.prototype.getLocation = function() {
+  return this.payload().location;
+};
+
+
+/**
+ * @param {string} value
+ * @return {!foo.db.row.Foo}
+*/
+foo.db.row.Foo.prototype.setLocation = function(value) {
+  this.payload().location = value;
   return this;
 };

@@ -48,6 +48,19 @@
 
 /**
  * @typedef {{
+ *   name: string,
+ *   local: string,
+ *   ref: string,
+ *   action: ?string,
+ *   timing: ?string
+ * }}
+ * @private
+ */
+var ForeignKeySpec_;
+
+
+/**
+ * @typedef {{
  *   primaryKey: !Array<{
  *     name: string,
  *     order: ?string,
@@ -60,13 +73,7 @@
  *       name: string
  *     }>
  *   }>,
- *   foreignKey: !Array<{
- *     name: string,
- *     local: string,
- *     ref: string,
- *     action: ?string,
- *     timing: ?string
- *   }>
+ *   foreignKey: !Array<!ForeignKeySpec_>
  * }}
  * @private
  */
@@ -1003,6 +1010,38 @@ CodeGenerator.prototype.getPrimaryKeyIndex_ = function(table, indentCount) {
 
 
 /**
+ * @param {Array<!ForeignKeySpec_>} specs
+ * @return {string}
+ * @private
+ */
+CodeGenerator.prototype.getForeignKeySpec_ = function(specs) {
+  if (!specs) {
+    return '';
+  }
+
+  var getAction = function(action) {
+    return action == 'cascade' ? 'lf.ConstraintAction.CASCADE' :
+        'lf.ConstraintAction.RESTRICT';
+  };
+
+  var getTiming = function(timing) {
+    return timing == 'deferrable' ? 'lf.ConstraintTiming.DEFERRABLE' :
+        'lf.ConstraintTiming.IMMEDIATE';
+  };
+
+  return specs.map(function(spec) {
+    return '    new lf.schema.ForeignKeySpec(\n' +
+        '        {\n' +
+        '          \'local\': \'' + spec.local + '\',\n' +
+        '          \'ref\': \'' + spec.ref + '\',\n' +
+        '          \'action\': ' + getAction(spec.action) + ',\n' +
+        '          \'timing\': ' + getTiming(spec.timing) + '\n' +
+        '        }, \'' + spec.name + '\')';
+  }).join(',\n');
+};
+
+
+/**
  * @param {!Table_} table
  * @return {string}
  * @private
@@ -1026,9 +1065,12 @@ CodeGenerator.prototype.getConstraint_ = function(table) {
         '  var pk = ' + pkIndexDefinition.substring(2) + ';');
     results.push(getNotNullable());
 
-    // TODO(dpapad): Populate this field once foreign key indices are
-    // implemented.
-    results.push('  var foreignKeys = [];');
+    results.push('  var foreignKeys = [');
+    var fkSpec = this.getForeignKeySpec_(table.constraint.foreignKey);
+    if (fkSpec.length) {
+      results.push(fkSpec);
+    }
+    results.push('  ];');
 
     results.push('  var unique = [');
     if (table.constraint.unique) {
@@ -1039,14 +1081,15 @@ CodeGenerator.prototype.getConstraint_ = function(table) {
     }
     results.push('  ];');
 
-    results.push('  return new lf.schema.Constraint(' +
-        'pk, notNullable, foreignKeys, unique);');
+    results.push('  this.constraint_ = new lf.schema.Constraint(\n' +
+        '      pk, notNullable, foreignKeys, unique);');
   } else {
     results.push(getNotNullable());
-    results.push('  return new lf.schema.Constraint(' +
+    results.push('  this.constraint_ = new lf.schema.Constraint(' +
         'null, notNullable, [], []);');
   }
 
+  results.push('  return this.constraint_;');
   return results.join('\n');
 };
 

@@ -9,12 +9,15 @@ goog.provide('#namespace.schema.Database');
 /// #sortend
 
 /** @suppress {extraRequire} */
+goog.require('lf.ConstraintAction');
+goog.require('lf.ConstraintTiming');
 goog.require('lf.Order');
 goog.require('lf.Row');
 goog.require('lf.Type');
 goog.require('lf.schema.BaseColumn');
 goog.require('lf.schema.Constraint');
 goog.require('lf.schema.Database');
+goog.require('lf.schema.ForeignKeySpec');
 goog.require('lf.schema.Index');
 goog.require('lf.schema.Table');
 
@@ -103,6 +106,9 @@ goog.require('lf.schema.Table');
 #tableindices
   ];
 
+  /** @private {!lf.schema.Constraint} */
+  this.constraint_;
+
   #namespace.schema.#table#pascal.base(
       this, 'constructor', '#tablename', cols, indices, #tablepersistentindex);
 };
@@ -124,6 +130,10 @@ goog.inherits(#namespace.schema.#table#pascal, lf.schema.Table);
 
 /** @override */
 #namespace.schema.#table#pascal.prototype.getConstraint = function() {
+  if (goog.isDefAndNotNull(this.constraint_)) {
+    return this.constraint_;
+  }
+
 #tableconstraint
 };
 

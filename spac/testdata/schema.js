@@ -29,12 +29,15 @@ goog.provide('lovefield.db.schema.PhotoCurator');
 goog.provide('lovefield.db.schema.SelfLoop');
 
 /** @suppress {extraRequire} */
+goog.require('lf.ConstraintAction');
+goog.require('lf.ConstraintTiming');
 goog.require('lf.Order');
 goog.require('lf.Row');
 goog.require('lf.Type');
 goog.require('lf.schema.BaseColumn');
 goog.require('lf.schema.Constraint');
 goog.require('lf.schema.Database');
+goog.require('lf.schema.ForeignKeySpec');
 goog.require('lf.schema.Index');
 goog.require('lf.schema.Table');
 
@@ -214,6 +217,9 @@ lovefield.db.schema.Album = function() {
         ])
   ];
 
+  /** @private {!lf.schema.Constraint} */
+  this.constraint_;
+
   lovefield.db.schema.Album.base(
       this, 'constructor', 'Album', cols, indices, false);
 };
@@ -238,6 +244,10 @@ lovefield.db.schema.Album.prototype.deserializeRow =
 
 /** @override */
 lovefield.db.schema.Album.prototype.getConstraint = function() {
+  if (goog.isDefAndNotNull(this.constraint_)) {
+    return this.constraint_;
+  }
+
   var pk = new lf.schema.Index('Album', 'pkAlbum', true,
       [
         {schema: this.id, order: lf.Order.ASC, autoIncrement: false}
@@ -248,10 +258,13 @@ lovefield.db.schema.Album.prototype.getConstraint = function() {
     this.createdByAction,
     this.timestamp
   ];
-  var foreignKeys = [];
+  var foreignKeys = [
+  ];
   var unique = [
   ];
-  return new lf.schema.Constraint(pk, notNullable, foreignKeys, unique);
+  this.constraint_ = new lf.schema.Constraint(
+      pk, notNullable, foreignKeys, unique);
+  return this.constraint_;
 };
 
 
@@ -529,6 +542,9 @@ lovefield.db.schema.Photo = function() {
         ])
   ];
 
+  /** @private {!lf.schema.Constraint} */
+  this.constraint_;
+
   lovefield.db.schema.Photo.base(
       this, 'constructor', 'Photo', cols, indices, false);
 };
@@ -555,6 +571,10 @@ lovefield.db.schema.Photo.prototype.deserializeRow =
 
 /** @override */
 lovefield.db.schema.Photo.prototype.getConstraint = function() {
+  if (goog.isDefAndNotNull(this.constraint_)) {
+    return this.constraint_;
+  }
+
   var pk = new lf.schema.Index('Photo', 'pkPhoto', true,
       [
         {schema: this.id, order: lf.Order.ASC, autoIncrement: false}
@@ -567,10 +587,20 @@ lovefield.db.schema.Photo.prototype.getConstraint = function() {
     this.albumId,
     this.isCoverPhoto
   ];
-  var foreignKeys = [];
+  var foreignKeys = [
+    new lf.schema.ForeignKeySpec(
+        {
+          'local': 'albumId',
+          'ref': 'Album.id',
+          'action': lf.ConstraintAction.CASCADE,
+          'timing': lf.ConstraintTiming.IMMEDIATE
+        }, 'fk_albumId')
+  ];
   var unique = [
   ];
-  return new lf.schema.Constraint(pk, notNullable, foreignKeys, unique);
+  this.constraint_ = new lf.schema.Constraint(
+      pk, notNullable, foreignKeys, unique);
+  return this.constraint_;
 };
 
 
@@ -907,6 +937,9 @@ lovefield.db.schema.Details = function() {
         ])
   ];
 
+  /** @private {!lf.schema.Constraint} */
+  this.constraint_;
+
   lovefield.db.schema.Details.base(
       this, 'constructor', 'Details', cols, indices, false);
 };
@@ -929,6 +962,10 @@ lovefield.db.schema.Details.prototype.deserializeRow =
 
 /** @override */
 lovefield.db.schema.Details.prototype.getConstraint = function() {
+  if (goog.isDefAndNotNull(this.constraint_)) {
+    return this.constraint_;
+  }
+
   var pk = new lf.schema.Index('Details', 'pkDetails', true,
       [
         {schema: this.id1, order: lf.Order.ASC, autoIncrement: false},
@@ -941,10 +978,27 @@ lovefield.db.schema.Details.prototype.getConstraint = function() {
     this.albumId,
     this.totalComments
   ];
-  var foreignKeys = [];
+  var foreignKeys = [
+    new lf.schema.ForeignKeySpec(
+        {
+          'local': 'photoId',
+          'ref': 'Photo.id',
+          'action': lf.ConstraintAction.CASCADE,
+          'timing': lf.ConstraintTiming.IMMEDIATE
+        }, 'fk_photoId'),
+    new lf.schema.ForeignKeySpec(
+        {
+          'local': 'albumId',
+          'ref': 'Album.id',
+          'action': lf.ConstraintAction.CASCADE,
+          'timing': lf.ConstraintTiming.IMMEDIATE
+        }, 'fk_albumId')
+  ];
   var unique = [
   ];
-  return new lf.schema.Constraint(pk, notNullable, foreignKeys, unique);
+  this.constraint_ = new lf.schema.Constraint(
+      pk, notNullable, foreignKeys, unique);
+  return this.constraint_;
 };
 
 
@@ -1163,6 +1217,9 @@ lovefield.db.schema.Curator = function() {
         ])
   ];
 
+  /** @private {!lf.schema.Constraint} */
+  this.constraint_;
+
   lovefield.db.schema.Curator.base(
       this, 'constructor', 'Curator', cols, indices, false);
 };
@@ -1185,6 +1242,10 @@ lovefield.db.schema.Curator.prototype.deserializeRow =
 
 /** @override */
 lovefield.db.schema.Curator.prototype.getConstraint = function() {
+  if (goog.isDefAndNotNull(this.constraint_)) {
+    return this.constraint_;
+  }
+
   var pk = new lf.schema.Index('Curator', 'pkCurator', true,
       [
         {schema: this.id, order: lf.Order.ASC, autoIncrement: true}
@@ -1194,7 +1255,8 @@ lovefield.db.schema.Curator.prototype.getConstraint = function() {
     this.name,
     this.timestamp
   ];
-  var foreignKeys = [];
+  var foreignKeys = [
+  ];
   var unique = [
     new lf.schema.Index('Curator', 'uq_creation', true,
         [
@@ -1202,7 +1264,9 @@ lovefield.db.schema.Curator.prototype.getConstraint = function() {
           {schema: this.timestamp, order: lf.Order.ASC}
         ])
   ];
-  return new lf.schema.Constraint(pk, notNullable, foreignKeys, unique);
+  this.constraint_ = new lf.schema.Constraint(
+      pk, notNullable, foreignKeys, unique);
+  return this.constraint_;
 };
 
 
@@ -1374,6 +1438,9 @@ lovefield.db.schema.PhotoCurator = function() {
         ])
   ];
 
+  /** @private {!lf.schema.Constraint} */
+  this.constraint_;
+
   lovefield.db.schema.PhotoCurator.base(
       this, 'constructor', 'PhotoCurator', cols, indices, false);
 };
@@ -1396,20 +1463,41 @@ lovefield.db.schema.PhotoCurator.prototype.deserializeRow =
 
 /** @override */
 lovefield.db.schema.PhotoCurator.prototype.getConstraint = function() {
+  if (goog.isDefAndNotNull(this.constraint_)) {
+    return this.constraint_;
+  }
+
   var pk = null;
   var notNullable = [
     this.photoId,
     this.curator,
     this.topic
   ];
-  var foreignKeys = [];
+  var foreignKeys = [
+    new lf.schema.ForeignKeySpec(
+        {
+          'local': 'photoId',
+          'ref': 'Photo.id',
+          'action': lf.ConstraintAction.CASCADE,
+          'timing': lf.ConstraintTiming.IMMEDIATE
+        }, 'fk_photoId'),
+    new lf.schema.ForeignKeySpec(
+        {
+          'local': 'curator',
+          'ref': 'Curator.id',
+          'action': lf.ConstraintAction.CASCADE,
+          'timing': lf.ConstraintTiming.IMMEDIATE
+        }, 'fk_curator')
+  ];
   var unique = [
     new lf.schema.Index('PhotoCurator', 'uq_topic', true,
         [
           {schema: this.topic, order: lf.Order.ASC}
         ])
   ];
-  return new lf.schema.Constraint(pk, notNullable, foreignKeys, unique);
+  this.constraint_ = new lf.schema.Constraint(
+      pk, notNullable, foreignKeys, unique);
+  return this.constraint_;
 };
 
 
@@ -1602,6 +1690,9 @@ lovefield.db.schema.NullableTable = function() {
         ])
   ];
 
+  /** @private {!lf.schema.Constraint} */
+  this.constraint_;
+
   lovefield.db.schema.NullableTable.base(
       this, 'constructor', 'NullableTable', cols, indices, false);
 };
@@ -1626,14 +1717,21 @@ lovefield.db.schema.NullableTable.prototype.deserializeRow =
 
 /** @override */
 lovefield.db.schema.NullableTable.prototype.getConstraint = function() {
+  if (goog.isDefAndNotNull(this.constraint_)) {
+    return this.constraint_;
+  }
+
   var pk = null;
   var notNullable = [
 
   ];
-  var foreignKeys = [];
+  var foreignKeys = [
+  ];
   var unique = [
   ];
-  return new lf.schema.Constraint(pk, notNullable, foreignKeys, unique);
+  this.constraint_ = new lf.schema.Constraint(
+      pk, notNullable, foreignKeys, unique);
+  return this.constraint_;
 };
 
 
@@ -1850,6 +1948,9 @@ lovefield.db.schema.SelfLoop = function() {
         ])
   ];
 
+  /** @private {!lf.schema.Constraint} */
+  this.constraint_;
+
   lovefield.db.schema.SelfLoop.base(
       this, 'constructor', 'SelfLoop', cols, indices, false);
 };
@@ -1872,6 +1973,10 @@ lovefield.db.schema.SelfLoop.prototype.deserializeRow =
 
 /** @override */
 lovefield.db.schema.SelfLoop.prototype.getConstraint = function() {
+  if (goog.isDefAndNotNull(this.constraint_)) {
+    return this.constraint_;
+  }
+
   var pk = new lf.schema.Index('SelfLoop', 'pkSelfLoop', true,
       [
         {schema: this.id, order: lf.Order.ASC, autoIncrement: false}
@@ -1880,10 +1985,20 @@ lovefield.db.schema.SelfLoop.prototype.getConstraint = function() {
     this.id,
     this.associate
   ];
-  var foreignKeys = [];
+  var foreignKeys = [
+    new lf.schema.ForeignKeySpec(
+        {
+          'local': 'associate',
+          'ref': 'SelfLoop.id',
+          'action': lf.ConstraintAction.CASCADE,
+          'timing': lf.ConstraintTiming.IMMEDIATE
+        }, 'fkAssociate')
+  ];
   var unique = [
   ];
-  return new lf.schema.Constraint(pk, notNullable, foreignKeys, unique);
+  this.constraint_ = new lf.schema.Constraint(
+      pk, notNullable, foreignKeys, unique);
+  return this.constraint_;
 };
 
 

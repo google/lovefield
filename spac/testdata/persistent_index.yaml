@@ -6,16 +6,27 @@ pragma:
   enableBundledMode: true
 version: 1
 table:
+  Location:
+    column:
+      id: string
+    constraint:
+      primaryKey: [ id ]
+
   Foo:
     column:
       id: string
       name: string
       bar: string
+      location: string
     constraint:
       primaryKey: [ id ]
       unique:
         uq_bar:
           column: [ bar ]
+      foreignKey:
+        fk_loc:
+          local: location
+          ref: Location.id
     index:
       idx_Name:
         column: [ name ]
