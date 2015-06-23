@@ -108,6 +108,12 @@ var Config = function() {
           __dirname,
           '../testing/order_schema.yaml')),
       'namespace': 'order.db'
+    },
+    {
+      'file': pathMod.resolve(pathMod.join(
+          __dirname,
+          '../testing/perf/hr_schema_no_fk.yaml')),
+      'namespace': 'lf.testing.perf.hr.db'
     }
   ];
 };

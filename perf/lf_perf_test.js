@@ -19,7 +19,6 @@ goog.require('goog.Promise');
 goog.require('goog.net.XhrIo');
 goog.require('goog.testing.AsyncTestCase');
 goog.require('goog.testing.jsunit');
-goog.require('hr.db');
 goog.require('lf.schema.DataStoreType');
 goog.require('lf.testing.Benchmark');
 goog.require('lf.testing.Capability');
@@ -27,6 +26,7 @@ goog.require('lf.testing.hrSchema.MockDataGenerator');
 goog.require('lf.testing.perf.DefaultBenchmark');
 goog.require('lf.testing.perf.ScenarioBenchmark');
 goog.require('lf.testing.perf.SelectBenchmark');
+goog.require('lf.testing.perf.hr.db');
 
 
 /** @type {!goog.testing.AsyncTestCase} */
@@ -44,10 +44,11 @@ var REPETITIONS = 5;
 /** @type {!lf.testing.Capability} */
 var capability;
 
+
 /**
  * An array that holds the results from all benchmarks, such that they can be
  * extracted later using WebDriver.
- * @type !Array<!lf.testing.Benchmark.Results>
+ * @type {!Array<!lf.testing.Benchmark.Results>}
  */
 var overallResults = [];
 
@@ -264,8 +265,8 @@ function selectRunner(name, db) {
 
   return promise.then(function(sampleData) {
     var dataGenerator = lf.testing.hrSchema.MockDataGenerator.
-        fromExportData(
-            /** @type {!hr.db.schema.Database} */ (db.getSchema()), sampleData);
+        fromExportData( /** @type {!lf.testing.perf.hr.db.schema.Database} */ (
+            db.getSchema()), sampleData);
     selectBenchmark = new lf.testing.perf.SelectBenchmark(db, dataGenerator);
     tearDown = goog.bind(selectBenchmark.tearDown, selectBenchmark.tearDown);
 
@@ -354,7 +355,7 @@ function test4Select() {
   asyncTestCase.waitForAsync('test4_Select');
 
   benchmarkSetUp().then(function() {
-    return hr.db.connect();
+    return lf.testing.perf.hr.db.connect();
   }).then(function(database) {
     return selectRunner('SelectBenchmark', database);
   }).then(function() {
@@ -366,7 +367,8 @@ function test4Select_Mem() {
   asyncTestCase.waitForAsync('test4_Select_Mem');
 
   benchmarkSetUp().then(function() {
-    return hr.db.connect({storeType: lf.schema.DataStoreType.MEMORY});
+    return lf.testing.perf.hr.db.connect(
+        {storeType: lf.schema.DataStoreType.MEMORY});
   }).then(function(database) {
     return selectRunner('SelectBenchmark Mem', database);
   }).then(function() {

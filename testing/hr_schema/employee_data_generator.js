@@ -16,7 +16,6 @@
  */
 goog.provide('lf.testing.hrSchema.EmployeeDataGenerator');
 
-goog.require('goog.array');
 goog.require('goog.asserts');
 goog.require('goog.structs.Set');
 goog.require('lf.testing.hrSchema.samples');
@@ -50,7 +49,7 @@ lf.testing.hrSchema.EmployeeDataGenerator = function(schema) {
 
 /**
  * @param {number} count The number of rows to generate.
- * @return {!Array<!hr.db.row.EmployeeType>}
+ * @return {!Array<!Object>}
  * @private
  */
 lf.testing.hrSchema.EmployeeDataGenerator.prototype.generateRaw_ =

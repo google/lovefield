@@ -1,0 +1,111 @@
+%YAML 1.2
+---
+# A schema for a Human Resources department to be used for performance tests.
+# This schema intentionally contains no foreign key constraints.
+name: hr_nofk
+version: 1
+table:
+  Job:
+    column:
+      id: string
+      title: string
+      minSalary: number
+      maxSalary: number
+    constraint:
+      primaryKey: [ id ]
+    index:
+      idx_maxSalary:
+        column: [ maxSalary ]
+        order: desc
+
+  JobHistory:
+    column:
+      employeeId: string
+      startDate: datetime
+      endDate: datetime
+      jobId: string
+      departmentId: string
+
+  Employee:
+    column:
+      id: string
+      firstName: string
+      lastName: string
+      email: string
+      phoneNumber: string
+      hireDate: datetime
+      jobId: string
+      salary: number
+      commissionPercent: number
+      managerId: string
+      departmentId: string
+      photo: arraybuffer
+    index:
+      idx_salary:
+        column: [ salary ]
+        order: desc
+    constraint:
+      primaryKey: [ id ]
+      nullable: [ hireDate ]
+
+  Department:
+    column:
+      id: string
+      name: string
+      managerId: string
+      locationId: string
+    constraint:
+      primaryKey: [ id ]
+
+  Location:
+    column:
+      id: string
+      streetAddress: string
+      postalCode: string
+      city: string
+      stateProvince: string
+      countryId: integer
+    constraint:
+      primaryKey: [ id ]
+
+  Country:
+    column:
+      id: integer
+      name: string
+      regionId: string
+    constraint:
+      primaryKey:
+        - column: id
+          autoIncrement: true
+
+  Region:
+    column:
+      id: string
+      name: string
+    constraint:
+      primaryKey: [ id ]
+
+  Holiday:  # Board certified paid holidays
+    column:
+      name: string
+      begin: datetime
+      end: datetime
+    constraint:
+      primaryKey: [ name ]
+    index:
+      idx_begin:
+        column: [ begin ]
+    pragma:
+      persistentIndex: true
+
+  CrossColumnTable:
+    column:
+      integer1: integer
+      integer2: integer
+    index:
+      idx_ascDesc:
+        column:
+          - name: integer1
+            order: asc
+          - name: integer2
+            order: desc

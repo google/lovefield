@@ -16,7 +16,10 @@
  */
 goog.provide('lf.testing.perf.SelectBenchmark');
 
+goog.require('goog.Promise');
 goog.require('goog.math');
+goog.require('goog.object');
+goog.require('goog.structs.Set');
 goog.require('lf.Order');
 goog.require('lf.fn');
 goog.require('lf.op');
@@ -33,13 +36,13 @@ goog.require('lf.op');
 lf.testing.perf.SelectBenchmark = function(db, dataGenerator) {
   this.db_ = db;
 
-  /** @private {!hr.db.schema.Employee} */
+  /** @private {!lf.testing.perf.hr.db.schema.Employee} */
   this.e_ = this.db_.getSchema().getEmployee();
 
-  /** @private {!hr.db.schema.Job} */
+  /** @private {!lf.testing.perf.hr.db.schema.Job} */
   this.j_ = this.db_.getSchema().getJob();
 
-  /** @private {!hr.db.schema.CrossColumnTable} */
+  /** @private {!lf.testing.perf.hr.db.schema.CrossColumnTable} */
   this.cct_ = this.db_.getSchema().getCrossColumnTable();
 
   /** @private {!lf.testing.hrSchema.MockDataGenerator} */
@@ -168,7 +171,7 @@ lf.testing.perf.SelectBenchmark.prototype.insertSampleData = function() {
   for (var i = 0; i < 200; i++) {
     for (var j = 0; j < 200; j++) {
       crossColumnTableRows.push(this.cct_.createRow(
-          /** @type {!hr.db.row.CrossColumnTableType} */ ({
+          /** @type {!lf.testing.perf.hr.db.row.CrossColumnTableType} */ ({
             integer1: i,
             integer2: j
           })));

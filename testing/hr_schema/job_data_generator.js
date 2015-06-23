@@ -49,7 +49,7 @@ lf.testing.hrSchema.JobDataGenerator.SALARY_POOL_ =
 
 /**
  * @param {number} count The number of rows to generate.
- * @return {!Array<!hr.db.row.JobType>}
+ * @return {!Array<!Object>}
  * @private
  */
 lf.testing.hrSchema.JobDataGenerator.prototype.generateRaw_ = function(count) {

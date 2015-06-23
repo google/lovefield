@@ -397,9 +397,9 @@ lf.testing.hrSchema.MockDataGenerator.prototype.findThetaJoinSalaryIds_ =
 
 /**
  * @typedef {{
- *   departments: !Array<!hr.db.row.DepartmentDbType>,
- *   employees: !Array<!hr.db.row.EmployeeDbType>,
- *   jobs: !Array<!hr.db.row.JobDbType>
+ *   departments: !Array<!Object>,
+ *   employees: !Array<!Object>,
+ *   jobs: !Array<!Object>
  * }}
  */
 lf.testing.hrSchema.MockDataGenerator.ExportData;
@@ -410,17 +410,17 @@ lf.testing.hrSchema.MockDataGenerator.ExportData;
  * @return {!lf.testing.hrSchema.MockDataGenerator.ExportData}
  */
 lf.testing.hrSchema.MockDataGenerator.prototype.exportData = function() {
-  /** @type {!Array<!hr.db.row.EmployeeDbType>} */
+  /** @type {!Array<!Object>} */
   var employeesPayloads = this.sampleEmployees.map(
       function(employee) {
         return employee.toDbPayload();
       });
-  /** @type {!Array<!hr.db.row.JobDbType>} */
+  /** @type {!Array<!Object>} */
   var jobsPayloads = this.sampleJobs.map(
       function(job) {
         return job.toDbPayload();
       });
-  /** @type {!Array<!hr.db.row.DepartmentDbType>} */
+  /** @type {!Array<!Object>} */
   var departmentsPayloads = this.sampleDepartments.map(
       function(department) {
         return department.toDbPayload();

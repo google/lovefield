@@ -19,11 +19,11 @@ goog.provide('lf.testing.perf.DefaultBenchmark');
 
 goog.require('goog.Promise');
 goog.require('goog.net.XhrIo');
-goog.require('hr.db');
 goog.require('lf.Order');
 goog.require('lf.Row');
 goog.require('lf.schema.DataStoreType');
 goog.require('lf.testing.hrSchema.EmployeeDataGenerator');
+goog.require('lf.testing.perf.hr.db');
 
 
 
@@ -39,10 +39,10 @@ lf.testing.perf.DefaultBenchmark = function(opt_volatile) {
   /** @private {!lf.Database} */
   this.db_;
 
-  /** @private {!hr.db.schema.Employee} */
+  /** @private {!lf.testing.perf.hr.db.schema.Employee} */
   this.e_;
 
-  /** @private {!Array<!hr.db.row.Employee>} */
+  /** @private {!Array<!lf.testing.perf.hr.db.row.Employee>} */
   this.data_;
 
   /** @private {boolean} */
@@ -56,7 +56,7 @@ lf.testing.perf.DefaultBenchmark.prototype.init = function() {
     storeType: this.volatile_ ? lf.schema.DataStoreType.MEMORY :
         lf.schema.DataStoreType.INDEXED_DB
   };
-  return hr.db.connect(options).then(goog.bind(
+  return lf.testing.perf.hr.db.connect(options).then(goog.bind(
       function(db) {
         this.db_ = db;
         this.e_ = db.getSchema().getEmployee();
@@ -79,7 +79,8 @@ lf.testing.perf.DefaultBenchmark.prototype.generateTestData = function() {
   }
 
   var generator = new lf.testing.hrSchema.EmployeeDataGenerator(
-      /** @type {!hr.db.schema.Database} */ (this.db_.getSchema()));
+      /** @type {!lf.testing.perf.hr.db.schema.Database} */ (
+          this.db_.getSchema()));
   this.data_ = generator.generate(50000);
   this.data_.forEach(function(row, i) {
     var id = ('000000' + i.toString()).slice(-6);
