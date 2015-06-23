@@ -146,11 +146,18 @@ lf.testing.EndToEndSelectTester.prototype.addSampleData_ = function() {
       /* employeeCount */ 300,
       /* departmentCount */ 10);
 
+  var r = this.db_.getSchema().table('Region');
+  var c = this.db_.getSchema().table('Country');
+  var l = this.db_.getSchema().table('Location');
+
   return this.db_.createTransaction().exec([
+    this.db_.insert().into(r).values(this.dataGenerator_.sampleRegions),
+    this.db_.insert().into(c).values(this.dataGenerator_.sampleCountries),
+    this.db_.insert().into(l).values(this.dataGenerator_.sampleLocations),
+    this.db_.insert().into(this.d_).values(
+        this.dataGenerator_.sampleDepartments),
     this.db_.insert().into(this.j_).values(this.dataGenerator_.sampleJobs),
     this.db_.insert().into(this.e_).values(this.dataGenerator_.sampleEmployees),
-    this.db_.insert().into(this.d_).values(
-        this.dataGenerator_.sampleDepartments)
   ]);
 };
 

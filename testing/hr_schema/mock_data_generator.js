@@ -46,6 +46,15 @@ lf.testing.hrSchema.MockDataGenerator = function(schema) {
   /** @type {!Array<!lf.Row>} */
   this.sampleDepartments = [];
 
+  /** @type {!Array<!lf.Row>} */
+  this.sampleLocations = [];
+
+  /** @type {!Array<!lf.Row>} */
+  this.sampleCountries = [];
+
+  /** @type {!Array<!lf.Row>} */
+  this.sampleRegions = [];
+
   /** @type {!lf.testing.hrSchema.MockDataGenerator.JobGroundTruth} */
   this.jobGroundTruth;
 
@@ -114,6 +123,32 @@ lf.testing.hrSchema.MockDataGenerator.prototype.generate = function(
   var departmentGenerator =
       new lf.testing.hrSchema.DepartmentDataGenerator(this.schema_);
   this.sampleDepartments = departmentGenerator.generate(departmentCount);
+
+  this.sampleLocations = [
+    this.schema_.table('Location').createRow({
+      id: 'locationId',
+      streetAddress: 'dummyStreetAddress',
+      postalCode: 'dummyPostalCode',
+      city: 'dummyCity',
+      stateProvince: 'dummyStateProvince',
+      countryId: 'countryId'
+    })
+  ];
+
+  this.sampleCountries = [
+    this.schema_.table('Country').createRow({
+      id: 'countryId',
+      name: 'dummyCountryName',
+      regionId: 'regionId'
+    })
+  ];
+
+  this.sampleRegions = [
+    this.schema_.table('Region').createRow({
+      id: 'regionId',
+      name: 'dummyRegionName'
+    })
+  ];
 
   this.jobGroundTruth = this.extractJobGroundTruth_();
   this.employeeGroundTruth = this.extractEmployeeGroundTruth_();

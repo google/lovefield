@@ -107,10 +107,17 @@ function addSampleData() {
   sampleEmployees = dataGenerator.sampleEmployees;
   sampleDepartments = dataGenerator.sampleDepartments;
 
+  var c = db.getSchema().getCountry();
+  var l = db.getSchema().getLocation();
+  var r = db.getSchema().getRegion();
+
   return db.createTransaction().exec([
+    db.insert().into(r).values(dataGenerator.sampleRegions),
+    db.insert().into(c).values(dataGenerator.sampleCountries),
+    db.insert().into(l).values(dataGenerator.sampleLocations),
+    db.insert().into(d).values(sampleDepartments),
     db.insert().into(j).values(sampleJobs),
-    db.insert().into(e).values(sampleEmployees),
-    db.insert().into(d).values(sampleDepartments)
+    db.insert().into(e).values(sampleEmployees)
   ]);
 }
 
