@@ -21,7 +21,6 @@ goog.require('goog.testing.jsunit');
 goog.require('hr.db');
 goog.require('lf.op');
 goog.require('lf.schema.DataStoreType');
-goog.require('lf.testing.hrSchemaSampleData');
 
 
 /** @type {!goog.testing.AsyncTestCase} */
@@ -72,19 +71,21 @@ function clearDb() {
 
 /**
  * @param {number} rowCount The number of rows to generate.
- * @return {!Array<!hr.db.row.Employee>}
+ * @return {!Array<!hr.db.row.DummyTable>}
  */
-function generateSampleEmployeeData(rowCount) {
-  var employees = new Array(rowCount);
+function generateSampleData(rowCount) {
+  var rows = new Array(rowCount);
+  var tableSchema = db.getSchema().getDummyTable();
   for (var i = 0; i < rowCount; i++) {
-    employees[i] =
-        lf.testing.hrSchemaSampleData.generateSampleEmployeeData(db);
-    employees[i].
-        setId('empId' + i.toString()).
-        setSalary(100 * i);
+    rows[i] = tableSchema.createRow({
+      string: 'string' + i.toString(),
+      number: 100 * i,
+      integer: 100 * i,
+      string2: 'string2' + i.toString()
+    });
   }
 
-  return employees;
+  return rows;
 }
 
 
@@ -95,8 +96,8 @@ function generateSampleEmployeeData(rowCount) {
 function populateDatabase() {
   return db.
       insert().
-      into(db.getSchema().getEmployee()).
-      values(generateSampleEmployeeData(rowCount)).
+      into(db.getSchema().getDummyTable()).
+      values(generateSampleData(rowCount)).
       exec();
 }
 
@@ -104,9 +105,9 @@ function populateDatabase() {
 function test_Not_In() {
   asyncTestCase.waitForAsync('test_Not_In');
 
-  var employee = db.getSchema().getEmployee();
-  var excludeIds = ['empId3', 'empId5', 'empId1'];
-  var expectedIds = ['empId0', 'empId2', 'empId4', 'empId6', 'empId7'];
+  var tableSchema = db.getSchema().getDummyTable();
+  var excludeIds = ['string3', 'string5', 'string1'];
+  var expectedIds = ['string0', 'string2', 'string4', 'string6', 'string7'];
 
   /**
    * Select records from the database.
@@ -115,18 +116,18 @@ function test_Not_In() {
   var selectFn = function() {
     return db.
         select().
-        from(employee).
-        where(lf.op.not(employee.id.in(excludeIds))).
+        from(tableSchema).
+        where(lf.op.not(tableSchema.string.in(excludeIds))).
         exec();
   };
 
   selectFn().then(
       function(results) {
         var actualIds = results.map(function(result) {
-          return result.id;
+          return result.string;
         });
 
-        assertArrayEquals(expectedIds, actualIds);
+        assertSameElements(expectedIds, actualIds);
         asyncTestCase.continueTesting();
       }, fail);
 }
@@ -140,8 +141,8 @@ function test_Not_In() {
 function test_Not_Eq() {
   asyncTestCase.waitForAsync('test_Not_Eq');
 
-  var employee = db.getSchema().getEmployee();
-  var excludedId = 'empId1';
+  var tableSchema = db.getSchema().getDummyTable();
+  var excludedId = 'string1';
 
   /**
    * Select records from the database.
@@ -150,8 +151,8 @@ function test_Not_Eq() {
   var selectFn = function() {
     return db.
         select().
-        from(employee).
-        where(lf.op.not(employee.id.eq(excludedId))).
+        from(tableSchema).
+        where(lf.op.not(tableSchema.string.eq(excludedId))).
         exec();
   };
 
@@ -159,7 +160,7 @@ function test_Not_Eq() {
       function(results) {
         assertEquals(rowCount - 1, results.length);
         assertFalse(results.some(function(result) {
-          return result.id == excludedId;
+          return result.string == excludedId;
         }));
         asyncTestCase.continueTesting();
       }, fail);
@@ -169,8 +170,8 @@ function test_Not_Eq() {
 function test_And_Not() {
   asyncTestCase.waitForAsync('test_And_Not');
 
-  var employee = db.getSchema().getEmployee();
-  var excludedId = 'empId1';
+  var tableSchema = db.getSchema().getDummyTable();
+  var excludedId = 'string1';
 
   /**
    * Select records from the database.
@@ -179,10 +180,10 @@ function test_And_Not() {
   var selectFn = function() {
     return db.
         select().
-        from(employee).
+        from(tableSchema).
         where(lf.op.and(
-            lf.op.not(employee.id.eq(excludedId)),
-            employee.id.in([excludedId, 'empId2', 'empId3']))).
+            lf.op.not(tableSchema.string.eq(excludedId)),
+            tableSchema.string.in([excludedId, 'string2', 'string3']))).
         exec();
   };
 
@@ -191,9 +192,9 @@ function test_And_Not() {
         assertEquals(2, results.length);
 
         var actualIds = results.map(function(result) {
-          return result.id;
+          return result.string;
         });
-        assertArrayEquals(actualIds, ['empId2', 'empId3']);
+        assertSameElements(actualIds, ['string2', 'string3']);
         asyncTestCase.continueTesting();
       }, fail);
 }
@@ -204,7 +205,7 @@ function test_And_Not() {
  */
 function test_Not_And() {
   asyncTestCase.waitForAsync('test_Not_And');
-  var employee = db.getSchema().getEmployee();
+  var tableSchema = db.getSchema().getDummyTable();
 
   /**
    * Select records from the database.
@@ -213,22 +214,22 @@ function test_Not_And() {
   var selectFn = function() {
     return db.
         select().
-        from(employee).
+        from(tableSchema).
         where(
             lf.op.not(
                 lf.op.and(
-                    employee.salary.gte(200),
-                    employee.salary.lte(600)))).
+                    tableSchema.integer.gte(200),
+                    tableSchema.integer.lte(600)))).
         exec();
   };
 
   selectFn().then(
       function(results) {
-        var actualSalaries = results.map(function(result) {
-          return result.salary;
+        var actualValues = results.map(function(result) {
+          return result.integer;
         });
-        var expectedSalaries = [0, 100, 700];
-        assertArrayEquals(expectedSalaries, actualSalaries);
+        var expectedValues = [0, 100, 700];
+        assertSameElements(expectedValues, actualValues);
         asyncTestCase.continueTesting();
       }, fail);
 }
@@ -239,7 +240,7 @@ function test_Not_And() {
  */
 function test_Not_Or() {
   asyncTestCase.waitForAsync('test_Not_Or');
-  var employee = db.getSchema().getEmployee();
+  var tableSchema = db.getSchema().getDummyTable();
 
   /**
    * Select records from the database.
@@ -248,22 +249,22 @@ function test_Not_Or() {
   var selectFn = function() {
     return db.
         select().
-        from(employee).
+        from(tableSchema).
         where(
             lf.op.not(
                 lf.op.or(
-                    employee.salary.lte(200),
-                    employee.salary.gte(600)))).
+                    tableSchema.integer.lte(200),
+                    tableSchema.integer.gte(600)))).
         exec();
   };
 
   selectFn().then(
       function(results) {
-        var actualSalaries = results.map(function(result) {
-          return result.salary;
+        var actualValues = results.map(function(result) {
+          return result.integer;
         });
-        var expectedSalaries = [500, 400, 300];
-        assertArrayEquals(expectedSalaries, actualSalaries);
+        var expectedValues = [500, 400, 300];
+        assertSameElements(expectedValues, actualValues);
         asyncTestCase.continueTesting();
       }, fail);
 }
