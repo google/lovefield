@@ -307,6 +307,10 @@ foo.db.schema.Foo = function() {
         [
           {schema: this.bar, order: lf.Order.ASC}
         ]),
+    new lf.schema.Index('Foo', 'fk_loc', false,
+        [
+          {schema: this.location, order: lf.Order.ASC}
+        ]),
     new lf.schema.Index('Foo', 'idx_Name', false,
         [
           {schema: this.name, order: lf.Order.ASC}
@@ -456,6 +460,8 @@ foo.db.row.Foo.prototype.keyOfIndex = function(indexName) {
       return this.payload().id;
     case 'Foo.uq_bar':
       return this.payload().bar;
+    case 'Foo.fk_loc':
+      return this.payload().location;
     case 'Foo.idx_Name':
       return this.payload().name;
     case 'Foo.#':

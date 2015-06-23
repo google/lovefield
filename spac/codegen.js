@@ -698,6 +698,13 @@ CodeGenerator.prototype.genKeyOfIndex_ = function(table, prefix) {
         body.push(this.genKeyFromColumns_(table, unq.column));
       }
     }
+
+    if (table.constraint.foreignKey) {
+      table.constraint.foreignKey.forEach(function(fkSpec) {
+        genCase(fkSpec.name);
+        body.push(this.genKeyFromColumns_(table, [{name: fkSpec.local}]));
+      }, this);
+    }
   }
 
   if (table.index) {
@@ -1123,6 +1130,30 @@ CodeGenerator.prototype.getUniqueIndices_ = function(table, indentCount) {
 
 /**
  * @param {!Table_} table
+ * @param {number} indentCount
+ * @return {!Array<string>}
+ * @private
+ */
+CodeGenerator.prototype.getForeignKeyIndices_ = function(table, indentCount) {
+  var fkIndices = [];
+
+  table.constraint.foreignKey.forEach(function(fkSpec) {
+    var indexDef = CodeGenerator.getIndexDefinition_(
+        table.name,
+        fkSpec.name,
+        [{name: fkSpec.local}],
+        false,  /* isUnique */
+        false,  /* isPrimaryKey */
+        indentCount);
+    fkIndices.push(indexDef);
+  });
+
+  return fkIndices;
+};
+
+
+/**
+ * @param {!Table_} table
  * @return {string}
  * @private
  */
@@ -1138,6 +1169,13 @@ CodeGenerator.prototype.getIndices_ = function(table) {
       var uniqueIndices = this.getUniqueIndices_(table, 4);
       uniqueIndices.forEach(function(uniqueIndex) {
         results.push(uniqueIndex);
+      });
+    }
+
+    if (table.constraint.foreignKey) {
+      var foreignKeyIndices = this.getForeignKeyIndices_(table, 4);
+      foreignKeyIndices.forEach(function(fkIndex) {
+        results.push(fkIndex);
       });
     }
   }

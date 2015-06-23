@@ -64,6 +64,18 @@ function setUp() {
 
 
 /**
+ * @param {!lf.schema.Table} table
+ * @param {string} indexName
+ * @return {!lf.schema.Index}
+ */
+function getIndexByName(table, indexName) {
+  return table.getIndices().filter(function(index) {
+    return index.name == indexName;
+  })[0];
+}
+
+
+/**
  * Tests a tree where the contents of a table are filtered by a value predicate
  * referring to a different column than the one used for sorting.
  */
@@ -115,7 +127,7 @@ function testTree2() {
     var tableAccessByRowIdNode = new lf.proc.TableAccessByRowIdStep(
         hr.db.getGlobal(), queryContext.from[0]);
     var indexRangeScanNode = new lf.proc.IndexRangeScanStep(
-        hr.db.getGlobal(), e.getIndices()[1],
+        hr.db.getGlobal(), getIndexByName(e, 'idx_salary'),
         new lf.testing.proc.MockKeyRangeCalculator(
             queryContext.where.toKeyRange()), true);
     tableAccessByRowIdNode.addChild(indexRangeScanNode);

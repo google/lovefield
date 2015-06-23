@@ -554,6 +554,10 @@ lovefield.db.schema.Photo = function() {
         [
           {schema: this.id, order: lf.Order.ASC, autoIncrement: false}
         ]),
+    new lf.schema.Index('Photo', 'fk_albumId', false,
+        [
+          {schema: this.albumId, order: lf.Order.ASC}
+        ]),
     new lf.schema.Index('Photo', 'idx_timestamp', false,
         [
           {schema: this.timestamp, order: lf.Order.DESC}
@@ -744,6 +748,8 @@ lovefield.db.row.Photo.prototype.keyOfIndex = function(indexName) {
   switch (indexName) {
     case 'Photo.pkPhoto':
       return this.payload().id;
+    case 'Photo.fk_albumId':
+      return this.payload().albumId;
     case 'Photo.idx_timestamp':
       return this.payload().timestamp.getTime();
     case 'Photo.idx_imageHash':
@@ -956,6 +962,14 @@ lovefield.db.schema.Details = function() {
         [
           {schema: this.id1, order: lf.Order.ASC, autoIncrement: false},
           {schema: this.id2, order: lf.Order.ASC, autoIncrement: false}
+        ]),
+    new lf.schema.Index('Details', 'fk_photoId', false,
+        [
+          {schema: this.photoId, order: lf.Order.ASC}
+        ]),
+    new lf.schema.Index('Details', 'fk_albumId', false,
+        [
+          {schema: this.albumId, order: lf.Order.ASC}
         ])
   ];
 
@@ -1114,6 +1128,10 @@ lovefield.db.row.Details.prototype.keyOfIndex = function(indexName) {
         this.payload().id1,
         this.payload().id2
       ];
+    case 'Details.fk_photoId':
+      return this.payload().photoId;
+    case 'Details.fk_albumId':
+      return this.payload().albumId;
     case 'Details.#':
       return this.id();
     default:
@@ -1457,6 +1475,14 @@ lovefield.db.schema.PhotoCurator = function() {
     new lf.schema.Index('PhotoCurator', 'uq_topic', true,
         [
           {schema: this.topic, order: lf.Order.ASC}
+        ]),
+    new lf.schema.Index('PhotoCurator', 'fk_photoId', false,
+        [
+          {schema: this.photoId, order: lf.Order.ASC}
+        ]),
+    new lf.schema.Index('PhotoCurator', 'fk_curator', false,
+        [
+          {schema: this.curator, order: lf.Order.ASC}
         ])
   ];
 
@@ -1598,6 +1624,10 @@ lovefield.db.row.PhotoCurator.prototype.keyOfIndex = function(indexName) {
   switch (indexName) {
     case 'PhotoCurator.uq_topic':
       return this.payload().topic;
+    case 'PhotoCurator.fk_photoId':
+      return this.payload().photoId;
+    case 'PhotoCurator.fk_curator':
+      return this.payload().curator;
     case 'PhotoCurator.#':
       return this.id();
     default:
@@ -1967,6 +1997,10 @@ lovefield.db.schema.SelfLoop = function() {
     new lf.schema.Index('SelfLoop', 'pkSelfLoop', true,
         [
           {schema: this.id, order: lf.Order.ASC, autoIncrement: false}
+        ]),
+    new lf.schema.Index('SelfLoop', 'fkAssociate', false,
+        [
+          {schema: this.associate, order: lf.Order.ASC}
         ])
   ];
 
@@ -2093,6 +2127,8 @@ lovefield.db.row.SelfLoop.prototype.keyOfIndex = function(indexName) {
   switch (indexName) {
     case 'SelfLoop.pkSelfLoop':
       return this.payload().id;
+    case 'SelfLoop.fkAssociate':
+      return this.payload().associate;
     case 'SelfLoop.#':
       return this.id();
     default:

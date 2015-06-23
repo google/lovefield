@@ -62,6 +62,18 @@ function setUp() {
 
 
 /**
+ * @param {!lf.schema.Table} table
+ * @param {string} indexName
+ * @return {!lf.schema.Index}
+ */
+function getIndexByName(table, indexName) {
+  return table.getIndices().filter(function(index) {
+    return index.name == indexName;
+  })[0];
+}
+
+
+/**
  * Tests a tree where an existing IndexRangeScanStep can be leveraged for
  * limiting and skipping results.
  */
@@ -98,7 +110,7 @@ function testTree1() {
     projectNode.addChild(tableAccessByRowIdNode);
     var indexRangeScanStep = new lf.proc.IndexRangeScanStep(
         hr.db.getGlobal(),
-        e.getIndices()[1],
+        getIndexByName(e, 'idx_salary'),
         new lf.testing.proc.MockKeyRangeCalculator([
           /** @type {!lf.pred.PredicateNode} */ (
               queryContext.where).getChildAt(0).toKeyRange()[0],
@@ -149,7 +161,7 @@ function testTree_SelectStep_Unaffected() {
         hr.db.getGlobal(), queryContext.from[0]);
     selectNode.addChild(tableAccessByRowIdNode);
     var indexRangeScanStep = new lf.proc.IndexRangeScanStep(
-        hr.db.getGlobal(), e.getIndices()[1],
+        hr.db.getGlobal(), getIndexByName(e, 'idx_salary'),
         new lf.testing.proc.MockKeyRangeCalculator(
             [lf.index.SingleKeyRange.all()]),
         true);
@@ -191,7 +203,7 @@ function testTree_GroupBy_Unaffected() {
         hr.db.getGlobal(), e);
     projectNode.addChild(tableAccessByRowIdNode);
     var indexRangeScanStep = new lf.proc.IndexRangeScanStep(
-        hr.db.getGlobal(), e.getIndices()[1],
+        hr.db.getGlobal(), getIndexByName(e, 'idx_salary'),
         new lf.testing.proc.MockKeyRangeCalculator(
             [lf.index.SingleKeyRange.all()]),
         true);
@@ -236,7 +248,7 @@ function testTree_Aggregators_Unaffected() {
         hr.db.getGlobal(), e);
     projectNode.addChild(tableAccessByRowIdNode);
     var indexRangeScanStep = new lf.proc.IndexRangeScanStep(
-        hr.db.getGlobal(), e.getIndices()[1],
+        hr.db.getGlobal(), getIndexByName(e, 'idx_salary'),
         new lf.testing.proc.MockKeyRangeCalculator(
             [lf.index.SingleKeyRange.all()]),
         true);
@@ -283,7 +295,7 @@ function testTree_OrderBy_Unaffected() {
         hr.db.getGlobal(), e);
     orderByNode.addChild(tableAccessByRowIdNode);
     var indexRangeScanStep = new lf.proc.IndexRangeScanStep(
-        hr.db.getGlobal(), e.getIndices()[1],
+        hr.db.getGlobal(), getIndexByName(e, 'idx_salary'),
         new lf.testing.proc.MockKeyRangeCalculator(
             [lf.index.SingleKeyRange.all()]),
         true);
