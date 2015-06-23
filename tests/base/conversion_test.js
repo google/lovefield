@@ -78,13 +78,14 @@ function testConversions() {
   asyncTestCase.waitForAsync('testConversions');
 
   var tableSchema = db.getSchema().getDummyTable();
-  var row = tableSchema.createRow();
-  row.arrayBuffer = new ArrayBuffer(0);
-  row.boolean = false;
-  row.datetime = new Date();
-  row.integer = 3;
-  row.number = Math.PI;
-  row.string = 'dummystring';
+  var row = tableSchema.createRow({
+    arrayBuffer: new ArrayBuffer(0),
+    boolean: false,
+    datetime: new Date(),
+    integer: 3,
+    number: Math.PI,
+    string: 'dummystring'
+  });
 
 
   /**

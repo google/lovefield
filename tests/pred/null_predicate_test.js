@@ -20,7 +20,6 @@ goog.require('goog.testing.AsyncTestCase');
 goog.require('goog.testing.jsunit');
 goog.require('hr.db');
 goog.require('lf.schema.DataStoreType');
-goog.require('lf.testing.hrSchemaSampleData');
 
 
 /** @type {!goog.testing.AsyncTestCase} */
@@ -66,20 +65,44 @@ function clearDb() {
 
 
 /**
- * Creates two sample Employee rows. One with a specified 'hireDate' and one
- * with a null 'hireDate'.
- * @return {!Array<!hr.db.row.Employee>}
+ * Creates two sample rows. One with a specified 'datetime' and one
+ * with a null 'datetime'.
+ * @return {!Array<!hr.db.row.DummyTable>}
  */
-function generateSampleEmployeeData() {
-  var employeeRow1 =
-      lf.testing.hrSchemaSampleData.generateSampleEmployeeData(db);
-  employeeRow1.setId('empId1');
-  var employeeRow2 =
-      lf.testing.hrSchemaSampleData.generateSampleEmployeeData(db);
-  employeeRow2.setId('empId2');
-  employeeRow2.setHireDate(null);
+function generateSampleDummyData() {
+  var tableSchema = db.getSchema().getDummyTable();
 
-  return [employeeRow1, employeeRow2];
+  var row1 = tableSchema.createRow({
+    string: 'string1',
+    number: 100,
+    integer: 100,
+    string2: 'string21',
+    datetime: new Date()
+  });
+
+  var row2 = tableSchema.createRow({
+    string: 'string2',
+    number: 200,
+    integer: 200,
+    string2: 'string22',
+    datetime: null
+  });
+
+  return [row1, row2];
+}
+
+
+/** @return {!Array<!hr.db.row.Region>} */
+function generateSampleRegionData() {
+  var tableSchema = db.getSchema().getRegion();
+  var rows = new Array(3);
+  for (var i = 0; i < rows.length; i++) {
+    rows[i] = tableSchema.createRow({
+      id: 'regionId' + i.toString(),
+      name: 'regionName' + i.toString()
+    });
+  }
+  return rows;
 }
 
 
@@ -88,11 +111,15 @@ function generateSampleEmployeeData() {
  * @return {!IThenable}
  */
 function populateDatabase() {
-  return db.
-      insert().
-      into(db.getSchema().getEmployee()).
-      values(generateSampleEmployeeData()).
-      exec();
+  var tx = db.createTransaction();
+  return tx.exec([
+    db.insert().
+        into(db.getSchema().getDummyTable()).
+        values(generateSampleDummyData()),
+    db.insert().
+        into(db.getSchema().getRegion()).
+        values(generateSampleRegionData()),
+  ]);
 }
 
 
@@ -102,10 +129,10 @@ function populateDatabase() {
 function test_IsNull_NonIndexed() {
   asyncTestCase.waitForAsync('test_IsNull_NonIndexed');
 
-  var employee = db.getSchema().getEmployee();
-  // Ensure that the 'hireDate' field is not indexed.
-  assertEquals(0, employee.hireDate.getIndices().length);
-  var sampleData = generateSampleEmployeeData();
+  var tableSchema = db.getSchema().getDummyTable();
+  // Ensure that the 'datetime' field is not indexed.
+  assertEquals(0, tableSchema.datetime.getIndices().length);
+  var sampleData = generateSampleDummyData();
 
   /**
    * Select records to the database.
@@ -114,8 +141,8 @@ function test_IsNull_NonIndexed() {
   var selectFn = function() {
     return db.
         select().
-        from(employee).
-        where(employee.hireDate.isNull()).
+        from(tableSchema).
+        where(tableSchema.datetime.isNull()).
         exec();
   };
 
@@ -125,7 +152,7 @@ function test_IsNull_NonIndexed() {
 
         // Expecting the second sample row to have been retrieved.
         var retrievedEmployee = result[0];
-        assertEquals(sampleData[1].getId(), retrievedEmployee.id);
+        assertEquals(sampleData[1].getString(), retrievedEmployee.string);
 
         asyncTestCase.continueTesting();
       }, fail);
@@ -138,10 +165,10 @@ function test_IsNull_NonIndexed() {
 function test_IsNotNull_NonIndexed() {
   asyncTestCase.waitForAsync('test_IsNotNull_NonIndexed');
 
-  var employee = db.getSchema().getEmployee();
-  // Ensure that the 'hireDate' field is not indexed.
-  assertEquals(0, employee.hireDate.getIndices().length);
-  var sampleData = generateSampleEmployeeData();
+  var tableSchema = db.getSchema().getDummyTable();
+  // Ensure that the 'datetime' field is not indexed.
+  assertEquals(0, tableSchema.datetime.getIndices().length);
+  var sampleData = generateSampleDummyData();
 
   /**
    * Select records to the database.
@@ -150,8 +177,8 @@ function test_IsNotNull_NonIndexed() {
   var selectFn = function() {
     return db.
         select().
-        from(employee).
-        where(employee.hireDate.isNotNull()).
+        from(tableSchema).
+        where(tableSchema.datetime.isNotNull()).
         exec();
   };
 
@@ -161,7 +188,7 @@ function test_IsNotNull_NonIndexed() {
 
         // Expecting the first sample row to have been retrieved.
         var retrievedEmployee = result[0];
-        assertEquals(sampleData[0].getId(), retrievedEmployee.id);
+        assertEquals(sampleData[0].getString(), retrievedEmployee.string);
 
         asyncTestCase.continueTesting();
       }, fail);
@@ -169,14 +196,14 @@ function test_IsNotNull_NonIndexed() {
 
 
 /**
- * Tests the case where an isNull() predicate is used on a indexed field.
+ * Tests the case where an isNull() predicate is used on an indexed field.
  */
 function test_IsNull_Indexed() {
   asyncTestCase.waitForAsync('test_IsNull_Indexed');
 
-  var employee = db.getSchema().getEmployee();
+  var tableSchema = db.getSchema().getRegion();
   // Ensure that the 'id' field is indexed.
-  assertTrue(employee.id.getIndices().length >= 1);
+  assertTrue(tableSchema.id.getIndices().length >= 1);
 
   /**
    * Select records to the database.
@@ -185,8 +212,8 @@ function test_IsNull_Indexed() {
   var selectFn = function() {
     return db.
         select().
-        from(employee).
-        where(employee.id.isNull()).
+        from(tableSchema).
+        where(tableSchema.id.isNull()).
         exec();
   };
 
@@ -204,10 +231,10 @@ function test_IsNull_Indexed() {
 function test_IsNotNull_Indexed() {
   asyncTestCase.waitForAsync('test_IsNotNull_Indexed');
 
-  var employee = db.getSchema().getEmployee();
+  var tableSchema = db.getSchema().getRegion();
   // Ensure that the 'id' field is indexed.
-  assertTrue(employee.id.getIndices().length >= 1);
-  var sampleData = generateSampleEmployeeData();
+  assertTrue(tableSchema.id.getIndices().length >= 1);
+  var sampleData = generateSampleRegionData();
 
   /**
    * Select records to the database.
@@ -216,8 +243,8 @@ function test_IsNotNull_Indexed() {
   var selectFn = function() {
     return db.
         select().
-        from(employee).
-        where(employee.id.isNotNull()).
+        from(tableSchema).
+        where(tableSchema.id.isNotNull()).
         exec();
   };
 

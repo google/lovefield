@@ -145,6 +145,7 @@ table:
       unique:
         uq_constraint:
           column: [integer, string2]
+      nullable: [ datetime ]
 
   CrossColumnTable:
     column:
