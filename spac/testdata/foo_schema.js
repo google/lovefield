@@ -86,7 +86,12 @@ foo.db.schema.Database.prototype.establishReferences_ = function() {
   for (var tableName in this.tableMap_) {
     var table = this.tableMap_[tableName];
     table.getConstraint().getForeignKeys().forEach(function(spec) {
-      var parent = this.tableMap_[spec.parentTable][spec.parentColumn];
+      var parentTable = this.tableMap_[spec.parentTable];
+      var refKeys = parentTable.getReferencingForeignKeys() || [];
+      refKeys.push(spec);
+      parentTable.setReferencingForeignKeys(refKeys);
+
+      var parent = parentTable[spec.parentColumn];
       var child = table[spec.childColumn];
       child.setParent(parent);
       var childrenColumns = parent.getChildren() || [];
@@ -354,7 +359,7 @@ foo.db.schema.Foo.prototype.getConstraint = function() {
           'ref': 'Location.id',
           'action': lf.ConstraintAction.RESTRICT,
           'timing': lf.ConstraintTiming.IMMEDIATE
-        }, 'fk_loc')
+        }, 'Foo.fk_loc')
   ];
   var unique = [
     new lf.schema.Index('Foo', 'uq_bar', true,

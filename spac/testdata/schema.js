@@ -131,7 +131,12 @@ lovefield.db.schema.Database.prototype.establishReferences_ = function() {
   for (var tableName in this.tableMap_) {
     var table = this.tableMap_[tableName];
     table.getConstraint().getForeignKeys().forEach(function(spec) {
-      var parent = this.tableMap_[spec.parentTable][spec.parentColumn];
+      var parentTable = this.tableMap_[spec.parentTable];
+      var refKeys = parentTable.getReferencingForeignKeys() || [];
+      refKeys.push(spec);
+      parentTable.setReferencingForeignKeys(refKeys);
+
+      var parent = parentTable[spec.parentColumn];
       var child = table[spec.childColumn];
       child.setParent(parent);
       var childrenColumns = parent.getChildren() || [];
@@ -611,7 +616,7 @@ lovefield.db.schema.Photo.prototype.getConstraint = function() {
           'ref': 'Album.id',
           'action': lf.ConstraintAction.CASCADE,
           'timing': lf.ConstraintTiming.IMMEDIATE
-        }, 'fk_albumId')
+        }, 'Photo.fk_albumId')
   ];
   var unique = [
   ];
@@ -1002,14 +1007,14 @@ lovefield.db.schema.Details.prototype.getConstraint = function() {
           'ref': 'Photo.id',
           'action': lf.ConstraintAction.CASCADE,
           'timing': lf.ConstraintTiming.IMMEDIATE
-        }, 'fk_photoId'),
+        }, 'Details.fk_photoId'),
     new lf.schema.ForeignKeySpec(
         {
           'local': 'albumId',
           'ref': 'Album.id',
           'action': lf.ConstraintAction.CASCADE,
           'timing': lf.ConstraintTiming.IMMEDIATE
-        }, 'fk_albumId')
+        }, 'Details.fk_albumId')
   ];
   var unique = [
   ];
@@ -1497,14 +1502,14 @@ lovefield.db.schema.PhotoCurator.prototype.getConstraint = function() {
           'ref': 'Photo.id',
           'action': lf.ConstraintAction.CASCADE,
           'timing': lf.ConstraintTiming.IMMEDIATE
-        }, 'fk_photoId'),
+        }, 'PhotoCurator.fk_photoId'),
     new lf.schema.ForeignKeySpec(
         {
           'local': 'curator',
           'ref': 'Curator.id',
           'action': lf.ConstraintAction.CASCADE,
           'timing': lf.ConstraintTiming.IMMEDIATE
-        }, 'fk_curator')
+        }, 'PhotoCurator.fk_curator')
   ];
   var unique = [
     new lf.schema.Index('PhotoCurator', 'uq_topic', true,
@@ -2009,7 +2014,7 @@ lovefield.db.schema.SelfLoop.prototype.getConstraint = function() {
           'ref': 'SelfLoop.id',
           'action': lf.ConstraintAction.CASCADE,
           'timing': lf.ConstraintTiming.IMMEDIATE
-        }, 'fkAssociate')
+        }, 'SelfLoop.fkAssociate')
   ];
   var unique = [
   ];

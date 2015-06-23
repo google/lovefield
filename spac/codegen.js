@@ -1010,11 +1010,12 @@ CodeGenerator.prototype.getPrimaryKeyIndex_ = function(table, indentCount) {
 
 
 /**
+ * @param {string} tableName
  * @param {Array<!ForeignKeySpec_>} specs
  * @return {string}
  * @private
  */
-CodeGenerator.prototype.getForeignKeySpec_ = function(specs) {
+CodeGenerator.prototype.getForeignKeySpec_ = function(tableName, specs) {
   if (!specs) {
     return '';
   }
@@ -1036,7 +1037,7 @@ CodeGenerator.prototype.getForeignKeySpec_ = function(specs) {
         '          \'ref\': \'' + spec.ref + '\',\n' +
         '          \'action\': ' + getAction(spec.action) + ',\n' +
         '          \'timing\': ' + getTiming(spec.timing) + '\n' +
-        '        }, \'' + spec.name + '\')';
+        '        }, \'' + tableName + '.' + spec.name + '\')';
   }).join(',\n');
 };
 
@@ -1066,7 +1067,8 @@ CodeGenerator.prototype.getConstraint_ = function(table) {
     results.push(getNotNullable());
 
     results.push('  var foreignKeys = [');
-    var fkSpec = this.getForeignKeySpec_(table.constraint.foreignKey);
+    var fkSpec = this.getForeignKeySpec_(
+        table.name, table.constraint.foreignKey);
     if (fkSpec.length) {
       results.push(fkSpec);
     }
