@@ -22,6 +22,7 @@ goog.require('goog.testing.jsunit');
 goog.require('lf.bind');
 goog.require('lf.schema.DataStoreType');
 goog.require('lf.testing.hrSchema.JobDataGenerator');
+goog.require('lf.testing.hrSchema.MockDataGenerator');
 goog.require('lf.testing.util');
 
 
@@ -50,6 +51,9 @@ lf.testing.EndToEndTester = function(global, connectFn) {
 
   /** @private {!Array<!lf.Row>} */
   this.sampleJobs__;
+
+  /** @private {!lf.testing.hrSchema.MockDataGenerator} */
+  this.dataGenerator_;
 
   /** @private {!Array<function(): !IThenable>} */
   this.testCases_ = [
@@ -105,6 +109,8 @@ lf.testing.EndToEndTester.prototype.setUp_ = function() {
   return this.connectFn_({storeType: lf.schema.DataStoreType.MEMORY}).then(
       function(database) {
         this.db_ = database;
+        this.dataGenerator_ =
+            new lf.testing.hrSchema.MockDataGenerator(this.db_.getSchema());
         this.j_ = this.db_.getSchema().table('Job');
         this.e_ = this.db_.getSchema().table('Employee');
         return this.addSampleData_(50);
@@ -119,10 +125,11 @@ lf.testing.EndToEndTester.prototype.setUp_ = function() {
  * @private
  */
 lf.testing.EndToEndTester.prototype.addSampleData_ = function(rowCount) {
-  var schema = this.db_.getSchema();
-  var jobGenerator =
-      new lf.testing.hrSchema.JobDataGenerator(schema);
-  this.sampleJobs_ = jobGenerator.generate(rowCount);
+  this.dataGenerator_.generate(
+      /* jobCount */ rowCount,
+      /* employeeCount */ rowCount,
+      /* departmentCount */ 1);
+  this.sampleJobs_ = this.dataGenerator_.sampleJobs;
 
   return this.db_.insert().into(this.j_).values(this.sampleJobs_).exec();
 };
@@ -159,14 +166,35 @@ lf.testing.EndToEndTester.prototype.testInsert = function() {
  * @return {!IThenable}
  */
 lf.testing.EndToEndTester.prototype.testInsert_NoPrimaryKey = function() {
+  var d = this.db_.getSchema().table('Department');
+  var l = this.db_.getSchema().table('Location');
+  var c = this.db_.getSchema().table('Country');
+  var r = this.db_.getSchema().table('Region');
+  var e = this.db_.getSchema().table('Employee');
+
   var jobHistory = this.db_.getSchema().table('JobHistory');
   assertNull(jobHistory.getConstraint().getPrimaryKey());
   var row = jobHistory.createRow();
+  row.payload()['employeeId'] =
+      this.dataGenerator_.sampleEmployees[0].payload()['id'];
+  row.payload()['departmentId'] =
+      this.dataGenerator_.sampleDepartments[0].payload()['id'];
 
   var queryBuilder = /** @type {!lf.query.InsertBuilder} */ (
       this.db_.insert().into(jobHistory).values([row]));
 
-  return queryBuilder.exec().then(
+  var tx = this.db_.createTransaction();
+  // Adding necessary rows to avoid triggering foreign key constraints.
+  return tx.exec([
+    this.db_.insert().into(r).values(this.dataGenerator_.sampleRegions),
+    this.db_.insert().into(c).values(this.dataGenerator_.sampleCountries),
+    this.db_.insert().into(l).values(this.dataGenerator_.sampleLocations),
+    this.db_.insert().into(d).values(this.dataGenerator_.sampleDepartments),
+    this.db_.insert().into(e).values(
+        this.dataGenerator_.sampleEmployees.slice(0, 1))
+  ]).then(function() {
+    return queryBuilder.exec();
+  }).then(
       function(results) {
         assertEquals(1, results.length);
         return lf.testing.util.selectAll(this.global_, jobHistory);
@@ -316,11 +344,15 @@ lf.testing.EndToEndTester.prototype.testInsertOrReplace_BindArray = function() {
  * @private
  */
 lf.testing.EndToEndTester.prototype.checkAutoIncrement_ = function(builderFn) {
+  var r = this.db_.getSchema().table('Region');
+  var regionRow = r.createRow({id: 'regionId', name: 'dummyRegionName'});
+
   var c = this.db_.getSchema().table('Country');
 
   var firstBatch = new Array(3);
   for (var i = 0; i < firstBatch.length; i++) {
     firstBatch[i] = c.createRow();
+    firstBatch[i].payload()['regionId'] = 'regionId';
     // Default value of the primary key column is set to 0 within createRow
     // (since only integer keys are allowed to be marked as auto-incrementing),
     // which will trigger an automatically assigned primary key.
@@ -330,7 +362,7 @@ lf.testing.EndToEndTester.prototype.checkAutoIncrement_ = function(builderFn) {
   for (var i = 0; i < secondBatch.length; i++) {
     secondBatch[i] = c.createRow({
       'name': 'holiday' + i.toString(),
-      'regionId': 'region' + i.toString()
+      'regionId': 'regionId'
     });
     // 'id' is not specified in the 2nd batch, which should also trigger
     // automatically assigned primary keys.
@@ -340,7 +372,7 @@ lf.testing.EndToEndTester.prototype.checkAutoIncrement_ = function(builderFn) {
   for (var i = 0; i < thirdBatch.length; i++) {
     thirdBatch[i] = c.createRow({
       'name': 'holiday' + i.toString(),
-      'regionId': 'region' + i.toString(),
+      'regionId': 'regionId',
       'id': null
     });
     // 'id' is set to null in the 3rd batch, which should also trigger
@@ -352,9 +384,13 @@ lf.testing.EndToEndTester.prototype.checkAutoIncrement_ = function(builderFn) {
   var manuallyAssignedId = 1000;
   var manualRow = c.createRow();
   manualRow.payload()['id'] = manuallyAssignedId;
+  manualRow.payload()['regionId'] = 'regionId';
   var global = this.global_;
 
-  return builderFn().into(c).values(firstBatch).exec().then(
+  return this.db_.insert().into(r).values([regionRow]).exec().then(
+      function() {
+        return builderFn().into(c).values(firstBatch).exec();
+      }).then(
       function(results) {
         assertEquals(firstBatch.length, results.length);
         return builderFn().into(c).values(secondBatch).exec();

@@ -569,6 +569,8 @@ goog.MODIFY_FUNCTION_PROTOTYPES && (Function.prototype.bind = Function.prototype
     return goog.bind.apply(null, args);
   }
   return goog.bind(this, selfObj);
+}, Function.prototype.inherits = function(parentCtor) {
+  goog.inherits(this, parentCtor);
 });
 goog.defineClass = function(superClass, def) {
   var constructor = def.constructor, statics = def.statics;
