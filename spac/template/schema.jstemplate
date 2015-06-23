@@ -42,6 +42,7 @@ goog.require('lf.schema.Table');
   this.tableMap_['#tablename'] = this.#table#camel_;
 
   /// #repeattableend
+  this.establishReferences_();
 };
 
 
@@ -74,6 +75,22 @@ goog.require('lf.schema.Table');
 /** @override */
 #namespace.schema.Database.prototype.pragma = function() {
   return this.pragma_;
+};
+
+
+/** @private */
+#namespace.schema.Database.prototype.establishReferences_ = function() {
+  for (var tableName in this.tableMap_) {
+    var table = this.tableMap_[tableName];
+    table.getConstraint().getForeignKeys().forEach(function(spec) {
+      var parent = this.tableMap_[spec.parentTable][spec.parentColumn];
+      var child = table[spec.childColumn];
+      child.setParent(parent);
+      var childrenColumns = parent.getChildren() || [];
+      childrenColumns.push(child);
+      parent.setChildren(childrenColumns);
+    }.bind(this));
+  }
 };
 /// #repeattable
 

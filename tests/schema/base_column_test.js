@@ -75,3 +75,15 @@ function testGetParentChildren_NoForeignKeys() {
     assertNull(column.getChildren());
   });
 }
+
+
+function testForeignKeyColumnsRelationship() {
+  var schema = hr.db.getSchema();
+  var deptId = schema.getDepartment().id;
+  var deptLoc = schema.getDepartment().locationId;
+  var locId = schema.getLocation().id;
+  assertEquals(locId, deptLoc.getParent());
+  assertArrayEquals([deptLoc], locId.getChildren());
+  assertEquals(2, deptId.getChildren().length);
+  assertNull(deptId.getParent());
+}
