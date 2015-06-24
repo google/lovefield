@@ -4,6 +4,7 @@
   "description": "Lovefield error code lookup",
   "devDependencies": {
     "fs-extra": "^0.18.2",
+    "nopt": "~2.2.1",
     "gulp": "^3.9.0",
     "gulp-gjslint": "^0.1.4",
     "gulp-webserver": "^0.9.0"

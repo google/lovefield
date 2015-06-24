@@ -4915,7 +4915,7 @@ lf.backstore.FirebaseRawBackStore.prototype.getRawDBInstance = function() {
   return this.db_;
 };
 lf.backstore.FirebaseRawBackStore.prototype.getRawTransaction = function() {
-  throw new lf.Exception(51);
+  throw new lf.Exception(351);
 };
 lf.backstore.FirebaseRawBackStore.getValue = function(ref, path) {
   var resolver = goog.Promise.withResolver(), valRef = ref;
@@ -5006,7 +5006,7 @@ lf.backstore.FirebaseRawBackStore.prototype.renameTableColumn = function(tableNa
 };
 goog.exportProperty(lf.backstore.FirebaseRawBackStore.prototype, "renameTableColumn", lf.backstore.FirebaseRawBackStore.prototype.renameTableColumn);
 lf.backstore.FirebaseRawBackStore.prototype.createRow = function() {
-  throw new lf.Exception(51);
+  throw new lf.Exception(351);
 };
 goog.exportProperty(lf.backstore.FirebaseRawBackStore.prototype, "createRow", lf.backstore.FirebaseRawBackStore.prototype.createRow);
 lf.backstore.FirebaseRawBackStore.prototype.getVersion = function() {
@@ -5556,7 +5556,7 @@ lf.backstore.IndexedDB = function(global, schema) {
 lf.backstore.IndexedDB.prototype.init = function(opt_onUpgrade) {
   var indexedDB = window.indexedDB || window.mozIndexedDB || window.webkitIndexedDB || window.msIndexedDB;
   if (!goog.isDefAndNotNull(indexedDB)) {
-    throw new lf.Exception(52);
+    throw new lf.Exception(352);
   }
   var onUpgrade = opt_onUpgrade || function() {
     return goog.Promise.resolve();
@@ -5753,12 +5753,12 @@ lf.backstore.LocalStorage = function(schema) {
 };
 lf.backstore.LocalStorage.prototype.initSync = function() {
   if (!window.localStorage) {
-    throw new lf.Exception(59);
+    throw new lf.Exception(359);
   }
   var versionKey = this.schema_.name() + ".version#", version = window.localStorage.getItem(versionKey);
   if (goog.isDefAndNotNull(version)) {
     if (version != this.schema_.version().toString()) {
-      throw new lf.Exception(60);
+      throw new lf.Exception(360);
     }
     this.loadTables_();
   } else {
@@ -5975,7 +5975,7 @@ lf.backstore.WebSqlRawBackStore.prototype.getRawDBInstance = function() {
 };
 goog.exportProperty(lf.backstore.WebSqlRawBackStore.prototype, "getRawDBInstance", lf.backstore.WebSqlRawBackStore.prototype.getRawDBInstance);
 lf.backstore.WebSqlRawBackStore.prototype.getRawTransaction = function() {
-  throw new lf.Exception(56);
+  throw new lf.Exception(356);
 };
 goog.exportProperty(lf.backstore.WebSqlRawBackStore.prototype, "getRawTransaction", lf.backstore.WebSqlRawBackStore.prototype.getRawTransaction);
 lf.backstore.WebSqlRawBackStore.prototype.createTx_ = function() {
@@ -6080,7 +6080,7 @@ lf.backstore.WebSql.prototype.getEmptyJournal_ = function() {
 };
 lf.backstore.WebSql.prototype.init = function(opt_onUpgrade) {
   if (!goog.isDefAndNotNull(window.openDatabase)) {
-    throw new lf.Exception(53);
+    throw new lf.Exception(353);
   }
   var onUpgrade = opt_onUpgrade || function() {
     return goog.Promise.resolve();
@@ -6091,7 +6091,7 @@ lf.backstore.WebSql.prototype.init = function(opt_onUpgrade) {
       if (goog.isDefAndNotNull(db)) {
         this.db_ = db, this.checkVersion_(onUpgrade).then(resolve, reject);
       } else {
-        throw new lf.Exception(54);
+        throw new lf.Exception(354);
       }
     } catch (e) {
       reject(e);
@@ -6121,7 +6121,7 @@ lf.backstore.WebSql.prototype.getTableInternal = function() {
   throw new lf.Exception(512);
 };
 lf.backstore.WebSql.prototype.notSupported_ = function() {
-  throw new lf.Exception(55);
+  throw new lf.Exception(355);
 };
 lf.backstore.WebSql.prototype.subscribe = function() {
   this.notSupported_();
@@ -8602,7 +8602,7 @@ lf.query.parseSearchCondition_ = function(pred, stripValueInfo) {
   if (pred instanceof lf.pred.JoinPredicate) {
     return lf.query.joinPredicateToSql_(pred);
   }
-  throw new lf.Exception(57, typeof pred);
+  throw new lf.Exception(357, typeof pred);
 };
 lf.query.predicateToSql_ = function(pred, stripValueInfo) {
   var whereClause = lf.query.parseSearchCondition_(pred, stripValueInfo);
@@ -8658,7 +8658,7 @@ lf.query.toSql = function(builder, opt_stripValueInfo) {
   if (query instanceof lf.query.SelectContext) {
     return lf.query.selectToSql_(query, stripValueInfo);
   }
-  throw new lf.Exception(58, typeof query);
+  throw new lf.Exception(358, typeof query);
 };
 
 lf.query.BaseBuilder = function(global, context) {
@@ -8923,7 +8923,7 @@ lf.query.SelectBuilder.prototype.innerJoin = function(table, predicate) {
 };
 goog.exportProperty(lf.query.SelectBuilder.prototype, "innerJoin", lf.query.SelectBuilder.prototype.innerJoin);
 lf.query.SelectBuilder.prototype.leftOuterJoin = function() {
-  throw new lf.Exception(60);
+  throw new lf.Exception(360);
 };
 goog.exportProperty(lf.query.SelectBuilder.prototype, "leftOuterJoin", lf.query.SelectBuilder.prototype.leftOuterJoin);
 lf.query.SelectBuilder.prototype.limit = function(numberOfRows) {

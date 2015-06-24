@@ -35,8 +35,19 @@ function getMessage(data) {
   });
 
   if (input.hasOwnProperty('c') && data.hasOwnProperty(input['c'])) {
-    var message = data[input['c']];
-    if (message && typeof(message) == 'string') {
+    var category;
+    var code;
+    try {
+      code = parseInt(input['c'], 10);
+      category = data[(Math.floor(code / 100) * 100).toString()];
+    } catch (e) {
+      return null;
+    }
+
+    var message = data[code.toString()];
+    if (category && message &&
+        typeof(category) == 'string' && typeof(message) == 'string') {
+      message = category + ': (' + code.toString() + ') ' + message;
       return message.replace(/{([^}]+)}/g, function(match, pattern) {
         return input['p' + pattern] || '';
       });

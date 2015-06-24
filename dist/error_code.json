@@ -1,5 +1,5 @@
 {
-  "0": "Unknown error.",
+  "0": "System error",
   "1": "Lovefield library version mismatch.",
   "2": "The database has not initialized yet.",
   "3": "Operation timeout.",
@@ -9,19 +9,7 @@
   "7": "Service {0} not registered.",
   "8": "Unknown query plan node.",
 
-  "50": "Not supported",
-  "51": "Firebase does not have raw transaction.",
-  "52": "IndexedDB is not supported by platform.",
-  "53": "WebSQL is not supported by platform.",
-  "54": "Unable to open WebSQL database.",
-  "55": "WebSQL does not support change notification.",
-  "56": "Not supported, use WebSQL instance to create transaction instead.",
-  "57": "toSql() does not support predicate type: {0}.",
-  "58": "toSql() is not implemented for {0}.",
-  "59": "LocalStorage is not supported by platform.",
-  "60": "Not implemented yet.",
-
-  "100": "Data error.",
+  "100": "Data error",
   "101": "Table {0} not found.",
   "102": "Data corruption detected.",
   "103": "Row id must be numbers.",
@@ -29,12 +17,24 @@
   "107": "Invalid transaction state transition: {0} -> {1}.",
   "108": "Attempt to open a newer database with old code.",
 
-  "200": "Constraint error.",
+  "200": "Constraint error",
   "201": "Duplicate keys are not allowed.",
   "202": "Attempted to insert NULL value to non-nullable field {0}.",
   "203": "Foreign key constraint violation on constraint {0}.",
 
-  "500": "Syntax error.",
+  "300": "Not supported",
+  "351": "Firebase does not have raw transaction.",
+  "352": "IndexedDB is not supported by platform.",
+  "353": "WebSQL is not supported by platform.",
+  "354": "Unable to open WebSQL database.",
+  "355": "WebSQL does not support change notification.",
+  "356": "Use WebSQL instance to create transaction instead.",
+  "357": "toSql() does not support predicate type: {0}.",
+  "358": "toSql() is not implemented for {0}.",
+  "359": "LocalStorage is not supported by platform.",
+  "360": "Not implemented yet.",
+
+  "500": "Syntax error",
   "501": "Value is not bounded.",
   "502": "Naming rule violation: {0}.",
   "503": "Name {0} is already defined.",
@@ -76,5 +76,6 @@
   "539": "Foreign key {0} refers to non-unique column.",
   "540": "Foreign key {0} has invalid reference syntax.",
 
-  "999": "Simulated error."
+  "900": "Test error",
+  "999": "Simulated error"
 }
