@@ -233,12 +233,13 @@ function testExec() {
   var tx = db.createTransaction();
   var q1 = db.select(lf.fn.count(j.id).as('jid')).from(j);
   var q2 = db.select(lf.fn.count(d.id).as('did')).from(d);
-  var q3 = db.delete().from(j);
-  tx.exec([q1, q2, q3, q1]).then(function(results) {
-    assertEquals(4, results.length);
+  var q3 = db.delete().from(e);
+  var q4 = db.delete().from(j);
+  tx.exec([q1, q2, q3, q4, q1]).then(function(results) {
+    assertEquals(5, results.length);
     assertEquals(sampleJobs.length, results[0][0]['jid']);
     assertEquals(sampleDepartments.length, results[1][0]['did']);
-    assertEquals(0, results[3][0]['jid']);
+    assertEquals(0, results[4][0]['jid']);
     asyncTestCase.continueTesting();
   }, fail);
 }
@@ -270,13 +271,15 @@ function testAttach_Success() {
     return tx.attach(q4);
   }).then(function(results) {
     assertTrue(results.length < sampleEmployees.length);
-
-    // Deleting all rows in the Job table.
-    var q5 = db.delete().from(j);
+    var q5 = db.delete().from(e);
     return tx.attach(q5);
   }).then(function() {
-    var q6 = db.select().from(j);
+    // Deleting all rows in the Job table.
+    var q6 = db.delete().from(j);
     return tx.attach(q6);
+  }).then(function() {
+    var q7 = db.select().from(j);
+    return tx.attach(q7);
   }).then(function(results) {
     // Expecting all rows to have been deleted within tx's context.
     assertEquals(0, results.length);
