@@ -10152,9 +10152,8 @@ lf.DiffCalculator.prototype.detectColumns_ = function() {
   if (0 < this.query_.columns.length) {
     return this.query_.columns;
   }
-  var columns = [], tables = this.query_.from.slice();
-  goog.isDefAndNotNull(this.query_.innerJoin) && tables.push(this.query_.innerJoin);
-  tables.forEach(function(table) {
+  var columns = [];
+  this.query_.from.forEach(function(table) {
     table.getColumns().forEach(function(column) {
       columns.push(column);
     });
