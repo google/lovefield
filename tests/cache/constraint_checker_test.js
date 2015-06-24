@@ -17,6 +17,7 @@
 goog.setTestOnly();
 goog.require('goog.testing.AsyncTestCase');
 goog.require('goog.testing.jsunit');
+goog.require('lf.ConstraintTiming');
 goog.require('lf.Global');
 goog.require('lf.cache.ConstraintChecker');
 goog.require('lf.testing.MockEnv');
@@ -95,4 +96,152 @@ function testCheckNotNullable() {
   assertNotThrows(function() {
     checker.checkNotNullable(table, validRows);
   });
+}
+
+
+/**
+ * Tests that ConstraintChecker#checkReferredKeys() throws an error if the
+ * referred keys do not exist, for constraints that are IMMEDIATE.
+ */
+function testCheckReferredKeys_Immediate() {
+  var childTable = env.schema.table('tableG');
+  var foreignKeySpecs = childTable.getConstraint().getForeignKeys();
+  // Ensure that all foreign key constraints on tableH are IMMEDIATE.
+  foreignKeySpecs.forEach(function(foreignKeySpec) {
+    assertEquals(lf.ConstraintTiming.IMMEDIATE, foreignKeySpec.timing);
+  });
+
+  var childRow = childTable.createRow({
+    id: 'dummyId_1',
+    id2: 'dummyId2_1'
+  });
+
+  lf.testing.util.assertThrowsError(
+      203,  // Foreign key constraint violation on constraint {0}.
+      function() {
+        checker.checkReferredKeys(
+            childTable, [childRow], lf.ConstraintTiming.IMMEDIATE);
+      });
+
+  assertNotThrows(function() {
+    checker.checkReferredKeys(
+        childTable, [childRow], lf.ConstraintTiming.DEFERRABLE);
+  });
+}
+
+
+/**
+ * Tests that ConstraintChecker#checkReferredKeys() throws an error if the
+ * referred keys do not exist, for constraints that are DEFERRABLE.
+ */
+function testCheckReferredKeys_Deferrable() {
+  var childTable = env.schema.table('tableH');
+  var foreignKeySpecs = childTable.getConstraint().getForeignKeys();
+  // Ensure that all foreign key constraints on tableH are DEFERRABLE.
+  foreignKeySpecs.forEach(function(foreignKeySpec) {
+    assertEquals(lf.ConstraintTiming.DEFERRABLE, foreignKeySpec.timing);
+  });
+
+  var childRow = childTable.createRow({
+    id: 'dummyId_1',
+    id2: 'dummyId2_1'
+  });
+
+  assertNotThrows(function() {
+    checker.checkReferredKeys(
+        childTable, [childRow], lf.ConstraintTiming.IMMEDIATE);
+  });
+
+  lf.testing.util.assertThrowsError(
+      203,  // Foreign key constraint violation on constraint {0}.
+      function() {
+        checker.checkReferredKeys(
+            childTable, [childRow], lf.ConstraintTiming.DEFERRABLE);
+      });
+}
+
+
+/**
+ * Tests that ConstraintChecker#checkReferringKeys() throws an error if
+ * referring keys do exist, for constraints that are IMMEDIATE.
+ */
+function testCheckReferringKeys_Immediate() {
+  asyncTestCase.waitForAsync('testCheckReferringKeys_Immediate');
+
+  var parentTable = env.schema.table('tableI');
+  var foreignKeySpec = parentTable.getReferencingForeignKeys()[0];
+  assertEquals('tableG.fk_Id', foreignKeySpec.fkName);
+  assertEquals(lf.ConstraintTiming.IMMEDIATE, foreignKeySpec.timing);
+
+  var parentRow = parentTable.createRow({
+    id: 'dummyId_1', id2: 'dummyId2_1'
+  });
+
+  var childTable = env.schema.table('tableG');
+  var childRow = childTable.createRow({
+    id: 'dummyId_1', id2: 'dummyId2_1'
+  });
+
+  var tx = env.db.createTransaction();
+  tx.exec([
+    env.db.insert().into(parentTable).values([parentRow]),
+    env.db.insert().into(childTable).values([childRow])
+  ]).then(function() {
+    lf.testing.util.assertThrowsError(
+        203,  // Foreign key constraint violation on constraint {0}.
+        function() {
+          checker.checkReferringKeys(
+              parentTable, [parentRow], lf.ConstraintTiming.IMMEDIATE);
+        });
+
+    assertNotThrows(function() {
+      checker.checkReferringKeys(
+          parentTable, [parentRow], lf.ConstraintTiming.DEFERRABLE);
+    });
+
+    asyncTestCase.continueTesting();
+  }, fail);
+}
+
+
+/**
+ * Tests that ConstraintChecker#checkReferringKeys() throws an error if
+ * referring keys do exist, for constraints that are DEFERRABLE.
+ */
+function testCheckReferringKeys_Deferrable() {
+  asyncTestCase.waitForAsync('testCheckReferringKeys_Deferrable');
+
+  var parentTable = env.schema.table('tableI');
+  /*var foreignKeySpec = parentTable.getReferencingForeignKeys()[1];
+  assertEquals('tableG.fk_Id', foreignKeySpec.fkName);
+  assertEquals(lf.ConstraintTiming.IMMEDIATE, foreignKeySpec.timing);*/
+
+  var parentRow = parentTable.createRow({
+    id: 'dummyId_1', id2: 'dummyId2_1'
+  });
+
+  var childTable = env.schema.table('tableH');
+  var childRow = childTable.createRow({
+    id: 'dummyId_1', id2: 'dummyId2_1'
+  });
+
+  var tx = env.db.createTransaction();
+  tx.exec([
+    env.db.insert().into(parentTable).values([parentRow]),
+    env.db.insert().into(childTable).values([childRow])
+  ]).then(function() {
+    assertNotThrows(function() {
+      checker.checkReferringKeys(
+          parentTable, [parentRow], lf.ConstraintTiming.IMMEDIATE);
+    });
+
+    lf.testing.util.assertThrowsError(
+        203,  // Foreign key constraint violation on constraint {0}.
+        function() {
+          checker.checkReferringKeys(
+              parentTable, [parentRow], lf.ConstraintTiming.DEFERRABLE);
+        });
+
+    asyncTestCase.continueTesting();
+  }, fail);
 }

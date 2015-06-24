@@ -32,6 +32,7 @@
   "200": "Constraint error.",
   "201": "Duplicate keys are not allowed.",
   "202": "Attempted to insert NULL value to non-nullable field {0}.",
+  "203": "Foreign key constraint violation on constraint {0}.",
 
   "500": "Syntax error.",
   "501": "Value is not bounded.",

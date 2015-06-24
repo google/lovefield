@@ -3875,6 +3875,7 @@ goog.inherits(lf.Exception, Error);
 
 lf.cache.ConstraintChecker = function(global) {
   this.indexStore_ = global.getService(lf.service.INDEX_STORE);
+  this.schema_ = global.getService(lf.service.SCHEMA);
 };
 lf.cache.ConstraintChecker.prototype.findExistingRowIdInPkIndex = function(table, row) {
   var pkIndexSchema = table.getConstraint().getPrimaryKey();

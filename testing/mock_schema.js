@@ -17,6 +17,7 @@
 goog.setTestOnly();
 goog.provide('lf.testing.MockSchema');
 
+goog.require('lf.ConstraintTiming');
 goog.require('lf.Order');
 goog.require('lf.Type');
 goog.require('lf.schema.Database');
@@ -107,13 +108,14 @@ lf.testing.MockSchema = function() {
       addPrimaryKey(['id']).
       addForeignKey('fk_Id', {
         local: 'id',
-        ref: 'tableG.id2'
+        ref: 'tableG.id2',
+        timing: lf.ConstraintTiming.DEFERRABLE
       }).
       addForeignKey('fk_Id2', {
         local: 'id2',
-        ref: 'tableI.id2'
+        ref: 'tableI.id2',
+        timing: lf.ConstraintTiming.DEFERRABLE
       }).
-      addIndex('idx_Id', [{'name': 'id', 'order': lf.Order.ASC}]).
       getSchema();
 
   /**
@@ -123,6 +125,7 @@ lf.testing.MockSchema = function() {
   this.tableI_ = new lf.schema.TableBuilder('tableI').
       addColumn('id', lf.Type.STRING).
       addColumn('id2', lf.Type.STRING).
+      addPrimaryKey(['id']).
       addUnique('uq_id2', ['id2']).
       addColumn('name', lf.Type.STRING).
       addNullable(['name']).
@@ -131,10 +134,15 @@ lf.testing.MockSchema = function() {
 
   this.tableI_['id'].setChildren([this.tableG_['id']]);
   this.tableI_['id2'].setChildren([this.tableH_['id2']]);
+  this.tableI_.setReferencingForeignKeys([
+    this.tableG_.getConstraint().getForeignKeys()[0],
+    this.tableH_.getConstraint().getForeignKeys()[1],
+  ]);
+
   this.tableG_['id2'].setChildren([this.tableH_['id']]);
+  this.tableG_['id'].setParent(this.tableI_['id']);
 
   this.tableH_['id'].setParent(this.tableG_['id2']);
-  this.tableG_['id'].setParent(this.tableI_['id']);
   this.tableH_['id2'].setParent(this.tableI_['id2']);
 
   /** @private {!lf.schema.Table} */
