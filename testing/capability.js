@@ -24,7 +24,7 @@ goog.require('goog.userAgent.product');
 
 /**
  * Capability object based on browser version.
- * @constructor
+ * @constructor @struct
  */
 lf.testing.Capability = function() {
   /**

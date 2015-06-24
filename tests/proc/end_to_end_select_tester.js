@@ -32,7 +32,7 @@ goog.require('lf.testing.util');
 
 
 /**
- * @constructor
+ * @constructor @struct
  *
  * @param {!Function} connectFn
  */

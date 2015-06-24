@@ -28,7 +28,7 @@ goog.require('lf.testing.util');
 
 
 /**
- * @constructor
+ * @constructor @struct
  *
  * @param {!lf.Global} global
  * @param {!Function} connectFn
@@ -50,7 +50,7 @@ lf.testing.EndToEndTester = function(global, connectFn) {
   this.global_ = global;
 
   /** @private {!Array<!lf.Row>} */
-  this.sampleJobs__;
+  this.sampleJobs_;
 
   /** @private {!lf.testing.hrSchema.MockDataGenerator} */
   this.dataGenerator_;

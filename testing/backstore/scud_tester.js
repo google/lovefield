@@ -25,7 +25,7 @@ goog.require('lf.service');
 
 /**
  * Helper class for performing SCUD tests on a given database instance.
- * @constructor
+ * @constructor @struct
  *
  * @param {!lf.BackStore} db
  * @param {!lf.Global} global

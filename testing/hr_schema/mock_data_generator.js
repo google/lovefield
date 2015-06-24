@@ -29,7 +29,7 @@ goog.require('lf.testing.hrSchema.JobDataGenerator');
 /**
  * A helper class for generating sample database rows, and also ground truth
  * data for the generated rows.
- * @constructor
+ * @constructor @struct
  *
  * @param {!lf.schema.Database} schema
  */

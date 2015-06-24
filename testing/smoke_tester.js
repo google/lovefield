@@ -27,7 +27,7 @@ goog.require('lf.service');
 
 /**
  * Smoke test for the most basic DB operations, Create, Read, Update, Delete.
- * @constructor
+ * @constructor @struct
  *
  * @param {!lf.Global} global
  * @param {!lf.Database} db Must compatible with HR schema's Region table.

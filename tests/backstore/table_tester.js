@@ -24,7 +24,7 @@ goog.require('lf.Row');
 
 
 /**
- * @constructor
+ * @constructor @struct
  * @param {!function():!lf.Table} tableCreator
  */
 lf.testing.backstore.TableTester = function(tableCreator) {

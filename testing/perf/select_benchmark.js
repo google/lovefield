@@ -28,7 +28,7 @@ goog.require('lf.op');
 
 /**
  * Benchmark for various types of SELECT queries.
- * @constructor
+ * @constructor @struct
  *
  * @param {!lf.Database} db
  * @param {!lf.testing.hrSchema.MockDataGenerator} dataGenerator

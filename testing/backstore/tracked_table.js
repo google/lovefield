@@ -25,7 +25,7 @@ goog.require('lf.cache.TableDiff');
 
 
 /**
- * @constructor
+ * @constructor @struct
  * @implements {lf.Table}
  *
  * @param {!lf.Table} table

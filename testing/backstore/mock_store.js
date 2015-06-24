@@ -38,7 +38,7 @@ goog.require('lf.testing.backstore.TrackedTx');
  *     update Lovefield's internal state (in-memory indices/caches) accordingly.
  *
  * @implements {lf.BackStore}
- * @constructor
+ * @constructor @struct
  *
  * @param {!lf.backstore.ObservableStore} store The memory backing store
  *     to be wrapped.

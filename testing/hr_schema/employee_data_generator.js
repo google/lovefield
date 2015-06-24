@@ -24,7 +24,7 @@ goog.require('lf.testing.hrSchema.samples');
 
 /**
  * Generates sample data for the Employee table.
- * @constructor
+ * @constructor @struct
  *
  * @param {!lf.schema.Database} schema
  */

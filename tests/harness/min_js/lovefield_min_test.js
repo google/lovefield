@@ -19,7 +19,7 @@
 
 /**
  * Need a custom test reporter such that WebDriver can detect test completion.
- * @constructor
+ * @constructor @struct
  * @private
  */
 function TestReporter_() {
@@ -94,7 +94,7 @@ function assertAttributes(obj, attributeNames, message) {
 
 /**
  * Helper class for testing Lovefield's public API existence.
- * @constructor
+ * @constructor @struct
  */
 var Tester = function() {
   this.db_ = null;
