@@ -55,24 +55,24 @@ lf.testing.EndToEndTester = function(global, connectFn) {
   /** @private {!lf.testing.hrSchema.MockDataGenerator} */
   this.dataGenerator_;
 
-  /** @private {!Array<function(): !IThenable>} */
+  /** @private {!Array<!Array>} */
   this.testCases_ = [
-    this.testInsert.bind(this),
-    this.testInsert_NoPrimaryKey.bind(this),
-    this.testInsert_CrossColumnPrimaryKey.bind(this),
-    this.testInsert_CrossColumnUniqueKey.bind(this),
-    this.testInsert_AutoIncrement.bind(this),
-    this.testInsertOrReplace_AutoIncrement.bind(this),
-    this.testInsertOrReplace_Bind.bind(this),
-    this.testInsertOrReplace_BindArray.bind(this),
-    this.testUpdate_All.bind(this),
-    this.testUpdate_Predicate.bind(this),
-    this.testUpdate_UnboundPredicate.bind(this),
-    this.testDelete_Predicate.bind(this),
-    this.testDelete_UnboundPredicate.bind(this),
-    this.testDelete_UnboundPredicateReject.bind(this),
-    this.testDelete_All.bind(this),
-    this.testObserve_MultipleObservers.bind(this)
+    [this.testInsert.bind(this), /* addSampleData */ false],
+    [this.testInsert_NoPrimaryKey.bind(this), false],
+    [this.testInsert_CrossColumnPrimaryKey.bind(this), false],
+    [this.testInsert_CrossColumnUniqueKey.bind(this), false],
+    [this.testInsert_AutoIncrement.bind(this), false],
+    [this.testInsertOrReplace_AutoIncrement.bind(this), false],
+    [this.testInsertOrReplace_Bind.bind(this), false],
+    [this.testInsertOrReplace_BindArray.bind(this), false],
+    [this.testUpdate_All.bind(this), true],
+    [this.testUpdate_Predicate.bind(this), true],
+    [this.testUpdate_UnboundPredicate.bind(this), true],
+    [this.testDelete_Predicate.bind(this), true],
+    [this.testDelete_UnboundPredicate.bind(this), true],
+    [this.testDelete_UnboundPredicateReject.bind(this), true],
+    [this.testDelete_All.bind(this), true],
+    [this.testObserve_MultipleObservers.bind(this), false]
   ];
 };
 
@@ -83,9 +83,9 @@ lf.testing.EndToEndTester = function(global, connectFn) {
  */
 lf.testing.EndToEndTester.prototype.run = function() {
   var tests = [];
-  this.testCases_.forEach(function(test) {
-    tests.push(this.setUp_.bind(this));
-    tests.push(test);
+  this.testCases_.forEach(function(testCase) {
+    tests.push(this.setUp_.bind(this, testCase[1]));
+    tests.push(testCase[0]);
   }, this);
 
   return lf.testing.util.sequentiallyRun(tests);
@@ -102,36 +102,30 @@ lf.testing.EndToEndTester.markDone_ = function(name) {
 
 
 /**
+ * @param {boolean} addSampleData Whether to pre-populate the DB with some data.
  * @return {!IThenable}
  * @private
  */
-lf.testing.EndToEndTester.prototype.setUp_ = function() {
+lf.testing.EndToEndTester.prototype.setUp_ = function(addSampleData) {
   return this.connectFn_({storeType: lf.schema.DataStoreType.MEMORY}).then(
       function(database) {
         this.db_ = database;
-        this.dataGenerator_ =
-            new lf.testing.hrSchema.MockDataGenerator(this.db_.getSchema());
         this.j_ = this.db_.getSchema().table('Job');
         this.e_ = this.db_.getSchema().table('Employee');
-        return this.addSampleData_(50);
+
+        this.dataGenerator_ =
+            new lf.testing.hrSchema.MockDataGenerator(this.db_.getSchema());
+        this.dataGenerator_.generate(
+            /* jobCount */ 50,
+            /* employeeCount */ 50,
+            /* departmentCount */ 1);
+        this.sampleJobs_ = this.dataGenerator_.sampleJobs;
+
+        if (addSampleData) {
+          return this.db_.insert().into(this.j_).values(this.sampleJobs_).
+              exec();
+        }
       }.bind(this));
-};
-
-
-/**
- * Populates the databse with sample data.
- * @param {number} rowCount The number of rows to insert.
- * @return {!IThenable} A signal firing when the data has been added.
- * @private
- */
-lf.testing.EndToEndTester.prototype.addSampleData_ = function(rowCount) {
-  this.dataGenerator_.generate(
-      /* jobCount */ rowCount,
-      /* employeeCount */ rowCount,
-      /* departmentCount */ 1);
-  this.sampleJobs_ = this.dataGenerator_.sampleJobs;
-
-  return this.db_.insert().into(this.j_).values(this.sampleJobs_).exec();
 };
 
 
@@ -155,7 +149,7 @@ lf.testing.EndToEndTester.prototype.testInsert = function() {
         return lf.testing.util.selectAll(this.global_, this.j_);
       }.bind(this)).then(
       function(results) {
-        assertEquals(this.sampleJobs_.length + 1, results.length);
+        assertEquals(1, results.length);
         lf.testing.EndToEndTester.markDone_('testInsert');
       }.bind(this));
 };
@@ -628,11 +622,11 @@ lf.testing.EndToEndTester.prototype.testObserve_MultipleObservers = function() {
   var doAssertions = (function() {
     try {
       // Expecting callback1 to have been called 3 times.
-      assertArrayEquals([this.sampleJobs_.length + 1, 1, 1], callback1Params);
+      assertArrayEquals([1, 1, 1], callback1Params);
       // Expecting callback2 to have been called 2 times.
-      assertArrayEquals([this.sampleJobs_.length + 2, 1], callback2Params);
+      assertArrayEquals([2, 1], callback2Params);
       // Expecting callback3 to have been called 1 time.
-      assertArrayEquals([this.sampleJobs_.length + 3], callback3Params);
+      assertArrayEquals([3], callback3Params);
     } catch (e) {
       resolver.reject(e);
     }
