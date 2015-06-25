@@ -18,7 +18,7 @@
 
 /**
  * Translates CGI params into human readable error messages, if applicable.
- * For example, ?code=107&p0=1&p1=3 will maps to error code 107, and two extra
+ * For example, ?c=107&p0=1&p1=3 will maps to error code 107, and two extra
  * parameters 1 and 3 will be used to generate the final message.
  * @param {!Object} data Error messages indexed by error code.
  * @return {?string}
@@ -35,8 +35,19 @@ function getMessage(data) {
   });
 
   if (input.hasOwnProperty('c') && data.hasOwnProperty(input['c'])) {
-    var message = data[input['c']];
-    if (message && typeof(message) == 'string') {
+    var category;
+    var code;
+    try {
+      code = parseInt(input['c'], 10);
+      category = data[(Math.floor(code / 100) * 100).toString()];
+    } catch (e) {
+      return null;
+    }
+
+    var message = data[code.toString()];
+    if (category && message &&
+        typeof(category) == 'string' && typeof(message) == 'string') {
+      message = category + ': (' + code.toString() + ') ' + message;
       return message.replace(/{([^}]+)}/g, function(match, pattern) {
         return input['p' + pattern] || '';
       });
