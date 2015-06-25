@@ -106,7 +106,7 @@ function testCheckNotNullable() {
 function testCheckReferredKeys_Immediate() {
   var childTable = env.schema.table('tableG');
   var foreignKeySpecs = childTable.getConstraint().getForeignKeys();
-  // Ensure that all foreign key constraints on tableH are IMMEDIATE.
+  // Ensure that all foreign key constraints on tableG are IMMEDIATE.
   foreignKeySpecs.forEach(function(foreignKeySpec) {
     assertEquals(lf.ConstraintTiming.IMMEDIATE, foreignKeySpec.timing);
   });
@@ -211,35 +211,43 @@ function testCheckReferringKeys_Immediate() {
 function testCheckReferringKeys_Deferrable() {
   asyncTestCase.waitForAsync('testCheckReferringKeys_Deferrable');
 
-  var parentTable = env.schema.table('tableI');
-  /*var foreignKeySpec = parentTable.getReferencingForeignKeys()[1];
-  assertEquals('tableG.fk_Id', foreignKeySpec.fkName);
-  assertEquals(lf.ConstraintTiming.IMMEDIATE, foreignKeySpec.timing);*/
+  var parentTable1 = env.schema.table('tableI');
+  var parentTable2 = env.schema.table('tableG');
+  var childTable = env.schema.table('tableH');
 
-  var parentRow = parentTable.createRow({
-    id: 'dummyId_1', id2: 'dummyId2_1'
+  // Ensure that all foreign key constraints on tableH are IMMEDIATE.
+  var foreignKeySpecs = childTable.getConstraint().getForeignKeys();
+  foreignKeySpecs.forEach(function(foreignKeySpec) {
+    assertEquals(lf.ConstraintTiming.DEFERRABLE, foreignKeySpec.timing);
   });
 
-  var childTable = env.schema.table('tableH');
+  var parentRow1 = parentTable1.createRow({
+    id: 'id_tableI', id2: 'id2_tableI'
+  });
+  var parentRow2 = parentTable2.createRow({
+    id: 'id_tableI', id2: 'id2_tableG'
+  });
+
   var childRow = childTable.createRow({
-    id: 'dummyId_1', id2: 'dummyId2_1'
+    id: 'id2_tableG', id2: 'id2_tableI'
   });
 
   var tx = env.db.createTransaction();
   tx.exec([
-    env.db.insert().into(parentTable).values([parentRow]),
+    env.db.insert().into(parentTable1).values([parentRow1]),
+    env.db.insert().into(parentTable2).values([parentRow2]),
     env.db.insert().into(childTable).values([childRow])
   ]).then(function() {
     assertNotThrows(function() {
       checker.checkReferringKeys(
-          parentTable, [parentRow], lf.ConstraintTiming.IMMEDIATE);
+          parentTable2, [parentRow2], lf.ConstraintTiming.IMMEDIATE);
     });
 
     lf.testing.util.assertThrowsError(
         203,  // Foreign key constraint violation on constraint {0}.
         function() {
           checker.checkReferringKeys(
-              parentTable, [parentRow], lf.ConstraintTiming.DEFERRABLE);
+              parentTable2, [parentRow2], lf.ConstraintTiming.DEFERRABLE);
         });
 
     asyncTestCase.continueTesting();

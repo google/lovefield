@@ -137,7 +137,7 @@ lf.testing.hrSchema.MockDataGenerator.prototype.generate = function(
 
   this.sampleCountries = [
     this.schema_.table('Country').createRow({
-      id: 'countryId',
+      id: 1,
       name: 'dummyCountryName',
       regionId: 'regionId'
     })

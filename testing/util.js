@@ -74,6 +74,20 @@ lf.testing.util.assertThrowsError = function(exceptionCode, fn) {
 
 
 /**
+ * Asserts that the given exception type is thrown asynchronounly.
+ * @param {number} exceptionCode The expected exception type.
+ * @param {!function(): !IThenable} fn The function to be checked.
+ * @return {!IThenable}
+ */
+lf.testing.util.assertThrowsErrorAsync = function(exceptionCode, fn) {
+  return fn.call().then(
+      fail, function(e) {
+        assertEquals(exceptionCode, e.code);
+      });
+};
+
+
+/**
  * Selects all entries in the given table directly from the database (skips the
  * cache).
  * @param {!lf.Global} global

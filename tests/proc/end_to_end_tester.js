@@ -58,16 +58,18 @@ lf.testing.EndToEndTester = function(global, connectFn) {
   /** @private {!Array<!Array>} */
   this.testCases_ = [
     [this.testInsert.bind(this), /* addSampleData */ false],
-    [this.testInsert_NoPrimaryKey.bind(this), false],
+    [this.testInsert_NoPrimaryKey.bind(this), true],
     [this.testInsert_CrossColumnPrimaryKey.bind(this), false],
     [this.testInsert_CrossColumnUniqueKey.bind(this), false],
     [this.testInsert_AutoIncrement.bind(this), false],
+    [this.testInsert_FkViolation.bind(this), false],
     [this.testInsertOrReplace_AutoIncrement.bind(this), false],
     [this.testInsertOrReplace_Bind.bind(this), false],
     [this.testInsertOrReplace_BindArray.bind(this), false],
     [this.testUpdate_All.bind(this), true],
     [this.testUpdate_Predicate.bind(this), true],
     [this.testUpdate_UnboundPredicate.bind(this), true],
+    [this.testDelete_FkViolation.bind(this), true],
     [this.testDelete_Predicate.bind(this), true],
     [this.testDelete_UnboundPredicate.bind(this), true],
     [this.testDelete_UnboundPredicateReject.bind(this), true],
@@ -122,10 +124,32 @@ lf.testing.EndToEndTester.prototype.setUp_ = function(addSampleData) {
         this.sampleJobs_ = this.dataGenerator_.sampleJobs;
 
         if (addSampleData) {
-          return this.db_.insert().into(this.j_).values(this.sampleJobs_).
-              exec();
+          return this.addSampleData_();
         }
       }.bind(this));
+};
+
+
+/**
+ * Populates the databse with sample data.
+ * @return {!IThenable} A signal firing when the data has been added.
+ * @private
+ */
+lf.testing.EndToEndTester.prototype.addSampleData_ = function() {
+  var d = this.db_.getSchema().table('Department');
+  var l = this.db_.getSchema().table('Location');
+  var c = this.db_.getSchema().table('Country');
+  var r = this.db_.getSchema().table('Region');
+
+  var tx = this.db_.createTransaction();
+  return tx.exec([
+    this.db_.insert().into(r).values(this.dataGenerator_.sampleRegions),
+    this.db_.insert().into(c).values(this.dataGenerator_.sampleCountries),
+    this.db_.insert().into(l).values(this.dataGenerator_.sampleLocations),
+    this.db_.insert().into(d).values(this.dataGenerator_.sampleDepartments),
+
+    this.db_.insert().into(this.j_).values(this.sampleJobs_)
+  ]);
 };
 
 
@@ -160,10 +184,6 @@ lf.testing.EndToEndTester.prototype.testInsert = function() {
  * @return {!IThenable}
  */
 lf.testing.EndToEndTester.prototype.testInsert_NoPrimaryKey = function() {
-  var d = this.db_.getSchema().table('Department');
-  var l = this.db_.getSchema().table('Location');
-  var c = this.db_.getSchema().table('Country');
-  var r = this.db_.getSchema().table('Region');
   var e = this.db_.getSchema().table('Employee');
 
   var jobHistory = this.db_.getSchema().table('JobHistory');
@@ -180,10 +200,6 @@ lf.testing.EndToEndTester.prototype.testInsert_NoPrimaryKey = function() {
   var tx = this.db_.createTransaction();
   // Adding necessary rows to avoid triggering foreign key constraints.
   return tx.exec([
-    this.db_.insert().into(r).values(this.dataGenerator_.sampleRegions),
-    this.db_.insert().into(c).values(this.dataGenerator_.sampleCountries),
-    this.db_.insert().into(l).values(this.dataGenerator_.sampleLocations),
-    this.db_.insert().into(d).values(this.dataGenerator_.sampleDepartments),
     this.db_.insert().into(e).values(
         this.dataGenerator_.sampleEmployees.slice(0, 1))
   ]).then(function() {
@@ -261,7 +277,7 @@ lf.testing.EndToEndTester.prototype.testInsert_CrossColumnUniqueKey =
 
 
 /**
- * Tests that an INSERT query on a tabe that uses 'autoIncrement' primary key
+ * Tests that an INSERT query on a table that uses 'autoIncrement' primary key
  * does indeed automatically assign incrementing primary keys to rows being
  * inserted.
  * @return {!IThenable}
@@ -271,6 +287,24 @@ lf.testing.EndToEndTester.prototype.testInsert_AutoIncrement = function() {
       function() {
         lf.testing.EndToEndTester.markDone_('testInsert_AutoIncrement');
       });
+};
+
+
+/**
+ * Tests that an INSERT query will fail if the row that is inserted is referring
+ * to non existing foreign keys.
+ * @return {!IThenable}
+ */
+lf.testing.EndToEndTester.prototype.testInsert_FkViolation = function() {
+  return lf.testing.util.assertThrowsErrorAsync(
+      203,
+      function() {
+        return this.db_.
+            insert().
+            into(this.e_).
+            values(this.dataGenerator_.sampleEmployees.slice(0, 1)).
+            exec();
+      }.bind(this));
 };
 
 
@@ -509,6 +543,26 @@ lf.testing.EndToEndTester.prototype.testUpdate_UnboundPredicate = function() {
     assertEquals(20000, results[0][maxSalaryName]);
     lf.testing.EndToEndTester.markDone_('testUpdate_UnboundPredicate');
   });
+};
+
+
+/**
+ * Tests that a DELETE query will fail if the row that is deleted is being
+ * referred by other columns.
+ * @return {!IThenable}
+ */
+lf.testing.EndToEndTester.prototype.testDelete_FkViolation = function() {
+  return lf.testing.util.assertThrowsErrorAsync(
+      203,
+      function() {
+        var l = this.db_.getSchema().table('Location');
+        var referringRow = this.dataGenerator_.sampleDepartments[0];
+        return this.db_.
+            delete().
+            from(l).
+            where(l.id.eq(referringRow.payload()['locationId'])).
+            exec();
+      }.bind(this));
 };
 
 

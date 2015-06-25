@@ -2695,6 +2695,11 @@ lf.backstore.BaseTx.prototype.getJournal = function() {
   return this.journal_;
 };
 lf.backstore.BaseTx.prototype.commit = function() {
+  try {
+    this.journal_.checkDeferredConstraints();
+  } catch (e) {
+    return goog.Promise.reject(e);
+  }
   var mergeIntoBackstore = goog.bind(function() {
     return this.txType == lf.TransactionType.READ_ONLY ? goog.Promise.resolve() : this.mergeIntoBackstore_();
   }, this);
@@ -3862,6 +3867,44 @@ lf.cache.InMemoryUpdater.prototype.updateTableIndicesForRow = function(table, mo
   });
 };
 
+lf.type = {};
+lf.ConstraintAction = {};
+goog.exportSymbol("lf.ConstraintAction", lf.ConstraintAction);
+lf.ConstraintAction.RESTRICT = 0;
+goog.exportProperty(lf.ConstraintAction, "RESTRICT", lf.ConstraintAction.RESTRICT);
+lf.ConstraintAction.CASCADE = 1;
+goog.exportProperty(lf.ConstraintAction, "CASCADE", lf.ConstraintAction.CASCADE);
+lf.ConstraintTiming = {};
+goog.exportSymbol("lf.ConstraintTiming", lf.ConstraintTiming);
+lf.ConstraintTiming.IMMEDIATE = 0;
+goog.exportProperty(lf.ConstraintTiming, "IMMEDIATE", lf.ConstraintTiming.IMMEDIATE);
+lf.ConstraintTiming.DEFERRABLE = 1;
+goog.exportProperty(lf.ConstraintTiming, "DEFERRABLE", lf.ConstraintTiming.DEFERRABLE);
+lf.Order = {};
+goog.exportSymbol("lf.Order", lf.Order);
+lf.Order.DESC = 0;
+goog.exportProperty(lf.Order, "DESC", lf.Order.DESC);
+lf.Order.ASC = 1;
+goog.exportProperty(lf.Order, "ASC", lf.Order.ASC);
+lf.Type = {};
+goog.exportSymbol("lf.Type", lf.Type);
+lf.Type.ARRAY_BUFFER = 0;
+goog.exportProperty(lf.Type, "ARRAY_BUFFER", lf.Type.ARRAY_BUFFER);
+lf.Type.BOOLEAN = 1;
+goog.exportProperty(lf.Type, "BOOLEAN", lf.Type.BOOLEAN);
+lf.Type.DATE_TIME = 2;
+goog.exportProperty(lf.Type, "DATE_TIME", lf.Type.DATE_TIME);
+lf.Type.INTEGER = 3;
+goog.exportProperty(lf.Type, "INTEGER", lf.Type.INTEGER);
+lf.Type.NUMBER = 4;
+goog.exportProperty(lf.Type, "NUMBER", lf.Type.NUMBER);
+lf.Type.STRING = 5;
+goog.exportProperty(lf.Type, "STRING", lf.Type.STRING);
+lf.Type.OBJECT = 6;
+goog.exportProperty(lf.Type, "OBJECT", lf.Type.OBJECT);
+lf.type.DEFAULT_VALUES = {0:new ArrayBuffer(0), 1:!1, 2:Object.freeze(new Date(0)), 3:0, 4:0, 5:"", 6:Object.freeze({})};
+goog.exportSymbol("lf.type.DEFAULT_VALUES", lf.type.DEFAULT_VALUES);
+
 lf.Exception = function(code, var_args) {
   this.code = code;
   this.message = "http://sn.im/2a0j3wn?c=" + code;
@@ -3893,6 +3936,37 @@ lf.cache.ConstraintChecker.prototype.checkNotNullable = function(table, rows) {
         throw new lf.Exception(202, column.getNormalizedName());
       }
     }, this);
+  }, this);
+};
+lf.cache.ConstraintChecker.prototype.checkReferredKeys = function(table, rows, constraintTiming) {
+  var foreignKeySpecs = table.getConstraint().getForeignKeys();
+  foreignKeySpecs.forEach(function(foreignKeySpec) {
+    foreignKeySpec.timing == constraintTiming && this.checkReferredKey_(foreignKeySpec, rows);
+  }, this);
+};
+lf.cache.ConstraintChecker.prototype.checkReferredKey_ = function(foreignKeySpec, rows) {
+  var parentTable = this.schema_.table(foreignKeySpec.parentTable), parentColumn = parentTable[foreignKeySpec.parentColumn], parentIndexSchema = parentColumn.getIndices().filter(function(indexSchema) {
+    return 1 == indexSchema.columns.length && indexSchema.columns[0].schema.getName() == foreignKeySpec.parentColumn;
+  })[0], parentIndex = this.indexStore_.get(parentIndexSchema.getNormalizedName());
+  rows.forEach(function(row) {
+    var parentKey = row.payload()[foreignKeySpec.childColumn];
+    if (!parentIndex.containsKey(parentKey)) {
+      throw new lf.Exception(203, foreignKeySpec.fkName);
+    }
+  });
+};
+lf.cache.ConstraintChecker.prototype.checkReferringKeys = function(table, rows, constraintTiming) {
+  var parentForeignKeys = table.getReferencingForeignKeys();
+  goog.isDefAndNotNull(parentForeignKeys) && parentForeignKeys.forEach(function(foreignKeySpec) {
+    if (foreignKeySpec.timing == constraintTiming) {
+      var childIndex = this.indexStore_.get(foreignKeySpec.fkName);
+      rows.forEach(function(row) {
+        var parentKey = row.payload()[foreignKeySpec.parentColumn];
+        if (childIndex.containsKey(parentKey)) {
+          throw new lf.Exception(203, foreignKeySpec.fkName);
+        }
+      });
+    }
   }, this);
 };
 
@@ -4034,6 +4108,7 @@ lf.cache.Journal.prototype.insert = function(table, rows) {
   this.assertJournalWritable_();
   this.checkScope_(table);
   this.constraintChecker_.checkNotNullable(table, rows);
+  this.constraintChecker_.checkReferredKeys(table, rows, lf.ConstraintTiming.IMMEDIATE);
   for (var i = 0;i < rows.length;i++) {
     this.modifyRow_(table, null, rows[i]);
   }
@@ -4071,9 +4146,17 @@ lf.cache.Journal.prototype.insertOrReplace = function(table, rows) {
 lf.cache.Journal.prototype.remove = function(table, rows) {
   this.assertJournalWritable_();
   this.checkScope_(table);
+  this.constraintChecker_.checkReferringKeys(table, rows, lf.ConstraintTiming.IMMEDIATE);
   for (var i = 0;i < rows.length;i++) {
     this.modifyRow_(table, rows[i], null);
   }
+};
+lf.cache.Journal.prototype.checkDeferredConstraints = function() {
+  this.tableDiffs_.getValues().forEach(function(tableDiff) {
+    var table = this.scope_.get(tableDiff.getName());
+    this.constraintChecker_.checkReferredKeys(table, tableDiff.getAdded().getValues(), lf.ConstraintTiming.DEFERRABLE);
+    this.constraintChecker_.checkReferringKeys(table, tableDiff.getDeleted().getValues(), lf.ConstraintTiming.DEFERRABLE);
+  }, this);
 };
 lf.cache.Journal.prototype.commit = function() {
   this.assertJournalWritable_();
@@ -4097,44 +4180,6 @@ lf.cache.Journal.prototype.checkScope_ = function(tableSchema) {
     throw new lf.Exception(106, tableSchema.getName());
   }
 };
-
-lf.type = {};
-lf.ConstraintAction = {};
-goog.exportSymbol("lf.ConstraintAction", lf.ConstraintAction);
-lf.ConstraintAction.RESTRICT = 0;
-goog.exportProperty(lf.ConstraintAction, "RESTRICT", lf.ConstraintAction.RESTRICT);
-lf.ConstraintAction.CASCADE = 1;
-goog.exportProperty(lf.ConstraintAction, "CASCADE", lf.ConstraintAction.CASCADE);
-lf.ConstraintTiming = {};
-goog.exportSymbol("lf.ConstraintTiming", lf.ConstraintTiming);
-lf.ConstraintTiming.IMMEDIATE = 0;
-goog.exportProperty(lf.ConstraintTiming, "IMMEDIATE", lf.ConstraintTiming.IMMEDIATE);
-lf.ConstraintTiming.DEFERRABLE = 1;
-goog.exportProperty(lf.ConstraintTiming, "DEFERRABLE", lf.ConstraintTiming.DEFERRABLE);
-lf.Order = {};
-goog.exportSymbol("lf.Order", lf.Order);
-lf.Order.DESC = 0;
-goog.exportProperty(lf.Order, "DESC", lf.Order.DESC);
-lf.Order.ASC = 1;
-goog.exportProperty(lf.Order, "ASC", lf.Order.ASC);
-lf.Type = {};
-goog.exportSymbol("lf.Type", lf.Type);
-lf.Type.ARRAY_BUFFER = 0;
-goog.exportProperty(lf.Type, "ARRAY_BUFFER", lf.Type.ARRAY_BUFFER);
-lf.Type.BOOLEAN = 1;
-goog.exportProperty(lf.Type, "BOOLEAN", lf.Type.BOOLEAN);
-lf.Type.DATE_TIME = 2;
-goog.exportProperty(lf.Type, "DATE_TIME", lf.Type.DATE_TIME);
-lf.Type.INTEGER = 3;
-goog.exportProperty(lf.Type, "INTEGER", lf.Type.INTEGER);
-lf.Type.NUMBER = 4;
-goog.exportProperty(lf.Type, "NUMBER", lf.Type.NUMBER);
-lf.Type.STRING = 5;
-goog.exportProperty(lf.Type, "STRING", lf.Type.STRING);
-lf.Type.OBJECT = 6;
-goog.exportProperty(lf.Type, "OBJECT", lf.Type.OBJECT);
-lf.type.DEFAULT_VALUES = {0:new ArrayBuffer(0), 1:!1, 2:Object.freeze(new Date(0)), 3:0, 4:0, 5:"", 6:Object.freeze({})};
-goog.exportSymbol("lf.type.DEFAULT_VALUES", lf.type.DEFAULT_VALUES);
 
 lf.index.SingleKeyRange = function(from, to, excludeLower, excludeUpper) {
   this.from = from;
@@ -7883,6 +7928,9 @@ lf.schema.Table.prototype.as = function(name) {
   return clone;
 };
 goog.exportProperty(lf.schema.Table.prototype, "as", lf.schema.Table.prototype.as);
+lf.schema.Table.prototype.getReferencingForeignKeys = function() {
+  return this.referencingForeignKeys_;
+};
 lf.schema.Table.prototype.setReferencingForeignKeys = function(referencingForeignKeys) {
   this.referencingForeignKeys_ = referencingForeignKeys;
 };

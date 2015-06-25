@@ -141,6 +141,9 @@ lf.testing.MockSchema = function() {
 
   this.tableG_['id2'].setChildren([this.tableH_['id']]);
   this.tableG_['id'].setParent(this.tableI_['id']);
+  this.tableG_.setReferencingForeignKeys([
+    this.tableH_.getConstraint().getForeignKeys()[0]
+  ]);
 
   this.tableH_['id'].setParent(this.tableG_['id2']);
   this.tableH_['id2'].setParent(this.tableI_['id2']);
