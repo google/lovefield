@@ -17,15 +17,15 @@
 goog.setTestOnly();
 goog.require('goog.testing.jsunit');
 goog.require('hr.db');
-goog.require('lf.testing.MockSchema');
+goog.require('lf.testing.getSchemaBuilder');
 
 
 /**
  * Tests the case where indices exist for a given column.
  */
 function testGetIndices() {
-  var schema = new lf.testing.MockSchema();
-  var table = schema.tables()[0];
+  var schema = lf.testing.getSchemaBuilder().getSchema();
+  var table = schema.table('tableA');
 
   var idIndices = table.id.getIndices();
   assertEquals(1, idIndices.length);
@@ -43,8 +43,8 @@ function testGetIndices() {
  * Tests the case where no indices exist for a given column.
  */
 function testGetIndices_NoIndicesExist() {
-  var schema = new lf.testing.MockSchema();
-  var tableWithNoIndices = schema.tables()[2];
+  var schema = lf.testing.getSchemaBuilder().getSchema();
+  var tableWithNoIndices = schema.table('tableC');
   assertEquals(0, tableWithNoIndices.id.getIndices().length);
   assertEquals(0, tableWithNoIndices.name.getIndices().length);
 }
@@ -69,7 +69,7 @@ function testGetNormalizedName() {
  * Test that if no foreign key exist getParent and getChildren return null.
  */
 function testGetParentChildren_NoForeignKeys() {
-  var schema = new lf.testing.MockSchema();
+  var schema = lf.testing.getSchemaBuilder().getSchema();
   schema.table('tableA').getColumns().forEach(function(column) {
     assertNull(column.getParent());
     assertNull(column.getChildren());

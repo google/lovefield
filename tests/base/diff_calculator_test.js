@@ -23,6 +23,7 @@ goog.require('lf.Global');
 goog.require('lf.proc.Relation');
 goog.require('lf.query.SelectBuilder');
 goog.require('lf.testing.MockEnv');
+goog.require('lf.testing.getSchemaBuilder');
 
 
 /** @type {!goog.testing.AsyncTestCase} */
@@ -37,16 +38,16 @@ var schema;
 function setUp() {
   asyncTestCase.waitForAsync('setUp');
 
-  var env = new lf.testing.MockEnv();
+  schema = lf.testing.getSchemaBuilder().getSchema();
+  var env = new lf.testing.MockEnv(schema);
   env.init().then(function() {
-    schema = env.schema;
     asyncTestCase.continueTesting();
   }, fail);
 }
 
 
 function generateSamlpeRows() {
-  var table = schema.tables()[0];
+  var table = schema.table('tableA');
   var rowCount = 10;
   var rows = new Array(rowCount);
   for (var i = 0; i < rowCount; i++) {
@@ -65,7 +66,7 @@ function generateSamlpeRows() {
  * projected.
  */
 function testDiffCalculation_ExplicitColumns() {
-  var table = schema.tables()[0];
+  var table = schema.table('tableA');
   var builder = new lf.query.SelectBuilder(
       lf.Global.get(), [table['id'], table['name']]);
   builder.from(table);
@@ -78,7 +79,7 @@ function testDiffCalculation_ExplicitColumns() {
  * Tests the case where the observed query implicitly projects all columns.
  */
 function testDiffCalculation_ImplicitColumns() {
-  var table = schema.tables()[0];
+  var table = schema.table('tableA');
   var builder = new lf.query.SelectBuilder(lf.Global.get(), []);
   builder.from(table);
   var query = builder.getQuery();
@@ -215,7 +216,7 @@ function performMutations(rowsPerVersion, query, callback) {
    */
   var updateResultsToNextVersion = function() {
     currentVersion++;
-    var table = schema.tables()[0];
+    var table = schema.table('tableA');
     var newResults = lf.proc.Relation.fromRows(
         rowsPerVersion[currentVersion], [table.getName()]);
     var changeRecords = /** @type {!Array<!lf.DiffCalculator.ChangeRecord>} */ (

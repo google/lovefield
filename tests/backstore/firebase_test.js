@@ -27,7 +27,7 @@ goog.require('lf.cache.Journal');
 goog.require('lf.index.MemoryIndexStore');
 goog.require('lf.index.RowId');
 goog.require('lf.service');
-goog.require('lf.testing.MockSchema');
+goog.require('lf.testing.getSchemaBuilder');
 
 
 /** @type {!goog.testing.AsyncTestCase} */
@@ -109,7 +109,7 @@ function setUp() {
 
   cache = new lf.cache.DefaultCache();
   indexStore = new lf.index.MemoryIndexStore();
-  schema = new lf.testing.MockSchema();
+  schema = lf.testing.getSchemaBuilder().getSchema();
 
   global = lf.Global.get();
   global.registerService(lf.service.CACHE, cache);
@@ -161,7 +161,7 @@ function testSCUD() {
   asyncTestCase.waitForAsync('testSCUD');
 
   // Use tableC, which has no indices.
-  var t2 = schema.tables()[2];
+  var t2 = schema.table('tableC');
   var rowIdIndex = new lf.index.RowId(t2.getRowIdIndexName());
   indexStore.set(rowIdIndex);
 

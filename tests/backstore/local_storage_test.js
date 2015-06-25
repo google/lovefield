@@ -22,8 +22,8 @@ goog.require('lf.backstore.LocalStorage');
 goog.require('lf.cache.DefaultCache');
 goog.require('lf.index.MemoryIndexStore');
 goog.require('lf.service');
-goog.require('lf.testing.MockSchema');
 goog.require('lf.testing.backstore.ScudTester');
+goog.require('lf.testing.getSchemaBuilder');
 
 
 /** @type {!goog.testing.AsyncTestCase} */
@@ -47,7 +47,7 @@ function setUp() {
 
   cache = new lf.cache.DefaultCache();
   var indexStore = new lf.index.MemoryIndexStore();
-  schema = new lf.testing.MockSchema();
+  schema = lf.testing.getSchemaBuilder().getSchema();
 
   var global = lf.Global.get();
   global.registerService(lf.service.CACHE, cache);

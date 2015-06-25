@@ -24,6 +24,7 @@ goog.require('lf.query.DeleteBuilder');
 goog.require('lf.query.SelectBuilder');
 goog.require('lf.query.UpdateBuilder');
 goog.require('lf.testing.MockEnv');
+goog.require('lf.testing.getSchemaBuilder');
 goog.require('lf.tree');
 
 
@@ -42,7 +43,7 @@ var env;
 
 function setUp() {
   asyncTestCase.waitForAsync('setUp');
-  env = new lf.testing.MockEnv();
+  env = new lf.testing.MockEnv(lf.testing.getSchemaBuilder().getSchema());
   env.init().then(function() {
     logicalPlanFactory = new lf.proc.LogicalPlanFactory();
     asyncTestCase.continueTesting();
@@ -59,7 +60,7 @@ function setUp() {
  * object.
  */
 function testCreate_DeletePlan() {
-  var table = env.schema.tables()[0];
+  var table = env.schema.table('tableA');
 
   var queryBuilder = new lf.query.DeleteBuilder(lf.Global.get());
   queryBuilder.
@@ -92,7 +93,7 @@ function testCreate_DeletePlan() {
  * generating a plan.
  */
 function testCreate_SelectPlan() {
-  var table = env.schema.tables()[0];
+  var table = env.schema.table('tableA');
 
   var queryBuilder = new lf.query.SelectBuilder(lf.Global.get(), []);
   queryBuilder.
@@ -124,7 +125,7 @@ function testCreate_SelectPlan() {
  * does not include a "skip" node, since it has no effect on the query results.
  */
 function testCreate_SelectPlan_SkipZero() {
-  var table = env.schema.tables()[0];
+  var table = env.schema.table('tableA');
   var queryBuilder = new lf.query.SelectBuilder(lf.Global.get(), []);
   queryBuilder.from(table).skip(0);
 
@@ -144,7 +145,7 @@ function testCreate_SelectPlan_SkipZero() {
  * does in fact include a "limit" node.
  */
 function testCreate_SelectPlan_LimitZero() {
-  var table = env.schema.tables()[0];
+  var table = env.schema.table('tableA');
   var queryBuilder = new lf.query.SelectBuilder(lf.Global.get(), []);
   queryBuilder.from(table).limit(0);
 
@@ -166,7 +167,7 @@ function testCreate_SelectPlan_LimitZero() {
  * generating a plan.
  */
 function testCreate_UpdatePlan() {
-  var table = env.schema.tables()[0];
+  var table = env.schema.table('tableA');
 
   var queryBuilder = new lf.query.UpdateBuilder(lf.Global.get(), table);
   queryBuilder.

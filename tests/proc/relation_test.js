@@ -20,7 +20,16 @@ goog.require('goog.testing.jsunit');
 goog.require('lf.Row');
 goog.require('lf.proc.Relation');
 goog.require('lf.proc.RelationEntry');
-goog.require('lf.testing.MockSchema');
+goog.require('lf.testing.getSchemaBuilder');
+
+
+/** @type {!lf.schema.Database} */
+var schema;
+
+
+function setUpPage() {
+  schema = lf.testing.getSchemaBuilder().getSchema();
+}
 
 
 function testFromRows() {
@@ -80,16 +89,14 @@ function checkGetSetValue_MultipleTables(tables) {
 
 
 function testGetSetValue_MultipleTables() {
-  var schema = new lf.testing.MockSchema();
   var tables = schema.tables().slice(0, 2);
   checkGetSetValue_MultipleTables(tables);
 }
 
 
 function testGetSetValue_MultipleTables_Alias() {
-  var schema = new lf.testing.MockSchema();
-  var table0 = schema.tables()[0].as('table0');
-  var table1 = schema.tables()[1].as('table1');
+  var table0 = schema.table('tableA').as('table0');
+  var table1 = schema.table('tableB').as('table1');
   checkGetSetValue_MultipleTables([table0, table1]);
 }
 
@@ -100,8 +107,7 @@ function testGetSetValue_SingleTable() {
     rows[i] = lf.Row.create();
   }
 
-  var schema = new lf.testing.MockSchema();
-  var table = schema.tables()[0];
+  var table = schema.table('tableA');
 
   var relation = lf.proc.Relation.fromRows(rows, [table.getName()]);
   relation.entries.forEach(function(entry) {
@@ -124,8 +130,7 @@ function testSetField_WithAlias() {
     rows[i] = lf.Row.create();
   }
 
-  var schema = new lf.testing.MockSchema();
-  var table = schema.tables()[0];
+  var table = schema.table('tableA');
   var col = table['name'].as('nickName');
 
   var relation = lf.proc.Relation.fromRows(rows, [table.getName()]);

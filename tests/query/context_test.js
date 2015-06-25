@@ -20,14 +20,15 @@ goog.require('goog.testing.jsunit');
 goog.require('lf.query.DeleteContext');
 goog.require('lf.query.InsertContext');
 goog.require('lf.query.UpdateContext');
-goog.require('lf.testing.MockSchema');
+goog.require('lf.testing.getSchemaBuilder');
 
 
-/** @type {!lf.testing.MockSchema} */
+/** @type {!lf.schema.Database} */
 var schema;
 
+
 function setUpPage() {
-  schema = new lf.testing.MockSchema();
+  schema = lf.testing.getSchemaBuilder().getSchema();
 }
 
 function testGetScope_Insert() {

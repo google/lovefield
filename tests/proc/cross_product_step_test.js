@@ -22,6 +22,7 @@ goog.require('lf.cache.Journal');
 goog.require('lf.proc.CrossProductStep');
 goog.require('lf.proc.Relation');
 goog.require('lf.testing.MockEnv');
+goog.require('lf.testing.getSchemaBuilder');
 goog.require('lf.testing.proc.DummyStep');
 
 
@@ -37,9 +38,9 @@ var schema;
 function setUp() {
   asyncTestCase.waitForAsync('setUp');
 
-  var env = new lf.testing.MockEnv();
+  schema = lf.testing.getSchemaBuilder().getSchema();
+  var env = new lf.testing.MockEnv(schema);
   env.init().then(function() {
-    schema = env.schema;
     asyncTestCase.continueTesting();
   }, fail);
 }
@@ -55,7 +56,7 @@ function testCrossProduct() {
   var rightRowCount = 4;
 
   var leftRows = new Array(leftRowCount);
-  var leftTable = schema.tables()[0];
+  var leftTable = schema.table('tableA');
   for (var i = 0; i < leftRowCount; i++) {
     leftRows[i] = leftTable.createRow({
       'id': 'id' + i.toString(),
@@ -64,7 +65,7 @@ function testCrossProduct() {
   }
 
   var rightRows = new Array(rightRowCount);
-  var rightTable = schema.tables()[4];
+  var rightTable = schema.table('tableE');
   for (var i = 0; i < rightRowCount; i++) {
     rightRows[i] = rightTable.createRow({
       'id': 'id' + i.toString(),
@@ -104,7 +105,7 @@ function testCrossProduct_PreviousJoins() {
   var relation3Count = 5;
 
   var relation1Rows = [];
-  var table1 = schema.tables()[0];
+  var table1 = schema.table('tableA');
   for (var i = 0; i < relation1Count; i++) {
     var row = table1.createRow({
       'id': 'id' + i.toString(),
@@ -114,7 +115,7 @@ function testCrossProduct_PreviousJoins() {
   }
 
   var relation2Rows = [];
-  var table2 = schema.tables()[1];
+  var table2 = schema.table('tableB');
   for (var i = 0; i < relation2Count; i++) {
     var row = table2.createRow({
       'id': 'id' + i.toString(),
@@ -124,7 +125,7 @@ function testCrossProduct_PreviousJoins() {
   }
 
   var relation3Rows = [];
-  var table3 = schema.tables()[4];
+  var table3 = schema.table('tableE');
   for (var i = 0; i < relation3Count; i++) {
     var row = table3.createRow({
       'id': 'id' + i.toString(),

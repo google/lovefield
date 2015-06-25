@@ -21,6 +21,7 @@ goog.require('lf.Global');
 goog.require('lf.cache.Journal');
 goog.require('lf.proc.TableAccessFullStep');
 goog.require('lf.testing.MockEnv');
+goog.require('lf.testing.getSchemaBuilder');
 
 
 /** @type {!goog.testing.AsyncTestCase} */
@@ -35,9 +36,9 @@ var schema;
 function setUp() {
   asyncTestCase.waitForAsync('setUp');
 
-  var env = new lf.testing.MockEnv();
+  schema = lf.testing.getSchemaBuilder().getSchema();
+  var env = new lf.testing.MockEnv(schema);
   env.init().then(function() {
-    schema = env.schema;
     return env.addSampleData();
   }).then(function() {
     asyncTestCase.continueTesting();
@@ -46,14 +47,14 @@ function setUp() {
 
 
 function testTableAccessFullStep() {
-  checkTableAccessFullStep('testTableAccessFullStep', schema.tables()[0]);
+  checkTableAccessFullStep('testTableAccessFullStep', schema.table('tableA'));
 }
 
 
 function testTableAccessFullStep_Alias() {
   checkTableAccessFullStep(
       'testTableAccessFullStep_Alias',
-      schema.tables()[0].as('SomeTableAlias'));
+      schema.table('tableA').as('SomeTableAlias'));
 }
 
 

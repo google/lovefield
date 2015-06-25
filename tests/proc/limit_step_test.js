@@ -24,6 +24,7 @@ goog.require('lf.proc.LimitStep');
 goog.require('lf.proc.Relation');
 goog.require('lf.query.SelectContext');
 goog.require('lf.testing.MockEnv');
+goog.require('lf.testing.getSchemaBuilder');
 goog.require('lf.testing.proc.DummyStep');
 
 
@@ -32,14 +33,15 @@ var asyncTestCase = goog.testing.AsyncTestCase.createAndInstall(
     'LimitStepTest');
 
 
-/** @type {!lf.testing.MockEnv} */
-var env;
+/** @type {!lf.schema.Database} */
+var schema;
 
 
 function setUp() {
   asyncTestCase.waitForAsync('setUp');
 
-  env = new lf.testing.MockEnv();
+  schema = lf.testing.getSchemaBuilder().getSchema();
+  var env = new lf.testing.MockEnv(schema);
   env.init().then(function() {
     asyncTestCase.continueTesting();
   }, fail);
@@ -78,7 +80,7 @@ function checkExec(sampleDataCount, limit) {
   var childStep = new lf.testing.proc.DummyStep(
       [lf.proc.Relation.fromRows(rows, [tableName])]);
 
-  var queryContext = new lf.query.SelectContext(env.schema);
+  var queryContext = new lf.query.SelectContext(schema);
   queryContext.limit = limit;
 
   var step = new lf.proc.LimitStep();

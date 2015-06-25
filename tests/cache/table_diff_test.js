@@ -2,7 +2,7 @@ goog.setTestOnly();
 goog.require('goog.testing.jsunit');
 
 goog.require('lf.cache.TableDiff');
-goog.require('lf.testing.MockSchema');
+goog.require('lf.testing.getSchemaBuilder');
 
 
 /** @type {!lf.schema.Table} */
@@ -10,8 +10,8 @@ var table;
 
 
 function setUp() {
-  var schema = new lf.testing.MockSchema();
-  table = schema.tables()[0];
+  var schema = lf.testing.getSchemaBuilder().getSchema();
+  table = schema.table('tableA');
 }
 
 

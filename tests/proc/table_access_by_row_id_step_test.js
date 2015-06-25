@@ -22,6 +22,7 @@ goog.require('lf.cache.Journal');
 goog.require('lf.proc.Relation');
 goog.require('lf.proc.TableAccessByRowIdStep');
 goog.require('lf.testing.MockEnv');
+goog.require('lf.testing.getSchemaBuilder');
 goog.require('lf.testing.proc.DummyStep');
 
 
@@ -37,9 +38,9 @@ var schema;
 function setUp() {
   asyncTestCase.waitForAsync('setUp');
 
-  var env = new lf.testing.MockEnv();
+  schema = lf.testing.getSchemaBuilder().getSchema();
+  var env = new lf.testing.MockEnv(schema);
   env.init().then(function() {
-    schema = env.schema;
     return env.addSampleData();
   }).then(function() {
     asyncTestCase.continueTesting();
@@ -48,14 +49,14 @@ function setUp() {
 
 
 function testTableAccessByRowId() {
-  checkTableAccessByRowId('testTableAccessByRowId', schema.tables()[0]);
+  checkTableAccessByRowId('testTableAccessByRowId', schema.table('tableA'));
 }
 
 
 function testTableAccessByRowId_Alias() {
   checkTableAccessByRowId(
       'testTableAccessByRowId_Alias',
-      schema.tables()[0].as('SomeTableAlias'));
+      schema.table('tableA').as('SomeTableAlias'));
 }
 
 
@@ -102,7 +103,7 @@ function checkTableAccessByRowId(description, table) {
 function testTableAccessByRowId_Empty() {
   asyncTestCase.waitForAsync('testTableAccessByRowId_Empty');
 
-  var table = schema.tables()[1];
+  var table = schema.table('tableB');
   var step = new lf.proc.TableAccessByRowIdStep(lf.Global.get(), table);
 
   // Creating a "dummy" child step that will not return any row IDs.

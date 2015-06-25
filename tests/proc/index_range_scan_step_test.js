@@ -23,6 +23,7 @@ goog.require('lf.cache.Journal');
 goog.require('lf.index.SingleKeyRange');
 goog.require('lf.proc.IndexRangeScanStep');
 goog.require('lf.testing.MockEnv');
+goog.require('lf.testing.getSchemaBuilder');
 goog.require('lf.testing.proc.MockKeyRangeCalculator');
 
 
@@ -38,7 +39,7 @@ var schema;
 function setUp() {
   asyncTestCase.waitForAsync('setUp');
 
-  var env = new lf.testing.MockEnv();
+  var env = new lf.testing.MockEnv(lf.testing.getSchemaBuilder().getSchema());
   env.init().then(function() {
     schema = env.schema;
 
@@ -67,7 +68,7 @@ function testIndexRangeScan_Descending() {
 function checkIndexRangeScan(order, description) {
   asyncTestCase.waitForAsync(description);
 
-  var table = schema.tables()[0];
+  var table = schema.table('tableA');
   var index = order == lf.Order.ASC ?
       table.getIndices()[0] : table.getIndices()[1];
   var keyRange = order == lf.Order.ASC ?

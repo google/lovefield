@@ -15,9 +15,7 @@
  * limitations under the License.
  */
 goog.setTestOnly();
-goog.require('goog.Promise');
 goog.require('goog.testing.AsyncTestCase');
-goog.require('goog.testing.PropertyReplacer');
 goog.require('goog.testing.jsunit');
 goog.require('lf.Global');
 goog.require('lf.Row');
@@ -26,8 +24,8 @@ goog.require('lf.cache.DefaultCache');
 goog.require('lf.index.MemoryIndexStore');
 goog.require('lf.service');
 goog.require('lf.testing.Capability');
-goog.require('lf.testing.MockSchema');
 goog.require('lf.testing.backstore.ScudTester');
+goog.require('lf.testing.getSchemaBuilder');
 
 
 /** @type {!goog.testing.AsyncTestCase} */
@@ -68,10 +66,9 @@ function setUp() {
   }
 
   cache = new lf.cache.DefaultCache();
-  schema = new lf.testing.MockSchema();
-
-  // Workaround the issue that Chrome can't open the same WebSQL instance again.
-  schema.setName(schema.name() + goog.now());
+  // The schema name is on purpose padded with a timestamp to workaround the
+  // issue that Chrome can't open the same WebSQL instance again.
+  schema = lf.testing.getSchemaBuilder().getSchema();
   indexStore = new lf.index.MemoryIndexStore();
   var global = lf.Global.get();
   global.registerService(lf.service.CACHE, cache);

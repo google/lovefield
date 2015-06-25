@@ -25,7 +25,7 @@ goog.require('lf.index.ComparatorFactory');
 goog.require('lf.index.MemoryIndexStore');
 goog.require('lf.index.NullableIndex');
 goog.require('lf.index.RowId');
-goog.require('lf.testing.MockSchema');
+goog.require('lf.testing.getSchemaBuilder');
 
 
 /** @type {!goog.testing.AsyncTestCase} */
@@ -41,9 +41,14 @@ var propertyReplacer;
 var indexStore;
 
 
+/** @type {!lf.schema.Database} */
+var schema;
+
+
 function setUp() {
   propertyReplacer = new goog.testing.PropertyReplacer();
   indexStore = new lf.index.MemoryIndexStore();
+  schema = lf.testing.getSchemaBuilder().getSchema();
 }
 
 
@@ -55,10 +60,9 @@ function tearDown() {
 function testMemoryIndexStore() {
   asyncTestCase.waitForAsync('testMemoryIndexStore');
 
-  var schema = new lf.testing.MockSchema();
-  var tableA = schema.tables()[0];
-  var tableB = schema.tables()[1];
-  var tableF = schema.tables()[5];
+  var tableA = schema.table('tableA');
+  var tableB = schema.table('tableB');
+  var tableF = schema.table('tableF');
   propertyReplacer.replace(tableB, 'persistentIndex', goog.functions.TRUE);
 
   assertFalse(tableA.persistentIndex());
@@ -119,10 +123,8 @@ function assertIndicesType(indexNames, expectedType) {
 function testGetTableIndices_NoIndices() {
   asyncTestCase.waitForAsync('testGetTableIndices');
 
-  var schema = new lf.testing.MockSchema();
-
   indexStore.init(schema).then(function() {
-    var tableWithNoIndexName = schema.tables()[2];  // tableC_
+    var tableWithNoIndexName = schema.table('tableC');
     // There should be at least one row id index.
     assertEquals(1,
         indexStore.getTableIndices(tableWithNoIndexName.getName()).length);
@@ -157,8 +159,7 @@ function testGetTableIndices_Prefix() {
 function testSet() {
   asyncTestCase.waitForAsync('testSet');
 
-  var schema = new lf.testing.MockSchema();
-  var tableSchema = schema.tables()[0];
+  var tableSchema = schema.table('tableA');
   var indexSchema = tableSchema.getIndices()[0];
 
   indexStore.init(schema).then(function() {

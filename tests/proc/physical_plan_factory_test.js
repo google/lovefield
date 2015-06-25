@@ -28,6 +28,7 @@ goog.require('lf.proc.SelectNode');
 goog.require('lf.proc.TableAccessNode');
 goog.require('lf.query.DeleteContext');
 goog.require('lf.testing.MockEnv');
+goog.require('lf.testing.getSchemaBuilder');
 goog.require('lf.testing.util');
 goog.require('lf.tree');
 
@@ -53,7 +54,7 @@ function setUp() {
   asyncTestCase.waitForAsync('setUp');
   propertyReplacer = new goog.testing.PropertyReplacer();
 
-  env = new lf.testing.MockEnv();
+  env = new lf.testing.MockEnv(lf.testing.getSchemaBuilder().getSchema());
   env.init().then(function() {
     physicalPlanFactory = new lf.proc.PhysicalPlanFactory(lf.Global.get());
     asyncTestCase.continueTesting();
@@ -85,7 +86,7 @@ function testCreate_DeletePlan() {
       '--table_access_by_row_id(tableA)\n' +
       '---index_range_scan(tableA.idxName, [name, name], natural)\n';
 
-  var table = env.schema.tables()[0];
+  var table = env.schema.table('tableA');
   var queryContext = new lf.query.DeleteContext(env.schema);
   queryContext.from = table;
   queryContext.where = lf.op.and(

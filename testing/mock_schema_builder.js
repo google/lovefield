@@ -23,9 +23,12 @@ goog.require('lf.Type');
 goog.require('lf.schema');
 
 
-/** @return {!lf.schema.Builder} */
-lf.testing.getSchemaBuilder = function() {
-  var schemaBuilder = lf.schema.create('ms' + goog.now(), 1);
+/**
+ * @param {string=} opt_name
+ * @return {!lf.schema.Builder}
+ */
+lf.testing.getSchemaBuilder = function(opt_name) {
+  var schemaBuilder = lf.schema.create(opt_name || ('ms' + goog.now()), 1);
 
   schemaBuilder.createTable('tableA').
       addColumn('id', lf.Type.STRING).

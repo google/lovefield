@@ -28,7 +28,7 @@ goog.require('goog.testing.jsunit');
 goog.require('lf.Row');
 goog.require('lf.backstore.LocalStorage');
 goog.require('lf.testing.Capability');
-goog.require('lf.testing.MockSchema');
+goog.require('lf.testing.getSchemaBuilder');
 
 
 /** @type {!goog.testing.AsyncTestCase} */
@@ -48,7 +48,7 @@ function setUp() {
     return;
   }
 
-  schema = new lf.testing.MockSchema();
+  schema = lf.testing.getSchemaBuilder('mock_schema').getSchema();
   window.localStorage.clear();
   resolver = goog.Promise.withResolver();
 }
