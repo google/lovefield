@@ -15,6 +15,7 @@
  * limitations under the License.
  */
 goog.setTestOnly();
+goog.require('goog.Promise');
 goog.require('goog.functions');
 goog.require('goog.testing.AsyncTestCase');
 goog.require('goog.testing.PropertyReplacer');
@@ -28,6 +29,7 @@ goog.require('lf.index.MemoryIndexStore');
 goog.require('lf.index.NullableIndex');
 goog.require('lf.index.RowId');
 goog.require('lf.testing.MockEnv');
+goog.require('lf.testing.getSchemaBuilder');
 
 
 /** @type {!goog.testing.AsyncTestCase} */
@@ -53,13 +55,13 @@ function tearDown() {
 
 
 function setUp() {
-  env = new lf.testing.MockEnv();
+  env = new lf.testing.MockEnv(lf.testing.getSchemaBuilder().getSchema());
 
   // Modifying tableA, tableF to use persisted indices.
   propertyReplacer.replace(
-      env.schema.tables()[0], 'persistentIndex', goog.functions.TRUE);
+      env.schema.table('tableA'), 'persistentIndex', goog.functions.TRUE);
   propertyReplacer.replace(
-      env.schema.tables()[5], 'persistentIndex', goog.functions.TRUE);
+      env.schema.table('tableF'), 'persistentIndex', goog.functions.TRUE);
 
   asyncTestCase.waitForAsync('init');
   env.init().then(goog.bind(asyncTestCase.continueTesting, asyncTestCase));
@@ -70,7 +72,7 @@ function testPrefetcher() {
   asyncTestCase.waitForAsync('testPrefetcher');
 
   // Setup some data first.
-  var tableSchema = env.schema.tables()[1];
+  var tableSchema = env.schema.table('tableB');
   var rows = getSampleRows(tableSchema, 19, 0);
 
   var indices = env.indexStore.getTableIndices(tableSchema.getName());
@@ -109,7 +111,7 @@ function testPrefetcher() {
 function testInit_PersistentIndices() {
   asyncTestCase.waitForAsync('testInit_PersistentIndices');
 
-  var tableSchema = env.schema.tables()[0];
+  var tableSchema = env.schema.table('tableA');
   var rows = getSampleRows(tableSchema, 10, 0);
 
   simulatePersistedIndices(tableSchema, rows).then(
@@ -143,7 +145,7 @@ function testInit_PersistentIndices() {
 function testInit_PersistentIndices_NullableIndex() {
   asyncTestCase.waitForAsync('testInit_PersistentIndices_NullableIndex');
 
-  var tableSchema = env.schema.tables()[5];
+  var tableSchema = env.schema.table('tableF');
   var nonNullKeyRows = 4;
   var nullKeyRows = 5;
   var rows = getSampleRows(tableSchema, nonNullKeyRows, nullKeyRows);

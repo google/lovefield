@@ -30,7 +30,7 @@ var asyncTestCase = goog.testing.AsyncTestCase.createAndInstall(
     'DiffCalculatorTest');
 
 
-/** @type {!lf.testing.MockSchema} */
+/** @type {!lf.schema.Database} */
 var schema;
 
 

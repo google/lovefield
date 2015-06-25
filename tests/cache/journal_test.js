@@ -22,6 +22,7 @@ goog.require('lf.Row');
 goog.require('lf.cache.Journal');
 goog.require('lf.index.SingleKeyRange');
 goog.require('lf.testing.MockEnv');
+goog.require('lf.testing.getSchemaBuilder');
 goog.require('lf.testing.util');
 
 
@@ -36,7 +37,7 @@ var env;
 
 function setUp() {
   asyncTestCase.waitForAsync('setUp');
-  env = new lf.testing.MockEnv();
+  env = new lf.testing.MockEnv(lf.testing.getSchemaBuilder().getSchema());
   env.init().then(function() {
     asyncTestCase.continueTesting();
   });
@@ -48,7 +49,7 @@ function setUp() {
  * committed.
  */
 function testNoWriteOperations() {
-  var table = env.schema.tables()[2];
+  var table = env.schema.table('tableC');
   var journal = new lf.cache.Journal(lf.Global.get(), [table]);
 
   var commitFn = function() {
@@ -63,7 +64,7 @@ function testNoWriteOperations() {
  * Tests the case where a new row is inserted into the journal.
  */
 function testInsert_New() {
-  var table = env.schema.tables()[0];
+  var table = env.schema.table('tableA');
   var pkIndexSchema = table.getConstraint().getPrimaryKey();
   var pkIndex = env.indexStore.get(pkIndexSchema.getNormalizedName());
   var rowIdIndex = env.indexStore.get(table.getRowIdIndexName());
@@ -91,7 +92,7 @@ function testInsert_New() {
  * committed journal is inserted.
  */
 function testInsert_PrimaryKeyViolation_SingleColumn() {
-  var table = env.schema.tables()[0];
+  var table = env.schema.table('tableA');
   var primaryKey = '100';
   var row = table.createRow({'id': primaryKey, 'name': 'DummyName'});
   var otherRow = table.createRow({'id': primaryKey, 'name': 'OtherDummyName'});
@@ -105,7 +106,7 @@ function testInsert_PrimaryKeyViolation_SingleColumn() {
  * cross-column.
  */
 function testInsert_PrimaryKeyViolation_CrossColumn() {
-  var table = env.schema.tables()[3];
+  var table = env.schema.table('tableD');
   var id1 = 'DummyId';
   var id2 = 100;
   var row = table.createRow({
@@ -146,7 +147,7 @@ function checkInsert_UniqueConstraintViolation(table, rows1, rows2) {
  * uncommitted journal is inserted.
  */
 function testInsert_PrimaryKeyViolation2() {
-  var table = env.schema.tables()[0];
+  var table = env.schema.table('tableA');
   var pkIndexSchema = table.getConstraint().getPrimaryKey();
   var pkIndex = env.indexStore.get(pkIndexSchema.getNormalizedName());
 
@@ -179,7 +180,7 @@ function testInsert_PrimaryKeyViolation2() {
  * already exist prior this insertion.
  */
 function testInsert_PrimaryKeyViolation3() {
-  var table = env.schema.tables()[0];
+  var table = env.schema.table('tableA');
   var pkIndexSchema = table.getConstraint().getPrimaryKey();
   var pkIndex = env.indexStore.get(pkIndexSchema.getNormalizedName());
 
@@ -213,7 +214,7 @@ function testInsert_PrimaryKeyViolation3() {
  * journal.
  */
 function testInsert_UniqueKeyViolation_SingleColumn() {
-  var table = env.schema.tables()[4];
+  var table = env.schema.table('tableE');
   var emailIndexSchema = table.getConstraint().getUnique()[1];
   var emailIndex = env.indexStore.get(emailIndexSchema.getNormalizedName());
   var rowIdIndex = env.indexStore.get(table.getRowIdIndexName());
@@ -244,7 +245,7 @@ function testInsert_UniqueKeyViolation_SingleColumn() {
  * same cross-column unique key already exists via a previous committed journal.
  */
 function testInsert_UniqueKeyViolation_CrossColumn() {
-  var table = env.schema.tables()[3];
+  var table = env.schema.table('tableD');
   var row = table.createRow({
     'id1': 'id_0', 'id2': 'id_1',
     'firstName': 'DummyFirstName', 'lastName': 'DummylastName'
@@ -264,7 +265,7 @@ function testInsert_UniqueKeyViolation_CrossColumn() {
  * Journal#insert.
  */
 function testInsert_NotNullableKeyViolation() {
-  var table = env.schema.tables()[4];
+  var table = env.schema.table('tableE');
   assertEquals(0, env.cache.getCount());
 
   var journal = new lf.cache.Journal(lf.Global.get(), [table]);
@@ -282,7 +283,7 @@ function testInsert_NotNullableKeyViolation() {
  * Journal#insertOrReplace.
  */
 function testInsertOrReplace_NotNullableKeyViolation() {
-  var table = env.schema.tables()[4];
+  var table = env.schema.table('tableE');
   assertEquals(0, env.cache.getCount());
 
   // Attempting to insert a new invalid row.
@@ -315,7 +316,7 @@ function testInsertOrReplace_NotNullableKeyViolation() {
  * Journal#update.
  */
 function testUpdate_NotNullableKeyViolation() {
-  var table = env.schema.tables()[4];
+  var table = env.schema.table('tableE');
   assertEquals(0, env.cache.getCount());
 
   var row = table.createRow({'id': 'pk1', 'email': 'emailAddress'});
@@ -345,7 +346,7 @@ function testUpdate_NotNullableKeyViolation() {
  * Tests that update() succeeds if there is no primary/unique key violation.
  */
 function testUpdate_NoPrimaryKeyViolation() {
-  var table = env.schema.tables()[0];
+  var table = env.schema.table('tableA');
   var pkIndexSchema = table.getConstraint().getPrimaryKey();
   var pkIndex = env.indexStore.get(pkIndexSchema.getNormalizedName());
   var rowIdIndex = env.indexStore.get(table.getRowIdIndexName());
@@ -389,7 +390,7 @@ function testUpdate_NoPrimaryKeyViolation() {
  * exists from a previously committed journal.
  */
 function testUpdate_PrimaryKeyViolation1() {
-  var table = env.schema.tables()[0];
+  var table = env.schema.table('tableA');
   var pkIndexSchema = table.getConstraint().getPrimaryKey();
   var pkIndex = env.indexStore.get(pkIndexSchema.getNormalizedName());
 
@@ -423,7 +424,7 @@ function testUpdate_PrimaryKeyViolation1() {
  * exists from a row that has been added within the same journal.
  */
 function testUpdate_PrimaryKeyViolation2() {
-  var table = env.schema.tables()[0];
+  var table = env.schema.table('tableA');
   var pkIndexSchema = table.getConstraint().getPrimaryKey();
   var pkIndex = env.indexStore.get(pkIndexSchema.getNormalizedName());
 
@@ -454,7 +455,7 @@ function testUpdate_PrimaryKeyViolation2() {
  * and that primary key does not already exist.
  */
 function testUpdate_PrimaryKeyViolation3() {
-  var table = env.schema.tables()[0];
+  var table = env.schema.table('tableA');
   var pkIndexSchema = table.getConstraint().getPrimaryKey();
   var pkIndex = env.indexStore.get(pkIndexSchema.getNormalizedName());
 
@@ -491,7 +492,7 @@ function testUpdate_PrimaryKeyViolation3() {
  * uncommitted journal is inserted.
  */
 function testDeleteInsert_Uncommitted() {
-  var table = env.schema.tables()[0];
+  var table = env.schema.table('tableA');
   var pkIndexSchema = table.getConstraint().getPrimaryKey();
   var pkIndex = env.indexStore.get(pkIndexSchema.getNormalizedName());
   var rowIdIndex = env.indexStore.get(table.getRowIdIndexName());
@@ -521,7 +522,7 @@ function testDeleteInsert_Uncommitted() {
 
 
 function testInsertOrReplace() {
-  var table = env.schema.tables()[0];
+  var table = env.schema.table('tableA');
   var pkIndexSchema = table.getConstraint().getPrimaryKey();
   var pkIndex = env.indexStore.get(pkIndexSchema.getNormalizedName());
   var rowIdIndex = env.indexStore.get(table.getRowIdIndexName());
@@ -558,7 +559,7 @@ function testInsertOrReplace() {
 
 
 function testInsertOrReplace_UniqueKeyViolation() {
-  var table = env.schema.tables()[4];
+  var table = env.schema.table('tableE');
   var emailIndexSchema = table.getConstraint().getUnique()[1];
   var emailIndex = env.indexStore.get(emailIndexSchema.getNormalizedName());
 
@@ -627,7 +628,7 @@ function testInsertOrReplace_UniqueKeyViolation() {
 
 function testCacheMerge() {
   // Selecting a table without any user-defined index (no primary key either).
-  var table = env.schema.tables()[2];
+  var table = env.schema.table('tableC');
   var rowIdIndex = env.indexStore.get(table.getRowIdIndexName());
   var payload = {'id': 'something'};
 
@@ -671,7 +672,7 @@ function testCacheMerge() {
  * committed.
  */
 function testIndicesCacheUpdated() {
-  var table = env.schema.tables()[1];
+  var table = env.schema.table('tableB');
   var indices = table.getIndices();
   var journal = new lf.cache.Journal(lf.Global.get(), [table]);
 
@@ -733,7 +734,7 @@ function testIndicesCacheUpdated() {
 
 
 function testIndicesUpdated() {
-  var table = env.schema.tables()[0];
+  var table = env.schema.table('tableA');
   var journal = new lf.cache.Journal(lf.Global.get(), [table]);
   var indexSchema = table.getIndices()[1];
   var keyRange1 = new lf.index.SingleKeyRange('aaa', 'bbb', false, false);
@@ -768,7 +769,7 @@ function testIndicesUpdated() {
  * Tests rolling back a journal.
  */
 function testRollback() {
-  var table = env.schema.tables()[0];
+  var table = env.schema.table('tableA');
 
   var rowToInsert = table.createRow(
       {'id': 'add', 'name': 'DummyName'});

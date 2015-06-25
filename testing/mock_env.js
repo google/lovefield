@@ -30,10 +30,12 @@ goog.require('lf.testing.MockSchema');
  * @constructor
  * @struct
  * @final
+ *
+ * @param {!lf.schema.Database=} opt_schema
  */
-lf.testing.MockEnv = function() {
-  /** @type {!lf.testing.MockSchema} */
-  this.schema = new lf.testing.MockSchema();
+lf.testing.MockEnv = function(opt_schema) {
+  /** @type {!lf.testing.MockSchema|!lf.schema.Database} */
+  this.schema = opt_schema || new lf.testing.MockSchema();
 
   /** @type {!lf.proc.QueryEngine} */
   this.queryEngine;

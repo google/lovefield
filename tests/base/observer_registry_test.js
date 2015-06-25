@@ -33,7 +33,7 @@ var asyncTestCase = goog.testing.AsyncTestCase.createAndInstall(
 var registry;
 
 
-/** @type {!lf.testing.MockSchema} */
+/** @type {!lf.schema.Database} */
 var schema;
 
 

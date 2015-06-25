@@ -21,6 +21,7 @@ goog.require('lf.ConstraintTiming');
 goog.require('lf.Global');
 goog.require('lf.cache.ConstraintChecker');
 goog.require('lf.testing.MockEnv');
+goog.require('lf.testing.getSchemaBuilder');
 goog.require('lf.testing.util');
 
 
@@ -39,7 +40,7 @@ var checker;
 
 function setUp() {
   asyncTestCase.waitForAsync('setUp');
-  env = new lf.testing.MockEnv();
+  env = new lf.testing.MockEnv(lf.testing.getSchemaBuilder().getSchema());
   env.init().then(function() {
     checker = new lf.cache.ConstraintChecker(lf.Global.get());
     asyncTestCase.continueTesting();
@@ -49,7 +50,7 @@ function setUp() {
 
 
 function testFindExistingRowIdInPkIndex() {
-  var table = env.schema.tables()[0];
+  var table = env.schema.table('tableA');
   var pkIndexSchema = table.getConstraint().getPrimaryKey();
   var pkIndex = env.indexStore.get(pkIndexSchema.getNormalizedName());
 
@@ -75,7 +76,7 @@ function testFindExistingRowIdInPkIndex() {
 
 
 function testCheckNotNullable() {
-  var table = env.schema.tables()[4];
+  var table = env.schema.table('tableE');
 
   // Attempting to insert rows that violate the constraint.
   var invalidRows = [1, 2, 3].map(function(primaryKey) {
