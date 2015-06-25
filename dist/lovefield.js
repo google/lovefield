@@ -3902,7 +3902,7 @@ lf.Type.STRING = 5;
 goog.exportProperty(lf.Type, "STRING", lf.Type.STRING);
 lf.Type.OBJECT = 6;
 goog.exportProperty(lf.Type, "OBJECT", lf.Type.OBJECT);
-lf.type.DEFAULT_VALUES = {0:new ArrayBuffer(0), 1:!1, 2:Object.freeze(new Date(0)), 3:0, 4:0, 5:"", 6:Object.freeze({})};
+lf.type.DEFAULT_VALUES = {0:null, 1:!1, 2:Object.freeze(new Date(0)), 3:0, 4:0, 5:"", 6:null};
 goog.exportSymbol("lf.type.DEFAULT_VALUES", lf.type.DEFAULT_VALUES);
 
 lf.Exception = function(code, var_args) {
