@@ -10190,6 +10190,9 @@ lf.proc.Runner.TaskQueue_.prototype.remove = function(task) {
   return goog.array.remove(this.queue_, task);
 };
 
+lf.Flags = {};
+lf.Flags.MEMORY_ONLY = !1;
+
 lf.DiffCalculator = function(query, observableResults) {
   this.evalRegistry_ = lf.eval.Registry.getInstance();
   this.query_ = query;
@@ -10302,25 +10305,30 @@ lf.ObserverRegistry.Entry_.prototype.updateResults = function(newResults) {
 
 lf.base = {};
 lf.base.init = function(global, opt_options) {
-  var schema = global.getService(lf.service.SCHEMA), options = opt_options || {}, dataStoreType = options.storeType || lf.schema.DataStoreType.INDEXED_DB, cache = new lf.cache.DefaultCache;
+  var schema = global.getService(lf.service.SCHEMA), options = opt_options || {}, cache = new lf.cache.DefaultCache;
   global.registerService(lf.service.CACHE, cache);
   var backStore = null, observeExternalChanges = !1;
-  switch(dataStoreType) {
-    case lf.schema.DataStoreType.MEMORY:
-      backStore = new lf.backstore.Memory(schema);
-      break;
-    case lf.schema.DataStoreType.OBSERVABLE_STORE:
-      backStore = new lf.backstore.ObservableStore(schema);
-      break;
-    case lf.schema.DataStoreType.WEB_SQL:
-      backStore = new lf.backstore.WebSql(global, schema, options.webSqlDbSize);
-      break;
-    case lf.schema.DataStoreType.FIREBASE:
-      backStore = new lf.backstore.Firebase(schema, options.firebase);
-      observeExternalChanges = !0;
-      break;
-    default:
-      backStore = new lf.backstore.IndexedDB(global, schema);
+  if (lf.Flags.MEMORY_ONLY) {
+    backStore = new lf.backstore.Memory(schema);
+  } else {
+    var dataStoreType = options.storeType || lf.schema.DataStoreType.INDEXED_DB;
+    switch(dataStoreType) {
+      case lf.schema.DataStoreType.MEMORY:
+        backStore = new lf.backstore.Memory(schema);
+        break;
+      case lf.schema.DataStoreType.OBSERVABLE_STORE:
+        backStore = new lf.backstore.ObservableStore(schema);
+        break;
+      case lf.schema.DataStoreType.WEB_SQL:
+        backStore = new lf.backstore.WebSql(global, schema, options.webSqlDbSize);
+        break;
+      case lf.schema.DataStoreType.FIREBASE:
+        backStore = new lf.backstore.Firebase(schema, options.firebase);
+        observeExternalChanges = !0;
+        break;
+      default:
+        backStore = new lf.backstore.IndexedDB(global, schema);
+    }
   }
   global.registerService(lf.service.BACK_STORE, backStore);
   var indexStore = new lf.index.MemoryIndexStore;
