@@ -75,7 +75,7 @@ finalized, it will not accept any calls.
 
 The `createTable()` call of `lf.schema.Builder` returns an
 [`lf.schema.TableBuilder`](
-https://github.com/google/lovefield/blob/31f14db4995bb89fa053c99261a4b7501f87eb8d/lib/schema/table_builder.js#L33-65)
+https://github.com/google/lovefield/blob/8e47538d5f32986596a9e97ec97350cc6ed9ec1a/lib/schema/table_builder.js#L38-77)
 object, which is used to build table schema. A table in Lovefield is similar to
 a SQL table. The user can specify indices and constraints in the table-level.
 All member functions of `lf.schema.TableBuilder` return the table builder object
@@ -84,12 +84,13 @@ itself to support chaining pattern.
 #### 1.3.1 Columns
 
 A table contains at least one column, which is added to the table by
-[`addColumn()`](https://github.com/google/lovefield/blob/31f14db4995bb89fa053c99261a4b7501f87eb8d/lib/schema/table_builder.js#L133-143).
+[`addColumn()`](
+https://github.com/google/lovefield/blob/8e47538d5f32986596a9e97ec97350cc6ed9ec1a/lib/schema/table_builder.js#L178-191).
 Columns are identified by column names, and column names must be unique within
 the table. Each column must have an associated data type.
 
 The supported data types are listed in [`lf.Type`](
-https://github.com/google/lovefield/blob/4e5c4c1318d2466da48858cf5fccce40fd059652/lib/type.js#L21-30):
+https://github.com/google/lovefield/blob/fafe224c75083698f1702c35c7908c25a8ea5951/lib/enums.js#L60-93):
 
 | Type                 | Default Value | Nullable by default | Description                          |
 |:---------------------|:--------------|:--------------------|:-------------------------------------|
@@ -103,7 +104,7 @@ https://github.com/google/lovefield/blob/4e5c4c1318d2466da48858cf5fccce40fd05965
 
 Any column regardless of type can be marked as nullable by calling
 [`TableBuilder#addNullable()`]
-(https://github.com/google/lovefield/blob/31f14db4995bb89fa053c99261a4b7501f87eb8d/lib/schema/table_builder.js#L213-231).
+(https://github.com/google/lovefield/blob/8e47538d5f32986596a9e97ec97350cc6ed9ec1a/lib/schema/table_builder.js#L285-297).
 The default value for nullable columns is always `null`. The default values
 shown in the table above refer to the case where a column has not been marked as
 nullable.
@@ -134,14 +135,14 @@ Lovefield supports the following constraints:
 * Nullable / Not-nullable
 
 Each table can have only one primary key. Primary key is added via the function
-[`addPrimaryKey()`](https://github.com/google/lovefield/blob/31f14db4995bb89fa053c99261a4b7501f87eb8d/lib/schema/table_builder.js#146-176).
+[`addPrimaryKey()`](https://github.com/google/lovefield/blob/8e47538d5f32986596a9e97ec97350cc6ed9ec1a/lib/schema/table_builder.js#L194-225).
 Same as in the SQL world, primary key implies unique and not null. Lovefield
 supports auto-increment primary key, which must be an integer column with
 default ascending order, and its value will be assigned by Lovefield, starting
 from 1.
 
 Foreign keys are added via [`addForeignKey()`](
-https://github.com/google/lovefield/blob/31f14db4995bb89fa053c99261a4b7501f87eb8d/lib/schema/table_builder.js#L179-195).
+https://github.com/google/lovefield/blob/8e47538d5f32986596a9e97ec97350cc6ed9ec1a/lib/schema/table_builder.js#L228-264).
 (Note 1)
 
 Primary key and foreign key constraint violations will cause transaction
@@ -150,17 +151,18 @@ a foreign key, Lovefield query engine will perform cascade delete and update
 if necessary.
 
 Unique constraints are added via [`addUnique()`](
-https://github.com/google/lovefield/blob/31f14db4995bb89fa053c99261a4b7501f87eb8d/lib/schema/table_builder.js#198-210).
+https://github.com/google/lovefield/blob/8e47538d5f32986596a9e97ec97350cc6ed9ec1a/lib/schema/table_builder.js#L267-282).
 Unique constraints imply implicit indices. A cross-column unique constraint
 means the value combinations of these columns must be unique.
 
 As mentioned in previous section, all table columns are defaulted to `NOT NULL`.
 The user needs to specifically call out nullable columns by calling
-[`addNullable()`](https://github.com/google/lovefield/blob/31f14db4995bb89fa053c99261a4b7501f87eb8d/lib/schema/table_builder.js#L213-231).
+[`addNullable()`](https://github.com/google/lovefield/blob/8e47538d5f32986596a9e97ec97350cc6ed9ec1a/lib/schema/table_builder.js#L285-297).
 
 
 Note 1: Currently [foreign key are not implemented nor honored/enforced](
-https://github.com/google/lovefield/issues/8).
+https://github.com/google/lovefield/issues/8) and the implementation is in
+progress.
 
 
 #### 1.3.3 Indices
@@ -171,7 +173,7 @@ indexable columns can be indexed. See [Columns](#131-columns) for details
 regarding which column data type are indexable.
 
 Indices are added via [`addIndex()`](
-https://github.com/google/lovefield/blob/31f14db4995bb89fa053c99261a4b7501f87eb8d/lib/schema/table_builder.js#L234-261).
+https://github.com/google/lovefield/blob/8e47538d5f32986596a9e97ec97350cc6ed9ec1a/lib/schema/table_builder.js#L327-357).
 Indices can be single-column or cross-column. Unlike most SQL engines, Lovefield
 has a limit that all values in indexed column must not be null. All unique
 constraint also builds implicit index, and therefore creating index with
@@ -186,7 +188,7 @@ transformations in their own JavaScript and store the transformed data.
 By default, Lovefield constructs table indices in memory during loading, without
 persisting the indices in data store. The indices of a given table will be
 persisted only if [`persistentIndex()`](
-https://github.com/google/lovefield/blob/31f14db4995bb89fa053c99261a4b7501f87eb8d/lib/schema/table_builder.js#L264-267).
+https://github.com/google/lovefield/blob/8e47538d5f32986596a9e97ec97350cc6ed9ec1a/lib/schema/table_builder.js#L383-386).
 
 
 ### 1.4 Static Schema Construction
