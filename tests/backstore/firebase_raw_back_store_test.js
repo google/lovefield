@@ -25,7 +25,7 @@ goog.require('lf.backstore.FirebaseRawBackStore');
 goog.require('lf.cache.DefaultCache');
 goog.require('lf.index.MemoryIndexStore');
 goog.require('lf.service');
-goog.require('lf.testing.MockSchema');
+goog.require('lf.testing.backstore.MockSchema');
 
 
 /** @type {!goog.testing.AsyncTestCase} */
@@ -115,7 +115,7 @@ function setUp() {
 
   cache = new lf.cache.DefaultCache();
   indexStore = new lf.index.MemoryIndexStore();
-  schema = new lf.testing.MockSchema();
+  schema = new lf.testing.backstore.MockSchema();
   schema.setName(schema.name() + goog.now());
 
   global = lf.Global.get();

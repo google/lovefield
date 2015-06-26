@@ -21,7 +21,6 @@ goog.require('lf.Global');
 goog.require('lf.proc.Database');
 goog.require('lf.schema.DataStoreType');
 goog.require('lf.service');
-goog.require('lf.testing.MockSchema');
 
 
 
@@ -31,11 +30,11 @@ goog.require('lf.testing.MockSchema');
  * @struct
  * @final
  *
- * @param {!lf.schema.Database=} opt_schema
+ * @param {!lf.schema.Database} schema
  */
-lf.testing.MockEnv = function(opt_schema) {
-  /** @type {!lf.testing.MockSchema|!lf.schema.Database} */
-  this.schema = opt_schema || new lf.testing.MockSchema();
+lf.testing.MockEnv = function(schema) {
+  /** @type {!lf.schema.Database} */
+  this.schema = schema;
 
   /** @type {!lf.proc.QueryEngine} */
   this.queryEngine;

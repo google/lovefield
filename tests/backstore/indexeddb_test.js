@@ -16,6 +16,7 @@
  */
 goog.setTestOnly();
 goog.require('goog.Promise');
+goog.require('goog.functions');
 goog.require('goog.testing.AsyncTestCase');
 goog.require('goog.testing.PropertyReplacer');
 goog.require('goog.testing.jsunit');
@@ -28,7 +29,7 @@ goog.require('lf.cache.Journal');
 goog.require('lf.index.MemoryIndexStore');
 goog.require('lf.service');
 goog.require('lf.testing.Capability');
-goog.require('lf.testing.MockSchema');
+goog.require('lf.testing.backstore.MockSchema');
 goog.require('lf.testing.backstore.ScudTester');
 goog.require('lf.testing.util');
 
@@ -72,7 +73,7 @@ function setUp() {
   }
 
   cache = new lf.cache.DefaultCache();
-  schema = new lf.testing.MockSchema();
+  schema = new lf.testing.backstore.MockSchema();
   indexStore = new lf.index.MemoryIndexStore();
   var global = lf.Global.get();
   global.registerService(lf.service.CACHE, cache);
@@ -159,8 +160,8 @@ function testTwoTableInserts_Bundled() {
   /** @const {!Object} */
   var CONTENTS2 = {'id': 'hello2', 'name': 'world2'};
 
-  var tableA = schema.tables()[0];
-  var tableB = schema.tables()[1];
+  var tableA = schema.table('tableA');
+  var tableB = schema.table('tableB');
   var row = lf.Row.create(CONTENTS);
   var row2 = lf.Row.create(CONTENTS);
   var row3 = lf.Row.create(CONTENTS2);
@@ -268,7 +269,7 @@ function testScanRowId() {
    * @return {!IThenable}
    */
   var insertIntoTable = function(rows) {
-    var table = schema.tables()[0];
+    var table = schema.table('tableA');
     var tx = db.createTx(
         lf.TransactionType.READ_WRITE,
         new lf.cache.Journal(lf.Global.get(), [table]));
@@ -328,7 +329,7 @@ function testScanRowId_BundledDB() {
       rows.push(new lf.Row(i, CONTENTS));
     }
 
-    var table = schema.tables()[0];
+    var table = schema.table('tableA');
     var tx = db.createTx(
         lf.TransactionType.READ_WRITE,
         new lf.cache.Journal(lf.Global.get(), [table]));
@@ -381,7 +382,7 @@ function testUpgrade() {
 
   // Modifying tableA to use persisted indices.
   propertyReplacer.replace(
-      schema.tables()[0], 'persistentIndex', goog.functions.TRUE);
+      schema.table('tableA'), 'persistentIndex', goog.functions.TRUE);
 
   db = new lf.backstore.IndexedDB(lf.Global.get(), schema);
   db.init().then(function() {
