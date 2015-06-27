@@ -6477,7 +6477,7 @@ lf.index.BTree.prototype.minMax_ = function(compareFn) {
   var leftMostKey = leftMostNode.keys_[0], leftMostValues = leftMostNode.values_[0], rightMostKey = rightMostNode.keys_[rightMostNode.keys_.length - 1], rightMostValues = rightMostNode.values_[rightMostNode.keys_.length - 1];
   return compareFn(leftMostKey, rightMostKey) == lf.index.Favor.LHS ? [leftMostKey, this.uniqueKeyOnly_ ? [leftMostValues] : leftMostValues] : [rightMostKey, this.uniqueKeyOnly_ ? [rightMostValues] : rightMostValues];
 };
-lf.index.BTree.prototype.isUniqueKeyOnly = function() {
+lf.index.BTree.prototype.isUniqueKey = function() {
   return this.uniqueKeyOnly_;
 };
 lf.index.BTree.prototype.comparator = function() {
@@ -6658,7 +6658,7 @@ lf.index.BTreeNode_.prototype.delete_ = function(key, parentPos, opt_value) {
     }
   }
   if (this.keys_.length > pos && this.tree_.eq(this.keys_[pos], key)) {
-    if (goog.isDef(opt_value) && !this.tree_.isUniqueKeyOnly() && this.isLeaf_() && (goog.array.binaryRemove(this.values_[pos], opt_value), this.values_[pos].length)) {
+    if (goog.isDef(opt_value) && !this.tree_.isUniqueKey() && this.isLeaf_() && (goog.array.binaryRemove(this.values_[pos], opt_value), this.values_[pos].length)) {
       return !1;
     }
     this.keys_.splice(pos, 1);
@@ -6707,9 +6707,9 @@ lf.index.BTreeNode_.prototype.insert = function(key, value, opt_replace) {
   if (this.isLeaf_()) {
     if (this.tree_.eq(this.keys_[pos], key)) {
       if (opt_replace) {
-        return this.values_[pos] = this.tree_.isUniqueKeyOnly() ? value : [value], this;
+        return this.values_[pos] = this.tree_.isUniqueKey() ? value : [value], this;
       }
-      if (this.tree_.isUniqueKeyOnly()) {
+      if (this.tree_.isUniqueKey()) {
         throw new lf.Exception(201);
       }
       if (this.values_[pos]) {
@@ -6718,7 +6718,7 @@ lf.index.BTreeNode_.prototype.insert = function(key, value, opt_replace) {
       this.values_[pos] = [value];
     }
     this.keys_.splice(pos, 0, key);
-    this.values_.splice(pos, 0, this.tree_.isUniqueKeyOnly() ? value : [value]);
+    this.values_.splice(pos, 0, this.tree_.isUniqueKey() ? value : [value]);
     return this.keys_.length == lf.index.BTreeNode_.MAX_COUNT_ ? this.splitLeaf_() : this;
   }
   var pos = this.tree_.eq(this.keys_[pos], key) ? pos + 1 : pos, node = this.children_[pos].insert(key, value, opt_replace);
@@ -6795,7 +6795,7 @@ lf.index.BTreeNode_.prototype.getRange = function(keyRange, results) {
   return end == this.keys_.length - 1 ? this.appendResults_(results, this.values_.slice(start)) : end >= start ? this.appendResults_(results, this.values_.slice(start, end + 1)) : 0;
 };
 lf.index.BTreeNode_.prototype.appendResults_ = function(currentResults, newResults) {
-  var toAppend = this.tree_.isUniqueKeyOnly() ? newResults : goog.array.flatten(newResults);
+  var toAppend = this.tree_.isUniqueKey() ? newResults : goog.array.flatten(newResults);
   currentResults.push.apply(currentResults, toAppend);
   return toAppend.length;
 };
@@ -7048,6 +7048,9 @@ lf.index.NullableIndex.deserialize = function(deserializeFn, rows) {
   nullableIndex.nulls_.addAll(nulls);
   return nullableIndex;
 };
+lf.index.NullableIndex.prototype.isUniqueKey = function() {
+  return this.index_.isUniqueKey();
+};
 
 lf.index.RowId = function(name) {
   this.name_ = name;
@@ -7117,6 +7120,9 @@ lf.index.RowId.deserialize = function(name, rows) {
     index.add(rowId, rowId);
   });
   return index;
+};
+lf.index.RowId.prototype.isUniqueKey = function() {
+  return !0;
 };
 
 lf.cache.Prefetcher = function(global) {
@@ -7351,6 +7357,9 @@ lf.index.AATree.prototype.toString = function() {
     result = result + buffer[i].join("") + "\n";
   }
   return result;
+};
+lf.index.AATree.prototype.isUniqueKey = function() {
+  return !0;
 };
 
 lf.index.IndexStore = function() {
