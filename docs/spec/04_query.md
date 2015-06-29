@@ -301,6 +301,24 @@ Just like SQL, the search conditions in `where()` does not support aggregators.
 Lovefield does not support `HAVING`. The users can do two queries or simply
 filter out the selected results.
 
+The results of aggregated functions are named after the function itself. For
+example:
+
+```js
+db.select(lf.fn.count(order.id)).from(order).exec.then(function(results) {
+  // Results contains only one row with one column, 'COUNT(id)'
+  console.log(results[0]['COUNT(id)']);
+});
+
+db.select(customer.name, lf.fn.count(order.id)).
+    from(order, customer).
+    where(order.customerId.eq(customer.id)).
+    groupBy(customer.name).exec(function(results) {
+      // Results are grouped in nested objects, see 4.1.8
+      var row0 = results[0];
+      console.log(row0['Customer']['name'], row0['Order']['COUNT(id)']);
+    });
+```
 
 #### 4.1.6 Column aliases
 
@@ -335,7 +353,11 @@ q3.exec().then(function(rows) {
 });
 ```
 
+The prefix and non-prefixed retrieval are described in
+[4.1.8](04_query.md#418-retrieval-of-query-results).
+
 #### 4.1.7 Table Aliases
+
 Each table can have an alias that will affect the format of the returned
 results. Table aliases have no effect if only one table is involved in a query.
 Table aliases are required for executing a self table join.
@@ -352,6 +374,7 @@ var q = db.select(j1.title, j2.title, j1.minSalary).
 
 q1.exec().then(function(rows) {
   rows.forEach(function(row) {
+    // Self-join results are also nested objects, see 4.1.8.
     console.log(
         row['j1']['title'],
         row['j2']['title'],
@@ -359,6 +382,65 @@ q1.exec().then(function(rows) {
   };
 });
 ```
+
+#### 4.1.8 Retrieval of Query Results
+
+Unlike other SQL engines, Lovefield does not flatten query results for
+inner-join queries. The inner joined results are returned as nested objects
+(a.k.a. prefixed), for example:
+
+```js
+var p = db.getSchema().table('Photo');
+var a = db.getSchema().table('Album');
+db.select().
+    from(p, a).
+    where(lf.op.and(
+        p.albumId.eq(a.id),
+        a.id.eq('1'))).
+    exec(function(results) {  // results is an array.
+      // Each elements in the array is a nested object.
+      var row0 = results[0];
+      console.log(row0['Photo']['id'], row0['Album']['id']);
+    });
+```
+
+The results can be flattened by using the `as()` function for each columns in
+`select()`:
+
+```js
+var q3 = db.select(
+    infoCard.id.as('InfoCard Id'),
+    asset.timestamp.as('Timestamp')).
+    from(infoCard).
+    innerJoin(asset, asset.id.eq(infoCard.id)).
+    where(asset.id.eq('1'));
+q3.exec().then(function(rows) {
+  // Aliased columns are flattened.
+  console.log(rows[0]['InfoCard Id'], rows[0]['Timestamp']);
+});
+```
+
+The reason that flattening is not performed by default is the performance
+penalty imposed. The flattening for `as()` is done internally by Lovefield using
+function similar to the following:
+
+
+```js
+function(objectsToMerge) {
+  var mergedObj = {};
+  objectsToMerge.forEach(function(obj) {
+    Object.keys(obj).forEach(function(key) {
+      mergedObj[key] = obj[key];
+    });
+  });
+  return mergedObj;
+}
+```
+
+The above function needs to be executed once for every row in the result.
+Flattening N objects to a single object causes significan slow down if N is big.
+As a result, Lovefield does not perform the flattening by default.
+
 
 ### 4.2 INSERT Query Builder
 
