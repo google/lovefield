@@ -24,6 +24,7 @@ goog.require('lf.index.SimpleComparator');
 goog.require('lf.index.SingleKeyRange');
 goog.require('lf.testing.index.TestSingleRowNumericalKey');
 goog.require('lf.testing.index.TestSingleRowStringKey');
+goog.require('lf.testing.util');
 
 
 /** @type {!lf.index.NullableIndex} */
@@ -131,4 +132,19 @@ function testSerialize() {
   assertArrayEquals([1, 2], index2.get(null));
   assertArrayEquals([3, 4], index2.get(1));
   assertArrayEquals([5], index2.get(2));
+}
+
+
+function testUnique() {
+  index = new lf.index.NullableIndex(
+      new lf.index.BTree(
+      'test',
+      new lf.index.SimpleComparator(lf.Order.ASC),
+      /* opt_unique */ true));
+  index.add(null, 1);
+  index.add(1, 2);
+
+  // 201: Duplicate keys are not allowed.
+  lf.testing.util.assertThrowsError(201, function() { index.add(1, 3); });
+  lf.testing.util.assertThrowsError(201, function() { index.add(null, 2); });
 }
