@@ -171,7 +171,7 @@ function testCheckForeignKeysForDelete_Immediate() {
 
   var parentTable = env.schema.table('tableI');
   var foreignKeySpec = parentTable.getReferencingForeignKeys()[0];
-  assertEquals('tableG.fk_Id', foreignKeySpec.fkName);
+  assertEquals('tableG.fk_Id', foreignKeySpec.name);
   assertEquals(lf.ConstraintTiming.IMMEDIATE, foreignKeySpec.timing);
 
   var parentRow = parentTable.createRow({

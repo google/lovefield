@@ -316,17 +316,17 @@ function convertUnique(tableName, tableSchema, colNames, names, unique) {
 /**
  * Check the parent (i.e. referenced) column in parent table for a foreign key.
  * This column must be expected type, unique, and not referencing other columns.
- * @param {string} fkName Name of the foreign key
+ * @param {string} name Name of the foreign key
  * @param {!Object} tableSchema
  * @param {string} column
  * @param {string} expectedType
  */
-function checkParent(fkName, tableSchema, column, expectedType) {
+function checkParent(name, tableSchema, column, expectedType) {
   if (!tableSchema.column.hasOwnProperty(column)) {
-    throw new Error(fkName + ' has invalid ref column');
+    throw new Error(name + ' has invalid ref column');
   }
   if (expectedType != tableSchema.column[column]) {
-    throw new Error(fkName + ' referring column of different type');
+    throw new Error(name + ' referring column of different type');
   }
   if (tableSchema.constraint) {
     var c = /** @type {!Object} */ (tableSchema.constraint);
@@ -342,7 +342,7 @@ function checkParent(fkName, tableSchema, column, expectedType) {
     if (fk) {
       for (var key in fk) {
         if (fk[key].local == column) {
-          throw new Error(fkName + ' referenced another foreign key');
+          throw new Error(name + ' referenced another foreign key');
         }
       }
     }
@@ -365,7 +365,7 @@ function checkParent(fkName, tableSchema, column, expectedType) {
       }
     }
   }
-  throw new Error(fkName + ' referring non-unique column');
+  throw new Error(name + ' referring non-unique column');
 }
 
 

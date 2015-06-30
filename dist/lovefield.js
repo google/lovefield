@@ -2348,8 +2348,8 @@ goog.Promise.resolveThen_ = function(value, onFulfilled, onRejected) {
 goog.Promise.race = function(promises) {
   return new goog.Promise(function(resolve, reject) {
     promises.length || resolve(void 0);
-    for (var i = 0, promise;i < promises.length;i++) {
-      promise = promises[i], goog.Promise.resolveThen_(promise, resolve, reject);
+    for (var i = 0, promise;promise = promises[i];i++) {
+      goog.Promise.resolveThen_(promise, resolve, reject);
     }
   });
 };
@@ -2363,8 +2363,8 @@ goog.Promise.all = function(promises) {
         0 == toFulfill && resolve(values);
       }, onReject = function(reason) {
         reject(reason);
-      }, i = 0, promise;i < promises.length;i++) {
-        promise = promises[i], goog.Promise.resolveThen_(promise, goog.partial(onFulfill, i), onReject);
+      }, i = 0, promise;promise = promises[i];i++) {
+        goog.Promise.resolveThen_(promise, goog.partial(onFulfill, i), onReject);
       }
     } else {
       resolve(values);
@@ -2379,8 +2379,8 @@ goog.Promise.allSettled = function(promises) {
         toSettle--;
         results[index] = fulfilled ? {fulfilled:!0, value:result} : {fulfilled:!1, reason:result};
         0 == toSettle && resolve(results);
-      }, i = 0, promise;i < promises.length;i++) {
-        promise = promises[i], goog.Promise.resolveThen_(promise, goog.partial(onSettled, i, !0), goog.partial(onSettled, i, !1));
+      }, i = 0, promise;promise = promises[i];i++) {
+        goog.Promise.resolveThen_(promise, goog.partial(onSettled, i, !0), goog.partial(onSettled, i, !1));
       }
     } else {
       resolve(results);
@@ -2397,8 +2397,8 @@ goog.Promise.firstFulfilled = function(promises) {
         toReject--;
         reasons[index] = reason;
         0 == toReject && reject(reasons);
-      }, i = 0, promise;i < promises.length;i++) {
-        promise = promises[i], goog.Promise.resolveThen_(promise, onFulfill, goog.partial(onReject, i));
+      }, i = 0, promise;promise = promises[i];i++) {
+        goog.Promise.resolveThen_(promise, onFulfill, goog.partial(onReject, i));
       }
     } else {
       resolve(void 0);
@@ -3947,11 +3947,11 @@ lf.cache.ConstraintChecker.prototype.checkReferredKeys_ = function(table, modifi
 };
 lf.cache.ConstraintChecker.prototype.checkReferredKey_ = function(foreignKeySpec, modifications) {
   modifications.forEach(function(modification) {
-    var didColumnValueChange = lf.cache.ConstraintChecker.didColumnValueChange_(modification[0], modification[1], foreignKeySpec.fkName);
+    var didColumnValueChange = lf.cache.ConstraintChecker.didColumnValueChange_(modification[0], modification[1], foreignKeySpec.name);
     if (didColumnValueChange) {
       var rowAfter = modification[1], parentKey = rowAfter.payload()[foreignKeySpec.childColumn], parentIndex = this.getParentIndex_(foreignKeySpec);
       if (!parentIndex.containsKey(parentKey)) {
-        throw new lf.Exception(203, foreignKeySpec.fkName);
+        throw new lf.Exception(203, foreignKeySpec.name);
       }
     }
   }, this);
@@ -3970,13 +3970,13 @@ lf.cache.ConstraintChecker.prototype.checkReferringKeys_ = function(table, modif
   var parentForeignKeys = table.getReferencingForeignKeys();
   goog.isDefAndNotNull(parentForeignKeys) && parentForeignKeys.forEach(function(foreignKeySpec) {
     if (foreignKeySpec.timing == constraintTiming) {
-      var childIndex = this.indexStore_.get(foreignKeySpec.fkName);
+      var childIndex = this.indexStore_.get(foreignKeySpec.name);
       modifications.forEach(function(modification) {
         var parentIndex = this.getParentIndex_(foreignKeySpec), didColumnValueChange = lf.cache.ConstraintChecker.didColumnValueChange_(modification[0], modification[1], parentIndex.getName());
         if (didColumnValueChange) {
           var rowBefore = modification[0], parentKey = rowBefore.payload()[foreignKeySpec.parentColumn];
           if (childIndex.containsKey(parentKey)) {
-            throw new lf.Exception(203, foreignKeySpec.fkName);
+            throw new lf.Exception(203, foreignKeySpec.name);
           }
         }
       }, this);
@@ -10795,15 +10795,15 @@ lf.schema.Constraint.prototype.getForeignKeys = function() {
   return this.foreignKeys_;
 };
 
-lf.schema.ForeignKeySpec = function(rawSpec, fkName) {
+lf.schema.ForeignKeySpec = function(rawSpec, name) {
   var array = rawSpec.ref.split(".");
   if (2 != array.length) {
-    throw new lf.Exception(540, fkName);
+    throw new lf.Exception(540, name);
   }
   this.childColumn = rawSpec.local;
   this.parentTable = array[0];
   this.parentColumn = array[1];
-  this.fkName = fkName;
+  this.name = name;
   this.action = rawSpec.action;
   this.timing = rawSpec.timing;
 };
@@ -10868,19 +10868,19 @@ lf.schema.TableBuilder.prototype.addPrimaryKey = function(columns, opt_autoInc) 
   return this;
 };
 goog.exportProperty(lf.schema.TableBuilder.prototype, "addPrimaryKey", lf.schema.TableBuilder.prototype.addPrimaryKey);
-lf.schema.TableBuilder.prototype.addForeignKey = function(fkName, rawSpec) {
-  this.checkName_(fkName);
-  var spec = new lf.schema.ForeignKeySpec(rawSpec, this.name_ + "." + fkName);
+lf.schema.TableBuilder.prototype.addForeignKey = function(name, rawSpec) {
+  this.checkName_(name);
+  var spec = new lf.schema.ForeignKeySpec(rawSpec, this.name_ + "." + name);
   goog.isDef(spec.action) || (spec.action = lf.ConstraintAction.RESTRICT);
   goog.isDef(spec.timing) || (spec.timing = lf.ConstraintTiming.IMMEDIATE);
   if (spec.action == lf.ConstraintAction.CASCADE && spec.timing == lf.ConstraintTiming.DEFERRABLE) {
     throw new lf.Exception(506);
   }
   if (!this.columns_.has(spec.childColumn)) {
-    throw new lf.Exception(540, fkName);
+    throw new lf.Exception(540, name);
   }
   this.fkSpecs_.push(spec);
-  this.addIndex(fkName, [spec.childColumn], !1);
+  this.addIndex(name, [spec.childColumn], !1);
   return this;
 };
 goog.exportProperty(lf.schema.TableBuilder.prototype, "addForeignKey", lf.schema.TableBuilder.prototype.addForeignKey);
@@ -11075,18 +11075,18 @@ lf.schema.Builder.prototype.checkForeignKeyValidity_ = function(builder) {
   fkSpecArray.forEach(function(specs) {
     var parentTableName = specs.parentTable;
     if (!this.tableBuilders_.containsKey(parentTableName)) {
-      throw new lf.Exception(536, specs.fkName);
+      throw new lf.Exception(536, specs.name);
     }
     var table = this.tableBuilders_.get(parentTableName), parentSchema = table.getSchema(), parentColName = specs.parentColumn;
     if (!parentSchema.hasOwnProperty(parentColName)) {
-      throw new lf.Exception(537, specs.fkName);
+      throw new lf.Exception(537, specs.name);
     }
     var localSchema = builder.getSchema(), localColName = specs.childColumn;
     if (localSchema[localColName].getType() != parentSchema[parentColName].getType()) {
-      throw new lf.Exception(538, specs.fkName);
+      throw new lf.Exception(538, specs.name);
     }
     if (!parentSchema[parentColName].isUnique()) {
-      throw new lf.Exception(539, specs.fkName);
+      throw new lf.Exception(539, specs.name);
     }
   }, this);
 };
@@ -11096,7 +11096,7 @@ lf.schema.Builder.prototype.checkForeignKeyChain_ = function(builder) {
     var parentBuilder = this.tableBuilders_.get(specs.parentTable);
     parentBuilder.getFkSpecs().forEach(function(parentSpecs) {
       if (parentSpecs.childColumn == specs.parentColumn) {
-        throw new lf.Exception(534, specs.fkName);
+        throw new lf.Exception(534, specs.name);
       }
     }, this);
   }, this);
