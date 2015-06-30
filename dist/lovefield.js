@@ -3938,36 +3938,65 @@ lf.cache.ConstraintChecker.prototype.checkNotNullable = function(table, rows) {
     }, this);
   }, this);
 };
-lf.cache.ConstraintChecker.prototype.checkReferredKeys = function(table, rows, constraintTiming) {
+lf.cache.ConstraintChecker.prototype.checkReferredKeys_ = function(table, modifications, constraintTiming) {
   var foreignKeySpecs = table.getConstraint().getForeignKeys();
   foreignKeySpecs.forEach(function(foreignKeySpec) {
-    foreignKeySpec.timing == constraintTiming && this.checkReferredKey_(foreignKeySpec, rows);
+    foreignKeySpec.timing == constraintTiming && this.checkReferredKey_(foreignKeySpec, modifications);
   }, this);
 };
-lf.cache.ConstraintChecker.prototype.checkReferredKey_ = function(foreignKeySpec, rows) {
+lf.cache.ConstraintChecker.prototype.checkReferredKey_ = function(foreignKeySpec, modifications) {
+  modifications.forEach(function(modification) {
+    var didColumnValueChange = lf.cache.ConstraintChecker.didColumnValueChange_(modification[0], modification[1], foreignKeySpec.fkName);
+    if (didColumnValueChange) {
+      var rowAfter = modification[1], parentKey = rowAfter.payload()[foreignKeySpec.childColumn], parentIndex = this.getParentIndex_(foreignKeySpec);
+      if (!parentIndex.containsKey(parentKey)) {
+        throw new lf.Exception(203, foreignKeySpec.fkName);
+      }
+    }
+  }, this);
+};
+lf.cache.ConstraintChecker.prototype.getParentIndex_ = function(foreignKeySpec) {
   var parentTable = this.schema_.table(foreignKeySpec.parentTable), parentColumn = parentTable[foreignKeySpec.parentColumn], parentIndexSchema = parentColumn.getIndices().filter(function(indexSchema) {
     return 1 == indexSchema.columns.length && indexSchema.columns[0].schema.getName() == foreignKeySpec.parentColumn;
-  })[0], parentIndex = this.indexStore_.get(parentIndexSchema.getNormalizedName());
-  rows.forEach(function(row) {
-    var parentKey = row.payload()[foreignKeySpec.childColumn];
-    if (!parentIndex.containsKey(parentKey)) {
-      throw new lf.Exception(203, foreignKeySpec.fkName);
-    }
-  });
+  })[0];
+  return this.indexStore_.get(parentIndexSchema.getNormalizedName());
 };
-lf.cache.ConstraintChecker.prototype.checkReferringKeys = function(table, rows, constraintTiming) {
+lf.cache.ConstraintChecker.didColumnValueChange_ = function(rowBefore, rowAfter, indexName) {
+  var deletionOrAddition = goog.isNull(rowBefore) ? !goog.isNull(rowAfter) : goog.isNull(rowAfter);
+  return deletionOrAddition || rowBefore.keyOfIndex(indexName) != rowAfter.keyOfIndex(indexName);
+};
+lf.cache.ConstraintChecker.prototype.checkReferringKeys_ = function(table, modifications, constraintTiming) {
   var parentForeignKeys = table.getReferencingForeignKeys();
   goog.isDefAndNotNull(parentForeignKeys) && parentForeignKeys.forEach(function(foreignKeySpec) {
     if (foreignKeySpec.timing == constraintTiming) {
       var childIndex = this.indexStore_.get(foreignKeySpec.fkName);
-      rows.forEach(function(row) {
-        var parentKey = row.payload()[foreignKeySpec.parentColumn];
-        if (childIndex.containsKey(parentKey)) {
-          throw new lf.Exception(203, foreignKeySpec.fkName);
+      modifications.forEach(function(modification) {
+        var parentIndex = this.getParentIndex_(foreignKeySpec), didColumnValueChange = lf.cache.ConstraintChecker.didColumnValueChange_(modification[0], modification[1], parentIndex.getName());
+        if (didColumnValueChange) {
+          var rowBefore = modification[0], parentKey = rowBefore.payload()[foreignKeySpec.parentColumn];
+          if (childIndex.containsKey(parentKey)) {
+            throw new lf.Exception(203, foreignKeySpec.fkName);
+          }
         }
-      });
+      }, this);
     }
   }, this);
+};
+lf.cache.ConstraintChecker.prototype.checkForeignKeysForInsert = function(table, rows, constraintTiming) {
+  if (0 != rows.length) {
+    var modifications = rows.map(function(row) {
+      return [null, row];
+    });
+    this.checkReferredKeys_(table, modifications, constraintTiming);
+  }
+};
+lf.cache.ConstraintChecker.prototype.checkForeignKeysForDelete = function(table, rows, constraintTiming) {
+  if (0 != rows.length) {
+    var modifications = rows.map(function(row) {
+      return [row, null];
+    });
+    this.checkReferringKeys_(table, modifications, constraintTiming);
+  }
 };
 
 lf.cache.TableDiff = function(name) {
@@ -4108,7 +4137,7 @@ lf.cache.Journal.prototype.insert = function(table, rows) {
   this.assertJournalWritable_();
   this.checkScope_(table);
   this.constraintChecker_.checkNotNullable(table, rows);
-  this.constraintChecker_.checkReferredKeys(table, rows, lf.ConstraintTiming.IMMEDIATE);
+  this.constraintChecker_.checkForeignKeysForInsert(table, rows, lf.ConstraintTiming.IMMEDIATE);
   for (var i = 0;i < rows.length;i++) {
     this.modifyRow_(table, null, rows[i]);
   }
@@ -4146,7 +4175,7 @@ lf.cache.Journal.prototype.insertOrReplace = function(table, rows) {
 lf.cache.Journal.prototype.remove = function(table, rows) {
   this.assertJournalWritable_();
   this.checkScope_(table);
-  this.constraintChecker_.checkReferringKeys(table, rows, lf.ConstraintTiming.IMMEDIATE);
+  this.constraintChecker_.checkForeignKeysForDelete(table, rows, lf.ConstraintTiming.IMMEDIATE);
   for (var i = 0;i < rows.length;i++) {
     this.modifyRow_(table, rows[i], null);
   }
@@ -4154,8 +4183,9 @@ lf.cache.Journal.prototype.remove = function(table, rows) {
 lf.cache.Journal.prototype.checkDeferredConstraints = function() {
   this.tableDiffs_.getValues().forEach(function(tableDiff) {
     var table = this.scope_.get(tableDiff.getName());
-    this.constraintChecker_.checkReferredKeys(table, tableDiff.getAdded().getValues(), lf.ConstraintTiming.DEFERRABLE);
-    this.constraintChecker_.checkReferringKeys(table, tableDiff.getDeleted().getValues(), lf.ConstraintTiming.DEFERRABLE);
+    this.constraintChecker_.checkForeignKeysForInsert(table, tableDiff.getAdded().getValues(), lf.ConstraintTiming.DEFERRABLE);
+    this.constraintChecker_.checkForeignKeysForDelete(table, tableDiff.getDeleted().getValues(), lf.ConstraintTiming.DEFERRABLE);
+    tableDiff.getModified().getValues();
   }, this);
 };
 lf.cache.Journal.prototype.commit = function() {

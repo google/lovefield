@@ -101,10 +101,10 @@ function testCheckNotNullable() {
 
 
 /**
- * Tests that ConstraintChecker#checkReferredKeys() throws an error if the
- * referred keys do not exist, for constraints that are IMMEDIATE.
+ * Tests that ConstraintChecker#checkForeignKeysForInsert() throws an error if
+ * the referred keys do not exist, for constraints that are IMMEDIATE.
  */
-function testCheckReferredKeys_Immediate() {
+function testCheckForeignKeysForInsert_Immediate() {
   var childTable = env.schema.table('tableG');
   var foreignKeySpecs = childTable.getConstraint().getForeignKeys();
   // Ensure that all foreign key constraints on tableG are IMMEDIATE.
@@ -120,22 +120,22 @@ function testCheckReferredKeys_Immediate() {
   lf.testing.util.assertThrowsError(
       203,  // Foreign key constraint violation on constraint {0}.
       function() {
-        checker.checkReferredKeys(
+        checker.checkForeignKeysForInsert(
             childTable, [childRow], lf.ConstraintTiming.IMMEDIATE);
       });
 
   assertNotThrows(function() {
-    checker.checkReferredKeys(
+    checker.checkForeignKeysForInsert(
         childTable, [childRow], lf.ConstraintTiming.DEFERRABLE);
   });
 }
 
 
 /**
- * Tests that ConstraintChecker#checkReferredKeys() throws an error if the
- * referred keys do not exist, for constraints that are DEFERRABLE.
+ * Tests that ConstraintChecker#checkForeignKeysForInsert() throws an error if
+ * the referred keys do not exist, for constraints that are DEFERRABLE.
  */
-function testCheckReferredKeys_Deferrable() {
+function testCheckForeignKeysForInsert_Deferrable() {
   var childTable = env.schema.table('tableH');
   var foreignKeySpecs = childTable.getConstraint().getForeignKeys();
   // Ensure that all foreign key constraints on tableH are DEFERRABLE.
@@ -149,25 +149,25 @@ function testCheckReferredKeys_Deferrable() {
   });
 
   assertNotThrows(function() {
-    checker.checkReferredKeys(
+    checker.checkForeignKeysForInsert(
         childTable, [childRow], lf.ConstraintTiming.IMMEDIATE);
   });
 
   lf.testing.util.assertThrowsError(
       203,  // Foreign key constraint violation on constraint {0}.
       function() {
-        checker.checkReferredKeys(
+        checker.checkForeignKeysForInsert(
             childTable, [childRow], lf.ConstraintTiming.DEFERRABLE);
       });
 }
 
 
 /**
- * Tests that ConstraintChecker#checkReferringKeys() throws an error if
+ * Tests that ConstraintChecker#checkForeignKeysForDelete() throws an error if
  * referring keys do exist, for constraints that are IMMEDIATE.
  */
-function testCheckReferringKeys_Immediate() {
-  asyncTestCase.waitForAsync('testCheckReferringKeys_Immediate');
+function testCheckForeignKeysForDelete_Immediate() {
+  asyncTestCase.waitForAsync('testCheckForeignKeysForDelete_Immediate');
 
   var parentTable = env.schema.table('tableI');
   var foreignKeySpec = parentTable.getReferencingForeignKeys()[0];
@@ -191,12 +191,12 @@ function testCheckReferringKeys_Immediate() {
     lf.testing.util.assertThrowsError(
         203,  // Foreign key constraint violation on constraint {0}.
         function() {
-          checker.checkReferringKeys(
+          checker.checkForeignKeysForDelete(
               parentTable, [parentRow], lf.ConstraintTiming.IMMEDIATE);
         });
 
     assertNotThrows(function() {
-      checker.checkReferringKeys(
+      checker.checkForeignKeysForDelete(
           parentTable, [parentRow], lf.ConstraintTiming.DEFERRABLE);
     });
 
@@ -206,11 +206,11 @@ function testCheckReferringKeys_Immediate() {
 
 
 /**
- * Tests that ConstraintChecker#checkReferringKeys() throws an error if
+ * Tests that ConstraintChecker#checkForeignKeysForDelete() throws an error if
  * referring keys do exist, for constraints that are DEFERRABLE.
  */
-function testCheckReferringKeys_Deferrable() {
-  asyncTestCase.waitForAsync('testCheckReferringKeys_Deferrable');
+function testCheckForeignKeysForDelete_Deferrable() {
+  asyncTestCase.waitForAsync('testCheckForeignKeysForDelete_Deferrable');
 
   var parentTable1 = env.schema.table('tableI');
   var parentTable2 = env.schema.table('tableG');
@@ -240,14 +240,14 @@ function testCheckReferringKeys_Deferrable() {
     env.db.insert().into(childTable).values([childRow])
   ]).then(function() {
     assertNotThrows(function() {
-      checker.checkReferringKeys(
+      checker.checkForeignKeysForDelete(
           parentTable2, [parentRow2], lf.ConstraintTiming.IMMEDIATE);
     });
 
     lf.testing.util.assertThrowsError(
         203,  // Foreign key constraint violation on constraint {0}.
         function() {
-          checker.checkReferringKeys(
+          checker.checkForeignKeysForDelete(
               parentTable2, [parentRow2], lf.ConstraintTiming.DEFERRABLE);
         });
 
