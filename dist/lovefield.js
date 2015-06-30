@@ -3916,6 +3916,7 @@ lf.Exception = function(code, var_args) {
 };
 goog.inherits(lf.Exception, Error);
 
+
 lf.cache.ConstraintChecker = function(global) {
   this.indexStore_ = global.getService(lf.service.INDEX_STORE);
   this.schema_ = global.getService(lf.service.SCHEMA);
@@ -4139,18 +4140,18 @@ lf.cache.Journal.prototype.insert = function(table, rows) {
   this.constraintChecker_.checkNotNullable(table, rows);
   this.constraintChecker_.checkForeignKeysForInsert(table, rows, lf.ConstraintTiming.IMMEDIATE);
   for (var i = 0;i < rows.length;i++) {
-    this.modifyRow_(table, null, rows[i]);
+    this.modifyRow_(table, [null, rows[i]]);
   }
 };
-lf.cache.Journal.prototype.modifyRow_ = function(table, rowBefore, rowNow) {
+lf.cache.Journal.prototype.modifyRow_ = function(table, modification) {
   var tableName = table.getName(), diff = this.tableDiffs_.get(tableName, null) || new lf.cache.TableDiff(tableName);
   this.tableDiffs_.set(tableName, diff);
-  var modification = [rowBefore, rowNow];
   try {
     this.inMemoryUpdater_.updateTableIndicesForRow(table, modification);
   } catch (e) {
     throw this.pendingRollback_ = !0, e;
   }
+  var rowBefore = modification[0], rowNow = modification[1];
   goog.isNull(rowBefore) && !goog.isNull(rowNow) ? (this.cache_.set(tableName, [rowNow]), diff.add(rowNow)) : goog.isNull(rowBefore) || goog.isNull(rowNow) ? !goog.isNull(rowBefore) && goog.isNull(rowNow) && (this.cache_.remove(tableName, [rowBefore.id()]), diff.delete(rowBefore)) : (this.cache_.set(tableName, [rowNow]), diff.modify(modification));
 };
 lf.cache.Journal.prototype.update = function(table, rows) {
@@ -4159,7 +4160,7 @@ lf.cache.Journal.prototype.update = function(table, rows) {
   this.constraintChecker_.checkNotNullable(table, rows);
   for (var i = 0;i < rows.length;i++) {
     var row = rows[i], rowBefore = this.cache_.get([row.id()])[0];
-    this.modifyRow_(table, rowBefore, row);
+    this.modifyRow_(table, [rowBefore, row]);
   }
 };
 lf.cache.Journal.prototype.insertOrReplace = function(table, rows) {
@@ -4169,7 +4170,7 @@ lf.cache.Journal.prototype.insertOrReplace = function(table, rows) {
   for (var i = 0;i < rows.length;i++) {
     var rowNow = rows[i], rowBefore = null, existingRowId = this.constraintChecker_.findExistingRowIdInPkIndex(table, rowNow);
     goog.isDefAndNotNull(existingRowId) && (rowBefore = this.cache_.get([existingRowId])[0], rowNow.assignRowId(existingRowId));
-    this.modifyRow_(table, rowBefore, rowNow);
+    this.modifyRow_(table, [rowBefore, rowNow]);
   }
 };
 lf.cache.Journal.prototype.remove = function(table, rows) {
@@ -4177,7 +4178,7 @@ lf.cache.Journal.prototype.remove = function(table, rows) {
   this.checkScope_(table);
   this.constraintChecker_.checkForeignKeysForDelete(table, rows, lf.ConstraintTiming.IMMEDIATE);
   for (var i = 0;i < rows.length;i++) {
-    this.modifyRow_(table, rows[i], null);
+    this.modifyRow_(table, [rows[i], null]);
   }
 };
 lf.cache.Journal.prototype.checkDeferredConstraints = function() {
