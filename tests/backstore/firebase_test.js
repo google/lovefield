@@ -109,7 +109,7 @@ function setUp() {
 
   cache = new lf.cache.DefaultCache();
   indexStore = new lf.index.MemoryIndexStore();
-  schema = lf.testing.getSchemaBuilder().getSchema();
+  schema = lf.testing.getSchemaBuilder('mock_schema').getSchema();
 
   global = lf.Global.get();
   global.registerService(lf.service.CACHE, cache);
