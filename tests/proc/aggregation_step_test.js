@@ -198,7 +198,8 @@ function checkCalculationWithJoin(aggregatedColumn, expectedValue) {
       dataGenerator.sampleJobs, [j.getName()]);
   var joinPredicate = new lf.pred.JoinPredicate(
       e.jobId, j.id, lf.eval.Type.EQ);
-  var joinedRelation = joinPredicate.evalRelations(relationLeft, relationRight);
+  var joinedRelation = joinPredicate.evalRelations(
+      relationLeft, relationRight, false);
   return checkCalculationForRelation(
       joinedRelation, aggregatedColumn, expectedValue);
 }

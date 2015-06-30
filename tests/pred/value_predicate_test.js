@@ -212,7 +212,8 @@ function checkEval_Eq_PreviousJoin(table1, table2) {
 
   var joinPredicate = new lf.pred.JoinPredicate(
       table1['id'], table2['id'], lf.eval.Type.EQ);
-  var joinedRelation = joinPredicate.evalRelations(leftRelation, rightRelation);
+  var joinedRelation = joinPredicate.evalRelations(
+      leftRelation, rightRelation, false);
 
   var valuePredicate = new lf.pred.ValuePredicate(
       table2['email'], rightRow2.payload()['email'], lf.eval.Type.EQ);

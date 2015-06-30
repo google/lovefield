@@ -15,6 +15,7 @@
  * limitations under the License.
  */
 goog.setTestOnly();
+goog.require('goog.object');
 goog.require('goog.testing.AsyncTestCase');
 goog.require('goog.testing.jsunit');
 goog.require('hr.db');
@@ -285,7 +286,8 @@ function getJoinedRelation() {
   var relationRight = lf.proc.Relation.fromRows(sampleJobs, [j.getName()]);
   var joinPredicate = new lf.pred.JoinPredicate(
       e.jobId, j.id, lf.eval.Type.EQ);
-  var joinedRelation = joinPredicate.evalRelations(relationLeft, relationRight);
+  var joinedRelation = joinPredicate.evalRelations(
+      relationLeft, relationRight, false);
 
   joinedRelation.setAggregationResult(lf.fn.avg(j.maxSalary), 50);
   joinedRelation.setAggregationResult(lf.fn.max(j.maxSalary), 100);

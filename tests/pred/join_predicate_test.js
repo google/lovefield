@@ -138,8 +138,10 @@ function checkJoinPredicate_EvalRelations(employeeSchema, jobSchema) {
       [sampleJob], [jobSchema.getEffectiveName()]);
 
   var joinPredicate = employeeSchema.jobId.eq(jobSchema.id);
-  var result1 = joinPredicate.evalRelations(employeeRelation, jobRelation);
-  var result2 = joinPredicate.evalRelations(jobRelation, employeeRelation);
+  var result1 = joinPredicate.evalRelations(
+      employeeRelation, jobRelation, false);
+  var result2 = joinPredicate.evalRelations(
+      jobRelation, employeeRelation, false);
 
   assertEquals(1, result1.entries.length);
   assertEquals(1, result2.entries.length);
@@ -189,6 +191,19 @@ function testJoinPredicate_EvalRelations_NestedLoopJoin() {
 
 
 /** @suppress {accessControls} */
+function testJoinPredicate_EvalRelations_OuterJoin_NestedLoopJoin() {
+  checkEvalRelations_OuterJoin_UniqueKeys(
+      lf.pred.JoinPredicate.prototype.evalRelationsNestedLoopJoin_);
+  checkEvalRelations_OuterJoin_NonUniqueKeys(
+      lf.pred.JoinPredicate.prototype.evalRelationsNestedLoopJoin_);
+  checkEvalRelations_TwoOuterJoins(
+      lf.pred.JoinPredicate.prototype.evalRelationsNestedLoopJoin_);
+  checkEvalRelations_OuterInnerJoins(
+      lf.pred.JoinPredicate.prototype.evalRelationsNestedLoopJoin_);
+}
+
+
+/** @suppress {accessControls} */
 function testJoinPredicate_EvalRelations_NestedLoopJoin_MultiJoin() {
   checkEvalRelations_MultiJoin(
       lf.pred.JoinPredicate.prototype.evalRelationsNestedLoopJoin_);
@@ -205,47 +220,198 @@ function testJoinPredicate_EvalRelations_HashJoin_MultiJoin() {
 /**
  * Checks that the given join implementation is correct, for the case where the
  * join predicate refers to unique keys.
- * @param {!function(!lf.proc.Relation, !lf.proc.Relation):!lf.proc.Relation}
- *     evalFn The join implementation method. Should be either
- *     evalRelationsNestedLoopJoin_ or evalRelationsHashJoin_.
+ * @param {!function(!lf.proc.Relation, !lf.proc.Relation, boolean)
+ *     :!lf.proc.Relation} evalFn The join implementation method should be
+ *     either evalRelationsNestedLoopJoin_ or evalRelationsHashJoin_.
  */
 function checkEvalRelations_UniqueKeys(evalFn) {
   var sampleRows = getSampleRows();
 
-  var leftRelation = lf.proc.Relation.fromRows(
+  var employeeRelation = lf.proc.Relation.fromRows(
       sampleRows.employees, [e.getName()]);
-  var rightRelation = lf.proc.Relation.fromRows(
+  var jobRelation = lf.proc.Relation.fromRows(
       sampleRows.jobs, [j.getName()]);
 
   var joinPredicate1 = e.jobId.eq(j.id);
-  var result = evalFn.call(joinPredicate1, leftRelation, rightRelation);
+  var result = evalFn.call(
+      joinPredicate1, employeeRelation, jobRelation, false);
   assertEquals(sampleRows.employees.length, result.entries.length);
 
   // Expecting only 5 result entries, since there are only 5 employees that have
   // the same ID with a job.
   var joinPredicate2 = e.id.eq(j.id);
-  result = evalFn.call(joinPredicate2, leftRelation, rightRelation);
+  result = evalFn.call(
+      joinPredicate2, employeeRelation, jobRelation, false);
   assertEquals(sampleRows.jobs.length, result.entries.length);
+}
+
+
+/**
+ * Checks that the given combined entry has a null entry for table 'tableName'.
+ * @param {!lf.proc.RelationEntry} entry The combined entry.
+ * @param {!string} tableName
+ * @return {boolean}
+ */
+function hasNullEntry(entry, tableName) {
+  var keys = Object.keys(entry.row.payload()[tableName]);
+  assertTrue(keys.length > 0);
+  return Object.keys(entry.row.payload()[tableName]).every(
+      function(key) {
+        return goog.isNull(entry.row.payload()[tableName][key]);
+      }
+  );
+}
+
+
+/**
+ * Checks that the given outer join implementation is correct for the case,
+ * where the join predicate refers to unique keys.
+ * @param {!function(!lf.proc.Relation, !lf.proc.Relation, boolean)
+ *     :!lf.proc.Relation} evalFn The join implementation method should be
+ *     either evalRelationsNestedLoopJoin_ or evalRelationsHashJoin_.
+ */
+function checkEvalRelations_OuterJoin_UniqueKeys(evalFn) {
+  var sampleRows = getSampleRows();
+  // Remove the last job row.
+  var lessJobs = sampleRows.jobs.slice(0, sampleRows.jobs.length - 1);
+  var employeeRelation = lf.proc.Relation.fromRows(
+      sampleRows.employees, [e.getName()]);
+  var jobRelation = lf.proc.Relation.fromRows(
+      lessJobs, [j.getName()]);
+  // For every Job , there are 10 employees according to getSampleRows().
+  var numEmployeesPerJob = 10;
+  var joinPredicate1 = e.jobId.eq(j.id);
+  var result = evalFn.call(
+      joinPredicate1, employeeRelation, jobRelation, true);
+  assertEquals(sampleRows.employees.length, result.entries.length);
+  var numNullEntries = result.entries.filter(function(entry) {
+    return hasNullEntry(entry, 'Job');
+  }).length;
+  assertEquals(numEmployeesPerJob, numNullEntries);
+}
+
+
+/**
+ * Checks that the given outer join implementation is correct for two
+ * Outer joins, for the case where the join predicate refers to unique keys.
+ * @param {!function(!lf.proc.Relation, !lf.proc.Relation, boolean)
+ *     :!lf.proc.Relation} evalFn The join implementation method should be
+ *     either evalRelationsNestedLoopJoin_ or evalRelationsHashJoin_.
+ */
+function checkEvalRelations_TwoOuterJoins(evalFn) {
+  var sampleRows = getSampleRows();
+  var numJobsDeleted = 1;
+  var numDepartmentsDeleted = 2;
+  // Remove the last job row.
+  var lessJobs = sampleRows.jobs.slice(
+      0, sampleRows.jobs.length - numJobsDeleted);
+  // Remove the last 2 rows in Departments.
+  var lessDepartments = sampleRows.departments.slice(
+      0, sampleRows.departments.length - numDepartmentsDeleted);
+
+  var employeeRelation = lf.proc.Relation.fromRows(
+      sampleRows.employees, [e.getName()]);
+  var jobRelation = lf.proc.Relation.fromRows(
+      lessJobs, [j.getName()]);
+  var departmentRelation = lf.proc.Relation.fromRows(
+      lessDepartments, [d.getName()]);
+
+  var joinPredicate1 = e.jobId.eq(j.id);
+  var joinPredicate2 = e.departmentId.eq(d.id);
+
+  var numEmployeesPerJob = 10;
+  var numEmployeesPerDepartment = 20;
+  var expectedResults = sampleRows.employees.length - (numJobsDeleted *
+      numEmployeesPerJob);
+  var expectedResults2 = sampleRows.employees.length - (
+      numDepartmentsDeleted * numEmployeesPerDepartment);
+
+  // Tests inner join followed by outer join.
+  var result = evalFn.call(
+      joinPredicate1, employeeRelation, jobRelation, false);
+  assertEquals(expectedResults, result.entries.length);
+  var result2 = evalFn.call(joinPredicate2, result, departmentRelation, true);
+  // Join employee and job with department.
+  assertEquals(expectedResults, result2.entries.length);
+
+  // Tests outer join followed by inner join.
+  result = evalFn.call(joinPredicate1, employeeRelation, jobRelation, true);
+  assertEquals(sampleRows.employees.length, result.entries.length);
+  result2 = evalFn.call(joinPredicate2, result, departmentRelation, false);
+  // Join employee and job with department
+  assertEquals(expectedResults2, result2.entries.length);
+
+  // Tests outer join followed by outer join.
+  result = evalFn.call(joinPredicate1, employeeRelation, jobRelation, true);
+  assertEquals(sampleRows.employees.length, result.entries.length);
+  result2 = evalFn.call(joinPredicate2, result, departmentRelation, true);
+  assertEquals(sampleRows.employees.length, result2.entries.length);
+}
+
+
+/**
+ * Checks that the given outer join implementation is correct
+ * for two Outer joins, for the case where the join predicate
+ * refers to unique keys.
+ * @param {!function(!lf.proc.Relation, !lf.proc.Relation, boolean)
+ *     :!lf.proc.Relation} evalFn The join implementation method should be
+ *     either evalRelationsNestedLoopJoin_ or evalRelationsHashJoin_.
+ */
+function checkEvalRelations_OuterInnerJoins(evalFn) {
+  var sampleRows = getSampleRows();
+  var lessJobs = sampleRows.jobs.slice(0, sampleRows.jobs.length - 1);
+  var lessDepartments = sampleRows.departments.slice(0,
+      sampleRows.departments.length - 1);
+  var numJobsDeleted = 1;
+  var numDepartmentsDeleted = 1;
+  var numEmployeesPerJob = 10;
+  var numEmployeesPerDepartment = 20;
+
+  var employeeRelation = lf.proc.Relation.fromRows(
+      sampleRows.employees, [e.getName()]);
+  var jobRelation = lf.proc.Relation.fromRows(
+      lessJobs, [j.getName()]);
+  var departmentRelation = lf.proc.Relation.fromRows(
+      lessDepartments, [d.getName()]);
+
+  var joinPredicate1 = e.jobId.eq(j.id);
+  var result = evalFn.call(
+      joinPredicate1, employeeRelation, jobRelation, false);
+  var expectedResults = sampleRows.employees.length - (numJobsDeleted *
+      numEmployeesPerJob);
+  var expectedResults2 = sampleRows.employees.length - (
+      numDepartmentsDeleted * numEmployeesPerDepartment);
+  assertEquals(expectedResults, result.entries.length);
+  result = evalFn.call(joinPredicate1, employeeRelation, jobRelation, true);
+  assertEquals(sampleRows.employees.length, result.entries.length);
+
+  // Join employee and job with department.
+  var joinPredicate2 = e.departmentId.eq(d.id);
+  var result2 = evalFn.call(joinPredicate2, result, departmentRelation, true);
+  assertEquals(sampleRows.employees.length, result2.entries.length);
+  result2 = evalFn.call(joinPredicate2, result, departmentRelation, false);
+  assertEquals(expectedResults2, result2.entries.length);
 }
 
 
 /**
  * Checks that the given join implementation is correct, for the case where the
  * join predicate refers to non-unique keys.
- * @param {!function(!lf.proc.Relation, !lf.proc.Relation):!lf.proc.Relation}
- *     evalFn The join implementation method. Should be either
- *     evalRelationsNestedLoopJoin_ or evalRelationsHashJoin_.
+ * @param {!function(!lf.proc.Relation, !lf.proc.Relation, boolean)
+ *     :!lf.proc.Relation} evalFn The join implementation method should be
+ *     either evalRelationsNestedLoopJoin_ or evalRelationsHashJoin_.
  */
 function checkEvalRelations_NonUniqueKeys(evalFn) {
   var sampleRows = getSampleRows();
 
-  var leftRelation = lf.proc.Relation.fromRows(
+  var employeeRelation = lf.proc.Relation.fromRows(
       sampleRows.employees, [e.getName()]);
-  var rightRelation = lf.proc.Relation.fromRows(
+  var jobRelation = lf.proc.Relation.fromRows(
       sampleRows.jobs, [j.getName()]);
 
   var joinPredicate1 = e.salary.eq(j.minSalary);
-  var result = evalFn.call(joinPredicate1, leftRelation, rightRelation);
+  var result = evalFn.call(
+      joinPredicate1, employeeRelation, jobRelation, false);
   assertEquals(
       sampleRows.employees.length * sampleRows.jobs.length,
       result.entries.length);
@@ -253,11 +419,45 @@ function checkEvalRelations_NonUniqueKeys(evalFn) {
 
 
 /**
+ * Checks that the given join implementation is correct, for the case where the
+ * join predicate refers to non-unique keys.
+ * @param {!function(!lf.proc.Relation, !lf.proc.Relation, boolean)
+ *     :!lf.proc.Relation} evalFn The join implementation method should be
+ *     either evalRelationsNestedLoopJoin_ or evalRelationsHashJoin_.
+ */
+function checkEvalRelations_OuterJoin_NonUniqueKeys(evalFn) {
+  var sampleRows = getSampleRows();
+  var lessJobs = sampleRows.jobs.slice(0, sampleRows.jobs.length - 1);
+  sampleRows.employees[sampleRows.employees.length - 1].setSalary(1);
+  var employeeRelation = lf.proc.Relation.fromRows(
+      sampleRows.employees, [e.getName()]);
+  var jobRelation = lf.proc.Relation.fromRows(
+      lessJobs, [j.getName()]);
+
+  var numEmployeesChanged = 1;
+
+  var joinPredicate1 = e.salary.eq(j.minSalary);
+  var result = evalFn.call(
+      joinPredicate1, employeeRelation, jobRelation, true);
+  assertEquals(
+      (sampleRows.employees.length - numEmployeesChanged) * lessJobs.length +
+      numEmployeesChanged, result.entries.length);
+  var numNullEntries = 0;
+  result.entries.forEach(function(entry) {
+    if (hasNullEntry(entry, 'Job')) {
+      numNullEntries++;
+    }
+  });
+  assertEquals(numEmployeesChanged, numNullEntries);
+}
+
+
+/**
  * Checks that the given join implementation is correct, for the case where a 3
  * table natural join is performed.
- * @param {!function(!lf.proc.Relation, !lf.proc.Relation):!lf.proc.Relation}
- *     evalFn The join implementation method. Should be either
- *     evalRelationsNestedLoopJoin_ or evalRelationsHashJoin_.
+ * @param {!function(!lf.proc.Relation, !lf.proc.Relation, boolean)
+ *     :!lf.proc.Relation} evalFn The join implementation method should be
+ *     either evalRelationsNestedLoopJoin_ or evalRelationsHashJoin_.
  */
 function checkEvalRelations_MultiJoin(evalFn) {
   var sampleRows = getSampleRows();
@@ -273,9 +473,9 @@ function checkEvalRelations_MultiJoin(evalFn) {
   var joinPredicate2 = e.departmentId.eq(d.id);
 
   var resultEmployeeJob = evalFn.call(
-      joinPredicate1, employeeRelation, jobRelation);
+      joinPredicate1, employeeRelation, jobRelation, false);
   var resultEmployeeJobDepartment = evalFn.call(
-      joinPredicate2, resultEmployeeJob, departmentRelation);
+      joinPredicate2, resultEmployeeJob, departmentRelation, false);
   assertEquals(
       sampleRows.employees.length,
       resultEmployeeJobDepartment.entries.length);

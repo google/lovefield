@@ -2348,8 +2348,8 @@ goog.Promise.resolveThen_ = function(value, onFulfilled, onRejected) {
 goog.Promise.race = function(promises) {
   return new goog.Promise(function(resolve, reject) {
     promises.length || resolve(void 0);
-    for (var i = 0, promise;promise = promises[i];i++) {
-      goog.Promise.resolveThen_(promise, resolve, reject);
+    for (var i = 0, promise;i < promises.length;i++) {
+      promise = promises[i], goog.Promise.resolveThen_(promise, resolve, reject);
     }
   });
 };
@@ -2363,8 +2363,8 @@ goog.Promise.all = function(promises) {
         0 == toFulfill && resolve(values);
       }, onReject = function(reason) {
         reject(reason);
-      }, i = 0, promise;promise = promises[i];i++) {
-        goog.Promise.resolveThen_(promise, goog.partial(onFulfill, i), onReject);
+      }, i = 0, promise;i < promises.length;i++) {
+        promise = promises[i], goog.Promise.resolveThen_(promise, goog.partial(onFulfill, i), onReject);
       }
     } else {
       resolve(values);
@@ -2379,8 +2379,8 @@ goog.Promise.allSettled = function(promises) {
         toSettle--;
         results[index] = fulfilled ? {fulfilled:!0, value:result} : {fulfilled:!1, reason:result};
         0 == toSettle && resolve(results);
-      }, i = 0, promise;promise = promises[i];i++) {
-        goog.Promise.resolveThen_(promise, goog.partial(onSettled, i, !0), goog.partial(onSettled, i, !1));
+      }, i = 0, promise;i < promises.length;i++) {
+        promise = promises[i], goog.Promise.resolveThen_(promise, goog.partial(onSettled, i, !0), goog.partial(onSettled, i, !1));
       }
     } else {
       resolve(results);
@@ -2397,8 +2397,8 @@ goog.Promise.firstFulfilled = function(promises) {
         toReject--;
         reasons[index] = reason;
         0 == toReject && reject(reasons);
-      }, i = 0, promise;promise = promises[i];i++) {
-        goog.Promise.resolveThen_(promise, onFulfill, goog.partial(onReject, i));
+      }, i = 0, promise;i < promises.length;i++) {
+        promise = promises[i], goog.Promise.resolveThen_(promise, onFulfill, goog.partial(onReject, i));
       }
     } else {
       resolve(void 0);
@@ -7885,18 +7885,32 @@ lf.pred.JoinPredicate.prototype.assertRelationsApply_ = function(leftRelation, r
   goog.asserts.assert(this.appliesToLeft_(leftRelation), "Mismatch between join predicate left operand and right relation.");
   goog.asserts.assert(this.appliesToRight_(rightRelation), "Mismatch between join predicate right operand and right relation.");
 };
-lf.pred.JoinPredicate.prototype.evalRelations = function(relation1, relation2) {
-  var leftRightRelations = this.detectLeftRight_(relation1, relation2), leftRelation = leftRightRelations[0], rightRelation = leftRightRelations[1];
-  return this.evaluatorType == lf.eval.Type.EQ ? this.evalRelationsHashJoin_(leftRelation, rightRelation) : this.evalRelationsNestedLoopJoin_(leftRelation, rightRelation);
+lf.pred.JoinPredicate.prototype.evalRelations = function(relation1, relation2, isOuterJoin) {
+  var leftRightRelations = [relation1, relation2];
+  isOuterJoin || (leftRightRelations = this.detectLeftRight_(relation1, relation2));
+  var leftRelation = leftRightRelations[0], rightRelation = leftRightRelations[1];
+  return this.evaluatorType == lf.eval.Type.EQ ? this.evalRelationsHashJoin_(leftRelation, rightRelation) : this.evalRelationsNestedLoopJoin_(leftRelation, rightRelation, isOuterJoin);
 };
-lf.pred.JoinPredicate.prototype.evalRelationsNestedLoopJoin_ = function(leftRelation, rightRelation) {
-  for (var combinedEntries = [], leftRelationTables = leftRelation.getTables(), rightRelationTables = rightRelation.getTables(), i = 0;i < leftRelation.entries.length;i++) {
-    for (var j = 0;j < rightRelation.entries.length;j++) {
+lf.pred.JoinPredicate.prototype.createNullPayload_ = function(table) {
+  var payload = {};
+  table.getColumns().forEach(function(column) {
+    payload[column.getName()] = null;
+  });
+  return payload;
+};
+lf.pred.JoinPredicate.prototype.evalRelationsNestedLoopJoin_ = function(leftRelation, rightRelation, isOuterJoin) {
+  for (var combinedEntries = [], nullPayload = null, leftRelationTables = leftRelation.getTables(), rightRelationTables = rightRelation.getTables(), i = 0;i < leftRelation.entries.length;i++) {
+    for (var matchFound = !1, j = 0;j < rightRelation.entries.length;j++) {
       var predicateResult = this.evaluatorFn_(leftRelation.entries[i].getField(this.leftColumn), rightRelation.entries[j].getField(this.rightColumn));
       if (predicateResult) {
-        var combinedEntry = lf.proc.RelationEntry.combineEntries(leftRelation.entries[i], leftRelationTables, rightRelation.entries[j], rightRelationTables);
+        var matchFound = !0, combinedEntry = lf.proc.RelationEntry.combineEntries(leftRelation.entries[i], leftRelationTables, rightRelation.entries[j], rightRelationTables);
         combinedEntries.push(combinedEntry);
       }
+    }
+    if (isOuterJoin && !matchFound) {
+      goog.isNull(nullPayload) && (nullPayload = this.createNullPayload_(this.rightColumn.getTable()));
+      var nullEntry = new lf.proc.RelationEntry(new lf.Row(lf.Row.DUMMY_ID, nullPayload), !1), combinedEntry = lf.proc.RelationEntry.combineEntries(leftRelation.entries[i], leftRelationTables, nullEntry, rightRelationTables);
+      combinedEntries.push(combinedEntry);
     }
   }
   var srcTables = leftRelation.getTables().concat(rightRelation.getTables());
