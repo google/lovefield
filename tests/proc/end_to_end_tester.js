@@ -64,9 +64,13 @@ lf.testing.EndToEndTester = function(global, connectFn) {
     [this.testInsert_AutoIncrement.bind(this), false],
     [this.testInsert_FkViolation.bind(this), false],
     [this.testInsertOrReplace_AutoIncrement.bind(this), false],
+    [this.testInsertOrReplace_FkViolation1.bind(this), false],
+    [this.testInsertOrReplace_FkViolation2.bind(this), true],
     [this.testInsertOrReplace_Bind.bind(this), false],
     [this.testInsertOrReplace_BindArray.bind(this), false],
     [this.testUpdate_All.bind(this), true],
+    [this.testUpdate_FkViolation1.bind(this), true],
+    [this.testUpdate_FkViolation2.bind(this), true],
     [this.testUpdate_Predicate.bind(this), true],
     [this.testUpdate_UnboundPredicate.bind(this), true],
     [this.testDelete_FkViolation.bind(this), true],
@@ -325,6 +329,55 @@ lf.testing.EndToEndTester.prototype.testInsertOrReplace_AutoIncrement =
 
 
 /**
+ * Tests that an INSERT_OR_REPLACE query will fail if the row that is inserted
+ * is referring to non existing foreign keys.
+ * @return {!IThenable}
+ */
+lf.testing.EndToEndTester.prototype.testInsertOrReplace_FkViolation1 =
+    function() {
+  return lf.testing.util.assertThrowsErrorAsync(
+      203,
+      function() {
+        return this.db_.
+            insertOrReplace().
+            into(this.e_).
+            values(this.dataGenerator_.sampleEmployees.slice(0, 1)).
+            exec();
+      }.bind(this));
+};
+
+
+/**
+ * Tests that an INSERT_OR_REPLACE query will fail if the row that is replaced
+ * is referring to non existing foreign keys as a result of the update.
+ * @return {!IThenable}
+ */
+lf.testing.EndToEndTester.prototype.testInsertOrReplace_FkViolation2 =
+    function() {
+  return lf.testing.util.assertThrowsErrorAsync(
+      203,
+      function() {
+        var d = this.db_.getSchema().table('Department');
+
+        var rowBefore = this.dataGenerator_.sampleDepartments[0];
+        var rowAfter = d.createRow({
+          id: rowBefore.payload()['id'],
+          name: rowBefore.payload()['name'],
+          managerId: rowBefore.payload()['managerId'],
+          // Updating locationId to point to a non-existing foreign key.
+          locationId: 'otherLocationId'
+        });
+
+        return this.db_.
+            insertOrReplace().
+            into(d).
+            values([rowAfter]).
+            exec();
+      }.bind(this));
+};
+
+
+/**
  * Tests INSERT OR REPLACE query accepts value binding.
  * @return {!IThenable}
  */
@@ -480,6 +533,46 @@ lf.testing.EndToEndTester.prototype.testUpdate_All = function() {
         });
         lf.testing.EndToEndTester.markDone_('testUpdate_All');
       });
+};
+
+
+/**
+ * Tests that an UPDATE query will fail if a parent column is updated while
+ * other rows are pointing to the updated parent row.
+ * @return {!IThenable}
+ */
+lf.testing.EndToEndTester.prototype.testUpdate_FkViolation1 = function() {
+  return lf.testing.util.assertThrowsErrorAsync(
+      203,
+      function() {
+        var l = this.db_.getSchema().table('Location');
+        var referringRow = this.dataGenerator_.sampleDepartments[0];
+        return this.db_.
+            update(l).
+            set(l.id, 'otherLocationId').
+            where(l.id.eq(referringRow.payload()['locationId'])).
+            exec();
+      }.bind(this));
+};
+
+
+/**
+ * Tests that an UPDATE query will fail if a child column is updated such that
+ * the updated row will now point to a non-existing foreign key.
+ * @return {!IThenable}
+ */
+lf.testing.EndToEndTester.prototype.testUpdate_FkViolation2 = function() {
+  return lf.testing.util.assertThrowsErrorAsync(
+      203,
+      function() {
+        var d = this.db_.getSchema().table('Department');
+        var referredRow = this.dataGenerator_.sampleLocations[0];
+        return this.db_.
+            update(d).
+            set(d.locationId, 'otherLocationId').
+            where(d.locationId.eq(referredRow.payload()['id'])).
+            exec();
+      }.bind(this));
 };
 
 

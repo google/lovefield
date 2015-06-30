@@ -212,6 +212,101 @@ function testCheckForeignKeysForDelete_Immediate() {
 function testCheckForeignKeysForDelete_Deferrable() {
   asyncTestCase.waitForAsync('testCheckForeignKeysForDelete_Deferrable');
 
+  addSampleDataForForeignKeyChecks().then(function(rows) {
+    var parentTable2 = env.schema.table('tableG');
+    var parentRow2 = rows[1];
+
+    assertNotThrows(function() {
+      checker.checkForeignKeysForDelete(
+          parentTable2, [parentRow2], lf.ConstraintTiming.IMMEDIATE);
+    });
+
+    lf.testing.util.assertThrowsError(
+        203,  // Foreign key constraint violation on constraint {0}.
+        function() {
+          checker.checkForeignKeysForDelete(
+              parentTable2, [parentRow2], lf.ConstraintTiming.DEFERRABLE);
+        });
+
+    asyncTestCase.continueTesting();
+  }, fail);
+}
+
+
+/**
+ * Tests that ConstraintChecker#checkForeignKeysForUpdate() throws an error if
+ * referring keys do exist for a column that is being updated, for constraints
+ * that are IMMEDIATE.
+ */
+function testCheckForeignKeysForUpdate_Immediate() {
+  asyncTestCase.waitForAsync('testCheckForeignKeysForUpdate_Immediate');
+
+  addSampleDataForForeignKeyChecks().then(function(rows) {
+    var parentTable = env.schema.table('tableI');
+    var parentRow = rows[0];
+    var parentRowAfter = parentTable.createRow({
+      id: 'otherId',
+      id2: parentRow.payload()['id2']
+    });
+
+    var modification = [parentRow, parentRowAfter];
+    lf.testing.util.assertThrowsError(
+        203,  // Foreign key constraint violation on constraint {0}.
+        function() {
+          checker.checkForeignKeysForUpdate(
+              parentTable, [modification], lf.ConstraintTiming.IMMEDIATE);
+        });
+
+    assertNotThrows(function() {
+      checker.checkForeignKeysForUpdate(
+          parentTable, [modification], lf.ConstraintTiming.DEFERRABLE);
+    });
+
+    asyncTestCase.continueTesting();
+  }, fail);
+}
+
+
+/**
+ * Tests that ConstraintChecker#checkForeignKeysForUpdate() throws an error if
+ * invalid referred keys are introduced for a column that is being updated, for
+ * constraints that are DEFERRABLE.
+ */
+function testCheckForeignKeysForUpdate_Deferrable() {
+  asyncTestCase.waitForAsync('testCheckForeignKeysForUpdate_Deferrable');
+
+  addSampleDataForForeignKeyChecks().then(function(rows) {
+    var childTable = env.schema.table('tableH');
+    var childRow = rows[2];
+
+    var childRowAfter = childTable.createRow({
+      id: 'nonExistingForeignKey',
+      id2: childRow.payload()['id2']
+    });
+    var modification = [childRow, childRowAfter];
+
+    assertNotThrows(function() {
+      checker.checkForeignKeysForUpdate(
+          childTable, [modification], lf.ConstraintTiming.IMMEDIATE);
+    });
+
+    lf.testing.util.assertThrowsError(
+        203,  // Foreign key constraint violation on constraint {0}.
+        function() {
+          checker.checkForeignKeysForUpdate(
+              childTable, [modification], lf.ConstraintTiming.DEFERRABLE);
+        });
+
+    asyncTestCase.continueTesting();
+  }, fail);
+}
+
+
+/**
+ * Populates tableI, tableG and tableH with one row per table.
+ * @return {!IThenable<!lf.Row>} The rows that were inserted (one per table).
+ */
+function addSampleDataForForeignKeyChecks() {
   var parentTable1 = env.schema.table('tableI');
   var parentTable2 = env.schema.table('tableG');
   var childTable = env.schema.table('tableH');
@@ -234,23 +329,11 @@ function testCheckForeignKeysForDelete_Deferrable() {
   });
 
   var tx = env.db.createTransaction();
-  tx.exec([
+  return tx.exec([
     env.db.insert().into(parentTable1).values([parentRow1]),
     env.db.insert().into(parentTable2).values([parentRow2]),
     env.db.insert().into(childTable).values([childRow])
   ]).then(function() {
-    assertNotThrows(function() {
-      checker.checkForeignKeysForDelete(
-          parentTable2, [parentRow2], lf.ConstraintTiming.IMMEDIATE);
-    });
-
-    lf.testing.util.assertThrowsError(
-        203,  // Foreign key constraint violation on constraint {0}.
-        function() {
-          checker.checkForeignKeysForDelete(
-              parentTable2, [parentRow2], lf.ConstraintTiming.DEFERRABLE);
-        });
-
-    asyncTestCase.continueTesting();
-  }, fail);
+    return [parentRow1, parentRow2, childRow];
+  });
 }

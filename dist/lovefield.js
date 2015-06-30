@@ -3991,6 +3991,9 @@ lf.cache.ConstraintChecker.prototype.checkForeignKeysForInsert = function(table,
     this.checkReferredKeys_(table, modifications, constraintTiming);
   }
 };
+lf.cache.ConstraintChecker.prototype.checkForeignKeysForUpdate = function(table, modifications, constraintTiming) {
+  0 != modifications.length && (this.checkReferredKeys_(table, modifications, constraintTiming), this.checkReferringKeys_(table, modifications, constraintTiming));
+};
 lf.cache.ConstraintChecker.prototype.checkForeignKeysForDelete = function(table, rows, constraintTiming) {
   if (0 != rows.length) {
     var modifications = rows.map(function(row) {
@@ -4159,8 +4162,9 @@ lf.cache.Journal.prototype.update = function(table, rows) {
   this.checkScope_(table);
   this.constraintChecker_.checkNotNullable(table, rows);
   for (var i = 0;i < rows.length;i++) {
-    var row = rows[i], rowBefore = this.cache_.get([row.id()])[0];
-    this.modifyRow_(table, [rowBefore, row]);
+    var row = rows[i], rowBefore = this.cache_.get([row.id()])[0], modification = [rowBefore, row];
+    this.constraintChecker_.checkForeignKeysForUpdate(table, [modification], lf.ConstraintTiming.IMMEDIATE);
+    this.modifyRow_(table, modification);
   }
 };
 lf.cache.Journal.prototype.insertOrReplace = function(table, rows) {
@@ -4169,7 +4173,14 @@ lf.cache.Journal.prototype.insertOrReplace = function(table, rows) {
   this.constraintChecker_.checkNotNullable(table, rows);
   for (var i = 0;i < rows.length;i++) {
     var rowNow = rows[i], rowBefore = null, existingRowId = this.constraintChecker_.findExistingRowIdInPkIndex(table, rowNow);
-    goog.isDefAndNotNull(existingRowId) && (rowBefore = this.cache_.get([existingRowId])[0], rowNow.assignRowId(existingRowId));
+    if (goog.isDefAndNotNull(existingRowId)) {
+      rowBefore = this.cache_.get([existingRowId])[0];
+      rowNow.assignRowId(existingRowId);
+      var modification = [rowBefore, rowNow];
+      this.constraintChecker_.checkForeignKeysForUpdate(table, [modification], lf.ConstraintTiming.IMMEDIATE);
+    } else {
+      this.constraintChecker_.checkForeignKeysForInsert(table, [rowNow], lf.ConstraintTiming.IMMEDIATE);
+    }
     this.modifyRow_(table, [rowBefore, rowNow]);
   }
 };
@@ -4186,7 +4197,7 @@ lf.cache.Journal.prototype.checkDeferredConstraints = function() {
     var table = this.scope_.get(tableDiff.getName());
     this.constraintChecker_.checkForeignKeysForInsert(table, tableDiff.getAdded().getValues(), lf.ConstraintTiming.DEFERRABLE);
     this.constraintChecker_.checkForeignKeysForDelete(table, tableDiff.getDeleted().getValues(), lf.ConstraintTiming.DEFERRABLE);
-    tableDiff.getModified().getValues();
+    this.constraintChecker_.checkForeignKeysForUpdate(table, tableDiff.getModified().getValues(), lf.ConstraintTiming.DEFERRABLE);
   }, this);
 };
 lf.cache.Journal.prototype.commit = function() {
