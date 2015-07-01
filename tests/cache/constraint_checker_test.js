@@ -170,7 +170,8 @@ function testCheckForeignKeysForDelete_Immediate() {
   asyncTestCase.waitForAsync('testCheckForeignKeysForDelete_Immediate');
 
   var parentTable = env.schema.table('tableI');
-  var foreignKeySpec = parentTable.getReferencingForeignKeys()[0];
+  var foreignKeySpec = env.schema.info().getReferencingForeignKeys(
+      parentTable.getName())[0];
   assertEquals('tableG.fk_Id', foreignKeySpec.name);
   assertEquals(lf.ConstraintTiming.IMMEDIATE, foreignKeySpec.timing);
 

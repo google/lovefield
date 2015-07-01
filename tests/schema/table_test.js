@@ -46,17 +46,9 @@ function checkAlias(schema) {
   assertEquals(name, noAliasTable.getName());
   assertEquals(name, noAliasTable.getEffectiveName());
 
-  var referencingForeignKeys = noAliasTable.getReferencingForeignKeys();
-  assertEquals(1, referencingForeignKeys.length);
-  assertEquals('Employee.fk_JobId', referencingForeignKeys[0].name);
-
   // Assertions about aliased instance.
   assertEquals(alias, aliasTable.getAlias());
   assertEquals(name, aliasTable.getName());
   assertEquals(alias, aliasTable.getEffectiveName());
   assertEquals(noAliasTable.constructor, aliasTable.constructor);
-
-  referencingForeignKeys = aliasTable.getReferencingForeignKeys();
-  assertEquals(1, referencingForeignKeys.length);
-  assertEquals('Employee.fk_JobId', referencingForeignKeys[0].name);
 }

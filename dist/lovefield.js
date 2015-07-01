@@ -3968,7 +3968,7 @@ lf.cache.ConstraintChecker.didColumnValueChange_ = function(rowBefore, rowAfter,
   return deletionOrAddition || rowBefore.keyOfIndex(indexName) != rowAfter.keyOfIndex(indexName);
 };
 lf.cache.ConstraintChecker.prototype.checkReferringKeys_ = function(table, modifications, constraintTiming) {
-  var parentForeignKeys = table.getReferencingForeignKeys();
+  var parentForeignKeys = this.schema_.info().getReferencingForeignKeys(table.getName());
   goog.isDefAndNotNull(parentForeignKeys) && parentForeignKeys.forEach(function(foreignKeySpec) {
     if (foreignKeySpec.timing == constraintTiming) {
       var childIndex = this.indexStore_.get(foreignKeySpec.name);
@@ -8000,12 +8000,6 @@ lf.schema.Table.prototype.as = function(name) {
   return clone;
 };
 goog.exportProperty(lf.schema.Table.prototype, "as", lf.schema.Table.prototype.as);
-lf.schema.Table.prototype.getReferencingForeignKeys = function() {
-  return this.referencingForeignKeys_;
-};
-lf.schema.Table.prototype.setReferencingForeignKeys = function(referencingForeignKeys) {
-  this.referencingForeignKeys_ = referencingForeignKeys;
-};
 goog.exportProperty(lf.schema.Table.prototype, "createRow", lf.schema.Table.prototype.createRow);
 goog.exportProperty(lf.schema.Table.prototype, "deserializeRow", lf.schema.Table.prototype.deserializeRow);
 lf.schema.Table.prototype.getIndices = function() {
@@ -11115,20 +11109,11 @@ lf.schema.Builder.prototype.checkForeignKeyChain_ = function(builder) {
     }, this);
   }, this);
 };
-lf.schema.Builder.prototype.setParentForeignKeys_ = function(tableSchema) {
-  var referencingKeys = [];
-  this.tableBuilders_.getValues().forEach(function(builder) {
-    builder.getFkSpecs().filter(function(foreignKeySpec) {
-      foreignKeySpec.parentTable == tableSchema.getName() && referencingKeys.push(foreignKeySpec);
-    });
-  });
-  tableSchema.setReferencingForeignKeys(referencingKeys);
-};
 lf.schema.Builder.prototype.finalize_ = function() {
   this.finalized_ || (this.tableBuilders_.getValues().forEach(function(builder) {
     this.checkForeignKeyValidity_(builder);
     this.schema_.setTable(builder.getSchema());
-  }, this), this.tableBuilders_.getValues().forEach(this.checkForeignKeyChain_, this), this.tableBuilders_.getKeys().forEach(this.connectParentChildren_, this), this.schema_.tables().forEach(this.setParentForeignKeys_, this), this.checkFkCycle_(), this.tableBuilders_.clear(), this.finalized_ = !0);
+  }, this), this.tableBuilders_.getValues().forEach(this.checkForeignKeyChain_, this), this.tableBuilders_.getKeys().forEach(this.connectParentChildren_, this), this.checkFkCycle_(), this.tableBuilders_.clear(), this.finalized_ = !0);
 };
 lf.schema.Builder.prototype.connectParentChildren_ = function(localTableName) {
   var builder = this.tableBuilders_.get(localTableName);
@@ -11236,6 +11221,10 @@ lf.schema.DatabaseSchema.prototype.table = function(tableName) {
   return this.tables_.get(tableName);
 };
 goog.exportProperty(lf.schema.DatabaseSchema.prototype, "table", lf.schema.DatabaseSchema.prototype.table);
+lf.schema.DatabaseSchema.prototype.info = function() {
+  this.info_ || (this.info_ = new lf.schema.Info(this));
+  return this.info_;
+};
 lf.schema.DatabaseSchema.prototype.setTable = function(table) {
   this.tables_.set(table.getName(), table);
 };

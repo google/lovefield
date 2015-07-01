@@ -149,7 +149,7 @@ function testGetForeignKeyTwoSpecs() {
 
 function testGetParentForeignKeys() {
   var schema = createBuilder().getSchema();
-  var parentForeignKeys = schema.table('Job').getReferencingForeignKeys();
+  var parentForeignKeys = schema.info().getReferencingForeignKeys('Job');
   var spec = new lf.schema.ForeignKeySpec({
     local: 'jobId',
     ref: 'Job.id',
