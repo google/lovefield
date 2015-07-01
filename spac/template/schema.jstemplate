@@ -19,6 +19,7 @@ goog.require('lf.schema.Constraint');
 goog.require('lf.schema.Database');
 goog.require('lf.schema.ForeignKeySpec');
 goog.require('lf.schema.Index');
+goog.require('lf.schema.Info');
 goog.require('lf.schema.Table');
 
 
@@ -42,6 +43,9 @@ goog.require('lf.schema.Table');
   this.tableMap_['#tablename'] = this.#table#camel_;
 
   /// #repeattableend
+  /** @private {!lf.schema.Info} */
+  this.metaInfo_;
+
   this.establishReferences_();
 };
 
@@ -63,6 +67,15 @@ goog.require('lf.schema.Table');
   return [
 #dbtablelist
   ];
+};
+
+
+/** @override */
+#namespace.schema.Database.prototype.info = function() {
+  if (!this.metaInfo_) {
+    this.metaInfo_ = new lf.schema.Info(this);
+  }
+  return this.metaInfo_;
 };
 
 

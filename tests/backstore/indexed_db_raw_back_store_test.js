@@ -29,6 +29,7 @@ goog.require('lf.cache.DefaultCache');
 goog.require('lf.schema.BaseColumn');
 goog.require('lf.schema.Constraint');
 goog.require('lf.schema.Database');
+goog.require('lf.schema.Info');
 goog.require('lf.schema.Table');
 goog.require('lf.service');
 goog.require('lf.testing.Capability');
@@ -546,6 +547,9 @@ var Schema_ = function() {
   this.pragma_ = {
     enableBundledMode: false
   };
+
+  /** @private {!lf.schema.Info} */
+  this.info_;
 };
 
 
@@ -592,6 +596,15 @@ Schema_.prototype.setVersion = function(version) {
 /** @param {boolean} mode */
 Schema_.prototype.setBundledMode = function(mode) {
   this.pragma_.enableBundledMode = mode;
+};
+
+
+/** @override */
+Schema_.prototype.info = function() {
+  if (!this.info_) {
+    this.info_ = new lf.schema.Info(this);
+  }
+  return this.info_;
 };
 
 

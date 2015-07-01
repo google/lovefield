@@ -10780,6 +10780,20 @@ lf.Global.prototype.isRegistered = function(serviceId) {
 };
 goog.exportProperty(lf.Global.prototype, "isRegistered", lf.Global.prototype.isRegistered);
 
+lf.schema.Info = function(dbSchema) {
+  this.referringFk_ = new lf.structs.Map;
+  dbSchema.tables().forEach(function(table) {
+    table.getConstraint().getForeignKeys().forEach(function(fkSpec) {
+      var parentRefs = this.referringFk_.get(fkSpec.parentTable) || [];
+      parentRefs.push(fkSpec);
+      this.referringFk_.set(fkSpec.parentTable, parentRefs);
+    }, this);
+  }, this);
+};
+lf.schema.Info.prototype.getReferencingForeignKeys = function(tableName) {
+  return this.referringFk_.get(tableName) || null;
+};
+
 lf.schema.Constraint = function(primaryKey, notNullable, foreignKeys) {
   this.primaryKey_ = primaryKey;
   this.notNullable_ = notNullable;
@@ -11236,18 +11250,4 @@ lf.schema.create = function(dbName, dbVersion) {
   return new lf.schema.Builder(dbName, dbVersion);
 };
 goog.exportSymbol("lf.schema.create", lf.schema.create);
-
-lf.schema.Info = function(dbSchema) {
-  this.referringFk_ = new lf.structs.Map;
-  dbSchema.tables().forEach(function(table) {
-    table.getConstraint().getForeignKeys().forEach(function(fkSpec) {
-      var parentRefs = this.referringFk_.get(fkSpec.parentTable) || [];
-      parentRefs.push(fkSpec);
-      this.referringFk_.set(fkSpec.parentTable, parentRefs);
-    }, this);
-  }, this);
-};
-lf.schema.Info.prototype.getReferencingForeignKeys = function(tableName) {
-  return this.referringFk_.get(tableName) || null;
-};
 }.bind(window))()

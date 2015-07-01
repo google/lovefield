@@ -39,6 +39,7 @@ goog.require('lf.schema.Constraint');
 goog.require('lf.schema.Database');
 goog.require('lf.schema.ForeignKeySpec');
 goog.require('lf.schema.Index');
+goog.require('lf.schema.Info');
 goog.require('lf.schema.Table');
 
 
@@ -84,6 +85,9 @@ lovefield.db.schema.Database = function() {
   this.selfLoop_ = new lovefield.db.schema.SelfLoop();
   this.tableMap_['SelfLoop'] = this.selfLoop_;
 
+  /** @private {!lf.schema.Info} */
+  this.metaInfo_;
+
   this.establishReferences_();
 };
 
@@ -111,6 +115,15 @@ lovefield.db.schema.Database.prototype.tables = function() {
     this.nullableTable_,
     this.selfLoop_
   ];
+};
+
+
+/** @override */
+lovefield.db.schema.Database.prototype.info = function() {
+  if (!this.metaInfo_) {
+    this.metaInfo_ = new lf.schema.Info(this);
+  }
+  return this.metaInfo_;
 };
 
 

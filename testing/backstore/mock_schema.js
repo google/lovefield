@@ -20,6 +20,7 @@ goog.provide('lf.testing.backstore.MockSchema');
 goog.require('lf.Order');
 goog.require('lf.Type');
 goog.require('lf.schema.Database');
+goog.require('lf.schema.Info');
 goog.require('lf.schema.TableBuilder');
 
 
@@ -62,6 +63,9 @@ lf.testing.backstore.MockSchema = function() {
   this.pragma_ = {
     enableBundledMode: false
   };
+
+  /** @private {!lf.schema.Info} */
+  this.info_;
 };
 
 
@@ -135,4 +139,13 @@ lf.testing.backstore.MockSchema.prototype.setBundledMode = function(mode) {
 /** @param {boolean} mode */
 lf.testing.backstore.MockSchema.prototype.setDropTableA = function(mode) {
   this.simulateDropTableA_ = mode;
+};
+
+
+/** @override */
+lf.testing.backstore.MockSchema.prototype.info = function() {
+  if (!this.info_) {
+    this.info_ = new lf.schema.Info(this);
+  }
+  return this.info_;
 };

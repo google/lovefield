@@ -19,6 +19,7 @@ goog.require('lf.schema.Constraint');
 goog.require('lf.schema.Database');
 goog.require('lf.schema.ForeignKeySpec');
 goog.require('lf.schema.Index');
+goog.require('lf.schema.Info');
 goog.require('lf.schema.Table');
 
 
@@ -44,6 +45,9 @@ foo.db.schema.Database = function() {
   this.foo_ = new foo.db.schema.Foo();
   this.tableMap_['Foo'] = this.foo_;
 
+  /** @private {!lf.schema.Info} */
+  this.metaInfo_;
+
   this.establishReferences_();
 };
 
@@ -66,6 +70,15 @@ foo.db.schema.Database.prototype.tables = function() {
     this.location_,
     this.foo_
   ];
+};
+
+
+/** @override */
+foo.db.schema.Database.prototype.info = function() {
+  if (!this.metaInfo_) {
+    this.metaInfo_ = new lf.schema.Info(this);
+  }
+  return this.metaInfo_;
 };
 
 
