@@ -2701,16 +2701,17 @@ lf.backstore.BaseTx.prototype.commit = function() {
     return goog.Promise.reject(e);
   }
   var mergeIntoBackstore = goog.bind(function() {
-    return this.txType == lf.TransactionType.READ_ONLY ? goog.Promise.resolve() : this.mergeIntoBackstore_();
+    return this.txType == lf.TransactionType.READ_ONLY ? this.commitInternal() : this.mergeIntoBackstore_();
   }, this);
-  return mergeIntoBackstore().then(goog.bind(function() {
+  return mergeIntoBackstore().then(goog.bind(function(results) {
     this.journal_.commit();
+    return results;
   }, this));
 };
 lf.backstore.BaseTx.prototype.mergeIntoBackstore_ = function() {
   this.mergeTableChanges_();
   this.mergeIndexChanges_();
-  return this.resolver.promise;
+  return this.commitInternal();
 };
 lf.backstore.BaseTx.prototype.mergeTableChanges_ = function() {
   var diff = this.journal_.getDiff();
@@ -5131,8 +5132,7 @@ goog.inherits(lf.backstore.FirebaseTx, lf.backstore.BaseTx);
 lf.backstore.FirebaseTx.prototype.getTable = function(name) {
   return this.db_.getTableInternal(name);
 };
-lf.backstore.FirebaseTx.prototype.commit = function() {
-  lf.backstore.FirebaseTx.superClass_.commit.call(this);
+lf.backstore.FirebaseTx.prototype.commitInternal = function() {
   var diffs = this.getJournal().getDiff(), numTableAffected = diffs.getCount();
   if (0 == numTableAffected) {
     this.resolver.resolve();
@@ -5634,6 +5634,9 @@ lf.backstore.IndexedDBTx.prototype.getTable = function(tableName, deserializeFn,
   }
   return new lf.backstore.ObjectStore(this.tx_.objectStore(tableName), deserializeFn);
 };
+lf.backstore.IndexedDBTx.prototype.commitInternal = function() {
+  return this.resolver.promise;
+};
 
 lf.backstore.IndexedDB = function(global, schema) {
   this.global_ = global;
@@ -5826,8 +5829,7 @@ goog.inherits(lf.backstore.LocalStorageTx, lf.backstore.BaseTx);
 lf.backstore.LocalStorageTx.prototype.getTable = function(tableName) {
   return this.store_.getTableInternal(tableName);
 };
-lf.backstore.LocalStorageTx.prototype.commit = function() {
-  lf.backstore.LocalStorageTx.superClass_.commit.call(this);
+lf.backstore.LocalStorageTx.prototype.commitInternal = function() {
   this.store_.commit();
   this.resolver.resolve();
   return this.resolver.promise;
@@ -5920,8 +5922,7 @@ goog.inherits(lf.backstore.MemoryTx, lf.backstore.BaseTx);
 lf.backstore.MemoryTx.prototype.getTable = function(tableName) {
   return this.store_.getTableInternal(tableName);
 };
-lf.backstore.MemoryTx.prototype.commit = function() {
-  lf.backstore.MemoryTx.superClass_.commit.call(this);
+lf.backstore.MemoryTx.prototype.commitInternal = function() {
   this.resolver.resolve();
   return this.resolver.promise;
 };
@@ -6031,8 +6032,7 @@ lf.backstore.WebSqlTx.prototype.getTable = function(tableName, deserializeFn) {
 lf.backstore.WebSqlTx.prototype.queue = function(statement, params, opt_transform) {
   this.commands_.push({statement:statement, params:params, transform:opt_transform});
 };
-lf.backstore.WebSqlTx.prototype.commit = function() {
-  lf.backstore.WebSqlTx.superClass_.commit.call(this);
+lf.backstore.WebSqlTx.prototype.commitInternal = function() {
   var lastResults, transformer, onTxError = this.resolver.reject.bind(this.resolver), onExecError = function(tx, e) {
     this.resolver.reject(e);
   }.bind(this), callback = goog.bind(function(tx, results) {

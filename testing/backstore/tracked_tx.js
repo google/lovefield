@@ -16,6 +16,7 @@
  */
 goog.provide('lf.testing.backstore.TrackedTx');
 
+goog.require('goog.Promise');
 goog.require('goog.structs.Map');
 goog.require('lf.TransactionType');
 goog.require('lf.backstore.BaseTx');
@@ -74,9 +75,7 @@ lf.testing.backstore.TrackedTx.prototype.abort = function() {
 
 
 /** @override */
-lf.testing.backstore.TrackedTx.prototype.commit = function() {
-  lf.testing.backstore.TrackedTx.base(this, 'commit');
-
+lf.testing.backstore.TrackedTx.prototype.commitInternal = function() {
   var requests = [];
   var tableDiffs = [];
   this.tables_.getKeys().forEach(
