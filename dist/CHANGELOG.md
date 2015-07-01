@@ -1,3 +1,14 @@
+Version: 2.0.59
+Publish date: 20150701
+Changes:
+ - Implemented RESTRICT foreign key constraints for all queries.
+ - Fixed bug that caused a thrown lf.Exception to be unreadable when using
+   lovefield.min.js.
+ - Fixed bug that caused a nullable and unique index to allow multiple null
+   keys.
+ - Fixed default values of ARRAY\_BUFFER and OBJECT columns to be null, per
+   spec.
+
 Version: 2.0.58
 Publish date: 20150617
 Changes:
