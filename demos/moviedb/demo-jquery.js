@@ -34,7 +34,9 @@ $(function() {
 
 
 function main() {
-  return movie.db.connect().then(function(database) {
+  return movie.db.getSchemaBuilder().connect({
+    storeType: lf.schema.DataStoreType.INDEXED_DB
+  }).then(function(database) {
     db = database;
     return checkForExistingData();
   }).then(function(dataExist) {
@@ -55,7 +57,10 @@ function addSampleData() {
     insertData('movieactor.json', db.getSchema().table('MovieActor')),
     insertData('moviedirector.json', db.getSchema().table('MovieDirector')),
     insertData('moviegenre.json', db.getSchema().table('MovieGenre'))
-  ]);
+  ]).then(function(queries) {
+    var tx = db.createTransaction();
+    return tx.exec(queries);
+  });
 }
 
 
@@ -64,7 +69,7 @@ function addSampleData() {
  * @param {string} filename The name of the file holding JSON data.
  * @param {!lf.schema.Table} tableSchema The schema of the table corresponding
  *     to the data.
- * @return {!IThenable}
+ * @return {!IThenable<!lf.query.Insert>}
  */
 function insertData(filename, tableSchema) {
   return getSampleData(filename).then(
@@ -72,7 +77,7 @@ function insertData(filename, tableSchema) {
         var rows = data.map(function(obj) {
           return tableSchema.createRow(obj);
         });
-        return db.insert().into(tableSchema).values(rows).exec();
+        return db.insert().into(tableSchema).values(rows);
       });
 }
 
@@ -98,7 +103,7 @@ function convertDate(rawDate) {
  * @param {string} filename The name of the file holding JSON data.
  * @param {!lf.schema.Table} tableSchema The schema of the table
  *     corresponding to the data.
- * @return {!IThenable}
+ * @return {!IThenable<!lf.query.Insert>}
  */
 function insertPersonData(filename, tableSchema) {
   return getSampleData(filename).then(
@@ -108,7 +113,7 @@ function insertPersonData(filename, tableSchema) {
           obj.dateOfDeath = convertDate(obj.dateOfDeath);
           return tableSchema.createRow(obj);
         });
-        return db.insert().into(tableSchema).values(rows).exec();
+        return db.insert().into(tableSchema).values(rows);
       });
 }
 

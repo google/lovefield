@@ -18,11 +18,8 @@
 var movie = { db: {} };
 
 
-/**
- * @return {!lf.schema.Builder}
- * @private
- */
-movie.db.createSchema_ = function() {
+/** @return {!lf.schema.Builder} */
+movie.db.getSchemaBuilder = function() {
   var ds = lf.schema.create('mvdb', 1);
   ds.createTable('Movie').
       addColumn('id', lf.Type.INTEGER).
@@ -85,10 +82,4 @@ movie.db.createSchema_ = function() {
       });
 
   return ds;
-};
-
-
-/** @return {!IThenable.<!lf.Database>} */
-movie.db.connect = function() {
-  return movie.db.createSchema_().connect();
 };
