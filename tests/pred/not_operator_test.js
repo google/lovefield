@@ -81,7 +81,8 @@ function generateSampleData(rowCount) {
       string: 'string' + i.toString(),
       number: 100 * i,
       integer: 100 * i,
-      string2: 'string2' + i.toString()
+      string2: 'string2' + i.toString(),
+      boolean: false
     });
   }
 

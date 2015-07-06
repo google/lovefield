@@ -84,7 +84,8 @@ function testConversions() {
     datetime: new Date(),
     integer: 3,
     number: Math.PI,
-    string: 'dummystring'
+    string: 'dummystring',
+    string2: 'dummystring2'
   });
 
 

@@ -111,10 +111,12 @@ function testInsert_PrimaryKeyViolation_CrossColumn() {
   var id2 = 100;
   var row = table.createRow({
     'id1': id1, 'id2': id2,
-    'firstName': 'DummyFirstName', 'lastName': 'DummylastName'
+    'firstName': 'DummyFirstName', 'lastName': 'DummyLastName'
   });
-  var otherRow = table.createRow(
-      {'id1': id1, 'id2': id2, 'name': 'OtherDummyName'});
+  var otherRow = table.createRow({
+    'id1': id1, 'id2': id2,
+    'firstName': 'OtherDummyFirstName', 'lastName': 'OtherDummyLastName'
+  });
   checkInsert_UniqueConstraintViolation(table, [row], [otherRow]);
 }
 
@@ -630,7 +632,7 @@ function testCacheMerge() {
   // Selecting a table without any user-defined index (no primary key either).
   var table = env.schema.table('tableC');
   var rowIdIndex = env.indexStore.get(table.getRowIdIndexName());
-  var payload = {'id': 'something'};
+  var payload = {'id': 'something', 'name': 'dummyName'};
 
   assertEquals(0, env.cache.getCount());
   var row = new lf.Row(1, payload);
@@ -646,7 +648,7 @@ function testCacheMerge() {
   assertTrue(rowIdIndex.containsKey(row2.id()));
 
   journal = new lf.cache.Journal(lf.Global.get(), [table]);
-  var payload2 = {'id': 'nothing'};
+  var payload2 = {'id': 'nothing', 'name': 'dummyName'};
   var row3 = new lf.Row(0, payload2);
   var row4 = new lf.Row(4, payload2);
   journal.insert(table, [row3]);

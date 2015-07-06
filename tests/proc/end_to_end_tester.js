@@ -162,9 +162,8 @@ lf.testing.EndToEndTester.prototype.addSampleData_ = function() {
  * @return {!IThenable}
  */
 lf.testing.EndToEndTester.prototype.testInsert = function() {
-  var row = this.j_.createRow({
-    'id': 'dummyJobId'
-  });
+  var row = this.j_.createRow();
+  row.payload()['id'] = 'dummyJobId';
 
   var queryBuilder = /** @type {!lf.query.InsertBuilder} */ (
       this.db_.insert().into(this.j_).values([row]));
@@ -250,13 +249,15 @@ lf.testing.EndToEndTester.prototype.testInsert_CrossColumnUniqueKey =
 
   // Creating two rows where 'uq_constraint' is violated.
   var row1 = table.createRow({
-    'string': 'string1',
+    'string': 'string_1',
+    'string2': 'string2',
     'number': 1,
     'integer': 100,
     'boolean': false
   });
   var row2 = table.createRow({
-    'string': 'string2',
+    'string': 'string_2',
+    'string2': 'string2',
     'number': 2,
     'integer': 100,
     'boolean': false
@@ -383,7 +384,10 @@ lf.testing.EndToEndTester.prototype.testInsertOrReplace_FkViolation2 =
  */
 lf.testing.EndToEndTester.prototype.testInsertOrReplace_Bind = function() {
   var region = this.db_.getSchema().table('Region');
-  var rows = [region.createRow({'id': 'd1'}), region.createRow({'id': 'd2'})];
+  var rows = [
+    region.createRow({'id': 'd1', 'name': 'dummyName'}),
+    region.createRow({'id': 'd2', 'name': 'dummyName'})
+  ];
 
   var queryBuilder = /** @type {!lf.query.InsertBuilder} */ (
       this.db_.insertOrReplace().into(region).
@@ -404,7 +408,10 @@ lf.testing.EndToEndTester.prototype.testInsertOrReplace_Bind = function() {
  */
 lf.testing.EndToEndTester.prototype.testInsertOrReplace_BindArray = function() {
   var region = this.db_.getSchema().table('Region');
-  var rows = [region.createRow({'id': 'd1'}), region.createRow({'id': 'd2'})];
+  var rows = [
+    region.createRow({'id': 'd1', 'name': 'dummyName'}),
+    region.createRow({'id': 'd2', 'name': 'dummyName'})
+  ];
 
   var queryBuilder = /** @type {!lf.query.InsertBuilder} */ (
       this.db_.insertOrReplace().into(region).values(lf.bind(0)));

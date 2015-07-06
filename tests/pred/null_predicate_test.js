@@ -77,6 +77,7 @@ function generateSampleDummyData() {
     number: 100,
     integer: 100,
     string2: 'string21',
+    boolean: false,
     datetime: new Date()
   });
 
@@ -85,6 +86,7 @@ function generateSampleDummyData() {
     number: 200,
     integer: 200,
     string2: 'string22',
+    boolean: false,
     datetime: null
   });
 

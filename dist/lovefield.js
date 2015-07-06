@@ -3934,7 +3934,7 @@ lf.cache.ConstraintChecker.prototype.checkNotNullable = function(table, rows) {
   var notNullable = table.getConstraint().getNotNullable();
   rows.forEach(function(row) {
     notNullable.forEach(function(column) {
-      if (goog.isNull(row.payload()[column.getName()])) {
+      if (!goog.isDefAndNotNull(row.payload()[column.getName()])) {
         throw new lf.Exception(202, column.getNormalizedName());
       }
     }, this);

@@ -137,7 +137,8 @@ lf.testing.hrSchema.getSchemaBuilder = function() {
       addColumn('string', lf.Type.STRING).
       addColumn('string2', lf.Type.STRING).
       addPrimaryKey(['string', 'number']).
-      addUnique('uq_constraint', ['integer', 'string2']);
+      addUnique('uq_constraint', ['integer', 'string2']).
+      addNullable(['datetime']);
 
   return schemaBuilder;
 };
