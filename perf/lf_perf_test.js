@@ -19,8 +19,8 @@ goog.require('goog.Promise');
 goog.require('goog.testing.AsyncTestCase');
 goog.require('goog.testing.jsunit');
 goog.require('lf.schema.DataStoreType');
-goog.require('lf.testing.Benchmark');
 goog.require('lf.testing.Capability');
+goog.require('lf.testing.perf.BenchmarkRunner');
 goog.require('lf.testing.perf.FullTableBenchmark');
 goog.require('lf.testing.perf.LoadingEmptyDbBenchmark');
 goog.require('lf.testing.perf.LoadingPopulatedDbBenchmark');
@@ -49,7 +49,7 @@ var capability;
 /**
  * An array that holds the results from all benchmarks, such that they can be
  * extracted later using WebDriver.
- * @type {!Array<!lf.testing.Benchmark.Results>}
+ * @type {!Array<!lf.testing.perf.BenchmarkRunner.Results>}
  */
 var overallResults = [];
 
@@ -84,7 +84,7 @@ function test1LoadingEmptyDB() {
 
   asyncTestCase.waitForAsync('test1LoadingEmptyDB');
   var benchmark = new lf.testing.perf.LoadingEmptyDbBenchmark();
-  var benchmarkRunner = new lf.testing.Benchmark(
+  var benchmarkRunner = new lf.testing.perf.BenchmarkRunner(
       'Loading Empty DB',
       benchmarkSetUp,
       benchmark.close.bind(benchmark));
@@ -103,7 +103,7 @@ function test2FullTableOps() {
 
   asyncTestCase.waitForAsync('test2FullTableOps');
   var benchmark = new lf.testing.perf.FullTableBenchmark();
-  var benchmarkRunner = new lf.testing.Benchmark(
+  var benchmarkRunner = new lf.testing.perf.BenchmarkRunner(
       'Full table SCUD',
       benchmarkSetUp,
       benchmark.close.bind(benchmark));
@@ -120,7 +120,8 @@ function test2FullTableOps_Mem() {
   asyncTestCase.waitForAsync('test2FullTableOps_Mem');
   var benchmark = new lf.testing.perf.FullTableBenchmark(
       /* opt_volatile*/ true);
-  var benchmarkRunner = new lf.testing.Benchmark('Full table SCUD Mem');
+  var benchmarkRunner = new lf.testing.perf.BenchmarkRunner(
+      'Full table SCUD Mem');
   benchmarkRunner.schedule(benchmark);
 
   return benchmarkRunner.run(REPETITIONS).then(function(results) {
@@ -137,7 +138,7 @@ function test3PKTableOps() {
 
   asyncTestCase.waitForAsync('test3PKTableOps');
   var benchmark = new lf.testing.perf.PkTableBenchmark();
-  var benchmarkRunner = new lf.testing.Benchmark(
+  var benchmarkRunner = new lf.testing.perf.BenchmarkRunner(
       'PK-based SCUD',
       benchmarkSetUp,
       benchmark.close.bind(benchmark));
@@ -154,7 +155,8 @@ function test3PKTableOps_Mem() {
   asyncTestCase.waitForAsync('test3PKTableOps_Mem');
   var benchmark = new lf.testing.perf.PkTableBenchmark(
       /* opt_volatile */ true);
-  var benchmarkRunner = new lf.testing.Benchmark('PK-based SCUD Mem');
+  var benchmarkRunner = new lf.testing.perf.BenchmarkRunner(
+      'PK-based SCUD Mem');
   benchmarkRunner.schedule(benchmark);
 
   benchmarkRunner.run(REPETITIONS).then(function(results) {
@@ -180,7 +182,7 @@ function selectRunner(name, db) {
 
     return selectBenchmark.insertSampleData();
   }).then(function() {
-    var benchmarkRunner = new lf.testing.Benchmark(name);
+    var benchmarkRunner = new lf.testing.perf.BenchmarkRunner(name);
     benchmarkRunner.schedule(selectBenchmark);
 
     return benchmarkRunner.run(REPETITIONS).then(function(results) {
@@ -242,7 +244,7 @@ function test5LoadingPopulatedDB() {
     });
   };
 
-  var benchmarkRunner = new lf.testing.Benchmark(
+  var benchmarkRunner = new lf.testing.perf.BenchmarkRunner(
       'Loading Populated DB', preRunSetup);
   benchmarkRunner.schedule(benchmark);
 
@@ -256,7 +258,8 @@ function test5LoadingPopulatedDB() {
 function test6ScenarioSimulations() {
   asyncTestCase.waitForAsync('test6ScenarioSimulations');
   var benchmark = new lf.testing.perf.ScenarioBenchmark();
-  var benchmarkRunner = new lf.testing.Benchmark('Scenario Simulations');
+  var benchmarkRunner = new lf.testing.perf.BenchmarkRunner(
+      'Scenario Simulations');
 
   benchmark.init().then(function() {
     benchmarkRunner.schedule(benchmark);

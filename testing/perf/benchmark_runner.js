@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-goog.provide('lf.testing.Benchmark');
+goog.provide('lf.testing.perf.BenchmarkRunner');
 
 goog.require('goog.Promise');
 goog.require('goog.structs.Map');
@@ -32,9 +32,8 @@ goog.require('lf.testing.util');
  *     invoked after each run.
  * @struct
  * @constructor
- * TODO(dpapad): Rename this class to BenchmarkRunner.
  */
-lf.testing.Benchmark = function(name, opt_setUp, opt_tearDown) {
+lf.testing.perf.BenchmarkRunner = function(name, opt_setUp, opt_tearDown) {
   /** @private {string} */
   this.name_ = name;
 
@@ -50,8 +49,8 @@ lf.testing.Benchmark = function(name, opt_setUp, opt_tearDown) {
   /** @private {!function(): !IThenable} */
   this.tearDown_ = opt_tearDown || goog.Promise.resolve;
 
-  /** @private {!lf.testing.Benchmark.LogLevel} */
-  this.logLevel_ = lf.testing.Benchmark.LogLevel.INFO;
+  /** @private {!lf.testing.perf.BenchmarkRunner.LogLevel} */
+  this.logLevel_ = lf.testing.perf.BenchmarkRunner.LogLevel.INFO;
 
   /** @private {number} */
   this.currentRepetition_ = 0;
@@ -64,13 +63,13 @@ lf.testing.Benchmark = function(name, opt_setUp, opt_tearDown) {
  *   data: !Object
  * }}
  */
-lf.testing.Benchmark.Results;
+lf.testing.perf.BenchmarkRunner.Results;
 
 
 /**
  * @enum {number}
  */
-lf.testing.Benchmark.LogLevel = {
+lf.testing.perf.BenchmarkRunner.LogLevel = {
   ERROR: 3,
   WARNING: 2,
   INFO: 1,
@@ -79,16 +78,16 @@ lf.testing.Benchmark.LogLevel = {
 
 
 /** @param {!lf.testing.perf.Benchmark} benchmark */
-lf.testing.Benchmark.prototype.schedule = function(benchmark) {
+lf.testing.perf.BenchmarkRunner.prototype.schedule = function(benchmark) {
   this.tests_.push.apply(this.tests_, benchmark.getTestCases());
 };
 
 
 /**
  * @param {number=} opt_repetitions Repeitions of test set, default to 1.
- * @return {!IThenable<!lf.testing.Benchmark.Results>} The results.
+ * @return {!IThenable<!lf.testing.perf.BenchmarkRunner.Results>} The results.
  */
-lf.testing.Benchmark.prototype.run = function(opt_repetitions) {
+lf.testing.perf.BenchmarkRunner.prototype.run = function(opt_repetitions) {
   var loopCount = opt_repetitions || 1;
   var functions = [];
   for (var i = 0; i < loopCount; ++i) {
@@ -103,8 +102,8 @@ lf.testing.Benchmark.prototype.run = function(opt_repetitions) {
 };
 
 
-/** @return {!lf.testing.Benchmark.Results} */
-lf.testing.Benchmark.prototype.getResults = function() {
+/** @return {!lf.testing.perf.BenchmarkRunner.Results} */
+lf.testing.perf.BenchmarkRunner.prototype.getResults = function() {
   var result = {};
   this.tests_.forEach(function(test) {
     if (test.skipRecording) {
@@ -127,11 +126,11 @@ lf.testing.Benchmark.prototype.getResults = function() {
 
 /**
  * Logs any arguments passed to it.
- * @param {!lf.testing.Benchmark.LogLevel} logLevel
+ * @param {!lf.testing.perf.BenchmarkRunner.LogLevel} logLevel
  * @param {...*} var_args Items to be logged.
  * @private
  */
-lf.testing.Benchmark.prototype.log_ = function(logLevel, var_args) {
+lf.testing.perf.BenchmarkRunner.prototype.log_ = function(logLevel, var_args) {
   if (logLevel < this.logLevel_) {
     return;
   }
@@ -147,9 +146,10 @@ lf.testing.Benchmark.prototype.log_ = function(logLevel, var_args) {
  * @param {...*} var_args Items to be logged.
  * @private
  */
-lf.testing.Benchmark.prototype.info_ = function(var_args) {
+lf.testing.perf.BenchmarkRunner.prototype.info_ = function(var_args) {
   var args = Array.prototype.slice.call(arguments, 0);
-  this.log_.apply(this, [lf.testing.Benchmark.LogLevel.INFO].concat(args));
+  this.log_.apply(
+      this, [lf.testing.perf.BenchmarkRunner.LogLevel.INFO].concat(args));
 };
 
 
@@ -157,9 +157,10 @@ lf.testing.Benchmark.prototype.info_ = function(var_args) {
  * @param {...*} var_args Items to be logged.
  * @private
  */
-lf.testing.Benchmark.prototype.fine_ = function(var_args) {
+lf.testing.perf.BenchmarkRunner.prototype.fine_ = function(var_args) {
   var args = Array.prototype.slice.call(arguments, 0);
-  this.log_.apply(this, [lf.testing.Benchmark.LogLevel.FINE].concat(args));
+  this.log_.apply(
+      this, [lf.testing.perf.BenchmarkRunner.LogLevel.FINE].concat(args));
 };
 
 
@@ -167,7 +168,7 @@ lf.testing.Benchmark.prototype.fine_ = function(var_args) {
  * @return {!IThenable}
  * @private
  */
-lf.testing.Benchmark.prototype.runTests_ = function() {
+lf.testing.perf.BenchmarkRunner.prototype.runTests_ = function() {
   this.currentRepetition_++;
   this.fine_('REPETITION:', this.currentRepetition_);
   var functions = [this.setUp_];
@@ -185,7 +186,7 @@ lf.testing.Benchmark.prototype.runTests_ = function() {
  * @return {!IThenable}
  * @private
  */
-lf.testing.Benchmark.prototype.runOneTest_ = function(test) {
+lf.testing.perf.BenchmarkRunner.prototype.runOneTest_ = function(test) {
   this.fine_('\n----------Running', test.name, '------------');
   var start = goog.global.performance.now();
   var duration = null;
