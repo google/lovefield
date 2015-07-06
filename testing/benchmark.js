@@ -23,35 +23,6 @@ goog.require('lf.testing.util');
 
 
 /**
- * @constructor
- * @struct
- * @final
- * @private
- *
- * @param {string} testName
- * @param {!function(): !IThenable} tester
- * @param {!function(*): !IThenable<boolean>} validator
- * @param {boolean} skipRecording Whether time data for this test should be
- *     recorded.
- */
-lf.testing.BenchmarkTest_ = function(
-    testName, tester, validator, skipRecording) {
-  /** @type {string} */
-  this.name = testName;
-
-  /** @type {!function(): !IThenable} */
-  this.tester = tester;
-
-  /** @type {!function(*): !IThenable<boolean>} */
-  this.validator = validator;
-
-  /** @type {boolean} */
-  this.skipRecording = skipRecording;
-};
-
-
-
-/**
  * Helper class for executing asynchronous tests in the given order, and storing
  * the results.
  * @param {string} name Name of the benchmark.
@@ -61,6 +32,7 @@ lf.testing.BenchmarkTest_ = function(
  *     invoked after each run.
  * @struct
  * @constructor
+ * TODO(dpapad): Rename this class to BenchmarkRunner.
  */
 lf.testing.Benchmark = function(name, opt_setUp, opt_tearDown) {
   /** @private {string} */
@@ -69,7 +41,7 @@ lf.testing.Benchmark = function(name, opt_setUp, opt_tearDown) {
   /** @private {!goog.structs.Map<string, !Array<number>>} */
   this.results_ = new goog.structs.Map();
 
-  /** @private {!Array<!lf.testing.BenchmarkTest_>} */
+  /** @private {!Array<!lf.testing.perf.TestCase>} */
   this.tests_ = [];
 
   /** @private {!function(): !IThenable} */
@@ -106,18 +78,9 @@ lf.testing.Benchmark.LogLevel = {
 };
 
 
-/**
- * @param {string} testName
- * @param {!function(): !IThenable} tester Test function.
- * @param {!function(*): !IThenable<boolean>=} opt_validator Test validator.
- * @param {boolean=} opt_skipRecording
- */
-lf.testing.Benchmark.prototype.schedule = function(
-    testName, tester, opt_validator, opt_skipRecording) {
-  var validator = opt_validator ||
-      function() { return goog.Promise.resolve(true); };
-  this.tests_.push(new lf.testing.BenchmarkTest_(
-      testName, tester, validator, opt_skipRecording || false));
+/** @param {!lf.testing.perf.Benchmark} benchmark */
+lf.testing.Benchmark.prototype.schedule = function(benchmark) {
+  this.tests_.push.apply(this.tests_, benchmark.getTestCases());
 };
 
 
@@ -218,7 +181,7 @@ lf.testing.Benchmark.prototype.runTests_ = function() {
 
 /**
  * Runs a single test, time it, and validate the test result.
- * @param {!lf.testing.BenchmarkTest_} test The test to be executed.
+ * @param {!lf.testing.perf.TestCase} test The test to be executed.
  * @return {!IThenable}
  * @private
  */

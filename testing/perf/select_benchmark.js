@@ -14,21 +14,29 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+goog.setTestOnly();
 goog.provide('lf.testing.perf.SelectBenchmark');
 
 goog.require('goog.Promise');
 goog.require('goog.math');
+goog.require('goog.net.XhrIo');
 goog.require('goog.object');
 goog.require('goog.structs.Set');
 goog.require('lf.Order');
 goog.require('lf.fn');
 goog.require('lf.op');
+goog.require('lf.testing.hrSchema.MockDataGenerator');
+goog.require('lf.testing.perf.Benchmark');
+goog.require('lf.testing.perf.TestCase');
+
+goog.scope(function() {
 
 
 
 /**
  * Benchmark for various types of SELECT queries.
  * @constructor @struct
+ * @implements {lf.testing.perf.Benchmark}
  *
  * @param {!lf.Database} db
  * @param {!lf.testing.hrSchema.MockDataGenerator} dataGenerator
@@ -192,9 +200,10 @@ lf.testing.perf.SelectBenchmark.prototype.insertSampleData = function() {
  * @return {!IThenable}
  */
 lf.testing.perf.SelectBenchmark.prototype.tearDown = function() {
-  return goog.Promise.all([
-    this.db_.delete().from(this.e_).exec(),
-    this.db_.delete().from(this.j_).exec()
+  var tx = this.db_.createTransaction();
+  return tx.exec([
+    this.db_.delete().from(this.e_),
+    this.db_.delete().from(this.j_)
   ]);
 };
 
@@ -740,3 +749,112 @@ lf.testing.perf.SelectBenchmark.prototype.verifyJoinTheta = function(results) {
 
   return goog.Promise.resolve(validated);
 };
+
+
+/** @override */
+lf.testing.perf.SelectBenchmark.prototype.getTestCases = function() {
+  // TODO(dpapad): Convert all other methods to private.
+  return [
+    new lf.testing.perf.TestCase(
+        'SelectSingleRowIndexed',
+        this.querySingleRowIndexed.bind(this),
+        this.verifySingleRowIndexed.bind(this)),
+    new lf.testing.perf.TestCase(
+        'SelectSingleRowNonIndexed',
+        this.querySingleRowNonIndexed.bind(this),
+        this.verifySingleRowNonIndexed.bind(this)),
+    new lf.testing.perf.TestCase(
+        'SelectSingleRowMultipleIndices',
+        this.querySingleRowMultipleIndices.bind(this),
+        this.verifySingleRowMultipleIndices.bind(this)),
+    new lf.testing.perf.TestCase(
+        'SelectMultiRowIndexedRange',
+        this.queryMultiRowIndexedRange.bind(this),
+        this.verifyMultiRowIndexedRange.bind(this)),
+    new lf.testing.perf.TestCase(
+        'SelectMultiRowIndexedSpacedOut',
+        this.queryMultiRowIndexedSpacedOut.bind(this),
+        this.verifyMultiRowIndexedSpacedOut.bind(this)),
+    new lf.testing.perf.TestCase(
+        'SelectMultiRowNonIndexedRange',
+        this.queryMultiRowNonIndexedRange.bind(this),
+        this.verifyMultiRowNonIndexedRange.bind(this)),
+    new lf.testing.perf.TestCase(
+        'SelectMultiRowNonIndexedSpacedOut',
+        this.queryMultiRowNonIndexedSpacedOut.bind(this),
+        this.verifyMultiRowNonIndexedSpacedOut.bind(this)),
+    new lf.testing.perf.TestCase(
+        'SelectOrderByIndexed',
+        this.queryOrderByIndexed.bind(this),
+        this.verifyOrderByIndexed.bind(this)),
+    new lf.testing.perf.TestCase(
+        'SelectOrderByNonIndexed',
+        this.queryOrderByNonIndexed.bind(this),
+        this.verifyOrderByNonIndexed.bind(this)),
+    new lf.testing.perf.TestCase(
+        'SelectOrderByIndexedCrossColumn',
+        this.queryOrderByIndexedCrossColumn.bind(this),
+        this.verifyOrderByIndexedCrossColumn.bind(this)),
+    new lf.testing.perf.TestCase(
+        'SelectLimitSkipIndexed',
+        this.queryLimitSkipIndexed.bind(this),
+        this.verifyLimitSkipIndexed.bind(this)),
+    new lf.testing.perf.TestCase(
+        'SelectProjectNonAggregatedColumns',
+        this.queryProjectNonAggregatedColumns.bind(this),
+        this.verifyProjectNonAggregatedColumns.bind(this)),
+    new lf.testing.perf.TestCase(
+        'SelectProjectAggregateIndexed',
+        this.queryProjectAggregateIndexed.bind(this),
+        this.verifyProjectAggregateIndexed.bind(this)),
+    new lf.testing.perf.TestCase(
+        'SelectProjectAggregateNonIndexed',
+        this.queryProjectAggregateNonIndexed.bind(this),
+        this.verifyProjectAggregateNonIndexed.bind(this)),
+    new lf.testing.perf.TestCase(
+        'SelectJoinEqui',
+        this.queryJoinEqui.bind(this),
+        this.verifyJoinEqui.bind(this)),
+    new lf.testing.perf.TestCase(
+        'SelectJoinTheta',
+        this.queryJoinTheta.bind(this),
+        this.verifyJoinTheta.bind(this))
+  ];
+};
+
+
+/**
+ * Creates a SelectBenchmark instance with mock data from the specified JSON
+ * file.
+ * @param {string} jsonFilename
+ * @param {!lf.Database} db
+ * @return {!IThenable<!lf.testing.perf.SelectBenchmark>}
+ */
+lf.testing.perf.SelectBenchmark.fromJson = function(jsonFilename, db) {
+  return loadSampleDatafromJson(jsonFilename).then(
+      function(sampleData) {
+        var dataGenerator =
+            lf.testing.hrSchema.MockDataGenerator.fromExportData(
+                /** @type {!lf.testing.perf.hr.db.schema.Database} */ (
+                    db.getSchema()), sampleData);
+        return new lf.testing.perf.SelectBenchmark(db, dataGenerator);
+      });
+};
+
+
+/**
+ * Reads the sample data from a JSON file.
+ * @param {string} filename The name of the JSON file holding the data. Has to
+ *     reside in the same folder as this test.
+ * @return {!IThenable}
+ */
+function loadSampleDatafromJson(filename) {
+  return new goog.Promise(function(resolve, reject) {
+    goog.net.XhrIo.send(filename, function(e) {
+      var xhr = e.target;
+      resolve(JSON.parse(xhr.getResponseText()));
+    });
+  });
+}
+
+});  // goog.scope

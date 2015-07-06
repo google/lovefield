@@ -15,7 +15,10 @@
  * limitations under the License.
  */
 goog.setTestOnly();
-goog.provide('lf.testing.perf.DefaultBenchmark');
+goog.provide('lf.testing.perf.FullTableBenchmark');
+goog.provide('lf.testing.perf.LoadingEmptyDbBenchmark');
+goog.provide('lf.testing.perf.LoadingPopulatedDbBenchmark');
+goog.provide('lf.testing.perf.PkTableBenchmark');
 
 goog.require('goog.Promise');
 goog.require('goog.net.XhrIo');
@@ -23,19 +26,21 @@ goog.require('lf.Order');
 goog.require('lf.Row');
 goog.require('lf.schema.DataStoreType');
 goog.require('lf.testing.hrSchema.EmployeeDataGenerator');
+goog.require('lf.testing.perf.Benchmark');
+goog.require('lf.testing.perf.TestCase');
 goog.require('lf.testing.perf.hr.db');
 
 
 
 /**
  * Class for testing perf regression and benchmark.
- * @param {boolean=} opt_volatile Use memory DB, default to false.
+ * @constructor @struct
+ * @implements {lf.testing.perf.Benchmark}
+ * @private
  *
- * @constructor
- * @struct
- * @final
+ * @param {boolean=} opt_volatile Use memory DB, default to false.
  */
-lf.testing.perf.DefaultBenchmark = function(opt_volatile) {
+lf.testing.perf.DefaultBenchmark_ = function(opt_volatile) {
   /** @private {!lf.Database} */
   this.db_;
 
@@ -51,7 +56,7 @@ lf.testing.perf.DefaultBenchmark = function(opt_volatile) {
 
 
 /** @return {!IThenable} */
-lf.testing.perf.DefaultBenchmark.prototype.init = function() {
+lf.testing.perf.DefaultBenchmark_.prototype.init = function() {
   var options = {
     storeType: this.volatile_ ? lf.schema.DataStoreType.MEMORY :
         lf.schema.DataStoreType.INDEXED_DB
@@ -65,7 +70,7 @@ lf.testing.perf.DefaultBenchmark.prototype.init = function() {
 
 
 /** @return {!IThenable} */
-lf.testing.perf.DefaultBenchmark.prototype.close = function() {
+lf.testing.perf.DefaultBenchmark_.prototype.close = function() {
   return this.db_.delete().from(this.e_).exec().then(goog.bind(function() {
     return this.db_.close();
   }, this));
@@ -73,7 +78,7 @@ lf.testing.perf.DefaultBenchmark.prototype.close = function() {
 
 
 /** @return {!IThenable} */
-lf.testing.perf.DefaultBenchmark.prototype.generateTestData = function() {
+lf.testing.perf.DefaultBenchmark_.prototype.generateTestData = function() {
   if (goog.isDefAndNotNull(this.data_)) {
     return goog.Promise.resolve();
   }
@@ -98,7 +103,7 @@ lf.testing.perf.DefaultBenchmark.prototype.generateTestData = function() {
  * @param {string} filename The filename of the JSON file holding the raw data.
  * @return {!IThenable}
  */
-lf.testing.perf.DefaultBenchmark.prototype.loadTestData = function(filename) {
+lf.testing.perf.DefaultBenchmark_.prototype.loadTestData = function(filename) {
   var employeeSchema = this.e_;
 
   return new goog.Promise(goog.bind(function(resolve, reject) {
@@ -121,14 +126,14 @@ lf.testing.perf.DefaultBenchmark.prototype.loadTestData = function(filename) {
  * @param {number} rowCount
  * @return {!IThenable}
  */
-lf.testing.perf.DefaultBenchmark.prototype.insert = function(rowCount) {
+lf.testing.perf.DefaultBenchmark_.prototype.insert = function(rowCount) {
   var data = this.data_.slice(0, rowCount);
   return this.db_.insert().into(this.e_).values(data).exec();
 };
 
 
 /** @return {!IThenable} */
-lf.testing.perf.DefaultBenchmark.prototype.select = function() {
+lf.testing.perf.DefaultBenchmark_.prototype.select = function() {
   return this.db_.
       select().
       from(this.e_).
@@ -138,13 +143,13 @@ lf.testing.perf.DefaultBenchmark.prototype.select = function() {
 
 
 /** @return {!IThenable} */
-lf.testing.perf.DefaultBenchmark.prototype.updateAll = function() {
+lf.testing.perf.DefaultBenchmark_.prototype.updateAll = function() {
   return this.db_.update(this.e_).set(this.e_.salary, 50000).exec();
 };
 
 
 /** @return {!IThenable} */
-lf.testing.perf.DefaultBenchmark.prototype.deleteAll = function() {
+lf.testing.perf.DefaultBenchmark_.prototype.deleteAll = function() {
   return this.db_.delete().from(this.e_).exec();
 };
 
@@ -154,7 +159,7 @@ lf.testing.perf.DefaultBenchmark.prototype.deleteAll = function() {
  * @return {string}
  * @private
  */
-lf.testing.perf.DefaultBenchmark.prototype.getRangeEnd_ = function(rowCount) {
+lf.testing.perf.DefaultBenchmark_.prototype.getRangeEnd_ = function(rowCount) {
   var id = 10000 + rowCount - 1;
   return ('000000' + id.toString()).slice(-6);
 };
@@ -164,7 +169,7 @@ lf.testing.perf.DefaultBenchmark.prototype.getRangeEnd_ = function(rowCount) {
  * @param {number} rowCount
  * @return {!IThenable}
  */
-lf.testing.perf.DefaultBenchmark.prototype.deletePartial = function(rowCount) {
+lf.testing.perf.DefaultBenchmark_.prototype.deletePartial = function(rowCount) {
   if (rowCount == 1) {
     return this.db_.
         delete().from(this.e_).where(this.e_.id.eq('010000')).exec();
@@ -182,7 +187,7 @@ lf.testing.perf.DefaultBenchmark.prototype.deletePartial = function(rowCount) {
  * @param {number} rowCount
  * @return {!IThenable}
  */
-lf.testing.perf.DefaultBenchmark.prototype.insertPartial = function(rowCount) {
+lf.testing.perf.DefaultBenchmark_.prototype.insertPartial = function(rowCount) {
   var data = this.data_.slice(10000, 10000 + rowCount);
   return this.db_.insert().into(this.e_).values(data).exec();
 };
@@ -192,7 +197,7 @@ lf.testing.perf.DefaultBenchmark.prototype.insertPartial = function(rowCount) {
  * @param {number} rowCount
  * @return {!IThenable}
  */
-lf.testing.perf.DefaultBenchmark.prototype.updatePartial = function(rowCount) {
+lf.testing.perf.DefaultBenchmark_.prototype.updatePartial = function(rowCount) {
   if (rowCount == 1) {
     return this.db_.
         update(this.e_).set(this.e_.salary, 50000).where(
@@ -209,7 +214,7 @@ lf.testing.perf.DefaultBenchmark.prototype.updatePartial = function(rowCount) {
  * @param {number} rowCount
  * @return {!IThenable}
  */
-lf.testing.perf.DefaultBenchmark.prototype.selectPartial = function(rowCount) {
+lf.testing.perf.DefaultBenchmark_.prototype.selectPartial = function(rowCount) {
   if (rowCount == 1) {
     return this.db_.
         select().from(this.e_).where(this.e_.id.eq('010000')).exec();
@@ -225,7 +230,8 @@ lf.testing.perf.DefaultBenchmark.prototype.selectPartial = function(rowCount) {
  * @param {number} rowCount
  * @return {!IThenable<boolean>}
  */
-lf.testing.perf.DefaultBenchmark.prototype.validateInsert = function(rowCount) {
+lf.testing.perf.DefaultBenchmark_.prototype.validateInsert =
+    function(rowCount) {
   return this.select().then(goog.bind(function(results) {
     if (results.length != rowCount) {
       return false;
@@ -247,7 +253,7 @@ lf.testing.perf.DefaultBenchmark.prototype.validateInsert = function(rowCount) {
  * @param {number} rowCount
  * @return {!IThenable<boolean>}
  */
-lf.testing.perf.DefaultBenchmark.prototype.validateUpdateAll = function(
+lf.testing.perf.DefaultBenchmark_.prototype.validateUpdateAll = function(
     rowCount) {
   return this.select().then(goog.bind(function(results) {
     if (results.length != rowCount) {
@@ -267,7 +273,7 @@ lf.testing.perf.DefaultBenchmark.prototype.validateUpdateAll = function(
 
 
 /** @return {!IThenable<boolean>} */
-lf.testing.perf.DefaultBenchmark.prototype.validateEmpty = function() {
+lf.testing.perf.DefaultBenchmark_.prototype.validateEmpty = function() {
   return this.select().then(function(results) {
     return results.length == 0;
   });
@@ -278,7 +284,7 @@ lf.testing.perf.DefaultBenchmark.prototype.validateEmpty = function() {
  * @param {number} rowCount
  * @return {!IThenable<boolean>}
  */
-lf.testing.perf.DefaultBenchmark.prototype.validateDeletePartial = function(
+lf.testing.perf.DefaultBenchmark_.prototype.validateDeletePartial = function(
     rowCount) {
   return this.selectPartial(rowCount).then(function(rows) {
     return rows.length == 0;
@@ -291,7 +297,7 @@ lf.testing.perf.DefaultBenchmark.prototype.validateDeletePartial = function(
  * @param {*} rows
  * @return {!IThenable<boolean>}
  */
-lf.testing.perf.DefaultBenchmark.prototype.validateUpdatePartial = function(
+lf.testing.perf.DefaultBenchmark_.prototype.validateUpdatePartial = function(
     rowCount, rows) {
   if (rowCount != rows.length) {
     return goog.Promise.resolve(false);
@@ -306,4 +312,177 @@ lf.testing.perf.DefaultBenchmark.prototype.validateUpdatePartial = function(
         50000 == row['salary'];
   });
   return goog.Promise.resolve(validated);
+};
+
+
+/** @override */
+lf.testing.perf.DefaultBenchmark_.prototype.getTestCases = goog.abstractMethod;
+
+
+
+/**
+ * @constructor @struct
+ * @extends {lf.testing.perf.DefaultBenchmark_}
+ *
+ * @param {boolean=} opt_volatile Use memory DB, default to false.
+ */
+lf.testing.perf.FullTableBenchmark = function(opt_volatile) {
+  lf.testing.perf.FullTableBenchmark.base(this, 'constructor', opt_volatile);
+};
+goog.inherits(
+    lf.testing.perf.FullTableBenchmark,
+    lf.testing.perf.DefaultBenchmark_);
+
+
+/** @override */
+lf.testing.perf.FullTableBenchmark.prototype.getTestCases = function() {
+  var testCases = [
+    new lf.testing.perf.TestCase(
+        'Init empty DB',
+        this.init.bind(this),
+        this.validateEmpty.bind(this), true),
+    new lf.testing.perf.TestCase(
+        'Load test data',
+        this.loadTestData.bind(
+            this, 'default_benchmark_mock_data_50k.json'), undefined, true)
+  ];
+
+  for (var i = 10000; i <= 50000; i += 10000) {
+    testCases.push(new lf.testing.perf.TestCase(
+        'Insert ' + i,
+        goog.bind(this.insert, this, i),
+        goog.bind(this.validateInsert, this, i)));
+    testCases.push(new lf.testing.perf.TestCase(
+        'Select ' + i,
+        this.select.bind(this)));
+    testCases.push(new lf.testing.perf.TestCase(
+        'Update ' + i,
+        goog.bind(this.updateAll, this, i),
+        goog.bind(this.validateUpdateAll, this, i)));
+    testCases.push(new lf.testing.perf.TestCase(
+        'Delete ' + i,
+        this.deleteAll.bind(this),
+        this.validateEmpty.bind(this)));
+  }
+
+  return testCases;
+};
+
+
+
+/**
+ * @constructor @struct
+ * @extends {lf.testing.perf.DefaultBenchmark_}
+ *
+ * @param {boolean=} opt_volatile Use memory DB, default to false.
+ */
+lf.testing.perf.PkTableBenchmark = function(opt_volatile) {
+  lf.testing.perf.PkTableBenchmark.base(this, 'constructor', opt_volatile);
+};
+goog.inherits(
+    lf.testing.perf.PkTableBenchmark,
+    lf.testing.perf.DefaultBenchmark_);
+
+
+/** @override */
+lf.testing.perf.PkTableBenchmark.prototype.getTestCases = function() {
+  var rowCount = 30000;
+
+  var testCases = [
+    new lf.testing.perf.TestCase(
+        'Init empty DB',
+        this.init.bind(this),
+        this.validateEmpty.bind(this), true),
+    new lf.testing.perf.TestCase(
+        'Load test data',
+        goog.bind(
+            this.loadTestData, this,
+            'default_benchmark_mock_data_50k.json'), undefined, true)
+  ];
+
+  for (var i = 1; i <= 10000; i *= 10) {
+    // Each repetition needs to insert 30000 rows.
+    testCases.push(new lf.testing.perf.TestCase(
+        'Insert ' + rowCount,
+        goog.bind(this.insert, this, rowCount),
+        goog.bind(this.validateInsert, this, rowCount), true));
+
+    // Checks for partial SCUD via primary keys.
+    testCases.push(new lf.testing.perf.TestCase(
+        'Delete ' + i,
+        goog.bind(this.deletePartial, this, i),
+        goog.bind(this.validateDeletePartial, this, i)));
+    testCases.push(new lf.testing.perf.TestCase(
+        'Insert ' + i,
+        goog.bind(this.insertPartial, this, i),
+        goog.bind(this.validateInsert, this, rowCount)));
+    testCases.push(new lf.testing.perf.TestCase(
+        'Update ' + i,
+        goog.bind(this.updatePartial, this, i)));
+    testCases.push(new lf.testing.perf.TestCase(
+        'Select ' + i,
+        goog.bind(this.selectPartial, this, i),
+        goog.bind(this.validateUpdatePartial, this, i)));
+
+    // Resets the table.
+    testCases.push(new lf.testing.perf.TestCase(
+        'Delete ' + i,
+        goog.bind(this.deleteAll, this),
+        goog.bind(this.validateEmpty, this), true));
+  }
+
+  return testCases;
+};
+
+
+
+/**
+ * @constructor @struct
+ * @extends {lf.testing.perf.DefaultBenchmark_}
+ *
+ * @param {boolean=} opt_volatile Use memory DB, default to false.
+ */
+lf.testing.perf.LoadingEmptyDbBenchmark = function(opt_volatile) {
+  lf.testing.perf.LoadingEmptyDbBenchmark.base(
+      this, 'constructor', opt_volatile);
+};
+goog.inherits(
+    lf.testing.perf.LoadingEmptyDbBenchmark,
+    lf.testing.perf.DefaultBenchmark_);
+
+
+/** @override */
+lf.testing.perf.LoadingEmptyDbBenchmark.prototype.getTestCases = function() {
+  return [
+    new lf.testing.perf.TestCase(
+        'Init empty DB',
+        this.init.bind(this),
+        this.validateEmpty.bind(this))
+  ];
+};
+
+
+
+/**
+ * @constructor @struct
+ * @extends {lf.testing.perf.DefaultBenchmark_}
+ *
+ * @param {boolean=} opt_volatile Use memory DB, default to false.
+ */
+lf.testing.perf.LoadingPopulatedDbBenchmark = function(opt_volatile) {
+  lf.testing.perf.LoadingPopulatedDbBenchmark.base(
+      this, 'constructor', opt_volatile);
+};
+goog.inherits(
+    lf.testing.perf.LoadingPopulatedDbBenchmark,
+    lf.testing.perf.DefaultBenchmark_);
+
+
+/** @override */
+lf.testing.perf.LoadingPopulatedDbBenchmark.prototype.getTestCases =
+    function() {
+  return [
+    new lf.testing.perf.TestCase(
+        'Init populated DB', this.init.bind(this))
+  ];
 };

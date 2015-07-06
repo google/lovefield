@@ -24,10 +24,15 @@ goog.require('lf.Type');
 goog.require('lf.bind');
 goog.require('lf.schema');
 goog.require('lf.schema.DataStoreType');
+goog.require('lf.testing.perf.Benchmark');
+goog.require('lf.testing.perf.TestCase');
 
 
 
-/** @constructor @struct @final */
+/**
+ * @constructor @struct @final
+ * @implements {lf.testing.perf.Benchmark}
+ */
 lf.testing.perf.ScenarioBenchmark = function() {
   /** @private {!lf.Database} */
   this.db_;
@@ -42,13 +47,13 @@ lf.testing.perf.ScenarioBenchmark = function() {
 
 /** @return {!IThenable} */
 lf.testing.perf.ScenarioBenchmark.prototype.init = function() {
-  var ds = lf.schema.create('scenario0', 1);
-  ds.createTable('Brand').
+  var schemaBuilder = lf.schema.create('scenario0', 1);
+  schemaBuilder.createTable('Brand').
       addColumn('rowId', lf.Type.INTEGER).
       addColumn('brandId', lf.Type.INTEGER).
       addPrimaryKey(['rowId']).
       addIndex('idxBrandId', ['brandId']);
-  return ds.connect({
+  return schemaBuilder.connect({
     storeType: lf.schema.DataStoreType.MEMORY
   }).then(goog.bind(function(db) {
     this.db_ = db;
@@ -72,7 +77,8 @@ lf.testing.perf.ScenarioBenchmark.prototype.createRows_ = function() {
   for (var i = 0; i < this.REPETITIONS_; ++i) {
     rows.push(this.brand_.createRow({
       rowId: i,
-      brandId: i}));
+      brandId: i
+    }));
   }
   return rows;
 };
@@ -127,4 +133,19 @@ lf.testing.perf.ScenarioBenchmark.prototype.selectBinding = function() {
     queries.push(q.bind([i]).exec());
   }
   return goog.Promise.all(queries);
+};
+
+
+/** @override */
+lf.testing.perf.ScenarioBenchmark.prototype.getTestCases = function() {
+  return [
+    new lf.testing.perf.TestCase(
+        'Insert via Tx Attach', this.insertTxAttach.bind(this)),
+    new lf.testing.perf.TestCase('Select',
+        this.select.bind(this)),
+    new lf.testing.perf.TestCase(
+        'Select Binding', this.selectBinding.bind(this)),
+    new lf.testing.perf.TestCase(
+        'Teardown', this.tearDown.bind(this), undefined, true)
+  ];
 };
