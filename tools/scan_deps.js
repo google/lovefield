@@ -504,6 +504,9 @@ TransitiveDepsScanner.prototype.gatherDepsRec_ = function(
   }
   depsSoFar.add(dependency);
   var provider = this.provideMap_.get(dependency);
+  if (provider == null) {
+    throw new Error('Could not find provider for ' + dependency);
+  }
   var deps = this.requireMap_.get(/** @type {string} */ (provider));
   deps.forEach(function(dep) {
     this.gatherDepsRec_(dep, depsSoFar);

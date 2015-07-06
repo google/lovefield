@@ -86,8 +86,13 @@ function buildTest(options) {
     var spacTemporaryDir = new temporary.Dir().path;
     generateTestSchemas(spacTemporaryDir).then(
         function() {
-          var transitiveDeps = depsHelper.getTransitiveDeps(
-              testFile, spacTemporaryDir);
+          var transitiveDeps;
+          try {
+            transitiveDeps = depsHelper.getTransitiveDeps(
+                testFile, spacTemporaryDir);
+          } catch (e) {
+            reject(e);
+          }
 
           gulp.src(transitiveDeps).pipe(closureCompiler({
             compilerPath: config.CLOSURE_COMPILER_PATH,
