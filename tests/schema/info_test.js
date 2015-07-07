@@ -16,21 +16,90 @@
  */
 goog.setTestOnly();
 goog.require('goog.testing.jsunit');
+goog.require('hr.db');
 goog.require('lf.schema.Info');
 goog.require('lf.testing.hrSchema.getSchemaBuilder');
 
 
-function testGetReferencingForeignKeys() {
-  var builder = lf.testing.hrSchema.getSchemaBuilder();
-  var info = new lf.schema.Info(builder.getSchema());
+/** @type {!lf.schema.Info} */
+var dynamicInfo;
 
-  var getRefs = function(tableName) {
+
+/** @type {!lf.schema.Info} */
+var staticInfo;
+
+
+function setUp() {
+  var builder = lf.testing.hrSchema.getSchemaBuilder();
+  dynamicInfo = new lf.schema.Info(builder.getSchema());
+  staticInfo = hr.db.getSchema().info();
+}
+
+
+function testGetReferencingForeignKeys() {
+  var getRefs = function(tableName, info) {
     var refs = info.getReferencingForeignKeys(tableName);
     return !refs ? null : refs.map(function(ref) {
       return ref.name;
     });
   };
 
-  assertSameElements(['Country.fk_RegionId'], getRefs('Region'));
-  assertSameElements(['Location.fk_CountryId'], getRefs('Country'));
+  [dynamicInfo, staticInfo].forEach(function(info) {
+    assertNull(getRefs('DummyTable', info));
+    assertSameElements(['Country.fk_RegionId'], getRefs('Region', info));
+    assertSameElements(['Location.fk_CountryId'], getRefs('Country', info));
+  });
+}
+
+
+/**
+ * @param {!Function} toTest Function to be tested.
+ * @param {string|!Array<string>} arg
+ * @return {!Array<string>}
+ */
+function invoke(toTest, arg) {
+  return toTest(arg).map(function(table) {
+    return table.getName();
+  });
+}
+
+function testGetParentTables() {
+  [dynamicInfo, staticInfo].forEach(function(info) {
+    var toTest = info.getParentTables.bind(info);
+    assertEquals(0, invoke(toTest, 'Region').length);
+    assertSameElements(['Region'], invoke(toTest, 'Country'));
+    assertSameElements(['Country'], invoke(toTest, 'Location'));
+  });
+}
+
+function testGetParentTablesByColumns() {
+  [dynamicInfo, staticInfo].forEach(function(info) {
+    var toTest = info.getParentTablesByColumns.bind(info);
+    assertEquals(0, invoke(toTest, []).length);
+    assertEquals(0, invoke(toTest, ['DummyTable.arraybuffer']).length);
+    assertSameElements(['Job'], invoke(toTest, ['Employee.jobId']));
+    assertSameElements(
+        ['Department', 'Job'],
+        invoke(toTest, ['Employee.jobId', 'Employee.departmentId']));
+  });
+}
+
+function testGetChildTables() {
+  [dynamicInfo, staticInfo].forEach(function(info) {
+    var toTest = info.getChildTables.bind(info);
+    assertEquals(0, invoke(toTest, 'DummyTable').length);
+    assertSameElements(['Country'], invoke(toTest, 'Region'));
+    assertSameElements(['Location'], invoke(toTest, 'Country'));
+  });
+}
+
+function testGetChildTablesByColumns() {
+  [dynamicInfo, staticInfo].forEach(function(info) {
+    var toTest = info.getChildTablesByColumns.bind(info);
+    assertEquals(0, invoke(toTest, []).length);
+    assertEquals(0, invoke(toTest, ['DummyTable.arraybuffer']).length);
+    assertSameElements(
+        ['Employee', 'JobHistory'],
+        invoke(toTest, ['Department.id']));
+  });
 }

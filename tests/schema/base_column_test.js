@@ -63,27 +63,3 @@ function testGetNormalizedName() {
   var jobAlias = jobNoAlias.as(alias);
   assertEquals(alias + '.title', jobAlias.title.getNormalizedName());
 }
-
-
-/**
- * Test that if no foreign key exist getParent and getChildren return null.
- */
-function testGetParentChildren_NoForeignKeys() {
-  var schema = lf.testing.getSchemaBuilder().getSchema();
-  schema.table('tableA').getColumns().forEach(function(column) {
-    assertNull(column.getParent());
-    assertNull(column.getChildren());
-  });
-}
-
-
-function testForeignKeyColumnsRelationship() {
-  var schema = hr.db.getSchema();
-  var deptId = schema.getDepartment().id;
-  var deptLoc = schema.getDepartment().locationId;
-  var locId = schema.getLocation().id;
-  assertEquals(locId, deptLoc.getParent());
-  assertArrayEquals([deptLoc], locId.getChildren());
-  assertEquals(2, deptId.getChildren().length);
-  assertNull(deptId.getParent());
-}

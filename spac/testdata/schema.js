@@ -87,8 +87,6 @@ lovefield.db.schema.Database = function() {
 
   /** @private {!lf.schema.Info} */
   this.metaInfo_;
-
-  this.establishReferences_();
 };
 
 
@@ -136,22 +134,6 @@ lovefield.db.schema.Database.prototype.table = function(tableName) {
 /** @override */
 lovefield.db.schema.Database.prototype.pragma = function() {
   return this.pragma_;
-};
-
-
-/** @private */
-lovefield.db.schema.Database.prototype.establishReferences_ = function() {
-  for (var tableName in this.tableMap_) {
-    var table = this.tableMap_[tableName];
-    table.getConstraint().getForeignKeys().forEach(function(spec) {
-      var parent = this.tableMap_[spec.parentTable][spec.parentColumn];
-      var child = table[spec.childColumn];
-      child.setParent(parent);
-      var childrenColumns = parent.getChildren() || [];
-      childrenColumns.push(child);
-      parent.setChildren(childrenColumns);
-    }.bind(this));
-  }
 };
 
 
