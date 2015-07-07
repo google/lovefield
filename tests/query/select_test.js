@@ -511,8 +511,12 @@ function testInvalidBindingRejects() {
 
 function testContext_Clone() {
   var j = db.getSchema().getJob();
+  var e = db.getSchema().getEmployee();
+  var pred1 = j.id.eq(e.jobId);
   var query = /** @type {!lf.query.SelectBuilder} */ (
-      db.select(j.title).from(j).where(lf.op.or(
+      db.select(j.title).from(e).
+      leftOuterJoin(j, pred1).
+      where(lf.op.or(
       j.minSalary.lt(lf.bind(0)), j.maxSalary.gt(lf.bind(1)))).
       orderBy(j.title).
       groupBy(j.minSalary).
@@ -525,6 +529,8 @@ function testContext_Clone() {
   assertObjectEquals(context.orderBy, context2.orderBy);
   assertObjectEquals(context.groupBy, context2.groupBy);
   assertArrayEquals(context.columns, context2.columns);
+  assertEquals(context.outerJoinPredicates,
+      context2.outerJoinPredicates);
   assertEquals(context.limit, context2.limit);
   assertEquals(context.skip, context2.skip);
   assertTrue(goog.getUid(context) != goog.getUid(context2));

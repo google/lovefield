@@ -4801,6 +4801,7 @@ lf.query.SelectContext.prototype.clone = function() {
   this.groupBy && (context.groupBy = this.groupBy.slice());
   this.limitBinder && (context.limitBinder = this.limitBinder);
   this.skipBinder && (context.skipBinder = this.skipBinder);
+  context.outerJoinPredicates = this.outerJoinPredicates;
   return context;
 };
 lf.query.SelectContext.prototype.bind = function(values) {
@@ -8919,6 +8920,9 @@ lf.query.SelectBuilder.prototype.assertExecPreconditions = function() {
   if (!goog.isDefAndNotNull(context.from)) {
     throw new lf.Exception(522);
   }
+  if (goog.isDefAndNotNull(this.query.outerJoinPredicates)) {
+    throw new lf.Exception(360);
+  }
   if (goog.isDef(context.limitBinder) && !goog.isDef(context.limit) || goog.isDef(context.skipBinder) && !goog.isDef(context.skip)) {
     throw new lf.Exception(523);
   }
@@ -9010,8 +9014,13 @@ lf.query.SelectBuilder.prototype.innerJoin = function(table, predicate) {
   return this;
 };
 goog.exportProperty(lf.query.SelectBuilder.prototype, "innerJoin", lf.query.SelectBuilder.prototype.innerJoin);
-lf.query.SelectBuilder.prototype.leftOuterJoin = function() {
-  throw new lf.Exception(360);
+lf.query.SelectBuilder.prototype.leftOuterJoin = function(table, predicate) {
+  goog.isDefAndNotNull(this.query.from) || (this.query.from = []);
+  this.query.from.push(table);
+  goog.isDefAndNotNull(this.query.outerJoinPredicates) || (this.query.outerJoinPredicates = new goog.structs.Set);
+  this.query.outerJoinPredicates.add(predicate.getId());
+  this.augmentWhereClause_(predicate);
+  return this;
 };
 goog.exportProperty(lf.query.SelectBuilder.prototype, "leftOuterJoin", lf.query.SelectBuilder.prototype.leftOuterJoin);
 lf.query.SelectBuilder.prototype.limit = function(numberOfRows) {
