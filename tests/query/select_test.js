@@ -200,6 +200,25 @@ function testFrom_ThrowsAlreadyCalled() {
 
 
 /**
+ * Tests that Select#leftOuterJoin() fails if order of join predicate
+ * is not the same as join order.
+ */
+function testOuterJoin_ThrowsWrongPredicateOrder() {
+  var query = new lf.query.SelectBuilder(hr.db.getGlobal(), []);
+
+  var buildQuery = function() {
+    var j = db.getSchema().getJob();
+    var e = db.getSchema().getEmployee();
+    query.from(e).leftOuterJoin(j, j.id.eq(e.jobId));
+  };
+
+  // 541: The order of outer join predicate should be the
+  // same as Join order.
+  lf.testing.util.assertThrowsError(541, buildQuery);
+}
+
+
+/**
  * Tests that Select#where() fails if where() has already been called.
  */
 function testWhere_ThrowsAlreadyCalled() {
@@ -512,7 +531,7 @@ function testInvalidBindingRejects() {
 function testContext_Clone() {
   var j = db.getSchema().getJob();
   var e = db.getSchema().getEmployee();
-  var pred1 = j.id.eq(e.jobId);
+  var pred1 = e.jobId.eq(j.id);
   var query = /** @type {!lf.query.SelectBuilder} */ (
       db.select(j.title).from(e).
       leftOuterJoin(j, pred1).

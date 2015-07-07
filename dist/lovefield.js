@@ -9018,6 +9018,9 @@ lf.query.SelectBuilder.prototype.leftOuterJoin = function(table, predicate) {
   goog.isDefAndNotNull(this.query.from) || (this.query.from = []);
   this.query.from.push(table);
   goog.isDefAndNotNull(this.query.outerJoinPredicates) || (this.query.outerJoinPredicates = new goog.structs.Set);
+  if (table.getEffectiveName() != predicate.rightColumn.getTable().getEffectiveName()) {
+    throw new lf.Exception(541);
+  }
   this.query.outerJoinPredicates.add(predicate.getId());
   this.augmentWhereClause_(predicate);
   return this;
