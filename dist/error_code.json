@@ -76,6 +76,7 @@
   "539": "Foreign key {0} refers to non-unique column.",
   "540": "Foreign key {0} has invalid reference syntax.",
   "541": "The order of outer join predicate should be the same as Join order.",
+  "542": "Outer join accepts only join predicate.",
 
   "900": "Test error",
   "999": "Simulated error"

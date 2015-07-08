@@ -9017,12 +9017,15 @@ lf.query.SelectBuilder.prototype.innerJoin = function(table, predicate) {
 };
 goog.exportProperty(lf.query.SelectBuilder.prototype, "innerJoin", lf.query.SelectBuilder.prototype.innerJoin);
 lf.query.SelectBuilder.prototype.leftOuterJoin = function(table, predicate) {
-  goog.isDefAndNotNull(this.query.from) || (this.query.from = []);
-  this.query.from.push(table);
-  goog.isDefAndNotNull(this.query.outerJoinPredicates) || (this.query.outerJoinPredicates = new goog.structs.Set);
+  if (!(predicate instanceof lf.pred.JoinPredicate)) {
+    throw new lf.Exception(542);
+  }
   if (table.getEffectiveName() != predicate.rightColumn.getTable().getEffectiveName()) {
     throw new lf.Exception(541);
   }
+  goog.isDefAndNotNull(this.query.from) || (this.query.from = []);
+  this.query.from.push(table);
+  goog.isDefAndNotNull(this.query.outerJoinPredicates) || (this.query.outerJoinPredicates = new goog.structs.Set);
   this.query.outerJoinPredicates.add(predicate.getId());
   this.augmentWhereClause_(predicate);
   return this;

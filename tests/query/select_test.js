@@ -219,6 +219,25 @@ function testOuterJoin_ThrowsWrongPredicateOrder() {
 
 
 /**
+ * Tests that Select#leftOuterJoin() fails if the predicate is not
+ * join predicate.
+ */
+function testOuterJoin_ThrowsOnlyJoinPredicateAllowed() {
+  var query = new lf.query.SelectBuilder(hr.db.getGlobal(), []);
+
+  var buildQuery = function() {
+    var j = db.getSchema().getJob();
+    var e = db.getSchema().getEmployee();
+    query.from(e).leftOuterJoin(
+        j, lf.op.and(j.id.eq(e.jobId), j.id.eq('jobId1')));
+  };
+
+  // 542: Outer join accepts only join predicate.
+  lf.testing.util.assertThrowsError(542, buildQuery);
+}
+
+
+/**
  * Tests that Select#where() fails if where() has already been called.
  */
 function testWhere_ThrowsAlreadyCalled() {
