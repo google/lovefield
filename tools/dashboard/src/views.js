@@ -218,6 +218,46 @@ var scenarioSimulationsView = {
 };
 
 
+var foreignKeysBenchmarkView = {
+  name: 'ForeignKeysBenchmark',
+  graphs: [
+    {
+      name: 'No foreign key constraints',
+      curves: [
+        'InsertParent_60000_nofk',
+        'InsertChild_60000_nofk',
+        'UpdateParent_60000_nofk',
+        'UpdateChild_60000_nofk',
+        'DeleteParent_50000_nofk',
+        'DeleteChild_60000_nofk'
+      ]
+    },
+    {
+      name: 'Immediate foreign key constraints',
+      curves: [
+        'InsertParent_60000_immediate',
+        'InsertChild_60000_immediate',
+        'UpdateParent_60000_immediate',
+        'UpdateChild_60000_immediate',
+        'DeleteParent_50000_immediate',
+        'DeleteChild_60000_immediate'
+      ]
+    },
+    {
+      name: 'Deferrable foreign key constraints',
+      curves: [
+        'InsertParent_60000_deferrable',
+        'InsertChild_60000_deferrable',
+        'UpdateParent_60000_deferrable',
+        'UpdateChild_60000_deferrable',
+        'DeleteParent_50000_deferrable',
+        'DeleteChild_60000_deferrable'
+      ]
+    }
+  ]
+};
+
+
 function buildViewMap() {
   var viewMap = new Map();
   var views = [
@@ -229,7 +269,8 @@ function buildViewMap() {
     pkBasedScudView,
     scenarioSimulationsView,
     selectBenchmarkMemView,
-    selectBenchmarkView
+    selectBenchmarkView,
+    foreignKeysBenchmarkView
   ];
 
   views.forEach(function(view) {
