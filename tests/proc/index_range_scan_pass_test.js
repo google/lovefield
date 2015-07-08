@@ -516,7 +516,7 @@ function constructTree2() {
   var joinPredicate = /** @type {!lf.Predicate} */ (
       /** @type {!lf.pred.PredicateNode} */ (
           queryContext.where).getChildAt(4));
-  var joinNode = new lf.proc.JoinStep(joinPredicate);
+  var joinNode = new lf.proc.JoinStep(joinPredicate, false);
 
   rootNode.addChild(orderByNode3);
   orderByNode3.addChild(joinNode);

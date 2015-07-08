@@ -51,6 +51,12 @@ lf.testing.EndToEndSelectTester = function(connectFn) {
   /** @private {!lf.schema.Table} */
   this.d_;
 
+  /** @private {!lf.schema.Table} */
+  this.c_;
+
+  /** @private {!lf.schema.Table} */
+  this.r_;
+
   /** @private {!lf.testing.hrSchema.MockDataGenerator} */
   this.dataGenerator_;
 
@@ -77,6 +83,8 @@ lf.testing.EndToEndSelectTester = function(connectFn) {
     this.testPredicate_VarArgAnd.bind(this),
     this.testPredicate_VarArgOr.bind(this),
     this.testExplicitJoin.bind(this),
+    this.testOuterJoin.bind(this),
+    this.testOuterJoin_Alias.bind(this),
     this.testExplicitJoin_WithCrossProduct.bind(this),
     this.testOrderBy_Descending.bind(this),
     this.testOrderBy_Ascending.bind(this),
@@ -131,6 +139,8 @@ lf.testing.EndToEndSelectTester.prototype.setUp_ = function() {
         this.j_ = db.getSchema().table('Job');
         this.e_ = db.getSchema().table('Employee');
         this.d_ = db.getSchema().table('Department');
+        this.c_ = db.getSchema().table('Country');
+        this.r_ = db.getSchema().table('Region');
         return this.addSampleData_();
       }.bind(this));
 };
@@ -669,6 +679,82 @@ lf.testing.EndToEndSelectTester.prototype.testExplicitJoin = function() {
                   result[e.getName()]['jobId'],
                   result[e.getName()]['id']));
         }, this);
+      }.bind(this));
+};
+
+
+/**
+ * @param {!lf.schema.Table} leftTable
+ * @param {!lf.schema.Table} rightTable
+ * @param {!Array<{
+ *     Region: !hr.db.row.RegionType,
+ *     Country: !hr.db.row.CountryType}>} results
+ * @private
+ */
+lf.testing.EndToEndSelectTester.prototype.assertOuterJoinResult_ = function(
+    leftTable, rightTable, results) {
+  assertEquals(
+      this.dataGenerator_.sampleRegions.length, results.length);
+  var expectedMatched = 1;
+  var matchedRows = results.slice(0, expectedMatched);
+  matchedRows.forEach(function(resultRow) {
+    Object.keys(resultRow[rightTable.getEffectiveName()]).forEach(
+        function(column) {
+          assertNotNull(resultRow[rightTable.getEffectiveName()][column]);
+        });
+  });
+  var unMatchedRows = results.slice(expectedMatched);
+  unMatchedRows.forEach(function(resultRow) {
+    Object.keys(resultRow[rightTable.getEffectiveName()]).forEach(
+        function(column) {
+          assertNull(resultRow[rightTable.getEffectiveName()][column]);
+        });
+  });
+  results.forEach(function(resultRow) {
+    Object.keys(resultRow[leftTable.getEffectiveName()]).forEach(
+        function(column) {
+          assertNotNull(resultRow[leftTable.getEffectiveName()][column]);
+        });
+  });
+};
+
+
+/**
+ * Tests a SELECT query with an outer join.
+ * @return {!IThenable}
+ */
+lf.testing.EndToEndSelectTester.prototype.testOuterJoin = function() {
+  var c = this.c_;
+  var r = this.r_;
+  var queryBuilder = /** @type {!lf.query.SelectBuilder} */ (
+      this.db_.select().
+      from(r).
+      leftOuterJoin(c, r.id.eq(c.regionId)).
+      orderBy(r.id, lf.Order.ASC));
+
+  return queryBuilder.exec().then(
+      function(results) {
+        this.assertOuterJoinResult_(r, c, results);
+      }.bind(this));
+};
+
+
+/**
+ * Tests a SELECT query with an outer join on tables using alias.
+ * @return {!IThenable}
+ */
+lf.testing.EndToEndSelectTester.prototype.testOuterJoin_Alias = function() {
+  var c1 = this.c_.as('c1');
+  var r1 = this.r_.as('r1');
+  var queryBuilder = /** @type {!lf.query.SelectBuilder} */ (
+      this.db_.select().
+      from(r1).
+      leftOuterJoin(c1, r1.id.eq(c1.regionId)).
+      orderBy(r1.id, lf.Order.ASC));
+
+  return queryBuilder.exec().then(
+      function(results) {
+        this.assertOuterJoinResult_(r1, c1, results);
       }.bind(this));
 };
 

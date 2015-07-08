@@ -7868,7 +7868,7 @@ lf.pred.JoinPredicate.prototype.evalRelations = function(relation1, relation2, i
   var leftRightRelations = [relation1, relation2];
   isOuterJoin || (leftRightRelations = this.detectLeftRight_(relation1, relation2));
   var leftRelation = leftRightRelations[0], rightRelation = leftRightRelations[1];
-  return this.evaluatorType == lf.eval.Type.EQ ? this.evalRelationsHashJoin_(leftRelation, rightRelation) : this.evalRelationsNestedLoopJoin_(leftRelation, rightRelation, isOuterJoin);
+  return isOuterJoin ? this.evalRelationsNestedLoopJoin_(leftRelation, rightRelation, isOuterJoin) : this.evaluatorType == lf.eval.Type.EQ ? this.evalRelationsHashJoin_(leftRelation, rightRelation) : this.evalRelationsNestedLoopJoin_(leftRelation, rightRelation, isOuterJoin);
 };
 lf.pred.JoinPredicate.prototype.createNullPayload_ = function(table) {
   var payload = {};
@@ -8389,13 +8389,15 @@ goog.inherits(lf.proc.SkipNode, lf.proc.LogicalQueryPlanNode);
 lf.proc.SkipNode.prototype.toString = function() {
   return "skip(" + this.skip + ")";
 };
-lf.proc.JoinNode = function(predicate) {
+lf.proc.JoinNode = function(predicate, isOuterJoin) {
   lf.proc.LogicalQueryPlanNode.call(this);
   this.predicate = predicate;
+  this.isOuterJoin = isOuterJoin;
 };
 goog.inherits(lf.proc.JoinNode, lf.proc.LogicalQueryPlanNode);
 lf.proc.JoinNode.prototype.toString = function() {
-  return "join(" + this.predicate.toString() + ")";
+  var prefix = this.isOuterJoin ? "left_outer_join" : "join";
+  return prefix + "(" + this.predicate.toString() + ")";
 };
 
 lf.proc.RewritePass = function() {
@@ -8923,9 +8925,6 @@ lf.query.SelectBuilder.prototype.assertExecPreconditions = function() {
   if (!goog.isDefAndNotNull(context.from)) {
     throw new lf.Exception(522);
   }
-  if (goog.isDefAndNotNull(this.query.outerJoinPredicates)) {
-    throw new lf.Exception(360);
-  }
   if (goog.isDef(context.limitBinder) && !goog.isDef(context.limit) || goog.isDef(context.skipBinder) && !goog.isDef(context.skip)) {
     throw new lf.Exception(523);
   }
@@ -9168,13 +9167,14 @@ lf.proc.UpdateLogicalPlanGenerator.prototype.generateInternal = function() {
   return updateNode;
 };
 
-lf.proc.LogicalPlanRewriter = function(rootNode, rewritePasses) {
+lf.proc.LogicalPlanRewriter = function(rootNode, queryContext, rewritePasses) {
   this.rootNode_ = rootNode;
+  this.queryContext_ = queryContext;
   this.rewritePasses_ = rewritePasses;
 };
 lf.proc.LogicalPlanRewriter.prototype.generate = function() {
   this.rewritePasses_.forEach(function(rewritePass) {
-    this.rootNode_ = rewritePass.rewrite(this.rootNode_);
+    this.rootNode_ = rewritePass.rewrite(this.rootNode_, this.queryContext_);
   }, this);
   return this.rootNode_;
 };
@@ -9186,31 +9186,31 @@ goog.inherits(lf.proc.DeleteLogicalPlanGenerator, lf.proc.BaseLogicalPlanGenerat
 lf.proc.DeleteLogicalPlanGenerator.prototype.generateInternal = function() {
   var deleteNode = new lf.proc.DeleteNode(this.query.from), selectNode = goog.isDefAndNotNull(this.query.where) ? new lf.proc.SelectNode(this.query.where.copy()) : null, tableAccessNode = new lf.proc.TableAccessNode(this.query.from);
   goog.isNull(selectNode) ? deleteNode.addChild(tableAccessNode) : (selectNode.addChild(tableAccessNode), deleteNode.addChild(selectNode));
-  var rewritePasses = [new lf.proc.AndPredicatePass], planRewriter = new lf.proc.LogicalPlanRewriter(deleteNode, rewritePasses);
+  var rewritePasses = [new lf.proc.AndPredicatePass], planRewriter = new lf.proc.LogicalPlanRewriter(deleteNode, this.query, rewritePasses);
   return planRewriter.generate();
 };
 
 lf.proc.ImplicitJoinsPass = function() {
 };
 goog.inherits(lf.proc.ImplicitJoinsPass, lf.proc.RewritePass);
-lf.proc.ImplicitJoinsPass.prototype.rewrite = function(rootNode) {
+lf.proc.ImplicitJoinsPass.prototype.rewrite = function(rootNode, query) {
   this.rootNode = rootNode;
-  this.traverse_(this.rootNode);
+  this.traverse_(this.rootNode, query);
   return this.rootNode;
 };
-lf.proc.ImplicitJoinsPass.prototype.traverse_ = function(rootNode) {
+lf.proc.ImplicitJoinsPass.prototype.traverse_ = function(rootNode, opt_query) {
   if (rootNode instanceof lf.proc.SelectNode && rootNode.predicate instanceof lf.pred.JoinPredicate) {
     goog.asserts.assert(1 == rootNode.getChildCount(), "SelectNode must have exactly one child.");
-    var child$$0 = rootNode.getChildAt(0);
+    var predicateId = rootNode.predicate.getId(), child$$0 = rootNode.getChildAt(0);
     if (child$$0 instanceof lf.proc.CrossProductNode) {
-      var joinNode = new lf.proc.JoinNode(rootNode.predicate);
+      var isOuterJoin = goog.isDef(opt_query) && goog.isDefAndNotNull(opt_query.outerJoinPredicates) && opt_query.outerJoinPredicates.contains(predicateId), joinNode = new lf.proc.JoinNode(rootNode.predicate, isOuterJoin);
       lf.tree.replaceChainWithNode(rootNode, child$$0, joinNode);
       rootNode == this.rootNode && (this.rootNode = joinNode);
       rootNode = joinNode;
     }
   }
   rootNode.getChildren().forEach(function(child) {
-    this.traverse_(child);
+    this.traverse_(child, opt_query);
   }, this);
 };
 
@@ -9292,7 +9292,7 @@ lf.proc.SelectLogicalPlanGenerator = function(query) {
 goog.inherits(lf.proc.SelectLogicalPlanGenerator, lf.proc.BaseLogicalPlanGenerator);
 lf.proc.SelectLogicalPlanGenerator.prototype.generateInternal = function() {
   this.generateNodes_();
-  var rootNode = this.connectNodes_(), rewritePasses = [new lf.proc.AndPredicatePass, new lf.proc.CrossProductPass, new lf.proc.PushDownSelectionsPass, new lf.proc.ImplicitJoinsPass], planRewriter = new lf.proc.LogicalPlanRewriter(rootNode, rewritePasses);
+  var rootNode = this.connectNodes_(), rewritePasses = [new lf.proc.AndPredicatePass, new lf.proc.CrossProductPass, new lf.proc.PushDownSelectionsPass, new lf.proc.ImplicitJoinsPass], planRewriter = new lf.proc.LogicalPlanRewriter(rootNode, this.query, rewritePasses);
   return planRewriter.generate();
 };
 lf.proc.SelectLogicalPlanGenerator.prototype.generateNodes_ = function() {
@@ -9730,16 +9730,18 @@ lf.proc.InsertOrReplaceStep.prototype.execInternal = function(journal, relations
   return [lf.proc.Relation.fromRows(queryContext.values, [this.table_.getName()])];
 };
 
-lf.proc.JoinStep = function(predicate) {
+lf.proc.JoinStep = function(predicate, isOuterJoin) {
   lf.proc.PhysicalQueryPlanNode.call(this, 2, lf.proc.PhysicalQueryPlanNode.ExecType.ALL);
   this.predicate_ = predicate;
+  this.isOuterJoin_ = isOuterJoin;
 };
 goog.inherits(lf.proc.JoinStep, lf.proc.PhysicalQueryPlanNode);
 lf.proc.JoinStep.prototype.toString = function() {
-  return "join(" + this.predicate_.toString() + ")";
+  var prefix = this.isOuterJoin_ ? "left_outer_join" : "join";
+  return prefix + "(" + this.predicate_.toString() + ")";
 };
 lf.proc.JoinStep.prototype.execInternal = function(journal, relations) {
-  return [this.predicate_.evalRelations(relations[0], relations[1])];
+  return [this.predicate_.evalRelations(relations[0], relations[1], this.isOuterJoin_)];
 };
 
 lf.proc.LimitStep = function() {
@@ -10103,7 +10105,7 @@ lf.proc.PhysicalPlanFactory.prototype.mapFn_ = function(node) {
     return new lf.proc.CrossProductStep;
   }
   if (node instanceof lf.proc.JoinNode) {
-    return new lf.proc.JoinStep(node.predicate);
+    return new lf.proc.JoinStep(node.predicate, node.isOuterJoin);
   }
   if (node instanceof lf.proc.TableAccessNode) {
     return new lf.proc.TableAccessFullStep(this.global_, node.table);

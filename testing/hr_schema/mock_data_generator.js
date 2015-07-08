@@ -134,19 +134,27 @@ lf.testing.hrSchema.MockDataGenerator.prototype.generate = function(
       countryId: 'countryId'
     })
   ];
-
+  var country = this.schema_.table('Country');
   this.sampleCountries = [
-    this.schema_.table('Country').createRow({
+    country.createRow({
       id: 1,
       name: 'dummyCountryName',
       regionId: 'regionId'
-    })
+    }),
   ];
-
+  var region = this.schema_.table('Region');
   this.sampleRegions = [
-    this.schema_.table('Region').createRow({
+    region.createRow({
       id: 'regionId',
       name: 'dummyRegionName'
+    }),
+    region.createRow({
+      id: 'regionId2',
+      name: 'dummyRegionName2'
+    }),
+    region.createRow({
+      id: 'regionId3',
+      name: 'dummyRegionName2'
     })
   ];
 
