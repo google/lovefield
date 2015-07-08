@@ -4267,6 +4267,9 @@ lf.index.SingleKeyRange.only = function(key) {
 lf.index.SingleKeyRange.all = function() {
   return new lf.index.SingleKeyRange(null, null, !1, !1);
 };
+lf.index.SingleKeyRange.prototype.isOnly = function() {
+  return goog.isDefAndNotNull(this.from) && this.from == this.to && !this.excludeLower && !this.excludeUpper;
+};
 lf.index.SingleKeyRange.prototype.contains = function(key) {
   var left = goog.isNull(this.from) || key > this.from || key == this.from && !this.excludeLower, right = goog.isNull(this.to) || key < this.to || key == this.to && !this.excludeUpper;
   return left && right;
@@ -9589,7 +9592,9 @@ lf.proc.IndexRangeScanStep.prototype.toContextString = function(context) {
   return string;
 };
 lf.proc.IndexRangeScanStep.prototype.execInternal = function(journal, relations, context) {
-  var keyRanges = this.keyRangeCalculator.getKeyRangeCombinations(context), index = this.indexStore_.get(this.index.getNormalizedName()), rowIds = index.getRange(keyRanges, this.reverseOrder, this.useLimit ? context.limit : void 0, this.useSkip ? context.skip : void 0), rows = rowIds.map(function(rowId) {
+  var keyRanges = this.keyRangeCalculator.getKeyRangeCombinations(context), index = this.indexStore_.get(this.index.getNormalizedName()), rowIds;
+  rowIds = 1 == keyRanges.length && keyRanges[0] instanceof lf.index.SingleKeyRange && keyRanges[0].isOnly() ? lf.index.slice(index.get(keyRanges[0].from), !1, this.useLimit ? context.limit : void 0, this.useSkip ? context.skip : void 0) : index.getRange(keyRanges, this.reverseOrder, this.useLimit ? context.limit : void 0, this.useSkip ? context.skip : void 0);
+  var rows = rowIds.map(function(rowId) {
     return new lf.Row(rowId, {});
   }, this);
   return [lf.proc.Relation.fromRows(rows, [this.index.tableName])];
