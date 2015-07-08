@@ -238,6 +238,44 @@ function testOuterJoin_ThrowsOnlyJoinPredicateAllowed() {
 
 
 /**
+ * Tests that Select#leftOuterJoin() fails if from() is not called before
+ * it is called.
+ */
+function testOuterJoin_ThrowsFromNotCalled() {
+  var query = new lf.query.SelectBuilder(hr.db.getGlobal(), []);
+
+  var buildQuery = function() {
+    var j = db.getSchema().getJob();
+    var e = db.getSchema().getEmployee();
+    query.leftOuterJoin(
+        j, e.jobId.eq(j.id)).from(e);
+  };
+
+  // 543: from() has to be called before innerJoin() or leftOuterJoin().
+  lf.testing.util.assertThrowsError(543, buildQuery);
+}
+
+
+/**
+ * Tests that Select#innerJoin() fails if from() is not called before
+ * it is called.
+ */
+function testInnerJoin_ThrowsFromNotCalled() {
+  var query = new lf.query.SelectBuilder(hr.db.getGlobal(), []);
+
+  var buildQuery = function() {
+    var j = db.getSchema().getJob();
+    var e = db.getSchema().getEmployee();
+    query.innerJoin(
+        j, e.jobId.eq(j.id)).from(e);
+  };
+
+  // 543: from() has to be called before innerJoin() or leftOuterJoin().
+  lf.testing.util.assertThrowsError(543, buildQuery);
+}
+
+
+/**
  * Tests that Select#where() fails if where() has already been called.
  */
 function testWhere_ThrowsAlreadyCalled() {

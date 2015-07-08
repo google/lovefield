@@ -9010,7 +9010,9 @@ lf.query.SelectBuilder.prototype.augmentWhereClause_ = function(predicate) {
   }
 };
 lf.query.SelectBuilder.prototype.innerJoin = function(table, predicate) {
-  goog.isDefAndNotNull(this.query.from) || (this.query.from = []);
+  if (!goog.isDefAndNotNull(this.query.from)) {
+    throw new lf.Exception(543);
+  }
   this.query.from.push(table);
   this.augmentWhereClause_(predicate);
   return this;
@@ -9023,7 +9025,9 @@ lf.query.SelectBuilder.prototype.leftOuterJoin = function(table, predicate) {
   if (table.getEffectiveName() != predicate.rightColumn.getTable().getEffectiveName()) {
     throw new lf.Exception(541);
   }
-  goog.isDefAndNotNull(this.query.from) || (this.query.from = []);
+  if (!goog.isDefAndNotNull(this.query.from)) {
+    throw new lf.Exception(543);
+  }
   this.query.from.push(table);
   goog.isDefAndNotNull(this.query.outerJoinPredicates) || (this.query.outerJoinPredicates = new goog.structs.Set);
   this.query.outerJoinPredicates.add(predicate.getId());
