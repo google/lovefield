@@ -18,9 +18,11 @@ goog.setTestOnly();
 goog.require('goog.Promise');
 goog.require('goog.testing.AsyncTestCase');
 goog.require('goog.testing.jsunit');
+goog.require('lf.ConstraintTiming');
 goog.require('lf.schema.DataStoreType');
 goog.require('lf.testing.Capability');
 goog.require('lf.testing.perf.BenchmarkRunner');
+goog.require('lf.testing.perf.ForeignKeysBenchmark');
 goog.require('lf.testing.perf.FullTableBenchmark');
 goog.require('lf.testing.perf.LoadingEmptyDbBenchmark');
 goog.require('lf.testing.perf.LoadingPopulatedDbBenchmark');
@@ -268,5 +270,29 @@ function test6ScenarioSimulations() {
       overallResults.push(results);
       asyncTestCase.continueTesting();
     }, fail);
+  }, fail);
+}
+
+
+function test7ForeignKeys() {
+  asyncTestCase.waitForAsync('test7ForeignKeys');
+
+  goog.Promise.all([
+    lf.testing.perf.ForeignKeysBenchmark.create(
+        lf.ConstraintTiming.IMMEDIATE),
+    lf.testing.perf.ForeignKeysBenchmark.create(
+        lf.ConstraintTiming.DEFERRABLE),
+    lf.testing.perf.ForeignKeysBenchmark.create(null)
+  ]).then(function(benchmarks) {
+    var benchmarkRunner = new lf.testing.perf.BenchmarkRunner(
+        'ForeignKeysBenchmark');
+    benchmarks.forEach(function(benchmark) {
+      benchmarkRunner.schedule(benchmark);
+    });
+
+    return benchmarkRunner.run(REPETITIONS);
+  }).then(function(results) {
+    overallResults.push(results);
+    asyncTestCase.continueTesting();
   }, fail);
 }
