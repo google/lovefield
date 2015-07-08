@@ -3951,7 +3951,7 @@ lf.cache.ConstraintChecker.prototype.checkReferredKey_ = function(foreignKeySpec
     var didColumnValueChange = lf.cache.ConstraintChecker.didColumnValueChange_(modification[0], modification[1], foreignKeySpec.name);
     if (didColumnValueChange) {
       var rowAfter = modification[1], parentKey = rowAfter.payload()[foreignKeySpec.childColumn], parentIndex = this.getParentIndex_(foreignKeySpec);
-      if (!parentIndex.containsKey(parentKey)) {
+      if (!goog.isNull(parentKey) && !parentIndex.containsKey(parentKey)) {
         throw new lf.Exception(203, foreignKeySpec.name);
       }
     }

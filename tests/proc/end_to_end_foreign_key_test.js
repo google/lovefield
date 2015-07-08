@@ -77,6 +77,7 @@ function getSchemaBuilder() {
       addColumn('id', lf.Type.STRING).
       addColumn('parentId', lf.Type.STRING).
       addPrimaryKey(['id']).
+      addNullable(['parentId']).
       addForeignKey('fk_parentId', {
         local: 'parentId',
         ref: 'Parent.id',
@@ -124,6 +125,31 @@ function testDeferrable_ImplicitTx_Error() {
       function() {
         asyncTestCase.continueTesting();
       });
+}
+
+
+/**
+ * Tests that a child column value of null, does not trigger a foreign key
+ * constraint violation, instead it is ignored.
+ */
+function testDeferrable_ImplicitTx_IgnoreNull() {
+  asyncTestCase.waitForAsync('testDeferrable_ImplicitTx_IgnoreNull');
+
+  var childRow = childTable.createRow({
+    id: 'childId',
+    parentId: null,
+    name: 'childName'
+  });
+
+  db.insert().into(childTable).values([childRow]).exec().then(
+      function() {
+        return lf.testing.util.selectAll(global, childTable);
+      }).then(
+      function(results) {
+        assertEquals(1, results.length);
+        assertNull(results[0].payload()['parentId']);
+        asyncTestCase.continueTesting();
+      }, fail);
 }
 
 
