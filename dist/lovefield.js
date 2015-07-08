@@ -2671,73 +2671,6 @@ lf.index.IndexMetadataRow.forType = function(indexType) {
   var indexMetadata = new lf.index.IndexMetadata(indexType);
   return new lf.index.IndexMetadataRow(indexMetadata);
 };
-lf.TransactionType = {};
-goog.exportSymbol("lf.TransactionType", lf.TransactionType);
-lf.TransactionType.READ_ONLY = 0;
-goog.exportProperty(lf.TransactionType, "READ_ONLY", lf.TransactionType.READ_ONLY);
-lf.TransactionType.READ_WRITE = 1;
-goog.exportProperty(lf.TransactionType, "READ_WRITE", lf.TransactionType.READ_WRITE);
-lf.Transaction = function() {
-};
-lf.backstore = {};
-lf.backstore.Tx = function() {
-};
-lf.backstore.BaseTx = function(journal, txType) {
-  this.journal_ = journal;
-  this.txType = txType;
-  this.resolver = goog.Promise.withResolver();
-};
-lf.backstore.BaseTx.prototype.getJournal = function() {
-  return this.journal_;
-};
-lf.backstore.BaseTx.prototype.commit = function() {
-  try {
-    this.journal_.checkDeferredConstraints();
-  } catch (e) {
-    return goog.Promise.reject(e);
-  }
-  var mergeIntoBackstore = goog.bind(function() {
-    return this.txType == lf.TransactionType.READ_ONLY ? this.commitInternal() : this.mergeIntoBackstore_();
-  }, this);
-  return mergeIntoBackstore().then(goog.bind(function(results) {
-    this.journal_.commit();
-    return results;
-  }, this));
-};
-lf.backstore.BaseTx.prototype.mergeIntoBackstore_ = function() {
-  this.mergeTableChanges_();
-  this.mergeIndexChanges_();
-  return this.commitInternal();
-};
-lf.backstore.BaseTx.prototype.mergeTableChanges_ = function() {
-  var diff = this.journal_.getDiff();
-  diff.forEach(function(tableDiff, tableName) {
-    var tableSchema = this.journal_.getScope().get(tableName), table = this.getTable(tableSchema.getName(), goog.bind(tableSchema.deserializeRow, tableSchema)), toDeleteRowIds = tableDiff.getDeleted().getValues().map(function(row) {
-      return row.id();
-    });
-    0 < toDeleteRowIds.length && table.remove(toDeleteRowIds).thenCatch(this.handleError_, this);
-    var toPut = tableDiff.getModified().getValues().map(function(modification) {
-      return modification[1];
-    }).concat(tableDiff.getAdded().getValues());
-    table.put(toPut).thenCatch(this.handleError_, this);
-  }, this);
-};
-lf.backstore.BaseTx.prototype.mergeIndexChanges_ = function() {
-  var indices = this.journal_.getIndexDiff();
-  indices.forEach(function(index) {
-    var indexTable = this.getTable(index.getName(), lf.Row.deserialize), metadataRows;
-    indexTable.get([lf.index.IndexMetadataRow.ROW_ID]).then(function(rows) {
-      metadataRows = rows;
-      return indexTable.remove([]);
-    }).then(function() {
-      indexTable.put(metadataRows);
-      indexTable.put(index.serialize());
-    }, goog.bind(this.handleError_, this));
-  }, this);
-};
-lf.backstore.BaseTx.prototype.handleError_ = function(e) {
-  this.resolver.reject(e);
-};
 goog.math = {};
 goog.math.randomInt = function(a) {
   return Math.floor(Math.random() * a);
@@ -3497,6 +3430,73 @@ lf.structs.map.values = function(map) {
   });
   return array;
 };
+lf.TransactionType = {};
+goog.exportSymbol("lf.TransactionType", lf.TransactionType);
+lf.TransactionType.READ_ONLY = 0;
+goog.exportProperty(lf.TransactionType, "READ_ONLY", lf.TransactionType.READ_ONLY);
+lf.TransactionType.READ_WRITE = 1;
+goog.exportProperty(lf.TransactionType, "READ_WRITE", lf.TransactionType.READ_WRITE);
+lf.Transaction = function() {
+};
+lf.backstore = {};
+lf.backstore.Tx = function() {
+};
+lf.backstore.BaseTx = function(journal, txType) {
+  this.journal_ = journal;
+  this.txType = txType;
+  this.resolver = goog.Promise.withResolver();
+};
+lf.backstore.BaseTx.prototype.getJournal = function() {
+  return this.journal_;
+};
+lf.backstore.BaseTx.prototype.commit = function() {
+  try {
+    this.journal_.checkDeferredConstraints();
+  } catch (e) {
+    return goog.Promise.reject(e);
+  }
+  var mergeIntoBackstore = goog.bind(function() {
+    return this.txType == lf.TransactionType.READ_ONLY ? this.commitInternal() : this.mergeIntoBackstore_();
+  }, this);
+  return mergeIntoBackstore().then(goog.bind(function(results) {
+    this.journal_.commit();
+    return results;
+  }, this));
+};
+lf.backstore.BaseTx.prototype.mergeIntoBackstore_ = function() {
+  this.mergeTableChanges_();
+  this.mergeIndexChanges_();
+  return this.commitInternal();
+};
+lf.backstore.BaseTx.prototype.mergeTableChanges_ = function() {
+  var diff = this.journal_.getDiff();
+  diff.forEach(function(tableDiff, tableName) {
+    var tableSchema = this.journal_.getScope().get(tableName), table = this.getTable(tableSchema.getName(), goog.bind(tableSchema.deserializeRow, tableSchema)), toDeleteRowIds = lf.structs.map.values(tableDiff.getDeleted()).map(function(row) {
+      return row.id();
+    });
+    0 < toDeleteRowIds.length && table.remove(toDeleteRowIds).thenCatch(this.handleError_, this);
+    var toPut = lf.structs.map.values(tableDiff.getModified()).map(function(modification) {
+      return modification[1];
+    }).concat(lf.structs.map.values(tableDiff.getAdded()));
+    table.put(toPut).thenCatch(this.handleError_, this);
+  }, this);
+};
+lf.backstore.BaseTx.prototype.mergeIndexChanges_ = function() {
+  var indices = this.journal_.getIndexDiff();
+  indices.forEach(function(index) {
+    var indexTable = this.getTable(index.getName(), lf.Row.deserialize), metadataRows;
+    indexTable.get([lf.index.IndexMetadataRow.ROW_ID]).then(function(rows) {
+      metadataRows = rows;
+      return indexTable.remove([]);
+    }).then(function() {
+      indexTable.put(metadataRows);
+      indexTable.put(index.serialize());
+    }, goog.bind(this.handleError_, this));
+  }, this);
+};
+lf.backstore.BaseTx.prototype.handleError_ = function(e) {
+  this.resolver.reject(e);
+};
 lf.service = {};
 lf.service.ServiceId = function(serviceId) {
   this.serviceId_ = serviceId;
@@ -3947,8 +3947,8 @@ lf.cache.InMemoryUpdater.prototype.update = function(tableDiffs) {
 };
 lf.cache.InMemoryUpdater.prototype.updateCacheForDiff_ = function(diff) {
   var tableName = diff.getName();
-  diff.getDeleted().getValues().forEach(function(row) {
-    this.cache_.remove(tableName, [row.id()]);
+  diff.getDeleted().forEach(function(row, rowId) {
+    this.cache_.remove(tableName, [rowId]);
   }, this);
   diff.getAdded().forEach(function(row) {
     this.cache_.set(tableName, [row]);
@@ -4132,9 +4132,9 @@ lf.cache.ConstraintChecker.prototype.checkForeignKeysForDelete = function(table,
   }
 };
 lf.cache.TableDiff = function(name) {
-  this.added_ = new goog.structs.Map;
-  this.modified_ = new goog.structs.Map;
-  this.deleted_ = new goog.structs.Map;
+  this.added_ = lf.structs.map.create();
+  this.modified_ = lf.structs.map.create();
+  this.deleted_ = lf.structs.map.create();
   this.name_ = name;
 };
 lf.cache.TableDiff.prototype.getName = function() {
@@ -4150,10 +4150,10 @@ lf.cache.TableDiff.prototype.getDeleted = function() {
   return this.deleted_;
 };
 lf.cache.TableDiff.prototype.add = function(row) {
-  if (this.deleted_.containsKey(row.id())) {
+  if (this.deleted_.has(row.id())) {
     var modification = [this.deleted_.get(row.id()), row];
     this.modified_.set(row.id(), modification);
-    this.deleted_.remove(row.id());
+    this.deleted_.delete(row.id());
   } else {
     this.added_.set(row.id(), row);
   }
@@ -4162,10 +4162,10 @@ lf.cache.TableDiff.prototype.modify = function(modification) {
   var oldValue = modification[0], newValue = modification[1];
   goog.asserts.assert(oldValue.id() == newValue.id(), "Row ID mismatch between old/new values.");
   var id = oldValue.id();
-  if (this.added_.containsKey(id)) {
+  if (this.added_.has(id)) {
     this.added_.set(id, newValue);
   } else {
-    if (this.modified_.containsKey(id)) {
+    if (this.modified_.has(id)) {
       var overallModification = [this.modified_.get(modification[0].id())[0], newValue];
       this.modified_.set(id, overallModification);
     } else {
@@ -4174,12 +4174,12 @@ lf.cache.TableDiff.prototype.modify = function(modification) {
   }
 };
 lf.cache.TableDiff.prototype.delete = function(row) {
-  if (this.added_.containsKey(row.id())) {
-    this.added_.remove(row.id());
+  if (this.added_.has(row.id())) {
+    this.added_.delete(row.id());
   } else {
-    if (this.modified_.containsKey(row.id())) {
+    if (this.modified_.has(row.id())) {
       var originalRow = this.modified_.get(row.id())[0];
-      this.modified_.remove(row.id());
+      this.modified_.delete(row.id());
       this.deleted_.set(row.id(), originalRow);
     } else {
       this.deleted_.set(row.id(), row);
@@ -4188,35 +4188,35 @@ lf.cache.TableDiff.prototype.delete = function(row) {
 };
 lf.cache.TableDiff.prototype.getAsModifications = function() {
   var modifications = [];
-  this.added_.getValues().forEach(function(row) {
+  this.added_.forEach(function(row) {
     modifications.push([null, row]);
-  }, this);
-  this.modified_.getValues().forEach(function(modification) {
+  });
+  this.modified_.forEach(function(modification) {
     modifications.push(modification);
-  }, this);
-  this.deleted_.getValues().forEach(function(row) {
+  });
+  this.deleted_.forEach(function(row) {
     modifications.push([row, null]);
-  }, this);
+  });
   return modifications;
 };
 lf.cache.TableDiff.prototype.toString = function() {
-  return "[" + this.added_.getKeys().toString() + "], [" + this.modified_.getKeys().toString() + "], [" + this.deleted_.getKeys().toString() + "]";
+  return "[" + lf.structs.map.keys(this.added_).toString() + "], [" + lf.structs.map.keys(this.modified_).toString() + "], [" + lf.structs.map.keys(this.deleted_).toString() + "]";
 };
 lf.cache.TableDiff.prototype.getReverse = function() {
   var reverseDiff = new lf.cache.TableDiff(this.name_);
-  this.added_.getValues().forEach(function(row) {
+  this.added_.forEach(function(row) {
     reverseDiff.delete(row);
-  }, this);
-  this.deleted_.getValues().forEach(function(row) {
+  });
+  this.deleted_.forEach(function(row) {
     reverseDiff.add(row);
-  }, this);
-  this.modified_.getValues().forEach(function(modification) {
+  });
+  this.modified_.forEach(function(modification) {
     reverseDiff.modify([modification[1], modification[0]]);
-  }, this);
+  });
   return reverseDiff;
 };
 lf.cache.TableDiff.prototype.isEmpty = function() {
-  return this.added_.isEmpty() && this.deleted_.isEmpty() && this.modified_.isEmpty();
+  return 0 == this.added_.size && 0 == this.deleted_.size && 0 == this.modified_.size;
 };
 lf.cache.Journal = function(global, scope) {
   this.scope_ = lf.structs.map.create();
@@ -4322,9 +4322,9 @@ lf.cache.Journal.prototype.remove = function(table, rows) {
 lf.cache.Journal.prototype.checkDeferredConstraints = function() {
   this.tableDiffs_.forEach(function(tableDiff) {
     var table = this.scope_.get(tableDiff.getName());
-    this.constraintChecker_.checkForeignKeysForInsert(table, tableDiff.getAdded().getValues(), lf.ConstraintTiming.DEFERRABLE);
-    this.constraintChecker_.checkForeignKeysForDelete(table, tableDiff.getDeleted().getValues(), lf.ConstraintTiming.DEFERRABLE);
-    this.constraintChecker_.checkForeignKeysForUpdate(table, tableDiff.getModified().getValues(), lf.ConstraintTiming.DEFERRABLE);
+    this.constraintChecker_.checkForeignKeysForInsert(table, lf.structs.map.values(tableDiff.getAdded()), lf.ConstraintTiming.DEFERRABLE);
+    this.constraintChecker_.checkForeignKeysForDelete(table, lf.structs.map.values(tableDiff.getDeleted()), lf.ConstraintTiming.DEFERRABLE);
+    this.constraintChecker_.checkForeignKeysForUpdate(table, lf.structs.map.values(tableDiff.getModified()), lf.ConstraintTiming.DEFERRABLE);
   }, this);
 };
 lf.cache.Journal.prototype.commit = function() {
@@ -5385,7 +5385,7 @@ lf.backstore.Firebase.prototype.initRowId_ = function() {
 };
 lf.backstore.Firebase.prototype.onRemoved_ = function(snapshot) {
   var row = snapshot.val(), set = this.removedRows_.get(row.T) || null;
-  goog.isNull(set) && (set = lf.structs.set.create([row.T]));
+  goog.isNull(set) && (set = lf.structs.set.create(), this.removedRows_.set(row.T, set));
   set.add(parseInt(snapshot.key(), 10));
 };
 lf.backstore.Firebase.prototype.onChange_ = function(snapshot) {
@@ -5394,15 +5394,15 @@ lf.backstore.Firebase.prototype.onChange_ = function(snapshot) {
     this.revision_ = rev;
     var diffs = this.generateDiff_(snapshot);
     diffs.forEach(function(diff) {
-      var table = this.tables_.get(diff.getName()), toRemove = diff.getDeleted().getKeys();
-      toRemove.length && table.removeSync(toRemove);
-      var rows = diff.getAdded().getValues();
+      var table = this.tables_.get(diff.getName()), toRemove = lf.structs.map.keys(diff.getDeleted());
+      0 < toRemove.length && table.removeSync(toRemove);
+      var rows = lf.structs.map.values(diff.getAdded());
       diff.getModified().forEach(function(rowPair) {
         rows.push(rowPair[1]);
       });
       table.putSync(rows);
     }, this);
-    diffs.length && this.notify(diffs);
+    0 < diffs.length && this.notify(diffs);
     this.listen_();
   }
 };

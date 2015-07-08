@@ -1,7 +1,24 @@
+/**
+ * @license
+ * Copyright 2014 The Lovefield Project Authors. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 goog.setTestOnly();
 goog.require('goog.testing.jsunit');
 
 goog.require('lf.cache.TableDiff');
+goog.require('lf.structs.map');
 goog.require('lf.testing.getSchemaBuilder');
 
 
@@ -126,18 +143,18 @@ function testGetReversed_Add() {
   original.add(row1);
   original.add(row2);
 
-  assertEquals(2, original.getAdded().getCount());
-  assertEquals(0, original.getModified().getCount());
-  assertEquals(0, original.getDeleted().getCount());
+  assertEquals(2, original.getAdded().size);
+  assertEquals(0, original.getModified().size);
+  assertEquals(0, original.getDeleted().size);
 
   var reverse = original.getReverse();
-  assertEquals(0, reverse.getAdded().getCount());
-  assertEquals(0, reverse.getModified().getCount());
-  assertEquals(2, reverse.getDeleted().getCount());
+  assertEquals(0, reverse.getAdded().size);
+  assertEquals(0, reverse.getModified().size);
+  assertEquals(2, reverse.getDeleted().size);
 
   assertSameElements(
-      original.getAdded().getKeys(),
-      reverse.getDeleted().getKeys());
+      lf.structs.map.keys(original.getAdded()),
+      lf.structs.map.keys(reverse.getDeleted()));
 }
 
 
@@ -153,18 +170,18 @@ function testGetReversed_Delete() {
   original.delete(row1);
   original.delete(row2);
 
-  assertEquals(0, original.getAdded().getCount());
-  assertEquals(0, original.getModified().getCount());
-  assertEquals(2, original.getDeleted().getCount());
+  assertEquals(0, original.getAdded().size);
+  assertEquals(0, original.getModified().size);
+  assertEquals(2, original.getDeleted().size);
 
   var reverse = original.getReverse();
-  assertEquals(2, reverse.getAdded().getCount());
-  assertEquals(0, reverse.getModified().getCount());
-  assertEquals(0, reverse.getDeleted().getCount());
+  assertEquals(2, reverse.getAdded().size);
+  assertEquals(0, reverse.getModified().size);
+  assertEquals(0, reverse.getDeleted().size);
 
   assertSameElements(
-      original.getDeleted().getKeys(),
-      reverse.getAdded().getKeys());
+      lf.structs.map.keys(original.getDeleted()),
+      lf.structs.map.keys(reverse.getAdded()));
 }
 
 
@@ -179,18 +196,18 @@ function testGetReversed_Modify() {
   rowNew.assignRowId(1);
   original.modify([rowOld, rowNew]);
 
-  assertEquals(0, original.getAdded().getCount());
-  assertEquals(1, original.getModified().getCount());
-  assertEquals(0, original.getDeleted().getCount());
+  assertEquals(0, original.getAdded().size);
+  assertEquals(1, original.getModified().size);
+  assertEquals(0, original.getDeleted().size);
 
   var reverse = original.getReverse();
-  assertEquals(0, reverse.getAdded().getCount());
-  assertEquals(1, reverse.getModified().getCount());
-  assertEquals(0, reverse.getDeleted().getCount());
+  assertEquals(0, reverse.getAdded().size);
+  assertEquals(1, reverse.getModified().size);
+  assertEquals(0, reverse.getDeleted().size);
 
   assertSameElements(
-      original.getModified().getKeys(),
-      reverse.getModified().getKeys());
+      lf.structs.map.keys(original.getModified()),
+      lf.structs.map.keys(reverse.getModified()));
 
   reverse.getModified().forEach(
       function(modification, rowId) {

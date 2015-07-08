@@ -62,9 +62,9 @@ function sampleHandler(diffs) {
     return;
   }
 
-  assertEquals(2, diff.getAdded().getCount());
-  assertEquals(2, diff.getDeleted().getCount());
-  assertEquals(2, diff.getModified().getCount());
+  assertEquals(2, diff.getAdded().size);
+  assertEquals(2, diff.getDeleted().size);
+  assertEquals(2, diff.getModified().size);
   resolver.resolve();
 }
 

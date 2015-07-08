@@ -127,9 +127,9 @@ function testSimulateExternalChange() {
   actualStore.subscribe(function(tableDiffs) {
     assertEquals(1, tableDiffs.length);
     assertEquals(tableSchema.getName(), tableDiffs[0].getName());
-    assertEquals(5, tableDiffs[0].getAdded().getCount());
-    assertEquals(0, tableDiffs[0].getModified().getCount());
-    assertEquals(0, tableDiffs[0].getDeleted().getCount());
+    assertEquals(5, tableDiffs[0].getAdded().size);
+    assertEquals(0, tableDiffs[0].getModified().size);
+    assertEquals(0, tableDiffs[0].getDeleted().size);
 
     asyncTestCase.continueTesting();
   });
