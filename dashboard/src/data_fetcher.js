@@ -30,7 +30,8 @@ var testSuiteNames = [
   'PK-based_SCUD_Mem',
   'SelectBenchmark',
   'SelectBenchmark_Mem',
-  'Scenario_Simulations'
+  'Scenario_Simulations',
+  'ForeignKeysBenchmark'
 ];
 
 
