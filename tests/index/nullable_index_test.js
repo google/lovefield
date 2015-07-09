@@ -148,3 +148,26 @@ function testUnique() {
   lf.testing.util.assertThrowsError(201, function() { index.add(1, 3); });
   lf.testing.util.assertThrowsError(201, function() { index.add(null, 2); });
 }
+
+
+function testStats() {
+  index.add(null, 1);
+  index.add(null, 2);
+  index.add(null, 7);
+  index.add(1, 3);
+  index.add(1, 4);
+  index.add(1, 8);
+  index.add(2, 5);
+  assertEquals(7, index.stats().totalRows);
+
+  index.remove(null, 2);
+  assertEquals(6, index.stats().totalRows);
+  index.remove(null);
+  assertEquals(4, index.stats().totalRows);
+  index.remove(1, 3);
+  assertEquals(3, index.stats().totalRows);
+  index.remove(1);
+  assertEquals(1, index.stats().totalRows);
+  index.clear();
+  assertEquals(0, index.stats().totalRows);
+}

@@ -1223,6 +1223,44 @@ function testMultiKeyGetRangeRegression() {
       tree2.getRange());
 }
 
+function testStats() {
+  var tree = insertToTree(23, false);
+  assertEquals(23, tree.stats().totalRows);
+  tree.remove(9);
+  tree.remove(17);
+  tree.remove(21);
+  assertEquals(20, tree.stats().totalRows);
+  tree.add(9, 9);
+  tree.add(21, 21);
+  assertEquals(22, tree.stats().totalRows);
+  tree.clear();
+  assertEquals(0, tree.stats().totalRows);
+
+  // Non-unique tree, each key has two rows.
+  tree = insertToTree(23, true);
+  assertEquals(46, tree.stats().totalRows);
+  // Remove all rows for the given key.
+  tree.remove(21);
+  assertEquals(44, tree.stats().totalRows);
+  // Remove only one row for the given key.
+  tree.remove(17, 17);
+  assertEquals(43, tree.stats().totalRows);
+  tree.remove(17, 9999);  // remove non-existing row
+  assertEquals(43, tree.stats().totalRows);
+  tree.add(9, 889);
+  assertEquals(44, tree.stats().totalRows);
+  tree.remove(9);
+  assertEquals(41, tree.stats().totalRows);
+
+  var rows = tree.serialize();
+  var tree2 = lf.index.BTree.deserialize(c, 't2', false, rows);
+  assertEquals(41, tree2.stats().totalRows);
+
+  rows = insertToTree(23, false).serialize();
+  var tree3 = lf.index.BTree.deserialize(c, 't3', true, rows);
+  assertEquals(23, tree3.stats().totalRows);
+}
+
 function manualTestBenchmark() {
   var log = goog.bind(console['log'], console);
   var ROW_COUNT = 1000000;

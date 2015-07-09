@@ -6435,10 +6435,31 @@ lf.index.slice = function(rawArray, opt_reverseOrder, opt_limit, opt_skip) {
   return array.slice(skip, skip + limit);
 };
 
+lf.index.Stats = function() {
+  this.totalRows = 0;
+};
+lf.index.Stats.prototype.add = function(key, opt_rowCount) {
+  var rowCount = opt_rowCount || 1;
+  this.totalRows += rowCount;
+};
+lf.index.Stats.prototype.remove = function(key, removedCount) {
+  this.totalRows -= removedCount;
+};
+lf.index.Stats.prototype.clear = function() {
+  this.totalRows = 0;
+};
+lf.index.Stats.prototype.updateFromList = function(statsList) {
+  this.clear();
+  statsList.forEach(function(stats) {
+    this.totalRows += stats.totalRows;
+  }, this);
+};
+
 lf.index.BTree = function(name, comparator, uniqueKeyOnly, opt_data) {
   this.name_ = name;
   this.comparator_ = comparator;
   this.uniqueKeyOnly_ = uniqueKeyOnly;
+  this.stats_ = new lf.index.Stats;
   opt_data ? this.root_ = lf.index.BTreeNode_.fromData(this, opt_data) : this.clear();
 };
 lf.index.BTree.EMPTY = [];
@@ -6450,6 +6471,7 @@ lf.index.BTree.prototype.toString = function() {
 };
 lf.index.BTree.prototype.add = function(key, value) {
   this.root_ = this.root_.insert(key, value);
+  this.stats_.add(key);
 };
 lf.index.BTree.prototype.set = function(key, value) {
   this.root_ = this.root_.insert(key, value, !0);
@@ -6462,6 +6484,9 @@ lf.index.BTree.prototype.get = function(key) {
 };
 lf.index.BTree.prototype.cost = function(opt_keyRange) {
   return goog.isDefAndNotNull(opt_keyRange) ? this.getRange([opt_keyRange]).length : this.getRange().length;
+};
+lf.index.BTree.prototype.stats = function() {
+  return this.stats_;
 };
 lf.index.BTree.prototype.getRange = function(opt_keyRanges, opt_reverseOrder, opt_limit, opt_skip) {
   var leftMostKey = this.root_.getLeftMostNode().keys_[0];
@@ -6480,6 +6505,7 @@ lf.index.BTree.prototype.getRange = function(opt_keyRanges, opt_reverseOrder, op
 };
 lf.index.BTree.prototype.clear = function() {
   this.root_ = lf.index.BTreeNode_.create(this);
+  this.stats_.clear();
 };
 lf.index.BTree.prototype.containsKey = function(key) {
   return this.root_.containsKey(key);
@@ -6665,8 +6691,8 @@ lf.index.BTreeNode_.prototype.fix_ = function() {
   }
 };
 lf.index.BTreeNode_.prototype.delete_ = function(key, parentPos, opt_value) {
-  var pos = this.searchKey_(key);
-  if (!this.isLeaf_()) {
+  var pos = this.searchKey_(key), isLeaf = this.isLeaf_();
+  if (!isLeaf) {
     var index = this.tree_.eq(this.keys_[pos], key) ? pos + 1 : pos;
     if (this.children_[index].delete_(key, index, opt_value)) {
       this.fix_();
@@ -6679,11 +6705,15 @@ lf.index.BTreeNode_.prototype.delete_ = function(key, parentPos, opt_value) {
     }
   }
   if (this.keys_.length > pos && this.tree_.eq(this.keys_[pos], key)) {
-    if (goog.isDef(opt_value) && !this.tree_.isUniqueKey() && this.isLeaf_() && (goog.array.binaryRemove(this.values_[pos], opt_value), this.values_[pos].length)) {
+    if (goog.isDef(opt_value) && !this.tree_.isUniqueKey() && isLeaf && (goog.array.binaryRemove(this.values_[pos], opt_value) && this.tree_.stats().remove(key, 1), this.values_[pos].length)) {
       return !1;
     }
     this.keys_.splice(pos, 1);
-    this.isLeaf_() && this.values_.splice(pos, 1);
+    if (isLeaf) {
+      var removedLength = this.tree_.isUniqueKey() ? 1 : this.values_[pos].length;
+      this.values_.splice(pos, 1);
+      this.tree_.stats().remove(key, removedLength);
+    }
   }
   this.keys_.length < lf.index.BTreeNode_.MIN_KEY_LEN_ && !this.isRoot_() && (this.steal_() || this.merge_(parentPos));
   return !0;
@@ -6829,10 +6859,13 @@ lf.index.BTreeNode_.serialize = function(start) {
   return rows;
 };
 lf.index.BTreeNode_.deserialize = function(rows, tree) {
-  for (var leaves = rows.map(function(row) {
+  for (var stats = tree.stats(), leaves = rows.map(function(row) {
     var node = new lf.index.BTreeNode_(row.id(), tree);
     node.keys_ = row.payload()[0];
     node.values_ = row.payload()[1];
+    node.keys_.forEach(function(key, index) {
+      stats.add(key, tree.isUniqueKey() ? 1 : node.values_[index].length);
+    });
     return node;
   }), i = 0;i < leaves.length - 1;++i) {
     lf.index.BTreeNode_.associate_(leaves[i], leaves[i + 1]);
@@ -7009,6 +7042,8 @@ lf.index.MultiKeyComparator.prototype.rangeToKeys = function(keyRange) {
 lf.index.NullableIndex = function(index) {
   this.index_ = index;
   this.nulls_ = new goog.structs.Set;
+  this.statsNull_ = new lf.index.Stats;
+  this.stats_ = new lf.index.Stats;
 };
 lf.index.NullableIndex.prototype.getName = function() {
   return this.index_.getName();
@@ -7019,6 +7054,7 @@ lf.index.NullableIndex.prototype.add = function(key, value) {
       throw new lf.Exception(201);
     }
     this.nulls_.add(value);
+    this.statsNull_.add(key);
   } else {
     this.index_.add(key, value);
   }
@@ -7027,13 +7063,17 @@ lf.index.NullableIndex.prototype.set = function(key, value) {
   goog.isNull(key) ? (this.nulls_.clear(), this.nulls_.add(value)) : this.index_.set(key, value);
 };
 lf.index.NullableIndex.prototype.remove = function(key, opt_rowId) {
-  goog.isNull(key) ? opt_rowId ? this.nulls_.remove(opt_rowId) : this.nulls_.clear() : this.index_.remove(key, opt_rowId);
+  goog.isNull(key) ? opt_rowId ? (this.statsNull_.remove(key, 1), this.nulls_.remove(opt_rowId)) : (this.statsNull_.remove(key, this.nulls_.getCount()), this.nulls_.clear()) : this.index_.remove(key, opt_rowId);
 };
 lf.index.NullableIndex.prototype.get = function(key) {
   return goog.isNull(key) ? this.nulls_.getValues() : this.index_.get(key);
 };
 lf.index.NullableIndex.prototype.cost = function(opt_keyRange) {
   return this.index_.cost(opt_keyRange);
+};
+lf.index.NullableIndex.prototype.stats = function() {
+  this.stats_.updateFromList([this.index_.stats(), this.statsNull_]);
+  return this.stats_;
 };
 lf.index.NullableIndex.prototype.getRange = function(opt_keyRanges, opt_reverseOrder, opt_limit, opt_skip) {
   var results = this.index_.getRange(opt_keyRanges, opt_reverseOrder, opt_limit, opt_skip);
@@ -7151,6 +7191,9 @@ lf.index.RowId.deserialize = function(name, rows) {
 };
 lf.index.RowId.prototype.isUniqueKey = function() {
   return !0;
+};
+lf.index.RowId.prototype.stats = function() {
+  throw new lf.Exception(300);
 };
 
 lf.cache.Prefetcher = function(global) {
@@ -7318,6 +7361,9 @@ lf.index.AATree.prototype.get = function(key) {
 };
 lf.index.AATree.prototype.cost = function(opt_keyRange) {
   return goog.isDefAndNotNull(opt_keyRange) ? this.getRange([opt_keyRange]).length : this.getRange().length;
+};
+lf.index.AATree.prototype.stats = function() {
+  throw new lf.Exception(300);
 };
 lf.index.AATree.prototype.getLeftMostNode_ = function() {
   for (var node = this.root_;node.left != this.nullNode_;) {
