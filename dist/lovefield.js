@@ -1258,6 +1258,16 @@ goog.functions.cacheReturnValue = function(fn) {
     return value;
   };
 };
+goog.functions.once = function(f) {
+  var inner = f;
+  return function() {
+    if (inner) {
+      var tmp = inner;
+      inner = null;
+      tmp();
+    }
+  };
+};
 goog.array = {};
 goog.NATIVE_ARRAY_PROTOTYPES = goog.TRUSTED_SITE;
 goog.array.ASSUME_NATIVE_FUNCTIONS = !1;
@@ -6825,25 +6835,56 @@ lf.index.BTreeNode_.prototype.getContainingLeaf = function(key) {
   return this;
 };
 lf.index.BTreeNode_.prototype.getRange = function(keyRange, results) {
-  var start = -1, end = this.keys_.length - 1, c = this.tree_.comparator(), scanPos = goog.bind(function(initPos) {
-    for (var i = initPos;i < this.keys_.length;++i) {
-      var inRange = c.isInRange(this.keys_[i], keyRange);
-      if (-1 != start) {
-        if (!inRange) {
-          end = i - 1;
-          break;
-        }
-      } else {
-        inRange && (start = i);
-      }
-    }
-  }, this);
-  c.isInRange(this.keys_[0], keyRange) ? start = 0 : scanPos(1);
-  if (-1 == start) {
+  var c = this.tree_.comparator(), left = 0, right = this.keys_.length - 1, compare = function(coverage) {
+    return coverage[0] ? coverage[1] ? lf.index.Favor.TIE : lf.index.Favor.LHS : lf.index.Favor.RHS;
+  }, keys = this.keys_, favorLeft = compare(c.compareRange(keys[left], keyRange)), favorRight = compare(c.compareRange(keys[right], keyRange));
+  if (favorLeft == lf.index.Favor.LHS || favorLeft == lf.index.Favor.RHS && favorRight == lf.index.Favor.RHS) {
     return 0;
   }
-  c.isInRange(this.keys_[end], keyRange) || scanPos(start);
-  return end == this.keys_.length - 1 ? this.appendResults_(results, this.values_.slice(start)) : end >= start ? this.appendResults_(results, this.values_.slice(start, end + 1)) : 0;
+  var getMidPoint = function(l, r) {
+    var mid = l + r >> 1;
+    return mid == l ? mid + 1 : mid;
+  }, findFirstKey = function(l, r, favorR) {
+    if (l >= r) {
+      return favorR == lf.index.Favor.TIE ? r : -1;
+    }
+    var favorL = compare(c.compareRange(keys[l], keyRange));
+    if (favorL == lf.index.Favor.TIE) {
+      return l;
+    }
+    if (favorL == lf.index.Favor.LHS) {
+      return -1;
+    }
+    var mid = getMidPoint(l, r);
+    if (mid == r) {
+      return favorR == lf.index.Favor.TIE ? r : -1;
+    }
+    var favorM = compare(c.compareRange(keys[mid], keyRange));
+    return favorM == lf.index.Favor.TIE ? findFirstKey(l, mid, favorM) : favorM == lf.index.Favor.RHS ? findFirstKey(mid + 1, r, favorR) : findFirstKey(l + 1, mid, favorM);
+  }, findLastKey = function(l, r) {
+    if (l >= r) {
+      return l;
+    }
+    var favorR = compare(c.compareRange(keys[r], keyRange));
+    if (favorR == lf.index.Favor.TIE) {
+      return r;
+    }
+    if (favorR == lf.index.Favor.RHS) {
+      return l;
+    }
+    var mid = getMidPoint(l, r);
+    if (mid == r) {
+      return l;
+    }
+    var favorM = compare(c.compareRange(keys[mid], keyRange));
+    return favorM == lf.index.Favor.TIE ? findLastKey(mid, r) : favorM == lf.index.Favor.LHS ? findLastKey(l, mid - 1) : -1;
+  };
+  favorLeft != lf.index.Favor.TIE && (left = findFirstKey(left + 1, right, favorRight));
+  if (-1 == left) {
+    return 0;
+  }
+  right = findLastKey(left, right);
+  return -1 == right || right < left ? 0 : this.appendResults_(results, this.values_.slice(left, right + 1));
 };
 lf.index.BTreeNode_.prototype.appendResults_ = function(currentResults, newResults) {
   var toAppend = this.tree_.isUniqueKey() ? newResults : goog.array.flatten(newResults);
