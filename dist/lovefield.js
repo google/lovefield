@@ -10952,6 +10952,7 @@ goog.exportProperty(lf.schema.TableBuilder.prototype, "addForeignKey", lf.schema
 lf.schema.TableBuilder.prototype.addUnique = function(name, columns) {
   this.checkName_(name);
   var cols = this.normalizeColumns_(columns, !0);
+  this.checkIndexedColumns_(name, cols);
   1 == cols.length && this.uniqueColumns_.add(cols[0].name);
   this.indices_.set(name, cols);
   this.uniqueIndices_.add(name);

@@ -472,22 +472,40 @@ function testThrows_NonIntegerPkWithAutoInc() {
  * is thrown.
  */
 function testThrows_CrossColumnNullableIndex() {
-  var tableBuilder1 = lf.schema.create('hr', 1);
   // 507: Cross-column index {0} refers to nullable columns: {1}.
   lf.testing.util.assertThrowsError(507, function() {
-    tableBuilder1.createTable('Employee').
+    var tableBuilder = lf.schema.create('hr', 1);
+    tableBuilder.createTable('Employee').
         addColumn('id1', lf.Type.STRING).
         addColumn('id2', lf.Type.STRING).
         addNullable(['id1']).
         addIndex('idx_indexName', ['id1', 'id2']);
   });
 
-  var tableBuilder2 = lf.schema.create('hr', 1);
   lf.testing.util.assertThrowsError(507, function() {
-    tableBuilder2.createTable('Employee').
+    var tableBuilder = lf.schema.create('hr', 1);
+    tableBuilder.createTable('Employee').
         addColumn('id1', lf.Type.STRING).
         addColumn('id2', lf.Type.STRING).
         addIndex('idx_indexName', ['id1', 'id2']).
+        addNullable(['id1']);
+  });
+
+  lf.testing.util.assertThrowsError(507, function() {
+    var tableBuilder = lf.schema.create('hr', 1);
+    tableBuilder.createTable('Employee').
+        addColumn('id1', lf.Type.STRING).
+        addColumn('id2', lf.Type.STRING).
+        addNullable(['id1']).
+        addUnique('idx_indexName', ['id1', 'id2']);
+  });
+
+  lf.testing.util.assertThrowsError(507, function() {
+    var tableBuilder = lf.schema.create('hr', 1);
+    tableBuilder.createTable('Employee').
+        addColumn('id1', lf.Type.STRING).
+        addColumn('id2', lf.Type.STRING).
+        addUnique('idx_indexName', ['id1', 'id2']).
         addNullable(['id1']);
   });
 }
