@@ -164,7 +164,7 @@ function testTree2() {
   var treeBefore =
       'project()\n' +
       '-order_by(Employee.salary ASC)\n' +
-      '--join(join_pred(Job.id, Employee.jobId))\n' +
+      '--join(type: inner, impl: hash, join_pred(Job.id, Employee.jobId))\n' +
       '---select(value_pred(Employee.id gt 100))\n' +
       '----order_by(Employee.salary ASC)\n' +
       '-----select(value_pred(Employee.salary eq 10000))\n' +
@@ -177,7 +177,7 @@ function testTree2() {
   var treeAfter =
       'project()\n' +
       '-order_by(Employee.salary ASC)\n' +
-      '--join(join_pred(Job.id, Employee.jobId))\n' +
+      '--join(type: inner, impl: hash, join_pred(Job.id, Employee.jobId))\n' +
       '---order_by(Employee.salary ASC)\n' +
       '----select(value_pred(Employee.salary eq 10000))\n' +
       '-----table_access_by_row_id(Employee)\n' +

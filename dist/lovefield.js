@@ -8383,8 +8383,7 @@ lf.proc.JoinNode = function(predicate, isOuterJoin) {
 };
 goog.inherits(lf.proc.JoinNode, lf.proc.LogicalQueryPlanNode);
 lf.proc.JoinNode.prototype.toString = function() {
-  var prefix = this.isOuterJoin ? "left_outer_join" : "join";
-  return prefix + "(" + this.predicate.toString() + ")";
+  return "join(type: " + (this.isOuterJoin ? "outer" : "inner") + ", " + this.predicate.toString() + ")";
 };
 lf.proc.RewritePass = function() {
 };
@@ -9757,11 +9756,13 @@ lf.proc.JoinStep = function(predicate, isOuterJoin) {
   lf.proc.PhysicalQueryPlanNode.call(this, 2, lf.proc.PhysicalQueryPlanNode.ExecType.ALL);
   this.predicate_ = predicate;
   this.isOuterJoin_ = isOuterJoin;
+  this.algorithm_ = this.predicate_.evaluatorType == lf.eval.Type.EQ ? lf.proc.JoinStep.Algorithm_.HASH : lf.proc.JoinStep.Algorithm_.NESTED_LOOP;
 };
 goog.inherits(lf.proc.JoinStep, lf.proc.PhysicalQueryPlanNode);
+lf.proc.JoinStep.Algorithm_ = {HASH:0, INDEX_NESTED_LOOP:1, NESTED_LOOP:2};
+lf.proc.JoinStep.AlgorithmToString_ = ["hash", "index_nested_loop", "nested_loop"];
 lf.proc.JoinStep.prototype.toString = function() {
-  var prefix = this.isOuterJoin_ ? "left_outer_join" : "join";
-  return prefix + "(" + this.predicate_.toString() + ")";
+  return "join(type: " + (this.isOuterJoin_ ? "outer" : "inner") + ", impl: " + lf.proc.JoinStep.AlgorithmToString_[this.algorithm_] + ", " + this.predicate_.toString() + ")";
 };
 lf.proc.JoinStep.prototype.execInternal = function(journal, relations) {
   return [this.predicate_.evalRelations(relations[0], relations[1], this.isOuterJoin_)];

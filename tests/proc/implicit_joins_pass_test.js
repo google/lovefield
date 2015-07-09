@@ -59,7 +59,7 @@ function testSimpleTree() {
       '--table_access(Job)\n';
 
   var treeAfter =
-      'join(join_pred(Employee.jobId, Job.id))\n' +
+      'join(type: inner, join_pred(Employee.jobId, Job.id))\n' +
       '-table_access(Employee)\n' +
       '-table_access(Job)\n';
 
