@@ -84,6 +84,7 @@ lf.testing.EndToEndSelectTester = function(connectFn) {
     this.testPredicate_VarArgOr.bind(this),
     this.testExplicitJoin.bind(this),
     this.testOuterJoin.bind(this),
+    this.testOuterJoin_reversePredicate.bind(this),
     this.testOuterJoin_Alias.bind(this),
     this.testExplicitJoin_WithCrossProduct.bind(this),
     this.testOrderBy_Descending.bind(this),
@@ -730,6 +731,28 @@ lf.testing.EndToEndSelectTester.prototype.testOuterJoin = function() {
       this.db_.select().
       from(r).
       leftOuterJoin(c, r.id.eq(c.regionId)).
+      orderBy(r.id, lf.Order.ASC));
+
+  return queryBuilder.exec().then(
+      function(results) {
+        this.assertOuterJoinResult_(r, c, results);
+      }.bind(this));
+};
+
+
+/**
+ * Tests a SELECT left outer join query with the reversed order of columns
+ * in the predicate.
+ * @return {!IThenable}
+ */
+lf.testing.EndToEndSelectTester.prototype.
+    testOuterJoin_reversePredicate = function() {
+  var c = this.c_;
+  var r = this.r_;
+  var queryBuilder = /** @type {!lf.query.SelectBuilder} */ (
+      this.db_.select().
+      from(r).
+      leftOuterJoin(c, c.regionId.eq(r.id)).
       orderBy(r.id, lf.Order.ASC));
 
   return queryBuilder.exec().then(

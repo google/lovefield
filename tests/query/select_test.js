@@ -20,6 +20,7 @@ goog.require('goog.testing.AsyncTestCase');
 goog.require('goog.testing.jsunit');
 goog.require('hr.db');
 goog.require('lf.bind');
+goog.require('lf.eval.Type');
 goog.require('lf.fn');
 goog.require('lf.op');
 goog.require('lf.query.SelectBuilder');
@@ -200,25 +201,6 @@ function testFrom_ThrowsAlreadyCalled() {
 
 
 /**
- * Tests that Select#leftOuterJoin() fails if order of join predicate
- * is not the same as join order.
- */
-function testOuterJoin_ThrowsWrongPredicateOrder() {
-  var query = new lf.query.SelectBuilder(hr.db.getGlobal(), []);
-
-  var buildQuery = function() {
-    var j = db.getSchema().getJob();
-    var e = db.getSchema().getEmployee();
-    query.from(e).leftOuterJoin(j, j.id.eq(e.jobId));
-  };
-
-  // 541: The order of outer join predicate should be the
-  // same as Join order.
-  lf.testing.util.assertThrowsError(541, buildQuery);
-}
-
-
-/**
  * Tests that Select#leftOuterJoin() fails if the predicate is not
  * join predicate.
  */
@@ -232,8 +214,8 @@ function testOuterJoin_ThrowsOnlyJoinPredicateAllowed() {
         j, lf.op.and(j.id.eq(e.jobId), j.id.eq('jobId1')));
   };
 
-  // 542: Outer join accepts only join predicate.
-  lf.testing.util.assertThrowsError(542, buildQuery);
+  // 541: Outer join accepts only join predicate.
+  lf.testing.util.assertThrowsError(541, buildQuery);
 }
 
 
@@ -251,8 +233,8 @@ function testOuterJoin_ThrowsFromNotCalled() {
         j, e.jobId.eq(j.id)).from(e);
   };
 
-  // 543: from() has to be called before innerJoin() or leftOuterJoin().
-  lf.testing.util.assertThrowsError(543, buildQuery);
+  // 542: from() has to be called before innerJoin() or leftOuterJoin().
+  lf.testing.util.assertThrowsError(542, buildQuery);
 }
 
 
@@ -270,8 +252,8 @@ function testInnerJoin_ThrowsFromNotCalled() {
         j, e.jobId.eq(j.id)).from(e);
   };
 
-  // 543: from() has to be called before innerJoin() or leftOuterJoin().
-  lf.testing.util.assertThrowsError(543, buildQuery);
+  // 542: from() has to be called before innerJoin() or leftOuterJoin().
+  lf.testing.util.assertThrowsError(542, buildQuery);
 }
 
 
@@ -636,4 +618,28 @@ function testBuilder_Clone() {
       '--index_range_scan(Employee.idx_salary, (40000, unbound], natural, ' +
       'limit:44, skip:55)\n';
   assertEquals(expected2, builder2.explain());
+}
+
+function testBuilder_ReverseJoinPredicate() {
+  var j = db.getSchema().getJob();
+  var e = db.getSchema().getEmployee();
+  var pred1 = e.jobId.lt(j.id);
+  var pred2 = j.id.gt(e.jobId);
+  var builder =
+      db.select(j.title).from(e).
+      leftOuterJoin(j, pred1);
+  var builder2 =
+      db.select(j.title).from(e).
+      leftOuterJoin(j, pred2);
+  var expected =
+      'project(Job.title)\n' +
+      '-left_outer_join(join_pred(Employee.jobId, Job.id))\n' +
+      '--table_access(Employee)\n' +
+      '--table_access(Job)\n';
+  assertEquals(expected, builder.explain());
+  assertEquals(expected, builder2.explain());
+  assertEquals(lf.eval.Type.LT, pred1.evaluatorType);
+  assertEquals(lf.eval.Type.LT,
+      (/** @type {!lf.query.SelectBuilder} */(builder2)).
+      getQuery().where.evaluatorType);
 }

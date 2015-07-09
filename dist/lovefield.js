@@ -7839,6 +7839,24 @@ lf.pred.JoinPredicate.prototype.copy = function() {
 lf.pred.JoinPredicate.prototype.getColumns = function(opt_results) {
   return goog.isDefAndNotNull(opt_results) ? (opt_results.push(this.leftColumn), opt_results.push(this.rightColumn), opt_results) : [this.leftColumn, this.rightColumn];
 };
+lf.pred.JoinPredicate.prototype.reverse = function() {
+  var evaluatorType = this.evaluatorType;
+  switch(this.evaluatorType) {
+    case lf.eval.Type.GT:
+      evaluatorType = lf.eval.Type.LT;
+      break;
+    case lf.eval.Type.LT:
+      evaluatorType = lf.eval.Type.GT;
+      break;
+    case lf.eval.Type.GTE:
+      evaluatorType = lf.eval.Type.LTE;
+      break;
+    case lf.eval.Type.LTE:
+      evaluatorType = lf.eval.Type.GTE;
+  }
+  var newPredicate = new lf.pred.JoinPredicate(this.rightColumn, this.leftColumn, evaluatorType);
+  return newPredicate;
+};
 lf.pred.JoinPredicate.prototype.eval = function(relation) {
   var entries = relation.entries.filter(function(entry) {
     var leftValue = entry.getField(this.leftColumn), rightValue = entry.getField(this.rightColumn);
@@ -9011,7 +9029,7 @@ lf.query.SelectBuilder.prototype.augmentWhereClause_ = function(predicate) {
 };
 lf.query.SelectBuilder.prototype.innerJoin = function(table, predicate) {
   if (!goog.isDefAndNotNull(this.query.from)) {
-    throw new lf.Exception(543);
+    throw new lf.Exception(542);
   }
   this.query.from.push(table);
   this.augmentWhereClause_(predicate);
@@ -9020,18 +9038,17 @@ lf.query.SelectBuilder.prototype.innerJoin = function(table, predicate) {
 goog.exportProperty(lf.query.SelectBuilder.prototype, "innerJoin", lf.query.SelectBuilder.prototype.innerJoin);
 lf.query.SelectBuilder.prototype.leftOuterJoin = function(table, predicate) {
   if (!(predicate instanceof lf.pred.JoinPredicate)) {
-    throw new lf.Exception(542);
-  }
-  if (table.getEffectiveName() != predicate.rightColumn.getTable().getEffectiveName()) {
     throw new lf.Exception(541);
   }
   if (!goog.isDefAndNotNull(this.query.from)) {
-    throw new lf.Exception(543);
+    throw new lf.Exception(542);
   }
   this.query.from.push(table);
   goog.isDefAndNotNull(this.query.outerJoinPredicates) || (this.query.outerJoinPredicates = new goog.structs.Set);
-  this.query.outerJoinPredicates.add(predicate.getId());
-  this.augmentWhereClause_(predicate);
+  var normalizedPredicate = predicate;
+  table.getEffectiveName() != predicate.rightColumn.getTable().getEffectiveName() && (normalizedPredicate = predicate.reverse());
+  this.query.outerJoinPredicates.add(normalizedPredicate.getId());
+  this.augmentWhereClause_(normalizedPredicate);
   return this;
 };
 goog.exportProperty(lf.query.SelectBuilder.prototype, "leftOuterJoin", lf.query.SelectBuilder.prototype.leftOuterJoin);

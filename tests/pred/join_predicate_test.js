@@ -18,6 +18,7 @@ goog.setTestOnly();
 goog.require('goog.testing.AsyncTestCase');
 goog.require('goog.testing.jsunit');
 goog.require('hr.db');
+goog.require('lf.eval.Type');
 goog.require('lf.pred.JoinPredicate');
 goog.require('lf.proc.Relation');
 goog.require('lf.proc.RelationEntry');
@@ -75,6 +76,32 @@ function testCopy() {
 function testGetColumns() {
   var p = e.jobId.eq(j.id);
   assertSameElements([e.jobId, j.id], p.getColumns());
+}
+
+
+function testJoinPredicate_reverse() {
+  var predicates = [
+    e.jobId.lt(j.id),
+    e.jobId.gt(j.id),
+    e.jobId.lte(j.id),
+    e.jobId.gte(j.id),
+    e.jobId.eq(j.id),
+    e.jobId.neq(j.id)
+  ];
+  var expectedEvalTypes = [
+    lf.eval.Type.GT,
+    lf.eval.Type.LT,
+    lf.eval.Type.GTE,
+    lf.eval.Type.LTE,
+    lf.eval.Type.EQ,
+    lf.eval.Type.NEQ
+  ];
+  for (var i = 0; i < predicates.length; i++) {
+    var reversePredicate = predicates[i].reverse();
+    assertEquals(predicates[i].leftColumn, reversePredicate.rightColumn);
+    assertEquals(predicates[i].rightColumn, reversePredicate.leftColumn);
+    assertEquals(expectedEvalTypes[i], reversePredicate.evaluatorType);
+  }
 }
 
 

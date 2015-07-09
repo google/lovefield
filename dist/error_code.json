@@ -75,9 +75,8 @@
   "538": "Foreign key {0} column type mismatch.",
   "539": "Foreign key {0} refers to non-unique column.",
   "540": "Foreign key {0} has invalid reference syntax.",
-  "541": "The order of outer join predicate should be the same as Join order.",
-  "542": "Outer join accepts only join predicate.",
-  "543": "from() has to be called before innerJoin() or leftOuterJoin().",
+  "541": "Outer join accepts only join predicate.",
+  "542": "from() has to be called before innerJoin() or leftOuterJoin().",
 
   "900": "Test error",
   "999": "Simulated error"
