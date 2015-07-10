@@ -4277,6 +4277,9 @@ lf.index.SingleKeyRange.only = function(key) {
 lf.index.SingleKeyRange.all = function() {
   return new lf.index.SingleKeyRange(null, null, !1, !1);
 };
+lf.index.SingleKeyRange.prototype.isAll = function() {
+  return goog.isNull(this.from) && goog.isNull(this.to);
+};
 lf.index.SingleKeyRange.prototype.isOnly = function() {
   return goog.isDefAndNotNull(this.from) && this.from == this.to && !this.excludeLower && !this.excludeUpper;
 };
@@ -6493,7 +6496,18 @@ lf.index.BTree.prototype.get = function(key) {
   return this.root_.get(key);
 };
 lf.index.BTree.prototype.cost = function(opt_keyRange) {
-  return goog.isDefAndNotNull(opt_keyRange) ? this.getRange([opt_keyRange]).length : this.getRange().length;
+  if (!goog.isDefAndNotNull(opt_keyRange)) {
+    return this.stats().totalRows;
+  }
+  if (opt_keyRange instanceof lf.index.SingleKeyRange) {
+    if (opt_keyRange.isAll()) {
+      return this.stats().totalRows;
+    }
+    if (opt_keyRange.isOnly()) {
+      return this.get(opt_keyRange.from).length;
+    }
+  }
+  return this.getRange([opt_keyRange]).length;
 };
 lf.index.BTree.prototype.stats = function() {
   return this.stats_;
