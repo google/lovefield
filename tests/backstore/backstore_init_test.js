@@ -15,7 +15,8 @@
  * limitations under the License.
  */
 goog.setTestOnly();
-goog.require('goog.functions');
+goog.require('goog.Promise');
+goog.require('goog.string');
 goog.require('goog.structs.Set');
 goog.require('goog.testing.AsyncTestCase');
 goog.require('goog.testing.PropertyReplacer');
@@ -32,6 +33,7 @@ goog.require('lf.cache.DefaultCache');
 goog.require('lf.index.IndexMetadata');
 goog.require('lf.index.IndexMetadataRow');
 goog.require('lf.service');
+goog.require('lf.structs.map');
 goog.require('lf.testing.Capability');
 
 
@@ -136,7 +138,7 @@ function testInit_Memory() {
       /** @suppress {accessControls} */
       function() {
         var createdTableNames = new goog.structs.Set(
-            memoryDb.tables_.getKeys());
+            lf.structs.map.keys(memoryDb.tables_));
         assertUserTables(schema, createdTableNames);
         assertIndexTables(schema, createdTableNames);
 

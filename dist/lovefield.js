@@ -3456,6 +3456,60 @@ goog.structs.Map.hasKey_ = function(obj, key) {
   return Object.prototype.hasOwnProperty.call(obj, key);
 };
 
+lf.structs = {};
+lf.structs.map = {};
+lf.structs.MapPolyFill_ = function() {
+  this.map_ = new goog.structs.Map;
+  Object.defineProperty(this, "size", {get:function() {
+    return this.map_.getCount();
+  }});
+};
+lf.structs.MapPolyFill_.prototype.clear = function() {
+  this.map_.clear();
+};
+goog.exportProperty(lf.structs.MapPolyFill_.prototype, "clear", lf.structs.MapPolyFill_.prototype.clear);
+lf.structs.MapPolyFill_.prototype.delete = function(key) {
+  return this.map_.remove(key);
+};
+goog.exportProperty(lf.structs.MapPolyFill_.prototype, "delete", lf.structs.MapPolyFill_.prototype.delete);
+lf.structs.MapPolyFill_.prototype.forEach = function(callback, opt_thisArg) {
+  return this.map_.forEach(callback, opt_thisArg);
+};
+goog.exportProperty(lf.structs.MapPolyFill_.prototype, "forEach", lf.structs.MapPolyFill_.prototype.forEach);
+lf.structs.MapPolyFill_.prototype.get = function(key) {
+  return this.map_.get(key);
+};
+goog.exportProperty(lf.structs.MapPolyFill_.prototype, "get", lf.structs.MapPolyFill_.prototype.get);
+lf.structs.MapPolyFill_.prototype.has = function(key) {
+  return this.map_.containsKey(key);
+};
+goog.exportProperty(lf.structs.MapPolyFill_.prototype, "has", lf.structs.MapPolyFill_.prototype.has);
+lf.structs.MapPolyFill_.prototype.set = function(key, value) {
+  return this.map_.set(key, value);
+};
+goog.exportProperty(lf.structs.MapPolyFill_.prototype, "set", lf.structs.MapPolyFill_.prototype.set);
+lf.structs.Map = window.Map && window.Map.prototype.values && window.Map.prototype.forEach ? window.Map : lf.structs.MapPolyFill_;
+lf.structs.map.keys = function(map) {
+  if (map instanceof lf.structs.MapPolyFill_) {
+    return map.map_.getKeys();
+  }
+  var i = 0, array = Array(map.size);
+  map.forEach(function(v, k) {
+    array[i++] = k;
+  });
+  return array;
+};
+lf.structs.map.values = function(map) {
+  if (map instanceof lf.structs.MapPolyFill_) {
+    return map.map_.getValues();
+  }
+  var i = 0, array = Array(map.size);
+  map.forEach(function(v) {
+    array[i++] = v;
+  });
+  return array;
+};
+
 lf.service = {};
 lf.service.ServiceId = function(serviceId) {
   this.serviceId_ = serviceId;
@@ -3722,7 +3776,7 @@ lf.backstore.BundledObjectStore.prototype.get = function(ids) {
   }, this));
 };
 lf.backstore.BundledObjectStore.prototype.getPagesByRowIds_ = function(rowIds) {
-  var results = new goog.structs.Map, resolver = goog.Promise.withResolver(), pageIds = lf.backstore.Page.toPageIds(rowIds), promises = pageIds.map(function(id) {
+  var results = new lf.structs.Map, resolver = goog.Promise.withResolver(), pageIds = lf.backstore.Page.toPageIds(rowIds), promises = pageIds.map(function(id) {
     return new goog.Promise(function(resolve, reject) {
       var request;
       try {
@@ -3785,14 +3839,14 @@ lf.backstore.BundledObjectStore.prototype.put = function(rows) {
   if (0 == rows.length) {
     return goog.Promise.resolve();
   }
-  var pages = new goog.structs.Map;
+  var pages = new lf.structs.Map;
   rows.forEach(function(row) {
-    var pageId = lf.backstore.Page.toPageId(row.id()), page = pages.get(pageId, null);
+    var pageId = lf.backstore.Page.toPageId(row.id()), page = pages.get(pageId) || null;
     goog.isNull(page) && (page = this.retrievePageFn_(this.store_.name, pageId));
     page.setRows([row]);
     pages.set(pageId, page);
   }, this);
-  var promises = pages.getValues().map(function(page) {
+  var promises = lf.structs.map.values(pages).map(function(page) {
     return this.performWriteOp_(goog.bind(function() {
       return this.store_.put(page.serialize());
     }, this));
@@ -3805,14 +3859,14 @@ lf.backstore.BundledObjectStore.prototype.remove = function(ids) {
       return this.store_.clear();
     }, this));
   }
-  var pages = new goog.structs.Map;
+  var pages = new lf.structs.Map;
   ids.forEach(function(id) {
-    var pageId = lf.backstore.Page.toPageId(id), page = pages.get(pageId, null);
+    var pageId = lf.backstore.Page.toPageId(id), page = pages.get(pageId) || null;
     goog.isNull(page) && (page = this.retrievePageFn_(this.store_.name, pageId));
     page.removeRows([id]);
     pages.set(pageId, page);
   }, this);
-  var promises = pages.getValues().map(function(page) {
+  var promises = lf.structs.map.values(pages).map(function(page) {
     return this.performWriteOp_(goog.bind(function() {
       return goog.object.isEmpty(page.getPayload()) ? this.store_.delete(page.getId()) : this.store_.put(page.serialize());
     }, this));
@@ -5160,15 +5214,15 @@ lf.backstore.FirebaseTx.prototype.commitInternal = function() {
 };
 
 lf.backstore.MemoryTable = function() {
-  this.data_ = new goog.structs.Map;
+  this.data_ = new lf.structs.Map;
 };
 lf.backstore.MemoryTable.prototype.getSync = function(ids) {
   if (0 == ids.length) {
-    return this.data_.getValues();
+    return lf.structs.map.values(this.data_);
   }
   var results = [];
   ids.forEach(function(id) {
-    var row = this.data_.get(id, null);
+    var row = this.data_.get(id) || null;
     goog.isNull(row) || results.push(row);
   }, this);
   return results;
@@ -5189,8 +5243,8 @@ lf.backstore.MemoryTable.prototype.put = function(rows) {
   return goog.Promise.resolve();
 };
 lf.backstore.MemoryTable.prototype.removeSync = function(ids) {
-  0 == ids.length || ids.length == this.data_.getCount() ? this.data_.clear() : ids.forEach(function(id) {
-    this.data_.remove(id);
+  0 == ids.length || ids.length == this.data_.size ? this.data_.clear() : ids.forEach(function(id) {
+    this.data_.delete(id);
   }, this);
 };
 lf.backstore.MemoryTable.prototype.remove = function(ids) {
@@ -5198,7 +5252,7 @@ lf.backstore.MemoryTable.prototype.remove = function(ids) {
   return goog.Promise.resolve();
 };
 lf.backstore.MemoryTable.prototype.getMaxRowId = function() {
-  return this.data_.isEmpty() ? 0 : this.data_.getKeys().reduce(function(prev, cur) {
+  return 0 == this.data_.size ? 0 : lf.structs.map.keys(this.data_).reduce(function(prev, cur) {
     return prev > cur ? prev : cur;
   }, 0);
 };
@@ -5829,7 +5883,7 @@ lf.backstore.LocalStorageTx.prototype.commitInternal = function() {
 
 lf.backstore.LocalStorage = function(schema) {
   this.schema_ = schema;
-  this.tables_ = new goog.structs.Map;
+  this.tables_ = new lf.structs.Map;
   this.listener_ = this.changeHandler_ = null;
 };
 lf.backstore.LocalStorage.prototype.initSync = function() {
@@ -5867,7 +5921,7 @@ lf.backstore.LocalStorage.prototype.loadTables_ = function() {
   }, this);
 };
 lf.backstore.LocalStorage.prototype.getTableInternal = function(tableName) {
-  if (!this.tables_.containsKey(tableName)) {
+  if (!this.tables_.has(tableName)) {
     throw new lf.Exception(101, tableName);
   }
   return this.tables_.get(tableName);
@@ -5882,7 +5936,7 @@ lf.backstore.LocalStorage.prototype.subscribe = function(handler) {
   goog.isDefAndNotNull(this.listener_) || (this.listener_ = this.onStorageEvent_.bind(this), window.addEventListener("storage", this.listener_, !1));
 };
 lf.backstore.LocalStorage.prototype.commit = function() {
-  this.tables_.getValues().forEach(function(table) {
+  this.tables_.forEach(function(table) {
     table.commit();
   });
 };
@@ -5921,14 +5975,14 @@ lf.backstore.MemoryTx.prototype.commitInternal = function() {
 
 lf.backstore.Memory = function(schema) {
   this.schema_ = schema;
-  this.tables_ = new goog.structs.Map;
+  this.tables_ = new lf.structs.Map;
 };
 lf.backstore.Memory.prototype.init = function() {
   this.schema_.tables().forEach(this.initTable_, this);
   return goog.Promise.resolve();
 };
 lf.backstore.Memory.prototype.getTableInternal = function(tableName) {
-  var table = this.tables_.get(tableName, null);
+  var table = this.tables_.get(tableName) || null;
   if (goog.isNull(table)) {
     throw new lf.Exception(101, tableName);
   }
@@ -5938,7 +5992,7 @@ lf.backstore.Memory.prototype.createTx = function(mode, journal) {
   return new lf.backstore.MemoryTx(this, mode, journal);
 };
 lf.backstore.Memory.prototype.createTable_ = function(tableName) {
-  if (!this.tables_.containsKey(tableName)) {
+  if (!this.tables_.has(tableName)) {
     var backstoreTable = new lf.backstore.MemoryTable;
     this.tables_.set(tableName, backstoreTable);
     return backstoreTable;
@@ -6012,12 +6066,12 @@ lf.backstore.WebSqlTable.prototype.remove = function(ids) {
 lf.backstore.WebSqlTx = function(db, journal, txType) {
   lf.backstore.BaseTx.call(this, journal, txType);
   this.db_ = db;
-  this.tables_ = new goog.structs.Map;
+  this.tables_ = new lf.structs.Map;
   this.commands_ = [];
 };
 goog.inherits(lf.backstore.WebSqlTx, lf.backstore.BaseTx);
 lf.backstore.WebSqlTx.prototype.getTable = function(tableName, deserializeFn) {
-  var table = this.tables_.get(tableName, null);
+  var table = this.tables_.get(tableName) || null;
   goog.isNull(table) && (table = new lf.backstore.WebSqlTable(this, tableName, deserializeFn), this.tables_.set(tableName, table));
   return table;
 };
@@ -6261,60 +6315,6 @@ lf.backstore.WebSql.prototype.scanRowId_ = function() {
 };
 
 lf.cache.Cache = function() {
-};
-
-lf.structs = {};
-lf.structs.map = {};
-lf.structs.MapPolyFill_ = function() {
-  this.map_ = new goog.structs.Map;
-  Object.defineProperty(this, "size", {get:function() {
-    return this.map_.getCount();
-  }});
-};
-lf.structs.MapPolyFill_.prototype.clear = function() {
-  this.map_.clear();
-};
-goog.exportProperty(lf.structs.MapPolyFill_.prototype, "clear", lf.structs.MapPolyFill_.prototype.clear);
-lf.structs.MapPolyFill_.prototype.delete = function(key) {
-  return this.map_.remove(key);
-};
-goog.exportProperty(lf.structs.MapPolyFill_.prototype, "delete", lf.structs.MapPolyFill_.prototype.delete);
-lf.structs.MapPolyFill_.prototype.forEach = function(callback, opt_thisArg) {
-  return this.map_.forEach(callback, opt_thisArg);
-};
-goog.exportProperty(lf.structs.MapPolyFill_.prototype, "forEach", lf.structs.MapPolyFill_.prototype.forEach);
-lf.structs.MapPolyFill_.prototype.get = function(key) {
-  return this.map_.get(key);
-};
-goog.exportProperty(lf.structs.MapPolyFill_.prototype, "get", lf.structs.MapPolyFill_.prototype.get);
-lf.structs.MapPolyFill_.prototype.has = function(key) {
-  return this.map_.containsKey(key);
-};
-goog.exportProperty(lf.structs.MapPolyFill_.prototype, "has", lf.structs.MapPolyFill_.prototype.has);
-lf.structs.MapPolyFill_.prototype.set = function(key, value) {
-  return this.map_.set(key, value);
-};
-goog.exportProperty(lf.structs.MapPolyFill_.prototype, "set", lf.structs.MapPolyFill_.prototype.set);
-lf.structs.Map = window.Map && window.Map.prototype.values && window.Map.prototype.forEach ? window.Map : lf.structs.MapPolyFill_;
-lf.structs.map.keys = function(map) {
-  if (map instanceof lf.structs.MapPolyFill_) {
-    return map.map_.getKeys();
-  }
-  var i = 0, array = Array(map.size);
-  map.forEach(function(v, k) {
-    array[i++] = k;
-  });
-  return array;
-};
-lf.structs.map.values = function(map) {
-  if (map instanceof lf.structs.MapPolyFill_) {
-    return map.map_.getValues();
-  }
-  var i = 0, array = Array(map.size);
-  map.forEach(function(v) {
-    array[i++] = v;
-  });
-  return array;
 };
 
 lf.structs.set = {};
