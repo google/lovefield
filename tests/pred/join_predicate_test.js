@@ -218,6 +218,19 @@ function testJoinPredicate_EvalRelations_NestedLoopJoin() {
 
 
 /** @suppress {accessControls} */
+function testJoinPredicate_EvalRelations_OuterJoin_HashJoin() {
+  checkEvalRelations_OuterJoin_UniqueKeys(
+      lf.pred.JoinPredicate.prototype.evalRelationsHashJoin_);
+  checkEvalRelations_OuterJoin_NonUniqueKeys(
+      lf.pred.JoinPredicate.prototype.evalRelationsHashJoin_);
+  checkEvalRelations_TwoOuterJoins(
+      lf.pred.JoinPredicate.prototype.evalRelationsHashJoin_);
+  checkEvalRelations_OuterInnerJoins(
+      lf.pred.JoinPredicate.prototype.evalRelationsHashJoin_);
+}
+
+
+/** @suppress {accessControls} */
 function testJoinPredicate_EvalRelations_OuterJoin_NestedLoopJoin() {
   checkEvalRelations_OuterJoin_UniqueKeys(
       lf.pred.JoinPredicate.prototype.evalRelationsNestedLoopJoin_);

@@ -7928,6 +7928,7 @@ lf.pred.JoinPredicate = function(leftColumn, rightColumn, evaluatorType) {
   this.leftColumn = leftColumn;
   this.rightColumn = rightColumn;
   this.evaluatorType = evaluatorType;
+  this.nullPayload_ = null;
   var registry = lf.eval.Registry.getInstance();
   this.evaluatorFn_ = registry.getEvaluator(this.leftColumn.getType(), this.evaluatorType);
 };
@@ -7987,7 +7988,7 @@ lf.pred.JoinPredicate.prototype.evalRelations = function(relation1, relation2, i
   var leftRightRelations = [relation1, relation2];
   isOuterJoin || (leftRightRelations = this.detectLeftRight_(relation1, relation2));
   var leftRelation = leftRightRelations[0], rightRelation = leftRightRelations[1];
-  return isOuterJoin ? this.evalRelationsNestedLoopJoin_(leftRelation, rightRelation, isOuterJoin) : this.evaluatorType == lf.eval.Type.EQ ? this.evalRelationsHashJoin_(leftRelation, rightRelation) : this.evalRelationsNestedLoopJoin_(leftRelation, rightRelation, isOuterJoin);
+  return this.evaluatorType == lf.eval.Type.EQ ? this.evalRelationsHashJoin_(leftRelation, rightRelation, isOuterJoin) : this.evalRelationsNestedLoopJoin_(leftRelation, rightRelation, isOuterJoin);
 };
 lf.pred.JoinPredicate.prototype.createNullPayload_ = function(table) {
   var payload = {};
@@ -7996,8 +7997,13 @@ lf.pred.JoinPredicate.prototype.createNullPayload_ = function(table) {
   });
   return payload;
 };
+lf.pred.JoinPredicate.prototype.createCombinedEntryForUnmatched_ = function(entry, leftRelationTables) {
+  goog.isNull(this.nullPayload_) && (this.nullPayload_ = this.createNullPayload_(this.rightColumn.getTable()));
+  var nullEntry = new lf.proc.RelationEntry(new lf.Row(lf.Row.DUMMY_ID, this.nullPayload_), !1), combinedEntry = lf.proc.RelationEntry.combineEntries(entry, leftRelationTables, nullEntry, [this.rightColumn.getTable().getEffectiveName()]);
+  return combinedEntry;
+};
 lf.pred.JoinPredicate.prototype.evalRelationsNestedLoopJoin_ = function(leftRelation, rightRelation, isOuterJoin) {
-  for (var combinedEntries = [], nullPayload = null, leftRelationTables = leftRelation.getTables(), rightRelationTables = rightRelation.getTables(), i = 0;i < leftRelation.entries.length;i++) {
+  for (var combinedEntries = [], leftRelationTables = leftRelation.getTables(), rightRelationTables = rightRelation.getTables(), i = 0;i < leftRelation.entries.length;i++) {
     for (var matchFound = !1, j = 0;j < rightRelation.entries.length;j++) {
       var predicateResult = this.evaluatorFn_(leftRelation.entries[i].getField(this.leftColumn), rightRelation.entries[j].getField(this.rightColumn));
       if (predicateResult) {
@@ -8005,18 +8011,16 @@ lf.pred.JoinPredicate.prototype.evalRelationsNestedLoopJoin_ = function(leftRela
         combinedEntries.push(combinedEntry);
       }
     }
-    if (isOuterJoin && !matchFound) {
-      goog.isNull(nullPayload) && (nullPayload = this.createNullPayload_(this.rightColumn.getTable()));
-      var nullEntry = new lf.proc.RelationEntry(new lf.Row(lf.Row.DUMMY_ID, nullPayload), !1), combinedEntry = lf.proc.RelationEntry.combineEntries(leftRelation.entries[i], leftRelationTables, nullEntry, rightRelationTables);
-      combinedEntries.push(combinedEntry);
-    }
+    isOuterJoin && !matchFound && combinedEntries.push(this.createCombinedEntryForUnmatched_(leftRelation.entries[i], leftRelationTables));
   }
   var srcTables = leftRelation.getTables().concat(rightRelation.getTables());
   return new lf.proc.Relation(combinedEntries, srcTables);
 };
-lf.pred.JoinPredicate.prototype.evalRelationsHashJoin_ = function(leftRelation, rightRelation) {
+lf.pred.JoinPredicate.prototype.evalRelationsHashJoin_ = function(leftRelation, rightRelation, isOuterJoin) {
   var minRelation = leftRelation, maxRelation = rightRelation, minColumn = this.leftColumn, maxColumn = this.rightColumn;
-  leftRelation.entries.length > rightRelation.entries.length && (minRelation = rightRelation, maxRelation = leftRelation, minColumn = this.rightColumn, maxColumn = this.leftColumn);
+  if (isOuterJoin || leftRelation.entries.length > rightRelation.entries.length) {
+    minRelation = rightRelation, maxRelation = leftRelation, minColumn = this.rightColumn, maxColumn = this.leftColumn;
+  }
   var map = new goog.labs.structs.Multimap, combinedEntries = [];
   minRelation.entries.forEach(function(entry) {
     var key = String(entry.getField(minColumn));
@@ -8031,8 +8035,10 @@ lf.pred.JoinPredicate.prototype.evalRelationsHashJoin_ = function(leftRelation, 
         var combinedEntry = lf.proc.RelationEntry.combineEntries(entry, maxRelationTableNames, innerEntry, minRelationTableNames);
         combinedEntries.push(combinedEntry);
       });
+    } else {
+      isOuterJoin && combinedEntries.push(this.createCombinedEntryForUnmatched_(entry, maxRelationTableNames));
     }
-  });
+  }.bind(this));
   var srcTables = leftRelation.getTables().concat(rightRelation.getTables());
   return new lf.proc.Relation(combinedEntries, srcTables);
 };
