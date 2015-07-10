@@ -6451,8 +6451,7 @@ lf.index.slice = function(rawArray, opt_reverseOrder, opt_limit, opt_skip) {
 lf.index.Stats = function() {
   this.totalRows = 0;
 };
-lf.index.Stats.prototype.add = function(key, opt_rowCount) {
-  var rowCount = opt_rowCount || 1;
+lf.index.Stats.prototype.add = function(key, rowCount) {
   this.totalRows += rowCount;
 };
 lf.index.Stats.prototype.remove = function(key, removedCount) {
@@ -6484,7 +6483,6 @@ lf.index.BTree.prototype.toString = function() {
 };
 lf.index.BTree.prototype.add = function(key, value) {
   this.root_ = this.root_.insert(key, value);
-  this.stats_.add(key);
 };
 lf.index.BTree.prototype.set = function(key, value) {
   this.root_ = this.root_.insert(key, value, !0);
@@ -6782,18 +6780,21 @@ lf.index.BTreeNode_.prototype.insert = function(key, value, opt_replace) {
   if (this.isLeaf_()) {
     if (this.tree_.eq(this.keys_[pos], key)) {
       if (opt_replace) {
-        return this.values_[pos] = this.tree_.isUniqueKey() ? value : [value], this;
+        this.tree_.stats().remove(key, this.tree_.isUniqueKey() ? 1 : this.values_[pos].length), this.values_[pos] = this.tree_.isUniqueKey() ? value : [value];
+      } else {
+        if (this.tree_.isUniqueKey()) {
+          throw new lf.Exception(201);
+        }
+        if (!goog.array.binaryInsert(this.values_[pos], value)) {
+          throw new lf.Exception(109);
+        }
       }
-      if (this.tree_.isUniqueKey()) {
-        throw new lf.Exception(201);
-      }
-      if (this.values_[pos]) {
-        return goog.array.binaryInsert(this.values_[pos], value), this;
-      }
-      this.values_[pos] = [value];
+      this.tree_.stats().add(key, 1);
+      return this;
     }
     this.keys_.splice(pos, 0, key);
     this.values_.splice(pos, 0, this.tree_.isUniqueKey() ? value : [value]);
+    this.tree_.stats().add(key, 1);
     return this.keys_.length == lf.index.BTreeNode_.MAX_COUNT_ ? this.splitLeaf_() : this;
   }
   var pos = this.tree_.eq(this.keys_[pos], key) ? pos + 1 : pos, node = this.children_[pos].insert(key, value, opt_replace);
@@ -7109,16 +7110,16 @@ lf.index.NullableIndex.prototype.add = function(key, value) {
       throw new lf.Exception(201);
     }
     this.nulls_.add(value);
-    this.statsNull_.add(key);
+    this.statsNull_.add(key, 1);
   } else {
     this.index_.add(key, value);
   }
 };
 lf.index.NullableIndex.prototype.set = function(key, value) {
-  goog.isNull(key) ? (this.nulls_.clear(), this.nulls_.add(value)) : this.index_.set(key, value);
+  goog.isNull(key) ? (this.nulls_.clear(), this.statsNull_.clear(), this.add(key, value)) : this.index_.set(key, value);
 };
 lf.index.NullableIndex.prototype.remove = function(key, opt_rowId) {
-  goog.isNull(key) ? opt_rowId ? (this.statsNull_.remove(key, 1), this.nulls_.remove(opt_rowId)) : (this.statsNull_.remove(key, this.nulls_.getCount()), this.nulls_.clear()) : this.index_.remove(key, opt_rowId);
+  goog.isNull(key) ? opt_rowId ? (this.nulls_.remove(opt_rowId), this.statsNull_.remove(key, 1)) : (this.nulls_.clear(), this.statsNull_.clear()) : this.index_.remove(key, opt_rowId);
 };
 lf.index.NullableIndex.prototype.get = function(key) {
   return goog.isNull(key) ? this.nulls_.getValues() : this.index_.get(key);

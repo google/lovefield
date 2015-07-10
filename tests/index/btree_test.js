@@ -1233,8 +1233,16 @@ function testStats() {
   tree.add(9, 9);
   tree.add(21, 21);
   assertEquals(22, tree.stats().totalRows);
+  tree.set(9, 8);
+  assertEquals(22, tree.stats().totalRows);
+  tree.set(999, 888);
+  assertEquals(23, tree.stats().totalRows);
   tree.clear();
   assertEquals(0, tree.stats().totalRows);
+  for (var i = 0; i < 23; ++i) {
+    tree.set(i, i);
+  }
+  assertEquals(23, tree.stats().totalRows);
 
   // Non-unique tree, each key has two rows.
   tree = insertToTree(23, true);
@@ -1247,14 +1255,18 @@ function testStats() {
   assertEquals(43, tree.stats().totalRows);
   tree.remove(17, 9999);  // remove non-existing row
   assertEquals(43, tree.stats().totalRows);
+  tree.set(17, 7777);
+  tree.add(17, 8888);
+  tree.add(17, 9999);
+  assertEquals(45, tree.stats().totalRows);
   tree.add(9, 889);
-  assertEquals(44, tree.stats().totalRows);
+  assertEquals(46, tree.stats().totalRows);
   tree.remove(9);
-  assertEquals(41, tree.stats().totalRows);
+  assertEquals(43, tree.stats().totalRows);
 
   var rows = tree.serialize();
   var tree2 = lf.index.BTree.deserialize(c, 't2', false, rows);
-  assertEquals(41, tree2.stats().totalRows);
+  assertEquals(43, tree2.stats().totalRows);
 
   rows = insertToTree(23, false).serialize();
   var tree3 = lf.index.BTree.deserialize(c, 't3', true, rows);

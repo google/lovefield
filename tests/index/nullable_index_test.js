@@ -164,6 +164,12 @@ function testStats() {
   assertEquals(6, index.stats().totalRows);
   index.remove(null);
   assertEquals(4, index.stats().totalRows);
+  index.set(null, 22);
+  assertEquals(5, index.stats().totalRows);
+  index.add(null, 33);
+  assertEquals(6, index.stats().totalRows);
+  index.remove(null);
+  assertEquals(4, index.stats().totalRows);
   index.remove(1, 3);
   assertEquals(3, index.stats().totalRows);
   index.remove(1);

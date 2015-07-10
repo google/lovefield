@@ -16,6 +16,7 @@
   "106": "Attempt to access {0} outside of specified scope.",
   "107": "Invalid transaction state transition: {0} -> {1}.",
   "108": "Attempt to open a newer database with old code.",
+  "109": "Attempt to insert a row number that already existed.",
 
   "200": "Constraint error",
   "201": "Duplicate keys are not allowed.",
