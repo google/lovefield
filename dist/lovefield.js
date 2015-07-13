@@ -6511,7 +6511,7 @@ lf.index.BTree.prototype.stats = function() {
   return this.stats_;
 };
 lf.index.BTree.prototype.getAll_ = function(reverseOrder, limit, skip) {
-  var count = Math.min(this.stats_.totalRows - skip, limit);
+  var count = Math.min(Math.max(this.stats_.totalRows - skip, 0), limit);
   if (0 == count) {
     return [];
   }

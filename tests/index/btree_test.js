@@ -1295,6 +1295,8 @@ function testGetAll() {
 
   assertArrayEquals([11, 12, 13], tree2.getRange(undefined, false, 3, 1));
   assertArrayEquals([14, 20, 21], tree2.getRange(undefined, false, 3, 4));
+  assertArrayEquals([94], tree2.getRange(undefined, false, 10, 44));
+  assertArrayEquals([], tree2.getRange(undefined, false, undefined, 99));
 }
 
 function manualTestBenchmark() {
