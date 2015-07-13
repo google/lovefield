@@ -1067,10 +1067,9 @@ CodeGenerator.prototype.getConstraint_ = function(table) {
   }).bind(this);
 
   if (table.constraint) {
-    var pkIndexDefinition = this.getPrimaryKeyIndex_(table, 2);
-    results.push(pkIndexDefinition == 'null' ?
-        '  var pk = ' + pkIndexDefinition + ';' :
-        '  var pk = ' + pkIndexDefinition.substring(2) + ';');
+    results.push(table.constraint.primaryKey ?
+        '  var pk = this.getIndices()[0];' :
+        '  var pk = null;');
     results.push(getNotNullable());
 
     results.push('  var foreignKeys = [');

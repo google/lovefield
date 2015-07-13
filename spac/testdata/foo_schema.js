@@ -154,10 +154,7 @@ foo.db.schema.Location.prototype.getConstraint = function() {
     return this.constraint_;
   }
 
-  var pk = new lf.schema.Index('Location', 'pkLocation', true,
-      [
-        {schema: this.id, order: lf.Order.ASC, autoIncrement: false}
-      ]);
+  var pk = this.getIndices()[0];
   var notNullable = [
     this.id
   ];
@@ -336,10 +333,7 @@ foo.db.schema.Foo.prototype.getConstraint = function() {
     return this.constraint_;
   }
 
-  var pk = new lf.schema.Index('Foo', 'pkFoo', true,
-      [
-        {schema: this.id, order: lf.Order.ASC, autoIncrement: false}
-      ]);
+  var pk = this.getIndices()[0];
   var notNullable = [
     this.id,
     this.name,

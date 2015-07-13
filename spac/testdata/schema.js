@@ -260,10 +260,7 @@ lovefield.db.schema.Album.prototype.getConstraint = function() {
     return this.constraint_;
   }
 
-  var pk = new lf.schema.Index('Album', 'pkAlbum', true,
-      [
-        {schema: this.id, order: lf.Order.ASC, autoIncrement: false}
-      ]);
+  var pk = this.getIndices()[0];
   var notNullable = [
     this.id,
     this.isLocal,
@@ -591,10 +588,7 @@ lovefield.db.schema.Photo.prototype.getConstraint = function() {
     return this.constraint_;
   }
 
-  var pk = new lf.schema.Index('Photo', 'pkPhoto', true,
-      [
-        {schema: this.id, order: lf.Order.ASC, autoIncrement: false}
-      ]);
+  var pk = this.getIndices()[0];
   var notNullable = [
     this.id,
     this.imageHash,
@@ -992,11 +986,7 @@ lovefield.db.schema.Details.prototype.getConstraint = function() {
     return this.constraint_;
   }
 
-  var pk = new lf.schema.Index('Details', 'pkDetails', true,
-      [
-        {schema: this.id1, order: lf.Order.ASC, autoIncrement: false},
-        {schema: this.id2, order: lf.Order.ASC, autoIncrement: false}
-      ]);
+  var pk = this.getIndices()[0];
   var notNullable = [
     this.id1,
     this.id2,
@@ -1276,10 +1266,7 @@ lovefield.db.schema.Curator.prototype.getConstraint = function() {
     return this.constraint_;
   }
 
-  var pk = new lf.schema.Index('Curator', 'pkCurator', true,
-      [
-        {schema: this.id, order: lf.Order.ASC, autoIncrement: true}
-      ]);
+  var pk = this.getIndices()[0];
   var notNullable = [
     this.id,
     this.name,
@@ -2023,10 +2010,7 @@ lovefield.db.schema.SelfLoop.prototype.getConstraint = function() {
     return this.constraint_;
   }
 
-  var pk = new lf.schema.Index('SelfLoop', 'pkSelfLoop', true,
-      [
-        {schema: this.id, order: lf.Order.ASC, autoIncrement: false}
-      ]);
+  var pk = this.getIndices()[0];
   var notNullable = [
     this.id,
     this.associate
