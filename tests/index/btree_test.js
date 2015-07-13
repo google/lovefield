@@ -1273,6 +1273,30 @@ function testStats() {
   assertEquals(23, tree3.stats().totalRows);
 }
 
+function testGetAll() {
+  var tree = insertToTree(23, false);
+  var expected = SEQUENCE.slice(0).sort(function(a, b) {
+    return (a < b) ? -1 : ((a > b) ? 1 : 0);
+  });
+  assertArrayEquals(expected, tree.getRange());
+  assertArrayEquals(
+      expected.slice(2, 5),
+      tree.getRange(undefined, false, 3, 2));
+  assertArrayEquals(
+      expected.slice(0, expected.length - 1).reverse(),
+      tree.getRange(undefined, true, undefined, 1));
+
+  var tree2 = new lf.index.BTree('t2', c, false);
+  for (var i = 1; i < 10; ++i) {
+    for (var j = 0; j < 5; ++j) {
+      tree2.add(i, i * 10 + j);
+    }
+  }
+
+  assertArrayEquals([11, 12, 13], tree2.getRange(undefined, false, 3, 1));
+  assertArrayEquals([14, 20, 21], tree2.getRange(undefined, false, 3, 4));
+}
+
 function manualTestBenchmark() {
   var log = goog.bind(console['log'], console);
   var ROW_COUNT = 1000000;

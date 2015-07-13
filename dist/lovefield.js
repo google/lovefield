@@ -1504,8 +1504,8 @@ goog.array.slice = function(arr, start, opt_end) {
   return 2 >= arguments.length ? goog.array.ARRAY_PROTOTYPE_.slice.call(arr, start) : goog.array.ARRAY_PROTOTYPE_.slice.call(arr, start, opt_end);
 };
 goog.array.removeDuplicates = function(arr, opt_rv, opt_hashFn) {
-  for (var returnArray = opt_rv || arr, defaultHashFn = function() {
-    return goog.isObject(current) ? "o" + goog.getUid(current) : (typeof current).charAt(0) + current;
+  for (var returnArray = opt_rv || arr, defaultHashFn = function(item) {
+    return goog.isObject(item) ? "o" + goog.getUid(item) : (typeof item).charAt(0) + item;
   }, hashFn = opt_hashFn || defaultHashFn, seen = {}, cursorInsert = 0, cursorRead = 0;cursorRead < arr.length;) {
     var current = arr[cursorRead++], key = hashFn(current);
     Object.prototype.hasOwnProperty.call(seen, key) || (seen[key] = !0, returnArray[cursorInsert++] = current);
@@ -6510,12 +6510,24 @@ lf.index.BTree.prototype.cost = function(opt_keyRange) {
 lf.index.BTree.prototype.stats = function() {
   return this.stats_;
 };
+lf.index.BTree.prototype.getAll_ = function(reverseOrder, limit, skip) {
+  var count = Math.min(this.stats_.totalRows - skip, limit);
+  if (0 == count) {
+    return [];
+  }
+  var offset = reverseOrder ? this.stats_.totalRows - count - skip : skip, results = Array(count), params = {offset:offset, count:count, startIndex:0};
+  this.root_.fill(params, results);
+  return reverseOrder ? results.reverse() : results;
+};
 lf.index.BTree.prototype.getRange = function(opt_keyRanges, opt_reverseOrder, opt_limit, opt_skip) {
   var leftMostKey = this.root_.getLeftMostNode().keys_[0];
   if (!goog.isDef(leftMostKey) || 0 == opt_limit) {
     return lf.index.BTree.EMPTY;
   }
-  var maxNumResults = (opt_limit || 0) + (opt_skip || 0), maxNumResults = 0 < maxNumResults && !opt_reverseOrder ? maxNumResults : Number.POSITIVE_INFINITY, sortedKeyRanges = goog.isDef(opt_keyRanges) ? this.comparator_.sortKeyRanges(opt_keyRanges) : [this.comparator_.getAllRange()], results = [];
+  if (!goog.isDef(opt_keyRanges) || 1 == opt_keyRanges.length && opt_keyRanges[0] instanceof lf.index.SingleKeyRange && opt_keyRanges[0].isAll()) {
+    return this.getAll_(opt_reverseOrder || !1, opt_limit || this.stats_.totalRows, opt_skip || 0);
+  }
+  var maxNumResults = (opt_limit || 0) + (opt_skip || 0), maxNumResults = 0 < maxNumResults && !opt_reverseOrder ? maxNumResults : Number.POSITIVE_INFINITY, sortedKeyRanges = this.comparator_.sortKeyRanges(opt_keyRanges), results = [];
   sortedKeyRanges.forEach(function(range) {
     for (var keys = this.comparator_.rangeToKeys(range), key = this.comparator_.isLeftOpen(range) ? leftMostKey : keys[0], start = this.root_.getContainingLeaf(key), strikeCount = 0;goog.isDefAndNotNull(start) && results.length < maxNumResults;) {
       var length = start.getRange(range, results);
@@ -6905,6 +6917,31 @@ lf.index.BTreeNode_.prototype.appendResults_ = function(currentResults, newResul
   var toAppend = this.tree_.isUniqueKey() ? newResults : goog.array.flatten(newResults);
   currentResults.push.apply(currentResults, toAppend);
   return toAppend.length;
+};
+lf.index.BTreeNode_.prototype.fill = function(params, results) {
+  if (this.isLeaf_()) {
+    for (var i = 0;i < this.values_.length && 0 < params.count;++i) {
+      if (0 < params.offset) {
+        if (params.offset -= this.tree_.isUniqueKey() ? 1 : this.values_[i].length, 0 > params.offset) {
+          for (var j = this.values_[i].length + params.offset;j < this.values_[i].length && 0 < params.count;++j) {
+            results[params.startIndex++] = this.values_[i][j], params.count--;
+          }
+        }
+      } else {
+        if (this.tree_.isUniqueKey()) {
+          results[params.startIndex++] = this.values_[i], params.count--;
+        } else {
+          for (j = 0;j < this.values_[i].length && 0 < params.count;++j) {
+            results[params.startIndex++] = this.values_[i][j], params.count--;
+          }
+        }
+      }
+    }
+  } else {
+    for (i = 0;i < this.children_.length && 0 < params.count;++i) {
+      this.children_[i].fill(params, results);
+    }
+  }
 };
 lf.index.BTreeNode_.serialize = function(start) {
   for (var rows = [], node = start;node;) {
