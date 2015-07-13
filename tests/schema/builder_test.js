@@ -544,6 +544,29 @@ function testSchemaCorrectness() {
   assertObjectEquals(row.payload(), row2.payload());
 }
 
+
+function testSchemaCorrectness_IndexOrder() {
+  var schemaBuilder = createBuilder();
+  var schema = schemaBuilder.getSchema();
+
+  // Test case of DESC index.
+  var job = schema.table('Job');
+  var maxSalaryIndexSchema = job.getIndices().filter(
+      function(indexSchema) {
+        return indexSchema.name == 'idx_maxSalary';
+      })[0];
+  assertEquals(lf.Order.DESC, maxSalaryIndexSchema.columns[0].order);
+
+  // Test case of ASC index.
+  var dummyTable = schema.table('DummyTable');
+  var stringIndexSchema = dummyTable.getIndices().filter(
+      function(indexSchema) {
+        return indexSchema.name == 'idx_string';
+      })[0];
+  assertEquals(lf.Order.ASC, stringIndexSchema.columns[0].order);
+}
+
+
 function testThrows_NonIndexableColumns() {
   // 509: Attempt to index table {0} on non-indexable column {1}.
   lf.testing.util.assertThrowsError(509, function() {

@@ -11160,7 +11160,7 @@ lf.schema.TableBuilder.prototype.getFkSpecs = function() {
 };
 lf.schema.TableBuilder.prototype.normalizeColumns_ = function(columns, checkIndexable, opt_order, opt_autoInc) {
   var normalized = columns, normalized = "string" == typeof columns[0] ? columns.map(function(col) {
-    return new lf.schema.TableBuilder.IndexedColumn_({name:col, order:opt_order || lf.Order.ASC, autoIncrement:opt_autoInc || !1});
+    return new lf.schema.TableBuilder.IndexedColumn_({name:col, order:goog.isDefAndNotNull(opt_order) ? opt_order : lf.Order.ASC, autoIncrement:opt_autoInc || !1});
   }) : columns.map(function(col) {
     return new lf.schema.TableBuilder.IndexedColumn_(col);
   });
