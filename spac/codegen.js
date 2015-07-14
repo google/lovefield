@@ -1080,21 +1080,12 @@ CodeGenerator.prototype.getConstraint_ = function(table) {
     }
     results.push('  ];');
 
-    results.push('  var unique = [');
-    if (table.constraint.unique) {
-      var uniqueIndices = this.getUniqueIndices_(table, 4);
-      uniqueIndices.forEach(function(uniqueIndex) {
-        results.push(uniqueIndex);
-      });
-    }
-    results.push('  ];');
-
     results.push('  this.constraint_ = new lf.schema.Constraint(\n' +
-        '      pk, notNullable, foreignKeys, unique);');
+        '      pk, notNullable, foreignKeys);');
   } else {
     results.push(getNotNullable());
     results.push('  this.constraint_ = new lf.schema.Constraint(' +
-        'null, notNullable, [], []);');
+        'null, notNullable, []);');
   }
 
   results.push('  return this.constraint_;');

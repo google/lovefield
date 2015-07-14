@@ -648,5 +648,5 @@ Table_.prototype.deserializeRow = function(dbPayload) {
 
 /** @override */
 Table_.prototype.getConstraint = function() {
-  return new lf.schema.Constraint(null, [], [], []);
+  return new lf.schema.Constraint(null, [], []);
 };

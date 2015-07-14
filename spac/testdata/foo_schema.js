@@ -160,10 +160,8 @@ foo.db.schema.Location.prototype.getConstraint = function() {
   ];
   var foreignKeys = [
   ];
-  var unique = [
-  ];
   this.constraint_ = new lf.schema.Constraint(
-      pk, notNullable, foreignKeys, unique);
+      pk, notNullable, foreignKeys);
   return this.constraint_;
 };
 
@@ -349,14 +347,8 @@ foo.db.schema.Foo.prototype.getConstraint = function() {
           'timing': lf.ConstraintTiming.IMMEDIATE
         }, 'Foo.fk_loc')
   ];
-  var unique = [
-    new lf.schema.Index('Foo', 'uq_bar', true,
-        [
-          {schema: this.bar, order: lf.Order.ASC}
-        ])
-  ];
   this.constraint_ = new lf.schema.Constraint(
-      pk, notNullable, foreignKeys, unique);
+      pk, notNullable, foreignKeys);
   return this.constraint_;
 };
 

@@ -217,7 +217,8 @@ function testInsert_PrimaryKeyViolation3() {
  */
 function testInsert_UniqueKeyViolation_SingleColumn() {
   var table = env.schema.table('tableE');
-  var emailIndexSchema = table.getConstraint().getUnique()[1];
+  var emailIndexSchema = table.getIndices()[1];
+  assertTrue(emailIndexSchema.isUnique);
   var emailIndex = env.indexStore.get(emailIndexSchema.getNormalizedName());
   var rowIdIndex = env.indexStore.get(table.getRowIdIndexName());
 
@@ -562,7 +563,8 @@ function testInsertOrReplace() {
 
 function testInsertOrReplace_UniqueKeyViolation() {
   var table = env.schema.table('tableE');
-  var emailIndexSchema = table.getConstraint().getUnique()[1];
+  var emailIndexSchema = table.getIndices()[1];
+  assertTrue(emailIndexSchema.isUnique);
   var emailIndex = env.indexStore.get(emailIndexSchema.getNormalizedName());
 
   var row1 = table.createRow({'id': 'pk1', 'email': 'emailAddress1'});

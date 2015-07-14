@@ -269,10 +269,8 @@ lovefield.db.schema.Album.prototype.getConstraint = function() {
   ];
   var foreignKeys = [
   ];
-  var unique = [
-  ];
   this.constraint_ = new lf.schema.Constraint(
-      pk, notNullable, foreignKeys, unique);
+      pk, notNullable, foreignKeys);
   return this.constraint_;
 };
 
@@ -606,10 +604,8 @@ lovefield.db.schema.Photo.prototype.getConstraint = function() {
           'timing': lf.ConstraintTiming.IMMEDIATE
         }, 'Photo.fk_albumId')
   ];
-  var unique = [
-  ];
   this.constraint_ = new lf.schema.Constraint(
-      pk, notNullable, foreignKeys, unique);
+      pk, notNullable, foreignKeys);
   return this.constraint_;
 };
 
@@ -1010,10 +1006,8 @@ lovefield.db.schema.Details.prototype.getConstraint = function() {
           'timing': lf.ConstraintTiming.IMMEDIATE
         }, 'Details.fk_albumId')
   ];
-  var unique = [
-  ];
   this.constraint_ = new lf.schema.Constraint(
-      pk, notNullable, foreignKeys, unique);
+      pk, notNullable, foreignKeys);
   return this.constraint_;
 };
 
@@ -1274,15 +1268,8 @@ lovefield.db.schema.Curator.prototype.getConstraint = function() {
   ];
   var foreignKeys = [
   ];
-  var unique = [
-    new lf.schema.Index('Curator', 'uq_creation', true,
-        [
-          {schema: this.name, order: lf.Order.ASC},
-          {schema: this.timestamp, order: lf.Order.ASC}
-        ])
-  ];
   this.constraint_ = new lf.schema.Constraint(
-      pk, notNullable, foreignKeys, unique);
+      pk, notNullable, foreignKeys);
   return this.constraint_;
 };
 
@@ -1514,14 +1501,8 @@ lovefield.db.schema.PhotoCurator.prototype.getConstraint = function() {
           'timing': lf.ConstraintTiming.IMMEDIATE
         }, 'PhotoCurator.fk_curator')
   ];
-  var unique = [
-    new lf.schema.Index('PhotoCurator', 'uq_topic', true,
-        [
-          {schema: this.topic, order: lf.Order.ASC}
-        ])
-  ];
   this.constraint_ = new lf.schema.Constraint(
-      pk, notNullable, foreignKeys, unique);
+      pk, notNullable, foreignKeys);
   return this.constraint_;
 };
 
@@ -1756,10 +1737,8 @@ lovefield.db.schema.NullableTable.prototype.getConstraint = function() {
   ];
   var foreignKeys = [
   ];
-  var unique = [
-  ];
   this.constraint_ = new lf.schema.Constraint(
-      pk, notNullable, foreignKeys, unique);
+      pk, notNullable, foreignKeys);
   return this.constraint_;
 };
 
@@ -2024,10 +2003,8 @@ lovefield.db.schema.SelfLoop.prototype.getConstraint = function() {
           'timing': lf.ConstraintTiming.IMMEDIATE
         }, 'SelfLoop.fkAssociate')
   ];
-  var unique = [
-  ];
   this.constraint_ = new lf.schema.Constraint(
-      pk, notNullable, foreignKeys, unique);
+      pk, notNullable, foreignKeys);
   return this.constraint_;
 };
 

@@ -11192,10 +11192,8 @@ lf.schema.TableBuilder.prototype.generateTableClass_ = function() {
     lf.schema.Table.call(this, that.name_, columns, indices, that.persistentIndex_);
     var pk = that.indices_.has(that.pkName_) ? new lf.schema.Index(that.name_, that.pkName_, !0, generateIndexedColumns.call(this, that.pkName_)) : null, notNullable = columns.filter(function(col) {
       return !that.nullable_.has(col.getName());
-    }), unique = lf.structs.set.values(that.uniqueIndices_).map(function(indexName) {
-      return new lf.schema.Index(that.name_, indexName, !0, generateIndexedColumns.call(this, indexName));
-    }, this);
-    this.constraint_ = new lf.schema.Constraint(pk, notNullable, that.getFkSpecs(), unique);
+    });
+    this.constraint_ = new lf.schema.Constraint(pk, notNullable, that.getFkSpecs());
     this.rowClass_ = that.generateRowClass_(columns, indices);
   };
   goog.inherits(tableClass, lf.schema.Table);
