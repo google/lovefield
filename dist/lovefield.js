@@ -562,14 +562,7 @@ goog.scope = function(fn) {
   fn.call(goog.global);
 };
 goog.MODIFY_FUNCTION_PROTOTYPES = !0;
-goog.MODIFY_FUNCTION_PROTOTYPES && (Function.prototype.bind = Function.prototype.bind || function(selfObj, var_args) {
-  if (1 < arguments.length) {
-    var args = Array.prototype.slice.call(arguments, 1);
-    args.unshift(this, selfObj);
-    return goog.bind.apply(null, args);
-  }
-  return goog.bind(this, selfObj);
-}, Function.prototype.inherits = function(parentCtor) {
+goog.MODIFY_FUNCTION_PROTOTYPES && (Function.prototype.inherits = function(parentCtor) {
   goog.inherits(this, parentCtor);
 });
 goog.defineClass = function(superClass, def) {
