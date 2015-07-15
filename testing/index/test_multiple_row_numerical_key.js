@@ -120,8 +120,8 @@ lf.testing.index.TestMultiRowNumericalKey.prototype.testSet = function(index) {
 lf.testing.index.TestMultiRowNumericalKey.prototype.testMinMax = function(
     index) {
   // First try an empty index.
-  assertArrayEquals([null, null], index.min());
-  assertArrayEquals([null, null], index.max());
+  assertNull(index.min());
+  assertNull(index.max());
 
   this.populateIndex_(index);
   assertArrayEquals(this.minKeyValuePair_, index.min());

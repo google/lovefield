@@ -92,9 +92,8 @@ function testSerialize() {
 
 function testMinMax() {
   var index1 = new lf.index.RowId('dummyName');
-  assertArrayEquals([null, null], index1.min());
-  assertArrayEquals([null, null], index1.max());
-
+  assertNull(index1.min());
+  assertNull(index1.max());
   var rowCount = 7;
   var index2 = getSampleIndex(rowCount);
   assertArrayEquals([0, [0]], index2.min());

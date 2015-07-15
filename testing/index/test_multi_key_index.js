@@ -177,8 +177,8 @@ lf.testing.index.TestMultiKeyIndex.prototype.testSet = function(index) {
 /** @override */
 lf.testing.index.TestMultiKeyIndex.prototype.testMinMax = function(index) {
   // First try an empty index.
-  assertArrayEquals([null, null], index.min());
-  assertArrayEquals([null, null], index.max());
+  assertNull(index.min());
+  assertNull(index.max());
 
   this.populateIndex_(index);
   assertArrayEquals([[0, 'Z'], [2000]], index.min());

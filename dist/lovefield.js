@@ -6545,7 +6545,7 @@ lf.index.BTree.prototype.max = function() {
 lf.index.BTree.prototype.minMax_ = function(compareFn) {
   var leftMostNode = this.root_.getLeftMostNode(), rightMostNode = this.root_.getRightMostNode();
   if (0 == leftMostNode.keys_.length && 0 == rightMostNode.keys_.length) {
-    return [null, null];
+    return null;
   }
   var leftMostKey = leftMostNode.keys_[0], leftMostValues = leftMostNode.values_[0], rightMostKey = rightMostNode.keys_[rightMostNode.keys_.length - 1], rightMostValues = rightMostNode.values_[rightMostNode.keys_.length - 1];
   return compareFn(leftMostKey, rightMostKey) == lf.index.Favor.LHS ? [leftMostKey, this.uniqueKeyOnly_ ? [leftMostValues] : leftMostValues] : [rightMostKey, this.uniqueKeyOnly_ ? [rightMostValues] : rightMostValues];
@@ -7238,7 +7238,7 @@ lf.index.RowId.prototype.max = function() {
 };
 lf.index.RowId.prototype.minMax_ = function(compareFn) {
   if (0 == this.rows_.size) {
-    return [null, null];
+    return null;
   }
   var key$$0 = lf.structs.set.values(this.rows_).reduce(goog.bind(function(keySoFar, key) {
     return goog.isNull(keySoFar) || compareFn(key, keySoFar) == lf.index.Favor.LHS ? key : keySoFar;
@@ -7491,7 +7491,7 @@ lf.index.AATree.prototype.max = function() {
 };
 lf.index.AATree.prototype.minMax_ = function(compareFn) {
   var leftMostNode = this.getLeftMostNode_(), rightMostNode = this.getRightMostNode_();
-  return goog.isDefAndNotNull(leftMostNode.key) || goog.isDefAndNotNull(rightMostNode.key) ? compareFn(leftMostNode.key, rightMostNode.key) == lf.index.Favor.LHS ? [leftMostNode.key, [leftMostNode.value]] : [rightMostNode.key, [rightMostNode.value]] : [null, null];
+  return goog.isDefAndNotNull(leftMostNode.key) || goog.isDefAndNotNull(rightMostNode.key) ? compareFn(leftMostNode.key, rightMostNode.key) == lf.index.Favor.LHS ? [leftMostNode.key, [leftMostNode.value]] : [rightMostNode.key, [rightMostNode.value]] : null;
 };
 lf.index.AATree.prototype.serialize = function() {
   goog.asserts.fail("AATree index serialization is not supported.");
@@ -9874,7 +9874,7 @@ lf.proc.InsertStep.prototype.execInternal = function(journal, relations, context
 lf.proc.InsertStep.assignAutoIncrementPks_ = function(table, values, indexStore) {
   var pkIndexSchema = table.getConstraint().getPrimaryKey(), autoIncrement = goog.isNull(pkIndexSchema) ? !1 : pkIndexSchema.columns[0].autoIncrement;
   if (autoIncrement) {
-    var pkColumnName = pkIndexSchema.columns[0].schema.getName(), index = indexStore.get(pkIndexSchema.getNormalizedName()), maxKey = index.max()[0] || 0;
+    var pkColumnName = pkIndexSchema.columns[0].schema.getName(), index = indexStore.get(pkIndexSchema.getNormalizedName()), max = index.max(), maxKey = goog.isNull(max) ? 0 : max[0];
     values.forEach(function(row) {
       0 != row.payload()[pkColumnName] && goog.isDefAndNotNull(row.payload()[pkColumnName]) || (maxKey++, row.payload()[pkColumnName] = maxKey);
     });
