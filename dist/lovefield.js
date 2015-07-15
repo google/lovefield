@@ -8129,6 +8129,7 @@ goog.exportSymbol("lf.schema.Table", lf.schema.Table);
 lf.schema.Table.prototype.getName = function() {
   return this.name_;
 };
+goog.exportProperty(lf.schema.Table.prototype, "getName", lf.schema.Table.prototype.getName);
 lf.schema.Table.prototype.getAlias = function() {
   return this.alias_;
 };
@@ -8147,13 +8148,16 @@ goog.exportProperty(lf.schema.Table.prototype, "deserializeRow", lf.schema.Table
 lf.schema.Table.prototype.getIndices = function() {
   return this.indices_;
 };
+goog.exportProperty(lf.schema.Table.prototype, "getIndices", lf.schema.Table.prototype.getIndices);
 lf.schema.Table.prototype.getColumns = function() {
   return this.columns_;
 };
+goog.exportProperty(lf.schema.Table.prototype, "getColumns", lf.schema.Table.prototype.getColumns);
 goog.exportProperty(lf.schema.Table.prototype, "getConstraint", lf.schema.Table.prototype.getConstraint);
 lf.schema.Table.prototype.persistentIndex = function() {
   return this.persistentIndex_;
 };
+goog.exportProperty(lf.schema.Table.prototype, "persistentIndex", lf.schema.Table.prototype.persistentIndex);
 lf.schema.Table.ROW_ID_INDEX_PATTERN = "#";
 lf.schema.Table.prototype.getRowIdIndexName = function() {
   return this.name_ + "." + lf.schema.Table.ROW_ID_INDEX_PATTERN;
@@ -10827,6 +10831,7 @@ lf.schema.BaseColumn.prototype.getTable = function() {
 lf.schema.BaseColumn.prototype.getType = function() {
   return this.type_;
 };
+goog.exportProperty(lf.schema.BaseColumn.prototype, "getType", lf.schema.BaseColumn.prototype.getType);
 lf.schema.BaseColumn.prototype.getAlias = function() {
   return this.alias_;
 };
@@ -10842,6 +10847,7 @@ lf.schema.BaseColumn.prototype.getIndices = function() {
 lf.schema.BaseColumn.prototype.isNullable = function() {
   return this.isNullable_;
 };
+goog.exportProperty(lf.schema.BaseColumn.prototype, "isNullable", lf.schema.BaseColumn.prototype.isNullable);
 lf.schema.BaseColumn.prototype.isUnique = function() {
   return this.isUnique_;
 };
@@ -10995,15 +11001,18 @@ lf.schema.Constraint = function(primaryKey, notNullable, foreignKeys) {
   this.notNullable_ = notNullable;
   this.foreignKeys_ = foreignKeys;
 };
+goog.exportSymbol("lf.schema.Constraint", lf.schema.Constraint);
 lf.schema.Constraint.prototype.getPrimaryKey = function() {
   return this.primaryKey_;
 };
+goog.exportProperty(lf.schema.Constraint.prototype, "getPrimaryKey", lf.schema.Constraint.prototype.getPrimaryKey);
 lf.schema.Constraint.prototype.getNotNullable = function() {
   return this.notNullable_;
 };
 lf.schema.Constraint.prototype.getForeignKeys = function() {
   return this.foreignKeys_;
 };
+goog.exportProperty(lf.schema.Constraint.prototype, "getForeignKeys", lf.schema.Constraint.prototype.getForeignKeys);
 
 lf.schema.ForeignKeySpec = function(rawSpec, name) {
   var array = rawSpec.ref.split(".");

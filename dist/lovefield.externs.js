@@ -465,12 +465,20 @@ lf.schema.Column = function() {};
 lf.schema.Column.prototype.as = function(name) {};
 
 
+/** @return {!lf.Type} */
+lf.schema.Column.prototype.getType = function() {};
+
+
 /** @return {string} */
 lf.schema.Column.prototype.getName = function() {};
 
 
 /** @return {string} */
 lf.schema.Column.prototype.getNormalizedName = function() {};
+
+
+/** @return {boolean} */
+lf.schema.Column.prototype.isNullable = function() {};
 
 
 
@@ -494,6 +502,81 @@ lf.schema.Table.prototype.createRow = function(value) {};
 
 /** @return {string} */
 lf.schema.Table.prototype.getName = function() {};
+
+
+/** @return {!Array<!lf.schema.Column>} */
+lf.schema.Table.prototype.getColumns = function() {};
+
+
+/** @return {!Array<!lf.schema.Index>} */
+lf.schema.Table.prototype.getIndices = function() {};
+
+
+/** @return {!lf.schema.Constraint} */
+lf.schema.Table.prototype.getConstraint = function() {};
+
+
+/** @return {boolean} */
+lf.schema.Table.prototype.persistentIndex = function() {};
+
+
+
+/** @interface */
+lf.schema.Constraint = function() {};
+
+
+/** @return {?lf.schema.Index} */
+lf.schema.Constraint.prototype.getPrimaryKey = function() {};
+
+
+/** @return {!Array<lf.schema.ForeignKeySpec>} */
+lf.schema.Constraint.prototype.getForeignKeys = function() {};
+
+
+/** @constructor */
+lf.schema.ForeignKeySpec = function() {};
+
+
+/** @type {string} */
+lf.schema.ForeignKeySpec.prototype.name;
+
+
+/** @type {string} */
+lf.schema.ForeignKeySpec.prototype.parentTable;
+
+
+/** @type {string} */
+lf.schema.ForeignKeySpec.prototype.parentColumn;
+
+
+/** @type {string} */
+lf.schema.ForeignKeySpec.prototype.childColumn;
+
+
+/** @type {!lf.ConstraintAction} */
+lf.schema.ForeignKeySpec.prototype.action;
+
+
+/** @type {!lf.ConstraintTiming} */
+lf.schema.ForeignKeySpec.prototype.timing;
+
+
+
+/** @constructor */
+lf.schema.Index = function() {};
+
+
+/** @type {string} */
+lf.schema.Index.prototype.name;
+
+
+/** @type {boolean} */
+lf.schema.Index.prototype.isUnique;
+
+
+/** @type {!Array} */
+lf.schema.Index.prototype.columns;
+// TODO(dpapad): Add more properties here.
 
 
 
