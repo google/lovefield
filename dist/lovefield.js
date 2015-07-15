@@ -11234,7 +11234,7 @@ lf.schema.TableBuilder.prototype.generateRowClass_ = function(columns$$0, indice
     var obj = {};
     this.columns_.forEach(function(col) {
       var key = col.getName(), type = col.getType(), value = this.payload()[key];
-      obj[key] = type == lf.Type.ARRAY_BUFFER ? goog.isNull(value) ? value : lf.Row.binToHex(value) : type == lf.Type.DATE_TIME ? goog.isNull(value) ? value : value.getTime() : value;
+      obj[key] = type == lf.Type.ARRAY_BUFFER ? goog.isDefAndNotNull(value) ? lf.Row.binToHex(value) : null : type == lf.Type.DATE_TIME ? goog.isDefAndNotNull(value) ? value.getTime() : null : value;
     }, this);
     return obj;
   };

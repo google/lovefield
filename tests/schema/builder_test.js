@@ -193,7 +193,7 @@ function testThrows_InValidFKLocalColName() {
   lf.testing.util.assertThrowsError(540, testFn);
 }
 
-function test_defaultIndexOnForeignKey() {
+function testDefaultIndexOnForeignKey() {
   var schemaBuilder = createBuilder();
   var indexNames = new lf.structs.Set();
   // TODO(sowmyasb) : optimize getting index name
@@ -231,7 +231,7 @@ function testThrows_duplicateIndexName() {
   lf.testing.util.assertThrowsError(503, testFn);
 }
 
-function test_addDuplicateIndexOnFK() {
+function testAddDuplicateIndexOnFK() {
   var schemaBuilder = createBuilder();
   schemaBuilder.createTable('FkTableDupIndex').
       addColumn('employeeId', lf.Type.INTEGER).
@@ -338,7 +338,7 @@ function test_checkForeignKeyChainOnSameColumn() {
   });
 }
 
-function test_checkForeignKeyLoop() {
+function testCheckForeignKeyLoop() {
   var schemaBuilder = createBuilder();
   schemaBuilder.createTable('FkTable8').
       addColumn('employeeId', lf.Type.INTEGER).
@@ -376,7 +376,7 @@ function test_checkForeignKeyLoop() {
   });
 }
 
-function test_checkForeignKeySelfLoop() {
+function testCheckForeignKeySelfLoop() {
   var schemaBuilder = createBuilder();
   schemaBuilder.createTable('FkTable8').
       addColumn('employeeId', lf.Type.INTEGER).
@@ -389,7 +389,7 @@ function test_checkForeignKeySelfLoop() {
   schemaBuilder.getSchema();
 }
 
-function test_checkForeignKeySelfLoopOfBiggerGraph() {
+function testCheckForeignKeySelfLoopOfBiggerGraph() {
   var schemaBuilder = createBuilder();
   schemaBuilder.createTable('FkTable8').
       addColumn('employeeId', lf.Type.INTEGER).
@@ -788,4 +788,26 @@ function testIsUnique_CrossColumnPk() {
   var tableSchema = schema.table('DummyTable');
   assertFalse(tableSchema['id1'].isUnique());
   assertFalse(tableSchema['id2'].isUnique());
+}
+
+function testToDbPayload() {
+  var schemaBuilder = lf.schema.create('foo', 1);
+  schemaBuilder.createTable('DummyTable').
+      addColumn('id', lf.Type.NUMBER).
+      addColumn('name', lf.Type.STRING).
+      addColumn('photo', lf.Type.ARRAY_BUFFER).
+      addColumn('regDate', lf.Type.DATE_TIME).
+      addNullable(['regDate']);
+  var dummy = schemaBuilder.getSchema().table('DummyTable');
+  var row = dummy.createRow({
+    id: 1,
+    name: 'bar',
+    photo: null
+  });
+  assertObjectEquals({
+    id: 1,
+    name: 'bar',
+    photo: null,
+    regDate: null
+  }, row.toDbPayload());
 }
