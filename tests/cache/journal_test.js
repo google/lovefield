@@ -491,6 +491,51 @@ function testUpdate_PrimaryKeyViolation3() {
 
 
 /**
+ * Tests the cases where a nullable column is updated to null from non-null
+ * and vice versa.
+ */
+function testUpdate_updateNullsCorrectly() {
+  var table = env.schema.table('tableI');
+  var nameIndex = env.indexStore.get('tableI.idxName');
+  assertEquals(0, nameIndex.getRange().length);
+
+  // Inserting a new row with a null key.
+  var row = table.createRow(
+      {'id': 'pk0', 'id2': 'id2x', 'name': null});
+  var journal = new lf.cache.Journal(lf.Global.get(), [table]);
+  journal.insert(table, [row]);
+  journal.commit();
+  assertTrue(nameIndex.containsKey(null));
+  assertEquals(1, nameIndex.getRange().length);
+
+  // Updating an existing row, and replacing the null key with a non-null.
+  var updatedRow = table.createRow(
+      {'id': 'pk0', 'id2': 'id2x', 'name': 'sampleName'});
+  updatedRow.assignRowId(row.id());
+  journal = new lf.cache.Journal(lf.Global.get(), [table]);
+  journal.update(table, [updatedRow]);
+  journal.commit();
+  assertFalse(nameIndex.containsKey(null));
+  assertEquals(1, nameIndex.getRange().length);
+
+  // Updating an existing row replacing a non-null key with null.
+  updatedRow = table.createRow(
+      {'id': 'pk0', 'id2': 'id2x', 'name': null});
+  updatedRow.assignRowId(row.id());
+  journal = new lf.cache.Journal(lf.Global.get(), [table]);
+  journal.update(table, [updatedRow]);
+  journal.commit();
+  assertTrue(nameIndex.containsKey(null));
+  assertEquals(1, nameIndex.getRange().length);
+
+  // Removing an existing row.
+  journal = new lf.cache.Journal(lf.Global.get(), [table]);
+  journal.remove(table, [updatedRow]);
+  assertEquals(0, nameIndex.getRange().length);
+}
+
+
+/**
  * Tests the case where a row that has been deleted previously within the same
  * uncommitted journal is inserted.
  */
