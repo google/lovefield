@@ -183,6 +183,31 @@ function testThrows_ColumnBothPkAndFk() {
 }
 
 
+function testThrows_PrimaryKeyDuplicateIndex() {
+  // 544: Duplicate primary key index found at {0},
+  // Testing single column primary key.
+  lf.testing.util.assertThrowsError(544, function() {
+    var tableBuilder = new lf.schema.TableBuilder('Table');
+    tableBuilder.
+        addColumn('id', lf.Type.STRING).
+        addPrimaryKey(['id']).
+        addIndex('idx_id', ['id'], false, lf.Order.ASC);
+    return tableBuilder.getSchema();
+  });
+
+  // Testing multi column primary key.
+  lf.testing.util.assertThrowsError(544, function() {
+    var tableBuilder = new lf.schema.TableBuilder('Table');
+    tableBuilder.
+        addColumn('id1', lf.Type.STRING).
+        addColumn('id2', lf.Type.STRING).
+        addPrimaryKey(['id1', 'id2']).
+        addIndex('idx_id', ['id1', 'id2']);
+    return tableBuilder.getSchema();
+  });
+}
+
+
 function testIsUnique_CrossColumnPk() {
   var getSchema = function() {
     var tableBuilder = new lf.schema.TableBuilder('Table');

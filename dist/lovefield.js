@@ -11086,6 +11086,21 @@ lf.schema.TableBuilder.prototype.checkPrimaryKeyNotForeignKey_ = function() {
     }
   }
 };
+lf.schema.TableBuilder.prototype.checkPrimaryKeyDuplicateIndex_ = function() {
+  if (!goog.isNull(this.pkName_)) {
+    var extractName = function(indexedColumn) {
+      return indexedColumn.name;
+    }, pkColumnsJson = JSON.stringify(this.indices_.get(this.pkName_).map(extractName));
+    this.indices_.forEach(function(indexedColumns, indexName) {
+      if (indexName != this.pkName_) {
+        var indexedColumnNames = indexedColumns.map(extractName);
+        if (JSON.stringify(indexedColumnNames) == pkColumnsJson) {
+          throw new lf.Exception(544, this.name_ + "." + indexName);
+        }
+      }
+    }, this);
+  }
+};
 lf.schema.TableBuilder.prototype.addColumn = function(name, type) {
   this.checkName_(name);
   this.columns_.set(name, type);
@@ -11178,6 +11193,7 @@ lf.schema.TableBuilder.prototype.persistentIndex = function(value) {
 goog.exportProperty(lf.schema.TableBuilder.prototype, "persistentIndex", lf.schema.TableBuilder.prototype.persistentIndex);
 lf.schema.TableBuilder.prototype.getSchema = function() {
   this.checkPrimaryKeyNotForeignKey_();
+  this.checkPrimaryKeyDuplicateIndex_();
   var tableClass = this.generateTableClass_();
   return new tableClass;
 };

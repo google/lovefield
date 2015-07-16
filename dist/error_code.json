@@ -79,6 +79,7 @@
   "541": "Outer join accepts only join predicate.",
   "542": "from() has to be called before innerJoin() or leftOuterJoin().",
   "543": "Foreign key {0}. A primary key column can't also be a foreign key child column",
+  "544": "Duplicate primary key index found at {0}",
 
   "900": "Test error",
   "999": "Simulated error"
