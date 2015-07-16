@@ -553,11 +553,19 @@ CodeGenerator.prototype.genToDbPayload_ = function(table, prefix) {
       case 'datetime':
         if (col.nullable) {
           body.push(
-              lhs + 'goog.isNull(this.payload().' + col.name + ') ?\n' +
-              '      null : this.payload().' + col.name + '.getTime();');
+              lhs.substring(0, lhs.length - 1) +
+              '\n      goog.isDefAndNotNull(this.payload().' + col.name +
+              ') ?\n      this.payload().' + col.name + '.getTime() : null;');
         } else {
           body.push(lhs + 'this.payload().' + col.name + '.getTime();');
         }
+        break;
+
+      case 'object':
+        body.push(
+            lhs.substring(0, lhs.length - 1) +
+            '\n      goog.isDefAndNotNull(this.payload().' + col.name +
+            ') ?\n      this.payload().' + col.name + ' : null;');
         break;
 
       default:
@@ -602,7 +610,8 @@ CodeGenerator.columnToKey_ = function(
       case 'datetime':
         if (col.nullable) {
           pushLine('var value = this.payload().' + column);
-          pushLine('return goog.isNull(value) ? null : value.getTime()');
+          pushLine('return goog.isDefAndNotNull(value) ? ' +
+              'value.getTime() : null');
         } else {
           pushLine(
               (includeSemicolonAndReturn ? 'return ' : '') +
@@ -621,7 +630,8 @@ CodeGenerator.columnToKey_ = function(
       case 'boolean':
         if (col.nullable) {
           pushLine('var value = this.payload().' + column);
-          pushLine('return goog.isNull(value) ? null : (value ? 1 : 0)');
+          pushLine('return goog.isDefAndNotNull(value) ? (value ? 1 : 0)' +
+              ' : null');
         } else {
           pushLine(
               (includeSemicolonAndReturn ? 'return ' : '') +
@@ -771,8 +781,8 @@ CodeGenerator.prototype.genDeserializeRow_ = function(table, target, record) {
       case 'datetime':
         var temp = 'data.' + col.name;
         if (col.nullable) {
-          body.push(prefix + 'goog.isNull(' + temp + ') ?\n' +
-              '      null : new Date(' + temp + ');');
+          body.push(prefix + 'goog.isDefAndNotNull(' + temp + ') ?\n' +
+              '      new Date(' + temp + ') : null;');
         } else {
           body.push(prefix + 'new Date(' + temp + ');');
         }

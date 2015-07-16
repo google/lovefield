@@ -35,6 +35,10 @@ var tester;
 var capability;
 
 
+/** @type {!lf.Database} */
+var db;
+
+
 function setUp() {
   capability = lf.testing.Capability.get();
 
@@ -44,6 +48,7 @@ function setUp() {
         lf.schema.DataStoreType.INDEXED_DB
   };
   hr.db.connect(options).then(function(database) {
+    db = database;
     tester = new lf.testing.SmokeTester(hr.db.getGlobal(), database);
     // Delete any left-overs from previous tests.
     return tester.clearDb();
@@ -74,4 +79,30 @@ function testTransaction() {
   tester.testTransaction().then(function() {
     asyncTestCase.continueTesting();
   }, fail);
+}
+
+
+function testSerialization() {
+  var dummy = db.getSchema().table('DummyTable');
+  var row = dummy.createRow({
+    arraybuffer: null,
+    boolean: false,
+    integer: 1,
+    number: 2,
+    string: 'A',
+    string2: 'B'
+  });
+
+  var expected = {
+    arraybuffer: null,
+    boolean: false,
+    datetime: null,
+    integer: 1,
+    number: 2,
+    string: 'A',
+    string2: 'B',
+    proto: null
+  };
+  assertObjectEquals(expected, row.toDbPayload());
+  assertObjectEquals(expected, dummy.deserializeRow(row.serialize()).payload());
 }

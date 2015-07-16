@@ -783,13 +783,14 @@ function testIsUnique_CrossColumnPk() {
   assertFalse(tableSchema['id2'].isUnique());
 }
 
-function testToDbPayload() {
+function testSerialization() {
   var schemaBuilder = lf.schema.create('foo', 1);
   schemaBuilder.createTable('DummyTable').
       addColumn('id', lf.Type.NUMBER).
       addColumn('name', lf.Type.STRING).
       addColumn('photo', lf.Type.ARRAY_BUFFER).
       addColumn('regDate', lf.Type.DATE_TIME).
+      addColumn('proto', lf.Type.OBJECT).
       addNullable(['regDate']);
   var dummy = schemaBuilder.getSchema().table('DummyTable');
   var row = dummy.createRow({
@@ -797,12 +798,16 @@ function testToDbPayload() {
     name: 'bar',
     photo: null
   });
-  assertObjectEquals({
+
+  var expected = {
     id: 1,
     name: 'bar',
     photo: null,
+    proto: null,
     regDate: null
-  }, row.toDbPayload());
+  };
+  assertObjectEquals(expected, row.toDbPayload());
+  assertObjectEquals(expected, dummy.deserializeRow(row.serialize()).payload());
 }
 
 

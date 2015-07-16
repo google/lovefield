@@ -140,6 +140,7 @@ table:
       number: number
       string: string
       string2: string
+      proto: object
     constraint:
       primaryKey: [ string, number ]
       unique:

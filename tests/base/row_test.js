@@ -52,7 +52,8 @@ function testBinHexConversion() {
 
   var expected = '000102030405060708090a0b0c0d0e0f1011121314151617';
   assertNull(lf.Row.hexToBin(''));
-  assertEquals('', lf.Row.binToHex(null));
+  assertNull(lf.Row.hexToBin(null));
+  assertEquals(null, lf.Row.binToHex(null));
   assertEquals(expected, lf.Row.binToHex(buffer));
   assertEquals(expected, lf.Row.binToHex(lf.Row.hexToBin(expected)));
 }

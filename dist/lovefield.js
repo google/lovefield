@@ -2643,7 +2643,7 @@ lf.Row.create = function(opt_payload) {
 };
 lf.Row.binToHex = function(buffer) {
   if (!goog.isDefAndNotNull(buffer)) {
-    return "";
+    return null;
   }
   for (var uint8Array = new Uint8Array(buffer), s = "", i = 0;i < uint8Array.length;++i) {
     var chr = uint8Array[i].toString(16), s = s + (2 > chr.length ? "0" + chr : chr)
@@ -2651,7 +2651,7 @@ lf.Row.binToHex = function(buffer) {
   return s;
 };
 lf.Row.hexToBin = function(hex) {
-  if ("" == hex) {
+  if (!goog.isDefAndNotNull(hex) || "" == hex) {
     return null;
   }
   0 != hex.length % 2 && (hex = "0" + hex);
@@ -11240,7 +11240,7 @@ lf.schema.TableBuilder.prototype.generateTableClass_ = function() {
     var obj = {};
     this.getColumns().forEach(function(col) {
       var key = col.getName(), type = col.getType(), value = dbRecord.value[key];
-      obj[key] = type == lf.Type.ARRAY_BUFFER ? goog.isNull(value) ? value : lf.Row.hexToBin(value) : type == lf.Type.DATE_TIME ? goog.isNull(value) ? value : new Date(value) : value;
+      obj[key] = type == lf.Type.ARRAY_BUFFER ? lf.Row.hexToBin(value) : type == lf.Type.DATE_TIME ? goog.isDefAndNotNull(value) ? new Date(value) : null : value;
     }, this);
     return new this.rowClass_(dbRecord.id, obj);
   };
@@ -11269,7 +11269,7 @@ lf.schema.TableBuilder.prototype.generateRowClass_ = function(columns$$0, indice
     var obj = {};
     this.columns_.forEach(function(col) {
       var key = col.getName(), type = col.getType(), value = this.payload()[key];
-      obj[key] = type == lf.Type.ARRAY_BUFFER ? goog.isDefAndNotNull(value) ? lf.Row.binToHex(value) : null : type == lf.Type.DATE_TIME ? goog.isDefAndNotNull(value) ? value.getTime() : null : value;
+      obj[key] = type == lf.Type.ARRAY_BUFFER ? goog.isDefAndNotNull(value) ? lf.Row.binToHex(value) : null : type == lf.Type.DATE_TIME ? goog.isDefAndNotNull(value) ? value.getTime() : null : type == lf.Type.OBJECT ? goog.isDefAndNotNull(value) ? value : null : value;
     }, this);
     return obj;
   };

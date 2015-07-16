@@ -15,10 +15,10 @@
  * limitations under the License.
  */
 goog.setTestOnly();
-goog.require('goog.Promise');
 goog.require('goog.testing.AsyncTestCase');
 goog.require('goog.testing.jsunit');
 goog.require('hr.bdb');
+goog.require('lf.backstore.Page');
 goog.require('lf.testing.Capability');
 goog.require('lf.testing.SmokeTester');
 
@@ -36,6 +36,10 @@ var tester;
 var capability;
 
 
+/** @type {!lf.Database} */
+var db;
+
+
 function setUpPage() {
   capability = lf.testing.Capability.get();
 }
@@ -48,6 +52,7 @@ function setUp() {
 
   asyncTestCase.waitForAsync('setUp');
   hr.bdb.connect().then(function(database) {
+    db = database;
     tester = new lf.testing.SmokeTester(hr.bdb.getGlobal(), database);
     return tester.clearDb();
   }).then(function() {
@@ -89,4 +94,39 @@ function testTransaction() {
   tester.testTransaction().then(function() {
     asyncTestCase.continueTesting();
   }, fail);
+}
+
+
+function testSerialization() {
+  if (!capability.indexedDb) {
+    return;
+  }
+
+  var dummy = db.getSchema().table('DummyTable');
+  var row = dummy.createRow({
+    arraybuffer: null,
+    boolean: false,
+    integer: 1,
+    number: 2,
+    string: 'A',
+    string2: 'B'
+  });
+
+  var expected = {
+    arraybuffer: null,
+    boolean: false,
+    datetime: null,
+    integer: 1,
+    number: 2,
+    string: 'A',
+    string2: 'B',
+    proto: null
+  };
+  assertObjectEquals(expected, row.toDbPayload());
+  assertObjectEquals(expected, dummy.deserializeRow(row.serialize()).payload());
+
+  var page = new lf.backstore.Page(1);
+  page.setRows([row]);
+  var page2 = lf.backstore.Page.deserialize(page.serialize()).getPayload();
+  assertObjectEquals(expected, page2[row.id()]['value']);
 }
