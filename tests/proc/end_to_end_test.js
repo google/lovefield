@@ -16,8 +16,15 @@
  */
 goog.setTestOnly();
 goog.require('goog.testing.AsyncTestCase');
+goog.require('goog.testing.PropertyReplacer');
 goog.require('goog.testing.jsunit');
+goog.require('goog.userAgent.product');
+goog.require('hr.bdb');
 goog.require('hr.db');
+goog.require('lf.Global');
+goog.require('lf.schema.DataStoreType');
+goog.require('lf.service.ServiceId');
+goog.require('lf.testing.Capability');
 goog.require('lf.testing.EndToEndTester');
 goog.require('lf.testing.hrSchema.getSchemaBuilder');
 
@@ -31,23 +38,109 @@ var asyncTestCase = goog.testing.AsyncTestCase.createAndInstall(
 asyncTestCase.stepTimeout = 10 * 1000;  // 10 seconds
 
 
+/** @type {!lf.testing.Capability} */
+var capability;
+
+
+/** @type {!goog.testing.PropertyReplacer} */
+var stub;
+
+
+function setUpPage() {
+  capability = lf.testing.Capability.get();
+  stub = new goog.testing.PropertyReplacer();
+}
+
+function tearDown() {
+  stub.reset();
+}
+
 function testEndToEnd_StaticSchema() {
   asyncTestCase.waitForAsync('testEndToEnd_StaticSchema');
   var tester = new lf.testing.EndToEndTester(
-      hr.db.getGlobal(),
-      hr.db.connect);
+      hr.db.getGlobal.bind(hr.db),
+      hr.db.connect.bind(hr.db, {
+        storeType: lf.schema.DataStoreType.MEMORY
+      }));
   tester.run().then(function() {
     asyncTestCase.continueTesting();
   });
 }
 
+function testEndToEnd_StaticSchemaBundled() {
+  if (!capability.indexedDb || goog.userAgent.product.IE) {
+    // Due to sheer amount of data in this test, IE will prompt for permission,
+    // which blocks test bot execution. As a result, it is skipped from this
+    // test for now.
+    return;
+  }
+
+  asyncTestCase.waitForAsync('testEndToEnd_StaticSchemaBundled');
+  var dbGlobal;
+
+  var globalFn = function() {
+    return dbGlobal;
+  };
+  var connectFn = function() {
+    stub.reset();
+    var dbName = 'hrbdb' + goog.now();
+    dbGlobal = new lf.Global();
+    stub.replace(
+        goog.getObjectByName('hr.bdb.schema.Database.prototype'),
+        'name',
+        function() { return dbName; });
+    stub.replace(
+        goog.getObjectByName('hr.bdb'),
+        'getGlobal',
+        function() {
+          var serviceId = new lf.service.ServiceId(dbName);
+          var global = lf.Global.get();
+          if (!global.isRegistered(serviceId)) {
+            global.registerService(serviceId, dbGlobal);
+          }
+          return dbGlobal;
+        });
+    return hr.bdb.connect();
+  };
+
+  var tester = new lf.testing.EndToEndTester(globalFn, connectFn);
+  tester.run().then(function() {
+    asyncTestCase.continueTesting();
+  });
+}
 
 function testEndToEnd_DynamicSchema() {
   asyncTestCase.waitForAsync('testEndToEnd_DynamicSchema');
   var builder = lf.testing.hrSchema.getSchemaBuilder();
   var tester = new lf.testing.EndToEndTester(
-      builder.getGlobal(),
-      builder.connect.bind(builder));
+      builder.getGlobal.bind(builder),
+      builder.connect.bind(builder, {
+        storeType: lf.schema.DataStoreType.MEMORY
+      }));
+  tester.run().then(function() {
+    asyncTestCase.continueTesting();
+  });
+}
+
+function testEndToEnd_DynamicSchemaBundled() {
+  if (!capability.indexedDb || goog.userAgent.product.IE) {
+    return;
+  }
+
+  asyncTestCase.waitForAsync('testEndToEnd_DynamicSchemaBundled');
+  /** @type {!lf.schema.Builder} */
+  var builder;
+  var globalFn = function() {
+    return builder.getGlobal();
+  };
+  var connectFn = function() {
+    builder = lf.testing.hrSchema.getSchemaBuilder();
+    builder.setPragma(/** @type {!lf.schema.Database.Pragma} */ (
+        {enableBundledMode: true}));
+    return builder.connect();
+  };
+
+  var tester = new lf.testing.EndToEndTester(globalFn, connectFn);
   tester.run().then(function() {
     asyncTestCase.continueTesting();
   });

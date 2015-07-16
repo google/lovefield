@@ -20,7 +20,6 @@ goog.provide('lf.testing.EndToEndTester');
 goog.require('goog.Promise');
 goog.require('goog.testing.jsunit');
 goog.require('lf.bind');
-goog.require('lf.schema.DataStoreType');
 goog.require('lf.testing.hrSchema.JobDataGenerator');
 goog.require('lf.testing.hrSchema.MockDataGenerator');
 goog.require('lf.testing.util');
@@ -30,10 +29,10 @@ goog.require('lf.testing.util');
 /**
  * @constructor @struct
  *
- * @param {!lf.Global} global
+ * @param {!function():!lf.Global} globalFn
  * @param {!Function} connectFn
  */
-lf.testing.EndToEndTester = function(global, connectFn) {
+lf.testing.EndToEndTester = function(globalFn, connectFn) {
   /** @private {!Function} */
   this.connectFn_ = connectFn;
 
@@ -46,8 +45,8 @@ lf.testing.EndToEndTester = function(global, connectFn) {
   /** @private {!lf.schema.Table} */
   this.j_;
 
-  /** @private {!lf.Global} */
-  this.global_ = global;
+  /** @private {!function():!lf.Global} */
+  this.globalFn_ = globalFn;
 
   /** @private {!Array<!lf.Row>} */
   this.sampleJobs_;
@@ -113,7 +112,7 @@ lf.testing.EndToEndTester.markDone_ = function(name) {
  * @private
  */
 lf.testing.EndToEndTester.prototype.setUp_ = function(addSampleData) {
-  return this.connectFn_({storeType: lf.schema.DataStoreType.MEMORY}).then(
+  return this.connectFn_().then(
       function(database) {
         this.db_ = database;
         this.j_ = this.db_.getSchema().table('Job');
@@ -173,7 +172,7 @@ lf.testing.EndToEndTester.prototype.testInsert = function() {
         assertEquals(1, results.length);
         assertEquals(row.payload()['id'], results[0]['id']);
 
-        return lf.testing.util.selectAll(this.global_, this.j_);
+        return lf.testing.util.selectAll(this.globalFn_(), this.j_);
       }.bind(this)).then(
       function(results) {
         assertEquals(1, results.length);
@@ -210,7 +209,7 @@ lf.testing.EndToEndTester.prototype.testInsert_NoPrimaryKey = function() {
   }).then(
       function(results) {
         assertEquals(1, results.length);
-        return lf.testing.util.selectAll(this.global_, jobHistory);
+        return lf.testing.util.selectAll(this.globalFn_(), jobHistory);
       }.bind(this)).then(
       function(results) {
         assertEquals(1, results.length);
@@ -394,7 +393,7 @@ lf.testing.EndToEndTester.prototype.testInsertOrReplace_Bind = function() {
       values([lf.bind(0), lf.bind(1)]));
 
   return queryBuilder.bind(rows).exec().then(function() {
-    return lf.testing.util.selectAll(this.global_, region);
+    return lf.testing.util.selectAll(this.globalFn_(), region);
   }.bind(this)).then(function(results) {
     assertEquals(2, results.length);
     lf.testing.EndToEndTester.markDone_('testInsertOrReplace_Bind');
@@ -417,7 +416,7 @@ lf.testing.EndToEndTester.prototype.testInsertOrReplace_BindArray = function() {
       this.db_.insertOrReplace().into(region).values(lf.bind(0)));
 
   return queryBuilder.bind([rows]).exec().then(function() {
-    return lf.testing.util.selectAll(this.global_, region);
+    return lf.testing.util.selectAll(this.globalFn_(), region);
   }.bind(this)).then(function(results) {
     assertEquals(2, results.length);
     lf.testing.EndToEndTester.markDone_('testInsertOrReplace_BindArray');
@@ -473,7 +472,7 @@ lf.testing.EndToEndTester.prototype.checkAutoIncrement_ = function(builderFn) {
   var manualRow = c.createRow();
   manualRow.payload()['id'] = manuallyAssignedId;
   manualRow.payload()['regionId'] = 'regionId';
-  var global = this.global_;
+  var global = this.globalFn_();
 
   return this.db_.insert().into(r).values([regionRow]).exec().then(
       function() {
@@ -531,7 +530,7 @@ lf.testing.EndToEndTester.prototype.testUpdate_All = function() {
 
   return queryBuilder.exec().then(
       function() {
-        return lf.testing.util.selectAll(this.global_, this.j_);
+        return lf.testing.util.selectAll(this.globalFn_(), this.j_);
       }.bind(this)).then(
       function(results) {
         results.forEach(function(row) {
@@ -598,7 +597,7 @@ lf.testing.EndToEndTester.prototype.testUpdate_Predicate = function() {
           set(this.j_.maxSalary, 20000);
 
   return queryBuilder.exec().then(function() {
-    return lf.testing.util.selectAll(this.global_, this.j_);
+    return lf.testing.util.selectAll(this.globalFn_(), this.j_);
   }.bind(this)).then(function(results) {
     var verified = false;
     for (var i = 0; i < results.length; ++i) {
@@ -629,7 +628,7 @@ lf.testing.EndToEndTester.prototype.testUpdate_UnboundPredicate = function() {
   var maxSalaryName = this.j_.maxSalary.getName();
 
   return queryBuilder.bind([jobId, 10000]).exec().then(function() {
-    return lf.testing.util.selectAll(this.global_, this.j_);
+    return lf.testing.util.selectAll(this.globalFn_(), this.j_);
   }.bind(this)).then(function() {
     return this.db_.select().from(this.j_).where(this.j_.id.eq(jobId)).exec();
   }.bind(this)).then(function(results) {
@@ -678,7 +677,7 @@ lf.testing.EndToEndTester.prototype.testDelete_Predicate = function() {
 
   return queryBuilder.exec().then(
       function() {
-        return lf.testing.util.selectAll(this.global_, this.j_);
+        return lf.testing.util.selectAll(this.globalFn_(), this.j_);
       }.bind(this)).then(
       function(results) {
         assertEquals(this.sampleJobs_.length - 1, results.length);
@@ -695,7 +694,7 @@ lf.testing.EndToEndTester.prototype.testDelete_UnboundPredicate = function() {
 
   return queryBuilder.bind(['', jobId]).exec().then(
       function() {
-        return lf.testing.util.selectAll(this.global_, this.j_);
+        return lf.testing.util.selectAll(this.globalFn_(), this.j_);
       }.bind(this)).then(
       function(results) {
         assertEquals(this.sampleJobs_.length - 1, results.length);
@@ -728,7 +727,7 @@ lf.testing.EndToEndTester.prototype.testDelete_All = function() {
 
   return queryBuilder.exec().then(
       function() {
-        return lf.testing.util.selectAll(this.global_, this.j_);
+        return lf.testing.util.selectAll(this.globalFn_(), this.j_);
       }.bind(this)).then(
       function(results) {
         assertEquals(0, results.length);
