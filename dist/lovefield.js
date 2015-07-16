@@ -7153,15 +7153,7 @@ lf.index.NullableIndex.prototype.getName = function() {
   return this.index_.getName();
 };
 lf.index.NullableIndex.prototype.add = function(key, value) {
-  if (goog.isNull(key)) {
-    if (this.isUniqueKey() && !this.nulls_.isEmpty()) {
-      throw new lf.Exception(201);
-    }
-    this.nulls_.add(value);
-    this.statsNull_.add(key, 1);
-  } else {
-    this.index_.add(key, value);
-  }
+  goog.isNull(key) ? (this.nulls_.add(value), this.statsNull_.add(key, 1)) : this.index_.add(key, value);
 };
 lf.index.NullableIndex.prototype.set = function(key, value) {
   goog.isNull(key) ? (this.nulls_.clear(), this.statsNull_.clear(), this.add(key, value)) : this.index_.set(key, value);

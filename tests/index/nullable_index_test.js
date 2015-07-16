@@ -24,7 +24,6 @@ goog.require('lf.index.SimpleComparator');
 goog.require('lf.index.SingleKeyRange');
 goog.require('lf.testing.index.TestSingleRowNumericalKey');
 goog.require('lf.testing.index.TestSingleRowStringKey');
-goog.require('lf.testing.util');
 
 
 /** @type {!lf.index.NullableIndex} */
@@ -135,6 +134,10 @@ function testSerialize() {
 }
 
 
+/**
+ * Tests that a unique nullable index allows multiple nullable keys (this
+ * matches the behavior of other SQL engines).
+ */
 function testUnique() {
   index = new lf.index.NullableIndex(
       new lf.index.BTree(
@@ -143,10 +146,9 @@ function testUnique() {
       /* opt_unique */ true));
   index.add(null, 1);
   index.add(1, 2);
+  index.add(null, 3);
 
-  // 201: Duplicate keys are not allowed.
-  lf.testing.util.assertThrowsError(201, function() { index.add(1, 3); });
-  lf.testing.util.assertThrowsError(201, function() { index.add(null, 2); });
+  assertArrayEquals([1, 3], index.get(null));
 }
 
 
