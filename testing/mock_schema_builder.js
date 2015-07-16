@@ -69,7 +69,6 @@ lf.testing.getSchemaBuilder = function(opt_name) {
   schemaBuilder.createTable('tableG').
       addColumn('id', lf.Type.STRING).
       addColumn('id2', lf.Type.STRING).
-      addPrimaryKey(['id']).
       addUnique('uq_id2', ['id2']).
       addForeignKey('fk_Id', {
         local: 'id',
@@ -80,7 +79,6 @@ lf.testing.getSchemaBuilder = function(opt_name) {
   schemaBuilder.createTable('tableH').
       addColumn('id', lf.Type.STRING).
       addColumn('id2', lf.Type.STRING).
-      addPrimaryKey(['id']).
       addForeignKey('fk_Id', {
         local: 'id',
         ref: 'tableG.id2',

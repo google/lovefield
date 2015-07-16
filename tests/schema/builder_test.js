@@ -307,30 +307,23 @@ function testThrows_InValidFKRefName() {
 }
 
 function test_checkForeignKeyChainOnSameColumn() {
-  var schemaBuilder = createBuilder();
-  schemaBuilder.createTable('FkTable8').
+  var schemaBuilder = lf.schema.create('hr', 1);
+  schemaBuilder.createTable('FkTable1').
       addColumn('employeeId', lf.Type.INTEGER).
-      addForeignKey('fkemployeeId1', {
+      addForeignKey('fk_employeeId', {
         local: 'employeeId',
-        ref: 'FkTable10.employeeId'
+        ref: 'FkTable2.employeeId'
       });
-  schemaBuilder.createTable('FkTable9').
+  schemaBuilder.createTable('FkTable2').
       addColumn('employeeId', lf.Type.INTEGER).
-      addForeignKey('fkemployeeId2', {
+      addUnique('uq_employeeId', ['employeeId']).
+      addForeignKey('fk_employeeId', {
         local: 'employeeId',
-        ref: 'FkTable10.employeeId'
+        ref: 'FkTable3.employeeId'
       });
-  schemaBuilder.createTable('FkTable10').
+  schemaBuilder.createTable('FkTable3').
       addColumn('employeeId', lf.Type.INTEGER).
-      addColumn('employeeId2', lf.Type.INTEGER).
-      addPrimaryKey([{'name': 'employeeId', 'order': lf.Order.DESC}]).
-      addForeignKey('fkemployeeId3', {
-        local: 'employeeId',
-        ref: 'FkTable11.employeeId'
-      });
-  schemaBuilder.createTable('FkTable11').
-      addColumn('employeeId', lf.Type.INTEGER).
-      addPrimaryKey([{'name': 'employeeId', 'order': lf.Order.DESC}]);
+      addPrimaryKey(['employeeId']);
 
   // 534: Foreign key {0} refers to source column of another foreign key.
   lf.testing.util.assertThrowsError(534, function() {
@@ -810,4 +803,25 @@ function testToDbPayload() {
     photo: null,
     regDate: null
   }, row.toDbPayload());
+}
+
+
+function testThrows_ColumnBothPkAndFk() {
+  // 543: Foreign key {0}. A primary key column can't also be a foreign key
+  // child column.
+  lf.testing.util.assertThrowsError(543, function() {
+    var schemaBuilder = lf.schema.create('foo', 1);
+    schemaBuilder.createTable('Table1').
+        addColumn('id', lf.Type.STRING).
+        addPrimaryKey(['id']);
+
+    schemaBuilder.createTable('Table2').
+        addColumn('id', lf.Type.STRING).
+        addPrimaryKey(['id']).
+        addForeignKey('fk_id', {
+          local: 'id',
+          ref: 'Table1.id',
+        });
+    return schemaBuilder.getSchema();
+  });
 }

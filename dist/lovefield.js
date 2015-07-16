@@ -11026,7 +11026,7 @@ lf.schema.TableBuilder = function(tableName) {
   this.uniqueColumns_ = new lf.structs.Set;
   this.uniqueIndices_ = new lf.structs.Set;
   this.nullable_ = new lf.structs.Set;
-  this.pkName_ = "pk" + lf.schema.TableBuilder.toPascal_(this.name_);
+  this.pkName_ = null;
   this.indices_ = new lf.structs.Map;
   this.persistentIndex_ = !1;
   this.checkName_(tableName);
@@ -11063,6 +11063,19 @@ lf.schema.TableBuilder.prototype.checkPrimaryKey_ = function(columns) {
     throw new lf.Exception(505);
   }
 };
+lf.schema.TableBuilder.prototype.checkPrimaryKeyNotForeignKey_ = function() {
+  if (!goog.isNull(this.pkName_)) {
+    var pkColumns = this.indices_.get(this.pkName_).map(function(indexedColumn) {
+      return indexedColumn.name;
+    }), fkSpecIndex = 0, conflict = this.fkSpecs_.some(function(fkSpec, i) {
+      fkSpecIndex = i;
+      return -1 != pkColumns.indexOf(fkSpec.childColumn);
+    }, this);
+    if (conflict) {
+      throw new lf.Exception(543, this.fkSpecs_[fkSpecIndex].name);
+    }
+  }
+};
 lf.schema.TableBuilder.prototype.addColumn = function(name, type) {
   this.checkName_(name);
   this.columns_.set(name, type);
@@ -11071,6 +11084,7 @@ lf.schema.TableBuilder.prototype.addColumn = function(name, type) {
 };
 goog.exportProperty(lf.schema.TableBuilder.prototype, "addColumn", lf.schema.TableBuilder.prototype.addColumn);
 lf.schema.TableBuilder.prototype.addPrimaryKey = function(columns, opt_autoInc) {
+  this.pkName_ = "pk" + lf.schema.TableBuilder.toPascal_(this.name_);
   this.checkName_(this.pkName_);
   var cols = this.normalizeColumns_(columns, !0, void 0, opt_autoInc);
   this.checkPrimaryKey_(cols);
@@ -11153,6 +11167,7 @@ lf.schema.TableBuilder.prototype.persistentIndex = function(value) {
 };
 goog.exportProperty(lf.schema.TableBuilder.prototype, "persistentIndex", lf.schema.TableBuilder.prototype.persistentIndex);
 lf.schema.TableBuilder.prototype.getSchema = function() {
+  this.checkPrimaryKeyNotForeignKey_();
   var tableClass = this.generateTableClass_();
   return new tableClass;
 };
@@ -11192,7 +11207,7 @@ lf.schema.TableBuilder.prototype.generateTableClass_ = function() {
       return new lf.schema.Index(that.name_, indexName, that.uniqueIndices_.has(indexName), generateIndexedColumns.call(this, indexName));
     }, this);
     lf.schema.Table.call(this, that.name_, columns, indices, that.persistentIndex_);
-    var pk = that.indices_.has(that.pkName_) ? new lf.schema.Index(that.name_, that.pkName_, !0, generateIndexedColumns.call(this, that.pkName_)) : null, notNullable = columns.filter(function(col) {
+    var pk = goog.isNull(that.pkName_) ? null : new lf.schema.Index(that.name_, that.pkName_, !0, generateIndexedColumns.call(this, that.pkName_)), notNullable = columns.filter(function(col) {
       return !that.nullable_.has(col.getName());
     });
     this.constraint_ = new lf.schema.Constraint(pk, notNullable, that.getFkSpecs());
