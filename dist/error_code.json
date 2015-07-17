@@ -81,6 +81,7 @@
   "543": "Foreign key {0}. A primary key column can't also be a foreign key child column",
   "544": "Duplicate primary key index found at {0}",
   "545": "Primary key column {0} can't be marked as nullable",
+  "546": "Indices/constraints/columns can't re-use the table name {0}",
 
   "900": "Test error",
   "999": "Simulated error"

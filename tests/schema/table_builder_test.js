@@ -191,6 +191,29 @@ function testThrows_DuplicateIndexName() {
 }
 
 
+function testThrows_IndexColumnConstraintNameConflict() {
+  // 546: Indices/constraints/columns can't re-use the table name {0},
+  lf.testing.util.assertThrowsError(546, function() {
+    var tableBuilder = new lf.schema.TableBuilder('Table');
+    tableBuilder.
+        addColumn('id', lf.Type.INTEGER).
+        addIndex('Table', ['id']);
+  });
+
+  lf.testing.util.assertThrowsError(546, function() {
+    var tableBuilder = new lf.schema.TableBuilder('Table');
+    tableBuilder.
+        addColumn('id', lf.Type.INTEGER).
+        addUnique('Table', ['id']);
+  });
+
+  lf.testing.util.assertThrowsError(546, function() {
+    var tableBuilder = new lf.schema.TableBuilder('Table');
+    tableBuilder.addColumn('Table', lf.Type.INTEGER);
+  });
+}
+
+
 function testThrows_ColumnBothPkAndFk() {
   // 543: Foreign key {0}. A primary key column can't also be a foreign key
   // child column.
