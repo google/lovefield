@@ -35,6 +35,31 @@ function testThrows_DuplicateColumn() {
 }
 
 
+function testThrows_InvalidNullable() {
+  // Testing single column primary key.
+  // 545: Primary key column {0} can't be marked as nullable,
+  lf.testing.util.assertThrowsError(545, function() {
+    var tableBuilder = new lf.schema.TableBuilder('Table');
+    tableBuilder.
+        addColumn('id', lf.Type.STRING).
+        addPrimaryKey(['id']).
+        addNullable(['id']);
+    tableBuilder.getSchema();
+  });
+
+  // Testing multi column primary key.
+  lf.testing.util.assertThrowsError(545, function() {
+    var tableBuilder = new lf.schema.TableBuilder('Table');
+    tableBuilder.
+        addColumn('id1', lf.Type.STRING).
+        addColumn('id2', lf.Type.STRING).
+        addNullable(['id2']).
+        addPrimaryKey(['id1', 'id2']);
+    tableBuilder.getSchema();
+  });
+}
+
+
 function testThrows_NonIndexableColumns() {
   // 509: Attempt to index table {0} on non-indexable column {1}.
   lf.testing.util.assertThrowsError(509, function() {

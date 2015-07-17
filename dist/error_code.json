@@ -80,6 +80,7 @@
   "542": "from() has to be called before innerJoin() or leftOuterJoin().",
   "543": "Foreign key {0}. A primary key column can't also be a foreign key child column",
   "544": "Duplicate primary key index found at {0}",
+  "545": "Primary key column {0} can't be marked as nullable",
 
   "900": "Test error",
   "999": "Simulated error"

@@ -11101,6 +11101,13 @@ lf.schema.TableBuilder.prototype.checkPrimaryKeyDuplicateIndex_ = function() {
     }, this);
   }
 };
+lf.schema.TableBuilder.prototype.checkPrimaryKeyNotNullable_ = function() {
+  goog.isNull(this.pkName_) || this.indices_.get(this.pkName_).forEach(function(indexedColumn) {
+    if (this.nullable_.has(indexedColumn.name)) {
+      throw new lf.Exception(545, this.name_ + "." + indexedColumn.name);
+    }
+  }, this);
+};
 lf.schema.TableBuilder.prototype.addColumn = function(name, type) {
   this.checkName_(name);
   this.columns_.set(name, type);
@@ -11194,6 +11201,7 @@ goog.exportProperty(lf.schema.TableBuilder.prototype, "persistentIndex", lf.sche
 lf.schema.TableBuilder.prototype.getSchema = function() {
   this.checkPrimaryKeyNotForeignKey_();
   this.checkPrimaryKeyDuplicateIndex_();
+  this.checkPrimaryKeyNotNullable_();
   var tableClass = this.generateTableClass_();
   return new tableClass;
 };
