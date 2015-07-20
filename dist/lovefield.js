@@ -561,7 +561,7 @@ goog.base = function(me, opt_methodName, var_args) {
 goog.scope = function(fn) {
   fn.call(goog.global);
 };
-goog.MODIFY_FUNCTION_PROTOTYPES = !0;
+goog.MODIFY_FUNCTION_PROTOTYPES = !1;
 goog.MODIFY_FUNCTION_PROTOTYPES && (Function.prototype.inherits = function(parentCtor) {
   goog.inherits(this, parentCtor);
 });
@@ -2351,8 +2351,8 @@ goog.Promise.resolveThen_ = function(value, onFulfilled, onRejected) {
 goog.Promise.race = function(promises) {
   return new goog.Promise(function(resolve, reject) {
     promises.length || resolve(void 0);
-    for (var i = 0, promise;promise = promises[i];i++) {
-      goog.Promise.resolveThen_(promise, resolve, reject);
+    for (var i = 0, promise;i < promises.length;i++) {
+      promise = promises[i], goog.Promise.resolveThen_(promise, resolve, reject);
     }
   });
 };
@@ -2366,8 +2366,8 @@ goog.Promise.all = function(promises) {
         0 == toFulfill && resolve(values);
       }, onReject = function(reason) {
         reject(reason);
-      }, i = 0, promise;promise = promises[i];i++) {
-        goog.Promise.resolveThen_(promise, goog.partial(onFulfill, i), onReject);
+      }, i = 0, promise;i < promises.length;i++) {
+        promise = promises[i], goog.Promise.resolveThen_(promise, goog.partial(onFulfill, i), onReject);
       }
     } else {
       resolve(values);
@@ -2382,8 +2382,8 @@ goog.Promise.allSettled = function(promises) {
         toSettle--;
         results[index] = fulfilled ? {fulfilled:!0, value:result} : {fulfilled:!1, reason:result};
         0 == toSettle && resolve(results);
-      }, i = 0, promise;promise = promises[i];i++) {
-        goog.Promise.resolveThen_(promise, goog.partial(onSettled, i, !0), goog.partial(onSettled, i, !1));
+      }, i = 0, promise;i < promises.length;i++) {
+        promise = promises[i], goog.Promise.resolveThen_(promise, goog.partial(onSettled, i, !0), goog.partial(onSettled, i, !1));
       }
     } else {
       resolve(results);
@@ -2400,8 +2400,8 @@ goog.Promise.firstFulfilled = function(promises) {
         toReject--;
         reasons[index] = reason;
         0 == toReject && reject(reasons);
-      }, i = 0, promise;promise = promises[i];i++) {
-        goog.Promise.resolveThen_(promise, onFulfill, goog.partial(onReject, i));
+      }, i = 0, promise;i < promises.length;i++) {
+        promise = promises[i], goog.Promise.resolveThen_(promise, onFulfill, goog.partial(onReject, i));
       }
     } else {
       resolve(void 0);

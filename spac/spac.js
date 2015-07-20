@@ -23,7 +23,8 @@ var fsMod = require('fs');
 var pathMod = require('path');
 var noptMod = /** @type {!Function} */ (require('nopt'));
 
-var parseAndValidate = require('./parser.js').parse;
+var parseAndValidate = /** @type {{convert: !Function}} */ (
+    require('./parser.js')).convert;
 var CodeGen = require('./codegen.js').CodeGenerator;
 
 // Need to trick the presubmit script to not complain.

@@ -18,7 +18,8 @@ var fs = require('fs');
 var glob = require('glob');
 var path = require('path');
 
-var validate = userRequire('parser').parse;
+var validate = /** @type {{convert: !Function}} */ (
+    userRequire('parser')).convert;
 var CodeGenerator = userRequire('codegen').CodeGenerator;
 
 
@@ -47,8 +48,8 @@ describe('Generator Test', function() {
   it('should parse schema', function() {
     var schemaYaml = fs.readFileSync(testdata['codegen.yaml']);
     schema = validate(schemaYaml);
-    expect(schema.name).toEqual('db');
-    expect(schema.version).toEqual(1);
+    expect(schema.name()).toEqual('db');
+    expect(schema.version()).toEqual(1);
 
     // This must be done in the first spec, so that following specs will
     // have the object.

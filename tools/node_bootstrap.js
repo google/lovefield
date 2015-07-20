@@ -48,7 +48,12 @@ function bootstrap(lovefieldBinary) {
 module.exports = {
   // Loads ../dist/lovefield.js.
   loadDebugJs: function() {
-    bootstrap(pathMod.resolve(__dirname, '..', 'dist', 'lovefield.js'));
+    var lovefieldBinary = pathMod.resolve(__dirname, 'dist', 'lovefield.js');
+    if (!fsMod.existsSync(lovefieldBinary)) {
+      lovefieldBinary = pathMod.resolve(
+          __dirname, '..', 'dist', 'lovefield.js');
+    }
+    bootstrap(lovefieldBinary);
   },
   // Loads ../dist/lovefield.min.js.
   loadMinJs: function() {

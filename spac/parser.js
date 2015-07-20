@@ -1,6 +1,6 @@
 /**
  * @license
- * Copyright 2014 The Lovefield Project Authors. All Rights Reserved.
+ * Copyright 2015 The Lovefield Project Authors. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,740 +16,378 @@
  */
 
 /**
- * @fileoverview YAML schema parser which converts the schema into a JS
- * object for code generator.
+ * @fileoverview YAML schema parser which converts the schema into a proper,
+ * validated lf.schema.Database instance.
  */
+
+var yamlMod = /** @type {{safeLoad: !Function}} */ (require('js-yaml'));
+
+function loadLovefield() {
+  var pathMod = require('path');
+  var fs = require('fs');
+  var moduleName = 'node_bootstrap';
+
+  // Try this path first.
+  var moduleFile = pathMod.resolve(__dirname +
+      '/node_modules/' + moduleName + '/' + moduleName + '.js');
+  if (!fs.existsSync(moduleFile)) {
+    moduleFile = pathMod.resolve(__dirname, '..', 'tools', moduleName + '.js');
+  }
+
+  /** @type {{loadDebugJs: !Function}} */ (require(moduleFile)).loadDebugJs();
+}
+
+loadLovefield();
 
 
 /**
- * The typedef to make Closure compiler happy about js-yaml.safeLoad().
  * @typedef {{
- *   safeLoad: function(string):!Object
+ *   name: string,
+ *   local: string,
+ *   ref: string,
+ *   action: ?string,
+ *   timing: ?string
  * }}
  * @private
  */
-var YAML_;
-
-var yaml = /** @type {YAML_} */ (require('js-yaml'));
+var ForeignKeySpec_;
 
 
-/** @const {!Object} */
-var DB_SCHEMA = {
-  'name': 'string',
-  'version': 'integer',
-  'pragma=': 'object',
-  'table': 'object'
-};
+/**
+ * @typedef {{
+ *   primaryKey: (!Array<string>|!Array<{
+ *     name: string,
+ *     order: ?string,
+ *     autoIncrement: ?boolean
+ *   }>),
+ *   nullable: !Array<string>,
+ *   unique: {column: !Array<string>},
+ *   foreignKey: !Array<!ForeignKeySpec_>
+ * }}
+ * @private
+ */
+var Constraint_;
 
 
-/** @const {!Object} */
-var TABLE_SCHEMA = {
-  'column': 'object',
-  'constraint=': 'object',
-  'index=': 'object',
-  'pragma=': 'object'
-};
+/**
+ * @typedef {{
+ *   enableBundledMode: (undefined|boolean)
+ * }}
+ * @private
+ */
+var Pragma_;
 
 
-/** @const {!Object} */
-var CONSTRAINT_SCHEMA = {
-  'primaryKey=': 'array',
-  'unique=': 'object',
-  'nullable=': 'array',
-  'foreignKey=': 'object'
-};
+/**
+ * @typedef {{
+ *   name: string,
+ *   column: (
+ *      !Array<string>|!Array<{name: string, order: ?string}>),
+ *   unique: (boolean|undefined),
+ *   order: (string|undefined)
+ * }}
+ * @private
+ */
+var Index_;
 
 
-/** @const {!Object} */
-var UNIQUE_SCHEMA = {
-  'column': 'array'
-};
+/**
+ * @typedef {{
+ *   name: string,
+ *   column: !Object<string>,
+ *   constraint: Constraint_,
+ *   index: !Object<!Index_>,
+ *   pragma: {
+ *     persistentIndex: ?boolean
+ *   }
+ * }}
+ * @private
+ */
+var Table_;
 
 
-/** @const {!Object} */
-var FOREIGN_KEY_SCHEMA = {
-  'local': 'string',
-  'ref': 'string',
-  'action=': 'string',
-  'timing=': 'string'
-};
-
-
-/** @const {!Object} */
-var INDEX_SCHEMA = {
-  'column': 'array',
-  'order=': 'string',
-  'unique=': 'boolean'
-};
-
-
-/** @const {!Array<string>} */
-var VALID_COLUMN_TYPE = [
-  'arraybuffer',
-  'boolean',
-  'datetime',
-  'integer',
-  'number',
-  'object',
-  'string'
-];
-
-
-/** @const {!Array<string>} */
-var NON_INDEXABLE_TYPE = [
-  'arraybuffer',
-  'object'
-];
-
-
-/** @const {!Array<string>} */
-var VALID_INDEX_ORDER = ['asc', 'desc'];
-
-
-/** @const {!Array<string>} */
-var VALID_CONSTRAINT_ACTION = ['restrict', 'cascade'];
-
-
-/** @const {!Array<string>} */
-var VALID_CONSTRAINT_TIMING = ['immediate', 'deferrable'];
+/**
+ * @typedef {{
+ *   name: string,
+ *   version: number,
+ *   pragma: Pragma_,
+ *   table: !Object<!Table_>
+ * }}
+ * @private
+ */
+var Schema_;
 
 
 /** @const {!Array<string>} */
 var INVALID_DB_NAMES = ['Db', 'Transaction'];
 
 
-/** @param {string} name */
-function checkName(name) {
-  if (!/^[a-zA-Z_][0-9a-zA-Z_]*$/.test(name)) {
-    throw new Error(name + ' has illegal characters.');
-  }
-}
-
-
 /**
- * @param {string} name
- * @param {*} data
- * @param {string} type
+ * @param {!Table_} tableSchema
+ * @param {!lf.schema.TableBuilder} tableBuilder
  */
-function checkDataType(name, data, type) {
-  if (typeof(data) != type) {
-    throw new Error(name + ' has wrong type: expected ' + type);
-  }
-}
-
-
-/**
- * Checks if an object conforms with the schema rule.
- * @param {string} name Name of the object.
- * @param {!Object} rule Schema rule for verification.
- * @param {!Object} data The object to verify.
- */
-function checkObject(name, rule, data) {
-  for (var key in rule) {
-    var optional = (key.slice(-1) == '=');
-    var fieldName = name + '.' + key;
-
-    if (data.hasOwnProperty(key)) {
-      checkName(key);
-      switch (rule[key]) {
-        case 'string':
-        case 'boolean':
-          checkDataType(fieldName, data[key], rule[key]);
-          break;
-
-        case 'number':
-        case 'integer':
-          checkDataType(fieldName, data[key], 'number');
-          if (isNaN(parseInt(data[key], 10))) {
-            throw new Error(fieldName + ' is not an integer');
-          }
-          break;
-
-        case 'array':
-          if (!data[key].length) {
-            throw new Error(fieldName + ' should not be empty');
-          }
-          break;
-
-        case 'object':
-          if (!(data[key] != null)) {  // !goog.isDefAndNotNull
-            throw new Error(fieldName + ' should be defined and not null');
-          }
-          break;
-
-        default:
-          throw new Error('Rule syntax error');
-      }
-    } else if (!optional) {
-      throw new Error('Missing ' + fieldName);
-    }
-  }
-}
-
-
-/**
- * @param {string} tableName
- * @param {!Object} schema The constraint section of schema
- * @param {!Array<string>} colNames Column names in this table.
- * @param {!Array<string>} names Names of unique identifiers in table, this
- *     function will insert entries into it as side effect.
- * @return {!Array<string>} Columns associated.
- */
-function convertPrimaryKey(tableName, schema, colNames, names) {
-  var keyName = 'pk' + tableName;
-
-  if (names.indexOf(keyName) != -1) {
-    throw new Error('Primary key name conflicts with column name: ' + keyName);
-  }
-
-  var givenPK = schema.primaryKey;
-  if (givenPK.length == 0) {
-    throw new Error('Primary key of ' + tableName + ' is empty.');
-  }
-  var pk;
-  if (typeof(givenPK[0]) == 'string') {
-    pk = givenPK.map(function(colName) {
-      return {'name': colName, 'order': 'asc'};
-    });
-  } else {
-    pk = givenPK.map(function(obj) {
-      if (obj.order && VALID_INDEX_ORDER.indexOf(obj.order) == -1) {
-        throw new Error('Primary key of ' + tableName + ' has invalid order.');
-      }
-      if (obj.order == 'desc' && obj.autoIncrement) {
-        throw new Error('Primary key of ' + tableName +
-            ' try to autoIncrement in descending order.');
-      }
-      if (obj.column) {
-        return {
-          'name': obj.column,
-          'order': obj.order || 'asc',
-          'autoIncrement': obj.autoIncrement
-        };
-      } else {
-        throw new Error('Primary key of ' + tableName + ' has empty column.');
-      }
-    });
-  }
-
-  var notNullable = pk.map(function(keyCol) {
-    if (colNames.indexOf(keyCol.name) == -1) {
-      throw new Error('Primary key of ' + tableName + ' has invalid column');
-    }
-    return keyCol.name;
-  });
-  schema.primaryKey = pk;
-  names.push(keyName);
-  return notNullable;
-}
-
-
-/**
- * Checks if an invalid usage of "auto-increment" occurred.
- * @param {!Object} table
- * @private
- */
-function checkAutoIncrement(table) {
-  var pkColumns = table.constraint.primaryKey;
-
-  var hasAutoIncrement = false;
-  pkColumns.forEach(function(pkColumn) {
-    var columnType = table.column[pkColumn.column];
-    hasAutoIncrement = hasAutoIncrement || pkColumn.autoIncrement;
-    if (pkColumn.autoIncrement && columnType != 'integer') {
-      throw new Error(
-          'Can not use autoIncrement with a non-integer' +
-          ' primary key, \'' + pkColumn.column + '\' is of type ' +
-          columnType + '.');
-    }
-  });
-
-  if (hasAutoIncrement && pkColumns.length > 1) {
-    throw new Error(
-        'Can not use autoIncrement with a cross-column primary key.');
-  }
-}
-
-
-/**
- * @param {string} tableName
- * @param {!Object} tableSchema
- * @param {!Array<string>} colNames Column names in this table.
- * @param {!Array<string>} names Names of unique identifiers in table, this
- *     function will insert entries into it as side effect.
- * @param {!Array<string>} unique Known unique columns.
- * @return {!Array<string>} Columns associated.
- */
-function convertUnique(tableName, tableSchema, colNames, names, unique) {
-  var notNullable = [];
-  var schema = tableSchema.constraint.unique;
-
-  for (var item in schema) {
-    checkName(item);
-    checkObject(tableName + '.' + item, UNIQUE_SCHEMA, schema[item]);
-    if (names.indexOf(item) != -1) {
-      throw new Error(tableName + ' has name conflict:' + item);
-    }
-
-    checkIndexable(tableSchema, schema[item].column);
-    schema[item].column.forEach(function(col) {
-      if (colNames.indexOf(col) == -1) {
-        throw new Error(tableName + '.' + item + ' has invalid columns');
-      }
-      if (unique.indexOf(col) != -1 || notNullable.indexOf(col) != -1) {
-        throw new Error(tableName + '.' + item + ': column is already unique');
-      }
-    });
-
-    notNullable = notNullable.concat(schema[item].column);
-    var newCol = schema[item].column.map(function(col) {
-      return {name: col};
-    });
-    schema[item].column = newCol;
-
-    names.push(item);
-  }
-  return notNullable;
-}
-
-
-/**
- * Check the parent (i.e. referenced) column in parent table for a foreign key.
- * This column must be expected type, unique, and not referencing other columns.
- * @param {string} name Name of the foreign key
- * @param {!Object} tableSchema
- * @param {string} column
- * @param {string} expectedType
- */
-function checkParent(name, tableSchema, column, expectedType) {
-  if (!tableSchema.column.hasOwnProperty(column)) {
-    throw new Error(name + ' has invalid ref column');
-  }
-  if (expectedType != tableSchema.column[column]) {
-    throw new Error(name + ' referring column of different type');
-  }
-  if (tableSchema.constraint) {
-    var c = /** @type {!Object} */ (tableSchema.constraint);
-    var pk = /** @type {!Array<string|!Object>|undefined} */ (c.primaryKey);
-    if (pk && pk.length == 1 &&  // Must has only one column in key
-        // There are two formats for primaryKey spec:
-        // primaryKey: [column] or primaryKey: - column: column
-        // After checkPrimaryKey, both will be normalized to name
-        (pk[0] == column || pk[0].column == column || pk[0].name == column)) {
-      return;  // Referenced column is the primary key.
-    }
-    var fk = /** @type {!Object|undefined} */ (c.foreignKey);
-    if (fk) {
-      for (var key in fk) {
-        if (fk[key].local == column) {
-          throw new Error(name + ' referenced another foreign key');
-        }
-      }
-    }
-    var uq = /** @type {!Array<!Object>|undefined} */ (c.unique);
-    if (uq) {
-      uq.forEach(function(key) {
-        var keyCol = /** @type {!Array<string>} */ (key.column);
-        if (keyCol.length == 1 && keyCol[0] == column) {
-          return;  // Referenced column is unique
-        }
+function processColumns(tableSchema, tableBuilder) {
+  Object.keys(tableSchema.column).forEach(
+      function(columnName) {
+        var columnType = columnTypeToEnumType(tableSchema.column[columnName]);
+        tableBuilder.addColumn(columnName, columnType);
       });
-    }
+}
+
+
+/**
+ * @param {!Table_} tableSchema
+ * @param {!lf.schema.TableBuilder} tableBuilder
+ */
+function processIndices(tableSchema, tableBuilder) {
+  if (!tableSchema.index) {
+    return;
   }
-  if (tableSchema.index) {
-    for (var index in tableSchema.index) {
-      if (index.unique && index.column.length == 1) {
-        if (index.column[0] == column || index.column[0].name == column) {
-          return;  // Referenced column is unique
-        }
+
+  Object.keys(tableSchema.index).forEach(function(indexName) {
+    var indexDefinition = tableSchema.index[indexName];
+    if (typeof indexDefinition.column[0] == 'string') {
+      var order = undefined;
+      if (indexDefinition.order != undefined) {
+        order = columnOrderToEnumType(indexDefinition.order);
       }
-    }
-  }
-  throw new Error(name + ' referring non-unique column');
-}
 
-
-/**
- * @param {string} tableName
- * @param {!Object} schemas Schema of the whole database.
- * @param {!Object} schema Schema of the foreign key constraint.
- * @param {!Array<string>} colNames Columns of the table.
- * @param {!Array<string>} names Names of unique identifiers in table, this
- *     function will insert entries into it as side effect.
- * @param {!Array<string>} keyed Names already keyed locally.
- * @return {!Array<string>} Columns associated.
- */
-function checkForeignKey(tableName, schemas, schema, colNames, names, keyed) {
-  var tableNames = [];
-  var notNullable = [];
-  for (var table in schemas) {
-    tableNames.push(table);
-  }
-
-  for (var fk in schema) {
-    checkName(fk);
-    var fkName = tableName + '.' + fk;
-    checkObject(fkName, FOREIGN_KEY_SCHEMA, schema[fk]);
-
-    var local = schema[fk].local;
-    checkIndexable(schemas[tableName], [local]);
-    var localColumnType = schemas[tableName].column[local];
-    if (colNames.indexOf(local) == -1) {
-      throw new Error(fkName + ' has invalid local column');
-    }
-    if (keyed.indexOf(local) != -1 || notNullable.indexOf(local) != -1) {
-      throw new Error(fkName + ' attempts to use already keyed column');
-    }
-    notNullable.push(local);
-
-    var referenced = schema[fk].ref.split('.');
-    var parentTable = referenced[0];
-    if (referenced.length != 2 || tableNames.indexOf(parentTable) == -1) {
-      throw new Error(fkName + ' has invalid reference');
-    }
-
-    checkParent(fkName, schemas[parentTable], referenced[1], localColumnType);
-
-    var action = schema[fk].action;
-    if (action && VALID_CONSTRAINT_ACTION.indexOf(action) == -1) {
-      throw new Error(fkName + ' has invalid action');
-    }
-    var timing = schema[fk].timing;
-    if (timing && VALID_CONSTRAINT_TIMING.indexOf(timing) == -1) {
-      throw new Error(fkName + ' has invalid timing');
-    }
-    if (timing == 'deferrable' && action == 'cascade') {
-      throw new Error(fkName + ': cascade shall only be immediate');
-    }
-
-    if (names.indexOf(fk) != -1) {
-      throw new Error(fkName + ' has name conflict');
-    }
-    names.push(fkName);
-  }
-
-  return notNullable;
-}
-
-
-/**
- * @param {string} tableName
- * @param {!Object} schema
- * @param {!Array<string>} colNames
- * @param {!Array<string>} notNullable Already declared not nullable columns
- *     (e.g. Primary Keys, Unique).
- * @return {!Array<string>} Nullable columns
- */
-function checkNullable(tableName, schema, colNames, notNullable) {
-  var nullable = schema.constraint.nullable;
-  nullable.forEach(function(col) {
-    var colName = tableName + '.' + col;
-    if (colNames.indexOf(col) == -1) {
-      throw new Error(colName + ' does not exist and thus cannot be nullable');
-    }
-
-    if (notNullable.indexOf(col) != -1) {
-      throw new Error(colName + ' cannot be nullable');
-    }
-  });
-
-  return nullable;
-}
-
-
-/**
- * Validates whether the given columns are indexable or not.
- * @param {!Object} tableSchema
- * @param {!Array<string>} cols
- */
-function checkIndexable(tableSchema, cols) {
-  cols.forEach(function(col) {
-    if (NON_INDEXABLE_TYPE.indexOf(tableSchema.column[col]) != -1) {
-      throw new Error(
-          tableSchema.name + ' key on nonindexable column: ' + col);
-    }
-  });
-}
-
-
-/**
- * @param {string} tableName
- * @param {!Object} schemas
- * @param {!Array<string>} colNames
- * @param {!Array<string>} names Names of unique identifiers in table, this
- *     function will insert entries into it as side effect.
- * @return {!Array<string>} Nullable columns.
- */
-function checkConstraint(tableName, schemas, colNames, names) {
-  var schema = schemas[tableName].constraint;
-  var notNullable = [];
-  var nullable = [];
-  checkObject(tableName + '.constraint', CONSTRAINT_SCHEMA, schema);
-
-  if (schema.hasOwnProperty('primaryKey')) {
-    if (schema.primaryKey.length == 0) {
-      throw new Error('Empty primaryKey for ' + tableName);
-    }
-    checkAutoIncrement(schemas[tableName]);
-    checkIndexable(schemas[tableName], schema.primaryKey);
-    notNullable = notNullable.concat(
-        convertPrimaryKey(tableName, schema, colNames, names));
-  }
-
-  if (schema.hasOwnProperty('unique')) {
-    notNullable = notNullable.concat(
-        convertUnique(
-            tableName, schemas[tableName], colNames, names, notNullable));
-  }
-
-  if (schema.hasOwnProperty('foreignKey')) {
-    notNullable = notNullable.concat(
-        checkForeignKey(
-            tableName, schemas, schema.foreignKey,
-            colNames, names, notNullable));
-  }
-
-  if (schema.hasOwnProperty('nullable')) {
-    nullable = checkNullable(
-        tableName, schemas[tableName], colNames, notNullable);
-  }
-
-  return nullable;
-}
-
-
-/**
- * @param {string} indexName
- * @param {Object} raw
- * @return {!Object}
- */
-function convertIndexSchema(indexName, raw) {
-  if (raw.column.length == 0) {
-    throw new Error(indexName + ' is empty');
-  }
-
-  var index = {
-    'name': indexName.substring(indexName.indexOf('.') + 1),
-    'column': []
-  };
-  if (raw.hasOwnProperty('unique')) {
-    index.unique = raw.unique;
-  }
-
-  var order = raw.order ? raw.order : 'asc';
-  if (VALID_INDEX_ORDER.indexOf(order) == -1) {
-    throw new Error(indexName + ' has invalid order');
-  }
-
-  raw.column.forEach(function(col) {
-    if (typeof(col) == 'string') {
-      index.column.push({
-        'name': col,
-        'order': order
-      });
+      tableBuilder.addIndex(
+          indexName, indexDefinition.column, indexDefinition.unique, order);
     } else {
-      var colOrder = col.order || order;
-      if (VALID_INDEX_ORDER.indexOf(colOrder) == -1) {
-        throw new Error(indexName + ' has invalid order');
-      }
-      index.column.push({
-        'name': col.name,
-        'order': colOrder
-      });
+      var indexedColumns = indexDefinition.column.map(
+          function(indexedColumnSpec) {
+            var indexedColumn = {name: indexedColumnSpec.name};
+
+            // Avoiding giving default values to unspecified fields, such that
+            // the default values are dictated by the dynamic schema API.
+            if (indexedColumnSpec.order != undefined) {
+              indexedColumn.order = columnOrderToEnumType(
+                  indexedColumnSpec.order);
+            }
+            return indexedColumn;
+          });
+      tableBuilder.addIndex(
+          indexName, indexedColumns, indexDefinition.unique);
     }
   });
-
-  return index;
 }
 
 
 /**
- * @param {string} tableName
- * @param {!Object} schema
- * @param {!Array<string>} colNames
- * @param {!Array<string>} names Names of unique identifiers in table, this
- *     function will insert entries into it as side effect.
- * @param {!Array<string>} nullable Nullable columns.
+ * @param {!Table_} tableSchema
+ * @param {!lf.schema.TableBuilder} tableBuilder
  */
-function checkIndices(tableName, schema, colNames, names, nullable) {
-  var indexedCol = [];
-  if (schema.hasOwnProperty('constraint')) {
-    var constraint = schema.constraint;
-    if (constraint.hasOwnProperty('primaryKey')) {
-      indexedCol.push(constraint.primaryKey.map(function(keyCol) {
-        return keyCol.name;
-      }).join('#'));
-    }
-    if (constraint.hasOwnProperty('unique')) {
-      for (var item in constraint.unique) {
-        indexedCol.push(constraint.unique[item].column.join('#'));
-      }
-    }
+function processPrimaryKeyConstraint(tableSchema, tableBuilder) {
+  if (!tableSchema.constraint.primaryKey) {
+    return;
   }
 
-  for (var index in schema.index) {
-    checkName(index);
-    var indexName = tableName + '.' + index;
-    checkObject(indexName, INDEX_SCHEMA, schema.index[index]);
-    if (names.indexOf(index) != -1) {
-      throw new Error(tableName + ' has name conflict: ' + index);
-    }
-    names.push(index);
+  if (tableSchema.constraint.primaryKey.length == 0) {
+    throw new Error('Empty primaryKey for ' + tableSchema.name);
+  }
 
-    var indexSchema = convertIndexSchema(indexName, schema.index[index]);
-    indexSchema.column.forEach(function(col, i, columns) {
-      if (colNames.indexOf(col.name) == -1) {
-        throw new Error(indexName + ' has invalid column: ' + col);
-      }
-      if (columns.length > 1 && nullable.indexOf(col.name) != -1) {
-        throw new Error('Cross-column index ' + indexName +
-            ' referencing nullable column: ' + col);
-      }
-      if (NON_INDEXABLE_TYPE.indexOf(schema.column[col.name]) != -1) {
-        throw new Error(indexName + ' referencing nonindexable column: ' + col);
-      }
-    });
+  if (tableSchema.constraint.primaryKey[0] instanceof Object) {
+    var indexedColumns = tableSchema.constraint.primaryKey.map(
+        function(pkColumnSpec) {
+          var indexedColumn = {name: pkColumnSpec.column};
 
-    var indexed = indexSchema.column.map(function(col) {
-      return col.name;
-    }).join('#');
-    if (indexedCol.indexOf(indexed) != -1) {
-      throw new Error(indexName + ' indexed on already indexed column');
-    }
-    indexedCol.push(indexed);
-
-    schema.index[index] = indexSchema;
+          // Avoiding giving default values to unspecified fields, such that
+          // the default values are dictated by the dynamic schema API.
+          if (pkColumnSpec.order != undefined) {
+            indexedColumn.order = columnOrderToEnumType(pkColumnSpec.order);
+          }
+          if (pkColumnSpec.autoIncrement != undefined) {
+            indexedColumn.autoIncrement = pkColumnSpec.autoIncrement;
+          }
+          return indexedColumn;
+        });
+    tableBuilder.addPrimaryKey(indexedColumns);
+  } else {
+    tableBuilder.addPrimaryKey(tableSchema.constraint.primaryKey);
   }
 }
 
 
 /**
- * @param {string} tableName
- * @param {!Object} schemas
+ * @param {!Table_} tableSchema
+ * @param {!lf.schema.TableBuilder} tableBuilder
  */
-function checkTable(tableName, schemas) {
-  checkName(tableName);
-  var schema = schemas[tableName];
-
-  checkObject(tableName, TABLE_SCHEMA, schema);
-
-  /** @type {!Array<string>} */
-  var names = [];
-
-  // Check column types.
-  for (var col in schema.column) {
-    checkName(col);
-    names.push(col);
-    if (VALID_COLUMN_TYPE.indexOf(schema.column[col]) == -1) {
-      throw new Error(tableName + '.' + col + ' has invalid type');
-    }
-  }
-  var colNames = names.slice(0);
-  var nullable = [];
-
-  if (schema.hasOwnProperty('constraint')) {
-    nullable = checkConstraint(tableName, schemas, colNames, names);
+function processForeignKeyConstraints(tableSchema, tableBuilder) {
+  if (!tableSchema.constraint.foreignKey) {
+    return;
   }
 
-  if (schema.hasOwnProperty('index')) {
-    names.push(tableName);
-    checkIndices(tableName, schema, colNames, names, nullable);
-  }
-}
+  Object.keys(tableSchema.constraint.foreignKey).forEach(
+      function(constraintName) {
+        var constraintSpecObj =
+            tableSchema.constraint.foreignKey[constraintName];
+        var constraintSpecRaw = {
+          local: constraintSpecObj['local'],
+          ref: constraintSpecObj['ref']
+        };
 
-
-/**
- * @typedef {{
- *   visited: boolean,
- *   onStack: boolean,
- *   edges: Object,
- *   name: string
- * }}
- * @private
- */
-var GraphNode_;
-
-
-/**
- * Checks for loop in the graph recursively. Ignores self loops.
- * This algorithm is based on Lemma 22.11 in "Introduction To Algorithms
- * 3rd Edition By Cormen et Al". It says that a directed graph G
- * can be acyclic if and only DFS of G yields no back edges.
- * @param {!GraphNode_} node
- * @param {!Object} nodeMap
- */
-function checkCycle(node, nodeMap) {
-  if (!node.visited) {
-    node.visited = true;
-    node.onStack = true;
-    for (var edge in node.edges) {
-      var childNode = nodeMap[edge];
-      if (!childNode.visited) {
-        checkCycle(childNode, nodeMap);
-      } else if (childNode.onStack) {
-        // Throws exception if it's not a self-loop.
-        if (node != childNode) {
-          throw new Error('Foreign key loop detected.');
+        if (constraintSpecObj.action) {
+          constraintSpecRaw.action = constraintActionToEnumType(
+              constraintSpecObj.action);
         }
-      }
-    }
-  }
-  node.onStack = false;
+        if (constraintSpecObj.timing) {
+          constraintSpecRaw.timing = constraintTimingToEnumType(
+              constraintSpecObj.timing);
+        }
+
+        tableBuilder.addForeignKey(constraintName, constraintSpecRaw);
+      });
 }
 
 
-/** @param {!Object} schema */
-function detectForeignKeyLoop(schema) {
-  // Build the graph.
-  var nodeMap = {};
-  for (var table in schema.table) {
-    nodeMap[table] = /** @type {!GraphNode_} */ ({
-      visited: false,
-      onStack: false,
-      edges: {},
-      name: table
-    });
+/**
+ * @param {!Table_} tableSchema
+ * @param {!lf.schema.TableBuilder} tableBuilder
+ */
+function processUniqueConstraints(tableSchema, tableBuilder) {
+  if (!tableSchema.constraint.unique) {
+    return;
   }
 
-  for (var tableName in schema.table) {
-    var t = schema.table[tableName];
-    if (t.constraint && t.constraint.foreignKey) {
-      for (var fkName in t.constraint.foreignKey) {
-        var spec = t.constraint.foreignKey[fkName];
-        var refTable = spec.ref.split('.')[0];
-        nodeMap[refTable].edges[tableName] = true;
-      }
-    }
+  Object.keys(tableSchema.constraint.unique).forEach(
+      function(constraintName) {
+        tableBuilder.addUnique(
+            constraintName,
+            tableSchema.constraint.unique[constraintName].column);
+      });
+}
+
+
+/**
+ * @param {string} tableName
+ * @param {!Table_} tableSchema
+ * @param {!lf.schema.Builder} schemaBuilder
+ */
+function createTableDefinition(tableName, tableSchema, schemaBuilder) {
+  var tableBuilder = schemaBuilder.createTable(tableName);
+
+  processColumns(tableSchema, tableBuilder);
+
+  if (tableSchema.constraint === null) {
+    // Case where "Constraint" key-word appears in the YAML schema, but the
+    // section is left empty. Note, using triple-equals on purpose since
+    // undefined == null is true.
+    throw new Error('Empty constraint for ' + tableName);
   }
 
-  // Graph built, check loop.
-  for (var key in nodeMap) {
-    checkCycle(nodeMap[key], nodeMap);
+  if (tableSchema.constraint) {
+    processPrimaryKeyConstraint(tableSchema, tableBuilder);
+    processUniqueConstraints(tableSchema, tableBuilder);
+    processForeignKeyConstraints(tableSchema, tableBuilder);
+  }
+  processIndices(tableSchema, tableBuilder);
+
+  if (tableSchema.constraint && tableSchema.constraint.nullable) {
+    tableBuilder.addNullable(tableSchema.constraint.nullable);
+  }
+
+  if (tableSchema.pragma && tableSchema.pragma.persistentIndex != undefined) {
+    tableBuilder.persistentIndex(tableSchema.pragma.persistentIndex);
   }
 }
 
 
-/** @param {!Object} schema */
-function checkSchema(schema) {
-  checkObject('DB', DB_SCHEMA, schema);
+/**
+ * @param {!Schema_} schema
+ * @return {!lf.schema.Database}
+ */
+function convert(schema) {
+  if (typeof schema.version != 'number') {
+    throw new Error('Schema version must be a number');
+  }
+
   if (INVALID_DB_NAMES.indexOf(schema.name) != -1) {
     throw new Error('db name cannot be ' + INVALID_DB_NAMES.join(','));
   }
 
-  for (var table in schema.table) {
-    checkTable(table, schema.table);
+
+  var schemaBuilder = lf.schema.create(schema.name, schema.version);
+  Object.keys(schema.table).forEach(
+      function(tableName) {
+        createTableDefinition(
+            tableName, schema.table[tableName], schemaBuilder);
+      });
+
+  if (schema.pragma) {
+    schemaBuilder.setPragma(/** @type {!Pragma_} */ (schema.pragma));
   }
 
-  detectForeignKeyLoop(schema);
+  return schemaBuilder.getSchema();
+}
+
+
+/**
+ * @param {string} columnType
+ * @return {!lf.Type}
+ * @suppress {missingRequire}
+ */
+function columnTypeToEnumType(columnType) {
+  switch (columnType) {
+    case 'arraybuffer': return lf.Type.ARRAY_BUFFER;
+    case 'boolean': return lf.Type.BOOLEAN;
+    case 'datetime': return lf.Type.DATE_TIME;
+    case 'integer': return lf.Type.INTEGER;
+    case 'number': return lf.Type.NUMBER;
+    case 'string': return lf.Type.STRING;
+    case 'object': return lf.Type.OBJECT;
+    default: throw new Error('Invalid column type: ' + columnType);
+  }
+}
+
+
+/**
+ * @param {string} columnOrder
+ * @return {!lf.Order}
+ * @suppress {missingRequire}
+ */
+function columnOrderToEnumType(columnOrder) {
+  switch (columnOrder) {
+    case 'asc': return lf.Order.ASC;
+    case 'desc': return lf.Order.DESC;
+    default: throw new Error('Invalid column order: ' + columnOrder);
+  }
+}
+
+
+/**
+ * @param {string} constraintAction
+ * @return {!lf.ConstraintAction}
+ * @suppress {missingRequire}
+ */
+function constraintActionToEnumType(constraintAction) {
+  switch (constraintAction) {
+    case 'cascade': return lf.ConstraintAction.CASCADE;
+    case 'restrict': return lf.ConstraintAction.RESTRICT;
+    default: throw new Error('Invalid constraint action: ' + constraintAction);
+  }
+}
+
+
+/**
+ * @param {string} constraintTiming
+ * @return {!lf.ConstraintTiming}
+ * @suppress {missingRequire}
+ */
+function constraintTimingToEnumType(constraintTiming) {
+  switch (constraintTiming) {
+    case 'deferrable': return lf.ConstraintTiming.DEFERRABLE;
+    case 'immediate': return lf.ConstraintTiming.IMMEDIATE;
+    default: throw new Error('Invalid constraint timing: ' + constraintTiming);
+  }
 }
 
 
 /**
  * @param {string} contents
- * @return {!Object}
+ * @return {!lf.schema.Database}
  */
-exports.parse = function(contents) {
-  var schema = yaml.safeLoad(contents);
-  checkSchema(schema);
-  return schema;
+exports.convert = function(contents) {
+  var schema = yamlMod.safeLoad(contents);
+  return convert(schema);
 };

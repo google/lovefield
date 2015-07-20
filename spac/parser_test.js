@@ -16,32 +16,33 @@
  */
 var fs = require('fs');
 var path = require('path');
-var parse = userRequire('parser').parse;
+var parse = /** @type {{convert: !Function}} */ (
+    userRequire('parser')).convert;
 
 describe('YAML Parser Test', function() {
   it('should parse codegen.yaml without issue', function() {
     var testFile = fs.readFileSync(testdata['codegen.yaml']);
     var schema = parse(testFile);
-    expect(schema.name).toEqual('db');
-    expect(schema.version).toEqual(1);
+    expect(schema.name()).toEqual('db');
+    expect(schema.version()).toEqual(1);
   });
 
   it('should parse bundled_mode.yaml without issue', function() {
     var testFile = fs.readFileSync(testdata['bundled_mode.yaml']);
     var schema = parse(testFile);
-    expect(schema.name).toEqual('pdb');
+    expect(schema.name()).toEqual('pdb');
   });
 
   it('should parse bundled_mode_disabled.yaml without issue', function() {
     var testFile = fs.readFileSync(testdata['bundled_mode_disabled.yaml']);
     var schema = parse(testFile);
-    expect(schema.name).toEqual('pdb');
+    expect(schema.name()).toEqual('pdb');
   });
 
   it('should parse persistent_index.yaml without issue', function() {
     var testFile = fs.readFileSync(testdata['persistent_index.yaml']);
     var schema = parse(testFile);
-    expect(schema.name).toEqual('idb');
+    expect(schema.name()).toEqual('idb');
   });
 
   /** @param {string} file */
@@ -194,10 +195,6 @@ describe('YAML Parser Test', function() {
 
   it('should throw if unique column is already defined unique', function() {
     thrower('key_conflict3.yaml');
-  });
-
-  it('should throw if foreign key is defined on a unique column', function() {
-    thrower('key_conflict4.yaml');
   });
 
   it('should throw if nullable column not found', function() {

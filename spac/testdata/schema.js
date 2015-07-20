@@ -293,7 +293,7 @@ lovefield.db.row.AlbumType = function() {
   this.timestamp;
   /** @export @type {?ArrayBuffer} */
   this.tacotownJspb;
-  /** @export @type {Object} */
+  /** @export @type {?Object} */
   this.proto;
 };
 
@@ -316,7 +316,7 @@ lovefield.db.row.AlbumDbType = function() {
   this.timestamp;
   /** @export @type {?string} */
   this.tacotownJspb;
-  /** @export @type {Object} */
+  /** @export @type {?Object} */
   this.proto;
 };
 
@@ -638,7 +638,7 @@ lovefield.db.row.PhotoType = function() {
   this.isCoverPhoto;
   /** @export @type {?ArrayBuffer} */
   this.tacotownJspb;
-  /** @export @type {Object} */
+  /** @export @type {?Object} */
   this.proto;
 };
 
@@ -669,7 +669,7 @@ lovefield.db.row.PhotoDbType = function() {
   this.isCoverPhoto;
   /** @export @type {?string} */
   this.tacotownJspb;
-  /** @export @type {Object} */
+  /** @export @type {?Object} */
   this.proto;
 };
 

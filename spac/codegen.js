@@ -46,210 +46,15 @@
  */
 
 
-/**
- * @typedef {{
- *   name: string,
- *   local: string,
- *   ref: string,
- *   action: ?string,
- *   timing: ?string
- * }}
- * @private
- */
-var ForeignKeySpec_;
-
-
-/**
- * @typedef {{
- *   primaryKey: !Array<{
- *     name: string,
- *     order: ?string,
- *     autoIncrement: ?boolean
- *   }>,
- *   nullable: !Array<string>,
- *   unique: !Array<{
- *     name: string,
- *     column: !Array<{
- *       name: string
- *     }>
- *   }>,
- *   foreignKey: !Array<!ForeignKeySpec_>
- * }}
- * @private
- */
-var Constraint_;
-
-
-/**
- * @typedef {{
- *   enableBundledMode: boolean
- * }}
- * @private
- */
-var Pragma_;
-
-
-/**
- * @typedef {{
- *  name: string,
- *  type: string,
- *  nullable: boolean
- * }}
- * @private
- */
-var Column_;
-
-
-/**
- * @typedef {{
- *   name: string,
- *   column: !Array<{
- *     name: string,
- *     order: ?string
- *   }>,
- *   unique: ?boolean
- * }}
- * @private
- */
-var Index_;
-
-
-/**
- * @typedef {{
- *   name: string,
- *   column: !Array<!Column_>,
- *   constraint: Constraint_,
- *   index: !Array<!Index_>,
- *   pragma: {
- *     persistentIndex: ?boolean
- *   }
- * }}
- * @private
- */
-var Table_;
-
-
-/**
- * @typedef {{
- *   name: string,
- *   version: number,
- *   pragma: Pragma_,
- *   table: !Array<!Table_>
- * }}
- * @private
- */
-var Schema_;
-
-
-/** @const {!Array<string>} */
-var NULLABLE = ['arraybuffer', 'object'];
-
-
-/**
- * @param {!Object} yaml
- * @return {!Array<!Object>}
- */
-function objectToArray(yaml) {
-  var ret = [];
-  for (var propName in yaml) {
-    var prop = yaml[propName];
-    prop.name = propName;
-    ret.push(prop);
-  }
-  return ret;
-}
-
-
-/**
- * Converts constraints from YAML schema to codegen format.
- * @param {!Object} yaml
- * @return {!Constraint_}
- */
-function convertConstraint(yaml) {
-  var ret = {};
-  if (yaml.hasOwnProperty('primaryKey')) {
-    ret.primaryKey = yaml.primaryKey;
-  }
-  if (yaml.hasOwnProperty('nullable')) {
-    ret.nullable = yaml.nullable;
-  }
-  if (yaml.hasOwnProperty('unique')) {
-    ret.unique = objectToArray(yaml.unique);
-  }
-  if (yaml.hasOwnProperty('foreignKey')) {
-    ret.foreignKey = objectToArray(yaml.foreignKey);
-  }
-  return ret;
-}
-
-
-/**
- * Converts schema from YAML parser to the one understandable by codegen.
- * @param {!Object} yaml
- * @return {!Schema_}
- * @private
- */
-function convertSchema(yaml) {
-  var schema = {};
-  schema.name = yaml.name;
-  schema.version = yaml.version;
-  schema.pragma = yaml.pragma;
-  var tables = [];
-  for (var tableName in yaml.table) {
-    var table = {};
-    table.name = tableName;
-
-    // Handle pragma value.
-    if (yaml.table[tableName].hasOwnProperty('pragma')) {
-      table.pragma = yaml.table[tableName].pragma;
-    } else {
-      table.pragma = {};
-    }
-
-    if (yaml.table[tableName].hasOwnProperty('constraint')) {
-      table.constraint = convertConstraint(yaml.table[tableName].constraint);
-    }
-
-    var columns = [];
-    for (var colName in yaml.table[tableName].column) {
-      var col = {};
-      col.name = colName;
-      col.type = yaml.table[tableName].column[colName];
-      col.nullable = (table.hasOwnProperty('constraint') &&
-          table.constraint.hasOwnProperty('nullable') &&
-          table.constraint.nullable.indexOf(col.name) != -1) ||
-          NULLABLE_TYPES_BY_DEFAULT.indexOf(col.type) != -1;
-      columns.push(col);
-    }
-    table.column = columns;
-
-    if (yaml.table[tableName].hasOwnProperty('index')) {
-      table.index = objectToArray(yaml.table[tableName].index);
-    }
-
-    tables.push(table);
-  }
-  schema.table = tables;
-  return schema;
-}
-
-
-/** @const {!Array<string>} */
-var NULLABLE_TYPES_BY_DEFAULT = [
-  'arraybuffer',
-  'object'
-];
-
-
 
 /**
  * @param {string} namespace
- * @param {!Object} schema Validated DB schema
+ * @param {!lf.schema.Database} schema Validated DB schema
  * @constructor
  */
 var CodeGenerator = function(namespace, schema) {
-  /** @private {!Schema_} */
-  this.schema_ = convertSchema(schema);
+  /** @private {!lf.schema.Database} */
+  this.schema_ = schema;
 
   /** @private {string} */
   this.namespace_ = namespace;
@@ -498,7 +303,7 @@ CodeGenerator.prototype.processSort_ = function(lines) {
 
 
 /**
- * @param {Object} table
+ * @param {!lf.schema.Table} table
  * @param {string} prefix
  * @return {string}
  * @private
@@ -506,73 +311,62 @@ CodeGenerator.prototype.processSort_ = function(lines) {
 CodeGenerator.prototype.genGetDefaultPayload_ = function(table, prefix) {
   var body = [];  // Object body for UserType default object.
 
+  /**
+   * @param {!lf.schema.Column} col
+   * @param {string} defaultValue
+   */
   var pushField = function(col, defaultValue) {
-    var lhs = '  ' + prefix + '.' + col.name + ' = ';
-    body.push(lhs + (col.nullable ? 'null' : defaultValue) + ';');
+    var lhs = '  ' + prefix + '.' + col.getName() + ' = ';
+    body.push(lhs + (col.isNullable() ? 'null' : defaultValue) + ';');
   };
 
-  var columns = table.column;
-  for (var i = 0; i < columns.length; ++i) {
-    var col = columns[i];
-    if (col.type == 'string') {
+  table.getColumns().forEach(function(col) {
+    if (col.getType() == lf.Type.STRING) {
       pushField(col, '\'\'');
-    } else if (col.type == 'boolean') {
+    } else if (col.getType() == lf.Type.BOOLEAN) {
       pushField(col, 'false');
-    } else if (col.type == 'datetime') {
+    } else if (col.getType() == lf.Type.DATE_TIME) {
       pushField(col, 'new Date(0)');
-    } else if (col.type == 'arraybuffer') {
+    } else if (col.getType() == lf.Type.ARRAY_BUFFER) {
       pushField(col, 'new ArrayBuffer(0)');
-    } else if (col.type == 'object') {
+    } else if (col.getType() == lf.Type.OBJECT) {
       pushField(col, '{}');
     } else {  // integer, number
       pushField(col, '0');
     }
-  }
+  });
 
   return body.join('\n');
 };
 
 
 /**
- * @param {Object} table
+ * @param {!lf.schema.Table} table
  * @param {string} prefix
  * @return {string}
  * @private
  */
 CodeGenerator.prototype.genToDbPayload_ = function(table, prefix) {
-  var body = [];  // Object body for DbType objects
-  var columns = table.column;
-  for (var i = 0; i < columns.length; ++i) {
-    var col = columns[i];
-    var lhs = '  ' + prefix + '.' + col.name + ' = ';
-    switch (col.type) {
-      case 'arraybuffer':
-        body.push(lhs + 'lf.Row.binToHex(this.payload().' + col.name + ');');
-        break;
-
-      case 'datetime':
-        if (col.nullable) {
-          body.push(
-              lhs.substring(0, lhs.length - 1) +
-              '\n      goog.isDefAndNotNull(this.payload().' + col.name +
-              ') ?\n      this.payload().' + col.name + '.getTime() : null;');
-        } else {
-          body.push(lhs + 'this.payload().' + col.name + '.getTime();');
+  var body = table.getColumns().map(function(col) {
+    var lhs = '  ' + prefix + '.' + col.getName() + ' =';
+    switch (col.getType()) {
+      case lf.Type.ARRAY_BUFFER:
+        return lhs + ' lf.Row.binToHex(this.payload().' + col.getName() + ');';
+      case lf.Type.DATE_TIME:
+        if (col.isNullable()) {
+          return lhs + '\n      goog.isDefAndNotNull(this.payload().' +
+              col.getName() + ') ?\n' +
+              '      this.payload().' + col.getName() + '.getTime() : null;';
         }
-        break;
-
-      case 'object':
-        body.push(
-            lhs.substring(0, lhs.length - 1) +
-            '\n      goog.isDefAndNotNull(this.payload().' + col.name +
-            ') ?\n      this.payload().' + col.name + ' : null;');
-        break;
-
+        return lhs + ' this.payload().' + col.getName() + '.getTime();';
+      case lf.Type.OBJECT:
+        return lhs + '\n      goog.isDefAndNotNull(this.payload().' +
+            col.getName() + ') ?\n' +
+            '      this.payload().' + col.getName() + ' : null;';
       default:
-        body.push(lhs + 'this.payload().' + col.name + ';');
-        break;
+        return lhs + ' this.payload().' + col.getName() + ';';
     }
-  }
+  });
 
   return body.join('\n');
 };
@@ -583,8 +377,8 @@ CodeGenerator.prototype.genToDbPayload_ = function(table, prefix) {
  * Because this function is used both for single/cross column indices, and for
  * non-nullable/nullable indices it needs to be customized to produce the
  * correct output in both situations.
- * @param {Object} table
- * @param {string} column
+ * @param {!lf.schema.Table} table
+ * @param {!lf.schema.Column} column
  * @param {string} indentation The prefix to use for each line.
  * @param {boolean} includeSemicolonAndReturn Whether the output should include
  *     semicolons and 'return' keywords.
@@ -593,56 +387,42 @@ CodeGenerator.prototype.genToDbPayload_ = function(table, prefix) {
  */
 CodeGenerator.columnToKey_ = function(
     table, column, indentation, includeSemicolonAndReturn) {
-  var columns = table.column;
   var body = [];
 
   var pushLine = function(line) {
     body.push(indentation + line + (includeSemicolonAndReturn ? ';' : ''));
   };
 
-  for (var i = 0; i < columns.length; ++i) {
-    var col = columns[i];
-    if (col.name != column) {
-      continue;
-    }
-
-    switch (col.type) {
-      case 'datetime':
-        if (col.nullable) {
-          pushLine('var value = this.payload().' + column);
-          pushLine('return goog.isDefAndNotNull(value) ? ' +
-              'value.getTime() : null');
-        } else {
-          pushLine(
-              (includeSemicolonAndReturn ? 'return ' : '') +
-              'this.payload().' + column + '.getTime()');
-        }
-        break;
-
-      case 'string':
-      case 'integer':
-      case 'number':
+  switch (column.getType()) {
+    case lf.Type.DATE_TIME:
+      if (column.isNullable()) {
+        pushLine('var value = this.payload().' + column.getName());
+        pushLine('return goog.isDefAndNotNull(value) ? value.getTime() : null');
+      } else {
         pushLine(
             (includeSemicolonAndReturn ? 'return ' : '') +
-            'this.payload().' + column);
-        break;
-
-      case 'boolean':
-        if (col.nullable) {
-          pushLine('var value = this.payload().' + column);
-          pushLine('return goog.isDefAndNotNull(value) ? (value ? 1 : 0)' +
-              ' : null');
-        } else {
-          pushLine(
-              (includeSemicolonAndReturn ? 'return ' : '') +
-              'this.payload().' + column + ' ? 1 : 0');
-        }
-        break;
-
-      default:
-        throw new Error();
-    }
-    break;
+            'this.payload().' + column.getName() + '.getTime()');
+      }
+      break;
+    case lf.Type.STRING:
+    case lf.Type.INTEGER:
+    case lf.Type.NUMBER:
+      pushLine(
+          (includeSemicolonAndReturn ? 'return ' : '') +
+          'this.payload().' + column.getName());
+      break;
+    case lf.Type.BOOLEAN:
+      if (column.isNullable()) {
+        pushLine('var value = this.payload().' + column.getName());
+        pushLine('return goog.isDefAndNotNull(value) ? (value ? 1 : 0) : null');
+      } else {
+        pushLine(
+            (includeSemicolonAndReturn ? 'return ' : '') +
+            'this.payload().' + column.getName() + ' ? 1 : 0');
+      }
+      break;
+    default:
+      throw new Error();
   }
 
   return body.join('\n');
@@ -650,31 +430,18 @@ CodeGenerator.columnToKey_ = function(
 
 
 /**
- * @param {Object} table
- * @param {!Array<!Object>} columns
+ * @param {!lf.schema.Table} table
+ * @param {!lf.schema.Index} indexSchema
  * @return {string}
  * @private
  */
-CodeGenerator.prototype.genKeyFromColumns_ = function(table, columns) {
-  var doError = (function(col) {
-    this.error(
-        'Cannot generate index key for column:' + table.name + '.' + col);
-  }).bind(this);
+CodeGenerator.prototype.genKeyOfIndexForSchema_ = function(table, indexSchema) {
+  var indentation = indexSchema.columns.length > 1 ? '        ' : '      ';
+  var includeSemicolonAndReturn = indexSchema.columns.length == 1;
 
-  var indentation = columns.length > 1 ? '        ' : '      ';
-  var includeSemicolonAndReturn = columns.length == 1;
-
-  var columnNames = columns.map(function(col) {
-    return col.name;
-  });
-
-  var strings = columnNames.map(function(columnName) {
-    try {
-      return CodeGenerator.columnToKey_(
-          table, columnName, indentation, includeSemicolonAndReturn);
-    } catch (e) {
-      doError(columnName);
-    }
+  var strings = indexSchema.columns.map(function(column) {
+    return CodeGenerator.columnToKey_(
+        table, column.schema, indentation, includeSemicolonAndReturn);
   });
   return (strings.length == 1 ?
       strings[0] :
@@ -683,7 +450,7 @@ CodeGenerator.prototype.genKeyFromColumns_ = function(table, columns) {
 
 
 /**
- * @param {Object} table
+ * @param {!lf.schema.Table} table
  * @param {string} prefix
  * @return {string}
  * @private
@@ -692,38 +459,13 @@ CodeGenerator.prototype.genKeyOfIndex_ = function(table, prefix) {
   var body = [];
   body.push('  switch (' + prefix + ') {');
   var genCase = function(keyName) {
-    body.push('    case \'' + table.name + '.' + keyName + '\':');
+    body.push('    case \'' + table.getName() + '.' + keyName + '\':');
   };
 
-  if (table.constraint) {
-    if (table.constraint.primaryKey) {
-      genCase('pk' + this.toPascal_(table.name));
-      body.push(this.genKeyFromColumns_(table, table.constraint.primaryKey));
-    }
-
-    if (table.constraint.unique) {
-      for (var i = 0; i < table.constraint.unique.length; ++i) {
-        var unq = table.constraint.unique[i];
-        genCase(unq.name);
-        body.push(this.genKeyFromColumns_(table, unq.column));
-      }
-    }
-
-    if (table.constraint.foreignKey) {
-      table.constraint.foreignKey.forEach(function(fkSpec) {
-        genCase(fkSpec.name);
-        body.push(this.genKeyFromColumns_(table, [{name: fkSpec.local}]));
-      }, this);
-    }
-  }
-
-  if (table.index) {
-    for (var i = 0; i < table.index.length; ++i) {
-      var index = table.index[i];
-      genCase(index.name);
-      body.push(this.genKeyFromColumns_(table, index.column));
-    }
-  }
+  table.getIndices().forEach(function(indexSchema) {
+    genCase(indexSchema.name);
+    body.push(this.genKeyOfIndexForSchema_(table, indexSchema));
+  }, this);
 
   // '#' is the name of the special RowId index.
   genCase('#');
@@ -751,36 +493,31 @@ CodeGenerator.prototype.genKeyOfIndex_ = function(table, prefix) {
  *
  * if special conversion is required.
  *
- * @param {Object} table
+ * @param {!lf.schema.Table} table
  * @param {string} target
  * @param {string} record
  * @return {string}
  * @private
  */
 CodeGenerator.prototype.genDeserializeRow_ = function(table, target, record) {
-  var source = record + '[\'value\']';
-  var columns = table.column;
-
   var body = [
-    '  var data = ' + source + ';',
+    '  var data = ' + record + '[\'value\']' + ';'
   ];
 
-  for (var i = 0; i < columns.length; ++i) {
-    var col = columns[i];
-    var prefix = '  data.' + col.name + ' = ';
-    switch (col.type) {
-      case 'arraybuffer':
-        if (!col.nullable) {
+  table.getColumns().forEach(function(col) {
+    var prefix = '  data.' + col.getName() + ' = ';
+    switch (col.getType()) {
+      case lf.Type.ARRAY_BUFFER:
+        if (!col.isNullable()) {
           body.push(prefix + '/** @type {!ArrayBuffer} */ (\n' +
-              '      lf.Row.hexToBin(data.' + col.name + '));');
+              '      lf.Row.hexToBin(data.' + col.getName() + '));');
         } else {
-          body.push(prefix + 'lf.Row.hexToBin(data.' + col.name + ');');
+          body.push(prefix + 'lf.Row.hexToBin(data.' + col.getName() + ');');
         }
         break;
-
-      case 'datetime':
-        var temp = 'data.' + col.name;
-        if (col.nullable) {
+      case lf.Type.DATE_TIME:
+        var temp = 'data.' + col.getName();
+        if (col.isNullable()) {
           body.push(prefix + 'goog.isDefAndNotNull(' + temp + ') ?\n' +
               '      new Date(' + temp + ') : null;');
         } else {
@@ -788,7 +525,7 @@ CodeGenerator.prototype.genDeserializeRow_ = function(table, target, record) {
         }
         break;
     }
-  }
+  });
 
   body.push('  return new ' + target + '(' + record + '[\'id\'], data);');
   return body.join('\n');
@@ -797,57 +534,72 @@ CodeGenerator.prototype.genDeserializeRow_ = function(table, target, record) {
 
 /**
  * Converts a column type to a JS type annotation.
- * @param {string} columnType The type to be converted. Must be a value that
- *     exists in VALID_COLUMN_TYPE.
- * @param {boolean} isNullable Whether the type is nullable, applies only to
- *     ArrayBuffer and Date, since all other types are non-nullable per spec.
+ * @param {!lf.schema.Column} column
+ * @param {boolean} ignoreNullable Whether to take into account nullability of
+ *     the column.
  * @return {string} The type annotation to be used in generated code.
  * @private
  */
-CodeGenerator.columnTypeToJsType_ = function(columnType, isNullable) {
-  if (columnType == 'arraybuffer') {
-    columnType = (isNullable ? '?' : '!') + 'ArrayBuffer';
-  } else if (columnType == 'datetime') {
-    columnType = (isNullable ? '?' : '!') + 'Date';
-  } else if (columnType == 'integer' || columnType == 'number') {
-    columnType = (isNullable ? '?' : '') + 'number';
-  } else if (columnType == 'string') {
-    columnType = (isNullable ? '?' : '') + 'string';
-  } else if (columnType == 'boolean') {
-    columnType = (isNullable ? '?' : '') + 'boolean';
-  } else if (columnType == 'object') {
-    columnType = (isNullable ? '?' : '!') + 'Object';
+CodeGenerator.columnTypeToJsType_ = function(column, ignoreNullable) {
+  var isNullable = !ignoreNullable && column.isNullable();
+  switch (column.getType()) {
+    case lf.Type.ARRAY_BUFFER:
+      return (isNullable ? '?' : '!') + 'ArrayBuffer';
+    case lf.Type.DATE_TIME:
+      return (isNullable ? '?' : '!') + 'Date';
+    case lf.Type.INTEGER:
+    case lf.Type.NUMBER:
+      return (isNullable ? '?' : '') + 'number';
+    case lf.Type.STRING:
+      return (isNullable ? '?' : '') + 'string';
+    case lf.Type.BOOLEAN:
+      return (isNullable ? '?' : '') + 'boolean';
+    case lf.Type.OBJECT:
+      return (isNullable ? '?' : '!') + 'Object';
+    default: throw new Error('Invalid column type: ' + column.getType());
   }
+};
 
-  // Must be either 'number', 'boolean', which are non-nullable according to the
-  // spec.
-  return columnType;
+
+/**
+ * Converts a column type to a JS database type annotation.
+ * @param {!lf.schema.Column} column
+ * @return {string} The type annotation to be used in generated code.
+ * @private
+ */
+CodeGenerator.columnTypeToJsDbType_ = function(column) {
+  switch (column.getType()) {
+    case lf.Type.DATE_TIME:
+      return (column.isNullable() ? '?' : '') + 'number';
+    case lf.Type.ARRAY_BUFFER:
+      return (column.isNullable() ? '?' : '') + 'string';
+    default: return CodeGenerator.columnTypeToJsType_(column, false);
+  }
 };
 
 
 /**
  * Converts a column type to a string representing an lf.Type enumeration.
- * @param {string} columnType The type to be converted. Must be a value that
- *     exists in VALID_COLUMN_TYPE.
+ * @param {!lf.Type} columnType The type to be converted.
  * @return {string}
  * @private
  */
 CodeGenerator.columnTypeToEnumType_ = function(columnType) {
   switch (columnType) {
-    case 'arraybuffer': return 'lf.Type.ARRAY_BUFFER';
-    case 'boolean': return 'lf.Type.BOOLEAN';
-    case 'datetime': return 'lf.Type.DATE_TIME';
-    case 'integer': return 'lf.Type.INTEGER';
-    case 'number': return 'lf.Type.NUMBER';
-    case 'string': return 'lf.Type.STRING';
-    case 'object': return 'lf.Type.OBJECT';
+    case lf.Type.ARRAY_BUFFER: return 'lf.Type.ARRAY_BUFFER';
+    case lf.Type.BOOLEAN: return 'lf.Type.BOOLEAN';
+    case lf.Type.DATE_TIME: return 'lf.Type.DATE_TIME';
+    case lf.Type.INTEGER: return 'lf.Type.INTEGER';
+    case lf.Type.NUMBER: return 'lf.Type.NUMBER';
+    case lf.Type.STRING: return 'lf.Type.STRING';
+    case lf.Type.OBJECT: return 'lf.Type.OBJECT';
     default: throw new Error('Invalid type: ' + columnType);
   }
 };
 
 
 /**
- * @param {!Table_} table
+ * @param {!lf.schema.Table} table
  * @param {string} prefix
  * @return {string}
  * @private
@@ -855,17 +607,14 @@ CodeGenerator.columnTypeToEnumType_ = function(columnType) {
 CodeGenerator.prototype.genRowGetSet_ = function(table, prefix) {
   var results = [];
 
-  var columns = table.column;
-  for (var i = 0; i < columns.length; ++i) {
-    var col = columns[i];
-    var jsType = CodeGenerator.columnTypeToJsType_(
-        col.type, /* isNullable */ col.nullable);
-    var value = 'this.payload().' + col.name;
+  table.getColumns().forEach(function(col) {
+    var jsType = CodeGenerator.columnTypeToJsType_(col, false);
+    var value = 'this.payload().' + col.getName();
     var getter = '  return ' + value + ';';
     var setter = '  ' + value + ' = value;';
 
     results.push('\n\n/** @return {' + jsType + '} */');
-    results.push(prefix + '.get' + this.toPascal_(col.name) +
+    results.push(prefix + '.get' + this.toPascal_(col.getName()) +
         ' = function() {');
     results.push(getter);
     results.push('};');
@@ -875,12 +624,12 @@ CodeGenerator.prototype.genRowGetSet_ = function(table, prefix) {
     results.push(' * @param {' + jsType + '} value');
     results.push(' * @return {!' + className + '}');
     results.push('*/');
-    results.push(prefix + '.set' + this.toPascal_(col.name) +
+    results.push(prefix + '.set' + this.toPascal_(col.getName()) +
         ' = function(value) {');
     results.push(setter);
     results.push('  return this;');
     results.push('};');
-  }
+  }, this);
 
   return results.join('\n');
 };
@@ -892,27 +641,26 @@ CodeGenerator.prototype.genRowGetSet_ = function(table, prefix) {
  * @private
  */
 CodeGenerator.prototype.processRepeatTable_ = function(lines) {
-  var tables = this.schema_.table;
+  var tables = this.schema_.tables();
   var results = [];
 
-  for (var i = 0; i < tables.length; ++i) {
+  tables.forEach(function(table, i) {
     var pool = [];
-
-    var table = tables[i];
-    var name = table.name;
+    var name = table.getName();
     var pascal = this.toPascal_(name);
     var camel = this.toCamel_(name);
     var indices = this.getIndices_(table);
     var constraint = this.getConstraint_(table);
-    var colTypes = this.getColumnAsMembers_(table);
+    var colTypes = this.getColumnTypes_(table);
+    var colDbTypes = this.getColumnDbTypes_(table);
 
     for (var j = 0; j < lines.length; ++j) {
       var genLine = lines[j];
       // Regex replacing must start from the longest pattern.
-      genLine = genLine.replace(/#tablepersistentindex/g,
-          table.pragma.persistentIndex ? 'true' : 'false');
-      genLine = genLine.replace(/#tablecolumndbtypes/g, colTypes[0]);
-      genLine = genLine.replace(/#tablecolumntypes/g, colTypes[1]);
+      genLine = genLine.replace(
+          /#tablepersistentindex/g, table.persistentIndex().toString());
+      genLine = genLine.replace(/#tablecolumndbtypes/g, colDbTypes);
+      genLine = genLine.replace(/#tablecolumntypes/g, colTypes);
       genLine = genLine.replace(/#tableindices/g, indices);
       genLine = genLine.replace(/#tableconstraint/g, constraint);
       genLine = genLine.replace(/#table#pascal/g, pascal);
@@ -950,7 +698,7 @@ CodeGenerator.prototype.processRepeatTable_ = function(lines) {
 
     this.tableIndex_ = i;
     results = results.concat(this.parse_(pool));
-  }
+  }, this);
 
   this.tableIndex_ = -1;
   return results;
@@ -958,17 +706,13 @@ CodeGenerator.prototype.processRepeatTable_ = function(lines) {
 
 
 /**
- * @param {string} tableName
- * @param {string} indexName
- * @param {!Array<!Object>} columns
- * @param {boolean} isUnique
- * @param {boolean} isPrimaryKey
+ * @param {!lf.schema.Table} table
+ * @param {!lf.schema.Index} indexSchema
  * @param {number} indentCount
  * @return {string}
  * @private
  */
-CodeGenerator.getIndexDefinition_ = function(
-    tableName, indexName, columns, isUnique, isPrimaryKey, indentCount) {
+CodeGenerator.getIndexDefinition_ = function(table, indexSchema, indentCount) {
   var generateIndent = function(count) {
     var indentation = '';
     for (var i = 0; i < count; i++) {
@@ -982,16 +726,16 @@ CodeGenerator.getIndexDefinition_ = function(
     return generateIndent(indentCount) + generateIndent(relativeIndent);
   };
 
-  var body =
-      'new lf.schema.Index(\'' + tableName + '\', \'' + indexName + '\', ' +
-          (isUnique ? 'true' : 'false') + ',\n' + getIndent(4);
-  var columnBodys = columns.map(function(col) {
-    var colBody = getIndent(6) + '{schema: this.' + col.name + ',';
+  var body = 'new lf.schema.Index(\'' + table.getName() + '\', \'' +
+      indexSchema.name + '\', ' + indexSchema.isUnique.toString() + ',\n' +
+      getIndent(4);
+  var columnBodys = indexSchema.columns.map(function(col) {
+    var colBody = getIndent(6) + '{schema: this.' + col.schema.getName() + ',';
     colBody += ' order: ' +
-        (col.order == 'desc' ? 'lf.Order.DESC' : 'lf.Order.ASC');
-    if (isPrimaryKey) {
-      colBody +=
-          ', autoIncrement: ' + (col.autoIncrement ? 'true' : 'false');
+        (col.order == lf.Order.DESC ? 'lf.Order.DESC' : 'lf.Order.ASC');
+    if (table.getConstraint().getPrimaryKey() &&
+        table.getConstraint().getPrimaryKey().name == indexSchema.name) {
+      colBody += ', autoIncrement: ' + (col.autoIncrement ? 'true' : 'false');
     }
     colBody += '}';
 
@@ -1003,64 +747,42 @@ CodeGenerator.getIndexDefinition_ = function(
 
 
 /**
- * @param {!Table_} table
- * @param {number} indentCount
+ * @param {!lf.schema.Table} table
  * @return {string}
  * @private
  */
-CodeGenerator.prototype.getPrimaryKeyIndex_ = function(table, indentCount) {
-  if (!table.constraint || !table.constraint.primaryKey) {
-    return 'null';
-  }
-
-  var pkCols = table.constraint.primaryKey;
-  var indexDefinition = CodeGenerator.getIndexDefinition_(
-      table.name,
-      'pk' + this.toPascal_(table.name),
-      pkCols,
-      true, /* isUnique */
-      true, /* isPrimaryKey */
-      indentCount);
-
-  return indexDefinition;
-};
-
-
-/**
- * @param {string} tableName
- * @param {Array<!ForeignKeySpec_>} specs
- * @return {string}
- * @private
- */
-CodeGenerator.prototype.getForeignKeySpec_ = function(tableName, specs) {
-  if (!specs) {
+CodeGenerator.prototype.getForeignKeySpec_ = function(table) {
+  if (!table.getConstraint().getForeignKeys()) {
     return '';
   }
 
   var getAction = function(action) {
-    return action == 'cascade' ? 'lf.ConstraintAction.CASCADE' :
+    return action == lf.ConstraintAction.CASCADE ?
+        'lf.ConstraintAction.CASCADE' :
         'lf.ConstraintAction.RESTRICT';
   };
 
   var getTiming = function(timing) {
-    return timing == 'deferrable' ? 'lf.ConstraintTiming.DEFERRABLE' :
+    return timing == lf.ConstraintTiming.DEFERRABLE ?
+        'lf.ConstraintTiming.DEFERRABLE' :
         'lf.ConstraintTiming.IMMEDIATE';
   };
 
-  return specs.map(function(spec) {
+  return table.getConstraint().getForeignKeys().map(function(spec) {
     return '    new lf.schema.ForeignKeySpec(\n' +
         '        {\n' +
-        '          \'local\': \'' + spec.local + '\',\n' +
-        '          \'ref\': \'' + spec.ref + '\',\n' +
+        '          \'local\': \'' + spec.childColumn + '\',\n' +
+        '          \'ref\': \'' + spec.parentTable + '.' + spec.parentColumn +
+            '\',\n' +
         '          \'action\': ' + getAction(spec.action) + ',\n' +
         '          \'timing\': ' + getTiming(spec.timing) + '\n' +
-        '        }, \'' + tableName + '.' + spec.name + '\')';
+        '        }, \'' + spec.name + '\')';
   }).join(',\n');
 };
 
 
 /**
- * @param {!Table_} table
+ * @param {!lf.schema.Table} table
  * @return {string}
  * @private
  */
@@ -1068,23 +790,23 @@ CodeGenerator.prototype.getConstraint_ = function(table) {
   var results = [];
 
   var getNotNullable = (function() {
-    var notNullable = table.column.filter(function(column) {
-      return !column.nullable;
+    var notNullable = table.getColumns().filter(function(column) {
+      return !column.isNullable();
     }).map(function(column) {
-      return '    this.' + column.name;
+      return '    this.' + column.getName();
     });
     return '  var notNullable = [\n' + notNullable.join(',\n') + '\n  ];';
   }).bind(this);
 
-  if (table.constraint) {
-    results.push(table.constraint.primaryKey ?
-        '  var pk = this.getIndices()[0];' :
-        '  var pk = null;');
+  if (table.getConstraint()) {
+    var pkIndexSchema = table.getConstraint().getPrimaryKey();
+    results.push(pkIndexSchema == null ?
+        '  var pk = ' + pkIndexSchema + ';' :
+        '  var pk = this.getIndices()[0];');
     results.push(getNotNullable());
 
     results.push('  var foreignKeys = [');
-    var fkSpec = this.getForeignKeySpec_(
-        table.name, table.constraint.foreignKey);
+    var fkSpec = this.getForeignKeySpec_(table);
     if (fkSpec.length) {
       results.push(fkSpec);
     }
@@ -1104,208 +826,79 @@ CodeGenerator.prototype.getConstraint_ = function(table) {
 
 
 /**
- * @param {!Table_} table
- * @param {number} indentCount
- * @return {!Array<string>}
- * @private
- */
-CodeGenerator.prototype.getUniqueIndices_ = function(table, indentCount) {
-  var uniqueIndices = [];
-
-  for (var i = 0; i < table.constraint.unique.length; ++i) {
-    var uniqueConstraint = table.constraint.unique[i];
-    var indexDefinition = CodeGenerator.getIndexDefinition_(
-        table.name,
-        uniqueConstraint.name,
-        uniqueConstraint.column,
-        true, /* isUnique */
-        false, /* isPrimaryKey */
-        indentCount);
-    uniqueIndices.push(indexDefinition);
-  }
-
-  return uniqueIndices;
-};
-
-
-/**
- * @param {!Table_} table
- * @param {number} indentCount
- * @return {!Array<string>}
- * @private
- */
-CodeGenerator.prototype.getForeignKeyIndices_ = function(table, indentCount) {
-  var fkIndices = [];
-
-  table.constraint.foreignKey.forEach(function(fkSpec) {
-    var indexDef = CodeGenerator.getIndexDefinition_(
-        table.name,
-        fkSpec.name,
-        [{name: fkSpec.local}],
-        false,  /* isUnique */
-        false,  /* isPrimaryKey */
-        indentCount);
-    fkIndices.push(indexDef);
-  });
-
-  return fkIndices;
-};
-
-
-/**
- * @param {!Table_} table
+ * @param {!lf.schema.Table} table
  * @return {string}
  * @private
  */
 CodeGenerator.prototype.getIndices_ = function(table) {
-  var results = [];
-
-  if (table.constraint) {
-    if (table.constraint.primaryKey) {
-      results.push(this.getPrimaryKeyIndex_(table, 4));
-    }
-
-    if (table.constraint.unique) {
-      var uniqueIndices = this.getUniqueIndices_(table, 4);
-      uniqueIndices.forEach(function(uniqueIndex) {
-        results.push(uniqueIndex);
-      });
-    }
-
-    if (table.constraint.foreignKey) {
-      var foreignKeyIndices = this.getForeignKeyIndices_(table, 4);
-      foreignKeyIndices.forEach(function(fkIndex) {
-        results.push(fkIndex);
-      });
-    }
-  }
-
-  if (table.index) {
-    for (var i = 0; i < table.index.length; ++i) {
-      var index = table.index[i];
-      var isUnique = index.unique ? true : false;
-
-      var indexDefinition = CodeGenerator.getIndexDefinition_(
-          table.name,
-          index.name,
-          index.column,
-          isUnique,
-          false, /* isPrimaryKey */
-          4);
-      results.push(indexDefinition);
-    }
-  }
-
-  return results.join(',\n');
+  return table.getIndices().map(function(indexSchema) {
+    return CodeGenerator.getIndexDefinition_(table, indexSchema, 4);
+  }, this).join(',\n');
 };
 
 
 /**
- * @param {!Table_} table
- * @return {!Array<string>}
+ * @param {!lf.schema.Table} table
+ * @return {string}
  * @private
  */
-CodeGenerator.prototype.getColumnAsMembers_ = function(table) {
-  var columns = table.column;
-  var result = '';
-  var result2 = '';
-  for (var i = 0; i < columns.length; ++i) {
-    var col = columns[i];
-    var name = col.name;
-    var type = col.type;
-    var type2 = col.type;
-    switch (type) {
-      case 'arraybuffer':
-        type = col.nullable ? '?string' : 'string';
-        type2 = col.nullable ? '?ArrayBuffer' : '!ArrayBuffer';
-        break;
-
-      case 'datetime':
-        type = col.nullable ? '?number' : 'number';
-        type2 = col.nullable ? '?Date' : '!Date';
-        break;
-
-      case 'string':
-        type = col.nullable ? '?string' : 'string';
-        type2 = type;
-        break;
-
-      case 'integer':
-      case 'number':
-        type = col.nullable ? '?number' : 'number';
-        type2 = type;
-        break;
-
-      case 'boolean':
-        type = col.nullable ? '?boolean' : 'boolean';
-        type2 = type;
-        break;
-
-      case 'object':
-        type = col.nullable ? 'Object' : '!Object';
-        type2 = type;
-    }
-
-    var pattern =
-        '  /** @export @type {#####} */\n  this.' + this.toCamel_(name) + ';\n';
-
-    result += pattern.replace('#####', type);
-    result2 += pattern.replace('#####', type2);
-  }
-  return [
-    result.substring(0, result.length - 1),
-    result2.substring(0, result2.length - 1)
-  ];
+CodeGenerator.prototype.getColumnTypes_ = function(table) {
+  var result = table.getColumns().map(
+      function(col) {
+        var jsType = CodeGenerator.columnTypeToJsType_(col, false);
+        return '  /** @export @type {' + jsType + '} */\n  this.' +
+            this.toCamel_(col.getName()) + ';\n';
+      }, this).join('');
+  return result.substring(0, result.length - 1);
 };
 
 
 /**
- * @param {!Table_} table
+ * @param {!lf.schema.Table} table
+ * @return {string}
+ * @private
+ */
+CodeGenerator.prototype.getColumnDbTypes_ = function(table) {
+  var result = table.getColumns().map(
+      function(col) {
+        var jsType = CodeGenerator.columnTypeToJsDbType_(col);
+        return '  /** @export @type {' + jsType + '} */\n  this.' +
+            this.toCamel_(col.getName()) + ';\n';
+      }, this).join('');
+  return result.substring(0, result.length - 1);
+};
+
+
+/**
+ * @param {!lf.schema.Table} table
  * @return {!Array<string>}
  * @private
  */
 CodeGenerator.prototype.getUniqueColumns_ = function(table) {
   var ret = [];
 
-  if (table.hasOwnProperty('constraint')) {
-    var constraint = table.constraint;
-    if (constraint.hasOwnProperty('primaryKey') &&
-        constraint.primaryKey.length == 1) {
-      ret.push(constraint.primaryKey[0].name);
+  table.getIndices().forEach(function(indexSchema) {
+    if (indexSchema.isUnique && indexSchema.columns.length == 1) {
+      ret.push(indexSchema.columns[0].schema.getName());
     }
-    if (constraint.hasOwnProperty('unique')) {
-      constraint.unique.forEach(function(unq) {
-        if (unq.column.length == 1) {
-          ret.push(unq.column[0].name);
-        }
-      });
-    }
-  }
-
-  if (table.hasOwnProperty('index')) {
-    table.index.forEach(function(idx) {
-      if (idx.unique && idx.column.length == 1) {
-        ret.push(idx.column[0].name);
-      }
-    });
-  }
+  });
 
   return ret;
 };
 
 
 /**
- * @param {!Table_} table
+ * @param {!lf.schema.Table} table
  * @return {!Array<string>}
  * @private
  */
 CodeGenerator.prototype.getNullableColumns_ = function(table) {
-  return table.column.filter(
+  return table.getColumns().filter(
       function(column) {
-        return column.nullable || (NULLABLE.indexOf(column.type) != -1);
+        return column.isNullable();
       }).map(
       function(column) {
-        return column.name;
+        return column.getName();
       });
 };
 
@@ -1316,16 +909,15 @@ CodeGenerator.prototype.getNullableColumns_ = function(table) {
  * @private
  */
 CodeGenerator.prototype.processRepeatColumn_ = function(lines) {
-  var table = this.schema_.table[this.tableIndex_];
-  var columns = table.column;
+  var table = this.schema_.tables()[this.tableIndex_];
+  var columns = table.getColumns();
   var uniqueColumns = this.getUniqueColumns_(table);
   var nullableColumns = this.getNullableColumns_(table);
 
   var results = [];
 
-  for (var i = 0; i < columns.length; ++i) {
-    var col = columns[i];
-    var name = col.name;
+  columns.forEach(function(col) {
+    var name = col.getName();
     var pascal = this.toPascal_(name);
     var camel = this.toCamel_(name);
     var isUnique = uniqueColumns.indexOf(name) != -1;
@@ -1338,13 +930,13 @@ CodeGenerator.prototype.processRepeatColumn_ = function(lines) {
       genLine = genLine.replace(/#columnuniqueness/g, isUnique.toString());
       genLine = genLine.replace(/#columnnullable/g, isNullable.toString());
       genLine = genLine.replace(
-          /#columnjstype/g,
-          CodeGenerator.columnTypeToJsType_(col.type, /* isNullable */ false));
+          /#columnjstype/g, CodeGenerator.columnTypeToJsType_(col, true));
       genLine = genLine.replace(
-          /#columnenumtype/g, CodeGenerator.columnTypeToEnumType_(col.type));
+          /#columnenumtype/g,
+          CodeGenerator.columnTypeToEnumType_(col.getType()));
       results.push(genLine);
     }
-  }
+  }, this);
 
   return results;
 };
@@ -1361,20 +953,19 @@ CodeGenerator.prototype.generate = function(fileName, template) {
 
   // Global replacements
   var dbTableList = '';
-  for (var i = 0; i < this.schema_.table.length; ++i) {
-    var name = this.schema_.table[i].name;
-    dbTableList = dbTableList + '    this.' + this.toCamel_(name) + '_,\n';
-  }
+  this.schema_.tables().forEach(function(tableSchema) {
+    dbTableList = dbTableList + '    this.' +
+        this.toCamel_(tableSchema.getName()) + '_,\n';
+  }, this);
   dbTableList = dbTableList.substring(0, dbTableList.length - 2);
 
   output = output.replace(/#namespace#escape/g,
       this.namespace_.replace(/\./g, '_'));
   output = output.replace(/#dbtablelist/g, dbTableList);
-  output = output.replace(/#dbversion/g, this.schema_.version.toString());
+  output = output.replace(/#dbversion/g, this.schema_.version().toString());
   output = output.replace(/#namespace/g, this.namespace_);
-  output = output.replace(/#dbname/g, this.schema_.name);
-  var bundledMode = this.schema_.pragma ?
-      (this.schema_.pragma.enableBundledMode || false) : false;
+  output = output.replace(/#dbname/g, this.schema_.name());
+  var bundledMode = this.schema_.pragma().enableBundledMode;
   output = output.replace(/#bundledmode/g, bundledMode.toString());
 
   return this.parse_(output.split('\n')).join('\n');
