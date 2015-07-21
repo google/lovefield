@@ -751,6 +751,29 @@ lf.testing.perf.SelectBenchmark.prototype.verifyJoinTheta = function(results) {
 };
 
 
+/** @return {!IThenable} */
+lf.testing.perf.SelectBenchmark.prototype.queryCountStar = function() {
+  return this.db_.
+      select(lf.fn.count()).
+      from(this.e_).
+      exec();
+};
+
+
+/**
+ * @param {!Array<!Object>} results
+ * @return {!IThenable<boolean>}
+ */
+lf.testing.perf.SelectBenchmark.prototype.verifyCountStar = function(results) {
+  var aggregatedColumn = lf.fn.count();
+  var validated = (1 == results.length &&
+      this.dataGenerator_.sampleEmployees.length ==
+          results[0][aggregatedColumn]);
+
+  return goog.Promise.resolve(validated);
+};
+
+
 /** @override */
 lf.testing.perf.SelectBenchmark.prototype.getTestCases = function() {
   // TODO(dpapad): Convert all other methods to private.
@@ -818,7 +841,11 @@ lf.testing.perf.SelectBenchmark.prototype.getTestCases = function() {
     new lf.testing.perf.TestCase(
         'SelectJoinTheta',
         this.queryJoinTheta.bind(this),
-        this.verifyJoinTheta.bind(this))
+        this.verifyJoinTheta.bind(this)),
+    new lf.testing.perf.TestCase(
+        'SelectCountStar',
+        this.queryCountStar.bind(this),
+        this.verifyCountStar.bind(this))
   ];
 };
 

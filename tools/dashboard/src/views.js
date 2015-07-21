@@ -177,6 +177,12 @@ var selectBenchmarkGraphs = [
       'SelectJoinEqui',
       'SelectJoinTheta'
     ]
+  },
+  {
+    name: 'Select with aggregate functions',
+    curves: [
+      'SelectCountStar'
+    ]
   }
 ];
 
