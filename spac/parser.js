@@ -34,7 +34,8 @@ function loadLovefield() {
     moduleFile = pathMod.resolve(__dirname, '..', 'tools', moduleName + '.js');
   }
 
-  /** @type {{loadDebugJs: !Function}} */ (require(moduleFile)).loadDebugJs();
+  /** @type {{loadLkgrJs: !Function}} */ (
+      require(moduleFile)).loadLkgrJs();
 }
 
 loadLovefield();

@@ -562,9 +562,6 @@ goog.scope = function(fn) {
   fn.call(goog.global);
 };
 goog.MODIFY_FUNCTION_PROTOTYPES = !1;
-goog.MODIFY_FUNCTION_PROTOTYPES && (Function.prototype.inherits = function(parentCtor) {
-  goog.inherits(this, parentCtor);
-});
 goog.defineClass = function(superClass, def) {
   var constructor = def.constructor, statics = def.statics;
   constructor && constructor != Object.prototype.constructor || (constructor = function() {

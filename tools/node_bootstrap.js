@@ -48,12 +48,7 @@ function bootstrap(lovefieldBinary) {
 module.exports = {
   // Loads ../dist/lovefield.js.
   loadDebugJs: function() {
-    var lovefieldBinary = pathMod.resolve(__dirname, 'dist', 'lovefield.js');
-    if (!fsMod.existsSync(lovefieldBinary)) {
-      lovefieldBinary = pathMod.resolve(
-          __dirname, '..', 'dist', 'lovefield.js');
-    }
-    bootstrap(lovefieldBinary);
+    bootstrap(pathMod.resolve(__dirname, '..', 'dist', 'lovefield.js'));
   },
   // Loads ../dist/lovefield.min.js.
   loadMinJs: function() {
@@ -62,5 +57,11 @@ module.exports = {
   // Loads lovefield from a custom location.
   loadCustomJs: function(filepath) {
     bootstrap(filepath);
+  },
+  loadLkgrJs: function() {
+    var filepath = pathMod.resolve(__dirname, 'dist', 'lovefield-lkgr.js');
+    fsMod.existsSync(filepath) ?
+        bootstrap(filepath) :
+        bootstrap(pathMod.resolve(__dirname, '..', 'dist', 'lovefield.js'));
   }
 };
