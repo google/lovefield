@@ -61,6 +61,23 @@ function setUp() {
 }
 
 
+/**
+ * Creates two news rows with null hireDate and adds to the sample employees.
+ * @return {!Array<!lf.Row>}
+ */
+function getEmployeeDatasetWithNulls() {
+  var data = [];
+  var employee = hr.db.getSchema().table('Employee');
+  var startId = dataGenerator.sampleEmployees.length;
+  for (var i = startId; i < startId + 2; i++) {
+    var employeeRow = employee.createRow();
+    employeeRow.setId('employeeId' + i.toString());
+    employeeRow.setHireDate(null);
+    data.push(employeeRow);
+  }
+  return data;
+}
+
 function testExec_Min() {
   asyncTestCase.waitForAsync('testExec_Min');
   checkCalculation(
@@ -93,6 +110,32 @@ function testExec_Count_Distinct() {
   checkCalculation(
       lf.fn.count(lf.fn.distinct(j.minSalary)),
       dataGenerator.jobGroundTruth.countDistinctMinSalary).
+      then(asyncTestCase.continueTesting.bind(asyncTestCase), fail);
+}
+
+
+function testExec_CountNullableColumn() {
+  var data = getEmployeeDatasetWithNulls();
+  asyncTestCase.waitForAsync('testExec_CountNullableColumn');
+  var inputRelation = lf.proc.Relation.fromRows(
+      dataGenerator.sampleEmployees.concat(data), [e.getName()]);
+  checkCalculationForRelation(
+      inputRelation,
+      lf.fn.count(e.hireDate),
+      dataGenerator.sampleEmployees.length).
+      then(asyncTestCase.continueTesting.bind(asyncTestCase), fail);
+}
+
+
+function testExec_CountStar() {
+  var data = getEmployeeDatasetWithNulls();
+  asyncTestCase.waitForAsync('testExec_CountStar');
+  var inputRelation = lf.proc.Relation.fromRows(
+      dataGenerator.sampleEmployees.concat(data), [e.getName()]);
+  checkCalculationForRelation(
+      inputRelation,
+      lf.fn.count(),
+      dataGenerator.sampleEmployees.length + data.length).
       then(asyncTestCase.continueTesting.bind(asyncTestCase), fail);
 }
 

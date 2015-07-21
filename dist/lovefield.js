@@ -8368,7 +8368,7 @@ lf.proc.AggregationStep.Calculator_.evalAggregation_ = function(aggregatorType, 
       result = Calculator.distinct_(relation, column);
       break;
     case lf.fn.Type.COUNT:
-      result = relation.entries.length;
+      result = Calculator.count_(relation, column);
       break;
     case lf.fn.Type.SUM:
       result = Calculator.sum_(relation, column);
@@ -8403,6 +8403,11 @@ lf.proc.AggregationStep.Calculator_.max_ = function(relation, column) {
     }
   });
   return max;
+};
+lf.proc.AggregationStep.Calculator_.count_ = function(relation, column) {
+  return column instanceof lf.fn.StarColumn ? relation.entries.length : relation.entries.reduce(function(soFar, entry) {
+    return soFar + (goog.isNull(entry.getField(column)) ? 0 : 1);
+  }, 0);
 };
 lf.proc.AggregationStep.Calculator_.sum_ = function(relation, column) {
   return relation.entries.reduce(function(soFar, entry) {
