@@ -8359,10 +8359,14 @@ lf.proc.AggregationStep.Calculator_.evalAggregation_ = function(aggregatorType, 
   var result = null, Calculator = lf.proc.AggregationStep.Calculator_;
   switch(aggregatorType) {
     case lf.fn.Type.MIN:
-      result = Calculator.min_(relation, column);
+      result = Calculator.reduce_(relation, column, function(soFar, value) {
+        return value < soFar ? value : soFar;
+      });
       break;
     case lf.fn.Type.MAX:
-      result = Calculator.max_(relation, column);
+      result = Calculator.reduce_(relation, column, function(soFar, value) {
+        return value > soFar ? value : soFar;
+      });
       break;
     case lf.fn.Type.DISTINCT:
       result = Calculator.distinct_(relation, column);
@@ -8384,25 +8388,11 @@ lf.proc.AggregationStep.Calculator_.evalAggregation_ = function(aggregatorType, 
   }
   return result;
 };
-lf.proc.AggregationStep.Calculator_.min_ = function(relation, column) {
-  var min = null;
-  relation.entries.forEach(function(entry) {
+lf.proc.AggregationStep.Calculator_.reduce_ = function(relation, column, reduceFn) {
+  return relation.entries.reduce(function(soFar, entry) {
     var value = entry.getField(column);
-    if (goog.isNull(min) || value < min) {
-      min = value;
-    }
-  });
-  return min;
-};
-lf.proc.AggregationStep.Calculator_.max_ = function(relation, column) {
-  var max = null;
-  relation.entries.forEach(function(entry) {
-    var value = entry.getField(column);
-    if (goog.isNull(max) || value > max) {
-      max = value;
-    }
-  });
-  return max;
+    return goog.isNull(value) ? soFar : goog.isNull(soFar) ? value : reduceFn(soFar, value);
+  }, null);
 };
 lf.proc.AggregationStep.Calculator_.count_ = function(relation, column) {
   return column instanceof lf.fn.StarColumn ? relation.entries.length : relation.entries.reduce(function(soFar, entry) {

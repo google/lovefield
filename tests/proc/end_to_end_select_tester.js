@@ -97,6 +97,8 @@ lf.testing.EndToEndSelectTester = function(connectFn) {
     this.testGroupByWithLimit.bind(this),
     this.testAggregatorsOnly.bind(this),
     this.testCount_Empty.bind(this),
+    this.testMin_EmptyTable.bind(this),
+    this.testMax_EmptyTable.bind(this),
     this.testCount_Star.bind(this),
     this.testCount_Distinct.bind(this),
     this.testSum_Distinct.bind(this),
@@ -1112,6 +1114,44 @@ lf.testing.EndToEndSelectTester.prototype.testCount_Star = function() {
             this.dataGenerator_.sampleEmployees.length,
             results[0][aggregatedColumn.getName()]);
       }.bind(this));
+};
+
+
+/**
+ * Tests the case where a MIN aggregator is used on an empty table.
+ * @return {!IThenable}
+ */
+lf.testing.EndToEndSelectTester.prototype.testMin_EmptyTable = function() {
+  var h = this.db_.getSchema().table('Holiday');
+  var aggregatedColumn = lf.fn.min(h.begin);
+  var queryBuilder = /** @type {!lf.query.SelectBuilder} */ (
+      this.db_.select(aggregatedColumn).from(h));
+
+  return queryBuilder.exec().then(
+      function(results) {
+        assertEquals(1, results.length);
+        assertEquals(1, goog.object.getCount(results[0]));
+        assertNull(results[0][aggregatedColumn.getName()]);
+      });
+};
+
+
+/**
+ * Tests the case where a MAX aggregator is used on an empty table.
+ * @return {!IThenable}
+ */
+lf.testing.EndToEndSelectTester.prototype.testMax_EmptyTable = function() {
+  var h = this.db_.getSchema().table('Holiday');
+  var aggregatedColumn = lf.fn.max(h.begin);
+  var queryBuilder = /** @type {!lf.query.SelectBuilder} */ (
+      this.db_.select(aggregatedColumn).from(h));
+
+  return queryBuilder.exec().then(
+      function(results) {
+        assertEquals(1, results.length);
+        assertEquals(1, goog.object.getCount(results[0]));
+        assertNull(results[0][aggregatedColumn.getName()]);
+      });
 };
 
 

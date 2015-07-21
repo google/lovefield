@@ -87,11 +87,57 @@ function testExec_Min() {
 }
 
 
+function testExec_MinNullableColumn() {
+  var data = getEmployeeDatasetWithNulls();
+  asyncTestCase.waitForAsync('testExec_MinNullableColumn');
+  var inputRelation = lf.proc.Relation.fromRows(
+      dataGenerator.sampleEmployees.concat(data), [e.getName()]);
+  checkCalculationForRelation(
+      inputRelation,
+      lf.fn.min(e.hireDate),
+      dataGenerator.employeeGroundTruth.minHireDate).
+      then(asyncTestCase.continueTesting.bind(asyncTestCase), fail);
+}
+
+function testExec_MinEmptyTable() {
+  asyncTestCase.waitForAsync('testExec_MinEmptyTable');
+  var inputRelation = lf.proc.Relation.fromRows([], [e.getName()]);
+  checkCalculationForRelation(
+      inputRelation,
+      lf.fn.min(e.hireDate),
+      null).
+      then(asyncTestCase.continueTesting.bind(asyncTestCase), fail);
+}
+
+
 function testExec_Max() {
   asyncTestCase.waitForAsync('testExec_Max');
   checkCalculation(
       lf.fn.max(j.maxSalary),
       dataGenerator.jobGroundTruth.maxMaxSalary).
+      then(asyncTestCase.continueTesting.bind(asyncTestCase), fail);
+}
+
+
+function testExec_MaxNullableColumn() {
+  var data = getEmployeeDatasetWithNulls();
+  asyncTestCase.waitForAsync('testExec_MaxNullableColumn');
+  var inputRelation = lf.proc.Relation.fromRows(
+      dataGenerator.sampleEmployees.concat(data), [e.getName()]);
+  checkCalculationForRelation(
+      inputRelation,
+      lf.fn.max(e.hireDate),
+      dataGenerator.employeeGroundTruth.maxHireDate).
+      then(asyncTestCase.continueTesting.bind(asyncTestCase), fail);
+}
+
+function testExec_MaxEmptyTable() {
+  asyncTestCase.waitForAsync('testExec_MaxEmptyTable');
+  var inputRelation = lf.proc.Relation.fromRows([], [e.getName()]);
+  checkCalculationForRelation(
+      inputRelation,
+      lf.fn.max(e.hireDate),
+      null).
       then(asyncTestCase.continueTesting.bind(asyncTestCase), fail);
 }
 
@@ -251,8 +297,8 @@ function checkCalculationWithJoin(aggregatedColumn, expectedValue) {
 /**
  * @param {!lf.proc.Relation} inputRelation
  * @param {!lf.schema.Column} aggregatedColumn The column to be calculated.
- * @param {?number|!Array} expectedValue The expected value for the aggregated
- *     column.
+ * @param {?number|!Array|Date} expectedValue The expected value for the
+ *     aggregated column.
  * @return {!IThenable}
  */
 function checkCalculationForRelation(
