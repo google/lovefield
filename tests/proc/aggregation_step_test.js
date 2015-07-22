@@ -351,3 +351,28 @@ function checkCalculationForRelation(
     }
   });
 }
+
+
+/**
+ * Tests that AggregationStep is using existing aggregation result
+ * (pre-calculated by previous steps).
+ */
+function testExec_UsesExistingResult() {
+  asyncTestCase.waitForAsync('testExec_UsesExistingResult');
+
+  var inputRelation = lf.proc.Relation.fromRows([], [j.getName()]);
+  var aggregatedColumn = lf.fn.count();
+  var aggregationResult = 100;
+  inputRelation.setAggregationResult(aggregatedColumn, aggregationResult);
+  var childStep = new lf.testing.proc.DummyStep([inputRelation]);
+  var aggregationStep = new lf.proc.AggregationStep([aggregatedColumn]);
+  aggregationStep.addChild(childStep);
+
+  var journal = new lf.cache.Journal(hr.db.getGlobal(), []);
+  aggregationStep.exec(journal).then(function(relations) {
+    assertEquals(
+        aggregationResult,
+        relations[0].getAggregationResult(aggregatedColumn));
+    asyncTestCase.continueTesting();
+  }, fail);
+}

@@ -8349,7 +8349,11 @@ lf.proc.AggregationStep.Calculator_ = function(relation, columns) {
 lf.proc.AggregationStep.Calculator_.prototype.calculate = function() {
   this.columns_.forEach(function(column) {
     for (var reverseColumnChain = column.getColumnChain().reverse(), i = 1;i < reverseColumnChain.length;i++) {
-      var currentColumn = reverseColumnChain[i], leafColumn = currentColumn.getColumnChain().slice(-1)[0], inputRelation = this.getInputRelationFor_(currentColumn), result = lf.proc.AggregationStep.Calculator_.evalAggregation_(currentColumn.aggregatorType, inputRelation, leafColumn);
+      var currentColumn = reverseColumnChain[i], leafColumn = currentColumn.getColumnChain().slice(-1)[0], inputRelation = this.getInputRelationFor_(currentColumn);
+      if (inputRelation.hasAggregationResult(currentColumn)) {
+        break;
+      }
+      var result = lf.proc.AggregationStep.Calculator_.evalAggregation_(currentColumn.aggregatorType, inputRelation, leafColumn);
       this.relation_.setAggregationResult(currentColumn, result);
     }
   }, this);
@@ -9563,6 +9567,62 @@ lf.proc.DeleteStep.prototype.execInternal = function(journal, relations) {
   return [lf.proc.Relation.createEmpty()];
 };
 
+lf.proc.GetRowCountStep = function(global, table) {
+  lf.proc.PhysicalQueryPlanNode.call(this, 0, lf.proc.PhysicalQueryPlanNode.ExecType.NO_CHILD);
+  this.table = table;
+  this.indexStore_ = global.getService(lf.service.INDEX_STORE);
+};
+goog.inherits(lf.proc.GetRowCountStep, lf.proc.PhysicalQueryPlanNode);
+lf.proc.GetRowCountStep.prototype.toString = function() {
+  return "get_row_count(" + this.table.getName() + ")";
+};
+lf.proc.GetRowCountStep.prototype.execInternal = function() {
+  var rowIdIndex = this.indexStore_.get(this.table.getRowIdIndexName()), relation = new lf.proc.Relation([], [this.table.getName()]);
+  relation.setAggregationResult(lf.fn.count(), rowIdIndex.stats().totalRows);
+  return [relation];
+};
+
+lf.proc.TableAccessFullStep = function(global, table) {
+  lf.proc.PhysicalQueryPlanNode.call(this, 0, lf.proc.PhysicalQueryPlanNode.ExecType.NO_CHILD);
+  this.cache_ = global.getService(lf.service.CACHE);
+  this.indexStore_ = global.getService(lf.service.INDEX_STORE);
+  this.table = table;
+};
+goog.inherits(lf.proc.TableAccessFullStep, lf.proc.PhysicalQueryPlanNode);
+lf.proc.TableAccessFullStep.prototype.toString = function() {
+  var out = "table_access(" + this.table.getName();
+  goog.isNull(this.table.getAlias()) || (out += " as " + this.table.getAlias());
+  return out += ")";
+};
+lf.proc.TableAccessFullStep.prototype.execInternal = function() {
+  var rowIds = this.indexStore_.get(this.table.getRowIdIndexName()).getRange();
+  return [lf.proc.Relation.fromRows(this.cache_.get(rowIds), [this.table.getEffectiveName()])];
+};
+
+lf.proc.GetRowCountPass = function(global) {
+  this.global_ = global;
+};
+goog.inherits(lf.proc.GetRowCountPass, lf.proc.RewritePass);
+lf.proc.GetRowCountPass.prototype.rewrite = function(rootNode, queryContext) {
+  this.rootNode = rootNode;
+  if (!this.canOptimize_(queryContext)) {
+    return rootNode;
+  }
+  var tableAccessFullStep = lf.tree.find(rootNode, function(node) {
+    return node instanceof lf.proc.TableAccessFullStep;
+  })[0], getRowCountStep = new lf.proc.GetRowCountStep(this.global_, tableAccessFullStep.table);
+  lf.tree.replaceNodeWithChain(tableAccessFullStep, getRowCountStep, getRowCountStep);
+  return this.rootNode;
+};
+lf.proc.GetRowCountPass.prototype.canOptimize_ = function(queryContext) {
+  var isCandidate = 1 == queryContext.columns.length && 1 == queryContext.from.length && !goog.isDefAndNotNull(queryContext.where) && !goog.isDefAndNotNull(queryContext.limit) && !goog.isDefAndNotNull(queryContext.skip) && !goog.isDefAndNotNull(queryContext.groupBy);
+  if (isCandidate) {
+    var column = queryContext.columns[0];
+    return column instanceof lf.fn.AggregatedColumn && column.aggregatorType == lf.fn.Type.COUNT && column.child instanceof lf.fn.StarColumn;
+  }
+  return !1;
+};
+
 lf.proc.GroupByStep = function(groupByColumns) {
   lf.proc.PhysicalQueryPlanNode.call(this, 1, lf.proc.PhysicalQueryPlanNode.ExecType.FIRST_CHILD);
   this.groupByColumns_ = groupByColumns;
@@ -9798,23 +9858,6 @@ lf.proc.TableAccessByRowIdStep.prototype.toString = function() {
 };
 lf.proc.TableAccessByRowIdStep.prototype.execInternal = function(journal, relations) {
   return [lf.proc.Relation.fromRows(this.cache_.get(relations[0].getRowIds()), [this.table_.getEffectiveName()])];
-};
-
-lf.proc.TableAccessFullStep = function(global, table) {
-  lf.proc.PhysicalQueryPlanNode.call(this, 0, lf.proc.PhysicalQueryPlanNode.ExecType.NO_CHILD);
-  this.cache_ = global.getService(lf.service.CACHE);
-  this.indexStore_ = global.getService(lf.service.INDEX_STORE);
-  this.table = table;
-};
-goog.inherits(lf.proc.TableAccessFullStep, lf.proc.PhysicalQueryPlanNode);
-lf.proc.TableAccessFullStep.prototype.toString = function() {
-  var out = "table_access(" + this.table.getName();
-  goog.isNull(this.table.getAlias()) || (out += " as " + this.table.getAlias());
-  return out += ")";
-};
-lf.proc.TableAccessFullStep.prototype.execInternal = function() {
-  var rowIds = this.indexStore_.get(this.table.getRowIdIndexName()).getRange();
-  return [lf.proc.Relation.fromRows(this.cache_.get(rowIds), [this.table.getEffectiveName()])];
 };
 
 lf.proc.IndexRangeScanPass = function(global) {
@@ -10235,7 +10278,7 @@ lf.proc.PhysicalPlanFactory.prototype.create = function(logicalQueryPlan, queryC
     return this.createPlan_(logicalQueryPlan, queryContext);
   }
   if (logicalQueryPlanRoot instanceof lf.proc.ProjectNode || logicalQueryPlanRoot instanceof lf.proc.LimitNode || logicalQueryPlanRoot instanceof lf.proc.SkipNode) {
-    return this.createPlan_(logicalQueryPlan, queryContext, [new lf.proc.IndexRangeScanPass(this.global_), new lf.proc.OrderByIndexPass(this.global_), new lf.proc.LimitSkipByIndexPass]);
+    return this.createPlan_(logicalQueryPlan, queryContext, [new lf.proc.IndexRangeScanPass(this.global_), new lf.proc.OrderByIndexPass(this.global_), new lf.proc.LimitSkipByIndexPass, new lf.proc.GetRowCountPass(this.global_)]);
   }
   if (logicalQueryPlanRoot instanceof lf.proc.DeleteNode || logicalQueryPlanRoot instanceof lf.proc.UpdateNode) {
     return this.createPlan_(logicalQueryPlan, queryContext, [new lf.proc.IndexRangeScanPass(this.global_)]);
