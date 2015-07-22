@@ -35,7 +35,7 @@ schemaBuilder.connect().then(function(db) {
   return todoDb.select().from(item).where(item.done.eq(false)).exec();
 }).then(function(results) {
   results.forEach(function(row) {
-    console.log(row['description'], 'before',  row['deadline']);
+    console.log(row['description'], 'before', row['deadline']);
     document.body.textContent =
         row['description'] + ' before ' + row['deadline'];
   });

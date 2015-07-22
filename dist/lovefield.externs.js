@@ -57,6 +57,7 @@ lf.ConstraintTiming.IMMEDIATE;
 lf.ConstraintTiming.DEFERRABLE;
 
 
+
 /** @interface */
 lf.Binder = function() {};
 
@@ -531,6 +532,7 @@ lf.schema.Constraint.prototype.getPrimaryKey = function() {};
 
 /** @return {!Array<lf.schema.ForeignKeySpec>} */
 lf.schema.Constraint.prototype.getForeignKeys = function() {};
+
 
 
 /** @constructor */

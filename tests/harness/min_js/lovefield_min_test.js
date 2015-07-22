@@ -248,7 +248,7 @@ Tester.prototype.testEnum_TransactionType = function() {
 
 /** Tests lf.ConstraintAction */
 Tester.prototype.testEnum_ConstraintAction = function() {
-  var attributeNames = [ 'RESTRICT', 'CASCADE' ];
+  var attributeNames = ['RESTRICT', 'CASCADE'];
   assertAttributes(
       lf.ConstraintAction, attributeNames, 'lf.ConstraintAction');
 };
@@ -256,7 +256,7 @@ Tester.prototype.testEnum_ConstraintAction = function() {
 
 /** Tests lf.ConstraintTiming */
 Tester.prototype.testEnum_ConstraintTiming = function() {
-  var attributeNames = [ 'IMMEDIATE', 'DEFERRABLE' ];
+  var attributeNames = ['IMMEDIATE', 'DEFERRABLE'];
   assertAttributes(
       lf.ConstraintTiming, attributeNames, 'lf.ConstraintTiming');
 };

@@ -134,16 +134,16 @@ DataModel.prototype.updateObservable_ = function(uiModel) {
 DataModel.prototype.connect_ = function() {
   return new Promise(function(resolve, reject) {
     var req = window.indexedDB.open('scrum-idb', 1);
-      req.onsuccess = (function(ev) {
-        this.db_ = ev.target.result;
-        resolve();
-      }.bind(this));
-      req.onerror = reject;
-      req.onupgradeneeded = function(ev) {
-        var rawDb = ev.target.result;
-        rawDb.createObjectStore('person', { keyPath: 'id' });
-        rawDb.createObjectStore('task', { keyPath: 'id' });
-      };
+    req.onsuccess = (function(ev) {
+      this.db_ = ev.target.result;
+      resolve();
+    }.bind(this));
+    req.onerror = reject;
+    req.onupgradeneeded = function(ev) {
+      var rawDb = ev.target.result;
+      rawDb.createObjectStore('person', { keyPath: 'id' });
+      rawDb.createObjectStore('task', { keyPath: 'id' });
+    };
   }.bind(this));
 };
 

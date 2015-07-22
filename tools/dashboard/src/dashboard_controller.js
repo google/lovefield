@@ -28,6 +28,7 @@ var DashboardController = function($scope, syncService, lovefieldService) {
   this.lovefieldService_ = lovefieldService;
 
   this.testSuites = [];
+  this.logger = console['log'];
 
   this.lovefieldService_.getDbConnection().then(function() {
     // Draw initially with data from the database.
@@ -35,12 +36,12 @@ var DashboardController = function($scope, syncService, lovefieldService) {
 
     // Get notified when new data has been synced.
     this.lovefieldService_.whenLastSyncDateChanged(function() {
-      console.log('New data found, redrawing...');
+      logger('New data found, redrawing...');
       this.redraw_();
     }.bind(this));
 
     // Spawn server sync.
-    console.log('Syncing with server...');
+    logger('Syncing with server...');
     syncService.init();
 
   }.bind(this));
@@ -62,7 +63,7 @@ DashboardController.prototype.redraw_ = function() {
 
     // Draw all views (test suites).
     this.testSuites.forEach(function(testSuite) {
-       this.drawView_(this.viewMap_.get(testSuite));
+      this.drawView_(this.viewMap_.get(testSuite));
     }, this);
   }.bind(this));
 };

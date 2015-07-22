@@ -29,9 +29,9 @@ gulp.task('tsd', function(callback) {
 });
 
 
-gulp.task('build', ['tsd'], function () {
+gulp.task('build', ['tsd'], function() {
   var tsResult = gulp.src('todo.ts')
-    .pipe(ts({
+      .pipe(ts({
         noEmitOnError: true,
         noImplicitAny: true,
         out: 'todo.js'

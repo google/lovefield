@@ -15,6 +15,8 @@
  * limitations under the License.
  */
 
+
+/** @private */
 var MockData_ = function() {};
 
 
