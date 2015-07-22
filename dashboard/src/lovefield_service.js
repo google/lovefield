@@ -69,8 +69,13 @@ LovefieldService.prototype.getDbConnection = function() {
     return this.getDbConnection_;
   }
 
+  var isSafari = function() {
+    return navigator.userAgent.indexOf('Safari') != -1 &&
+        navigator.userAgent.indexOf('Chrome') == -1;
+  };
+
   var connectOptions = {
-    storeType: navigator.userAgent.indexOf('Safari') != -1 ?
+    storeType: isSafari() ?
         lf.schema.DataStoreType.MEMORY : lf.schema.DataStoreType.INDEXED_DB
   };
 
