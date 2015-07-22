@@ -7286,7 +7286,9 @@ lf.index.RowId.prototype.isUniqueKey = function() {
   return !0;
 };
 lf.index.RowId.prototype.stats = function() {
-  throw new lf.Exception(300);
+  var stats = new lf.index.Stats;
+  stats.totalRows = this.rows_.size;
+  return stats;
 };
 
 lf.cache.Prefetcher = function(global) {

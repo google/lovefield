@@ -16,7 +16,6 @@
  */
 goog.setTestOnly();
 goog.require('goog.testing.jsunit');
-goog.require('lf.Row');
 goog.require('lf.index.RowId');
 goog.require('lf.index.SingleKeyRange');
 
@@ -29,10 +28,8 @@ goog.require('lf.index.SingleKeyRange');
 function getSampleIndex(rowCount) {
   var index = new lf.index.RowId('dummyName');
 
-  var rows = new Array(rowCount);
-  for (var i = 0; i < rows.length; ++i) {
-    rows[i] = new lf.Row(i, {id: i * 100});
-    index.set(i, rows[i]);
+  for (var i = 0; i < rowCount; ++i) {
+    index.set(i, i * 100);
   }
 
   return index;
@@ -98,4 +95,27 @@ function testMinMax() {
   var index2 = getSampleIndex(rowCount);
   assertArrayEquals([0, [0]], index2.min());
   assertArrayEquals([rowCount - 1, [rowCount - 1]], index2.max());
+}
+
+
+function testStats() {
+  var index = new lf.index.RowId('dummyName');
+  assertEquals(0, index.stats().totalRows);
+
+  index.add(1, 1);
+  index.add(2, 2);
+  index.add(3, 3);
+  assertEquals(3, index.stats().totalRows);
+
+  index.remove(1, 1);
+  assertEquals(2, index.stats().totalRows);
+
+  index.remove(4, 4);
+  assertEquals(2, index.stats().totalRows);
+
+  index.remove(4, 4);
+  assertEquals(2, index.stats().totalRows);
+
+  index.clear();
+  assertEquals(0, index.stats().totalRows);
 }
