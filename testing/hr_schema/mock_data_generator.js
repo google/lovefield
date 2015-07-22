@@ -72,6 +72,7 @@ lf.testing.hrSchema.MockDataGenerator = function(schema) {
  *   countSalary: number,
  *   minHireDate: !Date,
  *   maxHireDate: !Date,
+ *   distinctHireDates: !Array<?Date>,
  *   employeesPerJob: !goog.labs.structs.Multimap<string, string>,
  *   thetaJoinSalaryIds: !Array<string>
  * }}
@@ -209,7 +210,7 @@ lf.testing.hrSchema.MockDataGenerator.prototype.extractEmployeeGroundTruth_ =
   // TODO(dpapad): Calculate ground truth data, and migrate select_benchmark.js
   // to use this generator.
   var salary = function(employee) { return employee.payload()['salary']; };
-
+  var hireDate = function(employee) { return employee.payload()['hireDate']; };
   return {
     employeesPerJob: this.findEmployeesPerJob_(),
     minSalary: 0,
@@ -219,6 +220,7 @@ lf.testing.hrSchema.MockDataGenerator.prototype.extractEmployeeGroundTruth_ =
     stddevSalary: goog.math.standardDeviation.apply(
         null, this.sampleEmployees.map(salary)),
     countSalary: 0,
+    distinctHireDates: this.findDistinct_(hireDate, this.sampleEmployees),
     minHireDate: this.findEmployeeMinDate_(),
     maxHireDate: this.findEmployeeMaxDate_(),
     thetaJoinSalaryIds: this.findThetaJoinSalaryIds_()
@@ -257,6 +259,24 @@ lf.testing.hrSchema.MockDataGenerator.prototype.findJobMax_ = function(
 
 
 /**
+ * Finds the DISTINCT of a given attribute in the rows provided.
+ * @param {!function(!lf.Row): *} getterFn The function to call for
+ *     accessing the attribute of interest.
+ * @param {!Array<!lf.Row>} rows
+ * @return {!Array<*>} The distinct values.
+ * @private
+ */
+lf.testing.hrSchema.MockDataGenerator.prototype.findDistinct_ = function(
+    getterFn, rows) {
+  var valueSet = new goog.structs.Set();
+  rows.forEach(function(row) {
+    valueSet.add(getterFn(row));
+  }, this);
+  return valueSet.getValues();
+};
+
+
+/**
  * Finds the DISTINCT of a given attribute in the Job table.
  * @param {!function(!lf.Row): number} getterFn The function to call for
  *     accessing the attribute of interest.
@@ -265,11 +285,7 @@ lf.testing.hrSchema.MockDataGenerator.prototype.findJobMax_ = function(
  */
 lf.testing.hrSchema.MockDataGenerator.prototype.findJobDistinct_ = function(
     getterFn) {
-  var valueSet = new goog.structs.Set();
-  this.sampleJobs.forEach(function(job) {
-    valueSet.add(getterFn(job));
-  }, this);
-  return valueSet.getValues();
+  return this.findDistinct_(getterFn, this.sampleJobs);
 };
 
 

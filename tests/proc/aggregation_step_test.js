@@ -99,6 +99,7 @@ function testExec_MinNullableColumn() {
       then(asyncTestCase.continueTesting.bind(asyncTestCase), fail);
 }
 
+
 function testExec_MinEmptyTable() {
   asyncTestCase.waitForAsync('testExec_MinEmptyTable');
   var inputRelation = lf.proc.Relation.fromRows([], [e.getName()]);
@@ -131,6 +132,7 @@ function testExec_MaxNullableColumn() {
       then(asyncTestCase.continueTesting.bind(asyncTestCase), fail);
 }
 
+
 function testExec_MaxEmptyTable() {
   asyncTestCase.waitForAsync('testExec_MaxEmptyTable');
   var inputRelation = lf.proc.Relation.fromRows([], [e.getName()]);
@@ -147,6 +149,34 @@ function testExec_Distinct() {
   checkCalculation(
       lf.fn.distinct(j.maxSalary),
       dataGenerator.jobGroundTruth.distinctMaxSalary).
+      then(asyncTestCase.continueTesting.bind(asyncTestCase), fail);
+}
+
+
+function testExec_DistinctNullableColumn() {
+  var data = getEmployeeDatasetWithNulls();
+  asyncTestCase.waitForAsync('testExec_DistinctNullableColumn');
+  var expectedHireDates = dataGenerator.employeeGroundTruth.distinctHireDates;
+  expectedHireDates.push(null);
+  var inputRelation = lf.proc.Relation.fromRows(
+      dataGenerator.sampleEmployees.concat(data), [e.getName()]);
+  checkCalculationForRelation(
+      inputRelation, lf.fn.distinct(e.hireDate), expectedHireDates).
+      then(asyncTestCase.continueTesting.bind(asyncTestCase), fail);
+}
+
+
+/**
+ * Count on a distinct column ignores nulls returned from distinct.
+ */
+function testExec_CountDistinctNullableColumn() {
+  var data = getEmployeeDatasetWithNulls();
+  asyncTestCase.waitForAsync('testExec_CountDistinctNullableColumn');
+  var inputRelation = lf.proc.Relation.fromRows(
+      dataGenerator.sampleEmployees.concat(data), [e.getName()]);
+  checkCalculationForRelation(
+      inputRelation, lf.fn.count(lf.fn.distinct(e.hireDate)),
+      dataGenerator.employeeGroundTruth.distinctHireDates.length).
       then(asyncTestCase.continueTesting.bind(asyncTestCase), fail);
 }
 
