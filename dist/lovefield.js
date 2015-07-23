@@ -7142,7 +7142,7 @@ lf.index.MultiKeyComparator.prototype.rangeToKeys = function(keyRange) {
 
 lf.index.NullableIndex = function(index) {
   this.index_ = index;
-  this.nulls_ = new goog.structs.Set;
+  this.nulls_ = new lf.structs.Set;
   this.statsNull_ = new lf.index.Stats;
   this.stats_ = new lf.index.Stats;
 };
@@ -7156,10 +7156,10 @@ lf.index.NullableIndex.prototype.set = function(key, value) {
   goog.isNull(key) ? (this.nulls_.clear(), this.statsNull_.clear(), this.add(key, value)) : this.index_.set(key, value);
 };
 lf.index.NullableIndex.prototype.remove = function(key, opt_rowId) {
-  goog.isNull(key) ? opt_rowId ? (this.nulls_.remove(opt_rowId), this.statsNull_.remove(key, 1)) : (this.nulls_.clear(), this.statsNull_.clear()) : this.index_.remove(key, opt_rowId);
+  goog.isNull(key) ? opt_rowId ? (this.nulls_.delete(opt_rowId), this.statsNull_.remove(key, 1)) : (this.nulls_.clear(), this.statsNull_.clear()) : this.index_.remove(key, opt_rowId);
 };
 lf.index.NullableIndex.prototype.get = function(key) {
-  return goog.isNull(key) ? this.nulls_.getValues() : this.index_.get(key);
+  return goog.isNull(key) ? lf.structs.set.values(this.nulls_) : this.index_.get(key);
 };
 lf.index.NullableIndex.prototype.cost = function(opt_keyRange) {
   return this.index_.cost(opt_keyRange);
@@ -7170,14 +7170,14 @@ lf.index.NullableIndex.prototype.stats = function() {
 };
 lf.index.NullableIndex.prototype.getRange = function(opt_keyRanges, opt_reverseOrder, opt_limit, opt_skip) {
   var results = this.index_.getRange(opt_keyRanges, opt_reverseOrder, opt_limit, opt_skip);
-  return goog.isDefAndNotNull(opt_keyRanges) ? results : results.concat(this.nulls_.getValues());
+  return goog.isDefAndNotNull(opt_keyRanges) ? results : results.concat(lf.structs.set.values(this.nulls_));
 };
 lf.index.NullableIndex.prototype.clear = function() {
   this.nulls_.clear();
   this.index_.clear();
 };
 lf.index.NullableIndex.prototype.containsKey = function(key) {
-  return goog.isNull(key) ? !this.nulls_.isEmpty() : this.index_.containsKey(key);
+  return goog.isNull(key) ? 0 != this.nulls_.size : this.index_.containsKey(key);
 };
 lf.index.NullableIndex.prototype.min = function() {
   return this.index_.min();
@@ -7187,7 +7187,7 @@ lf.index.NullableIndex.prototype.max = function() {
 };
 lf.index.NullableIndex.NULL_ROW_ID_ = -2;
 lf.index.NullableIndex.prototype.serialize = function() {
-  var rows = [new lf.Row(lf.index.NullableIndex.NULL_ROW_ID_, this.nulls_.getValues())];
+  var rows = [new lf.Row(lf.index.NullableIndex.NULL_ROW_ID_, lf.structs.set.values(this.nulls_))];
   return rows.concat(this.index_.serialize());
 };
 lf.index.NullableIndex.prototype.comparator = function() {
@@ -7206,7 +7206,9 @@ lf.index.NullableIndex.deserialize = function(deserializeFn, rows) {
   var nulls = rows[index].payload(), newRows = rows.slice(0);
   newRows.splice(index, 1);
   var tree = deserializeFn(newRows), nullableIndex = new lf.index.NullableIndex(tree);
-  nullableIndex.nulls_.addAll(nulls);
+  nulls.forEach(function(rowId) {
+    nullableIndex.nulls_.add(rowId);
+  });
   return nullableIndex;
 };
 lf.index.NullableIndex.prototype.isUniqueKey = function() {
@@ -7535,7 +7537,7 @@ lf.index.IndexStore = function() {
 };
 
 lf.index.MemoryIndexStore = function() {
-  this.store_ = new goog.structs.Map;
+  this.store_ = new lf.structs.Map;
 };
 lf.index.MemoryIndexStore.prototype.init = function(schema) {
   var tables = schema.tables();
@@ -7556,14 +7558,14 @@ lf.index.MemoryIndexStore.createIndex_ = function(indexSchema) {
   return indexSchema.hasNullableColumn() ? new lf.index.NullableIndex(index) : index;
 };
 lf.index.MemoryIndexStore.prototype.get = function(name) {
-  return this.store_.get(name, null);
+  return this.store_.get(name) || null;
 };
 lf.index.MemoryIndexStore.prototype.set = function(index) {
   return this.store_.set(index.getName(), index);
 };
 lf.index.MemoryIndexStore.prototype.getTableIndices = function(tableName) {
   var indices = [], prefix = tableName + ".";
-  this.store_.getKeys().forEach(function(key) {
+  this.store_.forEach(function(value, key) {
     0 == key.indexOf(prefix) && indices.push(this.store_.get(key));
   }, this);
   return indices;
