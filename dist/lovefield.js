@@ -7028,9 +7028,6 @@ lf.index.SimpleComparator.prototype.isInRange = function(key, range) {
   var results = this.compareRange(key, range);
   return results[0] && results[1];
 };
-lf.index.SimpleComparator.prototype.getAllRange = function() {
-  return lf.index.SingleKeyRange.all();
-};
 lf.index.SimpleComparator.prototype.orderKeyRange = function(lhs, rhs) {
   return this.orderRange_(lhs, rhs);
 };
@@ -7097,11 +7094,6 @@ lf.index.MultiKeyComparator.prototype.isInRange = function(key, range) {
     isInRange = this.comparators_[i].isInRange(key[i], range[i]);
   }
   return isInRange;
-};
-lf.index.MultiKeyComparator.prototype.getAllRange = function() {
-  return this.comparators_.map(function(c) {
-    return c.getAllRange();
-  });
 };
 lf.index.MultiKeyComparator.prototype.sortKeyRanges = function(keyRanges) {
   for (var outputKeyRanges = keyRanges.filter(function(range) {
@@ -7357,180 +7349,6 @@ lf.cache.Prefetcher.prototype.reconstructPersistentRowIdIndex_ = function(tableS
       this.indexStore_.set(rowIdIndex);
     }
   }, this));
-};
-
-lf.index.AANode_ = function() {
-  this.level = 0;
-  this.left = this;
-  this.right = this;
-};
-lf.index.AANode_.create = function(key, value, nullNode) {
-  var node = new lf.index.AANode_;
-  node.level = 1;
-  node.left = nullNode;
-  node.right = nullNode;
-  node.key = key;
-  node.value = value;
-  return node;
-};
-lf.index.AATree = function(name, comparator) {
-  this.name_ = name;
-  this.nullNode_ = new lf.index.AANode_;
-  this.deleted_ = null;
-  this.root_ = this.nullNode_;
-  this.comparator_ = comparator;
-};
-lf.index.AATree.prototype.getName = function() {
-  return this.name_;
-};
-lf.index.AATree.prototype.skew_ = function(node) {
-  if (node.level == node.left.level) {
-    var left = node.left;
-    node.left = left.right;
-    left.right = node;
-    return left;
-  }
-  return node;
-};
-lf.index.AATree.prototype.split_ = function(node) {
-  if (node.right.right.level == node.level) {
-    var right = node.right;
-    node.right = right.left;
-    right.left = node;
-    right.level++;
-    return right;
-  }
-  return node;
-};
-lf.index.AATree.prototype.insert_ = function(node, key, value) {
-  if (node == this.nullNode_) {
-    return lf.index.AANode_.create(key, value, this.nullNode_);
-  }
-  var favor = this.comparator_.compare(key, node.key);
-  if (favor == lf.index.Favor.RHS) {
-    node.left = this.insert_(node.left, key, value);
-  } else {
-    if (favor == lf.index.Favor.LHS) {
-      node.right = this.insert_(node.right, key, value);
-    } else {
-      throw new lf.Exception(201);
-    }
-  }
-  var ret = this.skew_(node);
-  return ret = this.split_(ret);
-};
-lf.index.AATree.prototype.add = function(key, value) {
-  this.root_ = this.insert_(this.root_, key, value);
-};
-lf.index.AATree.prototype.set = function(key, value) {
-  var node = this.search_(this.root_, key);
-  null == node ? this.add(key, value) : node.value = value;
-};
-lf.index.AATree.prototype.delete_ = function(node, key) {
-  if (node == this.nullNode_) {
-    return this.nullNode_;
-  }
-  var favor = this.comparator_.compare(key, node.key);
-  favor == lf.index.Favor.RHS ? node.left = this.delete_(node.left, key) : (favor == lf.index.Favor.TIE && (this.deleted_ = node), node.right = this.delete_(node.right, key));
-  var ret = node;
-  if (null != this.deleted_) {
-    this.deleted_.key = node.key, this.deleted_.value = node.value, this.deleted_ = null, ret = ret.right;
-  } else {
-    if (ret.left.level < ret.level - 1 || ret.right.level < ret.level - 1) {
-      --ret.level, ret.right.level > ret.level && (ret.right.level = ret.level), ret = this.skew_(node), ret.right = this.skew_(ret.right), ret.right.right = this.skew_(ret.right.right), ret = this.split_(ret), ret.right = this.split_(ret.right);
-    }
-  }
-  return ret;
-};
-lf.index.AATree.prototype.remove = function(key) {
-  this.root_ = this.delete_(this.root_, key);
-};
-lf.index.AATree.prototype.search_ = function(node, key) {
-  if (node == this.nullNode_) {
-    return null;
-  }
-  var favor = this.comparator_.compare(key, node.key);
-  return favor == lf.index.Favor.TIE ? node : favor == lf.index.Favor.RHS ? this.search_(node.left, key) : this.search_(node.right, key);
-};
-lf.index.AATree.prototype.get = function(key) {
-  var node = this.search_(this.root_, key);
-  return null == node ? [] : [node.value];
-};
-lf.index.AATree.prototype.cost = function(opt_keyRange) {
-  return goog.isDefAndNotNull(opt_keyRange) ? this.getRange([opt_keyRange]).length : this.getRange().length;
-};
-lf.index.AATree.prototype.stats = function() {
-  throw new lf.Exception(300);
-};
-lf.index.AATree.prototype.getLeftMostNode_ = function() {
-  for (var node = this.root_;node.left != this.nullNode_;) {
-    node = node.left;
-  }
-  return node;
-};
-lf.index.AATree.prototype.getRightMostNode_ = function() {
-  for (var node = this.root_;node.right != this.nullNode_;) {
-    node = node.right;
-  }
-  return node;
-};
-lf.index.AATree.prototype.traverse_ = function(node, keyRange, results) {
-  if (node != this.nullNode_) {
-    var coverage = this.comparator_.compareRange(node.key, keyRange);
-    coverage[0] && (this.traverse_(node.left, keyRange, results), coverage[1] && results.push(node.value));
-    coverage[1] && this.traverse_(node.right, keyRange, results);
-  }
-};
-lf.index.AATree.prototype.getRange = function(opt_keyRanges, opt_reverseOrder, opt_limit, opt_skip) {
-  var sortedKeyRanges = goog.isDefAndNotNull(opt_keyRanges) ? this.comparator_.sortKeyRanges(opt_keyRanges) : [this.comparator_.getAllRange()], results = [];
-  sortedKeyRanges.forEach(function(range) {
-    this.traverse_(this.root_, range, results);
-  }, this);
-  return lf.index.slice(results, opt_reverseOrder, opt_limit, opt_skip);
-};
-lf.index.AATree.prototype.clear = function() {
-  this.root_ = this.nullNode_;
-};
-lf.index.AATree.prototype.containsKey = function(key) {
-  return null != this.search_(this.root_, key);
-};
-lf.index.AATree.prototype.min = function() {
-  return this.minMax_(goog.bind(this.comparator_.min, this.comparator_));
-};
-lf.index.AATree.prototype.max = function() {
-  return this.minMax_(goog.bind(this.comparator_.max, this.comparator_));
-};
-lf.index.AATree.prototype.minMax_ = function(compareFn) {
-  var leftMostNode = this.getLeftMostNode_(), rightMostNode = this.getRightMostNode_();
-  return goog.isDefAndNotNull(leftMostNode.key) || goog.isDefAndNotNull(rightMostNode.key) ? compareFn(leftMostNode.key, rightMostNode.key) == lf.index.Favor.LHS ? [leftMostNode.key, [leftMostNode.value]] : [rightMostNode.key, [rightMostNode.value]] : null;
-};
-lf.index.AATree.prototype.serialize = function() {
-  goog.asserts.fail("AATree index serialization is not supported.");
-  return [];
-};
-lf.index.AATree.prototype.comparator = function() {
-  return this.comparator_;
-};
-lf.index.AATree.prototype.dump_ = function(node, buffer) {
-  if (node != this.nullNode_) {
-    var left = node.left == this.nullNode_ ? 0 : node.left.key, right = node.right == this.nullNode_ ? 0 : node.right.key, val = "[" + node.key + "-" + left + "/" + right + "]";
-    buffer[node.level - 1].push(val);
-    this.dump_(node.left, buffer);
-    this.dump_(node.right, buffer);
-  }
-};
-lf.index.AATree.prototype.toString = function() {
-  for (var buffer = [], j = 0;j < this.root_.level;++j) {
-    buffer.push([]);
-  }
-  this.dump_(this.root_, buffer);
-  for (var result = "", i = buffer.length - 1;0 <= i;--i) {
-    result = result + buffer[i].join("") + "\n";
-  }
-  return result;
-};
-lf.index.AATree.prototype.isUniqueKey = function() {
-  return !0;
 };
 
 lf.index.IndexStore = function() {
