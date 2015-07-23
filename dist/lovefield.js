@@ -8386,7 +8386,8 @@ lf.proc.AggregationStep.Calculator_.evalAggregation_ = function(aggregatorType, 
       result = Calculator.sum_(relation, column);
       break;
     case lf.fn.Type.AVG:
-      0 < relation.entries.length && (result = Calculator.sum_(relation, column) / relation.entries.length);
+      var count = Calculator.count_(relation, column);
+      0 < count && (result = Calculator.sum_(relation, column) / count);
       break;
     case lf.fn.Type.GEOMEAN:
       result = Calculator.geomean_(relation, column);

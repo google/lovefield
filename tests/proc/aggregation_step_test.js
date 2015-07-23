@@ -26,6 +26,7 @@ goog.require('lf.pred.JoinPredicate');
 goog.require('lf.proc.AggregationStep');
 goog.require('lf.proc.Relation');
 goog.require('lf.schema.DataStoreType');
+goog.require('lf.testing.NullableDataGenerator');
 goog.require('lf.testing.hrSchema.MockDataGenerator');
 goog.require('lf.testing.proc.DummyStep');
 
@@ -43,8 +44,19 @@ var e;
 var j;
 
 
+/**
+ * This schema has custom tables that can have nullable columns.
+ * @type {!lf.schema.Database}
+ */
+var schemaWithNullable;
+
+
 /** @type {!lf.testing.hrSchema.MockDataGenerator} */
 var dataGenerator;
+
+
+/** @type {!lf.testing.NullableDataGenerator} */
+var nullableGenerator;
 
 
 function setUp() {
@@ -54,10 +66,20 @@ function setUp() {
   e = schema.getEmployee();
   dataGenerator = new lf.testing.hrSchema.MockDataGenerator(schema);
   dataGenerator.generate(20, 100, 0);
-  hr.db.connect({storeType: lf.schema.DataStoreType.MEMORY}).then(
-      function() {
-        asyncTestCase.continueTesting();
-      });
+  hr.db.connect({storeType: lf.schema.DataStoreType.MEMORY});
+
+  // For the tests involving nullable integer columns, a different schema
+  // is created. The tables in hr schema do not handle nullable integer
+  // column.
+  var schemaBuilder = lf.testing.NullableDataGenerator.getSchemaBuilder();
+  schemaWithNullable = schemaBuilder.getSchema();
+  nullableGenerator = new
+      lf.testing.NullableDataGenerator(schemaWithNullable);
+  nullableGenerator.generate();
+  schemaBuilder.connect({storeType: lf.schema.DataStoreType.MEMORY}).
+      then(function() {
+            asyncTestCase.continueTesting();
+          });
 }
 
 
@@ -170,8 +192,8 @@ function testExec_DistinctNullableColumn() {
  * Count on a distinct column ignores nulls returned from distinct.
  */
 function testExec_CountDistinctNullableColumn() {
-  var data = getEmployeeDatasetWithNulls();
   asyncTestCase.waitForAsync('testExec_CountDistinctNullableColumn');
+  var data = getEmployeeDatasetWithNulls();
   var inputRelation = lf.proc.Relation.fromRows(
       dataGenerator.sampleEmployees.concat(data), [e.getName()]);
   checkCalculationForRelation(
@@ -191,8 +213,8 @@ function testExec_Count_Distinct() {
 
 
 function testExec_CountNullableColumn() {
-  var data = getEmployeeDatasetWithNulls();
   asyncTestCase.waitForAsync('testExec_CountNullableColumn');
+  var data = getEmployeeDatasetWithNulls();
   var inputRelation = lf.proc.Relation.fromRows(
       dataGenerator.sampleEmployees.concat(data), [e.getName()]);
   checkCalculationForRelation(
@@ -204,8 +226,8 @@ function testExec_CountNullableColumn() {
 
 
 function testExec_CountStar() {
-  var data = getEmployeeDatasetWithNulls();
   asyncTestCase.waitForAsync('testExec_CountStar');
+  var data = getEmployeeDatasetWithNulls();
   var inputRelation = lf.proc.Relation.fromRows(
       dataGenerator.sampleEmployees.concat(data), [e.getName()]);
   checkCalculationForRelation(
@@ -221,6 +243,40 @@ function testExec_Avg_Distinct() {
   checkCalculation(
       lf.fn.avg(lf.fn.distinct(j.minSalary)),
       dataGenerator.jobGroundTruth.avgDistinctMinSalary).
+      then(asyncTestCase.continueTesting.bind(asyncTestCase), fail);
+}
+
+
+/**
+ * Tests for average distinct on TableA which has a mix of null and
+ * non-null values for the column.
+ */
+function testExec_AvgDistinctNullableColumn() {
+  asyncTestCase.waitForAsync('testExec_AvgDistinctNullableColumn');
+  var tableA = schemaWithNullable.table('TableA');
+  var inputRelation = lf.proc.Relation.fromRows(
+      nullableGenerator.sampleTableARows, [tableA.getName()]);
+  checkCalculationForRelation(
+      inputRelation,
+      lf.fn.avg(lf.fn.distinct(tableA['id'])),
+      nullableGenerator.tableAGroundTruth.avgId).
+      then(asyncTestCase.continueTesting.bind(asyncTestCase), fail);
+}
+
+
+/**
+ * Tests for average on TableB which has only null values for the
+ * column.
+ */
+function testExec_Avg_NullRows() {
+  asyncTestCase.waitForAsync('testExec_Avg_NullRows');
+  var tableB = schemaWithNullable.table('TableB');
+  var inputRelation = lf.proc.Relation.fromRows(
+      nullableGenerator.sampleTableBRows, [tableB.getName()]);
+  checkCalculationForRelation(
+      inputRelation,
+      lf.fn.avg(tableB['id']),
+      nullableGenerator.tableBGroundTruth.avgId).
       then(asyncTestCase.continueTesting.bind(asyncTestCase), fail);
 }
 
