@@ -286,3 +286,11 @@ function testStripValueInfo() {
       'INSERT INTO Job(id, title, minSalary, maxSalary) VALUES (#, #, #, #);',
       query2.toSql(true));
 }
+
+function testNullConversion() {
+  var query = db.select().from(j).where(j.id.isNull());
+  assertEquals('SELECT * FROM Job WHERE Job.id IS NULL;', query.toSql());
+  query = db.select().from(j).where(j.id.isNotNull());
+  assertEquals(
+      'SELECT * FROM Job WHERE Job.id IS NOT NULL;', query.toSql(true));
+}

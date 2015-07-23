@@ -8843,7 +8843,8 @@ lf.query.valueToSql_ = function(value, op, type, stripValueInfo) {
   return op == lf.eval.Type.BETWEEN ? lf.query.escapeSqlValue_(type, value[0]) + " AND " + lf.query.escapeSqlValue_(type, value[1]) : lf.query.escapeSqlValue_(type, value).toString();
 };
 lf.query.valuePredicateToSql_ = function(pred, stripValueInfo) {
-  return [pred.column.getNormalizedName(), lf.query.evaluatorToSql_(pred.evaluatorType), lf.query.valueToSql_(pred.value, pred.evaluatorType, pred.column.getType(), stripValueInfo)].join(" ");
+  var column = pred.column.getNormalizedName(), op = lf.query.evaluatorToSql_(pred.evaluatorType), value = lf.query.valueToSql_(pred.value, pred.evaluatorType, pred.column.getType(), stripValueInfo);
+  return "=" == op && "NULL" == value ? [column, "IS NULL"].join(" ") : "<>" == op && "NULL" == value ? [column, "IS NOT NULL"].join(" ") : [column, op, value].join(" ");
 };
 lf.query.combinedPredicateToSql_ = function(pred, stripValueInfo) {
   var children = pred.getChildren().map(function(childNode) {
