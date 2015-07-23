@@ -57,6 +57,9 @@ lf.testing.EndToEndSelectTester = function(connectFn) {
   /** @private {!lf.schema.Table} */
   this.r_;
 
+  /** @private {!lf.schema.Table} */
+  this.l_;
+
   /** @private {!lf.testing.hrSchema.MockDataGenerator} */
   this.dataGenerator_;
 
@@ -84,6 +87,8 @@ lf.testing.EndToEndSelectTester = function(connectFn) {
     this.testPredicate_VarArgOr.bind(this),
     this.testExplicitJoin.bind(this),
     this.testOuterJoin.bind(this),
+    this.testOuterInnerJoin.bind(this),
+    this.testInnerOuterJoin.bind(this),
     this.testOuterJoin_reversePredicate.bind(this),
     this.testOuterJoin_Alias.bind(this),
     this.testExplicitJoin_WithCrossProduct.bind(this),
@@ -144,6 +149,7 @@ lf.testing.EndToEndSelectTester.prototype.setUp_ = function() {
         this.d_ = db.getSchema().table('Department');
         this.c_ = db.getSchema().table('Country');
         this.r_ = db.getSchema().table('Region');
+        this.l_ = db.getSchema().table('Location');
         return this.addSampleData_();
       }.bind(this));
 };
@@ -697,8 +703,8 @@ lf.testing.EndToEndSelectTester.prototype.testExplicitJoin = function() {
 lf.testing.EndToEndSelectTester.prototype.assertOuterJoinResult_ = function(
     leftTable, rightTable, results) {
   assertEquals(
-      this.dataGenerator_.sampleRegions.length, results.length);
-  var expectedMatched = 1;
+      this.dataGenerator_.sampleRegions.length + 1, results.length);
+  var expectedMatched = 2;
   var matchedRows = results.slice(0, expectedMatched);
   matchedRows.forEach(function(resultRow) {
     Object.keys(resultRow[rightTable.getEffectiveName()]).forEach(
@@ -723,6 +729,86 @@ lf.testing.EndToEndSelectTester.prototype.assertOuterJoinResult_ = function(
 
 
 /**
+ * @param {!lf.schema.Table} table1
+ * @param {!lf.schema.Table} table2
+ * @param {!lf.schema.Table} table3
+ * @param {!Array<{
+ *     Region: !hr.db.row.RegionType,
+ *     Country: !hr.db.row.CountryType,
+ *     Location: !hr.db.row.LocationType}>} results
+ * @private
+ */
+lf.testing.EndToEndSelectTester.prototype.assertOuterInnerJoinResult_ =
+    function(table1, table2, table3, results) {
+  assertEquals(
+      this.dataGenerator_.sampleLocations.length, results.length);
+  // All are non-null.
+  results.forEach(function(resultRow) {
+    Object.keys(resultRow[table1.getEffectiveName()]).forEach(
+        function(column) {
+          assertNotNull(resultRow[table1.getEffectiveName()][column]);
+        });
+    Object.keys(resultRow[table2.getEffectiveName()]).forEach(
+        function(column) {
+          assertNotNull(resultRow[table2.getEffectiveName()][column]);
+        });
+    Object.keys(resultRow[table3.getEffectiveName()]).forEach(
+        function(column) {
+          assertNotNull(resultRow[table3.getEffectiveName()][column]);
+        });
+  });
+};
+
+
+/**
+ * @param {!lf.schema.Table} table1
+ * @param {!lf.schema.Table} table2
+ * @param {!lf.schema.Table} table3
+ * @param {!Array<{
+ *     Region: !hr.db.row.RegionType,
+ *     Country: !hr.db.row.CountryType,
+ *     Location: !hr.db.row.LocationType}>} results
+ * @private
+ */
+lf.testing.EndToEndSelectTester.prototype.assertInnerOuterJoinResult_ =
+    function(table1, table2, table3, results) {
+  assertEquals(
+      this.dataGenerator_.sampleCountries.length, results.length);
+  var expectedMatched = 1;
+  // The matched rows are non-null.
+  results.slice(0, expectedMatched).forEach(function(resultRow) {
+    Object.keys(resultRow[table1.getEffectiveName()]).forEach(
+        function(column) {
+          assertNotNull(resultRow[table1.getEffectiveName()][column]);
+        });
+    Object.keys(resultRow[table2.getEffectiveName()]).forEach(
+        function(column) {
+          assertNotNull(resultRow[table2.getEffectiveName()][column]);
+        });
+    Object.keys(resultRow[table3.getEffectiveName()]).forEach(
+        function(column) {
+          assertNotNull(resultRow[table3.getEffectiveName()][column]);
+        });
+  });
+  //  The first two tables have non-null entries and third table null.
+  results.slice(expectedMatched, results.length).forEach(function(resultRow) {
+    Object.keys(resultRow[table1.getEffectiveName()]).forEach(
+        function(column) {
+          assertNotNull(resultRow[table1.getEffectiveName()][column]);
+        });
+    Object.keys(resultRow[table2.getEffectiveName()]).forEach(
+        function(column) {
+          assertNotNull(resultRow[table2.getEffectiveName()][column]);
+        });
+    Object.keys(resultRow[table3.getEffectiveName()]).forEach(
+        function(column) {
+          assertNull(resultRow[table3.getEffectiveName()][column]);
+        });
+  });
+};
+
+
+/**
  * Tests a SELECT query with an outer join.
  * @return {!IThenable}
  */
@@ -738,6 +824,50 @@ lf.testing.EndToEndSelectTester.prototype.testOuterJoin = function() {
   return queryBuilder.exec().then(
       function(results) {
         this.assertOuterJoinResult_(r, c, results);
+      }.bind(this));
+};
+
+
+/**
+ * Tests a SELECT query with an outer join followed by inner join.
+ * @return {!IThenable}
+ */
+lf.testing.EndToEndSelectTester.prototype.testOuterInnerJoin = function() {
+  var c = this.c_;
+  var r = this.r_;
+  var l = this.l_;
+  var queryBuilder = /** @type {!lf.query.SelectBuilder} */ (
+      this.db_.select().
+      from(c).
+      leftOuterJoin(r, r.id.eq(c.regionId)).
+      innerJoin(l, c.id.eq(l.countryId)).
+      orderBy(r.id, lf.Order.ASC));
+
+  return queryBuilder.exec().then(
+      function(results) {
+        this.assertOuterInnerJoinResult_(r, c, l, results);
+      }.bind(this));
+};
+
+
+/**
+ * Tests a SELECT query with an inner join followed by outer join.
+ * @return {!IThenable}
+ */
+lf.testing.EndToEndSelectTester.prototype.testInnerOuterJoin = function() {
+  var c = this.c_;
+  var r = this.r_;
+  var l = this.l_;
+  var queryBuilder = /** @type {!lf.query.SelectBuilder} */ (
+      this.db_.select().
+      from(c).
+      innerJoin(r, c.regionId.eq(r.id)).
+      leftOuterJoin(l, c.id.eq(l.countryId)).
+      orderBy(r.id, lf.Order.ASC));
+
+  return queryBuilder.exec().then(
+      function(results) {
+        this.assertInnerOuterJoinResult_(c, r, l, results);
       }.bind(this));
 };
 

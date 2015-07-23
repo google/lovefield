@@ -125,14 +125,15 @@ lf.testing.hrSchema.MockDataGenerator.prototype.generate = function(
       new lf.testing.hrSchema.DepartmentDataGenerator(this.schema_);
   this.sampleDepartments = departmentGenerator.generate(departmentCount);
 
+  var location = this.schema_.table('Location');
   this.sampleLocations = [
-    this.schema_.table('Location').createRow({
+    location.createRow({
       id: 'locationId',
       streetAddress: 'dummyStreetAddress',
       postalCode: 'dummyPostalCode',
       city: 'dummyCity',
       stateProvince: 'dummyStateProvince',
-      countryId: 'countryId'
+      countryId: 1
     })
   ];
   var country = this.schema_.table('Country');
@@ -142,6 +143,11 @@ lf.testing.hrSchema.MockDataGenerator.prototype.generate = function(
       name: 'dummyCountryName',
       regionId: 'regionId'
     }),
+    country.createRow({
+      id: 2,
+      name: 'dummyCountryName',
+      regionId: 'regionId'
+    })
   ];
   var region = this.schema_.table('Region');
   this.sampleRegions = [
