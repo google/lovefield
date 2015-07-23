@@ -4591,86 +4591,95 @@ lf.eval = {};
 lf.eval.Type = {BETWEEN:"between", EQ:"eq", GTE:"gte", GT:"gt", IN:"in", LTE:"lte", LT:"lt", MATCH:"match", NEQ:"neq"};
 lf.eval.Registry = function() {
   var numberOrIntegerEvalMap = lf.eval.buildNumberEvaluatorMap_();
-  this.evaluationMaps_ = new goog.structs.Map(lf.Type.BOOLEAN, lf.eval.buildBooleanEvaluatorMap_(), lf.Type.DATE_TIME, lf.eval.buildDateEvaluatorMap_(), lf.Type.NUMBER, numberOrIntegerEvalMap, lf.Type.INTEGER, numberOrIntegerEvalMap, lf.Type.STRING, lf.eval.buildStringEvaluatorMap_());
+  this.evalMaps_ = new lf.structs.Map;
+  this.evalMaps_.set(lf.Type.BOOLEAN, lf.eval.buildBooleanEvaluatorMap_());
+  this.evalMaps_.set(lf.Type.DATE_TIME, lf.eval.buildDateEvaluatorMap_());
+  this.evalMaps_.set(lf.Type.NUMBER, numberOrIntegerEvalMap);
+  this.evalMaps_.set(lf.Type.INTEGER, numberOrIntegerEvalMap);
+  this.evalMaps_.set(lf.Type.STRING, lf.eval.buildStringEvaluatorMap_());
 };
 goog.addSingletonGetter(lf.eval.Registry);
 lf.eval.Registry.prototype.getEvaluator = function(columnType, evaluatorType) {
-  var evaluationMap = this.evaluationMaps_.get(columnType, null);
+  var evaluationMap = this.evalMaps_.get(columnType) || null;
   goog.asserts.assert(!goog.isNull(evaluationMap), "Could not find evaluation map for " + columnType);
-  var evaluatorFn = evaluationMap.get(evaluatorType, null);
+  var evaluatorFn = evaluationMap.get(evaluatorType) || null;
   goog.asserts.assert(!goog.isNull(evaluatorFn), "Could not find evaluator for " + columnType + ", " + evaluatorType);
   return evaluatorFn;
 };
-lf.eval.buildNumberEvaluatorMap_ = function() {
-  return new goog.structs.Map(lf.eval.Type.BETWEEN, function(a, range) {
-    return a >= range[0] && a <= range[1];
-  }, lf.eval.Type.EQ, function(a, b) {
+lf.eval.buildBooleanEvaluatorMap_ = function() {
+  var map = new lf.structs.Map;
+  map.set(lf.eval.Type.EQ, function(a, b) {
     return a == b;
-  }, lf.eval.Type.GTE, function(a, b) {
-    return a >= b;
-  }, lf.eval.Type.GT, function(a, b) {
-    return a > b;
-  }, lf.eval.Type.IN, function(rowValue, values) {
-    return -1 != values.indexOf(rowValue);
-  }, lf.eval.Type.LTE, function(a, b) {
-    return a <= b;
-  }, lf.eval.Type.LT, function(a, b) {
-    return a < b;
-  }, lf.eval.Type.NEQ, function(a, b) {
+  });
+  map.set(lf.eval.Type.NEQ, function(a, b) {
     return a != b;
   });
+  return map;
+};
+lf.eval.buildCommonEvaluatorMap_ = function() {
+  var map = lf.eval.buildBooleanEvaluatorMap_();
+  map.set(lf.eval.Type.BETWEEN, function(a, range) {
+    return a >= range[0] && a <= range[1];
+  });
+  map.set(lf.eval.Type.GTE, function(a, b) {
+    return a >= b;
+  });
+  map.set(lf.eval.Type.GT, function(a, b) {
+    return a > b;
+  });
+  map.set(lf.eval.Type.IN, function(rowValue, values) {
+    return -1 != values.indexOf(rowValue);
+  });
+  map.set(lf.eval.Type.LTE, function(a, b) {
+    return a <= b;
+  });
+  map.set(lf.eval.Type.LT, function(a, b) {
+    return a < b;
+  });
+  return map;
+};
+lf.eval.buildNumberEvaluatorMap_ = function() {
+  return lf.eval.buildCommonEvaluatorMap_();
 };
 lf.eval.buildStringEvaluatorMap_ = function() {
-  return new goog.structs.Map(lf.eval.Type.BETWEEN, function(a, range) {
-    return a >= range[0] && a <= range[1];
-  }, lf.eval.Type.EQ, function(a, b) {
-    return a == b;
-  }, lf.eval.Type.GTE, function(a, b) {
-    return a >= b;
-  }, lf.eval.Type.GT, function(a, b) {
-    return a > b;
-  }, lf.eval.Type.IN, function(rowValue, values) {
-    return -1 != values.indexOf(rowValue);
-  }, lf.eval.Type.LTE, function(a, b) {
-    return a <= b;
-  }, lf.eval.Type.LT, function(a, b) {
-    return a < b;
-  }, lf.eval.Type.MATCH, function(value, regex) {
+  var map = lf.eval.buildCommonEvaluatorMap_();
+  map.set(lf.eval.Type.MATCH, function(value, regex) {
     var re = new RegExp(regex);
     return re.test(value);
-  }, lf.eval.Type.NEQ, function(a, b) {
-    return a != b;
   });
+  return map;
 };
 lf.eval.buildDateEvaluatorMap_ = function() {
-  return new goog.structs.Map(lf.eval.Type.BETWEEN, function(a, range) {
+  var map = new lf.structs.Map;
+  map.set(lf.eval.Type.BETWEEN, function(a, range) {
     return a.getTime() >= range[0].getTime() && a.getTime() <= range[1].getTime();
-  }, lf.eval.Type.EQ, function(a, b) {
+  });
+  map.set(lf.eval.Type.EQ, function(a, b) {
     var aTime = goog.isNull(a) ? -1 : a.getTime(), bTime = goog.isNull(b) ? -1 : b.getTime();
     return aTime == bTime;
-  }, lf.eval.Type.GTE, function(a, b) {
+  });
+  map.set(lf.eval.Type.GTE, function(a, b) {
     return a.getTime() >= b.getTime();
-  }, lf.eval.Type.GT, function(a, b) {
+  });
+  map.set(lf.eval.Type.GT, function(a, b) {
     return a.getTime() > b.getTime();
-  }, lf.eval.Type.IN, function(targetValue, values) {
+  });
+  map.set(lf.eval.Type.IN, function(targetValue, values) {
     return values.some(function(value) {
       return value.getTime() == targetValue.getTime();
     });
-  }, lf.eval.Type.LTE, function(a, b) {
+  });
+  map.set(lf.eval.Type.LTE, function(a, b) {
     return a.getTime() <= b.getTime();
-  }, lf.eval.Type.LT, function(a, b) {
+  });
+  map.set(lf.eval.Type.LT, function(a, b) {
     return a.getTime() < b.getTime();
-  }, lf.eval.Type.NEQ, function(a, b) {
+  });
+  map.set(lf.eval.Type.NEQ, function(a, b) {
     var aTime = goog.isNull(a) ? -1 : a.getTime(), bTime = goog.isNull(b) ? -1 : b.getTime();
     return aTime != bTime;
   });
-};
-lf.eval.buildBooleanEvaluatorMap_ = function() {
-  return new goog.structs.Map(lf.eval.Type.EQ, function(a, b) {
-    return a == b;
-  }, lf.eval.Type.NEQ, function(a, b) {
-    return a != b;
-  });
+  return map;
 };
 goog.structs.Node = function(key, value) {
   this.key_ = key;
@@ -10345,64 +10354,64 @@ lf.DiffCalculator.createChangeRecord_ = function(index, removed, addedCount, obj
 };
 
 lf.ObserverRegistry = function() {
-  this.entries_ = new goog.structs.Map;
+  this.entries_ = new lf.structs.Map;
 };
 lf.ObserverRegistry.prototype.getQueryId_ = function(query) {
   return goog.getUid(query).toString();
 };
 lf.ObserverRegistry.prototype.addObserver = function(rawBuilder, callback) {
-  var builder = rawBuilder, queryId = this.getQueryId_(builder.getObservableQuery()), entry = this.entries_.get(queryId, null);
+  var builder = rawBuilder, queryId = this.getQueryId_(builder.getObservableQuery()), entry = this.entries_.get(queryId) || null;
   goog.isNull(entry) && (entry = new lf.ObserverRegistry.Entry_(builder), this.entries_.set(queryId, entry));
   entry.addObserver(callback);
 };
 lf.ObserverRegistry.prototype.removeObserver = function(builder, callback) {
-  var query = builder.getObservableQuery(), queryId = this.getQueryId_(query), entry = this.entries_.get(queryId, null);
+  var query = builder.getObservableQuery(), queryId = this.getQueryId_(query), entry = this.entries_.get(queryId) || null;
   goog.asserts.assert(goog.isDefAndNotNull(entry), "Attempted to unobserve a query that was not observed.");
   var didRemove = entry.removeObserver(callback);
   goog.asserts.assert(didRemove, "removeObserver: Inconsistent state detected.");
-  entry.hasObservers() || this.entries_.remove(queryId);
+  entry.hasObservers() || this.entries_.delete(queryId);
 };
 lf.ObserverRegistry.prototype.getTaskItemsForTables = function(tables) {
-  var tableSet = new goog.structs.Set;
+  var tableSet = new lf.structs.Set;
   tables.forEach(function(table) {
     tableSet.add(table.getName());
   });
   var items = [];
-  this.entries_.getValues().forEach(function(entry) {
+  this.entries_.forEach(function(entry) {
     var item = entry.getTaskItem(), refersToTables = item.context.from.some(function(table) {
-      return tableSet.contains(table.getName());
+      return tableSet.has(table.getName());
     });
     refersToTables && items.push(item);
   });
   return items;
 };
 lf.ObserverRegistry.prototype.updateResultsForQuery = function(query, results) {
-  var queryId = this.getQueryId_(goog.isDefAndNotNull(query.clonedFrom) ? query.clonedFrom : query), entry = this.entries_.get(queryId, null);
+  var queryId = this.getQueryId_(goog.isDefAndNotNull(query.clonedFrom) ? query.clonedFrom : query), entry = this.entries_.get(queryId) || null;
   return goog.isNull(entry) ? !1 : (entry.updateResults(results), !0);
 };
 lf.ObserverRegistry.Entry_ = function(builder) {
   this.builder_ = builder;
-  this.observers_ = new goog.structs.Set;
+  this.observers_ = new lf.structs.Set;
   this.observable_ = [];
   this.lastResults_ = null;
   this.diffCalculator_ = new lf.DiffCalculator(builder.getObservableQuery(), this.observable_);
 };
 lf.ObserverRegistry.Entry_.prototype.addObserver = function(callback) {
-  this.observers_.contains(callback) ? goog.asserts.fail("Attempted to register observer twice.") : this.observers_.add(callback);
+  this.observers_.has(callback) ? goog.asserts.fail("Attempted to register observer twice.") : this.observers_.add(callback);
 };
 lf.ObserverRegistry.Entry_.prototype.removeObserver = function(callback) {
-  return this.observers_.remove(callback);
+  return this.observers_.delete(callback);
 };
 lf.ObserverRegistry.Entry_.prototype.getTaskItem = function() {
   return this.builder_.getObservableTaskItem();
 };
 lf.ObserverRegistry.Entry_.prototype.hasObservers = function() {
-  return 0 < this.observers_.getCount();
+  return 0 < this.observers_.size;
 };
 lf.ObserverRegistry.Entry_.prototype.updateResults = function(newResults) {
   var changeRecords = this.diffCalculator_.applyDiff(this.lastResults_, newResults);
   this.lastResults_ = newResults;
-  0 < changeRecords.length && this.observers_.getValues().forEach(function(observerFn) {
+  0 < changeRecords.length && this.observers_.forEach(function(observerFn) {
     observerFn(changeRecords);
   });
 };
@@ -10773,7 +10782,7 @@ lf.schema.BaseColumn.prototype.as = function(name) {
 goog.exportProperty(lf.schema.BaseColumn.prototype, "as", lf.schema.BaseColumn.prototype.as);
 
 lf.Global = function() {
-  this.services_ = new goog.structs.Map;
+  this.services_ = new lf.structs.Map;
 };
 lf.Global.get = function() {
   lf.Global.instance_ || (lf.Global.instance_ = new lf.Global);
@@ -10789,15 +10798,15 @@ lf.Global.prototype.registerService = function(serviceId, service) {
 };
 goog.exportProperty(lf.Global.prototype, "registerService", lf.Global.prototype.registerService);
 lf.Global.prototype.getService = function(serviceId) {
-  var service = this.services_.get(serviceId.toString(), null);
-  if (null == service) {
+  var service = this.services_.get(serviceId.toString()) || null;
+  if (goog.isNull(service)) {
     throw new lf.Exception(7, serviceId.toString());
   }
   return service;
 };
 goog.exportProperty(lf.Global.prototype, "getService", lf.Global.prototype.getService);
 lf.Global.prototype.isRegistered = function(serviceId) {
-  return this.services_.containsKey(serviceId.toString());
+  return this.services_.has(serviceId.toString());
 };
 goog.exportProperty(lf.Global.prototype, "isRegistered", lf.Global.prototype.isRegistered);
 
