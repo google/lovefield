@@ -11207,7 +11207,7 @@ lf.schema.TableBuilder.prototype.generateRowClass_ = function(columns$$0, indice
 
 lf.schema.Builder = function(dbName, dbVersion) {
   this.schema_ = new lf.schema.DatabaseSchema(dbName, dbVersion);
-  this.tableBuilders_ = new goog.structs.Map;
+  this.tableBuilders_ = new lf.structs.Map;
   this.finalized_ = !1;
 };
 goog.exportSymbol("lf.schema.Builder", lf.schema.Builder);
@@ -11215,7 +11215,7 @@ lf.schema.Builder.prototype.checkForeignKeyValidity_ = function(builder) {
   var fkSpecArray = builder.getFkSpecs();
   fkSpecArray.forEach(function(specs) {
     var parentTableName = specs.parentTable;
-    if (!this.tableBuilders_.containsKey(parentTableName)) {
+    if (!this.tableBuilders_.has(parentTableName)) {
       throw new lf.Exception(536, specs.name);
     }
     var table = this.tableBuilders_.get(parentTableName), parentSchema = table.getSchema(), parentColName = specs.parentColumn;
@@ -11243,10 +11243,10 @@ lf.schema.Builder.prototype.checkForeignKeyChain_ = function(builder) {
   }, this);
 };
 lf.schema.Builder.prototype.finalize_ = function() {
-  this.finalized_ || (this.tableBuilders_.getValues().forEach(function(builder) {
+  this.finalized_ || (this.tableBuilders_.forEach(function(builder) {
     this.checkForeignKeyValidity_(builder);
     this.schema_.setTable(builder.getSchema());
-  }, this), this.tableBuilders_.getValues().forEach(this.checkForeignKeyChain_, this), this.checkFkCycle_(), this.tableBuilders_.clear(), this.finalized_ = !0);
+  }, this), lf.structs.map.values(this.tableBuilders_).forEach(this.checkForeignKeyChain_, this), this.checkFkCycle_(), this.tableBuilders_.clear(), this.finalized_ = !0);
 };
 lf.schema.Builder.prototype.checkCycleUtil_ = function(graphNode, nodeMap) {
   graphNode.visited || (graphNode.visited = !0, graphNode.onStack = !0, graphNode.edges.forEach(function(edge) {
@@ -11263,7 +11263,7 @@ lf.schema.Builder.prototype.checkCycleUtil_ = function(graphNode, nodeMap) {
 };
 lf.schema.Builder.prototype.checkFkCycle_ = function() {
   var nodeMap = new lf.structs.Map;
-  this.schema_.tables_.getKeys().forEach(function(tableName) {
+  this.schema_.tables_.forEach(function(table, tableName) {
     nodeMap.set(tableName, new lf.schema.GraphNode_(tableName));
   }, this);
   this.tableBuilders_.forEach(function(builder, tableName) {
@@ -11300,7 +11300,7 @@ lf.schema.Builder.prototype.connect = function(opt_options) {
 };
 goog.exportProperty(lf.schema.Builder.prototype, "connect", lf.schema.Builder.prototype.connect);
 lf.schema.Builder.prototype.createTable = function(tableName) {
-  if (this.tableBuilders_.containsKey(tableName)) {
+  if (this.tableBuilders_.has(tableName)) {
     throw new lf.Exception(503, tableName);
   }
   if (this.finalized_) {
@@ -11321,7 +11321,7 @@ goog.exportProperty(lf.schema.Builder.prototype, "setPragma", lf.schema.Builder.
 lf.schema.DatabaseSchema = function(name, version) {
   this.name_ = name;
   this.version_ = version;
-  this.tables_ = new goog.structs.Map;
+  this.tables_ = new lf.structs.Map;
   this.pragma_ = {enableBundledMode:!1};
 };
 goog.exportSymbol("lf.schema.DatabaseSchema", lf.schema.DatabaseSchema);
@@ -11334,11 +11334,11 @@ lf.schema.DatabaseSchema.prototype.version = function() {
 };
 goog.exportProperty(lf.schema.DatabaseSchema.prototype, "version", lf.schema.DatabaseSchema.prototype.version);
 lf.schema.DatabaseSchema.prototype.tables = function() {
-  return this.tables_.getValues();
+  return lf.structs.map.values(this.tables_);
 };
 goog.exportProperty(lf.schema.DatabaseSchema.prototype, "tables", lf.schema.DatabaseSchema.prototype.tables);
 lf.schema.DatabaseSchema.prototype.table = function(tableName) {
-  if (!this.tables_.containsKey(tableName)) {
+  if (!this.tables_.has(tableName)) {
     throw new lf.Exception(101, tableName);
   }
   return this.tables_.get(tableName);
