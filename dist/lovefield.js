@@ -3708,17 +3708,70 @@ goog.structs.Set.prototype.__iterator__ = function() {
   return this.map_.__iterator__(!1);
 };
 
+lf.structs.set = {};
+lf.structs.SetPolyFill_ = function(opt_values) {
+  this.set_ = new goog.structs.Set(opt_values);
+  Object.defineProperty(this, "size", {get:function() {
+    return this.set_.getCount();
+  }});
+};
+lf.structs.SetPolyFill_.prototype.add = function(value) {
+  this.set_.add(value);
+};
+goog.exportProperty(lf.structs.SetPolyFill_.prototype, "add", lf.structs.SetPolyFill_.prototype.add);
+lf.structs.SetPolyFill_.prototype.clear = function() {
+  this.set_.clear();
+};
+goog.exportProperty(lf.structs.SetPolyFill_.prototype, "clear", lf.structs.SetPolyFill_.prototype.clear);
+lf.structs.SetPolyFill_.prototype.delete = function(value) {
+  return this.set_.remove(value);
+};
+goog.exportProperty(lf.structs.SetPolyFill_.prototype, "delete", lf.structs.SetPolyFill_.prototype.delete);
+lf.structs.SetPolyFill_.prototype.forEach = function(fn, opt_this) {
+  this.set_.getValues().forEach(fn, opt_this);
+};
+lf.structs.SetPolyFill_.prototype.has = function(value) {
+  return this.set_.contains(value);
+};
+goog.exportProperty(lf.structs.SetPolyFill_.prototype, "has", lf.structs.SetPolyFill_.prototype.has);
+lf.structs.Set = window.Set && window.Set.prototype.values && window.Set.prototype.forEach ? window.Set : lf.structs.SetPolyFill_;
+lf.structs.set.create_ = function() {
+  var constructorFn = window.Set && window.Set.prototype.values && window.Set.prototype.forEach ? window.Set : lf.structs.SetPolyFill_;
+  return new constructorFn;
+};
+lf.structs.set.values = function(set) {
+  if (set instanceof lf.structs.SetPolyFill_) {
+    return set.set_.getValues();
+  }
+  var i = 0, array = Array(set.size);
+  set.forEach(function(v) {
+    array[i++] = v;
+  });
+  return array;
+};
+lf.structs.set.diff = function(set1, set2) {
+  if (set1 instanceof lf.structs.SetPolyFill_) {
+    var result = new lf.structs.SetPolyFill_;
+    result.set_ = set1.set_.difference(set2.set_);
+  } else {
+    result = lf.structs.set.create_(), lf.structs.set.values(set1).forEach(function(v) {
+      set2.has(v) || result.add(v);
+    });
+  }
+  return result;
+};
+
 lf.backstore.Page = function(id, opt_payload) {
   this.id_ = id;
   this.payload_ = opt_payload || {};
 };
 lf.backstore.Page.BUNDLE_EXPONENT = 9;
 lf.backstore.Page.toPageIds = function(rowIds) {
-  var pageIds = new goog.structs.Set;
+  var pageIds = new lf.structs.Set;
   rowIds.forEach(function(id) {
     pageIds.add(lf.backstore.Page.toPageId(id));
   });
-  return pageIds.getValues();
+  return lf.structs.set.values(pageIds);
 };
 lf.backstore.Page.toPageId = function(rowId) {
   return rowId >> lf.backstore.Page.BUNDLE_EXPONENT;
@@ -5050,7 +5103,7 @@ lf.raw.BackStore = function() {
 lf.backstore.FirebaseRawBackStore = function(version, dbRef) {
   this.version_ = version;
   this.db_ = dbRef;
-  this.tableIds_ = new goog.structs.Map;
+  this.tableIds_ = new lf.structs.Map;
 };
 goog.exportSymbol("lf.backstore.FirebaseRawBackStore", lf.backstore.FirebaseRawBackStore);
 lf.backstore.FirebaseRawBackStore.prototype.getRawDBInstance = function() {
@@ -5086,7 +5139,7 @@ lf.backstore.FirebaseRawBackStore.prototype.init = function(schema) {
       this.tableIds_.set(t, tableIdMap[t]), tableIdMap[t] > maxTableId && (maxTableId = tableIdMap[t]);
     }
     schema.tables().forEach(function(table) {
-      this.tableIds_.containsKey(table.getName()) || (tableIdMap[table.getName()] = ++maxTableId);
+      this.tableIds_.has(table.getName()) || (tableIdMap[table.getName()] = ++maxTableId);
     }, this);
     var ref = this.db_.child("@table");
     return lf.backstore.FirebaseRawBackStore.setValue(ref, tableIdMap);
@@ -5117,7 +5170,7 @@ lf.backstore.FirebaseRawBackStore.prototype.dropTable = function(tableName) {
   return this.transform_(tableName, function() {
     return null;
   }).then(function() {
-    this.tableIds_.remove(tableName);
+    this.tableIds_.delete(tableName);
     return lf.backstore.FirebaseRawBackStore.setValue(this.db_.child("@table/" + tableName), null, !0);
   }.bind(this));
 };
@@ -5167,7 +5220,7 @@ lf.backstore.FirebaseRawBackStore.prototype.dumpTable_ = function(tableName) {
   return resolver.promise;
 };
 lf.backstore.FirebaseRawBackStore.prototype.dump = function() {
-  var contents = {}, promises = this.tableIds_.getKeys().map(function(tableName) {
+  var contents = {}, promises = lf.structs.map.keys(this.tableIds_).map(function(tableName) {
     return this.dumpTable_(tableName).then(function(rows) {
       contents[tableName] = rows;
     });
@@ -5268,10 +5321,10 @@ lf.backstore.MemoryTable.prototype.getMaxRowId = function() {
 lf.backstore.Firebase = function(schema, fb) {
   this.schema_ = schema;
   this.app_ = fb;
-  this.removedRows_ = new goog.structs.Map;
+  this.removedRows_ = new lf.structs.Map;
   this.revision_ = -1;
-  this.tables_ = new goog.structs.Map;
-  this.tableIds_ = new goog.structs.Map;
+  this.tables_ = new lf.structs.Map;
+  this.tableIds_ = new lf.structs.Map;
   this.changeHandler_ = null;
 };
 lf.backstore.Firebase.prototype.getRevision = function() {
@@ -5331,7 +5384,7 @@ lf.backstore.Firebase.prototype.listen_ = function() {
   this.change_.on("value", this.onChange_.bind(this));
 };
 lf.backstore.Firebase.prototype.initRowId_ = function() {
-  var maxRowId = this.tables_.getValues().map(function(table) {
+  var maxRowId = lf.structs.map.values(this.tables_).map(function(table) {
     return table.getMaxRowId();
   }).reduce(function(maxSoFar, cur) {
     return maxSoFar > cur ? maxSoFar : cur;
@@ -5339,8 +5392,8 @@ lf.backstore.Firebase.prototype.initRowId_ = function() {
   lf.Row.setNextId(maxRowId + 1);
 };
 lf.backstore.Firebase.prototype.onRemoved_ = function(snapshot) {
-  var row = snapshot.val(), set = this.removedRows_.get(row.T, null);
-  goog.isNull(set) && (set = new goog.structs.Set, this.removedRows_.set(row.T, set));
+  var row = snapshot.val(), set = this.removedRows_.get(row.T) || null;
+  goog.isNull(set) && (set = new lf.structs.Set, this.removedRows_.set(row.T, set));
   set.add(parseInt(snapshot.key(), 10));
 };
 lf.backstore.Firebase.prototype.onChange_ = function(snapshot) {
@@ -5362,12 +5415,14 @@ lf.backstore.Firebase.prototype.onChange_ = function(snapshot) {
   }
 };
 lf.backstore.Firebase.prototype.generateDiff_ = function(snapshot) {
-  var removedIds = new goog.structs.Set, diffs = new goog.structs.Map;
+  var removedIds = new lf.structs.Set, diffs = new lf.structs.Map;
   this.tableIds_.forEach(function(tid, tableName) {
     var table = this.tables_.get(tableName), diff = new lf.cache.TableDiff(tableName);
-    if (this.removedRows_.containsKey(tid)) {
-      var rowIds = this.removedRows_.get(tid).getValues();
-      removedIds.addAll(rowIds);
+    if (this.removedRows_.has(tid)) {
+      var rowIds = lf.structs.set.values(this.removedRows_.get(tid));
+      rowIds.forEach(function(rowId) {
+        removedIds.add(rowId);
+      });
       table.getSync(rowIds).forEach(function(row) {
         diff.delete(row);
       });
@@ -5377,13 +5432,13 @@ lf.backstore.Firebase.prototype.generateDiff_ = function(snapshot) {
   snapshot.forEach(function(child) {
     if ("@rev" != child.key()) {
       var rowId = parseInt(child.key(), 10);
-      if (!removedIds.contains(rowId)) {
+      if (!removedIds.has(rowId)) {
         var row = child.val(), diff = diffs.get(row.T), table = this.tables_.get(diff.getName());
-        table.getData().containsKey(rowId) ? diff.modify([table.getSync([rowId])[0], new lf.Row(rowId, row.P)]) : diff.add(new lf.Row(rowId, row.P));
+        table.getData().has(rowId) ? diff.modify([table.getSync([rowId])[0], new lf.Row(rowId, row.P)]) : diff.add(new lf.Row(rowId, row.P));
       }
     }
   }.bind(this));
-  return diffs.getValues().filter(function(diff) {
+  return lf.structs.map.values(diffs).filter(function(diff) {
     return !diff.isEmpty();
   });
 };
@@ -5421,7 +5476,7 @@ lf.backstore.Firebase.prototype.createTx = function(type, journal) {
   return new lf.backstore.FirebaseTx(this, type, journal);
 };
 lf.backstore.Firebase.prototype.getTableInternal = function(tableName) {
-  var table = this.tables_.get(tableName, null);
+  var table = this.tables_.get(tableName) || null;
   if (!goog.isNull(table)) {
     return table;
   }
@@ -6323,59 +6378,6 @@ lf.backstore.WebSql.prototype.scanRowId_ = function() {
 };
 
 lf.cache.Cache = function() {
-};
-
-lf.structs.set = {};
-lf.structs.SetPolyFill_ = function(opt_values) {
-  this.set_ = new goog.structs.Set(opt_values);
-  Object.defineProperty(this, "size", {get:function() {
-    return this.set_.getCount();
-  }});
-};
-lf.structs.SetPolyFill_.prototype.add = function(value) {
-  this.set_.add(value);
-};
-goog.exportProperty(lf.structs.SetPolyFill_.prototype, "add", lf.structs.SetPolyFill_.prototype.add);
-lf.structs.SetPolyFill_.prototype.clear = function() {
-  this.set_.clear();
-};
-goog.exportProperty(lf.structs.SetPolyFill_.prototype, "clear", lf.structs.SetPolyFill_.prototype.clear);
-lf.structs.SetPolyFill_.prototype.delete = function(value) {
-  return this.set_.remove(value);
-};
-goog.exportProperty(lf.structs.SetPolyFill_.prototype, "delete", lf.structs.SetPolyFill_.prototype.delete);
-lf.structs.SetPolyFill_.prototype.forEach = function(fn, opt_this) {
-  this.set_.getValues().forEach(fn, opt_this);
-};
-lf.structs.SetPolyFill_.prototype.has = function(value) {
-  return this.set_.contains(value);
-};
-goog.exportProperty(lf.structs.SetPolyFill_.prototype, "has", lf.structs.SetPolyFill_.prototype.has);
-lf.structs.Set = window.Set && window.Set.prototype.values && window.Set.prototype.forEach ? window.Set : lf.structs.SetPolyFill_;
-lf.structs.set.create_ = function() {
-  var constructorFn = window.Set && window.Set.prototype.values && window.Set.prototype.forEach ? window.Set : lf.structs.SetPolyFill_;
-  return new constructorFn;
-};
-lf.structs.set.values = function(set) {
-  if (set instanceof lf.structs.SetPolyFill_) {
-    return set.set_.getValues();
-  }
-  var i = 0, array = Array(set.size);
-  set.forEach(function(v) {
-    array[i++] = v;
-  });
-  return array;
-};
-lf.structs.set.diff = function(set1, set2) {
-  if (set1 instanceof lf.structs.SetPolyFill_) {
-    var result = new lf.structs.SetPolyFill_;
-    result.set_ = set1.set_.difference(set2.set_);
-  } else {
-    result = lf.structs.set.create_(), lf.structs.set.values(set1).forEach(function(v) {
-      set2.has(v) || result.add(v);
-    });
-  }
-  return result;
 };
 
 lf.cache.DefaultCache = function() {
