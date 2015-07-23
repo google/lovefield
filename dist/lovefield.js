@@ -2715,8 +2715,8 @@ lf.backstore.BaseTx.prototype.mergeIntoBackstore_ = function() {
 };
 lf.backstore.BaseTx.prototype.mergeTableChanges_ = function() {
   var diff = this.journal_.getDiff();
-  diff.getKeys().forEach(function(tableName) {
-    var tableSchema = this.journal_.getScope().get(tableName), table = this.getTable(tableSchema.getName(), goog.bind(tableSchema.deserializeRow, tableSchema)), tableDiff = diff.get(tableName), toDeleteRowIds = tableDiff.getDeleted().getValues().map(function(row) {
+  diff.forEach(function(tableDiff, tableName) {
+    var tableSchema = this.journal_.getScope().get(tableName), table = this.getTable(tableSchema.getName(), goog.bind(tableSchema.deserializeRow, tableSchema)), toDeleteRowIds = tableDiff.getDeleted().getValues().map(function(row) {
       return row.id();
     });
     0 < toDeleteRowIds.length && table.remove(toDeleteRowIds).thenCatch(this.handleError_, this);
@@ -4218,7 +4218,7 @@ lf.cache.TableDiff.prototype.isEmpty = function() {
 };
 
 lf.cache.Journal = function(global, scope) {
-  this.scope_ = new goog.structs.Map;
+  this.scope_ = new lf.structs.Map;
   scope.forEach(function(tableSchema) {
     this.scope_.set(tableSchema.getName(), tableSchema);
   }, this);
@@ -4227,13 +4227,13 @@ lf.cache.Journal = function(global, scope) {
   this.constraintChecker_ = new lf.cache.ConstraintChecker(global);
   this.inMemoryUpdater_ = new lf.cache.InMemoryUpdater(global);
   this.pendingRollback_ = this.terminated_ = !1;
-  this.tableDiffs_ = new goog.structs.Map;
+  this.tableDiffs_ = new lf.structs.Map;
 };
 lf.cache.Journal.prototype.getDiff = function() {
   return this.tableDiffs_;
 };
 lf.cache.Journal.prototype.getIndexDiff = function() {
-  var tableSchemas = this.tableDiffs_.getKeys().map(function(tableName) {
+  var tableSchemas = lf.structs.map.keys(this.tableDiffs_).map(function(tableName) {
     return this.scope_.get(tableName);
   }, this), indices = [];
   tableSchemas.forEach(function(tableSchema) {
@@ -4251,8 +4251,8 @@ lf.cache.Journal.prototype.getScope = function() {
   return this.scope_;
 };
 lf.cache.Journal.prototype.getIndexScope = function() {
-  var indexScope = [], tables = this.scope_.getValues();
-  tables.forEach(function(tableSchema) {
+  var indexScope = [];
+  this.scope_.forEach(function(tableSchema) {
     if (tableSchema.persistentIndex()) {
       var tableIndices = tableSchema.getIndices();
       tableIndices.forEach(function(indexSchema) {
@@ -4273,7 +4273,7 @@ lf.cache.Journal.prototype.insert = function(table, rows) {
   }
 };
 lf.cache.Journal.prototype.modifyRow_ = function(table, modification) {
-  var tableName = table.getName(), diff = this.tableDiffs_.get(tableName, null) || new lf.cache.TableDiff(tableName);
+  var tableName = table.getName(), diff = this.tableDiffs_.get(tableName) || new lf.cache.TableDiff(tableName);
   this.tableDiffs_.set(tableName, diff);
   try {
     this.inMemoryUpdater_.updateTableIndicesForRow(table, modification);
@@ -4319,7 +4319,7 @@ lf.cache.Journal.prototype.remove = function(table, rows) {
   }
 };
 lf.cache.Journal.prototype.checkDeferredConstraints = function() {
-  this.tableDiffs_.getValues().forEach(function(tableDiff) {
+  this.tableDiffs_.forEach(function(tableDiff) {
     var table = this.scope_.get(tableDiff.getName());
     this.constraintChecker_.checkForeignKeysForInsert(table, tableDiff.getAdded().getValues(), lf.ConstraintTiming.DEFERRABLE);
     this.constraintChecker_.checkForeignKeysForDelete(table, tableDiff.getDeleted().getValues(), lf.ConstraintTiming.DEFERRABLE);
@@ -4336,15 +4336,15 @@ lf.cache.Journal.prototype.assertJournalWritable_ = function() {
 };
 lf.cache.Journal.prototype.rollback = function() {
   goog.asserts.assert(!this.terminated_, "Attempted to rollback a terminated journal.");
-  var reverseDiffs = this.tableDiffs_.getValues().map(function(tableDiff) {
+  var reverseDiffs = lf.structs.map.values(this.tableDiffs_).map(function(tableDiff) {
     return tableDiff.getReverse();
-  }, this);
+  });
   this.inMemoryUpdater_.update(reverseDiffs);
   this.terminated_ = !0;
   this.pendingRollback_ = !1;
 };
 lf.cache.Journal.prototype.checkScope_ = function(tableSchema) {
-  if (!this.scope_.containsKey(tableSchema.getName())) {
+  if (!this.scope_.has(tableSchema.getName())) {
     throw new lf.Exception(106, tableSchema.getName());
   }
 };
@@ -5240,15 +5240,15 @@ lf.backstore.FirebaseTx.prototype.getTable = function(name) {
   return this.db_.getTableInternal(name);
 };
 lf.backstore.FirebaseTx.prototype.commitInternal = function() {
-  var diffs = this.getJournal().getDiff(), numTableAffected = diffs.getCount();
+  var diffs = this.getJournal().getDiff(), numTableAffected = diffs.size;
   if (0 == numTableAffected) {
     this.resolver.resolve();
   } else {
     var rev = this.db_.getRevision() + 1;
     this.db_.setRevision(rev);
     var update = {"@rev":{R:rev}};
-    diffs.forEach(function(diff) {
-      var tid = this.db_.getTableId(diff.getName());
+    diffs.forEach(function(diff, tableName) {
+      var tid = this.db_.getTableId(tableName);
       diff.getAdded().forEach(function(row, rowId) {
         update[rowId] = {R:rev, T:tid, P:row.payload()};
       });
@@ -5264,7 +5264,7 @@ lf.backstore.FirebaseTx.prototype.commitInternal = function() {
         this.resolver.resolve();
       } else {
         this.db_.setRevision(rev - 1);
-        var promises = diffs.getValues().map(function(diff) {
+        var promises = lf.structs.map.values(diffs).map(function(diff) {
           return this.db_.reloadTable(diff.getName());
         }, this);
         goog.Promise.all(promises).then(this.resolver.reject.bind(this.resolver), this.resolver.reject.bind(this.resolver));
@@ -5821,9 +5821,7 @@ lf.backstore.IndexedDB.prototype.createIndexTable_ = function(db, tx, indexName,
   }
 };
 lf.backstore.IndexedDB.prototype.createTx = function(type, journal) {
-  var scope = journal.getScope().getValues().map(function(table) {
-    return table.getName();
-  });
+  var scope = lf.structs.map.keys(journal.getScope());
   journal.getIndexScope().forEach(function(indexTableName) {
     scope.push(indexTableName);
   });
