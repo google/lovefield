@@ -9354,14 +9354,15 @@ lf.proc.LogicalPlanRewriter.prototype.generate = function() {
   return this.rootNode_;
 };
 
-lf.proc.DeleteLogicalPlanGenerator = function(query) {
+lf.proc.DeleteLogicalPlanGenerator = function(query, rewritePasses) {
   lf.proc.BaseLogicalPlanGenerator.call(this, query);
+  this.rewritePasses_ = rewritePasses;
 };
 goog.inherits(lf.proc.DeleteLogicalPlanGenerator, lf.proc.BaseLogicalPlanGenerator);
 lf.proc.DeleteLogicalPlanGenerator.prototype.generateInternal = function() {
   var deleteNode = new lf.proc.DeleteNode(this.query.from), selectNode = goog.isDefAndNotNull(this.query.where) ? new lf.proc.SelectNode(this.query.where.copy()) : null, tableAccessNode = new lf.proc.TableAccessNode(this.query.from);
   goog.isNull(selectNode) ? deleteNode.addChild(tableAccessNode) : (selectNode.addChild(tableAccessNode), deleteNode.addChild(selectNode));
-  var rewritePasses = [new lf.proc.AndPredicatePass], planRewriter = new lf.proc.LogicalPlanRewriter(deleteNode, this.query, rewritePasses);
+  var planRewriter = new lf.proc.LogicalPlanRewriter(deleteNode, this.query, this.rewritePasses_);
   return planRewriter.generate();
 };
 
@@ -9393,10 +9394,14 @@ lf.proc.PushDownSelectionsPass = function() {
   this.alreadyPushedDown_ = new goog.structs.Set;
 };
 goog.inherits(lf.proc.PushDownSelectionsPass, lf.proc.RewritePass);
+lf.proc.PushDownSelectionsPass.prototype.clear_ = function() {
+  this.alreadyPushedDown_.clear();
+};
 lf.proc.PushDownSelectionsPass.prototype.rewrite = function(rootNode) {
+  this.clear_();
   this.rootNode = rootNode;
   this.traverse_(this.rootNode);
-  this.alreadyPushedDown_.clear();
+  this.clear_();
   return this.rootNode;
 };
 lf.proc.PushDownSelectionsPass.prototype.traverse_ = function(node) {
@@ -9460,14 +9465,15 @@ lf.proc.PushDownSelectionsPass.prototype.shouldSwapWithChild_ = function(node) {
   return node.getChildAt(0) instanceof lf.proc.SelectNode;
 };
 
-lf.proc.SelectLogicalPlanGenerator = function(query) {
+lf.proc.SelectLogicalPlanGenerator = function(query, rewritePasses) {
   lf.proc.BaseLogicalPlanGenerator.call(this, query);
+  this.rewritePasses_ = rewritePasses;
   this.projectNode_ = this.limitNode_ = this.skipNode_ = this.orderByNode_ = this.aggregationNode_ = this.groupByNode_ = this.selectNode_ = this.crossProductNode_ = this.tableAccessNodes_ = null;
 };
 goog.inherits(lf.proc.SelectLogicalPlanGenerator, lf.proc.BaseLogicalPlanGenerator);
 lf.proc.SelectLogicalPlanGenerator.prototype.generateInternal = function() {
   this.generateNodes_();
-  var rootNode = this.connectNodes_(), rewritePasses = [new lf.proc.AndPredicatePass, new lf.proc.CrossProductPass, new lf.proc.PushDownSelectionsPass, new lf.proc.ImplicitJoinsPass], planRewriter = new lf.proc.LogicalPlanRewriter(rootNode, this.query, rewritePasses);
+  var rootNode = this.connectNodes_(), planRewriter = new lf.proc.LogicalPlanRewriter(rootNode, this.query, this.rewritePasses_);
   return planRewriter.generate();
 };
 lf.proc.SelectLogicalPlanGenerator.prototype.generateNodes_ = function() {
@@ -9528,6 +9534,8 @@ lf.proc.SelectLogicalPlanGenerator.prototype.generateProjectNode_ = function() {
 };
 
 lf.proc.LogicalPlanFactory = function() {
+  this.selectOptimizationPasses_ = [new lf.proc.AndPredicatePass, new lf.proc.CrossProductPass, new lf.proc.PushDownSelectionsPass, new lf.proc.ImplicitJoinsPass];
+  this.deleteOptimizationPasses_ = [new lf.proc.AndPredicatePass];
 };
 lf.proc.LogicalPlanFactory.prototype.create = function(query) {
   var generator = null;
@@ -9535,10 +9543,10 @@ lf.proc.LogicalPlanFactory.prototype.create = function(query) {
     generator = new lf.proc.InsertLogicalPlanGenerator(query);
   } else {
     if (query instanceof lf.query.DeleteContext) {
-      generator = new lf.proc.DeleteLogicalPlanGenerator(query);
+      generator = new lf.proc.DeleteLogicalPlanGenerator(query, this.deleteOptimizationPasses_);
     } else {
       if (query instanceof lf.query.SelectContext) {
-        generator = new lf.proc.SelectLogicalPlanGenerator(query);
+        generator = new lf.proc.SelectLogicalPlanGenerator(query, this.selectOptimizationPasses_);
       } else {
         if (query instanceof lf.query.UpdateContext) {
           generator = new lf.proc.UpdateLogicalPlanGenerator(query);
@@ -10272,6 +10280,8 @@ lf.proc.UpdateStep.prototype.execInternal = function(journal, relations) {
 
 lf.proc.PhysicalPlanFactory = function(global) {
   this.global_ = global;
+  this.selectOptimizationPasses_ = [new lf.proc.IndexRangeScanPass(this.global_), new lf.proc.OrderByIndexPass(this.global_), new lf.proc.LimitSkipByIndexPass, new lf.proc.GetRowCountPass(this.global_)];
+  this.deleteOptimizationPasses_ = [new lf.proc.IndexRangeScanPass(this.global_)];
 };
 lf.proc.PhysicalPlanFactory.prototype.create = function(logicalQueryPlan, queryContext) {
   var logicalQueryPlanRoot = logicalQueryPlan.getRoot();
@@ -10279,10 +10289,10 @@ lf.proc.PhysicalPlanFactory.prototype.create = function(logicalQueryPlan, queryC
     return this.createPlan_(logicalQueryPlan, queryContext);
   }
   if (logicalQueryPlanRoot instanceof lf.proc.ProjectNode || logicalQueryPlanRoot instanceof lf.proc.LimitNode || logicalQueryPlanRoot instanceof lf.proc.SkipNode) {
-    return this.createPlan_(logicalQueryPlan, queryContext, [new lf.proc.IndexRangeScanPass(this.global_), new lf.proc.OrderByIndexPass(this.global_), new lf.proc.LimitSkipByIndexPass, new lf.proc.GetRowCountPass(this.global_)]);
+    return this.createPlan_(logicalQueryPlan, queryContext, this.selectOptimizationPasses_);
   }
   if (logicalQueryPlanRoot instanceof lf.proc.DeleteNode || logicalQueryPlanRoot instanceof lf.proc.UpdateNode) {
-    return this.createPlan_(logicalQueryPlan, queryContext, [new lf.proc.IndexRangeScanPass(this.global_)]);
+    return this.createPlan_(logicalQueryPlan, queryContext, this.deleteOptimizationPasses_);
   }
   throw new lf.Exception(8);
 };
