@@ -3968,29 +3968,38 @@ lf.cache.InMemoryUpdater.prototype.updateIndicesForDiff_ = function(diff) {
 lf.cache.InMemoryUpdater.prototype.updateTableIndicesForRow = function(table, modification) {
   var indices = table.getIndices().map(function(indexSchema) {
     return this.indexStore_.get(indexSchema.getNormalizedName());
-  }, this).concat([this.indexStore_.get(table.getRowIdIndexName())]);
-  indices.forEach(function(index) {
-    var keyNow = goog.isNull(modification[1]) ? void 0 : modification[1].keyOfIndex(index.getName()), keyThen = goog.isNull(modification[0]) ? void 0 : modification[0].keyOfIndex(index.getName());
-    if (!goog.isDef(keyThen) && goog.isDef(keyNow)) {
-      index.add(keyNow, modification[1].id());
-    } else {
-      if (goog.isDef(keyThen) && goog.isDef(keyNow)) {
-        if (goog.isNull(keyNow) || goog.isNull(keyThen)) {
-          if (keyNow == keyThen) {
-            return;
-          }
-        } else {
-          if (index.comparator().compare(keyThen, keyNow) == lf.index.Favor.TIE) {
-            return;
-          }
-        }
-        index.add(keyNow, modification[1].id());
-        index.remove(keyThen, modification[0].id());
-      } else {
-        goog.isDef(keyThen) && !goog.isDef(keyNow) && index.remove(keyThen, modification[0].id());
-      }
+  }, this).concat([this.indexStore_.get(table.getRowIdIndexName())]), updatedIndices = [];
+  indices.forEach(function(index$$0) {
+    try {
+      this.updateTableIndexForRow_(index$$0, modification), updatedIndices.push(index$$0);
+    } catch (e) {
+      throw updatedIndices.forEach(function(index) {
+        this.updateTableIndexForRow_(index, [modification[1], modification[0]]);
+      }, this), e;
     }
-  });
+  }, this);
+};
+lf.cache.InMemoryUpdater.prototype.updateTableIndexForRow_ = function(index, modification) {
+  var keyNow = goog.isNull(modification[1]) ? void 0 : modification[1].keyOfIndex(index.getName()), keyThen = goog.isNull(modification[0]) ? void 0 : modification[0].keyOfIndex(index.getName());
+  if (!goog.isDef(keyThen) && goog.isDef(keyNow)) {
+    index.add(keyNow, modification[1].id());
+  } else {
+    if (goog.isDef(keyThen) && goog.isDef(keyNow)) {
+      if (goog.isNull(keyNow) || goog.isNull(keyThen)) {
+        if (keyNow == keyThen) {
+          return;
+        }
+      } else {
+        if (index.comparator().compare(keyThen, keyNow) == lf.index.Favor.TIE) {
+          return;
+        }
+      }
+      index.add(keyNow, modification[1].id());
+      index.remove(keyThen, modification[0].id());
+    } else {
+      goog.isDef(keyThen) && !goog.isDef(keyNow) && index.remove(keyThen, modification[0].id());
+    }
+  }
 };
 
 lf.type = {};

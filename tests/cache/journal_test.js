@@ -203,10 +203,52 @@ function testInsert_PrimaryKeyViolation3() {
 
   assertEquals(0, env.cache.getCount());
   var rowIdIndex = env.indexStore.get(table.getRowIdIndexName());
-  rows.forEach(function(row) {
-    assertFalse(pkIndex.containsKey(row.payload()['id']));
-    assertFalse(rowIdIndex.containsKey(row.id()));
-  });
+  assertEquals(0, pkIndex.getRange().length);
+  assertEquals(0, rowIdIndex.getRange().length);
+}
+
+
+function testInsert_UniqueKeyViolation_IndexOrder() {
+  var table = env.schema.table('tableE');
+  var pkIndexSchema = table.getIndices()[0];
+  assertTrue(pkIndexSchema.isUnique);
+  var emailIndexSchema = table.getIndices()[1];
+  assertTrue(emailIndexSchema.isUnique);
+
+  var pkIndex = env.indexStore.get(pkIndexSchema.getNormalizedName());
+  var emailIndex = env.indexStore.get(emailIndexSchema.getNormalizedName());
+  assertEquals(0, pkIndex.getRange().length);
+  assertEquals(0, emailIndex.getRange().length);
+
+  // Test case where the 'id' column uniqueness is violated.
+  var journal = new lf.cache.Journal(lf.Global.get(), [table]);
+  lf.testing.util.assertThrowsError(
+      201,  // Duplicate keys are not allowed.
+      function() {
+        var row1 = table.createRow({'id': 'samePk', 'email': 'email1'});
+        var row2 = table.createRow({'id': 'samePk', 'email': 'email2'});
+        journal.insert(table, [row1, row2]);
+      });
+
+  // Ensure that after rollback both indices are empty.
+  journal.rollback();
+  assertEquals(0, pkIndex.getRange().length);
+  assertEquals(0, emailIndex.getRange().length);
+
+  // Test case where the 'email' column uniqueness is violated.
+  journal = new lf.cache.Journal(lf.Global.get(), [table]);
+  lf.testing.util.assertThrowsError(
+      201,  // Duplicate keys are not allowed.
+      function() {
+        var row1 = table.createRow({'id': 'pk1', 'email': 'sameEmail'});
+        var row2 = table.createRow({'id': 'pk2', 'email': 'sameEmail'});
+        journal.insert(table, [row1, row2]);
+      });
+
+  // Ensure that none of the indices is affected.
+  journal.rollback();
+  assertEquals(0, pkIndex.getRange().length);
+  assertEquals(0, emailIndex.getRange().length);
 }
 
 
