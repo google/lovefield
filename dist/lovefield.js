@@ -3964,9 +3964,7 @@ lf.cache.InMemoryUpdater.prototype.updateIndicesForDiff_ = function(diff) {
   }, this);
 };
 lf.cache.InMemoryUpdater.prototype.updateTableIndicesForRow = function(table, modification) {
-  var indices = table.getIndices().map(function(indexSchema) {
-    return this.indexStore_.get(indexSchema.getNormalizedName());
-  }, this).concat([this.indexStore_.get(table.getRowIdIndexName())]), updatedIndices = [];
+  var indices = this.indexStore_.getTableIndices(table.getName()), updatedIndices = [];
   indices.forEach(function(index$$0) {
     try {
       this.updateTableIndexForRow_(index$$0, modification), updatedIndices.push(index$$0);
@@ -7348,10 +7346,10 @@ lf.cache.Prefetcher.prototype.reconstructPersistentIndex_ = function(indexSchema
     if (1 < serializedRows.length) {
       if (indexSchema.hasNullableColumn()) {
         var deserializeFn = lf.index.BTree.deserialize.bind(void 0, comparator, indexSchema.getNormalizedName(), indexSchema.isUnique), nullableIndex = lf.index.NullableIndex.deserialize(deserializeFn, serializedRows.slice(1));
-        this.indexStore_.set(nullableIndex);
+        this.indexStore_.set(indexSchema.tableName, nullableIndex);
       } else {
         var btreeIndex = lf.index.BTree.deserialize(comparator, indexSchema.getNormalizedName(), indexSchema.isUnique, serializedRows.slice(1));
-        this.indexStore_.set(btreeIndex);
+        this.indexStore_.set(indexSchema.tableName, btreeIndex);
       }
     }
   }, this));
@@ -7362,7 +7360,7 @@ lf.cache.Prefetcher.prototype.reconstructPersistentRowIdIndex_ = function(tableS
     goog.asserts.assert(serializedRows[0].payload().type == lf.index.IndexMetadata.Type.ROW_ID);
     if (1 < serializedRows.length) {
       var rowIdIndex = lf.index.RowId.deserialize(tableSchema.getRowIdIndexName(), serializedRows.slice(1));
-      this.indexStore_.set(rowIdIndex);
+      this.indexStore_.set(tableSchema.getName(), rowIdIndex);
     }
   }, this));
 };
@@ -7372,17 +7370,23 @@ lf.index.IndexStore = function() {
 
 lf.index.MemoryIndexStore = function() {
   this.store_ = new lf.structs.Map;
+  this.tableIndices_ = new lf.structs.Map;
 };
 lf.index.MemoryIndexStore.prototype.init = function(schema) {
   var tables = schema.tables();
   tables.forEach(function(table) {
+    var tableIndices = [];
+    this.tableIndices_.set(table.getName(), tableIndices);
     var rowIdIndexName = table.getRowIdIndexName(), rowIdIndex = this.get(rowIdIndexName);
     if (goog.isNull(rowIdIndex)) {
-      var index = new lf.index.RowId(rowIdIndexName);
-      this.store_.set(rowIdIndexName, index);
+      var index$$0 = new lf.index.RowId(rowIdIndexName);
+      tableIndices.push(index$$0);
+      this.store_.set(rowIdIndexName, index$$0);
     }
     table.getIndices().forEach(function(indexSchema) {
-      this.store_.set(indexSchema.getNormalizedName(), lf.index.MemoryIndexStore.createIndex_(indexSchema));
+      var index = lf.index.MemoryIndexStore.createIndex_(indexSchema);
+      tableIndices.push(index);
+      this.store_.set(indexSchema.getNormalizedName(), index);
     }, this);
   }, this);
   return goog.Promise.resolve();
@@ -7394,15 +7398,20 @@ lf.index.MemoryIndexStore.createIndex_ = function(indexSchema) {
 lf.index.MemoryIndexStore.prototype.get = function(name) {
   return this.store_.get(name) || null;
 };
-lf.index.MemoryIndexStore.prototype.set = function(index) {
-  return this.store_.set(index.getName(), index);
+lf.index.MemoryIndexStore.prototype.set = function(tableName, index) {
+  var tableIndices = this.tableIndices_.get(tableName) || null;
+  goog.isNull(tableIndices) && (tableIndices = [], this.tableIndices_.set(tableName, tableIndices));
+  for (var existsAt = null, i = 0;i < tableIndices.length;i++) {
+    if (tableIndices[i].getName() == index.getName()) {
+      existsAt = i;
+      break;
+    }
+  }
+  !goog.isNull(existsAt) && 0 < tableIndices.length ? tableIndices.splice(existsAt, 1, index) : tableIndices.push(index);
+  this.store_.set(index.getName(), index);
 };
 lf.index.MemoryIndexStore.prototype.getTableIndices = function(tableName) {
-  var indices = [], prefix = tableName + ".";
-  this.store_.forEach(function(value, key) {
-    0 == key.indexOf(prefix) && indices.push(this.store_.get(key));
-  }, this);
-  return indices;
+  return this.tableIndices_.get(tableName) || [];
 };
 
 lf.index.SingleKeyRangeSet = function(opt_ranges) {

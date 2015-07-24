@@ -163,7 +163,7 @@ function testSCUD() {
   // Use tableC, which has no indices.
   var t2 = schema.table('tableC');
   var rowIdIndex = new lf.index.RowId(t2.getRowIdIndexName());
-  indexStore.set(rowIdIndex);
+  indexStore.set(t2.getName(), rowIdIndex);
 
   var CONTENTS0 = {'id': 'hello0', 'name': 'world0'};
   var CONTENTS1 = {'id': 'hello1', 'name': 'world1'};

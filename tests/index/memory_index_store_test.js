@@ -143,9 +143,9 @@ function testGetTableIndices_Prefix() {
   var index2 = new lf.index.RowId('Actor.#');
   var index3 = new lf.index.RowId('ActorMovie.#');
 
-  indexStore.set(index1);
-  indexStore.set(index2);
-  indexStore.set(index3);
+  indexStore.set('MovieActor', index1);
+  indexStore.set('Actor', index2);
+  indexStore.set('ActorMovie', index3);
 
   var tableIndices = indexStore.getTableIndices('Actor');
   assertEquals(1, tableIndices.length);
@@ -169,7 +169,7 @@ function testSet() {
         indexSchema.getNormalizedName(),
         comparator,
         indexSchema.isUnique);
-    indexStore.set(newIndex);
+    indexStore.set(tableSchema.getName(), newIndex);
 
     var indexAfter = indexStore.get(indexSchema.getNormalizedName());
     assertTrue(indexBefore != indexAfter);
