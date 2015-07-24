@@ -8241,10 +8241,12 @@ lf.proc.AggregationStep.Calculator_.sum_ = function(relation, column) {
   });
 };
 lf.proc.AggregationStep.Calculator_.stddev_ = function(relation, column) {
-  var values = relation.entries.map(function(entry) {
-    return entry.getField(column);
+  var values = [];
+  relation.entries.forEach(function(entry) {
+    var value = entry.getField(column);
+    goog.isNull(value) || values.push(value);
   });
-  return goog.math.standardDeviation.apply(null, values);
+  return 0 == values.length ? null : goog.math.standardDeviation.apply(null, values);
 };
 lf.proc.AggregationStep.Calculator_.geomean_ = function(relation, column) {
   var nonZeroEntriesCount = 0, reduced = relation.entries.reduce(function(soFar, entry) {

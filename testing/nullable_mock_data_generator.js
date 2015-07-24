@@ -40,40 +40,26 @@ lf.testing.NullableDataGenerator = function(schema) {
 
   /**
    * TableA.id has values (1, 2, 3, 4, 5, null, null): see
-   * generateTableA_(). Hence, average of the non-null values is 3.
+   * generateTableA_(). Hence, average of the non-null values is 3,
+   * similarly other properties.
    * @type {!lf.testing.NullableDataGenerator.TableAGroundTruth}
    */
   this.tableAGroundTruth = {
     avgId: 3,
-    sumDistinctId: 15
-  };
-
-  /**
-   * TableB.id has only null values: see generateTableB_().
-   * Hence, average is null.
-   * @type {!lf.testing.NullableDataGenerator.TableBGroundTruth}
-   */
-  this.tableBGroundTruth = {
-    avgId: null,
-    sumId: null
+    sumDistinctId: 15,
+    stddevDistinctId: 1.5811388300841898
   };
 };
 
 
 /**
  * @typedef {{
- *   avgId: number
+ *   avgId: number,
+ *   sumDistinctId: number,
+ *   stddevDistinctId: number
  * }}
  */
 lf.testing.NullableDataGenerator.TableAGroundTruth;
-
-
-/**
- * @typedef {{
- *   avgId: ?number
- * }}
- */
-lf.testing.NullableDataGenerator.TableBGroundTruth;
 
 
 /**
