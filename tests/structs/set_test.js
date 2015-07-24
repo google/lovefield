@@ -16,16 +16,16 @@
  */
 goog.setTestOnly();
 goog.require('goog.testing.jsunit');
-goog.require('lf.structs.Set');
 goog.require('lf.structs.set');
 
 
 function testSmoke() {
-  var set = new lf.structs.Set();
-  set.add(1);
-  assertEquals(1, set.size);
+  var set = lf.structs.set.create([1, 2]);
+  assertEquals(2, set.size);
 
   assertTrue(set.delete(1));
+  assertEquals(1, set.size);
+  set.clear();
   assertEquals(0, set.size);
 
   for (var i = 0; i < 10; ++i) {
@@ -58,7 +58,7 @@ function testSmoke() {
 }
 
 function testSetUtilsForInteger() {
-  var set = new lf.structs.Set();
+  var set = lf.structs.set.create();
   for (var i = 0; i < 10; ++i) {
     set.add(i * 10);
   }
@@ -75,7 +75,7 @@ function testSetUtilsForInteger() {
   assertEquals(null, values[11]);
   assertEquals(undefined, values[12]);
 
-  var set2 = new lf.structs.Set();
+  var set2 = lf.structs.set.create();
   for (var i = 0; i < 10; ++i) {
     set2.add(i * 10);
   }
@@ -87,7 +87,7 @@ function testSetUtilsForInteger() {
 }
 
 function testSetUtilsForString() {
-  var set = new lf.structs.Set();
+  var set = lf.structs.set.create();
   for (var i = 0; i < 10; ++i) {
     set.add(i * 10 + '-string');
   }
@@ -102,7 +102,7 @@ function testSetUtilsForString() {
   assertEquals(1000 + '-string', values[10]);
   assertEquals('', values[11]);
 
-  var set2 = new lf.structs.Set();
+  var set2 = lf.structs.set.create();
   for (var i = 0; i < 10; ++i) {
     set2.add(i * 10 + '-string');
   }
@@ -114,7 +114,7 @@ function testSetUtilsForString() {
 
 function testSetUtilsForObjects() {
   var rows = new Array(10);
-  var set = new lf.structs.Set();
+  var set = lf.structs.set.create();
   for (var i = 0; i < 10; ++i) {
     rows[i] = {id: i, name: i + '-string'};
     set.add(rows[i]);
@@ -128,11 +128,7 @@ function testSetUtilsForObjects() {
   }
   assertEquals(null, values[10]);
 
-  var set2 = new lf.structs.Set();
-  for (var i = 0; i < 10; ++i) {
-    set2.add(rows[i]);
-  }
-
+  var set2 = lf.structs.set.create(rows);
   var diffSet = lf.structs.set.diff(set, set2);
   assertEquals(1, diffSet.size);
   assertTrue(diffSet.has(null));

@@ -3734,10 +3734,8 @@ lf.structs.SetPolyFill_.prototype.has = function(value) {
   return this.set_.contains(value);
 };
 goog.exportProperty(lf.structs.SetPolyFill_.prototype, "has", lf.structs.SetPolyFill_.prototype.has);
-lf.structs.Set = window.Set && window.Set.prototype.values && window.Set.prototype.forEach ? window.Set : lf.structs.SetPolyFill_;
-lf.structs.set.create_ = function() {
-  var constructorFn = window.Set && window.Set.prototype.values && window.Set.prototype.forEach ? window.Set : lf.structs.SetPolyFill_;
-  return new constructorFn;
+lf.structs.set.create = function(opt_iterable) {
+  return window.Set && window.Set.prototype.values && window.Set.prototype.forEach ? new window.Set(opt_iterable) : new lf.structs.SetPolyFill_(opt_iterable);
 };
 lf.structs.set.values = function(set) {
   if (set instanceof lf.structs.SetPolyFill_) {
@@ -3754,7 +3752,7 @@ lf.structs.set.diff = function(set1, set2) {
     var result = new lf.structs.SetPolyFill_;
     result.set_ = set1.set_.difference(set2.set_);
   } else {
-    result = lf.structs.set.create_(), lf.structs.set.values(set1).forEach(function(v) {
+    result = lf.structs.set.create(), lf.structs.set.values(set1).forEach(function(v) {
       set2.has(v) || result.add(v);
     });
   }
@@ -3767,7 +3765,7 @@ lf.backstore.Page = function(id, opt_payload) {
 };
 lf.backstore.Page.BUNDLE_EXPONENT = 9;
 lf.backstore.Page.toPageIds = function(rowIds) {
-  var pageIds = new lf.structs.Set;
+  var pageIds = lf.structs.set.create();
   rowIds.forEach(function(id) {
     pageIds.add(lf.backstore.Page.toPageId(id));
   });
@@ -5411,7 +5409,7 @@ lf.backstore.Firebase.prototype.initRowId_ = function() {
 };
 lf.backstore.Firebase.prototype.onRemoved_ = function(snapshot) {
   var row = snapshot.val(), set = this.removedRows_.get(row.T) || null;
-  goog.isNull(set) && (set = new lf.structs.Set, this.removedRows_.set(row.T, set));
+  goog.isNull(set) && (set = lf.structs.set.create([row.T]));
   set.add(parseInt(snapshot.key(), 10));
 };
 lf.backstore.Firebase.prototype.onChange_ = function(snapshot) {
@@ -5433,7 +5431,7 @@ lf.backstore.Firebase.prototype.onChange_ = function(snapshot) {
   }
 };
 lf.backstore.Firebase.prototype.generateDiff_ = function(snapshot) {
-  var removedIds = new lf.structs.Set, diffs = new lf.structs.Map;
+  var removedIds = lf.structs.set.create(), diffs = new lf.structs.Map;
   this.tableIds_.forEach(function(tid, tableName) {
     var table = this.tables_.get(tableName), diff = new lf.cache.TableDiff(tableName);
     if (this.removedRows_.has(tid)) {
@@ -6402,7 +6400,7 @@ lf.cache.DefaultCache = function() {
 };
 lf.cache.DefaultCache.prototype.getTableSet_ = function(tableName) {
   var set = this.tableRows_.get(tableName);
-  goog.isDef(set) || (set = new lf.structs.Set, this.tableRows_.set(tableName, set));
+  goog.isDef(set) || (set = lf.structs.set.create(), this.tableRows_.set(tableName, set));
   return set;
 };
 lf.cache.DefaultCache.prototype.set = function(tableName, rows) {
@@ -7152,7 +7150,7 @@ lf.index.MultiKeyComparator.prototype.rangeToKeys = function(keyRange) {
 
 lf.index.NullableIndex = function(index) {
   this.index_ = index;
-  this.nulls_ = new lf.structs.Set;
+  this.nulls_ = lf.structs.set.create();
   this.statsNull_ = new lf.index.Stats;
   this.stats_ = new lf.index.Stats;
 };
@@ -7227,7 +7225,7 @@ lf.index.NullableIndex.prototype.isUniqueKey = function() {
 
 lf.index.RowId = function(name) {
   this.name_ = name;
-  this.rows_ = new lf.structs.Set;
+  this.rows_ = lf.structs.set.create();
   this.comparator_ = new lf.index.SimpleComparator(lf.Order.ASC);
 };
 lf.index.RowId.ROW_ID = 0;
@@ -10383,7 +10381,7 @@ lf.ObserverRegistry.prototype.removeObserver = function(builder, callback) {
   entry.hasObservers() || this.entries_.delete(queryId);
 };
 lf.ObserverRegistry.prototype.getTaskItemsForTables = function(tables) {
-  var tableSet = new lf.structs.Set;
+  var tableSet = lf.structs.set.create();
   tables.forEach(function(table) {
     tableSet.add(table.getName());
   });
@@ -10402,7 +10400,7 @@ lf.ObserverRegistry.prototype.updateResultsForQuery = function(query, results) {
 };
 lf.ObserverRegistry.Entry_ = function(builder) {
   this.builder_ = builder;
-  this.observers_ = new lf.structs.Set;
+  this.observers_ = lf.structs.set.create();
   this.observable_ = [];
   this.lastResults_ = null;
   this.diffCalculator_ = new lf.DiffCalculator(builder.getObservableQuery(), this.observable_);
@@ -10832,14 +10830,14 @@ lf.schema.Info = function(dbSchema) {
 };
 lf.schema.Info.prototype.init_ = function() {
   this.schema_.tables().forEach(function(table) {
-    var parents = new lf.structs.Set;
+    var parents = lf.structs.set.create();
     table.getConstraint().getForeignKeys().forEach(function(fkSpec) {
       var parentRefs = this.referringFk_.get(fkSpec.parentTable) || [];
       parentRefs.push(fkSpec);
       this.referringFk_.set(fkSpec.parentTable, parentRefs);
       parents.add(this.schema_.table(fkSpec.parentTable));
       var childOfParent = this.children_.get(fkSpec.parentTable);
-      childOfParent || (childOfParent = new lf.structs.Set);
+      childOfParent || (childOfParent = lf.structs.set.create());
       childOfParent.add(table);
       this.children_.set(fkSpec.parentTable, childOfParent);
       this.colParent_.set(table.getName() + "." + fkSpec.childColumn, fkSpec.parentTable);
@@ -10861,7 +10859,7 @@ lf.schema.Info.prototype.getParentTables = function(tableName) {
   return this.expandScope_(tableName, this.parents_);
 };
 lf.schema.Info.prototype.getParentTablesByColumns = function(colNames) {
-  var tableNames = new lf.structs.Set;
+  var tableNames = lf.structs.set.create();
   colNames.forEach(function(col) {
     var table = this.colParent_.get(col);
     table && tableNames.add(table);
@@ -10875,7 +10873,7 @@ lf.schema.Info.prototype.getChildTables = function(tableName) {
   return this.expandScope_(tableName, this.children_);
 };
 lf.schema.Info.prototype.getChildTablesByColumns = function(colNames) {
-  var tableNames = new lf.structs.Set;
+  var tableNames = lf.structs.set.create();
   colNames.forEach(function(col) {
     var children = this.colChild_.get(col);
     children && children.forEach(function(child) {
@@ -10923,9 +10921,9 @@ lf.schema.TableBuilder = function(tableName) {
   this.checkNamingRules_(tableName);
   this.name_ = tableName;
   this.columns_ = new lf.structs.Map;
-  this.uniqueColumns_ = new lf.structs.Set;
-  this.uniqueIndices_ = new lf.structs.Set;
-  this.nullable_ = new lf.structs.Set;
+  this.uniqueColumns_ = lf.structs.set.create();
+  this.uniqueIndices_ = lf.structs.set.create();
+  this.nullable_ = lf.structs.set.create();
   this.pkName_ = null;
   this.indices_ = new lf.structs.Map;
   this.persistentIndex_ = !1;
@@ -10937,7 +10935,7 @@ lf.schema.TableBuilder.IndexedColumn_ = function(raw) {
   this.order = raw.order;
   this.autoIncrement = raw.autoIncrement;
 };
-lf.schema.TableBuilder.NULLABLE_TYPES_BY_DEFAULT = new lf.structs.Set([lf.Type.ARRAY_BUFFER, lf.Type.OBJECT]);
+lf.schema.TableBuilder.NULLABLE_TYPES_BY_DEFAULT = lf.structs.set.create([lf.Type.ARRAY_BUFFER, lf.Type.OBJECT]);
 lf.schema.TableBuilder.toPascal_ = function(name) {
   return name[0].toUpperCase() + name.substring(1);
 };
@@ -11061,7 +11059,7 @@ lf.schema.TableBuilder.prototype.addNullable = function(columns) {
 goog.exportProperty(lf.schema.TableBuilder.prototype, "addNullable", lf.schema.TableBuilder.prototype.addNullable);
 lf.schema.TableBuilder.prototype.checkNullableColumns_ = function(columns) {
   lf.structs.map.keys(this.indices_).forEach(function(indexName) {
-    var indexedColumnNames = new lf.structs.Set;
+    var indexedColumnNames = lf.structs.set.create();
     this.indices_.get(indexName).forEach(function(indexedColumn) {
       indexedColumnNames.add(indexedColumn.name);
     });
@@ -11296,7 +11294,7 @@ lf.schema.Builder.prototype.checkFkCycle_ = function() {
 };
 lf.schema.GraphNode_ = function(tableName) {
   this.onStack = this.visited = !1;
-  this.edges = new lf.structs.Set;
+  this.edges = lf.structs.set.create();
   this.tableName = tableName;
 };
 lf.schema.Builder.prototype.getSchema = function() {

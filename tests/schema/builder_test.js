@@ -24,7 +24,7 @@ goog.require('lf.schema');
 goog.require('lf.schema.BaseColumn');
 goog.require('lf.schema.ForeignKeySpec');
 goog.require('lf.schema.Table');
-goog.require('lf.structs.Set');
+goog.require('lf.structs.set');
 goog.require('lf.testing.util');
 
 
@@ -171,7 +171,7 @@ function testThrows_DuplicateTable() {
 
 function testDefaultIndexOnForeignKey() {
   var schemaBuilder = createBuilder();
-  var indexNames = new lf.structs.Set();
+  var indexNames = lf.structs.set.create();
   // TODO(sowmyasb) : optimize getting index name
   // without looping through the array.
   schemaBuilder.getSchema().table('Employee').

@@ -20,7 +20,7 @@ goog.require('lf.Order');
 goog.require('lf.Row');
 goog.require('lf.Type');
 goog.require('lf.schema.TableBuilder');
-goog.require('lf.structs.Set');
+goog.require('lf.structs.set');
 goog.require('lf.testing.util');
 
 
@@ -286,7 +286,7 @@ function testAddDuplicateIndexOnFK() {
         addIndex('idx_employeeId', ['employeeId'], false, lf.Order.ASC);
     return tableBuilder.getSchema();
   };
-  var indexNames = new lf.structs.Set();
+  var indexNames = lf.structs.set.create();
   getSchema().getIndices().forEach(
       function(index) {
         indexNames.add(index.name);
