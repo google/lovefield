@@ -8236,9 +8236,9 @@ lf.proc.AggregationStep.Calculator_.count_ = function(relation, column) {
   }, 0);
 };
 lf.proc.AggregationStep.Calculator_.sum_ = function(relation, column) {
-  return relation.entries.reduce(function(soFar, entry) {
-    return soFar + entry.getField(column);
-  }, 0);
+  return lf.proc.AggregationStep.Calculator_.reduce_(relation, column, function(soFar, value) {
+    return value + soFar;
+  });
 };
 lf.proc.AggregationStep.Calculator_.stddev_ = function(relation, column) {
   var values = relation.entries.map(function(entry) {

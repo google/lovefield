@@ -44,7 +44,8 @@ lf.testing.NullableDataGenerator = function(schema) {
    * @type {!lf.testing.NullableDataGenerator.TableAGroundTruth}
    */
   this.tableAGroundTruth = {
-    avgId: 3
+    avgId: 3,
+    sumDistinctId: 15
   };
 
   /**
@@ -53,7 +54,8 @@ lf.testing.NullableDataGenerator = function(schema) {
    * @type {!lf.testing.NullableDataGenerator.TableBGroundTruth}
    */
   this.tableBGroundTruth = {
-    avgId: null
+    avgId: null,
+    sumId: null
   };
 };
 

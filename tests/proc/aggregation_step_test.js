@@ -299,6 +299,54 @@ function testExec_Sum_Distinct() {
 }
 
 
+/**
+ * Tests for sum distinct on TableA which has a mix of null and
+ * non-null values for the column.
+ */
+function testExec_SumDistinctNullableColumn() {
+  asyncTestCase.waitForAsync('testExec_SumDistinctNullableColumn');
+  var tableA = schemaWithNullable.table('TableA');
+  var inputRelation = lf.proc.Relation.fromRows(
+      nullableGenerator.sampleTableARows, [tableA.getName()]);
+  checkCalculationForRelation(
+      inputRelation,
+      lf.fn.sum(lf.fn.distinct(tableA['id'])),
+      nullableGenerator.tableAGroundTruth.sumDistinctId).
+      then(asyncTestCase.continueTesting.bind(asyncTestCase), fail);
+}
+
+
+/**
+ * Tests for sum on empty table.
+ */
+function testExec_SumEmptyTable() {
+  asyncTestCase.waitForAsync('testExec_SumEmptyTable');
+  var inputRelation = lf.proc.Relation.createEmpty();
+  checkCalculationForRelation(
+      inputRelation,
+      lf.fn.sum(j.maxSalary),
+      null).
+      then(asyncTestCase.continueTesting.bind(asyncTestCase), fail);
+}
+
+
+/**
+ * Tests for sum on TableB which has only null values for the
+ * column.
+ */
+function testExec_Sum_NullRows() {
+  asyncTestCase.waitForAsync('testExec_Sum_NullRows');
+  var tableB = schemaWithNullable.table('TableB');
+  var inputRelation = lf.proc.Relation.fromRows(
+      nullableGenerator.sampleTableBRows, [tableB.getName()]);
+  checkCalculationForRelation(
+      inputRelation,
+      lf.fn.sum(tableB['id']),
+      nullableGenerator.tableBGroundTruth.sumId).
+      then(asyncTestCase.continueTesting.bind(asyncTestCase), fail);
+}
+
+
 function testExec_Stddev_Distinct() {
   asyncTestCase.waitForAsync('testExec_Stddev_Distinct');
   checkCalculation(
