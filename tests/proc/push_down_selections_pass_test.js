@@ -37,10 +37,15 @@ var asyncTestCase = goog.testing.AsyncTestCase.createAndInstall(
 var schema;
 
 
+/** type {!lf.proc.PushDownSelectionsPass} */
+var pass;
+
+
 function setUp() {
   asyncTestCase.waitForAsync('setUp');
   hr.db.connect({storeType: lf.schema.DataStoreType.MEMORY}).then(function(db) {
     schema = db.getSchema();
+    pass = new lf.proc.PushDownSelectionsPass();
   }).then(function() {
     asyncTestCase.continueTesting();
   }, fail);
@@ -93,7 +98,6 @@ function testTree_ValuePredicates1() {
   var rootNodeBefore = orderByNode;
   assertEquals(treeBefore, lf.tree.toString(rootNodeBefore));
 
-  var pass = new lf.proc.PushDownSelectionsPass();
   var rootNodeAfter = pass.rewrite(rootNodeBefore);
   assertEquals(treeAfter, lf.tree.toString(rootNodeAfter));
 }
@@ -124,7 +128,6 @@ function testTree_ValuePredicates2() {
   var rootNodeBefore = orderByNode;
   assertEquals(treeBefore, lf.tree.toString(rootNodeBefore));
 
-  var pass = new lf.proc.PushDownSelectionsPass();
   var rootNodeAfter = pass.rewrite(rootNodeBefore);
   assertEquals(treeBefore, lf.tree.toString(rootNodeAfter));
 }
@@ -163,7 +166,6 @@ function testTree_ValuePredicates3() {
   var rootNodeBefore = orderByNode;
   assertEquals(treeBefore, lf.tree.toString(rootNodeBefore));
 
-  var pass = new lf.proc.PushDownSelectionsPass();
   var rootNodeAfter = pass.rewrite(rootNodeBefore);
   assertEquals(treeAfter, lf.tree.toString(rootNodeAfter));
 }
@@ -210,7 +212,6 @@ function testTree_JoinPredicates() {
   rootNodeBefore.addChild(selectNode);
   assertEquals(treeBefore, lf.tree.toString(rootNodeBefore));
 
-  var pass = new lf.proc.PushDownSelectionsPass();
   var rootNodeAfter = pass.rewrite(rootNodeBefore);
   assertEquals(treeAfter, lf.tree.toString(rootNodeAfter));
 }
@@ -290,7 +291,6 @@ function testTree_JoinPredicates2() {
   var rootNodeBefore = selectStep5;
   assertEquals(treeBefore, lf.tree.toString(rootNodeBefore));
 
-  var pass = new lf.proc.PushDownSelectionsPass();
   var rootNodeAfter = pass.rewrite(rootNodeBefore);
   assertEquals(treeAfter, lf.tree.toString(rootNodeAfter));
 }
@@ -333,7 +333,6 @@ function testTree_JoinPredicates3() {
   var rootNodeBefore = selectNode2;
   assertEquals(treeBefore, lf.tree.toString(rootNodeBefore));
 
-  var pass = new lf.proc.PushDownSelectionsPass();
   var rootNodeAfter = pass.rewrite(rootNodeBefore);
   assertEquals(treeAfter, lf.tree.toString(rootNodeAfter));
 }

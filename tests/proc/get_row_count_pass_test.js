@@ -43,12 +43,17 @@ var schema;
 var global;
 
 
+/** @type {!lf.proc.GetRowCountPass} */
+var pass;
+
+
 function setUp() {
   asyncTestCase.waitForAsync('setUp');
   getSchemaBuilder().connect({storeType: lf.schema.DataStoreType.MEMORY}).then(
       function(db) {
         schema = db.getSchema();
         global = db.global_;
+        pass = new lf.proc.GetRowCountPass(global);
         asyncTestCase.continueTesting();
       }, fail);
 }
@@ -97,7 +102,6 @@ function testSimpleTree() {
     };
   };
 
-  var pass = new lf.proc.GetRowCountPass(global);
   lf.testing.treeutil.assertTreeTransformation(
       constructTree(), treeBefore, treeAfter, pass);
 }
@@ -132,7 +136,6 @@ function testTreeUnaffected1() {
     };
   };
 
-  var pass = new lf.proc.GetRowCountPass(global);
   lf.testing.treeutil.assertTreeTransformation(
       constructTree(), treeBefore, treeBefore, pass);
 }
@@ -171,7 +174,6 @@ function testTreeUnaffected2() {
     };
   };
 
-  var pass = new lf.proc.GetRowCountPass(global);
   lf.testing.treeutil.assertTreeTransformation(
       constructTree(), treeBefore, treeBefore, pass);
 }
