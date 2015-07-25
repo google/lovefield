@@ -8267,7 +8267,11 @@ lf.proc.AggregationStep.Calculator_.stddev_ = function(relation, column) {
 lf.proc.AggregationStep.Calculator_.geomean_ = function(relation, column) {
   var nonZeroEntriesCount = 0, reduced = relation.entries.reduce(function(soFar, entry) {
     var value = entry.getField(column);
-    return 0 != value ? (nonZeroEntriesCount++, soFar + Math.log(value)) : soFar;
+    if (0 == value || goog.isNull(value)) {
+      return soFar;
+    }
+    nonZeroEntriesCount++;
+    return soFar + Math.log(value);
   }, 0);
   return 0 == nonZeroEntriesCount ? null : Math.pow(Math.E, reduced / nonZeroEntriesCount);
 };

@@ -283,7 +283,7 @@ function testExec_AvgDistinctNullableColumn() {
       nullableGenerator.sampleTableARows, [tableA.getName()]);
   checkCalculationForRelation(
       inputRelation, lf.fn.avg(lf.fn.distinct(tableA['id'])),
-      nullableGenerator.tableAGroundTruth.avgId, testFloatEquals).
+      nullableGenerator.tableAGroundTruth.avgDistinctId, testFloatEquals).
       then(asyncTestCase.continueTesting.bind(asyncTestCase), fail);
 }
 
@@ -438,6 +438,39 @@ function testExec_Geomean_Empty() {
   var inputRelation = lf.proc.Relation.createEmpty();
   checkCalculationForRelation(
       inputRelation, lf.fn.geomean(j.maxSalary),
+      null, testEquals).
+      then(asyncTestCase.continueTesting.bind(asyncTestCase), fail);
+}
+
+
+/**
+ * Tests for geomean distinct on TableA which has a mix of null and
+ * non-null values for the column.
+ */
+function testExec_GeomeanDistinctNullableColumn() {
+  asyncTestCase.waitForAsync('testExec_GeomeanDistinctNullableColumn');
+  var tableA = schemaWithNullable.table('TableA');
+  var inputRelation = lf.proc.Relation.fromRows(
+      nullableGenerator.sampleTableARows, [tableA.getName()]);
+  checkCalculationForRelation(
+      inputRelation, lf.fn.geomean(lf.fn.distinct(tableA['id'])),
+      nullableGenerator.tableAGroundTruth.geomeanDistinctId, testFloatEquals).
+      then(asyncTestCase.continueTesting.bind(asyncTestCase), fail);
+}
+
+
+/**
+ * Tests for Geomean on TableB which has only null values for the
+ * column.
+ */
+function testExec_Geomean_NullRows() {
+  asyncTestCase.waitForAsync('testExec_Geomean_NullRows');
+  var tableB = schemaWithNullable.table('TableB');
+  var inputRelation = lf.proc.Relation.fromRows(
+      nullableGenerator.sampleTableBRows, [tableB.getName()]);
+  checkCalculationForRelation(
+      inputRelation,
+      lf.fn.geomean(tableB['id']),
       null, testEquals).
       then(asyncTestCase.continueTesting.bind(asyncTestCase), fail);
 }

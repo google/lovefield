@@ -45,17 +45,19 @@ lf.testing.NullableDataGenerator = function(schema) {
    * @type {!lf.testing.NullableDataGenerator.TableAGroundTruth}
    */
   this.tableAGroundTruth = {
-    avgId: 3,
+    avgDistinctId: 3,
     sumDistinctId: 15,
-    stddevDistinctId: 1.5811388300841898
+    stddevDistinctId: 1.5811388300841898,
+    geomeanDistinctId: 2.6051710846973517
   };
 };
 
 
 /**
  * @typedef {{
- *   avgId: number,
+ *   avgDistinctId: number,
  *   sumDistinctId: number,
+ *   geomeanDistinctId: number,
  *   stddevDistinctId: number
  * }}
  */
