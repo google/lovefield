@@ -30,6 +30,7 @@
     "nopt": "~2.2.1"
   },
   "devDependencies": {
+    "chalk": "^0.5.1",
     "firebase-token-generator": "*",
     "fs-extra": "^0.18.2",
     "glob": "~3.2.6",

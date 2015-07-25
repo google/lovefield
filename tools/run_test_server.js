@@ -16,7 +16,8 @@
  */
 var pathMod = require('path');
 var gulp = require('gulp');
-var connect = /** @type {{server: !Function}} */ (require('gulp-connect'));
+var connect = /** @type {{server: !Function, serverClose: !Function}} */ (
+    require('gulp-connect'));
 var config =
     /** @type {!Function} */ (
         require(pathMod.resolve(__dirname + '/config.js')))();
@@ -67,9 +68,18 @@ function runPerfTestServer(port) {
 }
 
 
+function stopServer() {
+  connect.serverClose();
+}
+
+
 /** @type {!Function} */
 exports.runUnitTestServer = runUnitTestServer;
 
 
 /** @type {!Function} */
 exports.runPerfTestServer = runPerfTestServer;
+
+
+/** @type {!Function} */
+exports.stopServer = stopServer;

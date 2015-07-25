@@ -20,6 +20,8 @@ var firefoxMod = /** @type {{Profile: !Function, Options: !Function}} */ (
     require('selenium-webdriver/firefox'));
 var fork = /** @type {!Function} */ (require('child_process').fork);
 var glob = /** @type {{sync: !Function}} */ (require('glob'));
+var chalk = /** @type {{green: !Function, red: !Function}} */ (
+    require('chalk'));
 var pathMod = require('path');
 
 var JsUnitTestRunner = require('./jsunit_test_runner.js').JsUnitTestRunner;
@@ -44,7 +46,7 @@ function runSpacTests() {
         pathMod.resolve(__dirname), '../spac/run_test.js');
     var spacTest = fork(spacPath);
     spacTest.on('close', function(code) {
-      log('SPAC tests:', code ? 'FAILED' : 'PASSED');
+      log('SPAC tests:', code ? chalk.red('FAILED') : chalk.green('PASSED'));
       resolve();
     });
   });
@@ -102,10 +104,11 @@ function runJsUnitTests(testPrefix, browser) {
 
 /**
  * Runs performance regression tests and prints the results in the output.
+ * @param {string} browser
  * @return {!IThenable}
  */
-function runJsPerfTests() {
-  return runBrowserTests('perf', 'chrome', 'perf').then(
+function runJsPerfTests(browser) {
+  return runBrowserTests('perf', browser, 'perf').then(
       /**
        * @param {!Array<{results: !Array}>} totalResults
        */

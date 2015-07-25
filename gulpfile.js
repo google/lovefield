@@ -14,10 +14,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-var gulp = /** @type {{task: function(string, Function), src: !Function}} */ (
-    require('gulp'));
+var gulp = /** @type {{
+    task: function(string, (!Array|!Function), !Function=),
+    src: !Function}} */ (require('gulp'));
 var gjslint = /** @type {!Function} */ (require('gulp-gjslint'));
 var pathMod = require('path');
+var chalk = /** @type {{green: !Function, red: !Function}} */ (
+    require('chalk'));
 var nopt = /** @type {!Function} */ (require('nopt'));
 
 var builder = /** @type {{
@@ -29,12 +32,13 @@ var builder = /** @type {{
 var runner = /** @type {{
     runJsUnitTests: function(?string, string):!IThenable,
     runSpacTests: function():!IThenable,
-    runJsPerfTests: function():!IThenable}} */ (
+    runJsPerfTests: function(string=):!IThenable}} */ (
         require(pathMod.resolve(
             pathMod.join(__dirname, 'tools/run_test.js'))));
 var testServer = /** @type {{
     runUnitTestServer: function(number):!IThenable,
-    runPerfTestServer: function(number):!IThenable }} */ (
+    runPerfTestServer: function(number):!IThenable,
+    stopServer: !Function }} */ (
         require(pathMod.resolve(
             pathMod.join(__dirname, 'tools/run_test_server.js'))));
 
@@ -45,12 +49,16 @@ var log = console['log'];
 gulp.task('default', function() {
   log('Usage: ');
   log('  gulp build --target=<all|lib|tests> --mode=<opt|debug>:');
-  log('      compile source files using Closure compiler');
+  log('      Compile source files using Closure compiler');
   log('  gulp debug [--target=<tests|perf>] [--port=<number>]:');
-  log('      start a debug server (default is test at port 8000)');
-  log('  gulp lint: lint against source files');
-  log('  gulp test --target=<perf|spac|jsunit> --browser=<chrome|firefox>:');
-  log('      run Lovefield tests using webdriver (need to install separately)');
+  log('      Start a debug server (default is test at port 8000)');
+  log('  gulp lint: Lint against source files');
+  log('  gulp test --target=spac: Run SPAC tests');
+  log('  gulp test --target=perf [--browser=<chrome|firefox>]:');
+  log('      Run perf tests using webdriver (need separate install).');
+  log('  gulp test --target=tests [--filter=<test name> ' +
+      '--browser=<chrome|firefox>]:');
+  log('      Run unit tests using webdriver (need separate install).');
 });
 
 
@@ -95,7 +103,7 @@ gulp.task('debug', function() {
   // The test server cannot callback. It is terminated by Ctrl-C.
   if (options.target == 'perf') {
     testServer.runPerfTestServer(port);
-  } else {
+  } else if (options.target != 'spac') {
     testServer.runUnitTestServer(port);
   }
 });
@@ -107,32 +115,41 @@ gulp.task('debug', function() {
  *     default.
  *  2) Gather the output of the tests and display something useful (summary).
  */
-gulp.task('test', function() {
+gulp.task('test', ['debug'], function() {
   var knownOpts = {
     'browser': [String, null],
-    'target': [String, null]
+    'filter': [String, null],
+    'target': [String]
   };
   var options = nopt(knownOpts);
   options.browser = options.browser || 'chrome';
 
   var whenTestsDone = null;
-  if (options.target == null) {
-    // Run both SPAC and JSUnit tests, one after the other.
-    whenTestsDone = runner.runSpacTests().then(
-        function() {
-          return runner.runJsUnitTests(null, options.browser);
-        });
-  } else if (options.target == 'perf') {
+  if (options.target == 'perf') {
     // Run only perf regression tests and dump output in the console.
-    whenTestsDone = runner.runJsPerfTests().then(function(perfData) {
-      log(JSON.stringify(perfData, null, 2));
-    });
+    whenTestsDone = runner.runJsPerfTests(options.browser).then(
+        function(perfData) {
+          log(JSON.stringify(perfData, null, 2));
+          testServer.stopServer();
+          process.exit();
+        });
   } else if (options.target == 'spac') {
     // Run only SPAC.
     whenTestsDone = runner.runSpacTests();
   } else {
     // Run only JSUnit tests.
-    whenTestsDone = runner.runJsUnitTests(options.target, options.browser);
+    whenTestsDone =
+        runner.runJsUnitTests(options.filter, options.browser).then(
+            function(results) {
+              var failedCount = results.reduce(function(prev, item) {
+                return prev + item['pass'] ? 0 : 1;
+              }, 0);
+              log(results.length + ' tests, ' + failedCount + ' failure(s).');
+              log('JSUnit tests: ', failedCount > 0 ? chalk.red('FAILED') :
+                  chalk.green('PASSED'));
+              testServer.stopServer();
+              process.exit();
+            });
   }
   return whenTestsDone;
 });

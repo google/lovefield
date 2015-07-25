@@ -15,6 +15,8 @@
  * limitations under the License.
  */
 var pathMod = require('path');
+var chalk = /** @type {{green: !Function, red: !Function}} */ (
+    require('chalk'));
 var sequentiallyRun = require(pathMod.resolve(
     pathMod.join(__dirname, '/promise_util.js'))).sequentiallyRun;
 
@@ -40,13 +42,14 @@ var JsUnitTestRunner = function(driver, url) {
  *   pass: boolean,
  *   results: ?Array
  * }}
+ * @private
  */
-JsUnitTestRunner.Result;
+JsUnitTestRunner.Result_;
 
 
 /**
  * Runs the tests at the given URL.
- * @return {!IThenable<!JsUnitTestRunner.Result>} The result.
+ * @return {!IThenable<!JsUnitTestRunner.Result_>} The result.
  */
 JsUnitTestRunner.prototype.run = function() {
   var result = {
@@ -61,7 +64,13 @@ JsUnitTestRunner.prototype.run = function() {
       }.bind(this)).then(
       function(didSucceed) {
         result.pass = didSucceed;
-        console['log']('[', didSucceed ? 'PASS' : 'FAIL', ']', this.url_);
+        var parts = this.url_.split('/');
+        var testName = parts[parts.length - 2] + '/' + parts[parts.length - 1];
+        console['log'](
+            '[',
+            didSucceed ? chalk.green('PASS') : chalk.red('FAIL'),
+            ']',
+            testName);
 
         return didSucceed ? this.extractResult_() : false;
       }.bind(this)).then(
