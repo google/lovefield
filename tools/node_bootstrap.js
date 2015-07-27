@@ -60,6 +60,10 @@ module.exports = {
   },
   loadLkgrJs: function() {
     var filepath = pathMod.resolve(__dirname, 'dist', 'lovefield-lkgr.js');
+    if (!fsMod.existsSync(filepath)) {
+      filepath = pathMod.resolve(__dirname, '..', 'dist', 'lovefield-lkgr.js');
+    }
+
     fsMod.existsSync(filepath) ?
         bootstrap(filepath) :
         bootstrap(pathMod.resolve(__dirname, '..', 'dist', 'lovefield.js'));
