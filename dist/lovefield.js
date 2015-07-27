@@ -7894,11 +7894,14 @@ lf.pred.JoinPredicate.prototype.createCombinedEntryForUnmatched_ = function(entr
 };
 lf.pred.JoinPredicate.prototype.evalRelationsNestedLoopJoin_ = function(leftRelation, rightRelation, isOuterJoin) {
   for (var combinedEntries = [], leftRelationTables = leftRelation.getTables(), rightRelationTables = rightRelation.getTables(), i = 0;i < leftRelation.entries.length;i++) {
-    for (var matchFound = !1, j = 0;j < rightRelation.entries.length;j++) {
-      var predicateResult = this.evaluatorFn_(leftRelation.entries[i].getField(this.leftColumn), rightRelation.entries[j].getField(this.rightColumn));
-      if (predicateResult) {
-        var matchFound = !0, combinedEntry = lf.proc.RelationEntry.combineEntries(leftRelation.entries[i], leftRelationTables, rightRelation.entries[j], rightRelationTables);
-        combinedEntries.push(combinedEntry);
+    var matchFound = !1, leftValue = leftRelation.entries[i].getField(this.leftColumn);
+    if (!goog.isNull(leftValue)) {
+      for (var j = 0;j < rightRelation.entries.length;j++) {
+        var predicateResult = this.evaluatorFn_(leftValue, rightRelation.entries[j].getField(this.rightColumn));
+        if (predicateResult) {
+          var matchFound = !0, combinedEntry = lf.proc.RelationEntry.combineEntries(leftRelation.entries[i], leftRelationTables, rightRelation.entries[j], rightRelationTables);
+          combinedEntries.push(combinedEntry);
+        }
       }
     }
     isOuterJoin && !matchFound && combinedEntries.push(this.createCombinedEntryForUnmatched_(leftRelation.entries[i], leftRelationTables));
@@ -7918,8 +7921,8 @@ lf.pred.JoinPredicate.prototype.evalRelationsHashJoin_ = function(leftRelation, 
   });
   var minRelationTableNames = minRelation.getTables(), maxRelationTableNames = maxRelation.getTables();
   maxRelation.entries.forEach(function(entry) {
-    var key = String(entry.getField(maxColumn));
-    if (map.containsKey(key)) {
+    var value = entry.getField(maxColumn), key = String(value);
+    if (!goog.isNull(value) && map.containsKey(key)) {
       var entries = map.get(key);
       entries.forEach(function(innerEntry) {
         var combinedEntry = lf.proc.RelationEntry.combineEntries(entry, maxRelationTableNames, innerEntry, minRelationTableNames);

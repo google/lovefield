@@ -38,13 +38,17 @@ lf.testing.NullableDataGenerator = function(schema) {
   /** @type {!Array<!lf.Row>} */
   this.sampleTableBRows = [];
 
+  /** @type {!Array<!lf.Row>} */
+  this.sampleTableCRows = [];
+
   /**
-   * TableA.id has values (1, 2, 3, 4, 5, null, null): see
-   * generateTableA_(). Hence, average of the non-null values is 3,
-   * similarly other properties.
+   * TableA.id has values (1, 2, 3, 4, 5, null, null): see generateTableA_().
+   * Hence, average of the non-null values is 3. numNullable is exposed to be
+   * used by tests related to nullable columns.
    * @type {!lf.testing.NullableDataGenerator.TableAGroundTruth}
    */
   this.tableAGroundTruth = {
+    numNullable: 2,
     avgDistinctId: 3,
     sumDistinctId: 15,
     stddevDistinctId: 1.5811388300841898,
@@ -55,6 +59,7 @@ lf.testing.NullableDataGenerator = function(schema) {
 
 /**
  * @typedef {{
+ *   numNullable: number,
  *   avgDistinctId: number,
  *   sumDistinctId: number,
  *   geomeanDistinctId: number,
@@ -66,7 +71,7 @@ lf.testing.NullableDataGenerator.TableAGroundTruth;
 
 /**
  * Create a Schema Builder for NullableSchema with tables containing
- * nullable columns..
+ * nullable columns.
  * @return {!lf.schema.Builder}
  */
 lf.testing.NullableDataGenerator.getSchemaBuilder = function() {
@@ -77,6 +82,10 @@ lf.testing.NullableDataGenerator.getSchemaBuilder = function() {
       addNullable(['id']);
   schemaBuilder.
       createTable('TableB').
+      addColumn('id', lf.Type.INTEGER).
+      addNullable(['id']);
+  schemaBuilder.
+      createTable('TableC').
       addColumn('id', lf.Type.INTEGER).
       addNullable(['id']);
   return schemaBuilder;
@@ -90,12 +99,28 @@ lf.testing.NullableDataGenerator.getSchemaBuilder = function() {
 lf.testing.NullableDataGenerator.prototype.generateTableA_ = function() {
   var tableA = this.schema_.table('TableA');
   var nonNullCount = 5;
-  var nullCount = 2;
   for (var i = 0; i < nonNullCount; i++) {
     this.sampleTableARows.push(tableA.createRow({id: i + 1}));
   }
-  for (var i = 0; i < nullCount; i++) {
+  for (var i = 0; i < this.tableAGroundTruth.numNullable; i++) {
     this.sampleTableARows.push(tableA.createRow({id: null}));
+  }
+};
+
+
+/**
+ * Generates sample rows for TableC. This has identical id values with
+ * TableA.id. Intended to be used for testing joins with TableA.
+ * @private
+ */
+lf.testing.NullableDataGenerator.prototype.generateTableC_ = function() {
+  var tableC = this.schema_.table('TableC');
+  var nonNullCount = 5;
+  for (var i = 0; i < nonNullCount; i++) {
+    this.sampleTableCRows.push(tableC.createRow({id: i + 1}));
+  }
+  for (var i = 0; i < this.tableAGroundTruth.numNullable; i++) {
+    this.sampleTableCRows.push(tableC.createRow({id: null}));
   }
 };
 
@@ -113,9 +138,10 @@ lf.testing.NullableDataGenerator.prototype.generateTableB_ = function() {
 
 
 /**
- * Generates sample rows for tables in this schema (TableA and TableB).
+ * Generates sample rows for tables in this schema.
  */
 lf.testing.NullableDataGenerator.prototype.generate = function() {
   this.generateTableA_();
   this.generateTableB_();
+  this.generateTableC_();
 };

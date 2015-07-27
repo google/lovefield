@@ -23,6 +23,7 @@ goog.require('lf.pred.JoinPredicate');
 goog.require('lf.proc.Relation');
 goog.require('lf.proc.RelationEntry');
 goog.require('lf.schema.DataStoreType');
+goog.require('lf.testing.NullableDataGenerator');
 goog.require('lf.testing.hrSchemaSampleData');
 
 
@@ -47,15 +48,37 @@ var j;
 var d;
 
 
+/**
+ * This schema has custom tables that can have nullable columns.
+ * @type {!lf.schema.Database}
+ */
+var schemaWithNullable;
+
+
+/** @type {!lf.testing.NullableDataGenerator} */
+var nullableGenerator;
+
 function setUp() {
   asyncTestCase.waitForAsync('setUp');
-  hr.db.connect({storeType: lf.schema.DataStoreType.MEMORY}).then(
+  var connectOptions = {storeType: lf.schema.DataStoreType.MEMORY};
+  hr.db.connect(connectOptions).then(
       function(database) {
         db = database;
         d = db.getSchema().getDepartment();
         e = db.getSchema().getEmployee();
         j = db.getSchema().getJob();
-        asyncTestCase.continueTesting();
+
+        // For the tests involving nullable columns, a different schema
+        // is created. The tables in hr schema do not handle nullable column.
+        var schemaBuilder = lf.testing.NullableDataGenerator.getSchemaBuilder();
+        schemaWithNullable = schemaBuilder.getSchema();
+        nullableGenerator =
+            new lf.testing.NullableDataGenerator(schemaWithNullable);
+        nullableGenerator.generate();
+        schemaBuilder.connect(connectOptions).
+            then(function() {
+                  asyncTestCase.continueTesting();
+                });
       }, fail);
 }
 
@@ -205,6 +228,8 @@ function testJoinPredicate_EvalRelations_HashJoin() {
       lf.pred.JoinPredicate.prototype.evalRelationsHashJoin_);
   checkEvalRelations_NonUniqueKeys(
       lf.pred.JoinPredicate.prototype.evalRelationsHashJoin_);
+  checkEvalRelations_NullableKeys(
+      lf.pred.JoinPredicate.prototype.evalRelationsHashJoin_);
 }
 
 
@@ -213,6 +238,8 @@ function testJoinPredicate_EvalRelations_NestedLoopJoin() {
   checkEvalRelations_UniqueKeys(
       lf.pred.JoinPredicate.prototype.evalRelationsNestedLoopJoin_);
   checkEvalRelations_NonUniqueKeys(
+      lf.pred.JoinPredicate.prototype.evalRelationsNestedLoopJoin_);
+  checkEvalRelations_NullableKeys(
       lf.pred.JoinPredicate.prototype.evalRelationsNestedLoopJoin_);
 }
 
@@ -227,6 +254,8 @@ function testJoinPredicate_EvalRelations_OuterJoin_HashJoin() {
       lf.pred.JoinPredicate.prototype.evalRelationsHashJoin_);
   checkEvalRelations_OuterInnerJoins(
       lf.pred.JoinPredicate.prototype.evalRelationsHashJoin_);
+  checkEvalRelations_OuterJoin_NullableKeys(
+      lf.pred.JoinPredicate.prototype.evalRelationsHashJoin_);
 }
 
 
@@ -239,6 +268,8 @@ function testJoinPredicate_EvalRelations_OuterJoin_NestedLoopJoin() {
   checkEvalRelations_TwoOuterJoins(
       lf.pred.JoinPredicate.prototype.evalRelationsNestedLoopJoin_);
   checkEvalRelations_OuterInnerJoins(
+      lf.pred.JoinPredicate.prototype.evalRelationsNestedLoopJoin_);
+  checkEvalRelations_OuterJoin_NullableKeys(
       lf.pred.JoinPredicate.prototype.evalRelationsNestedLoopJoin_);
 }
 
@@ -287,6 +318,98 @@ function checkEvalRelations_UniqueKeys(evalFn) {
 
 
 /**
+ * Checks that the given join implementation is correct, for the case where the
+ * join predicate refers to nullable keys.
+ * @param {!function(!lf.proc.Relation, !lf.proc.Relation, boolean)
+ *     :!lf.proc.Relation} evalFn The join implementation method should be
+ *     either evalRelationsNestedLoopJoin_ or evalRelationsHashJoin_.
+ */
+function checkEvalRelations_NullableKeys(evalFn) {
+  var tableA = schemaWithNullable.table('TableA');
+  var tableB = schemaWithNullable.table('TableB');
+  var tableC = schemaWithNullable.table('TableC');
+
+  var tableARelation = lf.proc.Relation.fromRows(
+      nullableGenerator.sampleTableARows, [tableA.getName()]);
+  var tableBRelation = lf.proc.Relation.fromRows(
+      nullableGenerator.sampleTableBRows, [tableB.getName()]);
+  var tableCRelation = lf.proc.Relation.fromRows(
+      nullableGenerator.sampleTableCRows, [tableC.getName()]);
+
+  var joinPredicate1 = tableA['id'].eq(tableC['id']);
+  var result = evalFn.call(
+      joinPredicate1, tableARelation, tableCRelation, false);
+  assertEquals(
+      nullableGenerator.sampleTableARows.length -
+      nullableGenerator.tableAGroundTruth.numNullable,
+      result.entries.length);
+  result.entries.forEach(function(entry) {
+    assertTrue(hasNonNullEntry(entry, tableA.getEffectiveName()));
+    assertFalse(hasNullEntry(entry, tableC.getEffectiveName()));
+  });
+  // Join with left table containing only nulls.
+  var joinPredicate2 = tableB['id'].eq(tableC['id']);
+  result = evalFn.call(
+      joinPredicate2, tableBRelation, tableCRelation, false);
+  assertEquals(0, result.entries.length);
+}
+
+
+/**
+ * Checks that the given outer join implementation is correct, for the case
+ * where the join predicate refers to nullable keys.
+ * @param {!function(!lf.proc.Relation, !lf.proc.Relation, boolean)
+ *     :!lf.proc.Relation} evalFn The join implementation method should be
+ *     either evalRelationsNestedLoopJoin_ or evalRelationsHashJoin_.
+ */
+function checkEvalRelations_OuterJoin_NullableKeys(evalFn) {
+  var tableA = schemaWithNullable.table('TableA');
+  var tableB = schemaWithNullable.table('TableB');
+  var tableC = schemaWithNullable.table('TableC');
+
+  var tableARelation = lf.proc.Relation.fromRows(
+      nullableGenerator.sampleTableARows, [tableA.getName()]);
+  var tableBRelation = lf.proc.Relation.fromRows(
+      nullableGenerator.sampleTableBRows, [tableB.getName()]);
+  var tableCRelation = lf.proc.Relation.fromRows(
+      nullableGenerator.sampleTableCRows, [tableC.getName()]);
+
+  var lengthTableA = nullableGenerator.sampleTableARows.length;
+  var numNullableTableA = nullableGenerator.tableAGroundTruth.numNullable;
+  var joinPredicate1 = tableA['id'].eq(tableC['id']);
+  var result = evalFn.call(
+      joinPredicate1, tableARelation, tableCRelation, true);
+  assertEquals(lengthTableA, result.entries.length);
+  result.entries.slice(0, lengthTableA - numNullableTableA).forEach(
+      function(entry) {
+        assertTrue(hasNonNullEntry(entry, tableA.getEffectiveName()));
+      });
+  result.entries.slice(lengthTableA - numNullableTableA).forEach(
+      function(entry) {
+        assertTrue(hasNullEntry(entry, tableA.getEffectiveName()));
+      });
+  var numNullEntries = result.entries.filter(function(entry) {
+    return hasNullEntry(entry, tableC.getEffectiveName());
+  }).length;
+  assertEquals(numNullableTableA, numNullEntries);
+
+  // Join with left table containing only nulls.
+  var joinPredicate2 = tableB['id'].eq(tableC['id']);
+  result = evalFn.call(
+      joinPredicate2, tableBRelation, tableCRelation, true);
+  assertEquals(
+      nullableGenerator.sampleTableBRows.length,
+      result.entries.length);
+  numNullEntries = result.entries.filter(function(entry) {
+    return hasNullEntry(entry, tableC.getEffectiveName()) &&
+        hasNullEntry(entry, tableB.getEffectiveName());
+  }).length;
+  assertEquals(
+      nullableGenerator.sampleTableBRows.length, numNullEntries);
+}
+
+
+/**
  * Checks that the given combined entry has a null entry for table 'tableName'.
  * @param {!lf.proc.RelationEntry} entry The combined entry.
  * @param {!string} tableName
@@ -298,6 +421,25 @@ function hasNullEntry(entry, tableName) {
   return Object.keys(entry.row.payload()[tableName]).every(
       function(key) {
         return goog.isNull(entry.row.payload()[tableName][key]);
+      }
+  );
+}
+
+
+/**
+ * Checks that the given combined entry has a non-null entry for table
+ * 'tableName'.
+ * @param {!lf.proc.RelationEntry} entry The combined entry.
+ * @param {!string} tableName
+ * @return {boolean}
+ */
+function hasNonNullEntry(entry, tableName) {
+  var payload = entry.row.payload()[tableName];
+  var keys = Object.keys(payload);
+  assertTrue(keys.length > 0);
+  return Object.keys(payload).every(
+      function(key) {
+        return !goog.isNull(payload[key]);
       }
   );
 }
