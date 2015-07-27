@@ -4081,10 +4081,11 @@ lf.cache.ConstraintChecker.prototype.checkReferredKeys_ = function(table, modifi
   }, this);
 };
 lf.cache.ConstraintChecker.prototype.checkReferredKey_ = function(foreignKeySpec, modifications) {
+  var parentIndex = this.getParentIndex_(foreignKeySpec);
   modifications.forEach(function(modification) {
     var didColumnValueChange = lf.cache.ConstraintChecker.didColumnValueChange_(modification[0], modification[1], foreignKeySpec.name);
     if (didColumnValueChange) {
-      var rowAfter = modification[1], parentKey = rowAfter.payload()[foreignKeySpec.childColumn], parentIndex = this.getParentIndex_(foreignKeySpec);
+      var rowAfter = modification[1], parentKey = rowAfter.payload()[foreignKeySpec.childColumn];
       if (!goog.isNull(parentKey) && !parentIndex.containsKey(parentKey)) {
         throw new lf.Exception(203, foreignKeySpec.name);
       }
