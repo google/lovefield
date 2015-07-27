@@ -16,12 +16,11 @@
  */
 goog.setTestOnly();
 goog.require('goog.testing.jsunit');
-goog.require('lf.structs.Map');
 goog.require('lf.structs.map');
 
 
 function testSmoke() {
-  var map = new lf.structs.Map();
+  var map = lf.structs.map.create();
   map.set(1, 2);
   assertEquals(2, map.get(1));
   assertEquals(1, map.size);
@@ -40,7 +39,7 @@ function testSmoke() {
 }
 
 function testMapUtilsForInteger() {
-  var map = new lf.structs.Map();
+  var map = lf.structs.map.create();
   map.set(1, 2);
   assertEquals(2, map.get(1));
   assertEquals(1, map.size);
@@ -68,7 +67,7 @@ function testMapUtilsForInteger() {
 }
 
 function testMapUtilsForString() {
-  var map = new lf.structs.Map();
+  var map = lf.structs.map.create();
   map.set(1, 2 + '-str');
   assertEquals(2 + '-str', map.get(1));
   assertEquals(1, map.size);
@@ -101,7 +100,7 @@ function testMapUtilsForString() {
 
 function testMapUtilsForObjects() {
   var rows = new Array(10);
-  var map = new lf.structs.Map();
+  var map = lf.structs.map.create();
   for (var i = 0; i < 10; ++i) {
     rows[i] = {id: i, name: i + '-string'};
   }

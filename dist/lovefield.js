@@ -3478,7 +3478,11 @@ lf.structs.MapPolyFill_.prototype.set = function(key, value) {
   return this.map_.set(key, value);
 };
 goog.exportProperty(lf.structs.MapPolyFill_.prototype, "set", lf.structs.MapPolyFill_.prototype.set);
-lf.structs.Map = window.Map && window.Map.prototype.values && window.Map.prototype.forEach ? window.Map : lf.structs.MapPolyFill_;
+lf.structs.map.create = window.Map && window.Map.prototype.values && window.Map.prototype.forEach ? function() {
+  return new Map;
+} : function() {
+  return new lf.structs.MapPolyFill_;
+};
 lf.structs.map.keys = function(map) {
   if (map instanceof lf.structs.MapPolyFill_) {
     return map.map_.getKeys();
@@ -3817,7 +3821,7 @@ lf.backstore.BundledObjectStore.prototype.get = function(ids) {
   }, this));
 };
 lf.backstore.BundledObjectStore.prototype.getPagesByRowIds_ = function(rowIds) {
-  var results = new lf.structs.Map, resolver = goog.Promise.withResolver(), pageIds = lf.backstore.Page.toPageIds(rowIds), promises = pageIds.map(function(id) {
+  var results = lf.structs.map.create(), resolver = goog.Promise.withResolver(), pageIds = lf.backstore.Page.toPageIds(rowIds), promises = pageIds.map(function(id) {
     return new goog.Promise(function(resolve, reject) {
       var request;
       try {
@@ -3880,7 +3884,7 @@ lf.backstore.BundledObjectStore.prototype.put = function(rows) {
   if (0 == rows.length) {
     return goog.Promise.resolve();
   }
-  var pages = new lf.structs.Map;
+  var pages = lf.structs.map.create();
   rows.forEach(function(row) {
     var pageId = lf.backstore.Page.toPageId(row.id()), page = pages.get(pageId) || null;
     goog.isNull(page) && (page = this.retrievePageFn_(this.store_.name, pageId));
@@ -3900,7 +3904,7 @@ lf.backstore.BundledObjectStore.prototype.remove = function(ids) {
       return this.store_.clear();
     }, this));
   }
-  var pages = new lf.structs.Map;
+  var pages = lf.structs.map.create();
   ids.forEach(function(id) {
     var pageId = lf.backstore.Page.toPageId(id), page = pages.get(pageId) || null;
     goog.isNull(page) && (page = this.retrievePageFn_(this.store_.name, pageId));
@@ -4223,7 +4227,7 @@ lf.cache.TableDiff.prototype.isEmpty = function() {
 };
 
 lf.cache.Journal = function(global, scope) {
-  this.scope_ = new lf.structs.Map;
+  this.scope_ = lf.structs.map.create();
   scope.forEach(function(tableSchema) {
     this.scope_.set(tableSchema.getName(), tableSchema);
   }, this);
@@ -4232,7 +4236,7 @@ lf.cache.Journal = function(global, scope) {
   this.constraintChecker_ = new lf.cache.ConstraintChecker(global);
   this.inMemoryUpdater_ = new lf.cache.InMemoryUpdater(global);
   this.pendingRollback_ = this.terminated_ = !1;
-  this.tableDiffs_ = new lf.structs.Map;
+  this.tableDiffs_ = lf.structs.map.create();
 };
 lf.cache.Journal.prototype.getDiff = function() {
   return this.tableDiffs_;
@@ -4596,7 +4600,7 @@ lf.eval = {};
 lf.eval.Type = {BETWEEN:"between", EQ:"eq", GTE:"gte", GT:"gt", IN:"in", LTE:"lte", LT:"lt", MATCH:"match", NEQ:"neq"};
 lf.eval.Registry = function() {
   var numberOrIntegerEvalMap = lf.eval.buildNumberEvaluatorMap_();
-  this.evalMaps_ = new lf.structs.Map;
+  this.evalMaps_ = lf.structs.map.create();
   this.evalMaps_.set(lf.Type.BOOLEAN, lf.eval.buildBooleanEvaluatorMap_());
   this.evalMaps_.set(lf.Type.DATE_TIME, lf.eval.buildDateEvaluatorMap_());
   this.evalMaps_.set(lf.Type.NUMBER, numberOrIntegerEvalMap);
@@ -4612,7 +4616,7 @@ lf.eval.Registry.prototype.getEvaluator = function(columnType, evaluatorType) {
   return evaluatorFn;
 };
 lf.eval.buildBooleanEvaluatorMap_ = function() {
-  var map = new lf.structs.Map;
+  var map = lf.structs.map.create();
   map.set(lf.eval.Type.EQ, function(a, b) {
     return a == b;
   });
@@ -4655,7 +4659,7 @@ lf.eval.buildStringEvaluatorMap_ = function() {
   return map;
 };
 lf.eval.buildDateEvaluatorMap_ = function() {
-  var map = new lf.structs.Map;
+  var map = lf.structs.map.create();
   map.set(lf.eval.Type.BETWEEN, function(a, range) {
     return a.getTime() >= range[0].getTime() && a.getTime() <= range[1].getTime();
   });
@@ -5117,7 +5121,7 @@ lf.raw.BackStore = function() {
 lf.backstore.FirebaseRawBackStore = function(version, dbRef) {
   this.version_ = version;
   this.db_ = dbRef;
-  this.tableIds_ = new lf.structs.Map;
+  this.tableIds_ = lf.structs.map.create();
 };
 goog.exportSymbol("lf.backstore.FirebaseRawBackStore", lf.backstore.FirebaseRawBackStore);
 lf.backstore.FirebaseRawBackStore.prototype.getRawDBInstance = function() {
@@ -5289,7 +5293,7 @@ lf.backstore.FirebaseTx.prototype.commitInternal = function() {
 };
 
 lf.backstore.MemoryTable = function() {
-  this.data_ = new lf.structs.Map;
+  this.data_ = lf.structs.map.create();
 };
 lf.backstore.MemoryTable.prototype.getSync = function(ids) {
   if (0 == ids.length) {
@@ -5335,10 +5339,10 @@ lf.backstore.MemoryTable.prototype.getMaxRowId = function() {
 lf.backstore.Firebase = function(schema, fb) {
   this.schema_ = schema;
   this.app_ = fb;
-  this.removedRows_ = new lf.structs.Map;
+  this.removedRows_ = lf.structs.map.create();
   this.revision_ = -1;
-  this.tables_ = new lf.structs.Map;
-  this.tableIds_ = new lf.structs.Map;
+  this.tables_ = lf.structs.map.create();
+  this.tableIds_ = lf.structs.map.create();
   this.changeHandler_ = null;
 };
 lf.backstore.Firebase.prototype.getRevision = function() {
@@ -5429,7 +5433,7 @@ lf.backstore.Firebase.prototype.onChange_ = function(snapshot) {
   }
 };
 lf.backstore.Firebase.prototype.generateDiff_ = function(snapshot) {
-  var removedIds = lf.structs.set.create(), diffs = new lf.structs.Map;
+  var removedIds = lf.structs.set.create(), diffs = lf.structs.map.create();
   this.tableIds_.forEach(function(tid, tableName) {
     var table = this.tables_.get(tableName), diff = new lf.cache.TableDiff(tableName);
     if (this.removedRows_.has(tid)) {
@@ -5958,7 +5962,7 @@ lf.backstore.LocalStorageTx.prototype.commitInternal = function() {
 
 lf.backstore.LocalStorage = function(schema) {
   this.schema_ = schema;
-  this.tables_ = new lf.structs.Map;
+  this.tables_ = lf.structs.map.create();
   this.listener_ = this.changeHandler_ = null;
 };
 lf.backstore.LocalStorage.prototype.initSync = function() {
@@ -6050,7 +6054,7 @@ lf.backstore.MemoryTx.prototype.commitInternal = function() {
 
 lf.backstore.Memory = function(schema) {
   this.schema_ = schema;
-  this.tables_ = new lf.structs.Map;
+  this.tables_ = lf.structs.map.create();
 };
 lf.backstore.Memory.prototype.init = function() {
   this.schema_.tables().forEach(this.initTable_, this);
@@ -6141,7 +6145,7 @@ lf.backstore.WebSqlTable.prototype.remove = function(ids) {
 lf.backstore.WebSqlTx = function(db, journal, txType) {
   lf.backstore.BaseTx.call(this, journal, txType);
   this.db_ = db;
-  this.tables_ = new lf.structs.Map;
+  this.tables_ = lf.structs.map.create();
   this.commands_ = [];
 };
 goog.inherits(lf.backstore.WebSqlTx, lf.backstore.BaseTx);
@@ -6393,8 +6397,8 @@ lf.cache.Cache = function() {
 };
 
 lf.cache.DefaultCache = function() {
-  this.map_ = new lf.structs.Map;
-  this.tableRows_ = new lf.structs.Map;
+  this.map_ = lf.structs.map.create();
+  this.tableRows_ = lf.structs.map.create();
 };
 lf.cache.DefaultCache.prototype.getTableSet_ = function(tableName) {
   var set = this.tableRows_.get(tableName);
@@ -7369,8 +7373,8 @@ lf.index.IndexStore = function() {
 };
 
 lf.index.MemoryIndexStore = function() {
-  this.store_ = new lf.structs.Map;
-  this.tableIndices_ = new lf.structs.Map;
+  this.store_ = lf.structs.map.create();
+  this.tableIndices_ = lf.structs.map.create();
 };
 lf.index.MemoryIndexStore.prototype.init = function(schema) {
   var tables = schema.tables();
@@ -10376,7 +10380,7 @@ lf.DiffCalculator.createChangeRecord_ = function(index, removed, addedCount, obj
 };
 
 lf.ObserverRegistry = function() {
-  this.entries_ = new lf.structs.Map;
+  this.entries_ = lf.structs.map.create();
 };
 lf.ObserverRegistry.prototype.getQueryId_ = function(query) {
   return goog.getUid(query).toString();
@@ -10804,7 +10808,7 @@ lf.schema.BaseColumn.prototype.as = function(name) {
 goog.exportProperty(lf.schema.BaseColumn.prototype, "as", lf.schema.BaseColumn.prototype.as);
 
 lf.Global = function() {
-  this.services_ = new lf.structs.Map;
+  this.services_ = lf.structs.map.create();
 };
 lf.Global.get = function() {
   lf.Global.instance_ || (lf.Global.instance_ = new lf.Global);
@@ -10834,11 +10838,11 @@ goog.exportProperty(lf.Global.prototype, "isRegistered", lf.Global.prototype.isR
 
 lf.schema.Info = function(dbSchema) {
   this.schema_ = dbSchema;
-  this.referringFk_ = new lf.structs.Map;
-  this.parents_ = new lf.structs.Map;
-  this.colParent_ = new lf.structs.Map;
-  this.children_ = new lf.structs.Map;
-  this.colChild_ = new lf.structs.Map;
+  this.referringFk_ = lf.structs.map.create();
+  this.parents_ = lf.structs.map.create();
+  this.colParent_ = lf.structs.map.create();
+  this.children_ = lf.structs.map.create();
+  this.colChild_ = lf.structs.map.create();
   this.init_();
 };
 lf.schema.Info.prototype.init_ = function() {
@@ -10933,12 +10937,12 @@ lf.schema.ForeignKeySpec = function(rawSpec, name) {
 lf.schema.TableBuilder = function(tableName) {
   this.checkNamingRules_(tableName);
   this.name_ = tableName;
-  this.columns_ = new lf.structs.Map;
+  this.columns_ = lf.structs.map.create();
   this.uniqueColumns_ = lf.structs.set.create();
   this.uniqueIndices_ = lf.structs.set.create();
   this.nullable_ = lf.structs.set.create();
   this.pkName_ = null;
-  this.indices_ = new lf.structs.Map;
+  this.indices_ = lf.structs.map.create();
   this.persistentIndex_ = !1;
   this.fkSpecs_ = [];
 };
@@ -11236,7 +11240,7 @@ lf.schema.TableBuilder.prototype.generateRowClass_ = function(columns$$0, indice
 
 lf.schema.Builder = function(dbName, dbVersion) {
   this.schema_ = new lf.schema.DatabaseSchema(dbName, dbVersion);
-  this.tableBuilders_ = new lf.structs.Map;
+  this.tableBuilders_ = lf.structs.map.create();
   this.finalized_ = !1;
 };
 goog.exportSymbol("lf.schema.Builder", lf.schema.Builder);
@@ -11291,7 +11295,7 @@ lf.schema.Builder.prototype.checkCycleUtil_ = function(graphNode, nodeMap) {
   graphNode.onStack = !1;
 };
 lf.schema.Builder.prototype.checkFkCycle_ = function() {
-  var nodeMap = new lf.structs.Map;
+  var nodeMap = lf.structs.map.create();
   this.schema_.tables_.forEach(function(table, tableName) {
     nodeMap.set(tableName, new lf.schema.GraphNode_(tableName));
   }, this);
@@ -11350,7 +11354,7 @@ goog.exportProperty(lf.schema.Builder.prototype, "setPragma", lf.schema.Builder.
 lf.schema.DatabaseSchema = function(name, version) {
   this.name_ = name;
   this.version_ = version;
-  this.tables_ = new lf.structs.Map;
+  this.tables_ = lf.structs.map.create();
   this.pragma_ = {enableBundledMode:!1};
 };
 goog.exportSymbol("lf.schema.DatabaseSchema", lf.schema.DatabaseSchema);
