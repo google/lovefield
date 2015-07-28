@@ -3679,9 +3679,6 @@ goog.structs.Set.prototype.isEmpty = function() {
 goog.structs.Set.prototype.contains = function(element) {
   return this.map_.containsKey(goog.structs.Set.getKey_(element));
 };
-goog.structs.Set.prototype.containsAll = function(col) {
-  return goog.structs.every(col, this.contains, this);
-};
 goog.structs.Set.prototype.difference = function(col) {
   var result = this.clone();
   result.removeAll(col);
@@ -3759,6 +3756,19 @@ lf.structs.set.diff = function(set1, set2) {
     });
   }
   return result;
+};
+lf.structs.set.isSubset = function(set1, set2) {
+  if (set2.size > set1.size) {
+    return !1;
+  }
+  var result = !0;
+  set2.forEach(function(value) {
+    result = result && set1.has(value);
+  });
+  return result;
+};
+lf.structs.set.equals = function(set1, set2) {
+  return set1.size == set2.size && lf.structs.set.isSubset(set1, set2);
 };
 
 lf.backstore.Page = function(id, opt_payload) {
@@ -8303,12 +8313,12 @@ lf.proc.AggregationStep.Calculator_.geomean_ = function(relation, column) {
   return 0 == nonZeroEntriesCount ? null : Math.pow(Math.E, reduced / nonZeroEntriesCount);
 };
 lf.proc.AggregationStep.Calculator_.distinct_ = function(relation, column) {
-  var distinctMap = new goog.structs.Map;
+  var distinctMap = lf.structs.map.create();
   relation.entries.forEach(function(entry) {
     var value = entry.getField(column);
     distinctMap.set(value, entry);
   });
-  return new lf.proc.Relation(distinctMap.getValues(), relation.getTables());
+  return new lf.proc.Relation(lf.structs.map.values(distinctMap), relation.getTables());
 };
 
 lf.proc.LogicalQueryPlan = function(rootNode, scope) {
@@ -9275,7 +9285,7 @@ lf.proc.ImplicitJoinsPass.prototype.traverse_ = function(rootNode, opt_query) {
 };
 
 lf.proc.PushDownSelectionsPass = function() {
-  this.alreadyPushedDown_ = new goog.structs.Set;
+  this.alreadyPushedDown_ = lf.structs.set.create();
 };
 goog.inherits(lf.proc.PushDownSelectionsPass, lf.proc.RewritePass);
 lf.proc.PushDownSelectionsPass.prototype.clear_ = function() {
@@ -9293,7 +9303,7 @@ lf.proc.PushDownSelectionsPass.prototype.traverse_ = function(node) {
     var selectNode = node, newRoot = selectNode.predicate instanceof lf.pred.ValuePredicate ? this.pushDownValuePredNodeRec_(selectNode) : this.pushDownJoinPredNodeRec_(selectNode);
     this.alreadyPushedDown_.add(selectNode);
     newRoot == selectNode && (newRoot = selectNode.getChildAt(0));
-    goog.isNull(newRoot) || (goog.isNull(newRoot.getParent()) && (this.rootNode = newRoot), this.isCandidateNode_(newRoot) && !this.alreadyPushedDown_.contains(newRoot) && this.traverse_(newRoot));
+    goog.isNull(newRoot) || (goog.isNull(newRoot.getParent()) && (this.rootNode = newRoot), this.isCandidateNode_(newRoot) && !this.alreadyPushedDown_.has(newRoot) && this.traverse_(newRoot));
   } else {
     node.getChildren().forEach(function(child) {
       this.traverse_(child);
@@ -9319,24 +9329,24 @@ lf.proc.PushDownSelectionsPass.prototype.pushDownNodeRec_ = function(node$$0, sh
   return newRoot;
 };
 lf.proc.PushDownSelectionsPass.prototype.pushDownValuePredNodeRec_ = function(node) {
-  var selectNodeTables = new goog.structs.Set([node.predicate.column.getTable().getEffectiveName()]), shouldPushDownFn = function(child) {
+  var selectNodeTables = lf.structs.set.create([node.predicate.column.getTable().getEffectiveName()]), shouldPushDownFn = function(child) {
     return this.doesReferToTables_(child, selectNodeTables);
   }.bind(this);
   return this.pushDownNodeRec_(node, shouldPushDownFn);
 };
 lf.proc.PushDownSelectionsPass.prototype.pushDownJoinPredNodeRec_ = function(node) {
-  var selectNodeTables = new goog.structs.Set([node.predicate.leftColumn.getTable().getEffectiveName(), node.predicate.rightColumn.getTable().getEffectiveName()]), shouldPushDownFn = function(child) {
+  var selectNodeTables = lf.structs.set.create([node.predicate.leftColumn.getTable().getEffectiveName(), node.predicate.rightColumn.getTable().getEffectiveName()]), shouldPushDownFn = function(child) {
     return this.doesReferToTables_(child, selectNodeTables);
   }.bind(this);
   return this.pushDownNodeRec_(node, shouldPushDownFn);
 };
 lf.proc.PushDownSelectionsPass.prototype.doesReferToTables_ = function(root, tables) {
-  var referredTables = new goog.structs.Set;
+  var referredTables = lf.structs.set.create();
   lf.tree.getLeafNodes(root).forEach(function(tableAccessNode) {
     referredTables.add(tableAccessNode.table.getEffectiveName());
   }, this);
   root instanceof lf.proc.TableAccessNode && referredTables.add(root.table.getEffectiveName());
-  return referredTables.containsAll(tables);
+  return lf.structs.set.isSubset(referredTables, tables);
 };
 lf.proc.PushDownSelectionsPass.prototype.isCandidateNode_ = function(node) {
   return node instanceof lf.proc.SelectNode && !(node.predicate instanceof lf.pred.CombinedPredicate);
@@ -9571,7 +9581,7 @@ lf.proc.BoundKeyRangeCalculator = function(indexSchema, predicateMap) {
   this.combinations_ = this.lastQueryContext_ = null;
 };
 lf.proc.BoundKeyRangeCalculator.prototype.calculateKeyRangeMap_ = function(queryContext) {
-  var keyRangeMap = new goog.structs.Map;
+  var keyRangeMap = lf.structs.map.create();
   this.predicateMap_.getKeys().forEach(function(columnName) {
     var predicateIds = this.predicateMap_.get(columnName), predicates = predicateIds.map(function(predicateId) {
       return queryContext.getPredicate(predicateId);
@@ -9586,7 +9596,7 @@ lf.proc.BoundKeyRangeCalculator.prototype.calculateKeyRangeMap_ = function(query
 };
 lf.proc.BoundKeyRangeCalculator.prototype.fillMissingKeyRanges_ = function(keyRangeMap) {
   for (var i = this.indexSchema_.columns.length - 1;0 <= i;i--) {
-    var column = this.indexSchema_.columns[i], keyRangeSet = keyRangeMap.get(column.schema.getName(), null);
+    var column = this.indexSchema_.columns[i], keyRangeSet = keyRangeMap.get(column.schema.getName()) || null;
     if (!goog.isNull(keyRangeSet)) {
       break;
     }
@@ -9599,17 +9609,17 @@ lf.proc.BoundKeyRangeCalculator.prototype.getKeyRangeCombinations = function(que
   }
   var keyRangeMap = this.calculateKeyRangeMap_(queryContext);
   this.fillMissingKeyRanges_(keyRangeMap);
-  this.combinations_ = 1 == this.indexSchema_.columns.length ? keyRangeMap.getValues()[0].getValues() : (0,$jscomp.scope.calculateCartesianProduct)(this.getSortedKeyRangeSets_(keyRangeMap));
+  this.combinations_ = 1 == this.indexSchema_.columns.length ? lf.structs.map.values(keyRangeMap)[0].getValues() : (0,$jscomp.scope.calculateCartesianProduct)(this.getSortedKeyRangeSets_(keyRangeMap));
   this.lastQueryContext_ = queryContext;
   return this.combinations_;
 };
 lf.proc.BoundKeyRangeCalculator.prototype.getSortedKeyRangeSets_ = function(keyRangeMap) {
-  var sortHelper = new goog.structs.Map, priority = 0;
+  var sortHelper = lf.structs.map.create(), priority = 0;
   this.indexSchema_.columns.forEach(function(column) {
     sortHelper.set(column.schema.getName(), priority);
     priority++;
   });
-  var sortedColumnNames = keyRangeMap.getKeys().sort(function(a, b) {
+  var sortedColumnNames = lf.structs.map.keys(keyRangeMap).sort(function(a, b) {
     return sortHelper.get(a) - sortHelper.get(b);
   });
   return sortedColumnNames.map(function(columnName) {
@@ -9655,8 +9665,7 @@ lf.proc.IndexCostEstimator.prototype.isCandidate_ = function(predicate) {
 lf.proc.IndexRangeCandidate = function(indexStore, indexSchema) {
   this.indexStore_ = indexStore;
   this.indexSchema = indexSchema;
-  this.indexedColumnNames_ = new goog.structs.Set;
-  this.indexedColumnNames_.addAll(this.indexSchema.columns.map(function(col) {
+  this.indexedColumnNames_ = lf.structs.set.create(this.indexSchema.columns.map(function(col) {
     return col.schema.getName();
   }));
   this.keyRangeCalculator_ = this.predicateMap_ = null;
@@ -9672,7 +9681,7 @@ lf.proc.IndexRangeCandidate.prototype.getKeyRangeCalculator = function() {
 lf.proc.IndexRangeCandidate.prototype.consumePredicates_ = function(predicates) {
   predicates.forEach(function(predicate) {
     var columnName = predicate.getColumns()[0].getName();
-    this.indexedColumnNames_.contains(columnName) && (goog.isNull(this.predicateMap_) && (this.predicateMap_ = new goog.labs.structs.Multimap), this.predicateMap_.add(columnName, predicate.getId()));
+    this.indexedColumnNames_.has(columnName) && (goog.isNull(this.predicateMap_) && (this.predicateMap_ = new goog.labs.structs.Multimap), this.predicateMap_.add(columnName, predicate.getId()));
   }, this);
 };
 lf.proc.IndexRangeCandidate.prototype.isUsable = function() {
@@ -9769,7 +9778,7 @@ lf.proc.IndexRangeScanPass.prototype.rewrite = function(rootNode, queryContext) 
         return queryContext.getPredicate(c.predicateId);
       }));
       if (!goog.isNull(indexRangeCandidate)) {
-        var predicateToSelectStepMap = new goog.structs.Map;
+        var predicateToSelectStepMap = lf.structs.map.create();
         selectStepsCandidates.forEach(function(selectStep) {
           predicateToSelectStepMap.set(selectStep.predicateId, selectStep);
         }, this);
@@ -10606,14 +10615,23 @@ lf.proc.Transaction = function(global) {
   this.runner_ = global.getService(lf.service.RUNNER);
   this.transactionTask_ = null;
   this.state_ = lf.proc.TransactionState_.CREATED;
+  0 == lf.proc.StateTransitions_.size && this.initStateTransitions_();
 };
 goog.exportSymbol("lf.proc.Transaction", lf.proc.Transaction);
 lf.proc.TransactionState_ = {CREATED:0, ACQUIRING_SCOPE:1, ACQUIRED_SCOPE:2, EXECUTING_QUERY:3, EXECUTING_AND_COMMITTING:4, COMMITTING:5, ROLLING_BACK:6, FINALIZED:7};
-lf.proc.StateTransitions_ = new goog.structs.Map(lf.proc.TransactionState_.CREATED, new goog.structs.Set([lf.proc.TransactionState_.ACQUIRING_SCOPE, lf.proc.TransactionState_.EXECUTING_AND_COMMITTING]), lf.proc.TransactionState_.ACQUIRING_SCOPE, new goog.structs.Set([lf.proc.TransactionState_.ACQUIRED_SCOPE]), lf.proc.TransactionState_.ACQUIRED_SCOPE, new goog.structs.Set([lf.proc.TransactionState_.EXECUTING_QUERY, lf.proc.TransactionState_.COMMITTING, lf.proc.TransactionState_.ROLLING_BACK]), lf.proc.TransactionState_.EXECUTING_QUERY, 
-new goog.structs.Set([lf.proc.TransactionState_.ACQUIRED_SCOPE, lf.proc.TransactionState_.FINALIZED]), lf.proc.TransactionState_.EXECUTING_AND_COMMITTING, new goog.structs.Set([lf.proc.TransactionState_.FINALIZED]), lf.proc.TransactionState_.COMMITTING, new goog.structs.Set([lf.proc.TransactionState_.FINALIZED]), lf.proc.TransactionState_.ROLLING_BACK, new goog.structs.Set([lf.proc.TransactionState_.FINALIZED]));
+lf.proc.StateTransitions_ = lf.structs.map.create();
+lf.proc.Transaction.prototype.initStateTransitions_ = function() {
+  lf.proc.StateTransitions_.set(lf.proc.TransactionState_.CREATED, lf.structs.set.create([lf.proc.TransactionState_.ACQUIRING_SCOPE, lf.proc.TransactionState_.EXECUTING_AND_COMMITTING]));
+  lf.proc.StateTransitions_.set(lf.proc.TransactionState_.ACQUIRING_SCOPE, lf.structs.set.create([lf.proc.TransactionState_.ACQUIRED_SCOPE]));
+  lf.proc.StateTransitions_.set(lf.proc.TransactionState_.ACQUIRED_SCOPE, lf.structs.set.create([lf.proc.TransactionState_.EXECUTING_QUERY, lf.proc.TransactionState_.COMMITTING, lf.proc.TransactionState_.ROLLING_BACK]));
+  lf.proc.StateTransitions_.set(lf.proc.TransactionState_.EXECUTING_QUERY, lf.structs.set.create([lf.proc.TransactionState_.ACQUIRED_SCOPE, lf.proc.TransactionState_.FINALIZED]));
+  lf.proc.StateTransitions_.set(lf.proc.TransactionState_.EXECUTING_AND_COMMITTING, lf.structs.set.create([lf.proc.TransactionState_.FINALIZED]));
+  lf.proc.StateTransitions_.set(lf.proc.TransactionState_.COMMITTING, lf.structs.set.create([lf.proc.TransactionState_.FINALIZED]));
+  lf.proc.StateTransitions_.set(lf.proc.TransactionState_.ROLLING_BACK, lf.structs.set.create([lf.proc.TransactionState_.FINALIZED]));
+};
 lf.proc.Transaction.prototype.stateTransition_ = function(newState) {
-  var nextStates = lf.proc.StateTransitions_.get(this.state_, null);
-  if (goog.isNull(nextStates) || !nextStates.contains(newState)) {
+  var nextStates = lf.proc.StateTransitions_.get(this.state_) || null;
+  if (goog.isNull(nextStates) || !nextStates.has(newState)) {
     throw new lf.Exception(107, this.state_, newState);
   }
   this.state_ = newState;

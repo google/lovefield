@@ -133,3 +133,36 @@ function testSetUtilsForObjects() {
   assertEquals(1, diffSet.size);
   assertTrue(diffSet.has(null));
 }
+
+function testIsSubSetAndEquals() {
+  var checker = function(s1, s2, s3, s4, s5) {
+    assertTrue(lf.structs.set.isSubset(s1, s2));
+    assertTrue(lf.structs.set.isSubset(s1, s1));
+    assertFalse(lf.structs.set.isSubset(s2, s1));
+    assertFalse(lf.structs.set.isSubset(s1, s3));
+    assertFalse(lf.structs.set.isSubset(s3, s2));
+    assertTrue(lf.structs.set.isSubset(s1, s4));
+    assertFalse(lf.structs.set.isSubset(s4, s1));
+
+    assertTrue(lf.structs.set.equals(s1, s1));
+    assertTrue(lf.structs.set.equals(s4, s4));
+    assertFalse(lf.structs.set.equals(s1, s2));
+    assertFalse(lf.structs.set.equals(s2, s3));
+    assertFalse(lf.structs.set.equals(s1, s4));
+    assertTrue(lf.structs.set.equals(s1, s5));
+    assertTrue(lf.structs.set.equals(s5, s1));
+  };
+
+  var s1 = lf.structs.set.create([1, 2, 3]);
+  var s2 = lf.structs.set.create([2, 3]);
+  var s3 = lf.structs.set.create([1, 4]);
+  var s4 = lf.structs.set.create();
+  var s5 = lf.structs.set.create([1, 2, 3]);
+  checker(s1, s2, s3, s4, s5);
+
+  s1 = lf.structs.set.create(['A1', 'B2', 'C3']);
+  s2 = lf.structs.set.create(['B2', 'C3']);
+  s3 = lf.structs.set.create(['A1', 'D4']);
+  s5 = lf.structs.set.create(['A1', 'B2', 'C3']);
+  checker(s1, s2, s3, s4, s5);
+}
