@@ -44,6 +44,27 @@ function testBetween() {
 }
 
 
+function testBetween_Null() {
+  var evaluationFn = registry.getEvaluator(
+      lf.Type.DATE_TIME, lf.eval.Type.BETWEEN);
+
+  var date1 = new Date();
+  var date2 = new Date(date1.getTime() + 10);
+  var date3 = new Date(date1.getTime() + 20);
+  var date4 = null;
+
+  assertTrue(evaluationFn(date2, [date1, date3]));
+  assertFalse(evaluationFn(date1, [date2, date3]));
+  // null test.
+  assertFalse(evaluationFn(date1, [date4, date3]));
+  assertFalse(evaluationFn(date4, [date1, date3]));
+  assertFalse(evaluationFn(date1, [date1, date4]));
+  assertFalse(evaluationFn(date1, [date4, date1]));
+  assertFalse(evaluationFn(date4, [date4, date4]));
+  assertFalse(evaluationFn(date1, [date4, date4]));
+}
+
+
 function testEq() {
   var evaluationFn = registry.getEvaluator(
       lf.Type.DATE_TIME, lf.eval.Type.EQ);

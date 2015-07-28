@@ -4629,7 +4629,7 @@ lf.eval.buildBooleanEvaluatorMap_ = function() {
 lf.eval.buildCommonEvaluatorMap_ = function() {
   var map = lf.eval.buildBooleanEvaluatorMap_();
   map.set(lf.eval.Type.BETWEEN, function(a, range) {
-    return a >= range[0] && a <= range[1];
+    return goog.isNull(a) || goog.isNull(range[0]) || goog.isNull(range[1]) ? !1 : a >= range[0] && a <= range[1];
   });
   map.set(lf.eval.Type.GTE, function(a, b) {
     return a >= b;
@@ -4662,7 +4662,7 @@ lf.eval.buildStringEvaluatorMap_ = function() {
 lf.eval.buildDateEvaluatorMap_ = function() {
   var map = lf.structs.map.create();
   map.set(lf.eval.Type.BETWEEN, function(a, range) {
-    return a.getTime() >= range[0].getTime() && a.getTime() <= range[1].getTime();
+    return goog.isNull(a) || goog.isNull(range[0]) || goog.isNull(range[1]) ? !1 : a.getTime() >= range[0].getTime() && a.getTime() <= range[1].getTime();
   });
   map.set(lf.eval.Type.EQ, function(a, b) {
     var aTime = goog.isNull(a) ? -1 : a.getTime(), bTime = goog.isNull(b) ? -1 : b.getTime();

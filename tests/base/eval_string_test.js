@@ -46,6 +46,27 @@ function testBetween() {
 }
 
 
+function testBetween_Null() {
+  var evaluationFn = registry.getEvaluator(
+      lf.Type.STRING, lf.eval.Type.BETWEEN);
+
+  var string1 = 'a';
+  var string2 = 'ab';
+  var string3 = 'abc';
+  var string4 = null;
+
+  assertTrue(evaluationFn(string1, [string1, string3]));
+  assertTrue(evaluationFn(string2, [string1, string3]));
+  // null test.
+  assertFalse(evaluationFn(string1, [string4, string3]));
+  assertFalse(evaluationFn(string4, [string1, string3]));
+  assertFalse(evaluationFn(string1, [string1, string4]));
+  assertFalse(evaluationFn(string1, [string4, string1]));
+  assertFalse(evaluationFn(string4, [string4, string4]));
+  assertFalse(evaluationFn(string1, [string4, string4]));
+}
+
+
 function testEq() {
   var evaluationFn = registry.getEvaluator(
       lf.Type.STRING, lf.eval.Type.EQ);
