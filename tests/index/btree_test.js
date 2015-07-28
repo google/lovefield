@@ -16,16 +16,14 @@
  */
 goog.setTestOnly();
 
-goog.require('goog.string');
-goog.require('goog.structs.Set');
 goog.require('goog.testing.PropertyReplacer');
 goog.require('goog.testing.jsunit');
 goog.require('lf.Order');
-goog.require('lf.Row');
 goog.require('lf.index.BTree');
 goog.require('lf.index.MultiKeyComparator');
 goog.require('lf.index.SimpleComparator');
 goog.require('lf.index.SingleKeyRange');
+goog.require('lf.structs.set');
 goog.require('lf.testing.index.TestMultiKeyIndex');
 goog.require('lf.testing.index.TestMultiRowNumericalKey');
 goog.require('lf.testing.index.TestSingleRowNumericalKey');
@@ -998,12 +996,12 @@ function testUniqueConstraint() {
 function testRandomNumbers() {
   stub.reset();
   var ROW_COUNT = 5000;
-  var set = new goog.structs.Set();
-  while (set.getCount() < ROW_COUNT) {
+  var set = lf.structs.set.create();
+  while (set.size < ROW_COUNT) {
     set.add(Math.floor(Math.random() * ROW_COUNT * 100));
   }
 
-  var keys = set.getValues().sort(function(a, b) {
+  var keys = lf.structs.set.values(set).sort(function(a, b) {
     return a - b;
   });
 
@@ -1153,12 +1151,12 @@ function testMultiKeyGet() {
 function testMultiKeyRandomNumbers() {
   stub.reset();
   var ROW_COUNT = 5000;
-  var set = new goog.structs.Set();
-  while (set.getCount() < ROW_COUNT) {
+  var set = lf.structs.set.create();
+  while (set.size < ROW_COUNT) {
     set.add(Math.floor(Math.random() * ROW_COUNT * 100));
   }
 
-  var numbers = set.getValues().sort(function(a, b) {
+  var numbers = lf.structs.set.values(set).sort(function(a, b) {
     return a - b;
   });
 
@@ -1297,57 +1295,4 @@ function testGetAll() {
   assertArrayEquals([14, 20, 21], tree2.getRange(undefined, false, 3, 4));
   assertArrayEquals([94], tree2.getRange(undefined, false, 10, 44));
   assertArrayEquals([], tree2.getRange(undefined, false, undefined, 99));
-}
-
-function manualTestBenchmark() {
-  var log = goog.bind(console['log'], console);
-  var ROW_COUNT = 1000000;
-
-  stub.reset();
-
-  /** @param {!Array<!lf.Row>} rows */
-  var runTest = function(rows) {
-    var tree = new lf.index.BTree('test', c, true);
-    var start = goog.global.performance.now();
-    for (var i = 0; i < ROW_COUNT; i++) {
-      tree.add(values[i], i);
-    }
-    var end = goog.global.performance.now();
-    log('btree, normal construct:', end - start);
-
-    var data = rows.map(function(row, i) {
-      return [values[i], row.id()];
-    });
-    var sortedData = data.sort(function(lhs, rhs) {
-      return (lhs[0] < rhs[0]) ? -1 : ((lhs[0] > rhs[0]) ? 1 : 0);
-    });
-
-    start = goog.global.performance.now();
-    new lf.index.BTree('test', c, true, sortedData);
-    end = goog.global.performance.now();
-    log('btree, sorted construct:', end - start);
-  };
-
-  var set = new goog.structs.Set();
-  while (set.getCount() < ROW_COUNT) {
-    set.add(Math.random() * ROW_COUNT);
-  }
-
-  var rows = [];
-  var values = set.getValues();
-  for (var i = 0; i < ROW_COUNT; i++) {
-    rows.push(new lf.Row(i, {key: values[i]}));
-  }
-  runTest(rows);
-  set.clear();
-  while (set.getCount() < ROW_COUNT) {
-    set.add(goog.string.getRandomString());
-  }
-
-  rows = [];
-  values = set.getValues();
-  for (var i = 0; i < ROW_COUNT; i++) {
-    rows.push(new lf.Row(i, {key: values[i]}));
-  }
-  runTest(rows);
 }
