@@ -128,45 +128,79 @@ function testEval_Match() {
 /**
  * Tests ValuePredicate#eval() in the case where the predicate is of type
  * lf.eval.Type.IN.
+ * @param {!Array<!lf.Row>} sampleRows
+ * @param {!Array<string>} inValues
+ * @param {!Array<string>} expectedValues
+ * @param {boolean} isReverse
  */
-function testEval_In() {
+function checkEval_In(sampleRows, inValues, expectedValues, isReverse) {
   var table = schema.table('tableA');
-  var sampleRows = getSampleRows(6);
-  var expectedNames = ['sampleName0', 'sampleName2', 'sampleName4'];
   var predicate = new lf.pred.ValuePredicate(
-      table['name'], expectedNames, lf.eval.Type.IN);
-
-  var inputRelation = lf.proc.Relation.fromRows(sampleRows, ['tableA']);
+      table['name'], inValues, lf.eval.Type.IN);
+  if (isReverse) {
+    predicate.setComplement(true);
+  }
+  var inputRelation = lf.proc.Relation.fromRows(sampleRows, [table.getName()]);
   var outputRelation = predicate.eval(inputRelation);
-  var actualNames = outputRelation.entries.map(function(entry) {
+  var actualValues = outputRelation.entries.map(function(entry) {
     return entry.getField(table['name']);
   });
-  assertArrayEquals(expectedNames, actualNames);
+  assertArrayEquals(expectedValues, actualValues);
 }
 
 
 /**
  * Tests ValuePredicate#eval() in the case where the predicate is of type
- * lf.eval.Type.IN and the predicate has been reversed.
+ * lf.eval.Type.IN and column does not have null.
  */
-function testEval_In_Reversed() {
+function testEval_In_WithoutNull() {
+  var sampleRows = getSampleRows(6);
+  var inValues = ['sampleName0', 'sampleName2', 'sampleName4'];
+  checkEval_In(sampleRows, inValues, inValues, false);
+}
+
+
+/**
+ * Tests ValuePredicate#eval() for column having null, in the case where the
+ * predicate is of type lf.eval.Type.IN.
+ */
+function testEval_In_WithNull() {
   var table = schema.table('tableA');
   var sampleRows = getSampleRows(6);
-  var predicate = new lf.pred.ValuePredicate(
-      table['name'],
-      ['sampleName1', 'sampleName3', 'sampleName5'],
-      lf.eval.Type.IN);
-  predicate.setComplement(true);
+  sampleRows.push(table.createRow({
+    'id': 'sampleId6', 'name': null}));
+  var inValues = ['sampleName0', 'sampleName2', 'sampleName4'];
+  checkEval_In(sampleRows, inValues, inValues, false);
+  checkEval_In(sampleRows, inValues.concat(null), inValues, false);
+}
 
-  var inputRelation = lf.proc.Relation.fromRows(sampleRows, ['tableA']);
-  var outputRelation = predicate.eval(inputRelation);
-  var actualNames = outputRelation.entries.map(function(entry) {
-    return entry.getField(table['name']);
-  });
 
-  assertArrayEquals(
-      ['sampleName0', 'sampleName2', 'sampleName4'],
-      actualNames);
+/**
+ * Tests ValuePredicate#eval() in the case where the predicate is of type
+ * lf.eval.Type.IN and has been reversed and column does not
+ * have null.
+ */
+function testEval_In_Reversed_WithoutNull() {
+  var sampleRows = getSampleRows(6);
+  var inValues = ['sampleName1', 'sampleName3', 'sampleName5'];
+  var expectedValues = ['sampleName0', 'sampleName2', 'sampleName4'];
+  checkEval_In(sampleRows, inValues, expectedValues, true);
+}
+
+
+/**
+ * Tests ValuePredicate#eval() for column having null, in the case where
+ * the predicate is of type lf.eval.Type.IN and the predicate has been reversed.
+ */
+function testEval_In_Reversed_WithNull() {
+  var table = schema.table('tableA');
+  var sampleRows = getSampleRows(6);
+  sampleRows.push(table.createRow({
+    'id': 'sampleId6', 'name': null}));
+  var inValues = ['sampleName1', 'sampleName3', 'sampleName5'];
+  var expectedValues = ['sampleName0', 'sampleName2', 'sampleName4'];
+  checkEval_In(sampleRows, inValues, expectedValues, true);
+  checkEval_In(sampleRows, inValues.concat(null), expectedValues, true);
 }
 
 

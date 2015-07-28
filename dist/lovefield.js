@@ -4871,7 +4871,7 @@ lf.pred.ValuePredicate.prototype.bind = function(values) {
 lf.pred.ValuePredicate.prototype.evalAsIn_ = function(relation) {
   goog.asserts.assert(this.evaluatorType == lf.eval.Type.IN, "ValuePredicate#evalAsIn_() called for wrong predicate type.");
   var valueSet = new goog.structs.Set(this.value), evaluatorFn = goog.bind(function(rowValue) {
-    return valueSet.contains(rowValue) != this.isComplement_;
+    return goog.isNull(rowValue) ? !1 : valueSet.contains(rowValue) != this.isComplement_;
   }, this), entries = relation.entries.filter(function(entry) {
     return evaluatorFn(entry.getField(this.column));
   }, this);
