@@ -3478,10 +3478,8 @@ lf.structs.MapPolyFill_.prototype.set = function(key, value) {
   return this.map_.set(key, value);
 };
 goog.exportProperty(lf.structs.MapPolyFill_.prototype, "set", lf.structs.MapPolyFill_.prototype.set);
-lf.structs.map.create = window.Map && window.Map.prototype.values && window.Map.prototype.forEach ? function() {
-  return new Map;
-} : function() {
-  return new lf.structs.MapPolyFill_;
+lf.structs.map.create = function() {
+  return window.Map && window.Map.prototype.values && window.Map.prototype.forEach ? new Map : new lf.structs.MapPolyFill_;
 };
 lf.structs.map.keys = function(map) {
   if (map instanceof lf.structs.MapPolyFill_) {
