@@ -16,7 +16,6 @@
  */
 goog.setTestOnly();
 goog.require('goog.Promise');
-goog.require('goog.structs.Set');
 goog.require('goog.testing.AsyncTestCase');
 goog.require('goog.testing.jsunit');
 goog.require('hr.db');
@@ -24,6 +23,7 @@ goog.require('lf.TransactionType');
 goog.require('lf.proc.TaskPriority');
 goog.require('lf.schema.DataStoreType');
 goog.require('lf.service');
+goog.require('lf.structs.set');
 goog.require('lf.testing.MockTask');
 
 
@@ -56,6 +56,14 @@ function setUp() {
 }
 
 
+/** @return {!lf.structs.Set<!lf.schema.Table>} */
+function createScope() {
+  var scope = lf.structs.set.create();
+  scope.add(j);
+  return scope;
+}
+
+
 /**
  * Tests that SELECT queries are executed after overlapping write transaction
  * finishes.
@@ -68,12 +76,12 @@ function testTransaction_Read() {
   // Creating two tasks refering to the same scope.
   var queryTask1 = new lf.testing.MockTask(
       lf.TransactionType.READ_WRITE,
-      new goog.structs.Set([j]),
+      createScope(),
       function() { executionOrder.push('query1'); },
       lf.proc.TaskPriority.USER_QUERY_TASK);
   var queryTask2 = new lf.testing.MockTask(
       lf.TransactionType.READ_ONLY,
-      new goog.structs.Set([j]),
+      createScope(),
       function() { executionOrder.push('query2'); },
       lf.proc.TaskPriority.USER_QUERY_TASK);
 
@@ -106,7 +114,7 @@ function testTransaction_Write() {
   var queryTasks = ids.map(function(id) {
     var queryTask = new lf.testing.MockTask(
         lf.TransactionType.READ_WRITE,
-        new goog.structs.Set([j]),
+        createScope(),
         function() {
           actualExecutionOrder.push('query' + id.toString());
         },
@@ -134,7 +142,7 @@ function testTask_Success() {
 
   var queryTask = new lf.testing.MockTask(
       lf.TransactionType.READ_WRITE,
-      new goog.structs.Set([j]),
+      createScope(),
       function() { return expectedResult; },
       lf.proc.TaskPriority.USER_QUERY_TASK);
 
@@ -153,7 +161,7 @@ function testTask_Failure() {
 
   var queryTask = new lf.testing.MockTask(
       lf.TransactionType.READ_WRITE,
-      new goog.structs.Set([j]),
+      createScope(),
       function() { throw expectedError; },
       lf.proc.TaskPriority.USER_QUERY_TASK);
 
@@ -177,22 +185,22 @@ function testScheduleTask_Prioritize() {
 
   var task1 = new lf.testing.MockTask(
       lf.TransactionType.READ_WRITE,
-      new goog.structs.Set([j]),
+      createScope(),
       function() { return resolver.promise; },
       lf.proc.TaskPriority.USER_QUERY_TASK);
   var task2 = new lf.testing.MockTask(
       lf.TransactionType.READ_WRITE,
-      new goog.structs.Set([j]),
+      createScope(),
       function() { executionOrder.push('task2'); },
       lf.proc.TaskPriority.TRANSACTION_TASK);
   var task3 = new lf.testing.MockTask(
       lf.TransactionType.READ_WRITE,
-      new goog.structs.Set([j]),
+      createScope(),
       function() { executionOrder.push('task3'); },
       lf.proc.TaskPriority.EXTERNAL_CHANGE_TASK);
   var task4 = new lf.testing.MockTask(
       lf.TransactionType.READ_WRITE,
-      new goog.structs.Set([j]),
+      createScope(),
       function() { executionOrder.push('task4'); },
       lf.proc.TaskPriority.OBSERVER_QUERY_TASK);
 
@@ -225,7 +233,7 @@ function testTransaction_WriteWhileReading() {
   // Creating a READ_ONLY and a READ_WRITE task that refer to the same scope.
   var queryTask1 = new lf.testing.MockTask(
       lf.TransactionType.READ_ONLY,
-      new goog.structs.Set([j]),
+      createScope(),
       function() {
         executionOrder.push('q1 start');
         return resolver.promise.then(function() {
@@ -235,7 +243,7 @@ function testTransaction_WriteWhileReading() {
       lf.proc.TaskPriority.USER_QUERY_TASK);
   var queryTask2 = new lf.testing.MockTask(
       lf.TransactionType.READ_WRITE,
-      new goog.structs.Set([j]),
+      createScope(),
       function() {
         executionOrder.push('q2 start');
         executionOrder.push('q2 end');

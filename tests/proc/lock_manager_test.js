@@ -15,15 +15,14 @@
  * limitations under the License.
  */
 goog.setTestOnly();
-goog.require('goog.Promise');
-goog.require('goog.testing.AsyncTestCase');
 goog.require('goog.testing.jsunit');
 goog.require('hr.db');
 goog.require('lf.proc.LockManager');
 goog.require('lf.proc.LockType');
+goog.require('lf.structs.set');
 
 
-/** @type {!hr.db.schema.Job} */
+/** @type {!lf.structs.Set<!hr.db.schema.Job>} */
 var j;
 
 
@@ -32,7 +31,8 @@ var lockManager;
 
 
 function setUp() {
-  j = hr.db.getSchema().getJob();
+  j = lf.structs.set.create();
+  j.add(hr.db.getSchema().getJob());
   lockManager = new lf.proc.LockManager();
 }
 
@@ -42,16 +42,16 @@ function testRequestLock_SharedLocksOnly() {
     var taskId = i;
     // SHARED lock can't be granted if RESERVED_READ_ONLY has not been already
     // granted.
-    assertFalse(lockManager.requestLock(taskId, [j], lf.proc.LockType.SHARED));
-    assertTrue(lockManager.requestLock(taskId, [j],
+    assertFalse(lockManager.requestLock(taskId, j, lf.proc.LockType.SHARED));
+    assertTrue(lockManager.requestLock(taskId, j,
         lf.proc.LockType.RESERVED_READ_ONLY));
-    assertTrue(lockManager.requestLock(taskId, [j], lf.proc.LockType.SHARED));
+    assertTrue(lockManager.requestLock(taskId, j, lf.proc.LockType.SHARED));
   }
 }
 
 
 function testRequestLock_ReservedReadWriteLocksOnly() {
-  var dataItems = [j];
+  var dataItems = j;
 
   // Granting the lock to a single task.
   var reservedLockId = 0;
@@ -75,7 +75,7 @@ function testRequestLock_ReservedReadWriteLocksOnly() {
 
 
 function testRequestLock_ExclusiveLocksOnly() {
-  var dataItems = [j];
+  var dataItems = j;
 
   // EXCLUSIVE lock can't be granted if RESERVED_READ_WRITE has not been
   // already granted.
@@ -113,14 +113,14 @@ function testRequestLock_ExclusiveLocksOnly() {
  *    RESERVED_READ_WRITE lock is released.
  */
 function testRequestLock_SharedReserved() {
-  var dataItems = [j];
+  var dataItems = j;
 
   // Granting SHARED locks to a bunch of tasks.
   for (var i = 0; i < 10; i++) {
     var taskId = i;
-    assertTrue(lockManager.requestLock(taskId, [j],
+    assertTrue(lockManager.requestLock(taskId, j,
         lf.proc.LockType.RESERVED_READ_ONLY));
-    assertTrue(lockManager.requestLock(taskId, [j], lf.proc.LockType.SHARED));
+    assertTrue(lockManager.requestLock(taskId, j, lf.proc.LockType.SHARED));
   }
 
   // Granting a reserved lock to a single task.
@@ -131,9 +131,9 @@ function testRequestLock_SharedReserved() {
   // Expecting that no new SHARED locks can be granted.
   for (var i = 20; i < 30; i++) {
     var taskId = i;
-    assertFalse(lockManager.requestLock(taskId, [j],
+    assertFalse(lockManager.requestLock(taskId, j,
         lf.proc.LockType.RESERVED_READ_ONLY));
-    assertFalse(lockManager.requestLock(taskId, [j], lf.proc.LockType.SHARED));
+    assertFalse(lockManager.requestLock(taskId, j, lf.proc.LockType.SHARED));
   }
 
   // Releasing RESERVED_READ_WRITE lock.
@@ -142,9 +142,9 @@ function testRequestLock_SharedReserved() {
   // Expecting new SHARED locks to be successfully granted.
   for (var i = 20; i < 30; i++) {
     var taskId = i;
-    assertTrue(lockManager.requestLock(taskId, [j],
+    assertTrue(lockManager.requestLock(taskId, j,
         lf.proc.LockType.RESERVED_READ_ONLY));
-    assertTrue(lockManager.requestLock(taskId, [j], lf.proc.LockType.SHARED));
+    assertTrue(lockManager.requestLock(taskId, j, lf.proc.LockType.SHARED));
   }
 }
 
@@ -156,7 +156,7 @@ function testRequestLock_SharedReserved() {
  * 2) an EXCLUSIVE lock can be granted, after a previous task releases it.
  */
 function testRequestLock_ReservedExclusive() {
-  var dataItems = [j];
+  var dataItems = j;
   var taskId = 0;
   assertTrue(lockManager.requestLock(
       taskId, dataItems, lf.proc.LockType.RESERVED_READ_WRITE));
@@ -193,7 +193,7 @@ function testRequestLock_ReservedExclusive() {
  * 2) an EXCLUSIVE can't be granted if SHARED locks have already been granted.
  */
 function testRequestLock_SharedExclusive() {
-  var dataItems = [j];
+  var dataItems = j;
 
   var exclusiveLockId = 0;
   assertTrue(lockManager.requestLock(

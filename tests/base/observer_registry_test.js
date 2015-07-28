@@ -21,6 +21,7 @@ goog.require('goog.testing.jsunit');
 goog.require('lf.Global');
 goog.require('lf.proc.Relation');
 goog.require('lf.query.SelectBuilder');
+goog.require('lf.structs.set');
 goog.require('lf.testing.MockEnv');
 goog.require('lf.testing.getSchemaBuilder');
 
@@ -108,21 +109,32 @@ function testGetTaskItemsForTables() {
   registry.addObserver(builder2, callback);
   registry.addObserver(builder3, callback);
 
-  var getQueriesForTables = function(tables) {
-    return registry.getTaskItemsForTables(tables).map(function(item) {
+  /**
+   * @param {!lf.structs.Set<!lf.schema.Table>} targetSet
+   * @return {!Array<!lf.query.SelectContext>}
+   */
+  var getQueriesForTables = function(targetSet) {
+    return registry.getTaskItemsForTables(targetSet).map(function(item) {
       return item.context;
     });
   };
 
-  var queries = getQueriesForTables([tables[0]]);
+  var scope1 = lf.structs.set.create();
+  scope1.add(tables[0]);
+  var queries = getQueriesForTables(scope1);
   assertArrayEquals(
       [builder1.getObservableQuery(), builder2.getObservableQuery()], queries);
 
-  queries = getQueriesForTables([tables[1]]);
+  var scope2 = lf.structs.set.create();
+  scope2.add(tables[1]);
+  queries = getQueriesForTables(scope2);
   assertArrayEquals(
       [builder2.getObservableQuery(), builder3.getObservableQuery()], queries);
 
-  queries = getQueriesForTables([tables[0], tables[1]]);
+  var scope3 = lf.structs.set.create();
+  scope3.add(tables[0]);
+  scope3.add(tables[1]);
+  queries = getQueriesForTables(scope3);
   assertArrayEquals(
       [builder1.getObservableQuery(),
        builder2.getObservableQuery(),

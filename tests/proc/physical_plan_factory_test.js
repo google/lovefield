@@ -15,7 +15,6 @@
  * limitations under the License.
  */
 goog.setTestOnly();
-goog.require('goog.structs.Set');
 goog.require('goog.testing.AsyncTestCase');
 goog.require('goog.testing.PropertyReplacer');
 goog.require('goog.testing.jsunit');
@@ -27,6 +26,7 @@ goog.require('lf.proc.PhysicalPlanFactory');
 goog.require('lf.proc.SelectNode');
 goog.require('lf.proc.TableAccessNode');
 goog.require('lf.query.DeleteContext');
+goog.require('lf.structs.set');
 goog.require('lf.testing.MockEnv');
 goog.require('lf.testing.getSchemaBuilder');
 goog.require('lf.testing.util');
@@ -110,10 +110,10 @@ function testCreate_DeletePlan() {
   selectNode2.addChild(tableAccessNode);
 
   assertEquals(logicalTree, lf.tree.toString(deleteNode));
-  var logicalPlan = new lf.proc.LogicalQueryPlan(
-      deleteNode, new goog.structs.Set([table]));
-  var physicalPlan = physicalPlanFactory.create(
-      logicalPlan, queryContext);
+  var testScope = lf.structs.set.create();
+  testScope.add(table);
+  var logicalPlan = new lf.proc.LogicalQueryPlan(deleteNode, testScope);
+  var physicalPlan = physicalPlanFactory.create(logicalPlan, queryContext);
   var toStringFn = function(node) {
     return node.toContextString(queryContext) + '\n';
   };

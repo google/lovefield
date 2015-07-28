@@ -4898,12 +4898,12 @@ lf.query.Context = function(schema) {
 };
 lf.query.Context.prototype.getPredicate = function(id) {
   goog.isNull(this.predicateMap_) && goog.isDefAndNotNull(this.where) && (this.predicateMap_ = lf.query.Context.buildPredicateMap_(this.where));
-  var predicate = this.predicateMap_.get(id, null);
+  var predicate = this.predicateMap_.get(id) || null;
   goog.asserts.assert(!goog.isNull(predicate));
   return predicate;
 };
 lf.query.Context.buildPredicateMap_ = function(rootPredicate) {
-  var predicateMap = new goog.structs.Map;
+  var predicateMap = lf.structs.map.create();
   rootPredicate.traverse(function(node) {
     predicateMap.set(node.getId(), node);
   });
@@ -4938,7 +4938,7 @@ lf.query.SelectContext.orderByToString = function(orderBy) {
   return out;
 };
 lf.query.SelectContext.prototype.getScope = function() {
-  return new goog.structs.Set(this.from);
+  return lf.structs.set.create(this.from);
 };
 lf.query.SelectContext.prototype.clone = function() {
   var context = new lf.query.SelectContext(this.schema);
@@ -4976,9 +4976,9 @@ lf.proc.PhysicalQueryPlan.prototype.getScope = function() {
   return this.scope_;
 };
 lf.proc.PhysicalQueryPlan.getCombinedScope = function(plans) {
-  var tableSet = new goog.structs.Set;
+  var tableSet = lf.structs.set.create();
   plans.forEach(function(plan) {
-    tableSet.addAll(plan.getScope());
+    plan.getScope().forEach(tableSet.add.bind(tableSet));
   });
   return tableSet;
 };
@@ -5007,7 +5007,7 @@ lf.proc.QueryTask.prototype.detectType_ = function() {
   return txType;
 };
 lf.proc.QueryTask.prototype.exec = function() {
-  var journal = new lf.cache.Journal(this.global, this.combinedScope_.getValues()), results = [], remainingPlans = this.plans_.slice(), sequentiallyExec = goog.bind(function() {
+  var journal = new lf.cache.Journal(this.global, lf.structs.set.values(this.combinedScope_)), results = [], remainingPlans = this.plans_.slice(), sequentiallyExec = goog.bind(function() {
     var plan = remainingPlans.shift();
     if (plan) {
       var queryContext = this.queries[results.length];
@@ -5068,7 +5068,7 @@ lf.proc.ExternalChangeTask = function(global, tableDiffs) {
   var schema = global.getService(lf.service.SCHEMA), tableSchemas = this.tableDiffs_.map(function(tableDiff) {
     return schema.table(tableDiff.getName());
   });
-  this.scope_ = new goog.structs.Set(tableSchemas);
+  this.scope_ = lf.structs.set.create(tableSchemas);
   this.resolver_ = goog.Promise.withResolver();
 };
 lf.proc.ExternalChangeTask.prototype.exec = function() {
@@ -5092,7 +5092,7 @@ lf.proc.ExternalChangeTask.prototype.getPriority = function() {
   return lf.proc.TaskPriority.EXTERNAL_CHANGE_TASK;
 };
 lf.proc.ExternalChangeTask.prototype.scheduleObserverTask_ = function() {
-  var items = this.observerRegistry_.getTaskItemsForTables(this.scope_.getValues());
+  var items = this.observerRegistry_.getTaskItemsForTables(this.scope_);
   if (0 != items.length) {
     var observerTask = new lf.proc.ObserverQueryTask(this.global_, items);
     this.runner_.scheduleTask(observerTask);
@@ -8548,7 +8548,7 @@ lf.proc.UserQueryTask.prototype.notifyObserversDirectly_ = function(results) {
   }, this);
 };
 lf.proc.UserQueryTask.prototype.scheduleObserverTask_ = function() {
-  var items = this.observerRegistry_.getTaskItemsForTables(this.getScope().getValues());
+  var items = this.observerRegistry_.getTaskItemsForTables(this.getScope());
   if (0 != items.length) {
     var observerTask = new lf.proc.ObserverQueryTask(this.global, items);
     this.runner_.scheduleTask(observerTask);
@@ -8560,8 +8560,9 @@ lf.query.DeleteContext = function(schema) {
 };
 goog.inherits(lf.query.DeleteContext, lf.query.Context);
 lf.query.DeleteContext.prototype.getScope = function() {
-  var scope = new goog.structs.Set([this.from]);
-  scope.addAll(this.schema.info().getChildTables(this.from.getName()));
+  var scope = lf.structs.set.create();
+  scope.add(this.from);
+  this.schema.info().getChildTables(this.from.getName()).forEach(scope.add.bind(scope));
   return scope;
 };
 lf.query.DeleteContext.prototype.clone = function() {
@@ -8581,9 +8582,11 @@ lf.query.InsertContext = function(schema) {
 };
 goog.inherits(lf.query.InsertContext, lf.query.Context);
 lf.query.InsertContext.prototype.getScope = function() {
-  var scope = new goog.structs.Set([this.into]), info = this.schema.info();
-  scope.addAll(info.getParentTables(this.into.getName()));
-  this.allowReplace && scope.addAll(info.getChildTables(this.into.getName()));
+  var scope = lf.structs.set.create();
+  scope.add(this.into);
+  var info = this.schema.info();
+  info.getParentTables(this.into.getName()).forEach(scope.add.bind(scope));
+  this.allowReplace && info.getChildTables(this.into.getName()).forEach(scope.add.bind(scope));
   return scope;
 };
 lf.query.InsertContext.prototype.clone = function() {
@@ -8608,11 +8611,13 @@ lf.query.UpdateContext = function(schema) {
 };
 goog.inherits(lf.query.UpdateContext, lf.query.Context);
 lf.query.UpdateContext.prototype.getScope = function() {
-  var scope = new goog.structs.Set([this.table]), columns = this.set.map(function(col) {
+  var scope = lf.structs.set.create();
+  scope.add(this.table);
+  var columns = this.set.map(function(col) {
     return col.column.getNormalizedName();
   }), info = this.schema.info();
-  scope.addAll(info.getParentTablesByColumns(columns));
-  scope.addAll(info.getChildTablesByColumns(columns));
+  info.getParentTablesByColumns(columns).forEach(scope.add.bind(scope));
+  info.getChildTablesByColumns(columns).forEach(scope.add.bind(scope));
   return scope;
 };
 lf.query.UpdateContext.prototype.clone = function() {
@@ -9055,7 +9060,7 @@ lf.query.SelectBuilder.prototype.leftOuterJoin = function(table, predicate) {
     throw new lf.Exception(542);
   }
   this.query.from.push(table);
-  goog.isDefAndNotNull(this.query.outerJoinPredicates) || (this.query.outerJoinPredicates = new goog.structs.Set);
+  goog.isDefAndNotNull(this.query.outerJoinPredicates) || (this.query.outerJoinPredicates = lf.structs.set.create());
   var normalizedPredicate = predicate;
   table.getEffectiveName() != predicate.rightColumn.getTable().getEffectiveName() && (normalizedPredicate = predicate.reverse());
   this.query.outerJoinPredicates.add(normalizedPredicate.getId());
@@ -9239,7 +9244,7 @@ lf.proc.ImplicitJoinsPass.prototype.traverse_ = function(rootNode, opt_query) {
     goog.asserts.assert(1 == rootNode.getChildCount(), "SelectNode must have exactly one child.");
     var predicateId = rootNode.predicate.getId(), child$$0 = rootNode.getChildAt(0);
     if (child$$0 instanceof lf.proc.CrossProductNode) {
-      var isOuterJoin = goog.isDef(opt_query) && goog.isDefAndNotNull(opt_query.outerJoinPredicates) && opt_query.outerJoinPredicates.contains(predicateId), joinNode = new lf.proc.JoinNode(rootNode.predicate, isOuterJoin);
+      var isOuterJoin = goog.isDef(opt_query) && goog.isDefAndNotNull(opt_query.outerJoinPredicates) && opt_query.outerJoinPredicates.has(predicateId), joinNode = new lf.proc.JoinNode(rootNode.predicate, isOuterJoin);
       lf.tree.replaceChainWithNode(rootNode, child$$0, joinNode);
       rootNode == this.rootNode && (this.rootNode = joinNode);
       rootNode = joinNode;
@@ -10222,11 +10227,11 @@ lf.proc.DefaultQueryEngine.prototype.getPlan = function(query) {
 };
 
 lf.proc.LockManager = function() {
-  this.lockTable_ = new goog.structs.Map;
+  this.lockTable_ = lf.structs.map.create();
 };
 lf.proc.LockType = {EXCLUSIVE:0, RESERVED_READ_ONLY:1, RESERVED_READ_WRITE:2, SHARED:3};
 lf.proc.LockManager.prototype.getEntry_ = function(dataItem) {
-  var lockTableEntry = this.lockTable_.get(dataItem.getName(), null);
+  var lockTableEntry = this.lockTable_.get(dataItem.getName()) || null;
   goog.isNull(lockTableEntry) && (lockTableEntry = new lf.proc.LockTableEntry_, this.lockTable_.set(dataItem.getName(), lockTableEntry));
   return lockTableEntry;
 };
@@ -10237,10 +10242,14 @@ lf.proc.LockManager.prototype.grantLock_ = function(taskId, dataItems, lockType)
   }, this);
 };
 lf.proc.LockManager.prototype.canAcquireLock_ = function(taskId, dataItems, lockType) {
-  return dataItems.every(function(dataItem) {
-    var lockTableEntry = this.getEntry_(dataItem);
-    return lockTableEntry.canAcquireLock(taskId, lockType);
+  var canAcquireLock = !0;
+  dataItems.forEach(function(dataItem) {
+    if (canAcquireLock) {
+      var lockTableEntry = this.getEntry_(dataItem);
+      canAcquireLock = lockTableEntry.canAcquireLock(taskId, lockType);
+    }
   }, this);
+  return canAcquireLock;
 };
 lf.proc.LockManager.prototype.requestLock = function(taskId, dataItems, lockType) {
   var canAcquireLock = this.canAcquireLock_(taskId, dataItems, lockType);
@@ -10265,20 +10274,20 @@ lf.proc.LockTableEntry_ = function() {
 lf.proc.LockTableEntry_.prototype.releaseLock = function(taskId) {
   this.exclusiveLock == taskId && (this.exclusiveLock = null);
   this.reservedReadWriteLock == taskId && (this.reservedReadWriteLock = null);
-  goog.isNull(this.reservedReadOnlyLocks) || this.reservedReadOnlyLocks.remove(taskId);
-  goog.isNull(this.sharedLocks) || this.sharedLocks.remove(taskId);
+  goog.isNull(this.reservedReadOnlyLocks) || this.reservedReadOnlyLocks.delete(taskId);
+  goog.isNull(this.sharedLocks) || this.sharedLocks.delete(taskId);
 };
 lf.proc.LockTableEntry_.prototype.canAcquireLock = function(taskId, lockType) {
-  var noReservedReadOnlyLocksExist = goog.isNull(this.reservedReadOnlyLocks) || this.reservedReadOnlyLocks.isEmpty();
+  var noReservedReadOnlyLocksExist = goog.isNull(this.reservedReadOnlyLocks) || 0 == this.reservedReadOnlyLocks.size;
   if (lockType == lf.proc.LockType.EXCLUSIVE) {
-    var noSharedLocksExist = goog.isNull(this.sharedLocks) || this.sharedLocks.isEmpty();
+    var noSharedLocksExist = goog.isNull(this.sharedLocks) || 0 == this.sharedLocks.size;
     return noSharedLocksExist && noReservedReadOnlyLocksExist && goog.isNull(this.exclusiveLock) && !goog.isNull(this.reservedReadWriteLock) && this.reservedReadWriteLock == taskId;
   }
-  return lockType == lf.proc.LockType.SHARED ? goog.isNull(this.exclusiveLock) && goog.isNull(this.reservedReadWriteLock) && !goog.isNull(this.reservedReadOnlyLocks) && this.reservedReadOnlyLocks.contains(taskId) : lockType == lf.proc.LockType.RESERVED_READ_ONLY ? goog.isNull(this.reservedReadWriteLock) : noReservedReadOnlyLocksExist && (goog.isNull(this.reservedReadWriteLock) || this.reservedReadWriteLock == taskId);
+  return lockType == lf.proc.LockType.SHARED ? goog.isNull(this.exclusiveLock) && goog.isNull(this.reservedReadWriteLock) && !goog.isNull(this.reservedReadOnlyLocks) && this.reservedReadOnlyLocks.has(taskId) : lockType == lf.proc.LockType.RESERVED_READ_ONLY ? goog.isNull(this.reservedReadWriteLock) : noReservedReadOnlyLocksExist && (goog.isNull(this.reservedReadWriteLock) || this.reservedReadWriteLock == taskId);
 };
 lf.proc.LockTableEntry_.prototype.grantLock = function(taskId, lockType) {
-  lockType == lf.proc.LockType.EXCLUSIVE ? (this.reservedReadWriteLock = null, this.exclusiveLock = taskId) : lockType == lf.proc.LockType.SHARED ? (goog.isNull(this.sharedLocks) && (this.sharedLocks = new goog.structs.Set), this.sharedLocks.add(taskId), goog.isNull(this.reservedReadOnlyLocks) && (this.reservedReadOnlyLocks = new goog.structs.Set), this.reservedReadOnlyLocks.remove(taskId)) : lockType == lf.proc.LockType.RESERVED_READ_ONLY ? (goog.isNull(this.reservedReadOnlyLocks) && (this.reservedReadOnlyLocks = 
-  new goog.structs.Set), this.reservedReadOnlyLocks.add(taskId)) : lockType == lf.proc.LockType.RESERVED_READ_WRITE && (this.reservedReadWriteLock = taskId);
+  lockType == lf.proc.LockType.EXCLUSIVE ? (this.reservedReadWriteLock = null, this.exclusiveLock = taskId) : lockType == lf.proc.LockType.SHARED ? (goog.isNull(this.sharedLocks) && (this.sharedLocks = lf.structs.set.create()), this.sharedLocks.add(taskId), goog.isNull(this.reservedReadOnlyLocks) && (this.reservedReadOnlyLocks = lf.structs.set.create()), this.reservedReadOnlyLocks.delete(taskId)) : lockType == lf.proc.LockType.RESERVED_READ_ONLY ? (goog.isNull(this.reservedReadOnlyLocks) && (this.reservedReadOnlyLocks = 
+  lf.structs.set.create()), this.reservedReadOnlyLocks.add(taskId)) : lockType == lf.proc.LockType.RESERVED_READ_WRITE && (this.reservedReadWriteLock = taskId);
 };
 
 lf.proc.Runner = function() {
@@ -10286,7 +10295,7 @@ lf.proc.Runner = function() {
   this.lockManager_ = new lf.proc.LockManager;
 };
 lf.proc.Runner.prototype.scheduleTask = function(task) {
-  (task.getPriority() < lf.proc.TaskPriority.USER_QUERY_TASK || task.getPriority() < lf.proc.TaskPriority.TRANSACTION_TASK) && this.lockManager_.clearReservedLocks(task.getScope().getValues());
+  (task.getPriority() < lf.proc.TaskPriority.USER_QUERY_TASK || task.getPriority() < lf.proc.TaskPriority.TRANSACTION_TASK) && this.lockManager_.clearReservedLocks(task.getScope());
   this.queue_.insert(task);
   this.consumePending_();
   return task.getResolver().promise;
@@ -10300,20 +10309,20 @@ lf.proc.Runner.prototype.consumePending_ = function() {
   }
 };
 lf.proc.Runner.prototype.requestTwoPhaseLock_ = function(task, lockType1, lockType2) {
-  var acquiredLock = !1, scope = task.getScope().getValues(), acquiredFirstLock = this.lockManager_.requestLock(task.getId(), scope, lockType1);
-  acquiredFirstLock && (acquiredLock = this.lockManager_.requestLock(task.getId(), scope, lockType2));
+  var acquiredLock = !1, acquiredFirstLock = this.lockManager_.requestLock(task.getId(), task.getScope(), lockType1);
+  acquiredFirstLock && (acquiredLock = this.lockManager_.requestLock(task.getId(), task.getScope(), lockType2));
   return acquiredLock;
 };
 lf.proc.Runner.prototype.execTask_ = function(task) {
   task.exec().then(goog.bind(this.onTaskSuccess_, this, task), goog.bind(this.onTaskError_, this, task));
 };
 lf.proc.Runner.prototype.onTaskSuccess_ = function(task, results) {
-  this.lockManager_.releaseLock(task.getId(), task.getScope().getValues());
+  this.lockManager_.releaseLock(task.getId(), task.getScope());
   task.getResolver().resolve(results);
   this.consumePending_();
 };
 lf.proc.Runner.prototype.onTaskError_ = function(task, error) {
-  this.lockManager_.releaseLock(task.getId(), task.getScope().getValues());
+  this.lockManager_.releaseLock(task.getId(), task.getScope());
   task.getResolver().reject(error);
   this.consumePending_();
 };
@@ -10509,8 +10518,8 @@ lf.proc.TransactionTask = function(global, scope) {
   this.backStore_ = global.getService(lf.service.BACK_STORE);
   this.runner_ = global.getService(lf.service.RUNNER);
   this.observerRegistry_ = global.getService(lf.service.OBSERVER_REGISTRY);
-  this.scope_ = new goog.structs.Set(scope);
-  this.journal_ = new lf.cache.Journal(this.global_, this.scope_.getValues());
+  this.scope_ = lf.structs.set.create(scope);
+  this.journal_ = new lf.cache.Journal(this.global_, lf.structs.set.values(this.scope_));
   this.resolver_ = goog.Promise.withResolver();
   this.execResolver_ = goog.Promise.withResolver();
   this.acquireScopeResolver_ = goog.Promise.withResolver();
@@ -10566,7 +10575,7 @@ lf.proc.TransactionTask.prototype.rollback = function() {
   return this.resolver_.promise;
 };
 lf.proc.TransactionTask.prototype.scheduleObserverTask_ = function() {
-  var items = this.observerRegistry_.getTaskItemsForTables(this.scope_.getValues());
+  var items = this.observerRegistry_.getTaskItemsForTables(this.scope_);
   if (0 != items.length) {
     var observerTask = new lf.proc.ObserverQueryTask(this.global_, items);
     this.runner_.scheduleTask(observerTask);

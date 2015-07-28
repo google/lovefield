@@ -38,9 +38,9 @@ function testGetScope_Insert() {
   context.values = [row];
   context.into = tableG;
   var scope = context.getScope();
-  assertTrue(scope.contains(tableG));
-  assertEquals(2, scope.getCount());
-  assertTrue(scope.contains(schema.table('tableI')));
+  assertTrue(scope.has(tableG));
+  assertEquals(2, scope.size);
+  assertTrue(scope.has(schema.table('tableI')));
 }
 
 function testGetScope_InsertNoExpansion() {
@@ -50,8 +50,8 @@ function testGetScope_InsertNoExpansion() {
   context.values = [row];
   context.into = tableC;
   var scope = context.getScope();
-  assertTrue(scope.contains(tableC));
-  assertEquals(1, scope.getCount());
+  assertTrue(scope.has(tableC));
+  assertEquals(1, scope.size);
 }
 
 function testGetScope_InsertOrReplace() {
@@ -64,10 +64,10 @@ function testGetScope_InsertOrReplace() {
   context.values = [row];
   context.into = tableG;
   var scope = context.getScope();
-  assertTrue(scope.contains(tableG));
-  assertEquals(3, scope.getCount());
-  assertTrue(scope.contains(tableI));
-  assertTrue(scope.contains(tableH));
+  assertTrue(scope.has(tableG));
+  assertEquals(3, scope.size);
+  assertTrue(scope.has(tableI));
+  assertTrue(scope.has(tableH));
 }
 
 function testGetScope_InsertOrReplaceNoExpansion() {
@@ -78,8 +78,8 @@ function testGetScope_InsertOrReplaceNoExpansion() {
   context.values = [row];
   context.into = tableC;
   var scope = context.getScope();
-  assertTrue(scope.contains(tableC));
-  assertEquals(1, scope.getCount());
+  assertTrue(scope.has(tableC));
+  assertEquals(1, scope.size);
 }
 
 function testGetScope_Delete() {
@@ -88,9 +88,9 @@ function testGetScope_Delete() {
   var tableH = schema.table('tableH');
   context.from = tableG;
   var scope = context.getScope();
-  assertTrue(scope.contains(tableG));
-  assertEquals(2, scope.getCount());
-  assertTrue(scope.contains(tableH));
+  assertTrue(scope.has(tableG));
+  assertEquals(2, scope.size);
+  assertTrue(scope.has(tableH));
 }
 
 function testGetScope_DeleteNoExpansion() {
@@ -98,8 +98,8 @@ function testGetScope_DeleteNoExpansion() {
   var tableC = schema.table('tableC');
   context.from = tableC;
   var scope = context.getScope();
-  assertTrue(scope.contains(tableC));
-  assertEquals(1, scope.getCount());
+  assertTrue(scope.has(tableC));
+  assertEquals(1, scope.size);
 }
 
 function testGetScope_UpdateOneColumn() {
@@ -109,9 +109,9 @@ function testGetScope_UpdateOneColumn() {
   context.table = tableI;
   context.set = [{column: tableI['id2'], value: 'test'}];
   var scope = context.getScope();
-  assertEquals(2, scope.getCount());
-  assertTrue(scope.contains(tableI));
-  assertTrue(scope.contains(tableH));
+  assertEquals(2, scope.size);
+  assertTrue(scope.has(tableI));
+  assertTrue(scope.has(tableH));
 }
 
 function testGetScope_UpdateTwoColumns() {
@@ -123,10 +123,10 @@ function testGetScope_UpdateTwoColumns() {
   context.set = [{column: tableI['id2'], value: 'test'},
                  {column: tableI['id'], value: 'test'}];
   var scope = context.getScope();
-  assertEquals(3, scope.getCount());
-  assertTrue(scope.contains(tableG));
-  assertTrue(scope.contains(tableI));
-  assertTrue(scope.contains(tableH));
+  assertEquals(3, scope.size);
+  assertTrue(scope.has(tableG));
+  assertTrue(scope.has(tableI));
+  assertTrue(scope.has(tableH));
 }
 
 function testGetScope_UpdateReferredColumn() {
@@ -136,9 +136,9 @@ function testGetScope_UpdateReferredColumn() {
   context.table = tableG;
   context.set = [{column: tableG['id2'], value: 'test'}];
   var scope = context.getScope();
-  assertEquals(2, scope.getCount());
-  assertTrue(scope.contains(tableG));
-  assertTrue(scope.contains(tableH));
+  assertEquals(2, scope.size);
+  assertTrue(scope.has(tableG));
+  assertTrue(scope.has(tableH));
 }
 
 function testGetScope_UpdateReferredAndReferringColumn() {
@@ -150,10 +150,10 @@ function testGetScope_UpdateReferredAndReferringColumn() {
   context.set = [{column: tableG['id2'], value: 'test'},
                  {column: tableG['id'], value: 'test'}];
   var scope = context.getScope();
-  assertEquals(3, scope.getCount());
-  assertTrue(scope.contains(tableG));
-  assertTrue(scope.contains(tableH));
-  assertTrue(scope.contains(tableI));
+  assertEquals(3, scope.size);
+  assertTrue(scope.has(tableG));
+  assertTrue(scope.has(tableH));
+  assertTrue(scope.has(tableI));
 }
 
 function testGetScope_UpdateNoExpansion() {
@@ -162,6 +162,6 @@ function testGetScope_UpdateNoExpansion() {
   context.table = tableC;
   context.set = [{column: tableC['id'], value: 'test'}];
   var scope = context.getScope();
-  assertTrue(scope.contains(tableC));
-  assertEquals(1, scope.getCount());
+  assertTrue(scope.has(tableC));
+  assertEquals(1, scope.size);
 }

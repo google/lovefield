@@ -27,7 +27,7 @@ goog.require('lf.proc.Task');
  * @struct
  *
  * @param {!lf.TransactionType} txType
- * @param {!goog.structs.Set<!lf.schema.Table>} scope
+ * @param {!lf.structs.Set<!lf.schema.Table>} scope
  * @param {!Function} execFn The function to call when this task is executed.
  * @param {!lf.proc.TaskPriority} priority The priority of this task.
  */
@@ -35,7 +35,7 @@ lf.testing.MockTask = function(txType, scope, execFn, priority) {
   /** @private {!lf.TransactionType} */
   this.txType_ = txType;
 
-  /** @private {!goog.structs.Set<!lf.schema.Table>} */
+  /** @private {!lf.structs.Set<!lf.schema.Table>} */
   this.scope_ = scope;
 
   /** @private {!Function} */
