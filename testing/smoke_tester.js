@@ -22,6 +22,7 @@ goog.require('goog.testing.jsunit');
 goog.require('lf.TransactionType');
 goog.require('lf.cache.Journal');
 goog.require('lf.service');
+goog.require('lf.structs.set');
 
 
 
@@ -307,6 +308,6 @@ lf.testing.SmokeTester.prototype.selectAll_ = function() {
   var r = this.r_;
   var tx = this.backStore_.createTx(
       lf.TransactionType.READ_ONLY,
-      new lf.cache.Journal(this.global_, [r]));
+      new lf.cache.Journal(this.global_, lf.structs.set.create([r])));
   return tx.getTable(r.getName(), goog.bind(r.deserializeRow, r)).get([]);
 };

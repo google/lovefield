@@ -27,6 +27,7 @@ goog.require('lf.cache.Journal');
 goog.require('lf.index.MemoryIndexStore');
 goog.require('lf.index.RowId');
 goog.require('lf.service');
+goog.require('lf.structs.set');
 goog.require('lf.testing.getSchemaBuilder');
 
 
@@ -84,6 +85,15 @@ function getFirebaseRef() {
   });
 
   return resolver.promise;
+}
+
+
+/**
+ * @param {!Array<!lf.schema.Table>} tables
+ * @return {!lf.cache.Journal}
+ */
+function createJournal(tables) {
+  return new lf.cache.Journal(global, lf.structs.set.create(tables));
 }
 
 
@@ -187,30 +197,30 @@ function testSCUD() {
     });
   };
 
-  var journal = new lf.cache.Journal(global, [t2]);
+  var journal = createJournal([t2]);
   journal.insertOrReplace(t2, [row0, row1]);
   var tx = db.createTx(lf.TransactionType.READ_WRITE, journal);
   tx.commit().then(function() {
     checkRows([row0, row1]);
-    journal = new lf.cache.Journal(global, [t2]);
+    journal = createJournal([t2]);
     journal.update(t2, [new lf.Row(2, CONTENTS2)]);
     tx = db.createTx(lf.TransactionType.READ_WRITE, journal);
     return tx.commit();
   }).then(function() {
     checkRows([row0, row2]);
-    journal = new lf.cache.Journal(global, [t2]);
+    journal = createJournal([t2]);
     journal.remove(t2, [row0]);
     tx = db.createTx(lf.TransactionType.READ_WRITE, journal);
     return tx.commit();
   }).then(function() {
     checkRows([row2]);
-    journal = new lf.cache.Journal(global, [t2]);
+    journal = createJournal([t2]);
     journal.insert(t2, [row0]);
     tx = db.createTx(lf.TransactionType.READ_WRITE, journal);
     return tx.commit();
   }).then(function() {
     checkRows([row0, row2]);
-    journal = new lf.cache.Journal(global, [t2]);
+    journal = createJournal([t2]);
     journal.remove(t2, [row0, row2]);
     tx = db.createTx(lf.TransactionType.READ_WRITE, journal);
     return tx.commit();

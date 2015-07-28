@@ -23,6 +23,7 @@ goog.require('lf.cache.Journal');
 goog.require('lf.proc.LimitStep');
 goog.require('lf.proc.Relation');
 goog.require('lf.query.SelectContext');
+goog.require('lf.structs.set');
 goog.require('lf.testing.MockEnv');
 goog.require('lf.testing.getSchemaBuilder');
 goog.require('lf.testing.proc.DummyStep');
@@ -86,7 +87,7 @@ function checkExec(sampleDataCount, limit) {
   var step = new lf.proc.LimitStep();
   step.addChild(childStep);
 
-  var journal = new lf.cache.Journal(lf.Global.get(), []);
+  var journal = new lf.cache.Journal(lf.Global.get(), lf.structs.set.create());
   step.exec(journal, queryContext).then(function(relations) {
     assertEquals(
         Math.min(limit, sampleDataCount),

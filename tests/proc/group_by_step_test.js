@@ -21,6 +21,7 @@ goog.require('lf.cache.Journal');
 goog.require('lf.proc.GroupByStep');
 goog.require('lf.proc.Relation');
 goog.require('lf.schema.DataStoreType');
+goog.require('lf.structs.set');
 goog.require('lf.testing.hrSchema.MockDataGenerator');
 goog.require('lf.testing.proc.DummyStep');
 
@@ -60,7 +61,8 @@ function testExec_SingleColumn() {
   groupByStep.addChild(childStep);
 
   var employeesPerJob = dataGenerator.employeeGroundTruth.employeesPerJob;
-  var journal = new lf.cache.Journal(hr.db.getGlobal(), []);
+  var journal =
+      new lf.cache.Journal(hr.db.getGlobal(), lf.structs.set.create());
   return groupByStep.exec(journal).then(function(relations) {
     var jobIds = employeesPerJob.getKeys();
     assertEquals(jobIds.length, relations.length);
@@ -88,7 +90,8 @@ function testExec_MultiColumn() {
   var groupByStep = new lf.proc.GroupByStep([j.minSalary, j.maxSalary]);
   groupByStep.addChild(childStep);
 
-  var journal = new lf.cache.Journal(hr.db.getGlobal(), []);
+  var journal =
+      new lf.cache.Journal(hr.db.getGlobal(), lf.structs.set.create());
   return groupByStep.exec(journal).then(function(relations) {
     var jobCount = 0;
     relations.forEach(function(relation) {

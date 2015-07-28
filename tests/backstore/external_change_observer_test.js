@@ -24,6 +24,7 @@ goog.require('lf.backstore.ExternalChangeObserver');
 goog.require('lf.cache.Journal');
 goog.require('lf.schema.DataStoreType');
 goog.require('lf.service');
+goog.require('lf.structs.set');
 goog.require('lf.testing.backstore.MockStore');
 goog.require('lf.testing.hrSchema.MockDataGenerator');
 
@@ -206,7 +207,8 @@ function testOrder_Observer_ExternalChange() {
 function simulateInsertionModification(tableSchema, rows) {
   var tx = mockStore.createTx(
       lf.TransactionType.READ_WRITE,
-      new lf.cache.Journal(hr.db.getGlobal(), [tableSchema]));
+      new lf.cache.Journal(hr.db.getGlobal(),
+          lf.structs.set.create([tableSchema])));
   var table = tx.getTable(
       tableSchema.getName(),
       tableSchema.deserializeRow.bind(tableSchema));
@@ -224,7 +226,8 @@ function simulateInsertionModification(tableSchema, rows) {
 function simulateDeletion(tableSchema, rows) {
   var tx = mockStore.createTx(
       lf.TransactionType.READ_WRITE,
-      new lf.cache.Journal(hr.db.getGlobal(), [tableSchema]));
+      new lf.cache.Journal(hr.db.getGlobal(),
+          lf.structs.set.create([tableSchema])));
   var table = tx.getTable(
       tableSchema.getName(),
       tableSchema.deserializeRow.bind(tableSchema));

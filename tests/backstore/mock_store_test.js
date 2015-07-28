@@ -24,6 +24,7 @@ goog.require('lf.cache.DefaultCache');
 goog.require('lf.cache.Journal');
 goog.require('lf.index.MemoryIndexStore');
 goog.require('lf.service');
+goog.require('lf.structs.set');
 goog.require('lf.testing.backstore.MockStore');
 goog.require('lf.testing.backstore.ScudTester');
 goog.require('lf.testing.getSchemaBuilder');
@@ -138,7 +139,8 @@ function testSimulateExternalChange() {
   // actual backing store observers.
   var tx = mockStore.createTx(
       lf.TransactionType.READ_WRITE,
-      new lf.cache.Journal(lf.Global.get(), [tableSchema]));
+      new lf.cache.Journal(lf.Global.get(),
+          lf.structs.set.create([tableSchema])));
   var table = tx.getTable(
       tableSchema.getName(), tableSchema.deserializeRow.bind(tableSchema));
 

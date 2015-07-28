@@ -24,6 +24,7 @@ goog.require('lf.TransactionType');
 goog.require('lf.cache.Journal');
 goog.require('lf.schema.DataStoreType');
 goog.require('lf.service');
+goog.require('lf.structs.set');
 goog.require('lf.testing.Capability');
 
 
@@ -111,7 +112,8 @@ function testConversions() {
         hr.db.getGlobal().getService(lf.service.BACK_STORE));
     var tx = backStore.createTx(
         lf.TransactionType.READ_ONLY,
-        new lf.cache.Journal(hr.db.getGlobal(), [tableSchema]));
+        new lf.cache.Journal(hr.db.getGlobal(),
+            lf.structs.set.create([tableSchema])));
     var store = /** @type {!lf.backstore.ObjectStore} */ (
         tx.getTable(tableSchema.getName(), tableSchema.deserializeRow));
     return store.get([]);

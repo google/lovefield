@@ -20,6 +20,7 @@ goog.require('lf.Row');
 goog.require('lf.TransactionType');
 goog.require('lf.cache.Journal');
 goog.require('lf.service');
+goog.require('lf.structs.set');
 
 
 
@@ -60,7 +61,8 @@ lf.testing.backstore.ScudTester = function(db, global, opt_reload) {
 lf.testing.backstore.ScudTester.prototype.insert_ = function(rows) {
   var tx = this.db_.createTx(
       lf.TransactionType.READ_WRITE,
-      new lf.cache.Journal(this.global_, [this.tableSchema_]));
+      new lf.cache.Journal(
+          this.global_, lf.structs.set.create([this.tableSchema_])));
   var store = /** @type {!lf.Table} */ (tx.getTable(
       this.tableSchema_.getName(),
       this.tableSchema_.deserializeRow.bind(this.tableSchema_)));
@@ -78,7 +80,8 @@ lf.testing.backstore.ScudTester.prototype.insert_ = function(rows) {
 lf.testing.backstore.ScudTester.prototype.remove_ = function(rowIds) {
   var tx = this.db_.createTx(
       lf.TransactionType.READ_WRITE,
-      new lf.cache.Journal(this.global_, [this.tableSchema_]));
+      new lf.cache.Journal(
+          this.global_, lf.structs.set.create([this.tableSchema_])));
   var store = /** @type {!lf.Table} */ (tx.getTable(
       this.tableSchema_.getName(),
       this.tableSchema_.deserializeRow.bind(this.tableSchema_)));
@@ -105,7 +108,8 @@ lf.testing.backstore.ScudTester.prototype.removeAll_ = function() {
 lf.testing.backstore.ScudTester.prototype.select_ = function(rowIds) {
   var tx = this.db_.createTx(
       lf.TransactionType.READ_ONLY,
-      new lf.cache.Journal(this.global_, [this.tableSchema_]));
+      new lf.cache.Journal(this.global_,
+          lf.structs.set.create([this.tableSchema_])));
   var store = /** @type {!lf.Table} */ (tx.getTable(
       this.tableSchema_.getName(),
       this.tableSchema_.deserializeRow.bind(this.tableSchema_)));

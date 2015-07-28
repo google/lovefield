@@ -28,6 +28,7 @@ goog.require('lf.cache.DefaultCache');
 goog.require('lf.cache.Journal');
 goog.require('lf.index.MemoryIndexStore');
 goog.require('lf.service');
+goog.require('lf.structs.set');
 goog.require('lf.testing.Capability');
 goog.require('lf.testing.backstore.MockSchema');
 goog.require('lf.testing.backstore.ScudTester');
@@ -67,6 +68,7 @@ function setUpPage() {
   capability = lf.testing.Capability.get();
 }
 
+
 function setUp() {
   if (!capability.indexedDb) {
     return;
@@ -95,7 +97,7 @@ function tearDown() {
       function(table) {
         var tx = db.createTx(
             lf.TransactionType.READ_WRITE,
-            new lf.cache.Journal(lf.Global.get(), [table]));
+            createJournal([table]));
         var store = /** @type {!lf.backstore.ObjectStore} */ (
             tx.getTable(table.getName(), table.deserializeRow.bind(table)));
 
@@ -107,6 +109,15 @@ function tearDown() {
       function() {
         asyncTestCase.continueTesting();
       }, fail);
+}
+
+
+/**
+ * @param {!Array<!lf.schema.Table>} tables
+ * @return {!lf.cache.Journal}
+ */
+function createJournal(tables) {
+  return new lf.cache.Journal(lf.Global.get(), lf.structs.set.create(tables));
 }
 
 
@@ -171,7 +182,7 @@ function testTwoTableInserts_Bundled() {
   return db.init().then(function() {
     var tx = db.createTx(
         lf.TransactionType.READ_WRITE,
-        new lf.cache.Journal(lf.Global.get(), [tableA]));
+        createJournal([tableA]));
     var store = /** @type {!lf.backstore.ObjectStore} */ (
         tx.getTable(tableA.getName(), tableA.deserializeRow.bind(tableA)));
 
@@ -181,7 +192,7 @@ function testTwoTableInserts_Bundled() {
   }).then(function() {
     var tx = db.createTx(
         lf.TransactionType.READ_WRITE,
-        new lf.cache.Journal(lf.Global.get(), [tableB]));
+        createJournal([tableB]));
     var store = /** @type {!lf.backstore.ObjectStore} */ (
         tx.getTable(tableB.getName(), tableB.deserializeRow.bind(tableB)));
 
@@ -191,7 +202,7 @@ function testTwoTableInserts_Bundled() {
   }).then(function() {
     var tx = db.createTx(
         lf.TransactionType.READ_ONLY,
-        new lf.cache.Journal(lf.Global.get(), [tableB]));
+        createJournal([tableB]));
     var store = /** @type {!lf.backstore.ObjectStore} */ (
         tx.getTable(tableB.getName(), tableB.deserializeRow.bind(tableB)));
 
@@ -204,7 +215,7 @@ function testTwoTableInserts_Bundled() {
 
     var tx = db.createTx(
         lf.TransactionType.READ_WRITE,
-        new lf.cache.Journal(lf.Global.get(), [tableA]));
+        createJournal([tableA]));
     var store = /** @type {!lf.backstore.ObjectStore} */ (
         tx.getTable(tableA.getName(), tableA.deserializeRow.bind(tableA)));
 
@@ -225,7 +236,7 @@ function testTwoTableInserts_Bundled() {
 
     var tx = db.createTx(
         lf.TransactionType.READ_WRITE,
-        new lf.cache.Journal(lf.Global.get(), [tableA]));
+        createJournal([tableA]));
     var store = /** @type {!lf.backstore.ObjectStore} */ (
         tx.getTable(tableA.getName(), tableA.deserializeRow.bind(tableA)));
 
@@ -272,7 +283,7 @@ function testScanRowId() {
     var table = schema.table('tableA');
     var tx = db.createTx(
         lf.TransactionType.READ_WRITE,
-        new lf.cache.Journal(lf.Global.get(), [table]));
+        createJournal([table]));
     var store = /** @type {!lf.backstore.ObjectStore} */ (
         tx.getTable(table.getName(), table.deserializeRow.bind(table)));
     store.put(rows);
@@ -332,7 +343,7 @@ function testScanRowId_BundledDB() {
     var table = schema.table('tableA');
     var tx = db.createTx(
         lf.TransactionType.READ_WRITE,
-        new lf.cache.Journal(lf.Global.get(), [table]));
+        createJournal([table]));
     var store = /** @type {!lf.backstore.ObjectStore} */ (
         tx.getTable(table.getName(), table.deserializeRow.bind(table)));
 
@@ -403,7 +414,7 @@ function testUpgrade() {
     assertEquals('tablePlusOne', table.getName());
     var tx = db.createTx(
         lf.TransactionType.READ_WRITE,
-        new lf.cache.Journal(lf.Global.get(), [table]));
+        createJournal([table]));
     var store = /** @type {!lf.backstore.ObjectStore} */ (
         tx.getTable(table.getName(), table.deserializeRow.bind(table)));
     assertNotNull(store);

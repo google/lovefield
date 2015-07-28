@@ -22,6 +22,7 @@ goog.require('lf.Order');
 goog.require('lf.cache.Journal');
 goog.require('lf.index.SingleKeyRange');
 goog.require('lf.proc.IndexRangeScanStep');
+goog.require('lf.structs.set');
 goog.require('lf.testing.MockEnv');
 goog.require('lf.testing.getSchemaBuilder');
 goog.require('lf.testing.proc.MockKeyRangeCalculator');
@@ -79,7 +80,8 @@ function checkIndexRangeScan(order, description) {
       lf.Global.get(), index,
       new lf.testing.proc.MockKeyRangeCalculator([keyRange]), false);
 
-  var journal = new lf.cache.Journal(lf.Global.get(), [table]);
+  var journal = new lf.cache.Journal(lf.Global.get(),
+      lf.structs.set.create([table]));
   step.exec(journal).then(
       function(relations) {
         var relation = relations[0];

@@ -5005,7 +5005,7 @@ lf.proc.QueryTask.prototype.detectType_ = function() {
   return txType;
 };
 lf.proc.QueryTask.prototype.exec = function() {
-  var journal = new lf.cache.Journal(this.global, lf.structs.set.values(this.combinedScope_)), results = [], remainingPlans = this.plans_.slice(), sequentiallyExec = goog.bind(function() {
+  var journal = new lf.cache.Journal(this.global, this.combinedScope_), results = [], remainingPlans = this.plans_.slice(), sequentiallyExec = goog.bind(function() {
     var plan = remainingPlans.shift();
     if (plan) {
       var queryContext = this.queries[results.length];
@@ -6190,7 +6190,7 @@ lf.backstore.WebSqlRawBackStore.prototype.getRawTransaction = function() {
 };
 goog.exportProperty(lf.backstore.WebSqlRawBackStore.prototype, "getRawTransaction", lf.backstore.WebSqlRawBackStore.prototype.getRawTransaction);
 lf.backstore.WebSqlRawBackStore.prototype.createTx_ = function() {
-  return new lf.backstore.WebSqlTx(this.db_, new lf.cache.Journal(this.global_, []), lf.TransactionType.READ_WRITE);
+  return new lf.backstore.WebSqlTx(this.db_, new lf.cache.Journal(this.global_, lf.structs.set.create()), lf.TransactionType.READ_WRITE);
 };
 lf.backstore.WebSqlRawBackStore.prototype.dropTable = function(tableName) {
   var tx = this.createTx_();
@@ -6287,7 +6287,7 @@ lf.backstore.WebSql = function(global, schema, opt_size) {
   this.size_ = opt_size || 4194304;
 };
 lf.backstore.WebSql.prototype.getEmptyJournal_ = function() {
-  return new lf.cache.Journal(this.global_, []);
+  return new lf.cache.Journal(this.global_, lf.structs.set.create());
 };
 lf.backstore.WebSql.prototype.init = function(opt_onUpgrade) {
   if (!goog.isDefAndNotNull(window.openDatabase)) {
@@ -7319,7 +7319,7 @@ lf.cache.Prefetcher.prototype.init = function(schema) {
   return execSequentially();
 };
 lf.cache.Prefetcher.prototype.fetchTable_ = function(table) {
-  var journal = new lf.cache.Journal(this.global_, [table]), tx = this.backStore_.createTx(lf.TransactionType.READ_ONLY, journal), store = tx.getTable(table.getName(), goog.bind(table.deserializeRow, table));
+  var journal = new lf.cache.Journal(this.global_, lf.structs.set.create([table])), tx = this.backStore_.createTx(lf.TransactionType.READ_ONLY, journal), store = tx.getTable(table.getName(), goog.bind(table.deserializeRow, table));
   return store.get([]).then(goog.bind(function(results) {
     this.cache_.set(table.getName(), results);
     this.reconstructNonPersistentIndices_(table, results);
@@ -7335,7 +7335,7 @@ lf.cache.Prefetcher.prototype.reconstructNonPersistentIndices_ = function(tableS
   });
 };
 lf.cache.Prefetcher.prototype.fetchTableWithPersistentIndices_ = function(tableSchema) {
-  var journal = new lf.cache.Journal(this.global_, [tableSchema]), tx = this.backStore_.createTx(lf.TransactionType.READ_ONLY, journal), store = tx.getTable(tableSchema.getName(), tableSchema.deserializeRow), whenTableContentsFetched = store.get([]).then(goog.bind(function(results) {
+  var journal = new lf.cache.Journal(this.global_, lf.structs.set.create([tableSchema])), tx = this.backStore_.createTx(lf.TransactionType.READ_ONLY, journal), store = tx.getTable(tableSchema.getName(), tableSchema.deserializeRow), whenTableContentsFetched = store.get([]).then(goog.bind(function(results) {
     this.cache_.set(tableSchema.getName(), results);
   }, this)), whenIndicesReconstructed = tableSchema.getIndices().map(function(indexSchema) {
     return this.reconstructPersistentIndex_(indexSchema, tx);
@@ -10517,7 +10517,7 @@ lf.proc.TransactionTask = function(global, scope) {
   this.runner_ = global.getService(lf.service.RUNNER);
   this.observerRegistry_ = global.getService(lf.service.OBSERVER_REGISTRY);
   this.scope_ = lf.structs.set.create(scope);
-  this.journal_ = new lf.cache.Journal(this.global_, lf.structs.set.values(this.scope_));
+  this.journal_ = new lf.cache.Journal(this.global_, this.scope_);
   this.resolver_ = goog.Promise.withResolver();
   this.execResolver_ = goog.Promise.withResolver();
   this.acquireScopeResolver_ = goog.Promise.withResolver();

@@ -21,6 +21,7 @@ goog.require('lf.Global');
 goog.require('lf.cache.Journal');
 goog.require('lf.proc.Relation');
 goog.require('lf.proc.TableAccessByRowIdStep');
+goog.require('lf.structs.set');
 goog.require('lf.testing.MockEnv');
 goog.require('lf.testing.getSchemaBuilder');
 goog.require('lf.testing.proc.DummyStep');
@@ -81,7 +82,8 @@ function checkTableAccessByRowId(description, table) {
   step.addChild(new lf.testing.proc.DummyStep(
       [lf.proc.Relation.fromRows(rows, [table.getName()])]));
 
-  var journal = new lf.cache.Journal(lf.Global.get(), [table]);
+  var journal = new lf.cache.Journal(
+      lf.Global.get(), lf.structs.set.create([table]));
   step.exec(journal).then(
       function(relations) {
         var relation = relations[0];
@@ -110,7 +112,8 @@ function testTableAccessByRowId_Empty() {
   step.addChild(
       new lf.testing.proc.DummyStep([lf.proc.Relation.createEmpty()]));
 
-  var journal = new lf.cache.Journal(lf.Global.get(), [table]);
+  var journal = new lf.cache.Journal(
+      lf.Global.get(), lf.structs.set.create([table]));
   step.exec(journal).then(
       function(relations) {
         assertEquals(0, relations[0].entries.length);

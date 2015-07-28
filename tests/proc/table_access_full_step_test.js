@@ -20,6 +20,7 @@ goog.require('goog.testing.jsunit');
 goog.require('lf.Global');
 goog.require('lf.cache.Journal');
 goog.require('lf.proc.TableAccessFullStep');
+goog.require('lf.structs.set');
 goog.require('lf.testing.MockEnv');
 goog.require('lf.testing.getSchemaBuilder');
 
@@ -68,7 +69,8 @@ function checkTableAccessFullStep(description, table) {
   asyncTestCase.waitForAsync(description);
 
   var step = new lf.proc.TableAccessFullStep(lf.Global.get(), table);
-  var journal = new lf.cache.Journal(lf.Global.get(), [table]);
+  var journal = new lf.cache.Journal(
+      lf.Global.get(), lf.structs.set.create([table]));
   step.exec(journal).then(
       function(relations) {
         var relation = relations[0];

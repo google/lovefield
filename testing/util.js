@@ -20,6 +20,7 @@ goog.require('goog.Promise');
 goog.require('lf.TransactionType');
 goog.require('lf.cache.Journal');
 goog.require('lf.service');
+goog.require('lf.structs.set');
 
 goog.forwardDeclare('goog.testing.PropertyReplacer');
 
@@ -99,7 +100,7 @@ lf.testing.util.selectAll = function(global, tableSchema) {
 
   var tx = backStore.createTx(
       lf.TransactionType.READ_ONLY,
-      new lf.cache.Journal(global, [tableSchema]));
+      new lf.cache.Journal(global, lf.structs.set.create([tableSchema])));
   var table = tx.getTable(
       tableSchema.getName(),
       tableSchema.deserializeRow.bind(tableSchema));

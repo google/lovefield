@@ -21,6 +21,7 @@ goog.require('lf.Global');
 goog.require('lf.Row');
 goog.require('lf.cache.Journal');
 goog.require('lf.index.SingleKeyRange');
+goog.require('lf.structs.set');
 goog.require('lf.testing.MockEnv');
 goog.require('lf.testing.getSchemaBuilder');
 goog.require('lf.testing.util');
@@ -45,12 +46,21 @@ function setUp() {
 
 
 /**
+ * @param {!Array<!lf.schema.Table>} tables
+ * @return {!lf.cache.Journal}
+ */
+function createJournal(tables) {
+  return new lf.cache.Journal(lf.Global.get(), lf.structs.set.create(tables));
+}
+
+
+/**
  * Tests the case where a journal that has no write operations recorded is
  * committed.
  */
 function testNoWriteOperations() {
   var table = env.schema.table('tableC');
-  var journal = new lf.cache.Journal(lf.Global.get(), [table]);
+  var journal = createJournal([table]);
 
   var commitFn = function() {
     journal.commit();
@@ -77,7 +87,7 @@ function testInsert_New() {
   assertFalse(pkIndex.containsKey(primaryKey));
   assertFalse(rowIdIndex.containsKey(row.id()));
 
-  var journal = new lf.cache.Journal(lf.Global.get(), [table]);
+  var journal = createJournal([table]);
   journal.insert(table, [row]);
   journal.commit();
 
@@ -131,12 +141,12 @@ function testInsert_PrimaryKeyViolation_CrossColumn() {
  */
 function checkInsert_UniqueConstraintViolation(table, rows1, rows2) {
   // Inserting the row into the journal and committing.
-  var journal = new lf.cache.Journal(lf.Global.get(), [table]);
+  var journal = createJournal([table]);
   journal.insert(table, rows1);
   journal.commit();
 
   // Now re-inserting a row with the same primary key that already exists.
-  journal = new lf.cache.Journal(lf.Global.get(), [table]);
+  journal = createJournal([table]);
 
   lf.testing.util.assertThrowsError(
       201,  // Duplicate keys are not allowed.
@@ -158,7 +168,7 @@ function testInsert_PrimaryKeyViolation2() {
 
   // Inserting row without committing. Indices and cache are updated immediately
   // regardless of committing or not.
-  var journal = new lf.cache.Journal(lf.Global.get(), [table]);
+  var journal = createJournal([table]);
   journal.insert(table, [row1]);
   assertEquals(1, env.cache.getCount());
   assertTrue(pkIndex.containsKey(primaryKey));
@@ -195,7 +205,7 @@ function testInsert_PrimaryKeyViolation3() {
     rows.push(table.createRow({'id': 'samePk', 'name': 'DummyName'}));
   }
 
-  var journal = new lf.cache.Journal(lf.Global.get(), [table]);
+  var journal = createJournal([table]);
   lf.testing.util.assertThrowsError(
       201,  // Duplicate keys are not allowed.
       journal.insert.bind(journal, table, rows));
@@ -221,7 +231,7 @@ function testInsert_UniqueKeyViolation_IndexOrder() {
   assertEquals(0, emailIndex.getRange().length);
 
   // Test case where the 'id' column uniqueness is violated.
-  var journal = new lf.cache.Journal(lf.Global.get(), [table]);
+  var journal = createJournal([table]);
   lf.testing.util.assertThrowsError(
       201,  // Duplicate keys are not allowed.
       function() {
@@ -236,7 +246,7 @@ function testInsert_UniqueKeyViolation_IndexOrder() {
   assertEquals(0, emailIndex.getRange().length);
 
   // Test case where the 'email' column uniqueness is violated.
-  journal = new lf.cache.Journal(lf.Global.get(), [table]);
+  journal = createJournal([table]);
   lf.testing.util.assertThrowsError(
       201,  // Duplicate keys are not allowed.
       function() {
@@ -264,7 +274,7 @@ function testInsert_UniqueKeyViolation_SingleColumn() {
   var emailIndex = env.indexStore.get(emailIndexSchema.getNormalizedName());
   var rowIdIndex = env.indexStore.get(table.getRowIdIndexName());
 
-  var journal = new lf.cache.Journal(lf.Global.get(), [table]);
+  var journal = createJournal([table]);
   var row1 = table.createRow({'id': 'pk1', 'email': 'emailAddress1'});
   journal.insert(table, [row1]);
   journal.commit();
@@ -272,7 +282,7 @@ function testInsert_UniqueKeyViolation_SingleColumn() {
   assertTrue(rowIdIndex.containsKey(row1.id()));
   assertEquals(1, env.cache.getCount());
 
-  journal = new lf.cache.Journal(lf.Global.get(), [table]);
+  journal = createJournal([table]);
   var row2 = table.createRow({'id': 'pk2', 'email': 'emailAddress1'});
   lf.testing.util.assertThrowsError(
       201,  // Duplicate keys are not allowed.
@@ -313,7 +323,7 @@ function testInsert_NotNullableKeyViolation() {
   var table = env.schema.table('tableE');
   assertEquals(0, env.cache.getCount());
 
-  var journal = new lf.cache.Journal(lf.Global.get(), [table]);
+  var journal = createJournal([table]);
   var row1 = table.createRow({'id': 'pk1', 'email': null});
   lf.testing.util.assertThrowsError(
       202,  // Attempted to insert NULL value to non-nullable field {0}.
@@ -332,7 +342,7 @@ function testInsertOrReplace_NotNullableKeyViolation() {
   assertEquals(0, env.cache.getCount());
 
   // Attempting to insert a new invalid row.
-  var journal = new lf.cache.Journal(lf.Global.get(), [table]);
+  var journal = createJournal([table]);
   var row1 = table.createRow({'id': 'pk1', 'email': null});
   lf.testing.util.assertThrowsError(
       202,  // Attempted to insert NULL value to non-nullable field {0}.
@@ -342,13 +352,13 @@ function testInsertOrReplace_NotNullableKeyViolation() {
 
   // Attempting to insert a new valid row.
   var row2 = table.createRow({'id': 'pk2', 'email': 'emailAddress'});
-  journal = new lf.cache.Journal(lf.Global.get(), [table]);
+  journal = createJournal([table]);
   journal.insertOrReplace(table, [row2]);
   assertEquals(1, env.cache.getCount());
 
   // Attempting to replace existing row with an invalid one.
   var row2Updated = table.createRow({'id': 'pk2', 'email': null});
-  journal = new lf.cache.Journal(lf.Global.get(), [table]);
+  journal = createJournal([table]);
   lf.testing.util.assertThrowsError(
       202,  // Attempted to insert NULL value to non-nullable field {0}.
       journal.insertOrReplace.bind(journal, table, [row2Updated]));
@@ -365,11 +375,11 @@ function testUpdate_NotNullableKeyViolation() {
   assertEquals(0, env.cache.getCount());
 
   var row = table.createRow({'id': 'pk1', 'email': 'emailAddress'});
-  var journal = new lf.cache.Journal(lf.Global.get(), [table]);
+  var journal = createJournal([table]);
   journal.insert(table, [row]);
   assertEquals(1, env.cache.getCount());
 
-  journal = new lf.cache.Journal(lf.Global.get(), [table]);
+  journal = createJournal([table]);
   var rowUpdatedInvalid = table.createRow({'id': 'pk1', 'email': null});
   rowUpdatedInvalid.assignRowId(row.id());
   lf.testing.util.assertThrowsError(
@@ -377,7 +387,7 @@ function testUpdate_NotNullableKeyViolation() {
       journal.update.bind(journal, table, [rowUpdatedInvalid]));
   journal.rollback();
 
-  journal = new lf.cache.Journal(lf.Global.get(), [table]);
+  journal = createJournal([table]);
   var rowUpdatedValid = table.createRow(
       {'id': 'pk1', 'email': 'otherEmailAddress'});
   rowUpdatedValid.assignRowId(row.id());
@@ -397,7 +407,7 @@ function testUpdate_NoPrimaryKeyViolation() {
   var rowIdIndex = env.indexStore.get(table.getRowIdIndexName());
 
   var row = table.createRow({'id': 'pk1', 'name': 'DummyName'});
-  var journal = new lf.cache.Journal(lf.Global.get(), [table]);
+  var journal = createJournal([table]);
   journal.insert(table, [row]);
   journal.commit();
   assertEquals(1, env.cache.getCount());
@@ -411,7 +421,7 @@ function testUpdate_NoPrimaryKeyViolation() {
   });
   rowUpdated1.assignRowId(row.id());
 
-  journal = new lf.cache.Journal(lf.Global.get(), [table]);
+  journal = createJournal([table]);
   journal.update(table, [rowUpdated1]);
   journal.commit();
 
@@ -421,7 +431,7 @@ function testUpdate_NoPrimaryKeyViolation() {
     'name': 'OtherDummyName'
   });
   rowUpdated2.assignRowId(row.id());
-  journal = new lf.cache.Journal(lf.Global.get(), [table]);
+  journal = createJournal([table]);
   journal.update(table, [rowUpdated2]);
   journal.commit();
 
@@ -442,7 +452,7 @@ function testUpdate_PrimaryKeyViolation1() {
   var row1 = table.createRow({'id': 'pk1', 'name': 'DummyName'});
   var row2 = table.createRow({'id': 'pk2', 'name': 'DummyName'});
 
-  var journal = new lf.cache.Journal(lf.Global.get(), [table]);
+  var journal = createJournal([table]);
   journal.insert(table, [row1, row2]);
   journal.commit();
   assertEquals(2, env.cache.getCount());
@@ -456,7 +466,7 @@ function testUpdate_PrimaryKeyViolation1() {
   });
   row2Updated.assignRowId(row2.id());
 
-  journal = new lf.cache.Journal(lf.Global.get(), [table]);
+  journal = createJournal([table]);
   lf.testing.util.assertThrowsError(
       201,  // Duplicate keys are not allowed.
       journal.update.bind(journal, table, [row2Updated]));
@@ -476,7 +486,7 @@ function testUpdate_PrimaryKeyViolation2() {
   var row1 = table.createRow({'id': 'pk1', 'name': 'DummyName'});
   var row2 = table.createRow({'id': 'pk2', 'name': 'DummyName'});
 
-  var journal = new lf.cache.Journal(lf.Global.get(), [table]);
+  var journal = createJournal([table]);
   journal.insert(table, [row1, row2]);
   assertEquals(2, env.cache.getCount());
   assertTrue(pkIndex.containsKey(row1.payload()['id']));
@@ -510,7 +520,7 @@ function testUpdate_PrimaryKeyViolation3() {
         {'id': 'pk' + i.toString(), 'name': 'DummyName'}));
   }
 
-  var journal = new lf.cache.Journal(lf.Global.get(), [table]);
+  var journal = createJournal([table]);
   journal.insert(table, rows);
   journal.commit();
   assertEquals(rows.length, env.cache.getCount());
@@ -524,7 +534,7 @@ function testUpdate_PrimaryKeyViolation3() {
     return updatedRow;
   });
 
-  journal = new lf.cache.Journal(lf.Global.get(), [table]);
+  journal = createJournal([table]);
   lf.testing.util.assertThrowsError(
       201,  // Duplicate keys are not allowed.
       journal.update.bind(journal, table, rowsUpdated));
@@ -544,7 +554,7 @@ function testUpdate_updateNullsCorrectly() {
   // Inserting a new row with a null key.
   var row = table.createRow(
       {'id': 'pk0', 'id2': 'id2x', 'name': null});
-  var journal = new lf.cache.Journal(lf.Global.get(), [table]);
+  var journal = createJournal([table]);
   journal.insert(table, [row]);
   journal.commit();
   assertTrue(nameIndex.containsKey(null));
@@ -554,7 +564,7 @@ function testUpdate_updateNullsCorrectly() {
   var updatedRow = table.createRow(
       {'id': 'pk0', 'id2': 'id2x', 'name': 'sampleName'});
   updatedRow.assignRowId(row.id());
-  journal = new lf.cache.Journal(lf.Global.get(), [table]);
+  journal = createJournal([table]);
   journal.update(table, [updatedRow]);
   journal.commit();
   assertFalse(nameIndex.containsKey(null));
@@ -564,14 +574,14 @@ function testUpdate_updateNullsCorrectly() {
   updatedRow = table.createRow(
       {'id': 'pk0', 'id2': 'id2x', 'name': null});
   updatedRow.assignRowId(row.id());
-  journal = new lf.cache.Journal(lf.Global.get(), [table]);
+  journal = createJournal([table]);
   journal.update(table, [updatedRow]);
   journal.commit();
   assertTrue(nameIndex.containsKey(null));
   assertEquals(1, nameIndex.getRange().length);
 
   // Removing an existing row.
-  journal = new lf.cache.Journal(lf.Global.get(), [table]);
+  journal = createJournal([table]);
   journal.remove(table, [updatedRow]);
   assertEquals(0, nameIndex.getRange().length);
 }
@@ -591,12 +601,12 @@ function testDeleteInsert_Uncommitted() {
   var row1 = table.createRow({'id': primaryKey, 'name': 'DummyName'});
 
   // First adding the row and committing.
-  var journal = new lf.cache.Journal(lf.Global.get(), [table]);
+  var journal = createJournal([table]);
   journal.insert(table, [row1]);
   journal.commit();
 
   // Removing the row on a new journal.
-  journal = new lf.cache.Journal(lf.Global.get(), [table]);
+  journal = createJournal([table]);
   journal.remove(table, [row1]);
 
   // Inserting a row that has the primary key that was just removed within the
@@ -625,7 +635,7 @@ function testInsertOrReplace() {
   assertFalse(pkIndex.containsKey(primaryKey));
   assertFalse(rowIdIndex.containsKey(row1.id()));
 
-  var journal = new lf.cache.Journal(lf.Global.get(), [table]);
+  var journal = createJournal([table]);
   journal.insertOrReplace(table, [row1]);
   journal.commit();
 
@@ -636,7 +646,7 @@ function testInsertOrReplace() {
   // Now testing case where the row is being replaced. There should be no
   // exception thrown.
   var row2 = table.createRow({'id': primaryKey, 'name': 'OtherDummyName'});
-  journal = new lf.cache.Journal(lf.Global.get(), [table]);
+  journal = createJournal([table]);
   journal.insertOrReplace(table, [row2]);
   journal.commit();
 
@@ -657,7 +667,7 @@ function testInsertOrReplace_UniqueKeyViolation() {
   var row1 = table.createRow({'id': 'pk1', 'email': 'emailAddress1'});
   var row2 = table.createRow({'id': 'pk2', 'email': 'emailAddress2'});
 
-  var journal = new lf.cache.Journal(lf.Global.get(), [table]);
+  var journal = createJournal([table]);
   journal.insertOrReplace(table, [row1, row2]);
   journal.commit();
   assertTrue(emailIndex.containsKey(row1.payload()['email']));
@@ -666,7 +676,7 @@ function testInsertOrReplace_UniqueKeyViolation() {
   // Attempting to insert a new row that has the same 'email' field as an
   // existing row.
   var row3 = table.createRow({'id': 'pk3', 'email': row1.payload()['email']});
-  journal = new lf.cache.Journal(lf.Global.get(), [table]);
+  journal = createJournal([table]);
   lf.testing.util.assertThrowsError(
       201,  // Duplicate keys are not allowed.
       journal.insertOrReplace.bind(journal, table, [row3]));
@@ -677,7 +687,7 @@ function testInsertOrReplace_UniqueKeyViolation() {
   // each other, and also it is not occupied by any existing row.
   var row4 = table.createRow({'id': 'pk4', 'email': 'otherEmailAddress'});
   var row5 = table.createRow({'id': 'pk5', 'email': 'otherEmailAddress'});
-  journal = new lf.cache.Journal(lf.Global.get(), [table]);
+  journal = createJournal([table]);
   lf.testing.util.assertThrowsError(
       201,  // Duplicate keys are not allowed.
       journal.insertOrReplace.bind(journal, table, [row4, row5]));
@@ -692,7 +702,7 @@ function testInsertOrReplace_UniqueKeyViolation() {
     'email': row2.payload()['email']
   });
   row1Updated.assignRowId(row1.id());
-  journal = new lf.cache.Journal(lf.Global.get(), [table]);
+  journal = createJournal([table]);
   lf.testing.util.assertThrowsError(
       201,  // Duplicate keys are not allowed.
       journal.insertOrReplace.bind(journal, table, [row1Updated]));
@@ -707,7 +717,7 @@ function testInsertOrReplace_UniqueKeyViolation() {
     'email': 'unusedEmailAddress'
   });
   row2Updated.assignRowId(row2.id());
-  journal = new lf.cache.Journal(lf.Global.get(), [table]);
+  journal = createJournal([table]);
   assertNotThrows(function() {
     journal.insertOrReplace(table, [row2Updated]);
   });
@@ -726,7 +736,7 @@ function testCacheMerge() {
   assertEquals(0, env.cache.getCount());
   var row = new lf.Row(1, payload);
   var row2 = new lf.Row(4, payload);
-  var journal = new lf.cache.Journal(lf.Global.get(), [table]);
+  var journal = createJournal([table]);
   journal.insert(table, [row, row2]);
   assertEquals(2, env.cache.getCount());
   var results = env.cache.get([0, 1, 4]);
@@ -736,7 +746,7 @@ function testCacheMerge() {
   assertTrue(rowIdIndex.containsKey(row.id()));
   assertTrue(rowIdIndex.containsKey(row2.id()));
 
-  journal = new lf.cache.Journal(lf.Global.get(), [table]);
+  journal = createJournal([table]);
   var payload2 = {'id': 'nothing', 'name': 'dummyName'};
   var row3 = new lf.Row(0, payload2);
   var row4 = new lf.Row(4, payload2);
@@ -765,7 +775,7 @@ function testCacheMerge() {
 function testIndicesCacheUpdated() {
   var table = env.schema.table('tableB');
   var indices = table.getIndices();
-  var journal = new lf.cache.Journal(lf.Global.get(), [table]);
+  var journal = createJournal([table]);
 
   var row1 = table.createRow({'id': '1', 'name': '1'});
   row1.assignRowId(1);
@@ -826,7 +836,7 @@ function testIndicesCacheUpdated() {
 
 function testIndicesUpdated() {
   var table = env.schema.table('tableA');
-  var journal = new lf.cache.Journal(lf.Global.get(), [table]);
+  var journal = createJournal([table]);
   var indexSchema = table.getIndices()[1];
   var keyRange1 = new lf.index.SingleKeyRange('aaa', 'bbb', false, false);
   var keyRange2 = new lf.index.SingleKeyRange('ccc', 'eee', false, false);
@@ -898,7 +908,7 @@ function testRollback() {
   };
 
   // Setting up the cache and indices to be in the initial state.
-  var journal = new lf.cache.Journal(lf.Global.get(), [table]);
+  var journal = createJournal([table]);
   journal.insert(table, [rowToModifyOld]);
   journal.insert(table, [rowToRemove]);
   journal.commit();
@@ -906,7 +916,7 @@ function testRollback() {
   assertInitialState();
 
   // Modifying indices and cache.
-  journal = new lf.cache.Journal(lf.Global.get(), [table]);
+  journal = createJournal([table]);
   journal.insert(table, [rowToInsert]);
   journal.update(table, [rowToModifyNew]);
   journal.remove(table, [rowToRemove]);

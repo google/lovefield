@@ -23,6 +23,7 @@ goog.require('lf.cache.Journal');
 goog.require('lf.proc.Relation');
 goog.require('lf.proc.SkipStep');
 goog.require('lf.query.SelectContext');
+goog.require('lf.structs.set');
 goog.require('lf.testing.MockEnv');
 goog.require('lf.testing.getSchemaBuilder');
 goog.require('lf.testing.proc.DummyStep');
@@ -84,7 +85,7 @@ function checkExec(sampleDataCount, skip) {
   var step = new lf.proc.SkipStep();
   step.addChild(childStep);
 
-  var journal = new lf.cache.Journal(lf.Global.get(), []);
+  var journal = new lf.cache.Journal(lf.Global.get(), lf.structs.set.create());
   step.exec(journal, queryContext).then(function(relations) {
     var relation = relations[0];
     var expectedResults = Math.max(sampleDataCount - skip, 0);

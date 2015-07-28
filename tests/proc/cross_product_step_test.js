@@ -21,6 +21,7 @@ goog.require('lf.Global');
 goog.require('lf.cache.Journal');
 goog.require('lf.proc.CrossProductStep');
 goog.require('lf.proc.Relation');
+goog.require('lf.structs.set');
 goog.require('lf.testing.MockEnv');
 goog.require('lf.testing.getSchemaBuilder');
 goog.require('lf.testing.proc.DummyStep');
@@ -82,7 +83,7 @@ function testCrossProduct() {
   step.addChild(leftChild);
   step.addChild(rightChild);
 
-  var journal = new lf.cache.Journal(lf.Global.get(), []);
+  var journal = new lf.cache.Journal(lf.Global.get(), lf.structs.set.create());
   step.exec(journal).then(function(relations) {
     var relation = relations[0];
     assertEquals(leftRowCount * rightRowCount, relation.entries.length);
@@ -151,7 +152,7 @@ function testCrossProduct_PreviousJoins() {
   crossProductStep123.addChild(crossProductStep12);
   crossProductStep123.addChild(relation3Step);
 
-  var journal = new lf.cache.Journal(lf.Global.get(), []);
+  var journal = new lf.cache.Journal(lf.Global.get(), lf.structs.set.create());
   crossProductStep123.exec(journal).then(function(results) {
     var result = results[0];
 

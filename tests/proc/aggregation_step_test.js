@@ -27,6 +27,7 @@ goog.require('lf.pred.JoinPredicate');
 goog.require('lf.proc.AggregationStep');
 goog.require('lf.proc.Relation');
 goog.require('lf.schema.DataStoreType');
+goog.require('lf.structs.set');
 goog.require('lf.testing.NullableDataGenerator');
 goog.require('lf.testing.hrSchema.MockDataGenerator');
 goog.require('lf.testing.proc.DummyStep');
@@ -548,7 +549,8 @@ function checkCalculationForRelation(
   var aggregationStep = new lf.proc.AggregationStep([aggregatedColumn]);
   aggregationStep.addChild(childStep);
 
-  var journal = new lf.cache.Journal(hr.db.getGlobal(), []);
+  var journal =
+      new lf.cache.Journal(hr.db.getGlobal(), lf.structs.set.create());
   return aggregationStep.exec(journal).then(function(relations) {
     var relation = relations[0];
     if (expectedValue instanceof Array) {
@@ -579,7 +581,8 @@ function testExec_UsesExistingResult() {
   var aggregationStep = new lf.proc.AggregationStep([aggregatedColumn]);
   aggregationStep.addChild(childStep);
 
-  var journal = new lf.cache.Journal(hr.db.getGlobal(), []);
+  var journal =
+      new lf.cache.Journal(hr.db.getGlobal(), lf.structs.set.create());
   aggregationStep.exec(journal).then(function(relations) {
     assertEquals(
         aggregationResult,
