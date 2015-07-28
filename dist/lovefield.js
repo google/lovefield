@@ -6448,6 +6448,27 @@ lf.cache.DefaultCache.prototype.getCount = function(opt_tableName) {
   return goog.isDefAndNotNull(opt_tableName) ? this.getTableSet_(opt_tableName).size : this.map_.size;
 };
 
+lf.structs.array = {};
+lf.structs.array.binarySearch_ = function(arr, value) {
+  for (var left = 0, right = arr.length;left < right;) {
+    var middle = left + right >> 1;
+    arr[middle] < value ? left = middle + 1 : right = middle;
+  }
+  return left == right && arr[left] == value ? left : ~left;
+};
+lf.structs.array.binaryInsert = function(arr, value) {
+  var index = lf.structs.array.binarySearch_(arr, value);
+  return 0 > index ? (arr.splice(-(index + 1), 0, value), !0) : !1;
+};
+lf.structs.array.binaryRemove = function(arr, value) {
+  var index = lf.structs.array.binarySearch_(arr, value);
+  if (0 > index) {
+    return !1;
+  }
+  arr.splice(index, 1);
+  return !0;
+};
+
 lf.index.hashCode = function(value) {
   for (var hash = 0, i = 0;i < value.length;++i) {
     hash = (hash << 5) - hash + value.charCodeAt(i), hash &= hash;
@@ -6763,7 +6784,7 @@ lf.index.BTreeNode_.prototype.delete_ = function(key, parentPos, opt_value) {
     }
   }
   if (this.keys_.length > pos && this.tree_.eq(this.keys_[pos], key)) {
-    if (goog.isDef(opt_value) && !this.tree_.isUniqueKey() && isLeaf && (goog.array.binaryRemove(this.values_[pos], opt_value) && this.tree_.stats().remove(key, 1), this.values_[pos].length)) {
+    if (goog.isDef(opt_value) && !this.tree_.isUniqueKey() && isLeaf && (lf.structs.array.binaryRemove(this.values_[pos], opt_value) && this.tree_.stats().remove(key, 1), this.values_[pos].length)) {
       return !1;
     }
     this.keys_.splice(pos, 1);
@@ -6821,7 +6842,7 @@ lf.index.BTreeNode_.prototype.insert = function(key, value, opt_replace) {
         if (this.tree_.isUniqueKey()) {
           throw new lf.Exception(201);
         }
-        if (!goog.array.binaryInsert(this.values_[pos], value)) {
+        if (!lf.structs.array.binaryInsert(this.values_[pos], value)) {
           throw new lf.Exception(109);
         }
       }
