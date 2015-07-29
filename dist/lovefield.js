@@ -8786,10 +8786,8 @@ lf.query.selectToSql_ = function(query, stripValueInfo) {
   query.columns.length && (colList = query.columns.map(function(col) {
     return col.getAlias() ? col.getNormalizedName() + " AS " + col.getAlias() : col.getNormalizedName();
   }).join(", "));
-  var fromList = query.from.map(function(table) {
-    return table.getEffectiveName() != table.getName() ? table.getName() + " AS " + table.getEffectiveName() : table.getName();
-  }).join(", "), sql = "SELECT " + colList + " FROM " + fromList;
-  query.where && (sql += lf.query.predicateToSql_(query.where, stripValueInfo));
+  var sql = "SELECT " + colList + " FROM ";
+  goog.isDefAndNotNull(query.outerJoinPredicates) && 0 != query.outerJoinPredicates.size ? sql += lf.query.getFromListForOuterJoin_(query, stripValueInfo) : (sql += lf.query.getFromListForInnerJoin_(query, stripValueInfo), query.where && (sql += lf.query.predicateToSql_(query.where, stripValueInfo)));
   if (query.orderBy) {
     var orderBy = query.orderBy.map(function(order) {
       return order.column.getNormalizedName() + (order.order == lf.Order.DESC ? " DESC" : " ASC");
@@ -8803,6 +8801,23 @@ lf.query.selectToSql_ = function(query, stripValueInfo) {
   query.limit && (sql += " LIMIT " + query.limit.toString());
   query.skip && (sql += " SKIP " + query.skip.toString());
   return sql += ";";
+};
+lf.query.getTableNameToSql_ = function(table) {
+  return table.getEffectiveName() != table.getName() ? table.getName() + " AS " + table.getEffectiveName() : table.getName();
+};
+lf.query.getFromListForOuterJoin_ = function(query) {
+  for (var retrievedNodes = lf.tree.find(query.where, function(node) {
+    if (node instanceof lf.pred.ValuePredicate) {
+      throw new lf.Exception(361);
+    }
+    return !(node instanceof lf.pred.CombinedPredicate);
+  }), predicateString = retrievedNodes.map(lf.query.joinPredicateToSql_), fromList = lf.query.getTableNameToSql_(query.from[0]), i = 1;i < query.from.length;i++) {
+    var fromName = lf.query.getTableNameToSql_(query.from[i]), fromList = query.outerJoinPredicates.has(retrievedNodes[predicateString.length - i].getId()) ? fromList + (" LEFT OUTER JOIN " + fromName) : fromList + (" INNER JOIN " + fromName), fromList = fromList + (" ON (" + predicateString[predicateString.length - i] + ")")
+  }
+  return fromList;
+};
+lf.query.getFromListForInnerJoin_ = function(query) {
+  return query.from.map(lf.query.getTableNameToSql_).join(", ");
 };
 lf.query.toSql = function(builder, opt_stripValueInfo) {
   var stripValueInfo = opt_stripValueInfo || !1, query = builder.getQuery();
