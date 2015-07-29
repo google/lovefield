@@ -4465,20 +4465,20 @@ lf.index.SingleKeyRange.and = function(r1, r2) {
 lf.proc = {};
 lf.proc.Relation = function(entries, tables) {
   this.entries = entries;
-  this.tables_ = new goog.structs.Set(tables);
+  this.tables_ = lf.structs.set.create(tables);
   this.aggregationResults_ = null;
 };
 lf.proc.Relation.prototype.isCompatible = function(relation) {
-  return this.tables_.equals(relation.tables_);
+  return lf.structs.set.equals(this.tables_, relation.tables_);
 };
 lf.proc.Relation.assertCompatible_ = function(lhs, rhs) {
   goog.asserts.assert(lhs.isCompatible(rhs), "Intersection/union operations only apply to compatible relations.");
 };
 lf.proc.Relation.prototype.getTables = function() {
-  return this.tables_.getValues();
+  return lf.structs.set.values(this.tables_);
 };
 lf.proc.Relation.prototype.isPrefixApplied = function() {
-  return 1 < this.tables_.getCount();
+  return 1 < this.tables_.size;
 };
 lf.proc.Relation.prototype.getPayloads = function() {
   return this.entries.map(function(entry) {
@@ -4491,17 +4491,17 @@ lf.proc.Relation.prototype.getRowIds = function() {
   });
 };
 lf.proc.Relation.prototype.setAggregationResult = function(column, result) {
-  goog.isNull(this.aggregationResults_) && (this.aggregationResults_ = new goog.structs.Map);
+  goog.isNull(this.aggregationResults_) && (this.aggregationResults_ = lf.structs.map.create());
   this.aggregationResults_.set(column.getNormalizedName(), result);
 };
 lf.proc.Relation.prototype.getAggregationResult = function(column) {
   goog.asserts.assert(!goog.isNull(this.aggregationResults_), "getAggregationResult called before any results have been calculated.");
-  var result = this.aggregationResults_.get(column.getNormalizedName(), void 0);
+  var result = this.aggregationResults_.get(column.getNormalizedName());
   goog.asserts.assert(goog.isDef(result), "Could not find result for " + column.getNormalizedName());
   return result;
 };
 lf.proc.Relation.prototype.hasAggregationResult = function(column) {
-  return !goog.isNull(this.aggregationResults_) && this.aggregationResults_.containsKey(column.getNormalizedName());
+  return !goog.isNull(this.aggregationResults_) && this.aggregationResults_.has(column.getNormalizedName());
 };
 lf.proc.Relation.emptyRelation_ = null;
 lf.proc.Relation.createEmpty = function() {
@@ -4516,32 +4516,32 @@ lf.proc.Relation.intersect = function(relations) {
     lf.proc.Relation.assertCompatible_(relations[0], relation);
     return soFar + relation.entries.length;
   }, 0), allEntries = Array(totalCount), entryCounter = 0, relationMaps = relations.map(function(relation) {
-    var map = new goog.structs.Map;
+    var map = lf.structs.map.create();
     relation.entries.forEach(function(entry) {
       allEntries[entryCounter++] = entry;
       map.set(entry.id, entry);
     });
     return map;
-  }), intersection = new goog.structs.Map, i = 0;i < allEntries.length;i++) {
+  }), intersection = lf.structs.map.create(), i = 0;i < allEntries.length;i++) {
     var existsInAll = relationMaps.every(function(relation) {
-      return relation.containsKey(allEntries[i].id);
+      return relation.has(allEntries[i].id);
     });
     existsInAll && intersection.set(allEntries[i].id, allEntries[i]);
   }
-  return new lf.proc.Relation(intersection.getValues(), relations[0].tables_.getValues());
+  return new lf.proc.Relation(lf.structs.map.values(intersection), lf.structs.set.values(relations[0].tables_));
 };
 lf.proc.Relation.union = function(relations) {
   if (0 == relations.length) {
     return lf.proc.Relation.createEmpty();
   }
-  var union = new goog.structs.Map;
+  var union = lf.structs.map.create();
   relations.forEach(function(relation) {
     lf.proc.Relation.assertCompatible_(relations[0], relation);
     relation.entries.forEach(function(entry) {
       union.set(entry.id, entry);
     });
   });
-  return new lf.proc.Relation(union.getValues(), relations[0].tables_.getValues());
+  return new lf.proc.Relation(lf.structs.map.values(union), lf.structs.set.values(relations[0].tables_));
 };
 lf.proc.Relation.fromRows = function(rows, tables) {
   var isPrefixApplied = 1 < tables.length, entries = rows.map(function(row) {
@@ -4881,8 +4881,8 @@ lf.pred.ValuePredicate.prototype.bind = function(values) {
 };
 lf.pred.ValuePredicate.prototype.evalAsIn_ = function(relation) {
   goog.asserts.assert(this.evaluatorType == lf.eval.Type.IN, "ValuePredicate#evalAsIn_() called for wrong predicate type.");
-  var valueSet = new goog.structs.Set(this.value), evaluatorFn = goog.bind(function(rowValue) {
-    return goog.isNull(rowValue) ? !1 : valueSet.contains(rowValue) != this.isComplement_;
+  var valueSet = lf.structs.set.create(this.value), evaluatorFn = goog.bind(function(rowValue) {
+    return goog.isNull(rowValue) ? !1 : valueSet.has(rowValue) != this.isComplement_;
   }, this), entries = relation.entries.filter(function(entry) {
     return evaluatorFn(entry.getField(this.column));
   }, this);
@@ -7645,8 +7645,8 @@ lf.pred.CombinedPredicate.prototype.getColumns = function(opt_results) {
   this.traverse(function(child) {
     child != this && child.getColumns(columns);
   }.bind(this));
-  var columnSet = new goog.structs.Set(columns);
-  return columnSet.getValues();
+  var columnSet = lf.structs.set.create(columns);
+  return lf.structs.set.values(columnSet);
 };
 lf.pred.CombinedPredicate.prototype.setComplement = function(isComplement) {
   this.isComplement_ != isComplement && (this.isComplement_ = isComplement, this.operator = this.operator == lf.pred.Operator.AND ? lf.pred.Operator.OR : lf.pred.Operator.AND, this.getChildren().forEach(function(condition) {
