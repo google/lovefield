@@ -4649,7 +4649,7 @@ lf.eval.buildCommonEvaluatorMap_ = function() {
     return -1 != values.indexOf(rowValue);
   });
   map.set(lf.eval.Type.LTE, function(a, b) {
-    return a <= b;
+    return goog.isNull(a) || goog.isNull(b) ? !1 : a <= b;
   });
   map.set(lf.eval.Type.LT, function(a, b) {
     return goog.isNull(a) || goog.isNull(b) ? !1 : a < b;
@@ -4688,7 +4688,7 @@ lf.eval.buildDateEvaluatorMap_ = function() {
     });
   });
   map.set(lf.eval.Type.LTE, function(a, b) {
-    return a.getTime() <= b.getTime();
+    return goog.isNull(a) || goog.isNull(b) ? !1 : a.getTime() <= b.getTime();
   });
   map.set(lf.eval.Type.LT, function(a, b) {
     return goog.isNull(a) || goog.isNull(b) ? !1 : a.getTime() < b.getTime();

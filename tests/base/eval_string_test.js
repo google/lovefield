@@ -139,6 +139,26 @@ function testLte() {
 }
 
 
+function testLte_Null() {
+  var evaluationFn = registry.getEvaluator(
+      lf.Type.STRING, lf.eval.Type.LTE);
+
+  var string1 = 'a';
+  var string2 = 'ab';
+  var string3 = null;
+
+  assertTrue(evaluationFn(string1, string2));
+  assertTrue(evaluationFn(string1, string1));
+  assertFalse(evaluationFn(string2, string1));
+  // null test.
+  assertFalse(evaluationFn(string3, string1));
+  assertFalse(evaluationFn(string3, string2));
+  assertFalse(evaluationFn(string1, string3));
+  assertFalse(evaluationFn(string2, string3));
+  assertFalse(evaluationFn(string3, string3));
+}
+
+
 function testLt() {
   var evaluationFn = registry.getEvaluator(
       lf.Type.STRING, lf.eval.Type.LT);
