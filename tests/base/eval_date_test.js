@@ -150,6 +150,26 @@ function testLt() {
 }
 
 
+function testLt_Null() {
+  var evaluationFn = registry.getEvaluator(
+      lf.Type.DATE_TIME, lf.eval.Type.LT);
+
+  var date1 = new Date();
+  var date2 = new Date(date1.getTime() + 10);
+  var date3 = null;
+
+  assertTrue(evaluationFn(date1, date2));
+  assertFalse(evaluationFn(date1, date1));
+  assertFalse(evaluationFn(date2, date1));
+  // null test.
+  assertFalse(evaluationFn(date3, date1));
+  assertFalse(evaluationFn(date3, date2));
+  assertFalse(evaluationFn(date1, date3));
+  assertFalse(evaluationFn(date2, date3));
+  assertFalse(evaluationFn(date3, date3));
+}
+
+
 function testNeq() {
   var evaluationFn = registry.getEvaluator(
       lf.Type.DATE_TIME, lf.eval.Type.NEQ);
