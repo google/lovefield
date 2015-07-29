@@ -258,3 +258,25 @@ function testMatch() {
   assertTrue(evaluationFn(string, pattern2));
   assertFalse(evaluationFn(string, pattern3));
 }
+
+
+function testMatch_Null() {
+  var evaluationFn = registry.getEvaluator(
+      lf.Type.STRING, lf.eval.Type.MATCH);
+
+  var string = 'sampleName';
+  var string2 = null;
+
+  var pattern1 = /sampleName/;
+  var pattern2 = /\bsample[A-Za-z]+\b/;
+  var pattern3 = /SAMPLENAME/;
+  var pattern4 = null;
+
+  assertTrue(evaluationFn(string, pattern1));
+  assertTrue(evaluationFn(string, pattern2));
+  assertFalse(evaluationFn(string, pattern3));
+  // null check.
+  assertFalse(evaluationFn(string, pattern4));
+  assertFalse(evaluationFn(string2, pattern1));
+  assertFalse(evaluationFn(string2, pattern4));
+}

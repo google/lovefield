@@ -4662,6 +4662,9 @@ lf.eval.buildNumberEvaluatorMap_ = function() {
 lf.eval.buildStringEvaluatorMap_ = function() {
   var map = lf.eval.buildCommonEvaluatorMap_();
   map.set(lf.eval.Type.MATCH, function(value, regex) {
+    if (goog.isNull(value) || goog.isNull(regex)) {
+      return !1;
+    }
     var re = new RegExp(regex);
     return re.test(value);
   });
