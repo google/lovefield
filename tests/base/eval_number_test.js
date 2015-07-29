@@ -92,6 +92,26 @@ function testGte() {
 }
 
 
+function testGte_Null() {
+  var evaluationFn = registry.getEvaluator(
+      lf.Type.NUMBER, lf.eval.Type.GTE);
+
+  var number1 = 100;
+  var number2 = 200;
+  var number3 = null;
+
+  assertTrue(evaluationFn(number2, number1));
+  assertTrue(evaluationFn(number2, number2));
+  assertFalse(evaluationFn(number1, number2));
+  // null test.
+  assertFalse(evaluationFn(number3, number1));
+  assertFalse(evaluationFn(number3, number2));
+  assertFalse(evaluationFn(number1, number3));
+  assertFalse(evaluationFn(number2, number3));
+  assertFalse(evaluationFn(number3, number3));
+}
+
+
 function testGt() {
   var evaluationFn = registry.getEvaluator(
       lf.Type.NUMBER, lf.eval.Type.GT);

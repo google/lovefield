@@ -93,6 +93,26 @@ function testGte() {
 }
 
 
+function testGte_Null() {
+  var evaluationFn = registry.getEvaluator(
+      lf.Type.STRING, lf.eval.Type.GTE);
+
+  var string1 = 'a';
+  var string2 = 'ab';
+  var string3 = null;
+
+  assertTrue(evaluationFn(string2, string1));
+  assertTrue(evaluationFn(string2, string2));
+  assertFalse(evaluationFn(string1, string2));
+  // null test.
+  assertFalse(evaluationFn(string3, string1));
+  assertFalse(evaluationFn(string3, string2));
+  assertFalse(evaluationFn(string1, string3));
+  assertFalse(evaluationFn(string2, string3));
+  assertFalse(evaluationFn(string3, string3));
+}
+
+
 function testGt() {
   var evaluationFn = registry.getEvaluator(
       lf.Type.STRING, lf.eval.Type.GT);
