@@ -216,6 +216,10 @@ in SQL grammar. These predicates are generated from predicate providers:
 |`isNull`   |0                    |`IS NULL`      |
 |`isNotNull`|0                    |`IS NOT NULL`  |
 
+The behavior of eq(null) is the same as isNull(). Similarly neq(null) is the
+same as isNotNull(). This behavior is designed to make parameter binding easier
+so that the users do not need two different queries to handle cases for NULL.
+
 All these operators are defined in the interface of [`lf.PredicateProvider`](
 https://github.com/google/lovefield/blob/0146b8c1a951ecc2cf282075e6653d63aac1aed9/lib/predicate.js#L54-153).
 The general idea is that the column acquired from schema object also
