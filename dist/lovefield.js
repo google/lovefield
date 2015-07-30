@@ -8722,15 +8722,14 @@ lf.query.selectToSql_ = function(query, stripValueInfo) {
 lf.query.getTableNameToSql_ = function(table) {
   return table.getEffectiveName() != table.getName() ? table.getName() + " AS " + table.getEffectiveName() : table.getName();
 };
-lf.query.getFromListForOuterJoin_ = function(query) {
+lf.query.getFromListForOuterJoin_ = function(query, stripValueInfo) {
   for (var retrievedNodes = lf.tree.find(query.where, function(node) {
-    if (node instanceof lf.pred.ValuePredicate) {
-      throw new lf.Exception(361);
-    }
-    return !(node instanceof lf.pred.CombinedPredicate);
+    return node instanceof lf.pred.JoinPredicate;
   }), predicateString = retrievedNodes.map(lf.query.joinPredicateToSql_), fromList = lf.query.getTableNameToSql_(query.from[0]), i = 1;i < query.from.length;i++) {
     var fromName = lf.query.getTableNameToSql_(query.from[i]), fromList = query.outerJoinPredicates.has(retrievedNodes[predicateString.length - i].getId()) ? fromList + (" LEFT OUTER JOIN " + fromName) : fromList + (" INNER JOIN " + fromName), fromList = fromList + (" ON (" + predicateString[predicateString.length - i] + ")")
   }
+  var leftChild = query.where.getChildAt(0);
+  leftChild instanceof lf.pred.JoinPredicate || (fromList += " WHERE " + lf.query.parseSearchCondition_(leftChild, stripValueInfo));
   return fromList;
 };
 lf.query.getFromListForInnerJoin_ = function(query) {

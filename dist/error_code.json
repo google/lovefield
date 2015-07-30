@@ -34,7 +34,6 @@
   "358": "toSql() is not implemented for {0}.",
   "359": "LocalStorage is not supported by platform.",
   "360": "Not implemented yet.",
-  "361": "toSql() does not support queries that involve where clause with outer joins.",
 
   "500": "Syntax error",
   "501": "Value is not bounded.",
