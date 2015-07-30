@@ -1,3 +1,15 @@
+Version: 2.0.61<br>
+Publish date: 20150730<br>
+Changes:
+ - Converted all code paths to use native ES6 Map/Set when available.
+ - Fixed a bug causing Firebase backend stopped working.
+ - Fixed toSql() to correctly output queries with left outer join.
+ - Fixed scoping bug in performance dashboard.
+ - Fixed NULL handling problems in evaluators and predicates.
+ - Improve B-Tree performance by using a more effective binary insert/remove
+   algorithm.
+
+
 Version: 2.0.60<br>
 Publish date: 20150727<br>
 Changes:
