@@ -2657,7 +2657,6 @@ lf.Row.hexToBin = function(hex) {
   }
   return buffer;
 };
-
 lf.index = {};
 lf.index.IndexMetadata = function(type) {
   this.type = type;
@@ -2672,7 +2671,6 @@ lf.index.IndexMetadataRow.forType = function(indexType) {
   var indexMetadata = new lf.index.IndexMetadata(indexType);
   return new lf.index.IndexMetadataRow(indexMetadata);
 };
-
 lf.TransactionType = {};
 goog.exportSymbol("lf.TransactionType", lf.TransactionType);
 lf.TransactionType.READ_ONLY = 0;
@@ -2681,11 +2679,9 @@ lf.TransactionType.READ_WRITE = 1;
 goog.exportProperty(lf.TransactionType, "READ_WRITE", lf.TransactionType.READ_WRITE);
 lf.Transaction = function() {
 };
-
 lf.backstore = {};
 lf.backstore.Tx = function() {
 };
-
 lf.backstore.BaseTx = function(journal, txType) {
   this.journal_ = journal;
   this.txType = txType;
@@ -3501,7 +3497,6 @@ lf.structs.map.values = function(map) {
   });
   return array;
 };
-
 lf.service = {};
 lf.service.ServiceId = function(serviceId) {
   this.serviceId_ = serviceId;
@@ -3516,7 +3511,6 @@ lf.service.QUERY_ENGINE = new lf.service.ServiceId("engine");
 lf.service.RUNNER = new lf.service.ServiceId("runner");
 lf.service.OBSERVER_REGISTRY = new lf.service.ServiceId("observerregistry");
 lf.service.SCHEMA = new lf.service.ServiceId("schema");
-
 lf.Table = function() {
 };
 goog.structs.Collection = function() {
@@ -3706,7 +3700,6 @@ goog.structs.Set.prototype.isSubsetOf = function(col) {
 goog.structs.Set.prototype.__iterator__ = function() {
   return this.map_.__iterator__(!1);
 };
-
 lf.structs.set = {};
 lf.structs.SetPolyFill_ = function(opt_values) {
   this.set_ = new goog.structs.Set(opt_values);
@@ -3770,7 +3763,6 @@ lf.structs.set.isSubset = function(set1, set2) {
 lf.structs.set.equals = function(set1, set2) {
   return set1.size == set2.size && lf.structs.set.isSubset(set1, set2);
 };
-
 lf.backstore.Page = function(id, opt_payload) {
   this.id_ = id;
   this.payload_ = opt_payload || {};
@@ -3811,9 +3803,7 @@ lf.backstore.Page.prototype.serialize = function() {
 lf.backstore.Page.deserialize = function(data) {
   return new lf.backstore.Page(data.id, JSON.parse(data.value));
 };
-
 lf.backstore.TableType = {DATA:0, INDEX:1};
-
 lf.backstore.BundledObjectStore = function(store, deserializeFn, retrievePageFn) {
   this.store_ = store;
   this.deserializeFn_ = deserializeFn;
@@ -3938,13 +3928,11 @@ lf.backstore.BundledObjectStore.forTableType = function(global, store, deseriali
   var retrievePageFn = tableType == lf.backstore.TableType.DATA ? goog.partial(lf.backstore.BundledObjectStore.getDataTablePage_, global) : lf.backstore.BundledObjectStore.getIndexTablePage_;
   return new lf.backstore.BundledObjectStore(store, deserializeFn, retrievePageFn);
 };
-
 lf.index.Favor = {RHS:-1, TIE:0, LHS:1};
 lf.index.Comparator = function() {
 };
 lf.index.Index = function() {
 };
-
 lf.cache = {};
 lf.cache.InMemoryUpdater = function(global) {
   this.cache_ = global.getService(lf.service.CACHE);
@@ -4009,7 +3997,6 @@ lf.cache.InMemoryUpdater.prototype.updateTableIndexForRow_ = function(index, mod
     }
   }
 };
-
 lf.type = {};
 lf.ConstraintAction = {};
 goog.exportSymbol("lf.ConstraintAction", lf.ConstraintAction);
@@ -4058,8 +4045,6 @@ lf.Exception = function(code, var_args) {
   }
 };
 goog.inherits(lf.Exception, Error);
-
-
 lf.cache.ConstraintChecker = function(global) {
   this.indexStore_ = global.getService(lf.service.INDEX_STORE);
   this.schema_ = global.getService(lf.service.SCHEMA);
@@ -4146,7 +4131,6 @@ lf.cache.ConstraintChecker.prototype.checkForeignKeysForDelete = function(table,
     this.checkReferringKeys_(table, modifications, constraintTiming);
   }
 };
-
 lf.cache.TableDiff = function(name) {
   this.added_ = new goog.structs.Map;
   this.modified_ = new goog.structs.Map;
@@ -4234,7 +4218,6 @@ lf.cache.TableDiff.prototype.getReverse = function() {
 lf.cache.TableDiff.prototype.isEmpty = function() {
   return this.added_.isEmpty() && this.deleted_.isEmpty() && this.modified_.isEmpty();
 };
-
 lf.cache.Journal = function(global, scope) {
   this.scope_ = lf.structs.map.create();
   scope.forEach(function(tableSchema) {
@@ -4366,7 +4349,6 @@ lf.cache.Journal.prototype.checkScope_ = function(tableSchema) {
     throw new lf.Exception(106, tableSchema.getName());
   }
 };
-
 lf.index.SingleKeyRange = function(from, to, excludeLower, excludeUpper) {
   this.from = from;
   this.to = to;
@@ -4461,7 +4443,6 @@ lf.index.SingleKeyRange.and = function(r1, r2) {
   r.excludeUpper = right.excludeUpper;
   return r;
 };
-
 lf.proc = {};
 lf.proc.Relation = function(entries, tables) {
   this.entries = entries;
@@ -4592,7 +4573,6 @@ lf.proc.RelationEntry.combineEntries = function(leftEntry, leftEntryTables, righ
   var row = new lf.Row(lf.Row.DUMMY_ID, result);
   return new lf.proc.RelationEntry(row, !0);
 };
-
 lf.bind = function(index) {
   return new lf.Binder(index);
 };
@@ -4604,7 +4584,6 @@ goog.exportSymbol("lf.Binder", lf.Binder);
 lf.Binder.prototype.getIndex = function() {
   return this.index_;
 };
-
 lf.eval = {};
 lf.eval.Type = {BETWEEN:"between", EQ:"eq", GTE:"gte", GT:"gt", IN:"in", LTE:"lte", LT:"lt", MATCH:"match", NEQ:"neq"};
 lf.eval.Registry = function() {
@@ -4797,12 +4776,10 @@ goog.structs.TreeNode.prototype.removeChildAt = function(index) {
 goog.structs.TreeNode.prototype.removeChild = function(child) {
   return this.removeChildAt(goog.array.indexOf(this.getChildren(), child));
 };
-
 lf.Predicate = function() {
 };
 lf.PredicateProvider = function() {
 };
-
 lf.pred = {};
 lf.pred.PredicateNode = function() {
   goog.structs.TreeNode.call(this, "", "");
@@ -4816,7 +4793,6 @@ lf.pred.PredicateNode.prototype.getId = function() {
 lf.pred.PredicateNode.prototype.setId = function(id) {
   this.id_ = id;
 };
-
 lf.pred.ValuePredicate = function(column, value, evaluatorType) {
   lf.pred.PredicateNode.call(this);
   this.column = column;
@@ -4901,7 +4877,6 @@ lf.pred.ValuePredicate.prototype.toKeyRange = function() {
   lf.index.SingleKeyRange.upperBound(this.value, !0);
   return this.isComplement_ ? keyRange.complement() : [keyRange];
 };
-
 lf.query = {};
 lf.query.Context = function(schema) {
   this.schema = schema;
@@ -4934,7 +4909,6 @@ lf.query.Context.prototype.bindValuesInSearchCondition = function(values) {
     node instanceof lf.pred.ValuePredicate && node.bind(values);
   });
 };
-
 lf.query.SelectContext = function(schema) {
   lf.query.Context.call(this, schema);
 };
@@ -4972,7 +4946,6 @@ lf.query.SelectContext.prototype.bind = function(values) {
   this.bindValuesInSearchCondition(values);
   return this;
 };
-
 lf.proc.PhysicalQueryPlan = function(rootNode, scope) {
   this.rootNode_ = rootNode;
   this.scope_ = scope;
@@ -4993,11 +4966,9 @@ lf.proc.PhysicalQueryPlan.getCombinedScope = function(plans) {
   });
   return tableSet;
 };
-
 lf.proc.Task = function() {
 };
 lf.proc.TaskPriority = {OBSERVER_QUERY_TASK:0, EXTERNAL_CHANGE_TASK:1, USER_QUERY_TASK:2, TRANSACTION_TASK:2};
-
 lf.proc.QueryTask = function(global, items) {
   this.global = global;
   this.backStore_ = global.getService(lf.service.BACK_STORE);
@@ -5054,7 +5025,6 @@ lf.proc.QueryTask.prototype.getId = function() {
 };
 lf.proc.QueryTask.prototype.onSuccess = function() {
 };
-
 lf.proc.ObserverQueryTask = function(global, items) {
   lf.proc.QueryTask.call(this, global, items);
   this.observerRegistry_ = global.getService(lf.service.OBSERVER_REGISTRY);
@@ -5069,7 +5039,6 @@ lf.proc.ObserverQueryTask.prototype.onSuccess = function(results) {
     this.observerRegistry_.updateResultsForQuery(query, results[index]);
   }, this);
 };
-
 lf.proc.ExternalChangeTask = function(global, tableDiffs) {
   this.global_ = global;
   this.observerRegistry_ = global.getService(lf.service.OBSERVER_REGISTRY);
@@ -5109,7 +5078,6 @@ lf.proc.ExternalChangeTask.prototype.scheduleObserverTask_ = function() {
     this.runner_.scheduleTask(observerTask);
   }
 };
-
 lf.backstore.ExternalChangeObserver = function(global) {
   this.global_ = global;
   this.backStore_ = global.getService(lf.service.BACK_STORE);
@@ -5122,14 +5090,11 @@ lf.backstore.ExternalChangeObserver.prototype.onChange_ = function(tableDiffs) {
   var externalChangeTask = new lf.proc.ExternalChangeTask(this.global_, tableDiffs);
   this.runner_.scheduleTask(externalChangeTask);
 };
-
 lf.BackStore = function() {
 };
-
 lf.raw = {};
 lf.raw.BackStore = function() {
 };
-
 lf.backstore.FirebaseRawBackStore = function(version, dbRef) {
   this.version_ = version;
   this.db_ = dbRef;
@@ -5260,7 +5225,6 @@ lf.backstore.FirebaseRawBackStore.prototype.dump = function() {
   });
 };
 goog.exportProperty(lf.backstore.FirebaseRawBackStore.prototype, "dump", lf.backstore.FirebaseRawBackStore.prototype.dump);
-
 lf.backstore.FirebaseTx = function(db, type, journal) {
   lf.backstore.BaseTx.call(this, journal, type);
   this.db_ = db;
@@ -5303,7 +5267,6 @@ lf.backstore.FirebaseTx.prototype.commitInternal = function() {
   }
   return this.resolver.promise;
 };
-
 lf.backstore.MemoryTable = function() {
   this.data_ = lf.structs.map.create();
 };
@@ -5347,7 +5310,6 @@ lf.backstore.MemoryTable.prototype.getMaxRowId = function() {
     return prev > cur ? prev : cur;
   }, 0);
 };
-
 lf.backstore.Firebase = function(schema, fb) {
   this.schema_ = schema;
   this.app_ = fb;
@@ -5523,7 +5485,6 @@ lf.backstore.Firebase.prototype.subscribe = function(handler) {
 lf.backstore.Firebase.prototype.notify = function(changes) {
   goog.isDefAndNotNull(this.changeHandler_) && this.changeHandler_(changes);
 };
-
 lf.backstore.IndexedDBRawBackStore = function(version, db, tx, bundledMode) {
   this.db_ = db;
   this.tx_ = tx;
@@ -5671,7 +5632,6 @@ lf.backstore.IndexedDBRawBackStore.prototype.dumpTable_ = function(tableName) {
     });
   });
 };
-
 lf.backstore.ObjectStore = function(store, deserializeFn) {
   this.store_ = store;
   this.deserializeFn_ = deserializeFn;
@@ -5756,7 +5716,6 @@ lf.backstore.ObjectStore.prototype.remove = function(ids) {
     request.onerror = reject;
   }, this);
 };
-
 lf.backstore.IndexedDBTx = function(global, transaction, journal, txType, bundleMode) {
   lf.backstore.BaseTx.call(this, journal, txType);
   this.global_ = global;
@@ -5776,7 +5735,6 @@ lf.backstore.IndexedDBTx.prototype.getTable = function(tableName, deserializeFn,
 lf.backstore.IndexedDBTx.prototype.commitInternal = function() {
   return this.resolver.promise;
 };
-
 lf.backstore.IndexedDB = function(global, schema) {
   this.global_ = global;
   this.schema_ = schema;
@@ -5911,7 +5869,6 @@ lf.backstore.IndexedDB.prototype.subscribe = function() {
 };
 lf.backstore.IndexedDB.prototype.notify = function() {
 };
-
 lf.backstore.LocalStorageTable = function(tableKey) {
   this.key_ = tableKey;
   this.data_ = {};
@@ -5956,7 +5913,6 @@ lf.backstore.LocalStorageTable.prototype.diff = function(newData) {
   }, this);
   return diff;
 };
-
 lf.backstore.LocalStorageTx = function(store, type, journal) {
   lf.backstore.BaseTx.call(this, journal, type);
   this.store_ = store;
@@ -5971,7 +5927,6 @@ lf.backstore.LocalStorageTx.prototype.commitInternal = function() {
   this.resolver.resolve();
   return this.resolver.promise;
 };
-
 lf.backstore.LocalStorage = function(schema) {
   this.schema_ = schema;
   this.tables_ = lf.structs.map.create();
@@ -6049,7 +6004,6 @@ lf.backstore.LocalStorage.prototype.onStorageEvent_ = function(raw) {
     table && this.changeHandler_([table.diff(newData)]);
   }
 };
-
 lf.backstore.MemoryTx = function(store, type, journal) {
   lf.backstore.BaseTx.call(this, journal, type);
   this.store_ = store;
@@ -6063,7 +6017,6 @@ lf.backstore.MemoryTx.prototype.commitInternal = function() {
   this.resolver.resolve();
   return this.resolver.promise;
 };
-
 lf.backstore.Memory = function(schema) {
   this.schema_ = schema;
   this.tables_ = lf.structs.map.create();
@@ -6110,7 +6063,6 @@ lf.backstore.Memory.prototype.subscribe = function() {
 };
 lf.backstore.Memory.prototype.notify = function() {
 };
-
 lf.backstore.ObservableStore = function(schema) {
   lf.backstore.Memory.call(this, schema);
   this.observer_ = null;
@@ -6122,7 +6074,6 @@ lf.backstore.ObservableStore.prototype.subscribe = function(observer) {
 lf.backstore.ObservableStore.prototype.notify = function(changes) {
   goog.isNull(this.observer_) || this.observer_(changes);
 };
-
 lf.backstore.WebSqlTable = function(tx, name, deserializeFn) {
   this.tx_ = tx;
   this.name_ = name;
@@ -6153,7 +6104,6 @@ lf.backstore.WebSqlTable.prototype.remove = function(ids) {
   this.tx_.queue(sql, []);
   return goog.Promise.resolve();
 };
-
 lf.backstore.WebSqlTx = function(db, journal, txType) {
   lf.backstore.BaseTx.call(this, journal, txType);
   this.db_ = db;
@@ -6187,7 +6137,6 @@ lf.backstore.WebSqlTx.prototype.commitInternal = function() {
   this.txType == lf.TransactionType.READ_ONLY ? this.db_.readTransaction(callback, onTxError) : this.db_.transaction(callback, onTxError);
   return this.resolver.promise;
 };
-
 lf.backstore.WebSqlRawBackStore = function(global, oldVersion, db) {
   this.db_ = db;
   this.global_ = global;
@@ -6404,10 +6353,8 @@ lf.backstore.WebSql.prototype.scanRowId_ = function() {
   });
   return resolver.promise;
 };
-
 lf.cache.Cache = function() {
 };
-
 lf.cache.DefaultCache = function() {
   this.map_ = lf.structs.map.create();
   this.tableRows_ = lf.structs.map.create();
@@ -6481,7 +6428,6 @@ lf.structs.array.binaryRemove = function(arr, value) {
   arr.splice(index, 1);
   return !0;
 };
-
 lf.index.hashCode = function(value) {
   for (var hash = 0, i = 0;i < value.length;++i) {
     hash = (hash << 5) - hash + value.charCodeAt(i), hash &= hash;
@@ -6506,7 +6452,6 @@ lf.index.slice = function(rawArray, opt_reverseOrder, opt_limit, opt_skip) {
   var skip = Math.min(opt_skip || 0, array.length);
   return array.slice(skip, skip + limit);
 };
-
 lf.index.Stats = function() {
   this.totalRows = 0;
 };
@@ -6525,7 +6470,6 @@ lf.index.Stats.prototype.updateFromList = function(statsList) {
     this.totalRows += stats.totalRows;
   }, this);
 };
-
 lf.index.BTree = function(name, comparator, uniqueKeyOnly, opt_data) {
   this.name_ = name;
   this.comparator_ = comparator;
@@ -7182,7 +7126,6 @@ lf.index.MultiKeyComparator.prototype.rangeToKeys = function(keyRange) {
   }, this);
   return [startKey, endKey];
 };
-
 lf.index.NullableIndex = function(index) {
   this.index_ = index;
   this.nulls_ = lf.structs.set.create();
@@ -7257,7 +7200,6 @@ lf.index.NullableIndex.deserialize = function(deserializeFn, rows) {
 lf.index.NullableIndex.prototype.isUniqueKey = function() {
   return this.index_.isUniqueKey();
 };
-
 lf.index.RowId = function(name) {
   this.name_ = name;
   this.rows_ = lf.structs.set.create();
@@ -7335,7 +7277,6 @@ lf.index.RowId.prototype.stats = function() {
   stats.totalRows = this.rows_.size;
   return stats;
 };
-
 lf.cache.Prefetcher = function(global) {
   this.global_ = global;
   this.backStore_ = global.getService(lf.service.BACK_STORE);
@@ -7401,10 +7342,8 @@ lf.cache.Prefetcher.prototype.reconstructPersistentRowIdIndex_ = function(tableS
     }
   }, this));
 };
-
 lf.index.IndexStore = function() {
 };
-
 lf.index.MemoryIndexStore = function() {
   this.store_ = lf.structs.map.create();
   this.tableIndices_ = lf.structs.map.create();
@@ -7450,7 +7389,6 @@ lf.index.MemoryIndexStore.prototype.set = function(tableName, index) {
 lf.index.MemoryIndexStore.prototype.getTableIndices = function(tableName) {
   return this.tableIndices_.get(tableName) || [];
 };
-
 lf.index.SingleKeyRangeSet = function(opt_ranges) {
   this.ranges_ = [];
   goog.isDef(opt_ranges) && this.add(opt_ranges);
@@ -7508,7 +7446,6 @@ lf.index.SingleKeyRangeSet.intersect = function(s0, s1) {
     return !goog.isNull(r);
   }));
 };
-
 lf.tree = {};
 lf.tree.map = function(original, mapFn) {
   var copyParentStack = [], nextParent = null, copyRoot = null;
@@ -7619,9 +7556,7 @@ lf.tree.toString = function(rootNode, opt_stringFn) {
   });
   return out;
 };
-
 lf.pred.Operator = {AND:"and", OR:"or"};
-
 lf.pred.CombinedPredicate = function(operator) {
   lf.pred.PredicateNode.call(this);
   this.operator = operator;
@@ -7844,7 +7779,6 @@ goog.labs.structs.Multimap.prototype.getEntries = function() {
   }
   return entries;
 };
-
 lf.pred.JoinPredicate = function(leftColumn, rightColumn, evaluatorType) {
   lf.pred.PredicateNode.call(this);
   this.leftColumn = leftColumn;
@@ -7967,11 +7901,9 @@ lf.pred.JoinPredicate.prototype.evalRelationsHashJoin_ = function(leftRelation, 
   var srcTables = leftRelation.getTables().concat(rightRelation.getTables());
   return new lf.proc.Relation(combinedEntries, srcTables);
 };
-
 lf.pred.createPredicate = function(leftOperand, rightOperand, evaluatorType) {
   return goog.isNull(rightOperand) ? new lf.pred.ValuePredicate(leftOperand, rightOperand, evaluatorType) : goog.isDef(rightOperand.getNormalizedName) ? new lf.pred.JoinPredicate(leftOperand, rightOperand, evaluatorType) : new lf.pred.ValuePredicate(leftOperand, rightOperand, evaluatorType);
 };
-
 lf.schema = {};
 lf.schema.Column = function() {
 };
@@ -8049,7 +7981,6 @@ lf.schema.Table.ROW_ID_INDEX_PATTERN = "#";
 lf.schema.Table.prototype.getRowIdIndexName = function() {
   return this.name_ + "." + lf.schema.Table.ROW_ID_INDEX_PATTERN;
 };
-
 lf.fn = {};
 lf.fn.AggregatedColumn = function(col, aggregatorType) {
   this.child = col;
@@ -8119,7 +8050,6 @@ lf.fn.StarColumn.prototype.getIndices = function() {
 lf.fn.StarColumn.prototype.isNullable = function() {
   return !1;
 };
-
 lf.fn.Type = {AVG:"AVG", COUNT:"COUNT", DISTINCT:"DISTINCT", GEOMEAN:"GEOMEAN", MAX:"MAX", MIN:"MIN", STDDEV:"STDDEV", SUM:"SUM"};
 lf.fn.avg = function(col) {
   return new lf.fn.AggregatedColumn(col, lf.fn.Type.AVG);
@@ -8154,7 +8084,6 @@ lf.fn.geomean = function(col) {
   return new lf.fn.AggregatedColumn(col, lf.fn.Type.GEOMEAN);
 };
 goog.exportSymbol("lf.fn.geomean", lf.fn.geomean);
-
 lf.proc.PhysicalQueryPlanNode = function(numRelations, type) {
   goog.structs.TreeNode.call(this, "", "");
   this.execType_ = type;
@@ -8208,7 +8137,6 @@ lf.proc.PhysicalQueryPlanNode.prototype.execAllChildren_ = function(journal, opt
     return this.execInternal(journal, relations, opt_context);
   }, this));
 };
-
 lf.proc.AggregationStep = function(aggregatedColumns) {
   lf.proc.PhysicalQueryPlanNode.call(this, lf.proc.PhysicalQueryPlanNode.ANY, lf.proc.PhysicalQueryPlanNode.ExecType.FIRST_CHILD);
   this.aggregatedColumns = aggregatedColumns;
@@ -8323,7 +8251,6 @@ lf.proc.AggregationStep.Calculator_.distinct_ = function(relation, column) {
   });
   return new lf.proc.Relation(lf.structs.map.values(distinctMap), relation.getTables());
 };
-
 lf.proc.LogicalQueryPlan = function(rootNode, scope) {
   this.rootNode_ = rootNode;
   this.scope_ = scope;
@@ -8459,10 +8386,8 @@ lf.proc.JoinNode.prototype.toString = function() {
   var prefix = this.isOuterJoin ? "left_outer_join" : "join";
   return prefix + "(" + this.predicate.toString() + ")";
 };
-
 lf.proc.RewritePass = function() {
 };
-
 lf.proc.AndPredicatePass = function() {
 };
 goog.inherits(lf.proc.AndPredicatePass, lf.proc.RewritePass);
@@ -8506,7 +8431,6 @@ lf.proc.AndPredicatePass.prototype.createSelectNodeChain_ = function(predicates)
   }, this);
   return [parentNode, lastNode];
 };
-
 lf.proc.CrossProductPass = function() {
 };
 goog.inherits(lf.proc.CrossProductPass, lf.proc.RewritePass);
@@ -8529,7 +8453,6 @@ lf.proc.CrossProductPass.prototype.traverse_ = function(rootNode) {
     this.traverse_(child);
   }, this);
 };
-
 lf.proc.CrossProductStep = function() {
   lf.proc.PhysicalQueryPlanNode.call(this, 2, lf.proc.PhysicalQueryPlanNode.ExecType.ALL);
 };
@@ -8550,7 +8473,6 @@ lf.proc.CrossProductStep.crossProduct_ = function(leftRelation, rightRelation) {
   var srcTables = leftRelation.getTables().concat(rightRelation.getTables());
   return [new lf.proc.Relation(combinedEntries, srcTables)];
 };
-
 lf.query.Builder = function() {
 };
 lf.query.Select = function() {
@@ -8561,7 +8483,6 @@ lf.query.Update = function() {
 };
 lf.query.Delete = function() {
 };
-
 lf.proc.UserQueryTask = function(global, items) {
   lf.proc.QueryTask.call(this, global, items);
   this.runner_ = global.getService(lf.service.RUNNER);
@@ -8586,7 +8507,6 @@ lf.proc.UserQueryTask.prototype.scheduleObserverTask_ = function() {
     this.runner_.scheduleTask(observerTask);
   }
 };
-
 lf.query.DeleteContext = function(schema) {
   lf.query.Context.call(this, schema);
 };
@@ -8608,7 +8528,6 @@ lf.query.DeleteContext.prototype.bind = function(values) {
   this.bindValuesInSearchCondition(values);
   return this;
 };
-
 lf.query.InsertContext = function(schema) {
   lf.query.Context.call(this, schema);
 };
@@ -8637,7 +8556,6 @@ lf.query.InsertContext.prototype.bind = function(values) {
   }));
   return this;
 };
-
 lf.query.UpdateContext = function(schema) {
   lf.query.Context.call(this, schema);
 };
@@ -8667,7 +8585,6 @@ lf.query.UpdateContext.prototype.bind = function(values) {
   this.bindValuesInSearchCondition(values);
   return this;
 };
-
 lf.query.escapeSqlValue_ = function(type, value) {
   if (!goog.isDefAndNotNull(value)) {
     return "NULL";
@@ -8835,7 +8752,6 @@ lf.query.toSql = function(builder, opt_stripValueInfo) {
   }
   throw new lf.Exception(358, typeof query);
 };
-
 lf.query.BaseBuilder = function(global, context) {
   this.global = global;
   this.queryEngine_ = global.getService(lf.service.QUERY_ENGINE);
@@ -8891,7 +8807,6 @@ lf.query.BaseBuilder.prototype.getTaskItem = function() {
 lf.query.BaseBuilder.prototype.getObservableTaskItem = function() {
   return {context:this.getObservableQuery(), plan:this.getPlan_()};
 };
-
 lf.query.DeleteBuilder = function(global) {
   lf.query.BaseBuilder.call(this, global, new lf.query.DeleteContext(global.getService(lf.service.SCHEMA)));
 };
@@ -8925,7 +8840,6 @@ lf.query.DeleteBuilder.prototype.assertExecPreconditions = function() {
     throw new lf.Exception(517);
   }
 };
-
 lf.query.InsertBuilder = function(global, opt_allowReplace) {
   lf.query.BaseBuilder.call(this, global, new lf.query.InsertContext(global.getService(lf.service.SCHEMA)));
   this.query.allowReplace = opt_allowReplace || !1;
@@ -8966,7 +8880,6 @@ lf.query.InsertBuilder.prototype.assertValuesPreconditions_ = function() {
     throw new lf.Exception(521);
   }
 };
-
 lf.op = {};
 lf.op.and = function(var_args) {
   var args = Array.prototype.slice.call(arguments);
@@ -8990,7 +8903,6 @@ lf.op.not = function(operand) {
   return operand;
 };
 goog.exportSymbol("lf.op.not", lf.op.not);
-
 lf.query.SelectBuilder = function(global, columns) {
   lf.query.BaseBuilder.call(this, global, new lf.query.SelectContext(global.getService(lf.service.SCHEMA)));
   this.fromAlreadyCalled_ = this.whereAlreadyCalled_ = !1;
@@ -9188,7 +9100,6 @@ lf.query.SelectBuilder.prototype.clone = function() {
   return builder;
 };
 goog.exportProperty(lf.query.SelectBuilder.prototype, "clone", lf.query.SelectBuilder.prototype.clone);
-
 lf.query.UpdateBuilder = function(global, table) {
   lf.query.BaseBuilder.call(this, global, new lf.query.UpdateContext(global.getService(lf.service.SCHEMA)));
   this.query.table = table;
@@ -9224,7 +9135,6 @@ lf.query.UpdateBuilder.prototype.assertExecPreconditions = function() {
     throw new lf.Exception(501);
   }
 };
-
 lf.proc.LogicalPlanGenerator = function() {
 };
 lf.proc.LogicalPlanGenerator.prototype.generate = function() {
@@ -9253,7 +9163,6 @@ lf.proc.UpdateLogicalPlanGenerator.prototype.generateInternal = function() {
   goog.isNull(selectNode) ? updateNode.addChild(tableAccessNode) : (selectNode.addChild(tableAccessNode), updateNode.addChild(selectNode));
   return updateNode;
 };
-
 lf.proc.LogicalPlanRewriter = function(rootNode, queryContext, rewritePasses) {
   this.rootNode_ = rootNode;
   this.queryContext_ = queryContext;
@@ -9265,7 +9174,6 @@ lf.proc.LogicalPlanRewriter.prototype.generate = function() {
   }, this);
   return this.rootNode_;
 };
-
 lf.proc.DeleteLogicalPlanGenerator = function(query, rewritePasses) {
   lf.proc.BaseLogicalPlanGenerator.call(this, query);
   this.rewritePasses_ = rewritePasses;
@@ -9277,7 +9185,6 @@ lf.proc.DeleteLogicalPlanGenerator.prototype.generateInternal = function() {
   var planRewriter = new lf.proc.LogicalPlanRewriter(deleteNode, this.query, this.rewritePasses_);
   return planRewriter.generate();
 };
-
 lf.proc.ImplicitJoinsPass = function() {
 };
 goog.inherits(lf.proc.ImplicitJoinsPass, lf.proc.RewritePass);
@@ -9301,7 +9208,6 @@ lf.proc.ImplicitJoinsPass.prototype.traverse_ = function(rootNode, opt_query) {
     this.traverse_(child, opt_query);
   }, this);
 };
-
 lf.proc.PushDownSelectionsPass = function() {
   this.alreadyPushedDown_ = lf.structs.set.create();
 };
@@ -9376,7 +9282,6 @@ lf.proc.PushDownSelectionsPass.prototype.shouldPushBelowChild_ = function(node) 
 lf.proc.PushDownSelectionsPass.prototype.shouldSwapWithChild_ = function(node) {
   return node.getChildAt(0) instanceof lf.proc.SelectNode;
 };
-
 lf.proc.SelectLogicalPlanGenerator = function(query, rewritePasses) {
   lf.proc.BaseLogicalPlanGenerator.call(this, query);
   this.rewritePasses_ = rewritePasses;
@@ -9444,7 +9349,6 @@ lf.proc.SelectLogicalPlanGenerator.prototype.generateAggregationNode_ = function
 lf.proc.SelectLogicalPlanGenerator.prototype.generateProjectNode_ = function() {
   this.projectNode_ = new lf.proc.ProjectNode(this.query.columns || [], this.query.groupBy || null);
 };
-
 lf.proc.LogicalPlanFactory = function() {
   this.selectOptimizationPasses_ = [new lf.proc.AndPredicatePass, new lf.proc.CrossProductPass, new lf.proc.PushDownSelectionsPass, new lf.proc.ImplicitJoinsPass];
   this.deleteOptimizationPasses_ = [new lf.proc.AndPredicatePass];
@@ -9471,7 +9375,6 @@ lf.proc.LogicalPlanFactory.prototype.create = function(query) {
   var rootNode = generator.generate();
   return new lf.proc.LogicalQueryPlan(rootNode, query.getScope());
 };
-
 lf.proc.DeleteStep = function(table) {
   lf.proc.PhysicalQueryPlanNode.call(this, 1, lf.proc.PhysicalQueryPlanNode.ExecType.FIRST_CHILD);
   this.table_ = table;
@@ -9487,7 +9390,6 @@ lf.proc.DeleteStep.prototype.execInternal = function(journal, relations) {
   journal.remove(this.table_, rows);
   return [lf.proc.Relation.createEmpty()];
 };
-
 lf.proc.GetRowCountStep = function(global, table) {
   lf.proc.PhysicalQueryPlanNode.call(this, 0, lf.proc.PhysicalQueryPlanNode.ExecType.NO_CHILD);
   this.table = table;
@@ -9502,7 +9404,6 @@ lf.proc.GetRowCountStep.prototype.execInternal = function() {
   relation.setAggregationResult(lf.fn.count(), rowIdIndex.stats().totalRows);
   return [relation];
 };
-
 lf.proc.TableAccessFullStep = function(global, table) {
   lf.proc.PhysicalQueryPlanNode.call(this, 0, lf.proc.PhysicalQueryPlanNode.ExecType.NO_CHILD);
   this.cache_ = global.getService(lf.service.CACHE);
@@ -9519,7 +9420,6 @@ lf.proc.TableAccessFullStep.prototype.execInternal = function() {
   var rowIds = this.indexStore_.get(this.table.getRowIdIndexName()).getRange();
   return [lf.proc.Relation.fromRows(this.cache_.get(rowIds), [this.table.getEffectiveName()])];
 };
-
 lf.proc.GetRowCountPass = function(global) {
   this.global_ = global;
 };
@@ -9543,7 +9443,6 @@ lf.proc.GetRowCountPass.prototype.canOptimize_ = function(queryContext) {
   }
   return !1;
 };
-
 lf.proc.GroupByStep = function(groupByColumns) {
   lf.proc.PhysicalQueryPlanNode.call(this, 1, lf.proc.PhysicalQueryPlanNode.ExecType.FIRST_CHILD);
   this.groupByColumns_ = groupByColumns;
@@ -9572,7 +9471,6 @@ lf.proc.GroupByStep.prototype.calculateGroupedRelations_ = function(relation) {
     return new lf.proc.Relation(groupMap.get(key), relation.getTables());
   }, this);
 };
-
 $jscomp.scope.calculateCartesianProduct = function(keyRangeSets) {
   goog.asserts.assert(1 < keyRangeSets.length, "Should only be called for cross-column indices.");
   var keyRangeSetsAsArrays = keyRangeSets.map(function(keyRangeSet) {
@@ -9644,7 +9542,6 @@ lf.proc.BoundKeyRangeCalculator.prototype.getSortedKeyRangeSets_ = function(keyR
     return keyRangeMap.get(columnName);
   });
 };
-
 lf.proc.IndexCostEstimator = function(global, tableSchema) {
   this.tableSchema_ = tableSchema;
   this.indexStore_ = global.getService(lf.service.INDEX_STORE);
@@ -9722,7 +9619,6 @@ lf.proc.IndexRangeCandidate.prototype.calculateCost = function(queryContext) {
     return costSoFar + indexData.cost(combination);
   }, 0);
 };
-
 lf.proc.IndexRangeScanStep = function(global, index, keyRangeCalculator, reverseOrder) {
   lf.proc.PhysicalQueryPlanNode.call(this, 0, lf.proc.PhysicalQueryPlanNode.ExecType.NO_CHILD);
   this.indexStore_ = global.getService(lf.service.INDEX_STORE);
@@ -9749,7 +9645,6 @@ lf.proc.IndexRangeScanStep.prototype.execInternal = function(journal, relations,
   }, this);
   return [lf.proc.Relation.fromRows(rows, [this.index.tableName])];
 };
-
 lf.proc.SelectStep = function(predicateId) {
   lf.proc.PhysicalQueryPlanNode.call(this, 1, lf.proc.PhysicalQueryPlanNode.ExecType.FIRST_CHILD);
   this.predicateId = predicateId;
@@ -9766,7 +9661,6 @@ lf.proc.SelectStep.prototype.execInternal = function(journal, relations, context
   var predicate = context.getPredicate(this.predicateId);
   return [predicate.eval(relations[0])];
 };
-
 lf.proc.TableAccessByRowIdStep = function(global, table) {
   lf.proc.PhysicalQueryPlanNode.call(this, 1, lf.proc.PhysicalQueryPlanNode.ExecType.FIRST_CHILD);
   this.cache_ = global.getService(lf.service.CACHE);
@@ -9779,7 +9673,6 @@ lf.proc.TableAccessByRowIdStep.prototype.toString = function() {
 lf.proc.TableAccessByRowIdStep.prototype.execInternal = function(journal, relations) {
   return [lf.proc.Relation.fromRows(this.cache_.get(relations[0].getRowIds()), [this.table_.getEffectiveName()])];
 };
-
 lf.proc.IndexRangeScanPass = function(global) {
   this.global_ = global;
 };
@@ -9822,7 +9715,6 @@ lf.proc.IndexRangeScanPass.prototype.replaceWithIndexRangeScanStep_ = function(i
   lf.tree.replaceNodeWithChain(tableAccessFullStep, tableAccessByRowIdStep, indexRangeScanStep);
   return indexRangeScanStep.getRoot();
 };
-
 lf.proc.InsertStep = function(global, table) {
   lf.proc.PhysicalQueryPlanNode.call(this, 0, lf.proc.PhysicalQueryPlanNode.ExecType.NO_CHILD);
   this.indexStore_ = global.getService(lf.service.INDEX_STORE);
@@ -9862,7 +9754,6 @@ lf.proc.InsertOrReplaceStep.prototype.execInternal = function(journal, relations
   journal.insertOrReplace(this.table_, queryContext.values);
   return [lf.proc.Relation.fromRows(queryContext.values, [this.table_.getName()])];
 };
-
 lf.proc.JoinStep = function(predicate, isOuterJoin) {
   lf.proc.PhysicalQueryPlanNode.call(this, 2, lf.proc.PhysicalQueryPlanNode.ExecType.ALL);
   this.predicate_ = predicate;
@@ -9876,7 +9767,6 @@ lf.proc.JoinStep.prototype.toString = function() {
 lf.proc.JoinStep.prototype.execInternal = function(journal, relations) {
   return [this.predicate_.evalRelations(relations[0], relations[1], this.isOuterJoin_)];
 };
-
 lf.proc.LimitStep = function() {
   lf.proc.PhysicalQueryPlanNode.call(this, 1, lf.proc.PhysicalQueryPlanNode.ExecType.FIRST_CHILD);
 };
@@ -9891,7 +9781,6 @@ lf.proc.LimitStep.prototype.execInternal = function(journal, relations, context)
   relations[0].entries.splice(context.limit);
   return relations;
 };
-
 lf.proc.OrderByStep = function(orderBy) {
   lf.proc.PhysicalQueryPlanNode.call(this, lf.proc.PhysicalQueryPlanNode.ANY, lf.proc.PhysicalQueryPlanNode.ExecType.FIRST_CHILD);
   this.orderBy = orderBy;
@@ -9942,7 +9831,6 @@ lf.proc.OrderByStep.prototype.entryComparatorFn_ = function(lhs, rhs) {
     return rhs.getField(column);
   });
 };
-
 lf.proc.RelationTransformer = function(relation, columns) {
   this.relation_ = relation;
   this.columns_ = columns;
@@ -9986,7 +9874,6 @@ lf.proc.RelationTransformer.transformMany = function(relations, columns) {
   });
   return new lf.proc.Relation(entries, relations[0].getTables());
 };
-
 lf.proc.ProjectStep = function(columns, groupByColumns) {
   lf.proc.PhysicalQueryPlanNode.call(this, lf.proc.PhysicalQueryPlanNode.ANY, lf.proc.PhysicalQueryPlanNode.ExecType.FIRST_CHILD);
   this.columns = columns;
@@ -10021,7 +9908,6 @@ lf.proc.ProjectStep.prototype.execNonGroupByProjection_ = function(relation) {
   var relationTransformer = new lf.proc.RelationTransformer(relation, this.columns);
   return relationTransformer.getTransformed();
 };
-
 lf.proc.SkipStep = function() {
   lf.proc.PhysicalQueryPlanNode.call(this, 1, lf.proc.PhysicalQueryPlanNode.ExecType.FIRST_CHILD);
 };
@@ -10035,7 +9921,6 @@ lf.proc.SkipStep.prototype.toContextString = function(context) {
 lf.proc.SkipStep.prototype.execInternal = function(journal, relations, context) {
   return [new lf.proc.Relation(relations[0].entries.slice(context.skip), relations[0].getTables())];
 };
-
 lf.proc.LimitSkipByIndexPass = function() {
 };
 goog.inherits(lf.proc.LimitSkipByIndexPass, lf.proc.RewritePass);
@@ -10068,7 +9953,6 @@ lf.proc.LimitSkipByIndexPass.prototype.findIndexRangeScanStep_ = function(rootNo
   }, indexRangeScanSteps = lf.tree.find(rootNode, filterFn, stopFn);
   return 0 < indexRangeScanSteps.length ? indexRangeScanSteps[0] : null;
 };
-
 lf.proc.OrderByIndexPass = function(global) {
   this.global_ = global;
 };
@@ -10155,7 +10039,6 @@ lf.proc.OrderByIndexPass.checkOrder_ = function(orderBy, indexSchema) {
   }, 0), xorBitmask = ordersLeftBitmask ^ ordersRightBitmask, isNatural = 0 == xorBitmask, isReverse = xorBitmask == Math.pow(2, Math.max(orderBy.length, indexSchema.columns.length)) - 1;
   return [isNatural, isReverse];
 };
-
 lf.proc.PhysicalPlanRewriter = function(rootNode, queryContext, rewritePasses) {
   this.rootNode_ = rootNode;
   this.queryContext_ = queryContext;
@@ -10167,7 +10050,6 @@ lf.proc.PhysicalPlanRewriter.prototype.generate = function() {
   }, this);
   return this.rootNode_;
 };
-
 lf.proc.UpdateStep = function(table, updates) {
   lf.proc.PhysicalQueryPlanNode.call(this, 1, lf.proc.PhysicalQueryPlanNode.ExecType.FIRST_CHILD);
   this.table_ = table;
@@ -10188,7 +10070,6 @@ lf.proc.UpdateStep.prototype.execInternal = function(journal, relations) {
   journal.update(this.table_, rows);
   return [lf.proc.Relation.createEmpty()];
 };
-
 lf.proc.PhysicalPlanFactory = function(global) {
   this.global_ = global;
   this.selectOptimizationPasses_ = [new lf.proc.IndexRangeScanPass(this.global_), new lf.proc.OrderByIndexPass(this.global_), new lf.proc.LimitSkipByIndexPass, new lf.proc.GetRowCountPass(this.global_)];
@@ -10259,10 +10140,8 @@ lf.proc.PhysicalPlanFactory.prototype.mapFn_ = function(node) {
   }
   throw new lf.Exception(514);
 };
-
 lf.proc.QueryEngine = function() {
 };
-
 lf.proc.DefaultQueryEngine = function(global) {
   this.logicalPlanFactory_ = new lf.proc.LogicalPlanFactory;
   this.physicalPlanFactory_ = new lf.proc.PhysicalPlanFactory(global);
@@ -10271,7 +10150,6 @@ lf.proc.DefaultQueryEngine.prototype.getPlan = function(query) {
   var logicalQueryPlan = this.logicalPlanFactory_.create(query);
   return this.physicalPlanFactory_.create(logicalQueryPlan, query);
 };
-
 lf.proc.LockManager = function() {
   this.lockTable_ = lf.structs.map.create();
 };
@@ -10335,7 +10213,6 @@ lf.proc.LockTableEntry_.prototype.grantLock = function(taskId, lockType) {
   lockType == lf.proc.LockType.EXCLUSIVE ? (this.reservedReadWriteLock = null, this.exclusiveLock = taskId) : lockType == lf.proc.LockType.SHARED ? (goog.isNull(this.sharedLocks) && (this.sharedLocks = lf.structs.set.create()), this.sharedLocks.add(taskId), goog.isNull(this.reservedReadOnlyLocks) && (this.reservedReadOnlyLocks = lf.structs.set.create()), this.reservedReadOnlyLocks.delete(taskId)) : lockType == lf.proc.LockType.RESERVED_READ_ONLY ? (goog.isNull(this.reservedReadOnlyLocks) && (this.reservedReadOnlyLocks = 
   lf.structs.set.create()), this.reservedReadOnlyLocks.add(taskId)) : lockType == lf.proc.LockType.RESERVED_READ_WRITE && (this.reservedReadWriteLock = taskId);
 };
-
 lf.proc.Runner = function() {
   this.queue_ = new lf.proc.Runner.TaskQueue_;
   this.lockManager_ = new lf.proc.LockManager;
@@ -10387,10 +10264,8 @@ lf.proc.Runner.TaskQueue_.prototype.getValues = function() {
 lf.proc.Runner.TaskQueue_.prototype.remove = function(task) {
   return goog.array.remove(this.queue_, task);
 };
-
 lf.Flags = {};
 lf.Flags.MEMORY_ONLY = !1;
-
 lf.DiffCalculator = function(query, observableResults) {
   this.evalRegistry_ = lf.eval.Registry.getInstance();
   this.query_ = query;
@@ -10437,7 +10312,6 @@ lf.DiffCalculator.prototype.applyDiff = function(oldResults, newResults) {
 lf.DiffCalculator.createChangeRecord_ = function(index, removed, addedCount, object) {
   return {addedCount:addedCount, index:index, object:object, removed:removed, type:"splice"};
 };
-
 lf.ObserverRegistry = function() {
   this.entries_ = lf.structs.map.create();
 };
@@ -10500,7 +10374,6 @@ lf.ObserverRegistry.Entry_.prototype.updateResults = function(newResults) {
     observerFn(changeRecords);
   });
 };
-
 lf.base = {};
 lf.base.init = function(global, opt_options) {
   var schema = global.getService(lf.service.SCHEMA), options = opt_options || {}, cache = new lf.cache.DefaultCache;
@@ -10555,10 +10428,8 @@ lf.base.closeDatabase = function(global) {
   } catch (e) {
   }
 };
-
 lf.Database = function() {
 };
-
 lf.proc.TransactionTask = function(global, scope) {
   this.global_ = global;
   this.backStore_ = global.getService(lf.service.BACK_STORE);
@@ -10627,7 +10498,6 @@ lf.proc.TransactionTask.prototype.scheduleObserverTask_ = function() {
     this.runner_.scheduleTask(observerTask);
   }
 };
-
 lf.proc.Transaction = function(global) {
   this.global_ = global;
   this.runner_ = global.getService(lf.service.RUNNER);
@@ -10710,7 +10580,6 @@ lf.proc.Transaction.prototype.rollback = function() {
   }, this));
 };
 goog.exportProperty(lf.proc.Transaction.prototype, "rollback", lf.proc.Transaction.prototype.rollback);
-
 lf.proc.Database = function(global) {
   this.global_ = global;
   this.schema_ = global.getService(lf.service.SCHEMA);
@@ -10781,7 +10650,6 @@ lf.proc.Database.prototype.close = function() {
   this.initialized_ = !1;
 };
 goog.exportProperty(lf.proc.Database.prototype, "close", lf.proc.Database.prototype.close);
-
 lf.schema.BaseColumn = function(table, name, isUnique, isNullable, type, opt_alias) {
   this.table_ = table;
   this.name_ = name;
@@ -10874,7 +10742,6 @@ lf.schema.BaseColumn.prototype.as = function(name) {
   return new lf.schema.BaseColumn(this.table_, this.name_, this.isUnique_, this.isNullable_, this.type_, name);
 };
 goog.exportProperty(lf.schema.BaseColumn.prototype, "as", lf.schema.BaseColumn.prototype.as);
-
 lf.Global = function() {
   this.services_ = lf.structs.map.create();
 };
@@ -10903,7 +10770,6 @@ lf.Global.prototype.isRegistered = function(serviceId) {
   return this.services_.has(serviceId.toString());
 };
 goog.exportProperty(lf.Global.prototype, "isRegistered", lf.Global.prototype.isRegistered);
-
 lf.schema.Info = function(dbSchema) {
   this.schema_ = dbSchema;
   this.referringFk_ = lf.structs.map.create();
@@ -10970,7 +10836,6 @@ lf.schema.Info.prototype.getChildTablesByColumns = function(colNames) {
     return this.schema_.table(tableName);
   }, this);
 };
-
 lf.schema.Constraint = function(primaryKey, notNullable, foreignKeys) {
   this.primaryKey_ = primaryKey;
   this.notNullable_ = notNullable;
@@ -10988,7 +10853,6 @@ lf.schema.Constraint.prototype.getForeignKeys = function() {
   return this.foreignKeys_;
 };
 goog.exportProperty(lf.schema.Constraint.prototype, "getForeignKeys", lf.schema.Constraint.prototype.getForeignKeys);
-
 lf.schema.ForeignKeySpec = function(rawSpec, name) {
   var array = rawSpec.ref.split(".");
   if (2 != array.length) {
@@ -11001,7 +10865,6 @@ lf.schema.ForeignKeySpec = function(rawSpec, name) {
   this.action = rawSpec.action;
   this.timing = rawSpec.timing;
 };
-
 lf.schema.TableBuilder = function(tableName) {
   this.checkNamingRules_(tableName);
   this.name_ = tableName;
@@ -11305,7 +11168,6 @@ lf.schema.TableBuilder.prototype.generateRowClass_ = function(columns$$0, indice
   };
   return rowClass;
 };
-
 lf.schema.Builder = function(dbName, dbVersion) {
   this.schema_ = new lf.schema.DatabaseSchema(dbName, dbVersion);
   this.tableBuilders_ = lf.structs.map.create();
