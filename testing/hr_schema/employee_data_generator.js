@@ -17,7 +17,7 @@
 goog.provide('lf.testing.hrSchema.EmployeeDataGenerator');
 
 goog.require('goog.asserts');
-goog.require('goog.structs.Set');
+goog.require('lf.structs.set');
 goog.require('lf.testing.hrSchema.samples');
 
 
@@ -35,9 +35,9 @@ lf.testing.hrSchema.EmployeeDataGenerator = function(schema) {
   /**
    * A bag of salary values used to assign unique salaries to all generated
    * employees.
-   * @private {!goog.structs.Set<number>}
+   * @private {!lf.structs.Set<number>}
    */
-  this.assignedSalaries_ = new goog.structs.Set();
+  this.assignedSalaries_ = lf.structs.set.create();
 
   /** @private {number} */
   this.jobCount_ = lf.testing.hrSchema.samples.JOB_TITLES.length;
@@ -198,7 +198,7 @@ lf.testing.hrSchema.EmployeeDataGenerator.prototype.genSalary_ = function() {
   var salary = null;
   do {
     salary = getNewSalary();
-  } while (this.assignedSalaries_.contains(salary));
+  } while (this.assignedSalaries_.has(salary));
 
   this.assignedSalaries_.add(salary);
   return salary;

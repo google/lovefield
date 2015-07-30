@@ -17,7 +17,6 @@
 goog.setTestOnly();
 goog.require('goog.Promise');
 goog.require('goog.string');
-goog.require('goog.structs.Set');
 goog.require('goog.testing.AsyncTestCase');
 goog.require('goog.testing.PropertyReplacer');
 goog.require('goog.testing.jsunit');
@@ -34,6 +33,7 @@ goog.require('lf.index.IndexMetadata');
 goog.require('lf.index.IndexMetadataRow');
 goog.require('lf.service');
 goog.require('lf.structs.map');
+goog.require('lf.structs.set');
 goog.require('lf.testing.Capability');
 
 
@@ -113,8 +113,10 @@ function checkInit_IndexedDB(schema, global)  {
   indexedDb.init().then(
       /** @suppress {accessControls} */
       function() {
-        var createdTableNames = new goog.structs.Set(
-            indexedDb.db_.objectStoreNames);
+        var createdTableNames = lf.structs.set.create();
+        for (var i = 0; i < indexedDb.db_.objectStoreNames.length; ++i) {
+          createdTableNames.add(indexedDb.db_.objectStoreNames.item(i));
+        }
         assertUserTables(schema, createdTableNames);
         assertIndexTables(schema, createdTableNames);
 
@@ -137,7 +139,7 @@ function testInit_Memory() {
   memoryDb.init().then(
       /** @suppress {accessControls} */
       function() {
-        var createdTableNames = new goog.structs.Set(
+        var createdTableNames = lf.structs.set.create(
             lf.structs.map.keys(memoryDb.tables_));
         assertUserTables(schema, createdTableNames);
         assertIndexTables(schema, createdTableNames);
@@ -153,12 +155,12 @@ function testInit_Memory() {
 /**
  * Asserts that an object store was created for each user-defined table.
  * @param {!lf.schema.Database} schema The database schema being tested.
- * @param {!goog.structs.Set<string>} tableNames The names of the tables that
+ * @param {!lf.structs.Set<string>} tableNames The names of the tables that
  *     were created in the backing store.
  */
 function assertUserTables(schema, tableNames) {
   schema.tables().forEach(function(tableSchema) {
-    assertTrue(tableNames.contains(tableSchema.getName()));
+    assertTrue(tableNames.has(tableSchema.getName()));
   });
 }
 
@@ -167,7 +169,7 @@ function assertUserTables(schema, tableNames) {
  * Asserts that an object store was created for each lf.schema.Index instance
  * that belongs to a user-defined table that has "persistentIndex" enabled.
  * @param {!lf.schema.Database} schema The database schema being tested.
- * @param {!goog.structs.Set<string>} tableNames The names of the tables that
+ * @param {!lf.structs.Set<string>} tableNames The names of the tables that
  *     were created in the backing store.
  */
 function assertIndexTables(schema, tableNames) {
@@ -175,13 +177,13 @@ function assertIndexTables(schema, tableNames) {
     tableSchema.getIndices().forEach(function(indexSchema) {
       assertEquals(
           tableSchema.persistentIndex(),
-          tableNames.contains(indexSchema.getNormalizedName()));
+          tableNames.has(indexSchema.getNormalizedName()));
     });
 
     // Checking whether backing store for RowId index was created.
     assertEquals(
         tableSchema.persistentIndex(),
-        tableNames.contains(tableSchema.getRowIdIndexName()));
+        tableNames.has(tableSchema.getRowIdIndexName()));
   });
 }
 

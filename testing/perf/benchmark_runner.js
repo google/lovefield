@@ -17,7 +17,7 @@
 goog.provide('lf.testing.perf.BenchmarkRunner');
 
 goog.require('goog.Promise');
-goog.require('goog.structs.Map');
+goog.require('lf.structs.map');
 goog.require('lf.testing.util');
 
 
@@ -37,8 +37,8 @@ lf.testing.perf.BenchmarkRunner = function(name, opt_setUp, opt_tearDown) {
   /** @private {string} */
   this.name_ = name;
 
-  /** @private {!goog.structs.Map<string, !Array<number>>} */
-  this.results_ = new goog.structs.Map();
+  /** @private {!lf.structs.Map<string, !Array<number>>} */
+  this.results_ = lf.structs.map.create();
 
   /** @private {!Array<!lf.testing.perf.TestCase>} */
   this.tests_ = [];
@@ -109,7 +109,7 @@ lf.testing.perf.BenchmarkRunner.prototype.getResults = function() {
     if (test.skipRecording) {
       return;
     }
-    var durations = this.results_.get(test.name, []);
+    var durations = this.results_.get(test.name) || [];
     if (durations.length > 0) {
       var sum = durations.reduce(function(a, b) { return a + b; }, 0);
       result[test.name] = Number(sum / durations.length).toFixed(3).toString();
@@ -194,7 +194,7 @@ lf.testing.perf.BenchmarkRunner.prototype.runOneTest_ = function(test) {
     var end = goog.global.performance.now();
     duration = end - start;
     if (!test.skipRecording) {
-      var timeData = this.results_.get(test.name, []);
+      var timeData = this.results_.get(test.name) || [];
       timeData.push(duration);
       this.results_.set(test.name, timeData);
     }

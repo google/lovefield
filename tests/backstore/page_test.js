@@ -16,10 +16,10 @@
  */
 goog.setTestOnly();
 goog.require('goog.object');
-goog.require('goog.structs.Map');
 goog.require('goog.testing.jsunit');
 goog.require('lf.Row');
 goog.require('lf.backstore.Page');
+goog.require('lf.structs.map');
 
 
 /** @const {number} */
@@ -51,7 +51,7 @@ function createRows() {
 
 function testSetRemoveRows() {
   var rows = createRows();
-  var pages = new goog.structs.Map();
+  var pages = lf.structs.map.create();
   for (var i = 0; i <= 4; ++i) {
     pages.set(i, new lf.backstore.Page(i));
   }

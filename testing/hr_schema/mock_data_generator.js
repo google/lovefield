@@ -18,8 +18,8 @@ goog.provide('lf.testing.hrSchema.MockDataGenerator');
 
 goog.require('goog.labs.structs.Multimap');
 goog.require('goog.math');
-goog.require('goog.structs.Set');
 goog.require('lf.Row');
+goog.require('lf.structs.set');
 goog.require('lf.testing.hrSchema.DepartmentDataGenerator');
 goog.require('lf.testing.hrSchema.EmployeeDataGenerator');
 goog.require('lf.testing.hrSchema.JobDataGenerator');
@@ -268,11 +268,11 @@ lf.testing.hrSchema.MockDataGenerator.prototype.findJobMax_ = function(
  */
 lf.testing.hrSchema.MockDataGenerator.prototype.findDistinct_ = function(
     getterFn, rows) {
-  var valueSet = new goog.structs.Set();
+  var valueSet = lf.structs.set.create();
   rows.forEach(function(row) {
     valueSet.add(getterFn(row));
   }, this);
-  return valueSet.getValues();
+  return lf.structs.set.values(valueSet);
 };
 
 

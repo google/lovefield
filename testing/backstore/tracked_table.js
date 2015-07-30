@@ -17,10 +17,10 @@
 goog.provide('lf.testing.backstore.TrackedTable');
 
 goog.require('goog.Promise');
-goog.require('goog.structs.Map');
 goog.require('lf.Exception');
 goog.require('lf.Table');
 goog.require('lf.cache.TableDiff');
+goog.require('lf.structs.map');
 
 
 
@@ -101,23 +101,23 @@ lf.testing.backstore.TrackedTable.prototype.put = function(rows) {
     return goog.Promise.reject(e);
   }
 
-  var rowMap = new goog.structs.Map();
+  var rowMap = lf.structs.map.create();
   rows.forEach(function(row) {
     rowMap.set(row.id(), row);
   });
 
-  var promise = this.get(/** @type {!Array<number>} */ (rowMap.getKeys())).then(
+  var promise = this.get(lf.structs.map.keys(rowMap)).then(
       function(existingRows) {
         // First update the diff with the existing rows that are modified.
         existingRows.forEach(function(existingRow) {
           this.tableDiff_.modify([existingRow, rowMap.get(existingRow.id())]);
-          rowMap.remove(existingRow.id());
+          rowMap.delete(existingRow.id());
         }, this);
 
         // Then update the diff with the remaining items in the map, all of
         // which correspond to new rows.
-        rowMap.getKeys().forEach(function(rowId) {
-          this.tableDiff_.add(rowMap.get(rowId));
+        rowMap.forEach(function(row, rowId) {
+          this.tableDiff_.add(row);
         }, this);
 
         return this.table_.put(rows);

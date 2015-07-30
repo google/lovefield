@@ -21,10 +21,10 @@ goog.require('goog.Promise');
 goog.require('goog.math');
 goog.require('goog.net.XhrIo');
 goog.require('goog.object');
-goog.require('goog.structs.Set');
 goog.require('lf.Order');
 goog.require('lf.fn');
 goog.require('lf.op');
+goog.require('lf.structs.set');
 goog.require('lf.testing.hrSchema.MockDataGenerator');
 goog.require('lf.testing.perf.Benchmark');
 goog.require('lf.testing.perf.TestCase');
@@ -329,10 +329,10 @@ lf.testing.perf.SelectBenchmark.prototype.verifyMultiRowIndexedSpacedOut =
     return goog.Promise.resolve(false);
   }
 
-  var salariesSet = new goog.structs.Set(
+  var salariesSet = lf.structs.set.create(
       this.queryData_.employeeSalariesSpacedOut);
   var errorsExist = results.some(function(obj, index) {
-    return !salariesSet.contains(obj.salary);
+    return !salariesSet.has(obj.salary);
   }, this);
 
   return goog.Promise.resolve(!errorsExist);
@@ -358,7 +358,7 @@ lf.testing.perf.SelectBenchmark.prototype.queryMultiRowIndexedRange =
  */
 lf.testing.perf.SelectBenchmark.prototype.verifyMultiRowIndexedRange =
     function(results) {
-  var employeeIdSet = new goog.structs.Set();
+  var employeeIdSet = lf.structs.set.create();
   this.dataGenerator_.sampleEmployees.forEach(function(employee) {
     if (employee.getSalary() >= this.queryData_.employeeSalaryStart &&
         employee.getSalary() <= this.queryData_.employeeSalaryEnd) {
@@ -366,12 +366,12 @@ lf.testing.perf.SelectBenchmark.prototype.verifyMultiRowIndexedRange =
     }
   }, this);
 
-  if (results.length != employeeIdSet.getCount()) {
+  if (results.length != employeeIdSet.size) {
     return goog.Promise.resolve(false);
   }
 
   var validated = results.every(function(obj) {
-    return employeeIdSet.contains(obj.id);
+    return employeeIdSet.has(obj.id);
   }, this);
 
   return goog.Promise.resolve(validated);
@@ -404,9 +404,9 @@ lf.testing.perf.SelectBenchmark.prototype.verifyMultiRowNonIndexedSpacedOut =
         return date.getTime();
       });
 
-  var datestampsSet = new goog.structs.Set(datestamps);
+  var datestampsSet = lf.structs.set.create(datestamps);
   var errorsExist = results.some(function(obj, index) {
-    return !datestampsSet.contains(obj.hireDate.getTime());
+    return !datestampsSet.has(obj.hireDate.getTime());
   }, this);
 
   return goog.Promise.resolve(!errorsExist);
@@ -432,7 +432,7 @@ lf.testing.perf.SelectBenchmark.prototype.queryMultiRowNonIndexedRange =
  */
 lf.testing.perf.SelectBenchmark.prototype.verifyMultiRowNonIndexedRange =
     function(results) {
-  var employeeHireDateSet = new goog.structs.Set();
+  var employeeHireDateSet = lf.structs.set.create();
   this.dataGenerator_.sampleEmployees.forEach(function(employee) {
     if (employee.getHireDate().getTime() >=
         this.queryData_.employeeHireDateStart.getTime() &&
@@ -442,12 +442,12 @@ lf.testing.perf.SelectBenchmark.prototype.verifyMultiRowNonIndexedRange =
     }
   }, this);
 
-  if (results.length != employeeHireDateSet.getCount()) {
+  if (results.length != employeeHireDateSet.size) {
     return goog.Promise.resolve(false);
   }
 
   var validated = results.every(function(obj) {
-    return employeeHireDateSet.contains(obj.hireDate);
+    return employeeHireDateSet.has(obj.hireDate);
   }, this);
 
   return goog.Promise.resolve(validated);

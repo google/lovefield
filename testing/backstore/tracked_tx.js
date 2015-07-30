@@ -17,9 +17,9 @@
 goog.provide('lf.testing.backstore.TrackedTx');
 
 goog.require('goog.Promise');
-goog.require('goog.structs.Map');
 goog.require('lf.TransactionType');
 goog.require('lf.backstore.BaseTx');
+goog.require('lf.structs.map');
 goog.require('lf.testing.backstore.TrackedTable');
 
 
@@ -43,9 +43,9 @@ lf.testing.backstore.TrackedTx = function(store, type, journal) {
   /**
    * A directory of all the table connections that have been created within this
    * transaction.
-   * @private {!goog.structs.Map<string, !lf.testing.backstore.TrackedTable>}
+   * @private {!lf.structs.Map<string, !lf.testing.backstore.TrackedTable>}
    */
-  this.tables_ = new goog.structs.Map();
+  this.tables_ = lf.structs.map.create();
 
   if (type == lf.TransactionType.READ_ONLY) {
     this.resolver.resolve();
@@ -57,7 +57,7 @@ goog.inherits(lf.testing.backstore.TrackedTx, lf.backstore.BaseTx);
 /** @override */
 lf.testing.backstore.TrackedTx.prototype.getTable = function(
     tableName, deserializeFn) {
-  var table = this.tables_.get(tableName, null);
+  var table = this.tables_.get(tableName) || null;
   if (goog.isNull(table)) {
     table = new lf.testing.backstore.TrackedTable(
         this.store_.getTableInternal(tableName), tableName);
@@ -78,12 +78,10 @@ lf.testing.backstore.TrackedTx.prototype.abort = function() {
 lf.testing.backstore.TrackedTx.prototype.commitInternal = function() {
   var requests = [];
   var tableDiffs = [];
-  this.tables_.getKeys().forEach(
-      function(tableName) {
-        var table = this.tables_.get(tableName);
-        requests.push(table.whenRequestsDone());
-        tableDiffs.push(table.getDiff());
-      }, this);
+  this.tables_.forEach(function(table, tableName) {
+    requests.push(table.whenRequestsDone());
+    tableDiffs.push(table.getDiff());
+  });
 
   // Waiting for all asynchronous operations to finish.
   return goog.Promise.all(requests).then(function() {
