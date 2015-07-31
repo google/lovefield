@@ -4086,9 +4086,7 @@ lf.cache.ConstraintChecker.prototype.checkReferredKey_ = function(foreignKeySpec
   }, this);
 };
 lf.cache.ConstraintChecker.prototype.getParentIndex_ = function(foreignKeySpec) {
-  var parentTable = this.schema_.table(foreignKeySpec.parentTable), parentColumn = parentTable[foreignKeySpec.parentColumn], parentIndexSchema = parentColumn.getIndices().filter(function(indexSchema) {
-    return 1 == indexSchema.columns.length && indexSchema.columns[0].schema.getName() == foreignKeySpec.parentColumn;
-  })[0];
+  var parentTable = this.schema_.table(foreignKeySpec.parentTable), parentColumn = parentTable[foreignKeySpec.parentColumn], parentIndexSchema = parentColumn.getIndex();
   return this.indexStore_.get(parentIndexSchema.getNormalizedName());
 };
 lf.cache.ConstraintChecker.didColumnValueChange_ = function(rowBefore, rowAfter, indexName) {
@@ -8008,6 +8006,9 @@ lf.fn.AggregatedColumn.prototype.getAlias = function() {
 lf.fn.AggregatedColumn.prototype.getIndices = function() {
   return [];
 };
+lf.fn.AggregatedColumn.prototype.getIndex = function() {
+  return null;
+};
 lf.fn.AggregatedColumn.prototype.isNullable = function() {
   return !1;
 };
@@ -8046,6 +8047,9 @@ lf.fn.StarColumn.prototype.getAlias = function() {
 };
 lf.fn.StarColumn.prototype.getIndices = function() {
   return [];
+};
+lf.fn.StarColumn.prototype.getIndex = function() {
+  return null;
 };
 lf.fn.StarColumn.prototype.isNullable = function() {
   return !1;
@@ -10686,6 +10690,15 @@ lf.schema.BaseColumn.prototype.getIndices = function() {
     -1 != colNames.indexOf(this.name_) && this.indices_.push(index);
   }, this));
   return this.indices_;
+};
+lf.schema.BaseColumn.prototype.getIndex = function() {
+  if (!goog.isDef(this.index_)) {
+    var indices = this.getIndices().filter(function(indexSchema) {
+      return 1 != indexSchema.columns.length ? !1 : indexSchema.columns[0].schema.getName() == this.getName();
+    }, this);
+    this.index_ = 0 < indices.length ? indices[0] : null;
+  }
+  return this.index_;
 };
 lf.schema.BaseColumn.prototype.isNullable = function() {
   return this.isNullable_;

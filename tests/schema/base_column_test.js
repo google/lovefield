@@ -50,6 +50,30 @@ function testGetIndices_NoIndicesExist() {
 }
 
 
+function testGetIndex() {
+  var schema = lf.testing.getSchemaBuilder().getSchema();
+  var table = schema.table('tableA');
+  var idIndex = table.id.getIndex();
+  assertNotNull(idIndex);
+  assertEquals(1, idIndex.columns.length);
+  assertEquals(table.id.getName(), idIndex.columns[0].schema.getName());
+
+  var nameIndex = table.name.getIndex();
+  assertNotNull(nameIndex);
+  assertEquals('idxName', nameIndex.name);
+  assertEquals(1, nameIndex.columns.length);
+  assertEquals(table.name.getName(), nameIndex.columns[0].schema.getName());
+}
+
+
+function testGetIndex_NoIndexExists() {
+  var schema = lf.testing.getSchemaBuilder().getSchema();
+  var tableWithNoIndices = schema.table('tableC');
+  assertNull(tableWithNoIndices.id.getIndex());
+  assertNull(tableWithNoIndices.name.getIndex());
+}
+
+
 /**
  * Tests getNormalizedName for the case where an alias for the parent table has
  * been specified.
