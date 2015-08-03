@@ -4585,6 +4585,7 @@ lf.Binder.prototype.getIndex = function() {
 lf.eval = {};
 lf.eval.Type = {BETWEEN:"between", EQ:"eq", GTE:"gte", GT:"gt", IN:"in", LTE:"lte", LT:"lt", MATCH:"match", NEQ:"neq"};
 lf.eval.Registry = function() {
+  this.keyOfIndexConversionMap_ = lf.eval.buildKeyOfIndexConversionMap_();
   var numberOrIntegerEvalMap = lf.eval.buildNumberEvaluatorMap_();
   this.evalMaps_ = lf.structs.map.create();
   this.evalMaps_.set(lf.Type.BOOLEAN, lf.eval.buildBooleanEvaluatorMap_());
@@ -4600,6 +4601,27 @@ lf.eval.Registry.prototype.getEvaluator = function(columnType, evaluatorType) {
   var evaluatorFn = evaluationMap.get(evaluatorType) || null;
   goog.asserts.assert(!goog.isNull(evaluatorFn), "Could not find evaluator for " + columnType + ", " + evaluatorType);
   return evaluatorFn;
+};
+lf.eval.Registry.prototype.getKeyOfIndexEvaluator = function(columnType) {
+  var fn = this.keyOfIndexConversionMap_.get(columnType) || null;
+  goog.asserts.assert(!goog.isNull(fn), "Could not find keyOfIndex evaluation function for " + columnType);
+  return fn;
+};
+lf.eval.buildKeyOfIndexConversionMap_ = function() {
+  var map = lf.structs.map.create();
+  map.set(lf.Type.BOOLEAN, function(value) {
+    return goog.isNull(value) ? null : value ? 1 : 0;
+  });
+  map.set(lf.Type.DATE_TIME, function(value) {
+    return goog.isNull(value) ? null : value.getTime();
+  });
+  var identityFn = function(value) {
+    return value;
+  };
+  map.set(lf.Type.INTEGER, identityFn);
+  map.set(lf.Type.NUMBER, identityFn);
+  map.set(lf.Type.STRING, identityFn);
+  return map;
 };
 lf.eval.buildBooleanEvaluatorMap_ = function() {
   var map = lf.structs.map.create();
@@ -10880,6 +10902,7 @@ lf.schema.ForeignKeySpec = function(rawSpec, name) {
 };
 lf.schema.TableBuilder = function(tableName) {
   this.checkNamingRules_(tableName);
+  this.evalRegistry_ = lf.eval.Registry.getInstance();
   this.name_ = tableName;
   this.columns_ = lf.structs.map.create();
   this.uniqueColumns_ = lf.structs.set.create();
@@ -11148,18 +11171,9 @@ lf.schema.TableBuilder.prototype.generateRowClass_ = function(columns$$0, indice
     return obj;
   };
   var getSingleKeyFn = goog.bind(function(column) {
-    var colType = this.columns_.get(column.getName());
-    return colType == lf.Type.DATE_TIME ? function(payload) {
-      var value = payload[column.getName()];
-      return column.isNullable() && goog.isNull(value) ? null : value.getTime();
-    } : colType == lf.Type.BOOLEAN ? function(payload) {
-      if (column.isNullable()) {
-        var value = payload[column.getName()];
-        return goog.isNull(value) ? null : value ? 1 : 0;
-      }
-      return payload[column.getName()] ? 1 : 0;
-    } : function(payload) {
-      return payload[column.getName()];
+    var colType = this.columns_.get(column.getName()), keyOfIndexFn = this.evalRegistry_.getKeyOfIndexEvaluator(colType);
+    return function(payload) {
+      return keyOfIndexFn(payload[column.getName()]);
     };
   }, this), getMultiKeyFn = goog.bind(function(columns) {
     var getSingleKeyFunctions = columns.map(function(indexedColumn) {
