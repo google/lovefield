@@ -166,3 +166,8 @@ function testIsSubSetAndEquals() {
   s5 = lf.structs.set.create(['A1', 'B2', 'C3']);
   checker(s1, s2, s3, s4, s5);
 }
+
+function testSetConstructor() {
+  var s = lf.structs.set.create();
+  assertEquals(0, s.size);
+}

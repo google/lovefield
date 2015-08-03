@@ -3727,7 +3727,7 @@ lf.structs.SetPolyFill_.prototype.has = function(value) {
 };
 goog.exportProperty(lf.structs.SetPolyFill_.prototype, "has", lf.structs.SetPolyFill_.prototype.has);
 lf.structs.set.create = function(opt_iterable) {
-  return window.Set && window.Set.prototype.values && window.Set.prototype.forEach ? new window.Set(opt_iterable) : new lf.structs.SetPolyFill_(opt_iterable);
+  return window.Set && window.Set.prototype.values && window.Set.prototype.forEach ? goog.isDef(opt_iterable) ? new window.Set(opt_iterable) : new window.Set : new lf.structs.SetPolyFill_(opt_iterable);
 };
 lf.structs.set.values = function(set) {
   if (set instanceof lf.structs.SetPolyFill_) {
