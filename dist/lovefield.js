@@ -4097,9 +4097,9 @@ lf.cache.ConstraintChecker.prototype.checkReferringKeys_ = function(table, modif
   var parentForeignKeys = this.schema_.info().getReferencingForeignKeys(table.getName());
   goog.isDefAndNotNull(parentForeignKeys) && parentForeignKeys.forEach(function(foreignKeySpec) {
     if (foreignKeySpec.timing == constraintTiming) {
-      var childIndex = this.indexStore_.get(foreignKeySpec.name);
+      var childIndex = this.indexStore_.get(foreignKeySpec.name), parentIndex = this.getParentIndex_(foreignKeySpec);
       modifications.forEach(function(modification) {
-        var parentIndex = this.getParentIndex_(foreignKeySpec), didColumnValueChange = lf.cache.ConstraintChecker.didColumnValueChange_(modification[0], modification[1], parentIndex.getName());
+        var didColumnValueChange = lf.cache.ConstraintChecker.didColumnValueChange_(modification[0], modification[1], parentIndex.getName());
         if (didColumnValueChange) {
           var rowBefore = modification[0], parentKey = rowBefore.payload()[foreignKeySpec.parentColumn];
           if (childIndex.containsKey(parentKey)) {
