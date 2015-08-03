@@ -175,8 +175,12 @@ function testJoinPredicate_Eval_False() {
  * "left" and which as "right" independently of the input order.
  * @param {!hr.db.schema.Employee} employeeSchema
  * @param {!hr.db.schema.Job} jobSchema
+ * @param {!function(!lf.proc.Relation, !lf.proc.Relation, boolean)
+ *     :!lf.proc.Relation} evalFn The join implementation method should be
+ *     either evalRelationsNestedLoopJoin or evalRelationsHashJoin.
  */
-function checkJoinPredicate_EvalRelations(employeeSchema, jobSchema) {
+function checkJoinPredicate_RelationsInputOrder(
+    employeeSchema, jobSchema, evalFn) {
   var sampleEmployee =
       lf.testing.hrSchemaSampleData.generateSampleEmployeeData(db);
   var sampleJob =
@@ -188,10 +192,10 @@ function checkJoinPredicate_EvalRelations(employeeSchema, jobSchema) {
       [sampleJob], [jobSchema.getEffectiveName()]);
 
   var joinPredicate = employeeSchema.jobId.eq(jobSchema.id);
-  var result1 = joinPredicate.evalRelations(
-      employeeRelation, jobRelation, false);
-  var result2 = joinPredicate.evalRelations(
-      jobRelation, employeeRelation, false);
+  var result1 = evalFn.call(
+      joinPredicate, employeeRelation, jobRelation, false);
+  var result2 = evalFn.call(
+      joinPredicate, jobRelation, employeeRelation, false);
 
   assertEquals(1, result1.entries.length);
   assertEquals(1, result2.entries.length);
@@ -210,81 +214,83 @@ function checkJoinPredicate_EvalRelations(employeeSchema, jobSchema) {
 }
 
 
-function testJoinPredicate_EvalRelations() {
-  checkJoinPredicate_EvalRelations(e, j);
+function testJoinPredicate_RelationsInputOrder() {
+  checkJoinPredicate_RelationsInputOrder(
+      e, j, lf.pred.JoinPredicate.prototype.evalRelationsNestedLoopJoin);
+  checkJoinPredicate_RelationsInputOrder(
+      e, j, lf.pred.JoinPredicate.prototype.evalRelationsHashJoin);
 }
 
 
-function testJoinPredicate_EvalRelations_Alias() {
-  checkJoinPredicate_EvalRelations(
-      /** @type {!hr.db.schema.Employee} */ (e.as('employeeAlias')),
-      /** @type {!hr.db.schema.Job} */ (j.as('jobAlias')));
+function testJoinPredicate_RelationOrder_Alias() {
+  var eAlias = /** @type {!hr.db.schema.Employee} */ (e.as('employeeAlias'));
+  var jAlias = /** @type {!hr.db.schema.Job} */ (j.as('jobAlias'));
+  checkJoinPredicate_RelationsInputOrder(
+      eAlias, jAlias,
+      lf.pred.JoinPredicate.prototype.evalRelationsNestedLoopJoin);
+  checkJoinPredicate_RelationsInputOrder(
+      eAlias, jAlias,
+      lf.pred.JoinPredicate.prototype.evalRelationsHashJoin);
 }
 
 
-/** @suppress {accessControls} */
 function testJoinPredicate_EvalRelations_HashJoin() {
   checkEvalRelations_UniqueKeys(
-      lf.pred.JoinPredicate.prototype.evalRelationsHashJoin_);
+      lf.pred.JoinPredicate.prototype.evalRelationsHashJoin);
   checkEvalRelations_NonUniqueKeys(
-      lf.pred.JoinPredicate.prototype.evalRelationsHashJoin_);
+      lf.pred.JoinPredicate.prototype.evalRelationsHashJoin);
   checkEvalRelations_NullableKeys(
-      lf.pred.JoinPredicate.prototype.evalRelationsHashJoin_);
+      lf.pred.JoinPredicate.prototype.evalRelationsHashJoin);
 }
 
 
-/** @suppress {accessControls} */
 function testJoinPredicate_EvalRelations_NestedLoopJoin() {
   checkEvalRelations_UniqueKeys(
-      lf.pred.JoinPredicate.prototype.evalRelationsNestedLoopJoin_);
+      lf.pred.JoinPredicate.prototype.evalRelationsNestedLoopJoin);
   checkEvalRelations_NonUniqueKeys(
-      lf.pred.JoinPredicate.prototype.evalRelationsNestedLoopJoin_);
+      lf.pred.JoinPredicate.prototype.evalRelationsNestedLoopJoin);
   checkEvalRelations_NullableKeys(
-      lf.pred.JoinPredicate.prototype.evalRelationsNestedLoopJoin_);
+      lf.pred.JoinPredicate.prototype.evalRelationsNestedLoopJoin);
 }
 
 
-/** @suppress {accessControls} */
 function testJoinPredicate_EvalRelations_OuterJoin_HashJoin() {
   checkEvalRelations_OuterJoin_UniqueKeys(
-      lf.pred.JoinPredicate.prototype.evalRelationsHashJoin_);
+      lf.pred.JoinPredicate.prototype.evalRelationsHashJoin);
   checkEvalRelations_OuterJoin_NonUniqueKeys(
-      lf.pred.JoinPredicate.prototype.evalRelationsHashJoin_);
+      lf.pred.JoinPredicate.prototype.evalRelationsHashJoin);
   checkEvalRelations_TwoOuterJoins(
-      lf.pred.JoinPredicate.prototype.evalRelationsHashJoin_);
+      lf.pred.JoinPredicate.prototype.evalRelationsHashJoin);
   checkEvalRelations_OuterInnerJoins(
-      lf.pred.JoinPredicate.prototype.evalRelationsHashJoin_);
+      lf.pred.JoinPredicate.prototype.evalRelationsHashJoin);
   checkEvalRelations_OuterJoin_NullableKeys(
-      lf.pred.JoinPredicate.prototype.evalRelationsHashJoin_);
+      lf.pred.JoinPredicate.prototype.evalRelationsHashJoin);
 }
 
 
-/** @suppress {accessControls} */
 function testJoinPredicate_EvalRelations_OuterJoin_NestedLoopJoin() {
   checkEvalRelations_OuterJoin_UniqueKeys(
-      lf.pred.JoinPredicate.prototype.evalRelationsNestedLoopJoin_);
+      lf.pred.JoinPredicate.prototype.evalRelationsNestedLoopJoin);
   checkEvalRelations_OuterJoin_NonUniqueKeys(
-      lf.pred.JoinPredicate.prototype.evalRelationsNestedLoopJoin_);
+      lf.pred.JoinPredicate.prototype.evalRelationsNestedLoopJoin);
   checkEvalRelations_TwoOuterJoins(
-      lf.pred.JoinPredicate.prototype.evalRelationsNestedLoopJoin_);
+      lf.pred.JoinPredicate.prototype.evalRelationsNestedLoopJoin);
   checkEvalRelations_OuterInnerJoins(
-      lf.pred.JoinPredicate.prototype.evalRelationsNestedLoopJoin_);
+      lf.pred.JoinPredicate.prototype.evalRelationsNestedLoopJoin);
   checkEvalRelations_OuterJoin_NullableKeys(
-      lf.pred.JoinPredicate.prototype.evalRelationsNestedLoopJoin_);
+      lf.pred.JoinPredicate.prototype.evalRelationsNestedLoopJoin);
 }
 
 
-/** @suppress {accessControls} */
 function testJoinPredicate_EvalRelations_NestedLoopJoin_MultiJoin() {
   checkEvalRelations_MultiJoin(
-      lf.pred.JoinPredicate.prototype.evalRelationsNestedLoopJoin_);
+      lf.pred.JoinPredicate.prototype.evalRelationsNestedLoopJoin);
 }
 
 
-/** @suppress {accessControls} */
 function testJoinPredicate_EvalRelations_HashJoin_MultiJoin() {
   checkEvalRelations_MultiJoin(
-      lf.pred.JoinPredicate.prototype.evalRelationsHashJoin_);
+      lf.pred.JoinPredicate.prototype.evalRelationsHashJoin);
 }
 
 

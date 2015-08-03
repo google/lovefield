@@ -7860,12 +7860,6 @@ lf.pred.JoinPredicate.prototype.assertRelationsApply_ = function(leftRelation, r
   goog.asserts.assert(this.appliesToLeft_(leftRelation), "Mismatch between join predicate left operand and right relation.");
   goog.asserts.assert(this.appliesToRight_(rightRelation), "Mismatch between join predicate right operand and right relation.");
 };
-lf.pred.JoinPredicate.prototype.evalRelations = function(relation1, relation2, isOuterJoin) {
-  var leftRightRelations = [relation1, relation2];
-  isOuterJoin || (leftRightRelations = this.detectLeftRight_(relation1, relation2));
-  var leftRelation = leftRightRelations[0], rightRelation = leftRightRelations[1];
-  return this.evaluatorType == lf.eval.Type.EQ ? this.evalRelationsHashJoin_(leftRelation, rightRelation, isOuterJoin) : this.evalRelationsNestedLoopJoin_(leftRelation, rightRelation, isOuterJoin);
-};
 lf.pred.JoinPredicate.prototype.createNullPayload_ = function(table) {
   var payload = {};
   table.getColumns().forEach(function(column) {
@@ -7878,7 +7872,11 @@ lf.pred.JoinPredicate.prototype.createCombinedEntryForUnmatched_ = function(entr
   var nullEntry = new lf.proc.RelationEntry(new lf.Row(lf.Row.DUMMY_ID, this.nullPayload_), !1), combinedEntry = lf.proc.RelationEntry.combineEntries(entry, leftRelationTables, nullEntry, [this.rightColumn.getTable().getEffectiveName()]);
   return combinedEntry;
 };
-lf.pred.JoinPredicate.prototype.evalRelationsNestedLoopJoin_ = function(leftRelation, rightRelation, isOuterJoin) {
+lf.pred.JoinPredicate.prototype.evalRelationsNestedLoopJoin = function(leftRelation, rightRelation, isOuterJoin) {
+  var leftRightRelations = [leftRelation, rightRelation];
+  isOuterJoin || (leftRightRelations = this.detectLeftRight_(leftRelation, rightRelation));
+  leftRelation = leftRightRelations[0];
+  rightRelation = leftRightRelations[1];
   for (var combinedEntries = [], leftRelationTables = leftRelation.getTables(), rightRelationTables = rightRelation.getTables(), i = 0;i < leftRelation.entries.length;i++) {
     var matchFound = !1, leftValue = leftRelation.entries[i].getField(this.leftColumn);
     if (!goog.isNull(leftValue)) {
@@ -7895,7 +7893,11 @@ lf.pred.JoinPredicate.prototype.evalRelationsNestedLoopJoin_ = function(leftRela
   var srcTables = leftRelation.getTables().concat(rightRelation.getTables());
   return new lf.proc.Relation(combinedEntries, srcTables);
 };
-lf.pred.JoinPredicate.prototype.evalRelationsHashJoin_ = function(leftRelation, rightRelation, isOuterJoin) {
+lf.pred.JoinPredicate.prototype.evalRelationsHashJoin = function(leftRelation, rightRelation, isOuterJoin) {
+  var leftRightRelations = [leftRelation, rightRelation];
+  isOuterJoin || (leftRightRelations = this.detectLeftRight_(leftRelation, rightRelation));
+  leftRelation = leftRightRelations[0];
+  rightRelation = leftRightRelations[1];
   var minRelation = leftRelation, maxRelation = rightRelation, minColumn = this.leftColumn, maxColumn = this.rightColumn;
   if (isOuterJoin || leftRelation.entries.length > rightRelation.entries.length) {
     minRelation = rightRelation, maxRelation = leftRelation, minColumn = this.rightColumn, maxColumn = this.leftColumn;
@@ -9791,7 +9793,12 @@ lf.proc.JoinStep.prototype.toString = function() {
   return "join(type: " + (this.isOuterJoin_ ? "outer" : "inner") + ", impl: " + lf.proc.JoinStep.AlgorithmToString_[this.algorithm_] + ", " + this.predicate_.toString() + ")";
 };
 lf.proc.JoinStep.prototype.execInternal = function(journal, relations) {
-  return [this.predicate_.evalRelations(relations[0], relations[1], this.isOuterJoin_)];
+  switch(this.algorithm_) {
+    case lf.proc.JoinStep.Algorithm_.HASH:
+      return [this.predicate_.evalRelationsHashJoin(relations[0], relations[1], this.isOuterJoin_)];
+    default:
+      return [this.predicate_.evalRelationsNestedLoopJoin(relations[0], relations[1], this.isOuterJoin_)];
+  }
 };
 lf.proc.LimitStep = function() {
   lf.proc.PhysicalQueryPlanNode.call(this, 1, lf.proc.PhysicalQueryPlanNode.ExecType.FIRST_CHILD);

@@ -286,7 +286,7 @@ function getJoinedRelation() {
   var relationRight = lf.proc.Relation.fromRows(sampleJobs, [j.getName()]);
   var joinPredicate = new lf.pred.JoinPredicate(
       e.jobId, j.id, lf.eval.Type.EQ);
-  var joinedRelation = joinPredicate.evalRelations(
+  var joinedRelation = joinPredicate.evalRelationsHashJoin(
       relationLeft, relationRight, false);
 
   joinedRelation.setAggregationResult(lf.fn.avg(j.maxSalary), 50);

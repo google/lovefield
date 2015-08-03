@@ -513,7 +513,7 @@ function constructTree2() {
   var rootNode = new lf.proc.ProjectStep([], null);
   var orderByNode3 = new lf.proc.OrderByStep(
       [{column: e.salary, order: lf.Order.ASC}]);
-  var joinPredicate = /** @type {!lf.Predicate} */ (
+  var joinPredicate = /** @type {!lf.pred.JoinPredicate} */ (
       /** @type {!lf.pred.PredicateNode} */ (
           queryContext.where).getChildAt(4));
   var joinNode = new lf.proc.JoinStep(joinPredicate, false);
