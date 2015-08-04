@@ -219,6 +219,36 @@ function testOuterJoin_ThrowsOnlyJoinPredicateAllowed() {
 }
 
 
+function testExec_ThrowsWhereNotAllowedBeforeInnerJoin() {
+  var query = new lf.query.SelectBuilder(hr.db.getGlobal(), []);
+
+  var buildQuery = function() {
+    var e = db.getSchema().getEmployee();
+    var j = db.getSchema().getJob();
+    query.from(e).
+        where(j.id.eq('1')).
+        innerJoin(j, j.id.eq(e.jobId));
+  };
+  // 547: where() cannot be called before innerJoin() or leftOuterJoin().
+  lf.testing.util.assertThrowsError(547, buildQuery);
+}
+
+
+function testThrows_WhereNotAllowedBeforeOuterJoin() {
+  var query = new lf.query.SelectBuilder(hr.db.getGlobal(), []);
+
+  var buildQuery = function() {
+    var e = db.getSchema().getEmployee();
+    var j = db.getSchema().getJob();
+    query.from(e).
+        where(j.id.eq('1')).
+        leftOuterJoin(j, j.id.eq(e.jobId));
+  };
+  // 547: where() cannot be called before innerJoin() or leftOuterJoin().
+  lf.testing.util.assertThrowsError(547, buildQuery);
+}
+
+
 /**
  * Tests that Select#leftOuterJoin() fails if from() is not called before
  * it is called.

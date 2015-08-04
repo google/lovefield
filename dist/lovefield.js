@@ -9019,6 +9019,9 @@ lf.query.SelectBuilder.prototype.innerJoin = function(table, predicate) {
   if (!goog.isDefAndNotNull(this.query.from)) {
     throw new lf.Exception(542);
   }
+  if (this.whereAlreadyCalled_) {
+    throw new lf.Exception(547);
+  }
   this.query.from.push(table);
   this.augmentWhereClause_(predicate);
   return this;
@@ -9030,6 +9033,9 @@ lf.query.SelectBuilder.prototype.leftOuterJoin = function(table, predicate) {
   }
   if (!goog.isDefAndNotNull(this.query.from)) {
     throw new lf.Exception(542);
+  }
+  if (this.whereAlreadyCalled_) {
+    throw new lf.Exception(547);
   }
   this.query.from.push(table);
   goog.isDefAndNotNull(this.query.outerJoinPredicates) || (this.query.outerJoinPredicates = lf.structs.set.create());
