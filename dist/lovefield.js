@@ -1,18 +1,3 @@
-/*
-  Copyright 2014 The Lovefield Project Authors. All Rights Reserved.
-
-  Licensed under the Apache License, Version 2.0 (the "License");
-  you may not use this file except in compliance with the License.
-  You may obtain a copy of the License at
-
-  http://www.apache.org/licenses/LICENSE-2.0
-
-  Unless required by applicable law or agreed to in writing, software
-  distributed under the License is distributed on an "AS IS" BASIS,
-  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-  See the License for the specific language governing permissions and
-  limitations under the License.
-*/
 (function(){'use strict';var $jscomp = {scope:{}}, goog = goog || {};
 goog.global = this;
 goog.isDef = function(val) {
@@ -2585,7 +2570,22 @@ goog.Promise.Resolver_ = function(promise, resolve, reject) {
   this.resolve = resolve;
   this.reject = reject;
 };
+/*
 
+ Copyright 2014 The Lovefield Project Authors. All Rights Reserved.
+
+ Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+     http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+*/
 var lf = {Row:function(id, payload) {
   this.id_ = id;
   this.payload_ = payload || this.defaultPayload();
@@ -3361,7 +3361,22 @@ goog.structs.Map.prototype.__iterator__ = function(opt_keys) {
 goog.structs.Map.hasKey_ = function(obj, key) {
   return Object.prototype.hasOwnProperty.call(obj, key);
 };
+/*
 
+ Copyright 2015 The Lovefield Project Authors. All Rights Reserved.
+
+ Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+     http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+*/
 lf.structs = {};
 lf.structs.map = {};
 lf.structs.MapPolyFill_ = function() {
@@ -4021,7 +4036,6 @@ lf.Type.OBJECT = 6;
 goog.exportProperty(lf.Type, "OBJECT", lf.Type.OBJECT);
 lf.type.DEFAULT_VALUES = {0:null, 1:!1, 2:Object.freeze(new Date(0)), 3:0, 4:0, 5:"", 6:null};
 goog.exportSymbol("lf.type.DEFAULT_VALUES", lf.type.DEFAULT_VALUES);
-
 lf.Exception = function(code, var_args) {
   this.code = code;
   this.message = "http://sn.im/2a0j3wn?c=" + code;
@@ -6249,7 +6263,6 @@ lf.backstore.WebSqlRawBackStore.prototype.dump = function() {
   return resolver.promise;
 };
 goog.exportProperty(lf.backstore.WebSqlRawBackStore.prototype, "dump", lf.backstore.WebSqlRawBackStore.prototype.dump);
-
 lf.backstore.WebSql = function(global, schema, opt_size) {
   this.global_ = global;
   this.schema_ = schema;
@@ -6414,7 +6427,6 @@ lf.cache.DefaultCache.prototype.remove = function(tableName, ids) {
 lf.cache.DefaultCache.prototype.getCount = function(opt_tableName) {
   return goog.isDefAndNotNull(opt_tableName) ? this.getTableSet_(opt_tableName).size : this.map_.size;
 };
-
 lf.structs.array = {};
 lf.structs.array.binarySearch_ = function(arr, value) {
   for (var left = 0, right = arr.length;left < right;) {
@@ -6975,7 +6987,6 @@ lf.index.BTreeNode_.deserialize = function(rows, tree) {
   }
   return 1 < leaves.length ? lf.index.BTreeNode_.createInternals_(leaves[0]) : leaves[0];
 };
-
 lf.index.ComparatorFactory = {};
 lf.index.ComparatorFactory.create = function(indexSchema) {
   if (1 == indexSchema.columns.length) {

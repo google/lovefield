@@ -80,7 +80,8 @@ var Config = function() {
 
   // Compiler options for release mode.
   this.COMPILER_FLAGS_OPT = {
-    compilation_level: 'ADVANCED'
+    compilation_level: 'ADVANCED',
+    create_source_map: 'dist/lf.js.map'
   };
 
   // Compiler options for debug mode.
