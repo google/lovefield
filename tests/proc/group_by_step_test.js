@@ -19,11 +19,11 @@ goog.require('goog.testing.jsunit');
 goog.require('hr.db');
 goog.require('lf.cache.Journal');
 goog.require('lf.proc.GroupByStep');
+goog.require('lf.proc.NoOpStep');
 goog.require('lf.proc.Relation');
 goog.require('lf.schema.DataStoreType');
 goog.require('lf.structs.set');
 goog.require('lf.testing.hrSchema.MockDataGenerator');
-goog.require('lf.testing.proc.DummyStep');
 
 
 /** @type {!hr.db.schema.Employee} */
@@ -56,7 +56,7 @@ function setUp() {
 function testExec_SingleColumn() {
   var inputRelation = lf.proc.Relation.fromRows(
       dataGenerator.sampleEmployees, [e.getName()]);
-  var childStep = new lf.testing.proc.DummyStep([inputRelation]);
+  var childStep = new lf.proc.NoOpStep([inputRelation]);
   var groupByStep = new lf.proc.GroupByStep([e.jobId]);
   groupByStep.addChild(childStep);
 
@@ -86,7 +86,7 @@ function testExec_SingleColumn() {
 function testExec_MultiColumn() {
   var inputRelation = lf.proc.Relation.fromRows(
       dataGenerator.sampleJobs, [j.getName()]);
-  var childStep = new lf.testing.proc.DummyStep([inputRelation]);
+  var childStep = new lf.proc.NoOpStep([inputRelation]);
   var groupByStep = new lf.proc.GroupByStep([j.minSalary, j.maxSalary]);
   groupByStep.addChild(childStep);
 

@@ -20,11 +20,11 @@ goog.require('goog.testing.jsunit');
 goog.require('lf.Global');
 goog.require('lf.cache.Journal');
 goog.require('lf.proc.CrossProductStep');
+goog.require('lf.proc.NoOpStep');
 goog.require('lf.proc.Relation');
 goog.require('lf.structs.set');
 goog.require('lf.testing.MockEnv');
 goog.require('lf.testing.getSchemaBuilder');
-goog.require('lf.testing.proc.DummyStep');
 
 
 /** @type {!goog.testing.AsyncTestCase} */
@@ -74,9 +74,9 @@ function testCrossProduct() {
     });
   }
 
-  var leftChild = new lf.testing.proc.DummyStep(
+  var leftChild = new lf.proc.NoOpStep(
       [lf.proc.Relation.fromRows(leftRows, [leftTable.getName()])]);
-  var rightChild = new lf.testing.proc.DummyStep(
+  var rightChild = new lf.proc.NoOpStep(
       [lf.proc.Relation.fromRows(rightRows, [rightTable.getName()])]);
 
   var step = new lf.proc.CrossProductStep();
@@ -139,9 +139,9 @@ function testCrossProduct_PreviousJoins() {
   var relation2 = lf.proc.Relation.fromRows(relation2Rows, [table2.getName()]);
   var relation3 = lf.proc.Relation.fromRows(relation3Rows, [table3.getName()]);
 
-  var relation1Step = new lf.testing.proc.DummyStep([relation1]);
-  var relation2Step = new lf.testing.proc.DummyStep([relation2]);
-  var relation3Step = new lf.testing.proc.DummyStep([relation3]);
+  var relation1Step = new lf.proc.NoOpStep([relation1]);
+  var relation2Step = new lf.proc.NoOpStep([relation2]);
+  var relation3Step = new lf.proc.NoOpStep([relation3]);
 
   // Creating a tree structure composed of two cross product steps.
   var crossProductStep12 = new lf.proc.CrossProductStep();

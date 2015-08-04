@@ -25,12 +25,12 @@ goog.require('lf.eval.Type');
 goog.require('lf.fn');
 goog.require('lf.pred.JoinPredicate');
 goog.require('lf.proc.AggregationStep');
+goog.require('lf.proc.NoOpStep');
 goog.require('lf.proc.Relation');
 goog.require('lf.schema.DataStoreType');
 goog.require('lf.structs.set');
 goog.require('lf.testing.NullableDataGenerator');
 goog.require('lf.testing.hrSchema.MockDataGenerator');
-goog.require('lf.testing.proc.DummyStep');
 
 
 /** @type {!goog.testing.AsyncTestCase} */
@@ -545,7 +545,7 @@ function checkCalculationWithJoin(aggregatedColumn, expectedValue, assertFn) {
  */
 function checkCalculationForRelation(
     inputRelation, aggregatedColumn, expectedValue, assertFn) {
-  var childStep = new lf.testing.proc.DummyStep([inputRelation]);
+  var childStep = new lf.proc.NoOpStep([inputRelation]);
   var aggregationStep = new lf.proc.AggregationStep([aggregatedColumn]);
   aggregationStep.addChild(childStep);
 
@@ -577,7 +577,7 @@ function testExec_UsesExistingResult() {
   var aggregatedColumn = lf.fn.count();
   var aggregationResult = 100;
   inputRelation.setAggregationResult(aggregatedColumn, aggregationResult);
-  var childStep = new lf.testing.proc.DummyStep([inputRelation]);
+  var childStep = new lf.proc.NoOpStep([inputRelation]);
   var aggregationStep = new lf.proc.AggregationStep([aggregatedColumn]);
   aggregationStep.addChild(childStep);
 

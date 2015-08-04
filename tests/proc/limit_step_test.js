@@ -21,12 +21,12 @@ goog.require('lf.Global');
 goog.require('lf.Row');
 goog.require('lf.cache.Journal');
 goog.require('lf.proc.LimitStep');
+goog.require('lf.proc.NoOpStep');
 goog.require('lf.proc.Relation');
 goog.require('lf.query.SelectContext');
 goog.require('lf.structs.set');
 goog.require('lf.testing.MockEnv');
 goog.require('lf.testing.getSchemaBuilder');
-goog.require('lf.testing.proc.DummyStep');
 
 
 /** @type {!goog.testing.AsyncTestCase} */
@@ -78,7 +78,7 @@ function checkExec(sampleDataCount, limit) {
   asyncTestCase.waitForAsync('testExec' + sampleDataCount + limit);
   var rows = generateSampleRows(sampleDataCount);
   var tableName = 'dummyTable';
-  var childStep = new lf.testing.proc.DummyStep(
+  var childStep = new lf.proc.NoOpStep(
       [lf.proc.Relation.fromRows(rows, [tableName])]);
 
   var queryContext = new lf.query.SelectContext(schema);

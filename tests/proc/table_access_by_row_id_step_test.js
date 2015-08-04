@@ -19,12 +19,12 @@ goog.require('goog.testing.AsyncTestCase');
 goog.require('goog.testing.jsunit');
 goog.require('lf.Global');
 goog.require('lf.cache.Journal');
+goog.require('lf.proc.NoOpStep');
 goog.require('lf.proc.Relation');
 goog.require('lf.proc.TableAccessByRowIdStep');
 goog.require('lf.structs.set');
 goog.require('lf.testing.MockEnv');
 goog.require('lf.testing.getSchemaBuilder');
-goog.require('lf.testing.proc.DummyStep');
 
 
 /** @type {!goog.testing.AsyncTestCase} */
@@ -79,7 +79,7 @@ function checkTableAccessByRowId(description, table) {
   ];
   rows[0].assignRowId(0);
   rows[1].assignRowId(1);
-  step.addChild(new lf.testing.proc.DummyStep(
+  step.addChild(new lf.proc.NoOpStep(
       [lf.proc.Relation.fromRows(rows, [table.getName()])]));
 
   var journal = new lf.cache.Journal(
@@ -110,7 +110,7 @@ function testTableAccessByRowId_Empty() {
 
   // Creating a "dummy" child step that will not return any row IDs.
   step.addChild(
-      new lf.testing.proc.DummyStep([lf.proc.Relation.createEmpty()]));
+      new lf.proc.NoOpStep([lf.proc.Relation.createEmpty()]));
 
   var journal = new lf.cache.Journal(
       lf.Global.get(), lf.structs.set.create([table]));
