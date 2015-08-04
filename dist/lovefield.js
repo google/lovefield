@@ -3377,6 +3377,9 @@ goog.structs.Map.hasKey_ = function(obj, key) {
  See the License for the specific language governing permissions and
  limitations under the License.
 */
+lf.Flags = {};
+lf.Flags.MEMORY_ONLY = !1;
+lf.Flags.NATIVE_ES6 = !1;
 lf.structs = {};
 lf.structs.map = {};
 lf.structs.MapPolyFill_ = function() {
@@ -3410,7 +3413,7 @@ lf.structs.MapPolyFill_.prototype.set = function(key, value) {
 };
 goog.exportProperty(lf.structs.MapPolyFill_.prototype, "set", lf.structs.MapPolyFill_.prototype.set);
 lf.structs.map.create = function() {
-  return window.Map && window.Map.prototype.values && window.Map.prototype.forEach ? new Map : new lf.structs.MapPolyFill_;
+  return lf.Flags.NATIVE_ES6 ? new window.Map : window.Map && window.Map.prototype.values && window.Map.prototype.forEach ? new window.Map : new lf.structs.MapPolyFill_;
 };
 lf.structs.map.keys = function(map) {
   if (map instanceof lf.structs.MapPolyFill_) {
@@ -3729,7 +3732,7 @@ lf.structs.SetPolyFill_.prototype.has = function(value) {
 };
 goog.exportProperty(lf.structs.SetPolyFill_.prototype, "has", lf.structs.SetPolyFill_.prototype.has);
 lf.structs.set.create = function(opt_iterable) {
-  return window.Set && window.Set.prototype.values && window.Set.prototype.forEach ? goog.isDef(opt_iterable) ? new window.Set(opt_iterable) : new window.Set : new lf.structs.SetPolyFill_(opt_iterable);
+  return lf.Flags.NATIVE_ES6 ? goog.isDef(opt_iterable) ? new window.Set(opt_iterable) : new window.Set : window.Set && window.Set.prototype.values && window.Set.prototype.forEach ? goog.isDef(opt_iterable) ? new window.Set(opt_iterable) : new window.Set : new lf.structs.SetPolyFill_(opt_iterable);
 };
 lf.structs.set.values = function(set) {
   if (set instanceof lf.structs.SetPolyFill_) {
@@ -10301,8 +10304,6 @@ lf.proc.Runner.TaskQueue_.prototype.getValues = function() {
 lf.proc.Runner.TaskQueue_.prototype.remove = function(task) {
   return goog.array.remove(this.queue_, task);
 };
-lf.Flags = {};
-lf.Flags.MEMORY_ONLY = !1;
 lf.DiffCalculator = function(query, observableResults) {
   this.evalRegistry_ = lf.eval.Registry.getInstance();
   this.query_ = query;
