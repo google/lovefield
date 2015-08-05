@@ -4793,6 +4793,15 @@ goog.structs.TreeNode.prototype.addChildAt = function(child, index) {
   goog.asserts.assert(0 <= index && index <= this.children_.length);
   goog.array.insertAt(this.children_, child, index);
 };
+goog.structs.TreeNode.prototype.replaceChildAt = function(newChild, index) {
+  goog.asserts.assert(!newChild.getParent(), "newChild must not have parent node");
+  var children = this.getChildren(), oldChild = children[index];
+  goog.asserts.assert(oldChild, "Invalid child or child index is given.");
+  oldChild.setParent(null);
+  children[index] = newChild;
+  newChild.setParent(this);
+  return oldChild;
+};
 goog.structs.TreeNode.prototype.removeChildAt = function(index) {
   var child = this.children_ && this.children_[index];
   return child ? (child.setParent(null), goog.array.removeAt(this.children_, index), 0 == this.children_.length && (this.children_ = null), child) : null;
@@ -7808,6 +7817,7 @@ lf.pred.JoinPredicate = function(leftColumn, rightColumn, evaluatorType) {
   this.nullPayload_ = null;
   var registry = lf.eval.Registry.getInstance();
   this.evaluatorFn_ = registry.getEvaluator(this.leftColumn.getType(), this.evaluatorType);
+  this.keyOfIndexFn_ = registry.getKeyOfIndexEvaluator(this.leftColumn.getType());
 };
 goog.inherits(lf.pred.JoinPredicate, lf.pred.PredicateNode);
 lf.pred.JoinPredicate.prototype.copy = function() {
@@ -7922,6 +7932,21 @@ lf.pred.JoinPredicate.prototype.evalRelationsHashJoin = function(leftRelation, r
     }
   }.bind(this));
   var srcTables = leftRelation.getTables().concat(rightRelation.getTables());
+  return new lf.proc.Relation(combinedEntries, srcTables);
+};
+lf.pred.JoinPredicate.prototype.evalRelationsIndexNestedLoopJoin = function(leftRelation, rightRelation, indexJoinInfo, cache) {
+  goog.asserts.assert(this.evaluatorType == lf.eval.Type.EQ, "For now, index nested loop join can only be leveraged for EQ.");
+  var indexedTable = indexJoinInfo.indexedColumn.getTable(), outerRelation = leftRelation, innerRelation = rightRelation;
+  -1 != leftRelation.getTables().indexOf(indexedTable.getEffectiveName()) && (outerRelation = rightRelation, innerRelation = leftRelation);
+  var combinedEntries = [], innerRelationTables = innerRelation.getTables(), outerRelationTables = outerRelation.getTables();
+  outerRelation.entries.forEach(function(entry) {
+    var keyOfIndex = this.keyOfIndexFn_(entry.getField(indexJoinInfo.nonIndexedColumn)), matchingRowIds = indexJoinInfo.index.get(keyOfIndex), rows = cache.get(matchingRowIds);
+    rows.forEach(function(row) {
+      var innerEntry = new lf.proc.RelationEntry(row, 1 < innerRelationTables.length), combinedEntry = lf.proc.RelationEntry.combineEntries(entry, outerRelationTables, innerEntry, innerRelationTables);
+      combinedEntries.push(combinedEntry);
+    }, this);
+  }, this);
+  var srcTables = outerRelation.getTables().concat(innerRelation.getTables());
   return new lf.proc.Relation(combinedEntries, srcTables);
 };
 lf.pred.createPredicate = function(leftOperand, rightOperand, evaluatorType) {
@@ -9787,25 +9812,35 @@ lf.proc.InsertOrReplaceStep.prototype.execInternal = function(journal, relations
   journal.insertOrReplace(this.table_, queryContext.values);
   return [lf.proc.Relation.fromRows(queryContext.values, [this.table_.getName()])];
 };
-lf.proc.JoinStep = function(predicate, isOuterJoin) {
+lf.proc.JoinStep = function(global, predicate, isOuterJoin) {
   lf.proc.PhysicalQueryPlanNode.call(this, 2, lf.proc.PhysicalQueryPlanNode.ExecType.ALL);
-  this.predicate_ = predicate;
-  this.isOuterJoin_ = isOuterJoin;
-  this.algorithm_ = this.predicate_.evaluatorType == lf.eval.Type.EQ ? lf.proc.JoinStep.Algorithm_.HASH : lf.proc.JoinStep.Algorithm_.NESTED_LOOP;
+  this.indexStore_ = global.getService(lf.service.INDEX_STORE);
+  this.cache_ = global.getService(lf.service.CACHE);
+  this.predicate = predicate;
+  this.isOuterJoin = isOuterJoin;
+  this.algorithm_ = this.predicate.evaluatorType == lf.eval.Type.EQ ? lf.proc.JoinStep.Algorithm_.HASH : lf.proc.JoinStep.Algorithm_.NESTED_LOOP;
+  this.indexJoinInfo_ = null;
 };
 goog.inherits(lf.proc.JoinStep, lf.proc.PhysicalQueryPlanNode);
 lf.proc.JoinStep.Algorithm_ = {HASH:0, INDEX_NESTED_LOOP:1, NESTED_LOOP:2};
 lf.proc.JoinStep.AlgorithmToString_ = ["hash", "index_nested_loop", "nested_loop"];
 lf.proc.JoinStep.prototype.toString = function() {
-  return "join(type: " + (this.isOuterJoin_ ? "outer" : "inner") + ", impl: " + lf.proc.JoinStep.AlgorithmToString_[this.algorithm_] + ", " + this.predicate_.toString() + ")";
+  return "join(type: " + (this.isOuterJoin ? "outer" : "inner") + ", impl: " + lf.proc.JoinStep.AlgorithmToString_[this.algorithm_] + ", " + this.predicate.toString() + ")";
 };
 lf.proc.JoinStep.prototype.execInternal = function(journal, relations) {
   switch(this.algorithm_) {
     case lf.proc.JoinStep.Algorithm_.HASH:
-      return [this.predicate_.evalRelationsHashJoin(relations[0], relations[1], this.isOuterJoin_)];
+      return [this.predicate.evalRelationsHashJoin(relations[0], relations[1], this.isOuterJoin)];
+    case lf.proc.JoinStep.Algorithm_.INDEX_NESTED_LOOP:
+      return [this.predicate.evalRelationsIndexNestedLoopJoin(relations[0], relations[1], this.indexJoinInfo_, this.cache_)];
     default:
-      return [this.predicate_.evalRelationsNestedLoopJoin(relations[0], relations[1], this.isOuterJoin_)];
+      return [this.predicate.evalRelationsNestedLoopJoin(relations[0], relations[1], this.isOuterJoin)];
   }
+};
+lf.proc.JoinStep.prototype.markAsIndexJoin = function(column) {
+  this.algorithm_ = lf.proc.JoinStep.Algorithm_.INDEX_NESTED_LOOP;
+  var index = this.indexStore_.get(column.getIndex().getNormalizedName());
+  this.indexJoinInfo_ = {indexedColumn:column, nonIndexedColumn:column == this.predicate.leftColumn ? this.predicate.rightColumn : this.predicate.leftColumn, index:index};
 };
 lf.proc.LimitStep = function() {
   lf.proc.PhysicalQueryPlanNode.call(this, 1, lf.proc.PhysicalQueryPlanNode.ExecType.FIRST_CHILD);
@@ -10161,7 +10196,7 @@ lf.proc.PhysicalPlanFactory.prototype.mapFn_ = function(node) {
     return new lf.proc.CrossProductStep;
   }
   if (node instanceof lf.proc.JoinNode) {
-    return new lf.proc.JoinStep(node.predicate, node.isOuterJoin);
+    return new lf.proc.JoinStep(this.global_, node.predicate, node.isOuterJoin);
   }
   if (node instanceof lf.proc.TableAccessNode) {
     return new lf.proc.TableAccessFullStep(this.global_, node.table);
@@ -10698,6 +10733,40 @@ lf.proc.NoOpStep.prototype.toString = function() {
 };
 lf.proc.NoOpStep.prototype.execInternal = function() {
   return this.relations_;
+};
+lf.proc.IndexJoinPass = function() {
+};
+goog.inherits(lf.proc.IndexJoinPass, lf.proc.RewritePass);
+lf.proc.IndexJoinPass.prototype.rewrite = function(rootNode, queryContext) {
+  this.rootNode = rootNode;
+  if (!this.canOptimize_(queryContext)) {
+    return rootNode;
+  }
+  var joinSteps = lf.tree.find(rootNode, function(node) {
+    return node instanceof lf.proc.JoinStep;
+  });
+  joinSteps.forEach(this.processJoinStep_, this);
+  return this.rootNode;
+};
+lf.proc.IndexJoinPass.prototype.canOptimize_ = function(queryContext) {
+  return 1 < queryContext.from.length;
+};
+lf.proc.IndexJoinPass.prototype.processJoinStep_ = function(joinStep) {
+  if (joinStep.predicate.evaluatorType == lf.eval.Type.EQ && !joinStep.isOuterJoin) {
+    var getCandidate = function(executionStep) {
+      if (!(executionStep instanceof lf.proc.TableAccessFullStep)) {
+        return null;
+      }
+      var candidateColumn = executionStep.table.getEffectiveName() == joinStep.predicate.rightColumn.getTable().getEffectiveName() ? joinStep.predicate.rightColumn : joinStep.predicate.leftColumn;
+      return goog.isNull(candidateColumn.getIndex()) ? null : candidateColumn;
+    }, leftCandidate = getCandidate(joinStep.getChildAt(0)), rightCandidate = getCandidate(joinStep.getChildAt(1));
+    if (!goog.isNull(leftCandidate) || !goog.isNull(rightCandidate)) {
+      var chosenColumn = goog.isNull(rightCandidate) ? leftCandidate : rightCandidate;
+      joinStep.markAsIndexJoin(chosenColumn);
+      var dummyRelation = new lf.proc.Relation([], [chosenColumn.getTable().getEffectiveName()]);
+      joinStep.replaceChildAt(new lf.proc.NoOpStep([dummyRelation]), chosenColumn == leftCandidate ? 0 : 1);
+    }
+  }
 };
 lf.schema.BaseColumn = function(table, name, isUnique, isNullable, type, opt_alias) {
   this.table_ = table;

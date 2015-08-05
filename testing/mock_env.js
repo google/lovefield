@@ -56,12 +56,16 @@ lf.testing.MockEnv = function(schema) {
 
   /** @type {!lf.proc.Database} */
   this.db;
+
+  /** @type {!lf.Global} */
+  this.global;
 };
 
 
 /** @return {!IThenable} */
 lf.testing.MockEnv.prototype.init = function() {
   var global = lf.Global.get();
+  this.global = global;
   global.registerService(lf.service.SCHEMA, this.schema);
 
   this.db = new lf.proc.Database(global);
