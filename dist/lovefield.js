@@ -4056,6 +4056,7 @@ goog.inherits(lf.Exception, Error);
 lf.cache.ConstraintChecker = function(global) {
   this.indexStore_ = global.getService(lf.service.INDEX_STORE);
   this.schema_ = global.getService(lf.service.SCHEMA);
+  this.foreignKeysParentIndices_ = null;
 };
 lf.cache.ConstraintChecker.prototype.findExistingRowIdInPkIndex = function(table, row) {
   var pkIndexSchema = table.getConstraint().getPrimaryKey();
@@ -4093,9 +4094,15 @@ lf.cache.ConstraintChecker.prototype.checkReferredKey_ = function(foreignKeySpec
     }
   }, this);
 };
-lf.cache.ConstraintChecker.prototype.getParentIndex_ = function(foreignKeySpec) {
+lf.cache.ConstraintChecker.prototype.findParentIndex_ = function(foreignKeySpec) {
   var parentTable = this.schema_.table(foreignKeySpec.parentTable), parentColumn = parentTable[foreignKeySpec.parentColumn], parentIndexSchema = parentColumn.getIndex();
   return this.indexStore_.get(parentIndexSchema.getNormalizedName());
+};
+lf.cache.ConstraintChecker.prototype.getParentIndex_ = function(foreignKeySpec) {
+  goog.isNull(this.foreignKeysParentIndices_) && (this.foreignKeysParentIndices_ = lf.structs.map.create());
+  var parentIndex = this.foreignKeysParentIndices_.get(foreignKeySpec.name) || null;
+  goog.isNull(parentIndex) && (parentIndex = this.findParentIndex_(foreignKeySpec), this.foreignKeysParentIndices_.set(foreignKeySpec.name, parentIndex));
+  return parentIndex;
 };
 lf.cache.ConstraintChecker.didColumnValueChange_ = function(rowBefore, rowAfter, indexName) {
   var deletionOrAddition = goog.isNull(rowBefore) ? !goog.isNull(rowAfter) : goog.isNull(rowAfter);
