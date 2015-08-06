@@ -170,7 +170,7 @@ lf.testing.backstore.ScudTester.prototype.run = function() {
     return this.assertOnlyRows_([row3, row2]);
   }, this)).then(goog.bind(function(results) {
     // Update cache, otherwise the bundled operation will fail.
-    this.cache_.set(this.tableSchema_.getName(), [row2, row3]);
+    this.cache_.setMany(this.tableSchema_.getName(), [row2, row3]);
 
     // Remove row1.
     return this.remove_([row1.id()]);

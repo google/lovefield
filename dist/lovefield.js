@@ -3957,13 +3957,13 @@ lf.cache.InMemoryUpdater.prototype.update = function(tableDiffs) {
 lf.cache.InMemoryUpdater.prototype.updateCacheForDiff_ = function(diff) {
   var tableName = diff.getName();
   diff.getDeleted().forEach(function(row, rowId) {
-    this.cache_.remove(tableName, [rowId]);
+    this.cache_.remove(tableName, rowId);
   }, this);
   diff.getAdded().forEach(function(row) {
-    this.cache_.set(tableName, [row]);
+    this.cache_.set(tableName, row);
   }, this);
   diff.getModified().forEach(function(modification) {
-    this.cache_.set(tableName, [modification[1]]);
+    this.cache_.set(tableName, modification[1]);
   }, this);
 };
 lf.cache.InMemoryUpdater.prototype.updateIndicesForDiff_ = function(diff) {
@@ -4295,14 +4295,14 @@ lf.cache.Journal.prototype.modifyRow_ = function(table, modification) {
     throw this.pendingRollback_ = !0, e;
   }
   var rowBefore = modification[0], rowNow = modification[1];
-  goog.isNull(rowBefore) && !goog.isNull(rowNow) ? (this.cache_.set(tableName, [rowNow]), diff.add(rowNow)) : goog.isNull(rowBefore) || goog.isNull(rowNow) ? !goog.isNull(rowBefore) && goog.isNull(rowNow) && (this.cache_.remove(tableName, [rowBefore.id()]), diff.delete(rowBefore)) : (this.cache_.set(tableName, [rowNow]), diff.modify(modification));
+  goog.isNull(rowBefore) && !goog.isNull(rowNow) ? (this.cache_.set(tableName, rowNow), diff.add(rowNow)) : goog.isNull(rowBefore) || goog.isNull(rowNow) ? !goog.isNull(rowBefore) && goog.isNull(rowNow) && (this.cache_.remove(tableName, rowBefore.id()), diff.delete(rowBefore)) : (this.cache_.set(tableName, rowNow), diff.modify(modification));
 };
 lf.cache.Journal.prototype.update = function(table, rows) {
   this.assertJournalWritable_();
   this.checkScope_(table);
   this.constraintChecker_.checkNotNullable(table, rows);
   for (var i = 0;i < rows.length;i++) {
-    var row = rows[i], rowBefore = this.cache_.get([row.id()])[0], modification = [rowBefore, row];
+    var row = rows[i], rowBefore = this.cache_.get(row.id()), modification = [rowBefore, row];
     this.constraintChecker_.checkForeignKeysForUpdate(table, [modification], lf.ConstraintTiming.IMMEDIATE);
     this.modifyRow_(table, modification);
   }
@@ -4314,7 +4314,7 @@ lf.cache.Journal.prototype.insertOrReplace = function(table, rows) {
   for (var i = 0;i < rows.length;i++) {
     var rowNow = rows[i], rowBefore = null, existingRowId = this.constraintChecker_.findExistingRowIdInPkIndex(table, rowNow);
     if (goog.isDefAndNotNull(existingRowId)) {
-      rowBefore = this.cache_.get([existingRowId])[0];
+      rowBefore = this.cache_.get(existingRowId);
       rowNow.assignRowId(existingRowId);
       var modification = [rowBefore, rowNow];
       this.constraintChecker_.checkForeignKeysForUpdate(table, [modification], lf.ConstraintTiming.IMMEDIATE);
@@ -6407,16 +6407,23 @@ lf.cache.DefaultCache.prototype.getTableSet_ = function(tableName) {
   goog.isDef(set) || (set = lf.structs.set.create(), this.tableRows_.set(tableName, set));
   return set;
 };
-lf.cache.DefaultCache.prototype.set = function(tableName, rows) {
+lf.cache.DefaultCache.prototype.set = function(tableName, row) {
+  this.map_.set(row.id(), row);
+  this.getTableSet_(tableName).add(row.id());
+};
+lf.cache.DefaultCache.prototype.setMany = function(tableName, rows) {
   var tableSet = this.getTableSet_(tableName);
   rows.forEach(function(row) {
     this.map_.set(row.id(), row);
     tableSet.add(row.id());
   }, this);
 };
-lf.cache.DefaultCache.prototype.get = function(ids) {
+lf.cache.DefaultCache.prototype.get = function(id) {
+  return this.map_.get(id) || null;
+};
+lf.cache.DefaultCache.prototype.getMany = function(ids) {
   return ids.map(function(id) {
-    return this.map_.get(id) || null;
+    return this.get(id);
   }, this);
 };
 lf.cache.DefaultCache.prototype.getRange = function(tableName, fromId, toId) {
@@ -6440,15 +6447,16 @@ lf.cache.DefaultCache.prototype.getRange = function(tableName, fromId, toId) {
   }
   return data;
 };
-lf.cache.DefaultCache.prototype.remove = function(tableName, ids) {
-  var tableSet = this.getTableSet_(tableName);
-  ids.forEach(function(id) {
-    this.map_.delete(id);
-    tableSet.delete(id);
-  }, this);
+lf.cache.DefaultCache.prototype.remove = function(tableName, id) {
+  this.map_.delete(id);
+  this.getTableSet_(tableName).delete(id);
 };
 lf.cache.DefaultCache.prototype.getCount = function(opt_tableName) {
   return goog.isDefAndNotNull(opt_tableName) ? this.getTableSet_(opt_tableName).size : this.map_.size;
+};
+lf.cache.DefaultCache.prototype.clear = function() {
+  this.map_.clear();
+  this.tableRows_.clear();
 };
 lf.structs.array = {};
 lf.structs.array.binarySearch_ = function(arr, value) {
@@ -7337,7 +7345,7 @@ lf.cache.Prefetcher.prototype.init = function(schema) {
 lf.cache.Prefetcher.prototype.fetchTable_ = function(table) {
   var journal = new lf.cache.Journal(this.global_, lf.structs.set.create([table])), tx = this.backStore_.createTx(lf.TransactionType.READ_ONLY, journal), store = tx.getTable(table.getName(), table.deserializeRow.bind(table));
   return store.get([]).then(function(results) {
-    this.cache_.set(table.getName(), results);
+    this.cache_.setMany(table.getName(), results);
     this.reconstructNonPersistentIndices_(table, results);
   }.bind(this));
 };
@@ -7352,7 +7360,7 @@ lf.cache.Prefetcher.prototype.reconstructNonPersistentIndices_ = function(tableS
 };
 lf.cache.Prefetcher.prototype.fetchTableWithPersistentIndices_ = function(tableSchema) {
   var journal = new lf.cache.Journal(this.global_, lf.structs.set.create([tableSchema])), tx = this.backStore_.createTx(lf.TransactionType.READ_ONLY, journal), store = tx.getTable(tableSchema.getName(), tableSchema.deserializeRow), whenTableContentsFetched = store.get([]).then(function(results) {
-    this.cache_.set(tableSchema.getName(), results);
+    this.cache_.setMany(tableSchema.getName(), results);
   }.bind(this)), whenIndicesReconstructed = tableSchema.getIndices().map(function(indexSchema) {
     return this.reconstructPersistentIndex_(indexSchema, tx);
   }, this).concat(this.reconstructPersistentRowIdIndex_(tableSchema, tx));
@@ -7951,7 +7959,7 @@ lf.pred.JoinPredicate.prototype.evalRelationsIndexNestedLoopJoin = function(left
   -1 != leftRelation.getTables().indexOf(indexedTable.getEffectiveName()) && (outerRelation = rightRelation, innerRelation = leftRelation);
   var combinedEntries = [], innerRelationTables = innerRelation.getTables(), outerRelationTables = outerRelation.getTables();
   outerRelation.entries.forEach(function(entry) {
-    var keyOfIndex = this.keyOfIndexFn_(entry.getField(indexJoinInfo.nonIndexedColumn)), matchingRowIds = indexJoinInfo.index.get(keyOfIndex), rows = cache.get(matchingRowIds);
+    var keyOfIndex = this.keyOfIndexFn_(entry.getField(indexJoinInfo.nonIndexedColumn)), matchingRowIds = indexJoinInfo.index.get(keyOfIndex), rows = cache.getMany(matchingRowIds);
     rows.forEach(function(row) {
       var innerEntry = new lf.proc.RelationEntry(row, 1 < innerRelationTables.length), combinedEntry = lf.proc.RelationEntry.combineEntries(entry, outerRelationTables, innerEntry, innerRelationTables);
       combinedEntries.push(combinedEntry);
@@ -9487,7 +9495,7 @@ lf.proc.TableAccessFullStep.prototype.toString = function() {
 };
 lf.proc.TableAccessFullStep.prototype.execInternal = function() {
   var rowIds = this.indexStore_.get(this.table.getRowIdIndexName()).getRange();
-  return [lf.proc.Relation.fromRows(this.cache_.get(rowIds), [this.table.getEffectiveName()])];
+  return [lf.proc.Relation.fromRows(this.cache_.getMany(rowIds), [this.table.getEffectiveName()])];
 };
 lf.proc.GetRowCountPass = function(global) {
   this.global_ = global;
@@ -9740,7 +9748,7 @@ lf.proc.TableAccessByRowIdStep.prototype.toString = function() {
   return "table_access_by_row_id(" + this.table_.getName() + ")";
 };
 lf.proc.TableAccessByRowIdStep.prototype.execInternal = function(journal, relations) {
-  return [lf.proc.Relation.fromRows(this.cache_.get(relations[0].getRowIds()), [this.table_.getEffectiveName()])];
+  return [lf.proc.Relation.fromRows(this.cache_.getMany(relations[0].getRowIds()), [this.table_.getEffectiveName()])];
 };
 lf.proc.IndexRangeScanPass = function(global) {
   this.global_ = global;

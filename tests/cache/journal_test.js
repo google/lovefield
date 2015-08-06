@@ -739,7 +739,7 @@ function testCacheMerge() {
   var journal = createJournal([table]);
   journal.insert(table, [row, row2]);
   assertEquals(2, env.cache.getCount());
-  var results = env.cache.get([0, 1, 4]);
+  var results = env.cache.getMany([0, 1, 4]);
   assertNull(results[0]);
   assertObjectEquals(payload, results[1].payload());
   assertObjectEquals(payload, results[2].payload());
@@ -760,7 +760,7 @@ function testCacheMerge() {
   assertFalse(rowIdIndex.containsKey(row.id()));
 
   assertEquals(2, env.cache.getCount());
-  results = env.cache.get([0, 1, 4]);
+  results = env.cache.getMany([0, 1, 4]);
   assertObjectEquals(payload2, results[0].payload());
   assertNull(results[1]);
   assertObjectEquals(payload2, results[2].payload());
@@ -901,7 +901,7 @@ function testRollback() {
     assertTrue(rowIdIndex.containsKey(rowToRemove.id()));
     assertFalse(rowIdIndex.containsKey(rowToInsert.id()));
 
-    var row = env.cache.get([rowToModifyOld.id()])[0];
+    var row = env.cache.get(rowToModifyOld.id());
     assertEquals(
         rowToModifyOld.payload()['name'],
         row.payload()['name']);
@@ -935,5 +935,5 @@ function testRollback() {
  */
 function getTableRows(table) {
   var rowIds = env.indexStore.get(table.getRowIdIndexName()).getRange();
-  return env.cache.get(rowIds);
+  return env.cache.getMany(rowIds);
 }

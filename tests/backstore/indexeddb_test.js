@@ -232,7 +232,7 @@ function testTwoTableInserts_Bundled() {
     assertObjectEquals(CONTENTS2, results[1].payload());
 
     // Update cache, otherwise the bundled operation will fail.
-    cache.set(tableA.getName(), [row4, row3]);
+    cache.setMany(tableA.getName(), [row4, row3]);
 
     var tx = db.createTx(
         lf.TransactionType.READ_WRITE,

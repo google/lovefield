@@ -142,7 +142,7 @@ function testSinglePlan_Update() {
     for (var i = 0; i < ROW_COUNT; ++i) {
       assertEquals(newTitle, results[i].payload()[j.title.getName()]);
       var id = rows[i].id();
-      assertEquals(newTitle, cache.get([id])[0].payload()[j.title.getName()]);
+      assertEquals(newTitle, cache.get(id).payload()[j.title.getName()]);
     }
     asyncTestCase.continueTesting();
   });
