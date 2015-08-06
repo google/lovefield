@@ -7957,13 +7957,20 @@ lf.pred.JoinPredicate.prototype.evalRelationsIndexNestedLoopJoin = function(left
   goog.asserts.assert(this.evaluatorType == lf.eval.Type.EQ, "For now, index nested loop join can only be leveraged for EQ.");
   var indexedTable = indexJoinInfo.indexedColumn.getTable(), outerRelation = leftRelation, innerRelation = rightRelation;
   -1 != leftRelation.getTables().indexOf(indexedTable.getEffectiveName()) && (outerRelation = rightRelation, innerRelation = leftRelation);
-  var combinedEntries = [], innerRelationTables = innerRelation.getTables(), outerRelationTables = outerRelation.getTables();
+  var combinedEntries = [], innerRelationTables = innerRelation.getTables(), outerRelationTables = outerRelation.getTables(), pushCombinedEntry = function(outerEntry, row) {
+    var innerEntry = new lf.proc.RelationEntry(row, 1 < innerRelationTables.length), combinedEntry = lf.proc.RelationEntry.combineEntries(outerEntry, outerRelationTables, innerEntry, innerRelationTables);
+    combinedEntries.push(combinedEntry);
+  };
   outerRelation.entries.forEach(function(entry) {
-    var keyOfIndex = this.keyOfIndexFn_(entry.getField(indexJoinInfo.nonIndexedColumn)), matchingRowIds = indexJoinInfo.index.get(keyOfIndex), rows = cache.getMany(matchingRowIds);
-    rows.forEach(function(row) {
-      var innerEntry = new lf.proc.RelationEntry(row, 1 < innerRelationTables.length), combinedEntry = lf.proc.RelationEntry.combineEntries(entry, outerRelationTables, innerEntry, innerRelationTables);
-      combinedEntries.push(combinedEntry);
-    }, this);
+    var keyOfIndex = this.keyOfIndexFn_(entry.getField(indexJoinInfo.nonIndexedColumn)), matchingRowIds = indexJoinInfo.index.get(keyOfIndex);
+    if (0 != matchingRowIds.length) {
+      if (indexJoinInfo.index.isUniqueKey()) {
+        pushCombinedEntry(entry, cache.get(matchingRowIds[0]));
+      } else {
+        var rows = cache.getMany(matchingRowIds);
+        rows.forEach(pushCombinedEntry.bind(null, entry));
+      }
+    }
   }, this);
   var srcTables = outerRelation.getTables().concat(innerRelation.getTables());
   return new lf.proc.Relation(combinedEntries, srcTables);
@@ -9548,6 +9555,81 @@ lf.proc.GroupByStep.prototype.calculateGroupedRelations_ = function(relation) {
     return new lf.proc.Relation(groupMap.get(key), relation.getTables());
   }, this);
 };
+lf.proc.JoinStep = function(global, predicate, isOuterJoin) {
+  lf.proc.PhysicalQueryPlanNode.call(this, 2, lf.proc.PhysicalQueryPlanNode.ExecType.ALL);
+  this.indexStore_ = global.getService(lf.service.INDEX_STORE);
+  this.cache_ = global.getService(lf.service.CACHE);
+  this.predicate = predicate;
+  this.isOuterJoin = isOuterJoin;
+  this.algorithm_ = this.predicate.evaluatorType == lf.eval.Type.EQ ? lf.proc.JoinStep.Algorithm_.HASH : lf.proc.JoinStep.Algorithm_.NESTED_LOOP;
+  this.indexJoinInfo_ = null;
+};
+goog.inherits(lf.proc.JoinStep, lf.proc.PhysicalQueryPlanNode);
+lf.proc.JoinStep.Algorithm_ = {HASH:0, INDEX_NESTED_LOOP:1, NESTED_LOOP:2};
+lf.proc.JoinStep.AlgorithmToString_ = ["hash", "index_nested_loop", "nested_loop"];
+lf.proc.JoinStep.prototype.toString = function() {
+  return "join(type: " + (this.isOuterJoin ? "outer" : "inner") + ", impl: " + lf.proc.JoinStep.AlgorithmToString_[this.algorithm_] + ", " + this.predicate.toString() + ")";
+};
+lf.proc.JoinStep.prototype.execInternal = function(journal, relations) {
+  switch(this.algorithm_) {
+    case lf.proc.JoinStep.Algorithm_.HASH:
+      return [this.predicate.evalRelationsHashJoin(relations[0], relations[1], this.isOuterJoin)];
+    case lf.proc.JoinStep.Algorithm_.INDEX_NESTED_LOOP:
+      return [this.predicate.evalRelationsIndexNestedLoopJoin(relations[0], relations[1], this.indexJoinInfo_, this.cache_)];
+    default:
+      return [this.predicate.evalRelationsNestedLoopJoin(relations[0], relations[1], this.isOuterJoin)];
+  }
+};
+lf.proc.JoinStep.prototype.markAsIndexJoin = function(column) {
+  this.algorithm_ = lf.proc.JoinStep.Algorithm_.INDEX_NESTED_LOOP;
+  var index = this.indexStore_.get(column.getIndex().getNormalizedName());
+  this.indexJoinInfo_ = {indexedColumn:column, nonIndexedColumn:column == this.predicate.leftColumn ? this.predicate.rightColumn : this.predicate.leftColumn, index:index};
+};
+lf.proc.NoOpStep = function(relations) {
+  lf.proc.PhysicalQueryPlanNode.call(this, lf.proc.PhysicalQueryPlanNode.ANY, lf.proc.PhysicalQueryPlanNode.ExecType.NO_CHILD);
+  this.relations_ = relations;
+};
+goog.inherits(lf.proc.NoOpStep, lf.proc.PhysicalQueryPlanNode);
+lf.proc.NoOpStep.prototype.toString = function() {
+  return "no_op_step(" + this.relations_[0].getTables().join(",") + ")";
+};
+lf.proc.NoOpStep.prototype.execInternal = function() {
+  return this.relations_;
+};
+lf.proc.IndexJoinPass = function() {
+};
+goog.inherits(lf.proc.IndexJoinPass, lf.proc.RewritePass);
+lf.proc.IndexJoinPass.prototype.rewrite = function(rootNode, queryContext) {
+  this.rootNode = rootNode;
+  if (!this.canOptimize_(queryContext)) {
+    return rootNode;
+  }
+  var joinSteps = lf.tree.find(rootNode, function(node) {
+    return node instanceof lf.proc.JoinStep;
+  });
+  joinSteps.forEach(this.processJoinStep_, this);
+  return this.rootNode;
+};
+lf.proc.IndexJoinPass.prototype.canOptimize_ = function(queryContext) {
+  return 1 < queryContext.from.length;
+};
+lf.proc.IndexJoinPass.prototype.processJoinStep_ = function(joinStep) {
+  if (joinStep.predicate.evaluatorType == lf.eval.Type.EQ && !joinStep.isOuterJoin) {
+    var getCandidate = function(executionStep) {
+      if (!(executionStep instanceof lf.proc.TableAccessFullStep)) {
+        return null;
+      }
+      var candidateColumn = executionStep.table.getEffectiveName() == joinStep.predicate.rightColumn.getTable().getEffectiveName() ? joinStep.predicate.rightColumn : joinStep.predicate.leftColumn;
+      return goog.isNull(candidateColumn.getIndex()) ? null : candidateColumn;
+    }, leftCandidate = getCandidate(joinStep.getChildAt(0)), rightCandidate = getCandidate(joinStep.getChildAt(1));
+    if (!goog.isNull(leftCandidate) || !goog.isNull(rightCandidate)) {
+      var chosenColumn = goog.isNull(rightCandidate) ? leftCandidate : rightCandidate;
+      joinStep.markAsIndexJoin(chosenColumn);
+      var dummyRelation = new lf.proc.Relation([], [chosenColumn.getTable().getEffectiveName()]);
+      joinStep.replaceChildAt(new lf.proc.NoOpStep([dummyRelation]), chosenColumn == leftCandidate ? 0 : 1);
+    }
+  }
+};
 $jscomp.scope.calculateCartesianProduct = function(keyRangeSets) {
   goog.asserts.assert(1 < keyRangeSets.length, "Should only be called for cross-column indices.");
   var keyRangeSetsAsArrays = keyRangeSets.map(function(keyRangeSet) {
@@ -9830,36 +9912,6 @@ lf.proc.InsertOrReplaceStep.prototype.execInternal = function(journal, relations
   lf.proc.InsertStep.assignAutoIncrementPks_(this.table_, queryContext.values, this.indexStore_);
   journal.insertOrReplace(this.table_, queryContext.values);
   return [lf.proc.Relation.fromRows(queryContext.values, [this.table_.getName()])];
-};
-lf.proc.JoinStep = function(global, predicate, isOuterJoin) {
-  lf.proc.PhysicalQueryPlanNode.call(this, 2, lf.proc.PhysicalQueryPlanNode.ExecType.ALL);
-  this.indexStore_ = global.getService(lf.service.INDEX_STORE);
-  this.cache_ = global.getService(lf.service.CACHE);
-  this.predicate = predicate;
-  this.isOuterJoin = isOuterJoin;
-  this.algorithm_ = this.predicate.evaluatorType == lf.eval.Type.EQ ? lf.proc.JoinStep.Algorithm_.HASH : lf.proc.JoinStep.Algorithm_.NESTED_LOOP;
-  this.indexJoinInfo_ = null;
-};
-goog.inherits(lf.proc.JoinStep, lf.proc.PhysicalQueryPlanNode);
-lf.proc.JoinStep.Algorithm_ = {HASH:0, INDEX_NESTED_LOOP:1, NESTED_LOOP:2};
-lf.proc.JoinStep.AlgorithmToString_ = ["hash", "index_nested_loop", "nested_loop"];
-lf.proc.JoinStep.prototype.toString = function() {
-  return "join(type: " + (this.isOuterJoin ? "outer" : "inner") + ", impl: " + lf.proc.JoinStep.AlgorithmToString_[this.algorithm_] + ", " + this.predicate.toString() + ")";
-};
-lf.proc.JoinStep.prototype.execInternal = function(journal, relations) {
-  switch(this.algorithm_) {
-    case lf.proc.JoinStep.Algorithm_.HASH:
-      return [this.predicate.evalRelationsHashJoin(relations[0], relations[1], this.isOuterJoin)];
-    case lf.proc.JoinStep.Algorithm_.INDEX_NESTED_LOOP:
-      return [this.predicate.evalRelationsIndexNestedLoopJoin(relations[0], relations[1], this.indexJoinInfo_, this.cache_)];
-    default:
-      return [this.predicate.evalRelationsNestedLoopJoin(relations[0], relations[1], this.isOuterJoin)];
-  }
-};
-lf.proc.JoinStep.prototype.markAsIndexJoin = function(column) {
-  this.algorithm_ = lf.proc.JoinStep.Algorithm_.INDEX_NESTED_LOOP;
-  var index = this.indexStore_.get(column.getIndex().getNormalizedName());
-  this.indexJoinInfo_ = {indexedColumn:column, nonIndexedColumn:column == this.predicate.leftColumn ? this.predicate.rightColumn : this.predicate.leftColumn, index:index};
 };
 lf.proc.LimitStep = function() {
   lf.proc.PhysicalQueryPlanNode.call(this, 1, lf.proc.PhysicalQueryPlanNode.ExecType.FIRST_CHILD);
@@ -10166,7 +10218,7 @@ lf.proc.UpdateStep.prototype.execInternal = function(journal, relations) {
 };
 lf.proc.PhysicalPlanFactory = function(global) {
   this.global_ = global;
-  this.selectOptimizationPasses_ = [new lf.proc.IndexRangeScanPass(this.global_), new lf.proc.OrderByIndexPass(this.global_), new lf.proc.LimitSkipByIndexPass, new lf.proc.GetRowCountPass(this.global_)];
+  this.selectOptimizationPasses_ = [new lf.proc.IndexJoinPass, new lf.proc.IndexRangeScanPass(this.global_), new lf.proc.OrderByIndexPass(this.global_), new lf.proc.LimitSkipByIndexPass, new lf.proc.GetRowCountPass(this.global_)];
   this.deleteOptimizationPasses_ = [new lf.proc.IndexRangeScanPass(this.global_)];
 };
 lf.proc.PhysicalPlanFactory.prototype.create = function(logicalQueryPlan, queryContext) {
@@ -10742,51 +10794,6 @@ lf.proc.Database.prototype.close = function() {
   this.initialized_ = !1;
 };
 goog.exportProperty(lf.proc.Database.prototype, "close", lf.proc.Database.prototype.close);
-lf.proc.NoOpStep = function(relations) {
-  lf.proc.PhysicalQueryPlanNode.call(this, lf.proc.PhysicalQueryPlanNode.ANY, lf.proc.PhysicalQueryPlanNode.ExecType.NO_CHILD);
-  this.relations_ = relations;
-};
-goog.inherits(lf.proc.NoOpStep, lf.proc.PhysicalQueryPlanNode);
-lf.proc.NoOpStep.prototype.toString = function() {
-  return "no_op_step(" + this.relations_[0].getTables().join(",") + ")";
-};
-lf.proc.NoOpStep.prototype.execInternal = function() {
-  return this.relations_;
-};
-lf.proc.IndexJoinPass = function() {
-};
-goog.inherits(lf.proc.IndexJoinPass, lf.proc.RewritePass);
-lf.proc.IndexJoinPass.prototype.rewrite = function(rootNode, queryContext) {
-  this.rootNode = rootNode;
-  if (!this.canOptimize_(queryContext)) {
-    return rootNode;
-  }
-  var joinSteps = lf.tree.find(rootNode, function(node) {
-    return node instanceof lf.proc.JoinStep;
-  });
-  joinSteps.forEach(this.processJoinStep_, this);
-  return this.rootNode;
-};
-lf.proc.IndexJoinPass.prototype.canOptimize_ = function(queryContext) {
-  return 1 < queryContext.from.length;
-};
-lf.proc.IndexJoinPass.prototype.processJoinStep_ = function(joinStep) {
-  if (joinStep.predicate.evaluatorType == lf.eval.Type.EQ && !joinStep.isOuterJoin) {
-    var getCandidate = function(executionStep) {
-      if (!(executionStep instanceof lf.proc.TableAccessFullStep)) {
-        return null;
-      }
-      var candidateColumn = executionStep.table.getEffectiveName() == joinStep.predicate.rightColumn.getTable().getEffectiveName() ? joinStep.predicate.rightColumn : joinStep.predicate.leftColumn;
-      return goog.isNull(candidateColumn.getIndex()) ? null : candidateColumn;
-    }, leftCandidate = getCandidate(joinStep.getChildAt(0)), rightCandidate = getCandidate(joinStep.getChildAt(1));
-    if (!goog.isNull(leftCandidate) || !goog.isNull(rightCandidate)) {
-      var chosenColumn = goog.isNull(rightCandidate) ? leftCandidate : rightCandidate;
-      joinStep.markAsIndexJoin(chosenColumn);
-      var dummyRelation = new lf.proc.Relation([], [chosenColumn.getTable().getEffectiveName()]);
-      joinStep.replaceChildAt(new lf.proc.NoOpStep([dummyRelation]), chosenColumn == leftCandidate ? 0 : 1);
-    }
-  }
-};
 lf.schema.BaseColumn = function(table, name, isUnique, isNullable, type, opt_alias) {
   this.table_ = table;
   this.name_ = name;
