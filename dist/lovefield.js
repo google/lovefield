@@ -3799,7 +3799,7 @@ lf.backstore.Page.prototype.setRows = function(rows) {
 };
 lf.backstore.Page.prototype.removeRows = function(ids) {
   ids.forEach(function(id) {
-    goog.object.remove(this.payload_, id);
+    delete this.payload_[id];
   }, this);
 };
 lf.backstore.Page.prototype.serialize = function() {
@@ -3915,9 +3915,9 @@ lf.backstore.BundledObjectStore.prototype.remove = function(ids) {
     pages.set(pageId, page);
   }, this);
   var promises = lf.structs.map.values(pages).map(function(page) {
-    return this.performWriteOp_(goog.bind(function() {
-      return goog.object.isEmpty(page.getPayload()) ? this.store_.delete(page.getId()) : this.store_.put(page.serialize());
-    }, this));
+    return this.performWriteOp_(function() {
+      return 0 == Object.keys(page.getPayload()).length ? this.store_.delete(page.getId()) : this.store_.put(page.serialize());
+    }.bind(this));
   }, this);
   return goog.Promise.all(promises);
 };
@@ -5633,10 +5633,10 @@ lf.backstore.IndexedDBRawBackStore.prototype.getTableRows_ = function(tableName)
   }, this);
 };
 lf.backstore.IndexedDBRawBackStore.prototype.createRow = function(payload) {
-  var data = {};
-  goog.object.forEach(payload, goog.bind(function(value, key) {
-    data[key] = lf.backstore.IndexedDBRawBackStore.convert(value);
-  }, this));
+  var data = {}, key;
+  for (key in payload) {
+    data[key] = lf.backstore.IndexedDBRawBackStore.convert(payload[key]);
+  }
   return lf.Row.create(data);
 };
 goog.exportProperty(lf.backstore.IndexedDBRawBackStore.prototype, "createRow", lf.backstore.IndexedDBRawBackStore.prototype.createRow);
@@ -5855,7 +5855,7 @@ lf.backstore.IndexedDB.prototype.scanRowId_ = function(opt_tx) {
   }), db = this.db_, maxRowId = 0, extractRowId = goog.bind(function(cursor) {
     if (this.bundledMode_) {
       var page = lf.backstore.Page.deserialize(cursor.value);
-      return goog.object.getKeys(page.getPayload()).reduce(function(prev, cur) {
+      return Object.keys(page.getPayload()).reduce(function(prev, cur) {
         return Math.max(prev, cur);
       }, 0);
     }
@@ -5914,7 +5914,7 @@ lf.backstore.LocalStorageTable.prototype.get = function(ids) {
     var id = parseInt(key, 10);
     return new lf.Row(id, this.data_[key]);
   }, this) : (results = [], ids.forEach(function(id) {
-    goog.object.containsKey(this.data_, id.toString()) && results.push(new lf.Row(id, this.data_[id.toString()]));
+    this.data_.hasOwnProperty(id.toString()) && results.push(new lf.Row(id, this.data_[id.toString()]));
   }, this));
   return goog.Promise.resolve(results);
 };
@@ -5925,8 +5925,8 @@ lf.backstore.LocalStorageTable.prototype.put = function(rows) {
   return goog.Promise.resolve();
 };
 lf.backstore.LocalStorageTable.prototype.remove = function(ids) {
-  0 == ids.length || ids.length == goog.object.getCount(this.data_) ? goog.object.clear(this.data_) : ids.forEach(function(id) {
-    goog.object.remove(this.data_, id);
+  0 == ids.length || ids.length == Object.keys(this.data_).length ? this.data_ = {} : ids.forEach(function(id) {
+    delete this.data_[id];
   }, this);
   return goog.Promise.resolve();
 };
@@ -5937,10 +5937,10 @@ lf.backstore.LocalStorageTable.prototype.diff = function(newData) {
   var oldIds = Object.keys(this.data_), newIds = Object.keys(newData), diff = new lf.cache.TableDiff(this.key_);
   newIds.forEach(function(id) {
     var rowId = parseInt(id, 10);
-    goog.object.containsKey(this.data_, id) ? JSON.stringify(this.data_[id]) != JSON.stringify(newData[id]) && diff.modify([new lf.Row(rowId, this.data_[id]), new lf.Row(rowId, newData[id])]) : diff.add(new lf.Row(rowId, newData[id]));
+    this.data_.hasOwnProperty(id) ? JSON.stringify(this.data_[id]) != JSON.stringify(newData[id]) && diff.modify([new lf.Row(rowId, this.data_[id]), new lf.Row(rowId, newData[id])]) : diff.add(new lf.Row(rowId, newData[id]));
   }, this);
   oldIds.filter(function(id) {
-    return !goog.object.containsKey(newData, id);
+    return !newData.hasOwnProperty(id);
   }, this).forEach(function(id) {
     diff.delete(new lf.Row(parseInt(id, 10), this.data_[id]));
   }, this);
