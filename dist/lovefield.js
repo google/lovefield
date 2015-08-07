@@ -4997,9 +4997,6 @@ lf.proc.PhysicalQueryPlan = function(rootNode, scope) {
 lf.proc.PhysicalQueryPlan.prototype.getRoot = function() {
   return this.rootNode_;
 };
-lf.proc.PhysicalQueryPlan.prototype.explain = function() {
-  return "plan description";
-};
 lf.proc.PhysicalQueryPlan.prototype.getScope = function() {
   return this.scope_;
 };
