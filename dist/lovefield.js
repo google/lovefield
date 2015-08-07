@@ -6456,19 +6456,22 @@ lf.cache.DefaultCache.prototype.clear = function() {
   this.tableRows_.clear();
 };
 lf.structs.array = {};
-lf.structs.array.binarySearch_ = function(arr, value) {
-  for (var left = 0, right = arr.length;left < right;) {
+lf.structs.array.binarySearch_ = function(arr, value, opt_comparator) {
+  for (var left = 0, right = arr.length, comparator = opt_comparator || lf.structs.array.defaultComparator_;left < right;) {
     var middle = left + right >> 1;
-    arr[middle] < value ? left = middle + 1 : right = middle;
+    0 > comparator(arr[middle], value) ? left = middle + 1 : right = middle;
   }
   return left == right && arr[left] == value ? left : ~left;
 };
-lf.structs.array.binaryInsert = function(arr, value) {
-  var index = lf.structs.array.binarySearch_(arr, value);
+lf.structs.array.defaultComparator_ = function(lhs, rhs) {
+  return lhs - rhs;
+};
+lf.structs.array.binaryInsert = function(arr, value, opt_comparator) {
+  var index = lf.structs.array.binarySearch_(arr, value, opt_comparator);
   return 0 > index ? (arr.splice(-(index + 1), 0, value), !0) : !1;
 };
-lf.structs.array.binaryRemove = function(arr, value) {
-  var index = lf.structs.array.binarySearch_(arr, value);
+lf.structs.array.binaryRemove = function(arr, value, opt_comparator) {
+  var index = lf.structs.array.binarySearch_(arr, value, opt_comparator);
   if (0 > index) {
     return !1;
   }
@@ -10396,7 +10399,7 @@ lf.proc.Runner.TaskQueue_ = function() {
   this.queue_ = [];
 };
 lf.proc.Runner.TaskQueue_.prototype.insert = function(task) {
-  goog.array.binaryInsert(this.queue_, task, function(t1, t2) {
+  lf.structs.array.binaryInsert(this.queue_, task, function(t1, t2) {
     var priorityDiff = t1.getPriority() - t2.getPriority();
     return 0 == priorityDiff ? t1.getId() - t2.getId() : priorityDiff;
   });

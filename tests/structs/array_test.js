@@ -22,7 +22,7 @@ goog.require('lf.structs.array');
 /**
  * Tests copied from Closure library's array_test.js.
  */
-function testBinaryInsertRemove() {
+function testBinaryInsertRemove_DefaultComparator() {
   var makeChecker = function(array, fn) {
     return function(value, expectResult, expectArray) {
       var result = fn(array, value);
@@ -47,4 +47,47 @@ function testBinaryInsertRemove() {
   check(5, true, [2]);
   check(2, true, []);
   check(2, false, []);
+}
+
+
+function testBinaryInsertRemove_CustomComparator() {
+  var comparator = function(lhs, rhs) { return lhs.id - rhs.id; };
+  var makeChecker = function(array, fn) {
+    return function(value, expectResult, expectArray) {
+      var result = fn(array, value, comparator);
+      assertEquals(expectResult, result);
+      assertArrayEquals(expectArray, array);
+    }
+  };
+
+  /**
+   * @constructor
+   * @param {number} id
+   */
+  var Class = function(id) {
+    this.id = id;
+  };
+
+  var a = [];
+  var obj0 = new Class(0);
+  var obj1 = new Class(1);
+  var obj2 = new Class(2);
+  var obj3 = new Class(3);
+  var obj5 = new Class(5);
+
+  var check = makeChecker(a, lf.structs.array.binaryInsert);
+  check(obj3, true, [obj3]);
+  check(obj3, false, [obj3]);
+  check(obj1, true, [obj1, obj3]);
+  check(obj5, true, [obj1, obj3, obj5]);
+  check(obj2, true, [obj1, obj2, obj3, obj5]);
+  check(obj2, false, [obj1, obj2, obj3, obj5]);
+
+  check = makeChecker(a, lf.structs.array.binaryRemove);
+  check(obj0, false, [obj1, obj2, obj3, obj5]);
+  check(obj3, true, [obj1, obj2, obj5]);
+  check(obj1, true, [obj2, obj5]);
+  check(obj5, true, [obj2]);
+  check(obj2, true, []);
+  check(obj2, false, []);
 }
