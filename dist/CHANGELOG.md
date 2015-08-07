@@ -1,3 +1,12 @@
+Version: 2.0.62<br>
+Publish date: 20150807<br>
+Changes:
+ - Implemented index nested loop join.
+ - Optimize default cache.
+ - Remove dependencies of Closure structures Multimap and TreeNode.
+ - Provides source map for minified JS.
+ - Provides ES6 only minified JS that strips out Map and Set polyfills.
+
 Version: 2.0.61<br>
 Publish date: 20150730<br>
 Changes:
