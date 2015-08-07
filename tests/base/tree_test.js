@@ -15,20 +15,20 @@
  * limitations under the License.
  */
 goog.setTestOnly();
-goog.require('goog.structs.TreeNode');
 goog.require('goog.testing.jsunit');
+goog.require('lf.structs.TreeNode');
 goog.require('lf.tree');
 
 
 /**
  * Creates a tree to be used in various tests.
- * @return {!Array<!goog.structs.TreeNode>} An array holding all the nodes in
+ * @return {!Array<!lf.structs.TreeNode>} An array holding all the nodes in
  *     the tree in pre-order traversal order.
  */
 function createTestTree1() {
   var nodes = new Array(11);
   for (var i = 0; i < nodes.length; i++) {
-    nodes[i] = new goog.structs.TreeNode(i, null);
+    nodes[i] = new lf.structs.TreeNode(i, null);
   }
 
   // Creating a tree that has the following structure.
@@ -65,13 +65,13 @@ function createTestTree1() {
 
 /**
  * Creates a different tree to be used in various tests.
- * @return {!Array<!goog.structs.TreeNode>} An array holding all the nodes in
+ * @return {!Array<!lf.structs.TreeNode>} An array holding all the nodes in
  *     the tree in pre-order traversal order.
  */
 function createTestTree2() {
   var nodes = new Array(7);
   for (var i = 0; i < nodes.length; i++) {
-    nodes[i] = new goog.structs.TreeNode(i, null);
+    nodes[i] = new lf.structs.TreeNode(i, null);
   }
 
   // Creating a tree that has the following structure.
@@ -106,7 +106,7 @@ function createTestTree2() {
 function testMap1() {
   var nodes = new Array(6);
   for (var i = 0; i < nodes.length; i++) {
-    nodes[i] = new goog.structs.TreeNode(i, null);
+    nodes[i] = new lf.structs.TreeNode(i, null);
   }
 
   nodes[2].addChild(nodes[3]);
@@ -132,12 +132,12 @@ function testMap2() {
 /**
  * Checks that the given tree is producing a tree with an identical structure
  * when cloned.
- * @param {!goog.structs.TreeNode} rootNode
+ * @param {!lf.structs.TreeNode} rootNode
  */
 function checkMap(rootNode) {
   // Attempting to copy the tree.
   var copy = lf.tree.map(rootNode, function(node) {
-    return new goog.structs.TreeNode(node.getKey(), null);
+    return new lf.structs.TreeNode(node.getKey(), null);
   });
 
   assertEquals(
@@ -252,7 +252,7 @@ function testInsertNodeAt() {
       '-----[9,null]\n' +
       '-[10,null]\n';
 
-  var newNode = new goog.structs.TreeNode(11, null);
+  var newNode = new lf.structs.TreeNode(11, null);
   lf.tree.insertNodeAt(nodes[7], newNode);
   assertEquals(treeAfter, lf.tree.toString(nodes[0], stringFn));
 }
@@ -274,10 +274,10 @@ function testReplaceChainWithChain() {
       '----[9,null]\n' +
       '-[10,null]\n';
 
-  var newHead = new goog.structs.TreeNode(11, null);
-  var intermediate = new goog.structs.TreeNode(12, null);
+  var newHead = new lf.structs.TreeNode(11, null);
+  var intermediate = new lf.structs.TreeNode(12, null);
   newHead.addChild(intermediate);
-  var newTail = new goog.structs.TreeNode(13, null);
+  var newTail = new lf.structs.TreeNode(13, null);
   intermediate.addChild(newTail);
 
   var head = nodes[5];
@@ -301,7 +301,7 @@ function testReplaceChainWithNode() {
       '--[9,null]\n' +
       '-[10,null]\n';
 
-  var newNode = new goog.structs.TreeNode(11, null);
+  var newNode = new lf.structs.TreeNode(11, null);
   var head = nodes[5];
   var tail = nodes[7];
   lf.tree.replaceChainWithNode(head, tail, newNode);
@@ -327,10 +327,10 @@ function testReplaceNodeWithChain() {
       '----[9,null]\n' +
       '-[10,null]\n';
 
-  var head = new goog.structs.TreeNode(11, null);
-  var other = new goog.structs.TreeNode(12, null);
+  var head = new lf.structs.TreeNode(11, null);
+  var other = new lf.structs.TreeNode(12, null);
   head.addChild(other);
-  var tail = new goog.structs.TreeNode(13, null);
+  var tail = new lf.structs.TreeNode(13, null);
   other.addChild(tail);
 
   lf.tree.replaceNodeWithChain(nodes[8], head, tail);
@@ -356,7 +356,7 @@ function testPushNodeBelowChild() {
 
 
   var cloneFn = function(node) {
-    return new goog.structs.TreeNode(node.getKey(), null);
+    return new lf.structs.TreeNode(node.getKey(), null);
   };
 
   var shouldPushDownFn = function(child) {
@@ -435,7 +435,7 @@ function testFind_Stop() {
 
 
 /**
- * @param {!goog.structs.TreeNode} node The node to be stringified.
+ * @param {!lf.structs.TreeNode} node The node to be stringified.
  * @return {string} A string representation of the node.
  */
 function stringFn(node) {

@@ -197,9 +197,9 @@ goog.DEPENDENCIES_ENABLED && (goog.included_ = {}, goog.dependencies_ = {pathIsM
   } finally {
     goog.moduleLoaderState_ = previousState;
   }
-}, goog.loadModuleFromSource_ = function(source) {
+}, goog.loadModuleFromSource_ = function(JSCompiler_OptimizeArgumentsArray_p0) {
   var exports = {};
-  eval(source);
+  eval(JSCompiler_OptimizeArgumentsArray_p0);
   return exports;
 }, goog.writeScriptSrcNode_ = function(src) {
   goog.global.document.write('<script type="text/javascript" src="' + src + '">\x3c/script>');
@@ -4716,109 +4716,75 @@ lf.eval.buildDateEvaluatorMap_ = function() {
   });
   return map;
 };
-goog.structs.Node = function(key, value) {
+lf.structs.TreeNode = function(key, value) {
   this.key_ = key;
   this.value_ = value;
-};
-goog.structs.Node.prototype.getKey = function() {
-  return this.key_;
-};
-goog.structs.Node.prototype.getValue = function() {
-  return this.value_;
-};
-goog.structs.Node.prototype.clone = function() {
-  return new goog.structs.Node(this.key_, this.value_);
-};
-goog.structs.TreeNode = function(key, value) {
-  goog.structs.Node.call(this, key, value);
   this.children_ = this.parent_ = null;
 };
-goog.inherits(goog.structs.TreeNode, goog.structs.Node);
-goog.structs.TreeNode.EMPTY_ARRAY_ = [];
-goog.structs.TreeNode.prototype.clone = function() {
-  return new goog.structs.TreeNode(this.getKey(), this.getValue());
+lf.structs.TreeNode.EMPTY_ARRAY_ = [];
+lf.structs.TreeNode.prototype.getValue = function() {
+  return this.value_;
 };
-goog.structs.TreeNode.prototype.getParent = function() {
+lf.structs.TreeNode.prototype.getParent = function() {
   return this.parent_;
 };
-goog.structs.TreeNode.prototype.isLeaf = function() {
-  return !this.getChildCount();
+lf.structs.TreeNode.prototype.setParent = function(parentNode) {
+  this.parent_ = parentNode;
 };
-goog.structs.TreeNode.prototype.getChildren = function() {
-  return this.children_ || goog.structs.TreeNode.EMPTY_ARRAY_;
-};
-goog.structs.TreeNode.prototype.getChildAt = function(index) {
-  return this.getChildren()[index] || null;
-};
-goog.structs.TreeNode.prototype.getChildCount = function() {
-  return this.getChildren().length;
-};
-goog.structs.TreeNode.prototype.getDepth = function() {
-  for (var depth = 0, node = this;node.getParent();) {
-    depth++, node = node.getParent();
-  }
-  return depth;
-};
-goog.structs.TreeNode.prototype.getRoot = function() {
-  for (var root = this;root.getParent();) {
+lf.structs.TreeNode.prototype.getRoot = function() {
+  for (var root = this;!goog.isNull(root.getParent());) {
     root = root.getParent();
   }
   return root;
 };
-goog.structs.TreeNode.prototype.contains = function(node) {
-  var current = node;
-  do {
-    current = current.getParent();
-  } while (current && current != this);
-  return Boolean(current);
-};
-goog.structs.TreeNode.findCommonAncestor = function(var_args) {
-  var ret = arguments[0];
-  if (!ret) {
-    return null;
+lf.structs.TreeNode.prototype.getDepth = function() {
+  for (var depth = 0, node = this;!goog.isNull(node.getParent());) {
+    depth++, node = node.getParent();
   }
-  for (var retDepth = ret.getDepth(), i = 1;i < arguments.length;i++) {
-    for (var node = arguments[i], depth = node.getDepth();node != ret;) {
-      depth <= retDepth && (ret = ret.getParent(), retDepth--), depth > retDepth && (node = node.getParent(), depth--);
-    }
-  }
-  return ret;
+  return depth;
 };
-goog.structs.TreeNode.prototype.traverse = function(f, opt_this) {
-  if (!1 !== f.call(opt_this, this)) {
-    for (var children = this.getChildren(), i = 0;i < children.length;i++) {
-      children[i].traverse(f, opt_this);
-    }
-  }
+lf.structs.TreeNode.prototype.isLeaf = function() {
+  return goog.isNull(this.children_);
 };
-goog.structs.TreeNode.prototype.setParent = function(parent) {
-  this.parent_ = parent;
+lf.structs.TreeNode.prototype.getChildren = function() {
+  return this.children_ || lf.structs.TreeNode.EMPTY_ARRAY_;
 };
-goog.structs.TreeNode.prototype.addChild = function(child) {
-  this.addChildAt(child, this.children_ ? this.children_.length : 0);
+lf.structs.TreeNode.prototype.getChildAt = function(index) {
+  return this.getChildren()[index] || null;
 };
-goog.structs.TreeNode.prototype.addChildAt = function(child, index) {
-  goog.asserts.assert(!child.getParent());
+lf.structs.TreeNode.prototype.getChildCount = function() {
+  return this.getChildren().length;
+};
+lf.structs.TreeNode.prototype.addChildAt = function(child, index) {
+  goog.asserts.assert(goog.isNull(child.getParent()));
   child.setParent(this);
-  this.children_ = this.children_ || [];
-  goog.asserts.assert(0 <= index && index <= this.children_.length);
-  goog.array.insertAt(this.children_, child, index);
+  goog.isNull(this.children_) ? (goog.asserts.assert(0 == index), this.children_ = [child]) : (goog.asserts.assert(0 <= index && index <= this.children_.length), this.children_.splice(index, 0, child));
 };
-goog.structs.TreeNode.prototype.replaceChildAt = function(newChild, index) {
-  goog.asserts.assert(!newChild.getParent(), "newChild must not have parent node");
-  var children = this.getChildren(), oldChild = children[index];
-  goog.asserts.assert(oldChild, "Invalid child or child index is given.");
+lf.structs.TreeNode.prototype.addChild = function(child) {
+  goog.asserts.assert(goog.isNull(child.getParent()));
+  child.setParent(this);
+  goog.isNull(this.children_) ? this.children_ = [child] : this.children_.push(child);
+};
+lf.structs.TreeNode.prototype.removeChildAt = function(index) {
+  var child = this.children_ && this.children_[index];
+  return child ? (child.setParent(null), this.children_.splice(index, 1), 0 == this.children_.length && (this.children_ = null), child) : null;
+};
+lf.structs.TreeNode.prototype.removeChild = function(child) {
+  return this.removeChildAt(this.getChildren().indexOf(child));
+};
+lf.structs.TreeNode.prototype.replaceChildAt = function(newChild, index) {
+  goog.asserts.assert(goog.isNull(newChild.getParent()), "New child must not have parent node");
+  var oldChild = this.getChildAt(index);
+  goog.asserts.assert(oldChild, "Invalid child index");
   oldChild.setParent(null);
-  children[index] = newChild;
   newChild.setParent(this);
+  this.children_[index] = newChild;
   return oldChild;
 };
-goog.structs.TreeNode.prototype.removeChildAt = function(index) {
-  var child = this.children_ && this.children_[index];
-  return child ? (child.setParent(null), goog.array.removeAt(this.children_, index), 0 == this.children_.length && (this.children_ = null), child) : null;
-};
-goog.structs.TreeNode.prototype.removeChild = function(child) {
-  return this.removeChildAt(goog.array.indexOf(this.getChildren(), child));
+lf.structs.TreeNode.prototype.traverse = function(f, opt_this) {
+  !1 !== f.call(opt_this, this) && this.getChildren().forEach(function(child) {
+    child.traverse(f, opt_this);
+  });
 };
 lf.Predicate = function() {
 };
@@ -4826,10 +4792,10 @@ lf.PredicateProvider = function() {
 };
 lf.pred = {};
 lf.pred.PredicateNode = function() {
-  goog.structs.TreeNode.call(this, "", "");
+  lf.structs.TreeNode.call(this, "", "");
   this.id_ = lf.pred.PredicateNode.nextId_++;
 };
-goog.inherits(lf.pred.PredicateNode, goog.structs.TreeNode);
+goog.inherits(lf.pred.PredicateNode, lf.structs.TreeNode);
 lf.pred.PredicateNode.nextId_ = 0;
 lf.pred.PredicateNode.prototype.getId = function() {
   return this.id_;
@@ -8029,11 +7995,11 @@ lf.fn.geomean = function(col) {
 };
 goog.exportSymbol("lf.fn.geomean", lf.fn.geomean);
 lf.proc.PhysicalQueryPlanNode = function(numRelations, type) {
-  goog.structs.TreeNode.call(this, "", "");
+  lf.structs.TreeNode.call(this, "", "");
   this.execType_ = type;
   this.numRelations_ = numRelations;
 };
-goog.inherits(lf.proc.PhysicalQueryPlanNode, goog.structs.TreeNode);
+goog.inherits(lf.proc.PhysicalQueryPlanNode, lf.structs.TreeNode);
 lf.proc.PhysicalQueryPlanNode.ExecType = {NO_CHILD:-1, ALL:0, FIRST_CHILD:1};
 lf.proc.PhysicalQueryPlanNode.ANY = -1;
 lf.proc.PhysicalQueryPlanNode.prototype.exec = function(journal, opt_context) {
@@ -8206,9 +8172,9 @@ lf.proc.LogicalQueryPlan.prototype.getScope = function() {
   return this.scope_;
 };
 lf.proc.LogicalQueryPlanNode = function() {
-  goog.structs.TreeNode.call(this, "", "");
+  lf.structs.TreeNode.call(this, "", "");
 };
-goog.inherits(lf.proc.LogicalQueryPlanNode, goog.structs.TreeNode);
+goog.inherits(lf.proc.LogicalQueryPlanNode, lf.structs.TreeNode);
 lf.proc.InsertNode = function(table, values) {
   lf.proc.LogicalQueryPlanNode.call(this);
   this.table = table;

@@ -108,14 +108,16 @@ function testTree1() {
     var tableAccessByRowIdNode = new lf.proc.TableAccessByRowIdStep(
         hr.db.getGlobal(), queryContext.from[0]);
     projectNode.addChild(tableAccessByRowIdNode);
+    var child0 = /** @type {!lf.pred.PredicateNode} */ (
+        queryContext.where).getChildAt(0);
+    var child1 = /** @type {!lf.pred.PredicateNode} */ (
+        queryContext.where).getChildAt(1);
     var indexRangeScanStep = new lf.proc.IndexRangeScanStep(
         hr.db.getGlobal(),
         getIndexByName(e, 'idx_salary'),
         new lf.testing.proc.MockKeyRangeCalculator([
-          /** @type {!lf.pred.PredicateNode} */ (
-              queryContext.where).getChildAt(0).toKeyRange()[0],
-          /** @type {!lf.pred.PredicateNode} */ (
-              queryContext.where).getChildAt(1).toKeyRange()[0]
+          /** @type {!lf.pred.ValuePredicate} */ (child0).toKeyRange()[0],
+          /** @type {!lf.pred.ValuePredicate} */ (child1).toKeyRange()[0]
         ]),
         true);
     tableAccessByRowIdNode.addChild(indexRangeScanStep);

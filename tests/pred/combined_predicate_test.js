@@ -129,8 +129,8 @@ function testCopy_Nested() {
  * hold any common object references.
  * @param {string} expectedTree The expected string representation of the two
  *     trees.
- * @param {!goog.structs.TreeNode} original The root node of the original tree.
- * @param {!goog.structs.TreeNode} copy The root node of the copied tree.
+ * @param {!lf.structs.TreeNode} original The root node of the original tree.
+ * @param {!lf.structs.TreeNode} copy The root node of the copied tree.
  */
 function assertTreesIdentical(expectedTree, original, copy) {
   assertEquals(expectedTree, lf.tree.toString(original));

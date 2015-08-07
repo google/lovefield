@@ -565,6 +565,8 @@ function constructTree3() {
  * @return {!lf.proc.SelectStep}
  */
 function createSelectStep(queryContext, predicateIndex) {
-  return new lf.proc.SelectStep(/** @type {!lf.pred.PredicateNode} */ (
-      queryContext.where).getChildAt(predicateIndex).getId());
+  return new lf.proc.SelectStep(
+      /** @type {!lf.pred.PredicateNode} */ (
+      /** @type {!lf.pred.PredicateNode} */ (queryContext.where).getChildAt(
+          predicateIndex)).getId());
 }
