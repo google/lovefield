@@ -145,6 +145,15 @@ function testGetForeignKeyTwoSpecs() {
       getConstraint().getForeignKeys()[1]);
 }
 
+function checkObjectEquals(expected, actual) {
+  for (var key in actual) {
+    if (key.indexOf('closure_uid_') != -1) {
+      delete actual[key];
+      break;
+    }
+  }
+  assertObjectEquals(expected, actual);
+}
 
 function testGetParentForeignKeys() {
   var schema = createBuilder().getSchema();
@@ -156,7 +165,7 @@ function testGetParentForeignKeys() {
     timing: lf.ConstraintTiming.IMMEDIATE
   }, 'Employee.fk_JobId');
   assertEquals(1, parentForeignKeys.length);
-  assertObjectEquals(spec, parentForeignKeys[0]);
+  checkObjectEquals(spec, parentForeignKeys[0]);
 }
 
 

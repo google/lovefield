@@ -10923,41 +10923,79 @@ lf.Global.prototype.isRegistered = function(serviceId) {
   return this.services_.has(serviceId.toString());
 };
 goog.exportProperty(lf.Global.prototype, "isRegistered", lf.Global.prototype.isRegistered);
+lf.structs.MapSet = function() {
+  this.map_ = lf.structs.map.create();
+  this.size = 0;
+};
+lf.structs.MapSet.prototype.set = function(key, value) {
+  var valueSet = this.map_.get(key) || null;
+  goog.isNull(valueSet) && (valueSet = lf.structs.set.create(), this.map_.set(key, valueSet));
+  valueSet.has(value) || (valueSet.add(value), this.size++);
+  return this;
+};
+lf.structs.MapSet.prototype.setMany = function(key, values) {
+  var valueSet = this.map_.get(key) || null;
+  goog.isNull(valueSet) && (valueSet = lf.structs.set.create(), this.map_.set(key, valueSet));
+  values.forEach(function(value) {
+    valueSet.has(value) || (valueSet.add(value), this.size++);
+  }, this);
+  return this;
+};
+lf.structs.MapSet.prototype.delete = function(key, value) {
+  var valueSet = this.map_.get(key, null);
+  if (goog.isNull(valueSet)) {
+    return !1;
+  }
+  var didRemove = valueSet.delete(value);
+  didRemove && (--this.size, 0 == valueSet.size && this.map_.delete(key));
+  return didRemove;
+};
+lf.structs.MapSet.prototype.get = function(key) {
+  var valueSet = this.map_.get(key) || null;
+  return goog.isNull(valueSet) ? null : lf.structs.set.values(valueSet);
+};
+lf.structs.MapSet.prototype.clear = function() {
+  this.map_.clear();
+  this.size = 0;
+};
+lf.structs.MapSet.prototype.keys = function() {
+  return lf.structs.map.keys(this.map_);
+};
+lf.structs.MapSet.prototype.values = function() {
+  var results = [];
+  this.map_.forEach(function(valueSet) {
+    results = results.concat(lf.structs.set.values(valueSet));
+  });
+  return results;
+};
 lf.schema.Info = function(dbSchema) {
   this.schema_ = dbSchema;
-  this.referringFk_ = lf.structs.map.create();
-  this.parents_ = lf.structs.map.create();
+  this.referringFk_ = new lf.structs.MapSet;
+  this.parents_ = new lf.structs.MapSet;
   this.colParent_ = lf.structs.map.create();
-  this.children_ = lf.structs.map.create();
-  this.colChild_ = lf.structs.map.create();
+  this.children_ = new lf.structs.MapSet;
+  this.colChild_ = new lf.structs.MapSet;
   this.init_();
 };
 lf.schema.Info.prototype.init_ = function() {
   this.schema_.tables().forEach(function(table) {
-    var parents = lf.structs.set.create();
+    var tableName = table.getName();
     table.getConstraint().getForeignKeys().forEach(function(fkSpec) {
-      var parentRefs = this.referringFk_.get(fkSpec.parentTable) || [];
-      parentRefs.push(fkSpec);
-      this.referringFk_.set(fkSpec.parentTable, parentRefs);
-      parents.add(this.schema_.table(fkSpec.parentTable));
-      var childOfParent = this.children_.get(fkSpec.parentTable);
-      childOfParent || (childOfParent = lf.structs.set.create());
-      childOfParent.add(table);
-      this.children_.set(fkSpec.parentTable, childOfParent);
+      this.referringFk_.set(fkSpec.parentTable, fkSpec);
+      this.parents_.set(tableName, this.schema_.table(fkSpec.parentTable));
+      this.children_.set(fkSpec.parentTable, table);
       this.colParent_.set(table.getName() + "." + fkSpec.childColumn, fkSpec.parentTable);
-      var ref = fkSpec.parentTable + "." + fkSpec.parentColumn, referred = this.colChild_.get(ref) || [];
-      referred.push(table.getName());
-      this.colChild_.set(ref, referred);
+      var ref = fkSpec.parentTable + "." + fkSpec.parentColumn;
+      this.colChild_.set(ref, table.getName());
     }, this);
-    0 != parents.size && this.parents_.set(table.getName(), parents);
   }, this);
 };
 lf.schema.Info.prototype.getReferencingForeignKeys = function(tableName) {
-  return this.referringFk_.get(tableName) || null;
+  return this.referringFk_.get(tableName);
 };
 lf.schema.Info.prototype.expandScope_ = function(tableName, map) {
-  var set = map.get(tableName);
-  return set ? lf.structs.set.values(set) : [];
+  var values = map.get(tableName);
+  return goog.isNull(values) ? [] : values;
 };
 lf.schema.Info.prototype.getParentTables = function(tableName) {
   return this.expandScope_(tableName, this.parents_);
