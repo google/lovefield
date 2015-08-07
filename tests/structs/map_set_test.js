@@ -34,8 +34,10 @@ function populateMap() {
 }
 
 function testSet() {
+  assertFalse(mapSet.has(10));
   mapSet.set(10, 11);
   assertEquals(1, mapSet.size);
+  assertTrue(mapSet.has(10));
 
   // Set the same key/value shall not alter the map.
   mapSet.set(10, 11);

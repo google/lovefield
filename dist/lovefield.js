@@ -7649,184 +7649,53 @@ lf.pred.CombinedPredicate.prototype.combineResults_ = function(results) {
 lf.pred.CombinedPredicate.prototype.toString = function() {
   return "combined_pred_" + this.operator.toString();
 };
-goog.labs.object = {};
-goog.labs.object.is = function(v, v2) {
-  return v === v2 ? 0 !== v || 1 / v === 1 / v2 : v !== v && v2 !== v2;
+lf.structs.MapSet = function() {
+  this.map_ = lf.structs.map.create();
+  this.size = 0;
 };
-goog.labs.structs = {};
-goog.labs.structs.Map = function() {
-  this.clear();
+lf.structs.MapSet.prototype.has = function(key) {
+  return this.map_.has(key);
 };
-goog.labs.structs.Map.objectPropertyIsEnumerable_ = Object.prototype.propertyIsEnumerable;
-goog.labs.structs.Map.objectHasOwnProperty_ = Object.prototype.hasOwnProperty;
-goog.labs.structs.Map.prototype.set = function(key, value) {
-  this.assertKeyIsString_(key);
-  var newKey = !this.hasKeyInPrimaryStore_(key);
-  this.map_[key] = value;
-  if ("__proto__" == key || !goog.labs.structs.Map.BrowserFeature.OBJECT_CREATE_SUPPORTED && !goog.labs.structs.Map.objectPropertyIsEnumerable_.call(this.map_, key)) {
-    delete this.map_[key];
-    var index = goog.array.indexOf(this.secondaryStoreKeys_, key);
-    if (newKey = 0 > index) {
-      index = this.secondaryStoreKeys_.length;
-    }
-    this.secondaryStoreKeys_[index] = key;
-    this.secondaryStoreValues_[index] = value;
-  }
-  newKey && this.count_++;
+lf.structs.MapSet.prototype.set = function(key, value) {
+  var valueSet = this.map_.get(key) || null;
+  goog.isNull(valueSet) && (valueSet = lf.structs.set.create(), this.map_.set(key, valueSet));
+  valueSet.has(value) || (valueSet.add(value), this.size++);
+  return this;
 };
-goog.labs.structs.Map.prototype.get = function(key, opt_default) {
-  this.assertKeyIsString_(key);
-  if (this.hasKeyInPrimaryStore_(key)) {
-    return this.map_[key];
-  }
-  var index = goog.array.indexOf(this.secondaryStoreKeys_, key);
-  return 0 <= index ? this.secondaryStoreValues_[index] : opt_default;
-};
-goog.labs.structs.Map.prototype.remove = function(key) {
-  this.assertKeyIsString_(key);
-  if (this.hasKeyInPrimaryStore_(key)) {
-    return this.count_--, delete this.map_[key], !0;
-  }
-  var index = goog.array.indexOf(this.secondaryStoreKeys_, key);
-  return 0 <= index ? (this.count_--, goog.array.removeAt(this.secondaryStoreKeys_, index), goog.array.removeAt(this.secondaryStoreValues_, index), !0) : !1;
-};
-goog.labs.structs.Map.prototype.addAll = function(map) {
-  goog.array.forEach(map.getKeys(), function(key) {
-    this.set(key, map.get(key));
+lf.structs.MapSet.prototype.setMany = function(key, values) {
+  var valueSet = this.map_.get(key) || null;
+  goog.isNull(valueSet) && (valueSet = lf.structs.set.create(), this.map_.set(key, valueSet));
+  values.forEach(function(value) {
+    valueSet.has(value) || (valueSet.add(value), this.size++);
   }, this);
+  return this;
 };
-goog.labs.structs.Map.prototype.isEmpty = function() {
-  return !this.count_;
-};
-goog.labs.structs.Map.prototype.getCount = function() {
-  return this.count_;
-};
-goog.labs.structs.Map.prototype.containsKey = function(key) {
-  this.assertKeyIsString_(key);
-  return this.hasKeyInPrimaryStore_(key) || goog.array.contains(this.secondaryStoreKeys_, key);
-};
-goog.labs.structs.Map.prototype.containsValue = function(value) {
-  var found = goog.object.some(this.map_, function(v, k) {
-    return this.hasKeyInPrimaryStore_(k) && goog.labs.object.is(v, value);
-  }, this);
-  return found || goog.array.contains(this.secondaryStoreValues_, value);
-};
-goog.labs.structs.Map.prototype.getKeys = function() {
-  var keys;
-  if (goog.labs.structs.Map.BrowserFeature.OBJECT_KEYS_SUPPORTED) {
-    keys = goog.array.clone(Object.keys(this.map_));
-  } else {
-    keys = [];
-    for (var key in this.map_) {
-      goog.labs.structs.Map.objectHasOwnProperty_.call(this.map_, key) && keys.push(key);
-    }
-  }
-  goog.array.extend(keys, this.secondaryStoreKeys_);
-  return keys;
-};
-goog.labs.structs.Map.prototype.getValues = function() {
-  for (var values = [], keys = this.getKeys(), i = 0;i < keys.length;i++) {
-    values.push(this.get(keys[i]));
-  }
-  return values;
-};
-goog.labs.structs.Map.prototype.getEntries = function() {
-  for (var entries = [], keys = this.getKeys(), i = 0;i < keys.length;i++) {
-    var key = keys[i];
-    entries.push([key, this.get(key)]);
-  }
-  return entries;
-};
-goog.labs.structs.Map.prototype.clear = function() {
-  this.map_ = goog.labs.structs.Map.BrowserFeature.OBJECT_CREATE_SUPPORTED ? Object.create(null) : {};
-  this.secondaryStoreKeys_ = [];
-  this.secondaryStoreValues_ = [];
-  this.count_ = 0;
-};
-goog.labs.structs.Map.prototype.clone = function() {
-  var map = new goog.labs.structs.Map;
-  map.addAll(this);
-  return map;
-};
-goog.labs.structs.Map.prototype.hasKeyInPrimaryStore_ = function(key) {
-  return "__proto__" == key ? !1 : goog.labs.structs.Map.BrowserFeature.OBJECT_CREATE_SUPPORTED ? key in this.map_ : goog.labs.structs.Map.objectHasOwnProperty_.call(this.map_, key);
-};
-goog.labs.structs.Map.prototype.assertKeyIsString_ = function(key) {
-  goog.asserts.assert(goog.isString(key), "key must be a string.");
-};
-goog.labs.structs.Map.BrowserFeature = {OBJECT_CREATE_SUPPORTED:!!Object.create, OBJECT_KEYS_SUPPORTED:!!Object.keys};
-goog.labs.structs.Multimap = function() {
-  this.clear();
-};
-goog.labs.structs.Multimap.prototype.count_ = 0;
-goog.labs.structs.Multimap.prototype.clear = function() {
-  this.count_ = 0;
-  this.map_ = new goog.labs.structs.Map;
-};
-goog.labs.structs.Multimap.prototype.clone = function() {
-  var map = new goog.labs.structs.Multimap;
-  map.addAllFromMultimap(this);
-  return map;
-};
-goog.labs.structs.Multimap.prototype.add = function(key, value) {
-  var values = this.map_.get(key);
-  values || this.map_.set(key, values = []);
-  values.push(value);
-  this.count_++;
-};
-goog.labs.structs.Multimap.prototype.addAllFromMultimap = function(map) {
-  goog.array.forEach(map.getEntries(), function(entry) {
-    this.add(entry[0], entry[1]);
-  }, this);
-};
-goog.labs.structs.Multimap.prototype.get = function(key) {
-  var values = this.map_.get(key);
-  return values ? goog.array.clone(values) : [];
-};
-goog.labs.structs.Multimap.prototype.remove = function(key, value) {
-  var values = this.map_.get(key);
-  if (!values) {
+lf.structs.MapSet.prototype.delete = function(key, value) {
+  var valueSet = this.map_.get(key, null);
+  if (goog.isNull(valueSet)) {
     return !1;
   }
-  var removed = goog.array.removeIf(values, function(v) {
-    return goog.labs.object.is(value, v);
+  var didRemove = valueSet.delete(value);
+  didRemove && (--this.size, 0 == valueSet.size && this.map_.delete(key));
+  return didRemove;
+};
+lf.structs.MapSet.prototype.get = function(key) {
+  var valueSet = this.map_.get(key) || null;
+  return goog.isNull(valueSet) ? null : lf.structs.set.values(valueSet);
+};
+lf.structs.MapSet.prototype.clear = function() {
+  this.map_.clear();
+  this.size = 0;
+};
+lf.structs.MapSet.prototype.keys = function() {
+  return lf.structs.map.keys(this.map_);
+};
+lf.structs.MapSet.prototype.values = function() {
+  var results = [];
+  this.map_.forEach(function(valueSet) {
+    results.push.apply(results, lf.structs.set.values(valueSet));
   });
-  removed && (this.count_--, 0 == values.length && this.map_.remove(key));
-  return removed;
-};
-goog.labs.structs.Multimap.prototype.removeAll = function(key) {
-  var values = this.map_.get(key);
-  return this.map_.remove(key) ? (this.count_ -= values.length, !0) : !1;
-};
-goog.labs.structs.Multimap.prototype.isEmpty = function() {
-  return !this.count_;
-};
-goog.labs.structs.Multimap.prototype.getCount = function() {
-  return this.count_;
-};
-goog.labs.structs.Multimap.prototype.containsKey = function(key) {
-  return this.map_.containsKey(key);
-};
-goog.labs.structs.Multimap.prototype.containsValue = function(value) {
-  return goog.array.some(this.map_.getValues(), function(values) {
-    return goog.array.some(values, function(v) {
-      return goog.labs.object.is(v, value);
-    });
-  });
-};
-goog.labs.structs.Multimap.prototype.getKeys = function() {
-  return this.map_.getKeys();
-};
-goog.labs.structs.Multimap.prototype.getValues = function() {
-  return goog.array.flatten(this.map_.getValues());
-};
-goog.labs.structs.Multimap.prototype.getEntries = function() {
-  for (var keys = this.getKeys(), entries = [], i = 0;i < keys.length;i++) {
-    for (var key = keys[i], values = this.get(key), j = 0;j < values.length;j++) {
-      entries.push([key, values[j]]);
-    }
-  }
-  return entries;
+  return results;
 };
 lf.pred.JoinPredicate = function(leftColumn, rightColumn, evaluatorType) {
   lf.pred.PredicateNode.call(this);
@@ -7932,23 +7801,18 @@ lf.pred.JoinPredicate.prototype.evalRelationsHashJoin = function(leftRelation, r
   if (isOuterJoin || leftRelation.entries.length > rightRelation.entries.length) {
     minRelation = rightRelation, maxRelation = leftRelation, minColumn = this.rightColumn, maxColumn = this.leftColumn;
   }
-  var map = new goog.labs.structs.Multimap, combinedEntries = [];
+  var map = new lf.structs.MapSet, combinedEntries = [];
   minRelation.entries.forEach(function(entry) {
     var key = String(entry.getField(minColumn));
-    map.add(key, entry);
+    map.set(key, entry);
   });
   var minRelationTableNames = minRelation.getTables(), maxRelationTableNames = maxRelation.getTables();
   maxRelation.entries.forEach(function(entry) {
     var value = entry.getField(maxColumn), key = String(value);
-    if (!goog.isNull(value) && map.containsKey(key)) {
-      var entries = map.get(key);
-      entries.forEach(function(innerEntry) {
-        var combinedEntry = lf.proc.RelationEntry.combineEntries(entry, maxRelationTableNames, innerEntry, minRelationTableNames);
-        combinedEntries.push(combinedEntry);
-      });
-    } else {
-      isOuterJoin && combinedEntries.push(this.createCombinedEntryForUnmatched_(entry, maxRelationTableNames));
-    }
+    !goog.isNull(value) && map.has(key) ? map.get(key).forEach(function(innerEntry) {
+      var combinedEntry = lf.proc.RelationEntry.combineEntries(entry, maxRelationTableNames, innerEntry, minRelationTableNames);
+      combinedEntries.push(combinedEntry);
+    }) : isOuterJoin && combinedEntries.push(this.createCombinedEntryForUnmatched_(entry, maxRelationTableNames));
   }.bind(this));
   var srcTables = leftRelation.getTables().concat(rightRelation.getTables());
   return new lf.proc.Relation(combinedEntries, srcTables);
@@ -9542,16 +9406,16 @@ lf.proc.GroupByStep.prototype.execInternal = function(journal, relations) {
   return this.calculateGroupedRelations_(relations[0]);
 };
 lf.proc.GroupByStep.prototype.calculateGroupedRelations_ = function(relation) {
-  var groupMap = new goog.labs.structs.Multimap, getKey = function(entry) {
+  var groupMap = new lf.structs.MapSet, getKey = function(entry) {
     var keys = this.groupByColumns_.map(function(column) {
       return entry.getField(column);
     }, this);
     return keys.join(",");
   }.bind(this);
   relation.entries.forEach(function(entry) {
-    groupMap.add(getKey(entry), entry);
+    groupMap.set(getKey(entry), entry);
   }, this);
-  return groupMap.getKeys().map(function(key) {
+  return groupMap.keys().map(function(key) {
     return new lf.proc.Relation(groupMap.get(key), relation.getTables());
   }, this);
 };
@@ -9657,7 +9521,7 @@ lf.proc.BoundKeyRangeCalculator = function(indexSchema, predicateMap) {
 };
 lf.proc.BoundKeyRangeCalculator.prototype.calculateKeyRangeMap_ = function(queryContext) {
   var keyRangeMap = lf.structs.map.create();
-  this.predicateMap_.getKeys().forEach(function(columnName) {
+  this.predicateMap_.keys().forEach(function(columnName) {
     var predicateIds = this.predicateMap_.get(columnName), predicates = predicateIds.map(function(predicateId) {
       return queryContext.getPredicate(predicateId);
     }, this), keyRangeSetSoFar = new lf.index.SingleKeyRangeSet([lf.index.SingleKeyRange.all()]);
@@ -9745,7 +9609,7 @@ lf.proc.IndexRangeCandidate = function(indexStore, indexSchema) {
   this.keyRangeCalculator_ = this.predicateMap_ = null;
 };
 lf.proc.IndexRangeCandidate.prototype.getPredicateIds = function() {
-  return goog.isNull(this.predicateMap_) ? [] : this.predicateMap_.getValues();
+  return goog.isNull(this.predicateMap_) ? [] : this.predicateMap_.values();
 };
 lf.proc.IndexRangeCandidate.prototype.getKeyRangeCalculator = function() {
   goog.asserts.assert(this.predicateMap_);
@@ -9755,7 +9619,7 @@ lf.proc.IndexRangeCandidate.prototype.getKeyRangeCalculator = function() {
 lf.proc.IndexRangeCandidate.prototype.consumePredicates_ = function(predicates) {
   predicates.forEach(function(predicate) {
     var columnName = predicate.getColumns()[0].getName();
-    this.indexedColumnNames_.has(columnName) && (goog.isNull(this.predicateMap_) && (this.predicateMap_ = new goog.labs.structs.Multimap), this.predicateMap_.add(columnName, predicate.getId()));
+    this.indexedColumnNames_.has(columnName) && (goog.isNull(this.predicateMap_) && (this.predicateMap_ = new lf.structs.MapSet), this.predicateMap_.set(columnName, predicate.getId()));
   }, this);
 };
 lf.proc.IndexRangeCandidate.prototype.isUsable = function() {
@@ -9763,7 +9627,7 @@ lf.proc.IndexRangeCandidate.prototype.isUsable = function() {
     return !1;
   }
   for (var unboundColumnFound = !1, isUsable = !0, i = 0;i < this.indexSchema.columns.length;i++) {
-    var column = this.indexSchema.columns[i], isBound = this.predicateMap_.containsKey(column.schema.getName());
+    var column = this.indexSchema.columns[i], isBound = this.predicateMap_.has(column.schema.getName());
     if (unboundColumnFound && isBound) {
       isUsable = !1;
       break;
@@ -10923,51 +10787,6 @@ lf.Global.prototype.isRegistered = function(serviceId) {
   return this.services_.has(serviceId.toString());
 };
 goog.exportProperty(lf.Global.prototype, "isRegistered", lf.Global.prototype.isRegistered);
-lf.structs.MapSet = function() {
-  this.map_ = lf.structs.map.create();
-  this.size = 0;
-};
-lf.structs.MapSet.prototype.set = function(key, value) {
-  var valueSet = this.map_.get(key) || null;
-  goog.isNull(valueSet) && (valueSet = lf.structs.set.create(), this.map_.set(key, valueSet));
-  valueSet.has(value) || (valueSet.add(value), this.size++);
-  return this;
-};
-lf.structs.MapSet.prototype.setMany = function(key, values) {
-  var valueSet = this.map_.get(key) || null;
-  goog.isNull(valueSet) && (valueSet = lf.structs.set.create(), this.map_.set(key, valueSet));
-  values.forEach(function(value) {
-    valueSet.has(value) || (valueSet.add(value), this.size++);
-  }, this);
-  return this;
-};
-lf.structs.MapSet.prototype.delete = function(key, value) {
-  var valueSet = this.map_.get(key, null);
-  if (goog.isNull(valueSet)) {
-    return !1;
-  }
-  var didRemove = valueSet.delete(value);
-  didRemove && (--this.size, 0 == valueSet.size && this.map_.delete(key));
-  return didRemove;
-};
-lf.structs.MapSet.prototype.get = function(key) {
-  var valueSet = this.map_.get(key) || null;
-  return goog.isNull(valueSet) ? null : lf.structs.set.values(valueSet);
-};
-lf.structs.MapSet.prototype.clear = function() {
-  this.map_.clear();
-  this.size = 0;
-};
-lf.structs.MapSet.prototype.keys = function() {
-  return lf.structs.map.keys(this.map_);
-};
-lf.structs.MapSet.prototype.values = function() {
-  var results = [];
-  this.map_.forEach(function(valueSet) {
-    results = results.concat(lf.structs.set.values(valueSet));
-  });
-  return results;
-};
 lf.schema.Info = function(dbSchema) {
   this.schema_ = dbSchema;
   this.referringFk_ = new lf.structs.MapSet;
