@@ -113,10 +113,23 @@ function testSetUtilsForString() {
 }
 
 function testSetUtilsForObjects() {
+  /**
+   * @param {number} i
+   * @param {string} name
+   * @constructor
+   */
+  var myClass = function(i, name) {
+    /** @type {number} */
+    this.i = i;
+
+    /** @type {string} */
+    this.name = name;
+  };
+
   var rows = new Array(10);
   var set = lf.structs.set.create();
   for (var i = 0; i < 10; ++i) {
-    rows[i] = {id: i, name: i + '-string'};
+    rows[i] = new myClass(i, i + '-string');
     set.add(rows[i]);
   }
   set.add(null);
@@ -125,13 +138,18 @@ function testSetUtilsForObjects() {
   var values = lf.structs.set.values(set);
   for (var i = 0; i < 10; ++i) {
     assertEquals(rows[i], values[i]);
+    assertTrue(rows[i] instanceof myClass);
   }
   assertEquals(null, values[10]);
 
   var set2 = lf.structs.set.create(rows);
+  assertEquals(10, set2.size);
   var diffSet = lf.structs.set.diff(set, set2);
   assertEquals(1, diffSet.size);
   assertTrue(diffSet.has(null));
+
+  var set3 = lf.structs.set.create([rows[0]]);
+  assertEquals(1, set3.size);
 }
 
 function testIsSubSetAndEquals() {
