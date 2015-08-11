@@ -7841,6 +7841,7 @@ lf.pred.JoinPredicate = function(leftColumn, rightColumn, evaluatorType) {
   this.keyOfIndexFn_ = registry.getKeyOfIndexEvaluator(this.leftColumn.getType());
 };
 goog.inherits(lf.pred.JoinPredicate, lf.pred.PredicateNode);
+lf.pred.JoinPredicate.BLOCK_SIZE_EXPONENT_ = 8;
 lf.pred.JoinPredicate.prototype.copy = function() {
   var clone = new lf.pred.JoinPredicate(this.leftColumn, this.rightColumn, this.evaluatorType);
   clone.setId(this.getId());
@@ -7867,6 +7868,30 @@ lf.pred.JoinPredicate.prototype.reverse = function() {
   var newPredicate = new lf.pred.JoinPredicate(this.rightColumn, this.leftColumn, evaluatorType);
   return newPredicate;
 };
+lf.pred.JoinPredicate.prototype.reverseSelf_ = function() {
+  var temp = this.leftColumn;
+  this.leftColumn = this.rightColumn;
+  this.rightColumn = temp;
+  var evaluatorType = this.evaluatorType;
+  switch(this.evaluatorType) {
+    case lf.eval.Type.GT:
+      evaluatorType = lf.eval.Type.LT;
+      break;
+    case lf.eval.Type.LT:
+      evaluatorType = lf.eval.Type.GT;
+      break;
+    case lf.eval.Type.GTE:
+      evaluatorType = lf.eval.Type.LTE;
+      break;
+    case lf.eval.Type.LTE:
+      evaluatorType = lf.eval.Type.GTE;
+      break;
+    default:
+      return;
+  }
+  this.evaluatorType = evaluatorType;
+  this.evaluatorFn_ = lf.eval.Registry.getInstance().getEvaluator(this.leftColumn.getType(), this.evaluatorType);
+};
 lf.pred.JoinPredicate.prototype.eval = function(relation) {
   var entries = relation.entries.filter(function(entry) {
     var leftValue = entry.getField(this.leftColumn), rightValue = entry.getField(this.rightColumn);
@@ -7886,7 +7911,7 @@ lf.pred.JoinPredicate.prototype.appliesToRight_ = function(relation) {
 lf.pred.JoinPredicate.prototype.detectLeftRight_ = function(relation1, relation2) {
   var left = null, right = null;
   this.appliesToLeft_(relation1) ? (this.assertRelationsApply_(relation1, relation2), left = relation1, right = relation2) : (this.assertRelationsApply_(relation2, relation1), left = relation2, right = relation1);
-  return [left, right];
+  return left.entries.length > right.entries.length ? (this.reverseSelf_(), this.assertRelationsApply_(right, left), [right, left]) : [left, right];
 };
 lf.pred.JoinPredicate.prototype.assertRelationsApply_ = function(leftRelation, rightRelation) {
   goog.asserts.assert(this.appliesToLeft_(leftRelation), "Mismatch between join predicate left operand and right relation.");
@@ -7909,18 +7934,21 @@ lf.pred.JoinPredicate.prototype.evalRelationsNestedLoopJoin = function(leftRelat
   isOuterJoin || (leftRightRelations = this.detectLeftRight_(leftRelation, rightRelation));
   leftRelation = leftRightRelations[0];
   rightRelation = leftRightRelations[1];
-  for (var combinedEntries = [], leftRelationTables = leftRelation.getTables(), rightRelationTables = rightRelation.getTables(), i = 0;i < leftRelation.entries.length;i++) {
-    var matchFound = !1, leftValue = leftRelation.entries[i].getField(this.leftColumn);
-    if (!goog.isNull(leftValue)) {
-      for (var j = 0;j < rightRelation.entries.length;j++) {
-        var predicateResult = this.evaluatorFn_(leftValue, rightRelation.entries[j].getField(this.rightColumn));
-        if (predicateResult) {
-          var matchFound = !0, combinedEntry = lf.proc.RelationEntry.combineEntries(leftRelation.entries[i], leftRelationTables, rightRelation.entries[j], rightRelationTables);
-          combinedEntries.push(combinedEntry);
+  for (var combinedEntries = [], leftRelationTables = leftRelation.getTables(), rightRelationTables = rightRelation.getTables(), leftEntriesLength = leftRelation.entries.length, rightEntriesLength = rightRelation.entries.length, blockNumBits = lf.pred.JoinPredicate.BLOCK_SIZE_EXPONENT_, blockCount = rightEntriesLength + (1 << blockNumBits) - 1 >> blockNumBits, currentBlock = 0;currentBlock < blockCount;) {
+    for (var i = 0;i < leftEntriesLength;i++) {
+      var matchFound = !1, leftValue = leftRelation.entries[i].getField(this.leftColumn);
+      if (!goog.isNull(leftValue)) {
+        for (var rightLimit = Math.min(currentBlock + 1 << blockNumBits, rightEntriesLength), j = currentBlock << blockNumBits;j < rightLimit;j++) {
+          var predicateResult = this.evaluatorFn_(leftValue, rightRelation.entries[j].getField(this.rightColumn));
+          if (predicateResult) {
+            var matchFound = !0, combinedEntry = lf.proc.RelationEntry.combineEntries(leftRelation.entries[i], leftRelationTables, rightRelation.entries[j], rightRelationTables);
+            combinedEntries.push(combinedEntry);
+          }
         }
       }
+      isOuterJoin && !matchFound && combinedEntries.push(this.createCombinedEntryForUnmatched_(leftRelation.entries[i], leftRelationTables));
     }
-    isOuterJoin && !matchFound && combinedEntries.push(this.createCombinedEntryForUnmatched_(leftRelation.entries[i], leftRelationTables));
+    currentBlock++;
   }
   var srcTables = leftRelation.getTables().concat(rightRelation.getTables());
   return new lf.proc.Relation(combinedEntries, srcTables);
@@ -7931,9 +7959,7 @@ lf.pred.JoinPredicate.prototype.evalRelationsHashJoin = function(leftRelation, r
   leftRelation = leftRightRelations[0];
   rightRelation = leftRightRelations[1];
   var minRelation = leftRelation, maxRelation = rightRelation, minColumn = this.leftColumn, maxColumn = this.rightColumn;
-  if (isOuterJoin || leftRelation.entries.length > rightRelation.entries.length) {
-    minRelation = rightRelation, maxRelation = leftRelation, minColumn = this.rightColumn, maxColumn = this.leftColumn;
-  }
+  isOuterJoin && (minRelation = rightRelation, maxRelation = leftRelation, minColumn = this.rightColumn, maxColumn = this.leftColumn);
   var map = new lf.structs.MapSet, combinedEntries = [];
   minRelation.entries.forEach(function(entry) {
     var key = String(entry.getField(minColumn));

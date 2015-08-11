@@ -742,6 +742,10 @@ lf.testing.perf.SelectBenchmark.prototype.queryJoinTheta = function() {
  * @return {!IThenable<boolean>}
  */
 lf.testing.perf.SelectBenchmark.prototype.verifyJoinTheta = function(results) {
+  if (results.length !=
+      this.dataGenerator_.employeeGroundTruth.thetaJoinSalaryIds.length) {
+    return goog.Promise.resolve(false);
+  }
   var validated = results.every(function(obj, i) {
     return obj[this.e_.getName()][this.e_.id.getName()] ==
         this.dataGenerator_.employeeGroundTruth.thetaJoinSalaryIds[i];

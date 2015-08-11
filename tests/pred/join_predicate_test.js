@@ -119,11 +119,50 @@ function testJoinPredicate_reverse() {
     lf.eval.Type.EQ,
     lf.eval.Type.NEQ
   ];
+  checkJoinPredicate_ExplicitReverse(predicates, expectedEvalTypes);
+  checkJoinPredicate_NestedLoop_Reverse(predicates, expectedEvalTypes);
+}
+
+
+/**
+ * Tests that JoinPredicate.reverse() works correctly.
+ * @param {!Array<!lf.pred.JoinPredicate>} predicates
+ * @param {!Array<!lf.eval.Type>} expectedEvalTypes
+ */
+function checkJoinPredicate_ExplicitReverse(predicates, expectedEvalTypes) {
   for (var i = 0; i < predicates.length; i++) {
     var reversePredicate = predicates[i].reverse();
     assertEquals(predicates[i].leftColumn, reversePredicate.rightColumn);
     assertEquals(predicates[i].rightColumn, reversePredicate.leftColumn);
     assertEquals(expectedEvalTypes[i], reversePredicate.evaluatorType);
+  }
+}
+
+
+/**
+ * Tests that Nested Loop Join reverses join order and evaluation type when
+ * right table is smaller than the left.
+ * @param {!Array<!lf.pred.JoinPredicate>} predicates
+ * @param {!Array<!lf.eval.Type>} expectedEvalTypes
+ */
+function checkJoinPredicate_NestedLoop_Reverse(predicates, expectedEvalTypes) {
+  var sampleRows = getSampleRows();
+  var sampleEmployees = sampleRows.employees;
+  var sampleJobs = sampleRows.jobs;
+
+  var employeeRelation = lf.proc.Relation.fromRows(
+      sampleEmployees, [e.getEffectiveName()]);
+  var jobRelation = lf.proc.Relation.fromRows(
+      sampleJobs, [j.getEffectiveName()]);
+
+  var expectedLeftColumn = predicates[0].leftColumn;
+  var expectedRightColumn = predicates[1].rightColumn;
+  for (var i = 0; i < predicates.length; i++) {
+    predicates[i].
+        evalRelationsNestedLoopJoin(employeeRelation, jobRelation, false);
+    assertEquals(expectedRightColumn, predicates[i].leftColumn);
+    assertEquals(expectedLeftColumn, predicates[i].rightColumn);
+    assertEquals(expectedEvalTypes[i], predicates[i].evaluatorType);
   }
 }
 
@@ -468,6 +507,7 @@ function checkEvalRelations_OuterJoin_UniqueKeys(evalFn) {
       lessJobs, [j.getName()]);
   // For every Job , there are 10 employees according to getSampleRows().
   var numEmployeesPerJob = 10;
+
   var joinPredicate1 = e.jobId.eq(j.id);
   var result = evalFn.call(
       joinPredicate1, employeeRelation, jobRelation, true);
@@ -521,14 +561,16 @@ function checkEvalRelations_TwoOuterJoins(evalFn) {
   var result2 = evalFn.call(joinPredicate2, result, departmentRelation, true);
   // Join employee and job with department.
   assertEquals(expectedResults, result2.entries.length);
-
+  // joinPredicate1 is reversed in previous join.
+  joinPredicate1 = e.jobId.eq(j.id);
   // Tests outer join followed by inner join.
   result = evalFn.call(joinPredicate1, employeeRelation, jobRelation, true);
   assertEquals(sampleRows.employees.length, result.entries.length);
   result2 = evalFn.call(joinPredicate2, result, departmentRelation, false);
   // Join employee and job with department
   assertEquals(expectedResults2, result2.entries.length);
-
+  // joinPredicate2 is reversed in previous join.
+  joinPredicate2 = e.departmentId.eq(d.id);
   // Tests outer join followed by outer join.
   result = evalFn.call(joinPredicate1, employeeRelation, jobRelation, true);
   assertEquals(sampleRows.employees.length, result.entries.length);
@@ -570,6 +612,8 @@ function checkEvalRelations_OuterInnerJoins(evalFn) {
   var expectedResults2 = sampleRows.employees.length - (
       numDepartmentsDeleted * numEmployeesPerDepartment);
   assertEquals(expectedResults, result.entries.length);
+  // joinPredicate1 is reversed in previous join.
+  joinPredicate1 = e.jobId.eq(j.id);
   result = evalFn.call(joinPredicate1, employeeRelation, jobRelation, true);
   assertEquals(sampleRows.employees.length, result.entries.length);
 
