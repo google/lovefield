@@ -109,12 +109,6 @@ gulp.task('debug', function() {
 });
 
 
-/**
- * TODO(dpapad):
- *  1) Accept command line param to run a specific browser, run all browsers by
- *     default.
- *  2) Gather the output of the tests and display something useful (summary).
- */
 gulp.task('test', ['debug'], function() {
   var knownOpts = {
     'browser': [String, null],
@@ -142,7 +136,7 @@ gulp.task('test', ['debug'], function() {
         runner.runJsUnitTests(options.filter, options.browser).then(
             function(results) {
               var failedCount = results.reduce(function(prev, item) {
-                return prev + item['pass'] ? 0 : 1;
+                return prev + (item['pass'] ? 0 : 1);
               }, 0);
               log(results.length + ' tests, ' + failedCount + ' failure(s).');
               log('JSUnit tests: ', failedCount > 0 ? chalk.red('FAILED') :
