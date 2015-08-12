@@ -81,7 +81,8 @@ var Config = function() {
   // Compiler options for release mode.
   this.COMPILER_FLAGS_OPT = {
     compilation_level: 'ADVANCED',
-    create_source_map: 'dist/lf.js.map'
+    create_source_map: 'dist/lf.js.map',
+    define: 'goog.DEBUG=false'
   };
 
   // Compiler options for debug mode.

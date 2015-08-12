@@ -65,22 +65,21 @@ function buildLib(options) {
 }
 
 
-function buildTest(options) {
-  var testFile = pathMod.resolve(options.target);
-  if (!fsMod.existsSync(testFile)) {
-    return Promise.reject(new Error('No such test file: ' + testFile));
-  }
-
+/**
+ * @param {string} testFile
+ * @return {!IThenable}
+ */
+function buildTest(testFile) {
   // Some tests are built against the distritbuted lovefield.min.js and require
   // different setup.
   if (testFile.indexOf('lovefield_min_test.js') != -1) {
-    return buildMinJsTest_(options);
+    return buildMinJsTest_(testFile);
   }
 
   var compilerFlags = mergeObjects({
     export_local_property_definitions: null,
     externs: [config.FIREBASE_EXTERNS]
-  }, getCompilerFlags('compiled'));
+  }, getCompilerFlags('debug'));
 
   return new Promise(function(resolve, reject) {
     var spacTemporaryDir = new temporary.Dir().path;
@@ -108,15 +107,14 @@ function buildTest(options) {
 
 /**
  * Builds tests that pull lovefield.min.js as an external script.
- * @param {{target: string}} options
+ * @param {string} testFile
  * @return {!IThenable}
  */
-function buildMinJsTest_(options) {
-  var testFile = pathMod.resolve(options.target);
+function buildMinJsTest_(testFile) {
   var compilerFlags = mergeObjects({
     export_local_property_definitions: null,
     externs: [config.LOVEFIELD_EXTERNS]
-  }, getCompilerFlags('compiled'));
+  }, getCompilerFlags('debug'));
 
   return new Promise(function(resolve, reject) {
     gulp.src([testFile]).pipe(closureCompiler({
@@ -128,12 +126,23 @@ function buildMinJsTest_(options) {
 }
 
 
-function buildAllTests() {
+/**
+ * Builds tests that pull lovefield.min.js as an external script.
+ * @param {{filter: string}} options
+ * @return {!IThenable}
+ */
+function buildAllTests(options) {
   var glob = /** @type {{sync:!Function}} */ (require('glob'));
   var testFiles = glob.sync('tests/**/*_test.js');
+  if (options.filter) {
+    testFiles = testFiles.filter(function(file) {
+      return file.indexOf(options.filter) != -1;
+    });
+  }
+
   var functionItems = testFiles.map(function(file) {
     return {
-      fn: buildTest.bind(null, {target: file}),
+      fn: buildTest.bind(null, pathMod.resolve(file)),
       name: file
     };
   });
@@ -166,7 +175,7 @@ function generateTestSchemas(outputDir) {
 
 
 /**
- * @param {string} mode One of "debug" or "compiled".
+ * @param {string} mode One of "debug" or "opt".
  * @return {!Object} An object holding all compiler flags and their values.
  */
 function getCompilerFlags(mode) {

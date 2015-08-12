@@ -25,7 +25,6 @@ var nopt = /** @type {!Function} */ (require('nopt'));
 
 var builder = /** @type {{
     buildLib: !Function,
-    buildTest: !Function,
     buildAllTests: !Function}} */ (
         require(pathMod.resolve(
             pathMod.join(__dirname, 'tools/builder.js'))));
@@ -48,15 +47,17 @@ var log = console['log'];
 
 gulp.task('default', function() {
   log('Usage: ');
-  log('  gulp build --target=<all|lib|tests> --mode=<opt|debug>:');
-  log('      Compile source files using Closure compiler');
+  log('  gulp build --target=lib --mode=<opt|debug>:');
+  log('      Generate dist/lf.js using Closure compiler.');
+  log('  gulp build --target=tests --filter=<matching string>:');
+  log('      Compile tests using Closure compiler.');
   log('  gulp debug [--target=<tests|perf>] [--port=<number>]:');
   log('      Start a debug server (default is test at port 8000)');
   log('  gulp lint: Lint against source files');
   log('  gulp test --target=spac: Run SPAC tests');
   log('  gulp test --target=perf [--browser=<chrome|firefox>]:');
   log('      Run perf tests using webdriver (need separate install).');
-  log('  gulp test --target=tests [--filter=<test name> ' +
+  log('  gulp test --target=tests [--filter=<matching string> ' +
       '--browser=<chrome|firefox>]:');
   log('      Run unit tests using webdriver (need separate install).');
 });
@@ -64,6 +65,8 @@ gulp.task('default', function() {
 
 gulp.task('lint', function() {
   return gulp.src([
+    'perf/**/*.js',
+    'spac/**/*.js',
     'src/**/*.js',
     'tests/**/*.js',
     'testing/**/*.js',
@@ -74,18 +77,16 @@ gulp.task('lint', function() {
 
 gulp.task('build', function() {
   var knownOpts = {
+    'filter': [String, null],
     'mode': [String, null],
-    'target': [String, null]
+    'target': [String]
   };
   var options = nopt(knownOpts);
 
-  if (options.target == 'all' || options.target == null) {
-    // TODO(dpapad): Build also the lib here.
-    return builder.buildAllTests();
-  } else if (options.target == 'lib') {
+  if (options.target == 'lib') {
     return builder.buildLib(options);
   } else {
-    return builder.buildTest(options);
+    return builder.buildAllTests(options);
   }
 });
 
