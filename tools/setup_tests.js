@@ -98,7 +98,7 @@ TestEnv.prototype.create = function() {
   fsMod.mkdirSync('html');
   this.createSymLinks(config.CLOSURE_LIBRARY_PATH);
 
-  var allHtmlFiles = this.setupTestsWitoutHtml();
+  var allHtmlFiles = this.setupTestsWithoutHtml();
   allHtmlFiles.push.apply(
       allHtmlFiles,
       this.setupTestsWithHtml());
@@ -123,7 +123,7 @@ TestEnv.prototype.create = function() {
  * Performs necessary setup for tests that do not provide their own HTML file.
  * @return {!Array<string>} A list of all HTML files in the temp directory.
  */
-TestEnv.prototype.setupTestsWitoutHtml = function() {
+TestEnv.prototype.setupTestsWithoutHtml = function() {
   // Generating HTML files for tests that don't already have one.
   var testFilesWithoutHtml = this.queryTestFiles(false);
   log('Generating', testFilesWithoutHtml.length, 'HTML test files ... ');
@@ -146,23 +146,20 @@ TestEnv.prototype.setupTestsWithHtml = function() {
   return testFilesWithHtml.map(function(testFile) {
     var htmlFile = testFile.substr(0, testFile.length - 3) + '.html';
     // Replacing tests/ with html/ in the name.
-    var link = pathMod.join(
-        'html', htmlFile.split(pathMod.sep).slice(1).join(pathMod.sep));
+    var link = htmlFile.replace('tests/', 'html/');
 
-    // Creating a symlink for the HTML file.
-    var src = pathMod.join(this.origPath, htmlFile);
-    var dst = pathMod.join(this.tempPath, link);
-    // Ensure that the entire dir path is constructed.
+    // Creating a symlink for the directory.
+    // For Windows to work, one must comply
+    // 1. use absolute path
+    // 2. create junctions (ignored on platforms other than Windows)
+    // 3. directories only
+    // 4. both directories on the same volume
+    var src = pathMod.dirname(pathMod.resolve(this.origPath, htmlFile));
+    var dst = pathMod.dirname(pathMod.join(this.tempPath, link));
+
+    // Ensure that the parent dir of link target is constructed.
     fsMod.ensureDirSync(pathMod.dirname(dst));
-    fsMod.symlinkSync(src, dst, 'file');
-
-    // Creating a symlink for the JS file, because existing HTML files expect
-    // the JS file to be in the same folder.
-    var link2 = pathMod.join(
-        'html', testFile.split(pathMod.sep).slice(1).join(pathMod.sep));
-    var src2 = pathMod.join(this.origPath, testFile);
-    var dst2 = pathMod.join(this.tempPath, link2);
-    fsMod.symlinkSync(src2, dst2, 'file');
+    fsMod.symlinkSync(src, dst, 'junction');
 
     return link;
   }, this);
@@ -300,7 +297,7 @@ function generateHtmlFile(script) {
  * @return {string} Generated file path.
  */
 function createTestModule(script, moduleName) {
-  var sliceIndex = script.indexOf(pathMod.sep) + 1;
+  var sliceIndex = script.indexOf('/') + 1;
   var target = 'html/' + script.slice(sliceIndex, -2) + 'html';
   var level = target.match(/\//g).length;
   var prefix = new Array(level).join('../') + '../';
@@ -330,7 +327,7 @@ function createTestModule(script, moduleName) {
  * @return {string} Generated file path.
  */
 function createTestFile(script) {
-  var sliceIndex = script.indexOf(pathMod.sep) + 1;
+  var sliceIndex = script.indexOf('/') + 1;
   var target = 'html/' + script.slice(sliceIndex, -2) + 'html';
   var level = target.match(/\//g).length;
   var prefix = new Array(level).join('../') + '../';

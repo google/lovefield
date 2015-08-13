@@ -20,6 +20,7 @@
  * supposed to run via node.js.
  */
 var fsMod = require('fs');
+var mkdirp = /** @type {!Function} */ (require('mkdirp'));
 var pathMod = require('path');
 var noptMod = /** @type {!Function} */ (require('nopt'));
 
@@ -58,10 +59,8 @@ var namespace = args.namespace;
 var outputDir = pathMod.resolve(args.outputdir);
 var templateDir = args.templatedir || __dirname + '/template';
 
-// Creating output directory, if necessary.
-if (!fsMod.existsSync(outputDir)) {
-  fsMod.mkdirSync(outputDir);
-}
+// Ensure output directory.
+mkdirp(outputDir);
 
 // Scan all templates
 var configPath = pathMod.resolve(templateDir + '/templates.json');
