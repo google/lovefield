@@ -18,6 +18,11 @@ var chromeMod = /** @type {{Options: !Function}} */ (
     require('selenium-webdriver/chrome'));
 var firefoxMod = /** @type {{Profile: !Function, Options: !Function}} */ (
     require('selenium-webdriver/firefox'));
+var safariMod = /** @type {{Options: !Function}} */ (
+    require('selenium-webdriver/safari'));
+var ieMod = /** @type {{Options: !Function}} */ (
+    require('selenium-webdriver/ie'));
+
 var fork = /** @type {!Function} */ (require('child_process').fork);
 var glob = /** @type {{sync: !Function}} */ (require('glob'));
 var chalk = /** @type {{green: !Function, red: !Function}} */ (
@@ -57,8 +62,7 @@ function runSpacTests() {
  * Runs tests in a browser context.
  * @param {?string} testPrefix Only tests that match the prefix will be
  *     returned. If null, all tests will run.
- * @param {string} browser The browser to run the unit tests on. Must be one of
- *     'chrome' or 'firefox'.
+ * @param {string} browser The browser to run the unit tests on.
  * @param {string} testsFolder The tests that contains all the test to be run.
  * @return {!IThenable}
  */
@@ -93,8 +97,7 @@ function runBrowserTests(testPrefix, browser, testsFolder) {
  * Runs JSUnit tests.
  * @param {?string} testPrefix Only tests that match the prefix will be
  *     returned. If null, all tests will run.
- * @param {string} browser The browser to run the unit tests on. Must be one of
- *     'chrome' or 'firefox'.
+ * @param {string} browser The browser to run the unit tests on.
  * @return {!IThenable}
  */
 function runJsUnitTests(testPrefix, browser) {
@@ -181,6 +184,20 @@ function getWebDriver(browser) {
     return /** @type {!WebDriverBuilder} */ (new webdriver.Builder()).
         withCapabilities(capabilities).
         setFirefoxOptions(firefoxOptions).
+        build();
+  } else if (browser == 'safari') {
+    var safariOptions = /** @type {!SafariOptions} */ (new safariMod.Options());
+    safariOptions.setCleanSession();
+    return /** @type {!WebDriverBuilder} */ (new webdriver.Builder()).
+        withCapabilities(capabilities).
+        setSafariOptions(safariOptions).
+        build();
+  } else if (browser == 'ie') {
+    var ieOptions = /** @type {!IeOptions} */ (new ieMod.Options());
+    ieOptions.ensureCleanSession();
+    return /** @type {!WebDriverBuilder} */ (new webdriver.Builder()).
+        withCapabilities(capabilities).
+        setIeOptions(ieOptions).
         build();
   } else {
     throw new Error('Unknown browser:', browser);

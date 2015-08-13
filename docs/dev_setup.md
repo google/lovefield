@@ -29,6 +29,13 @@ npm update
 
 2. Build/Test Lovefield
 
+   Lovefield uses Closure JavaScript Compiler to validate/minify/uglify its
+   code. The compiler is brought down by npm automatically.
+
+   Lovefield uses Selenium WebDriver to run automated test. You will need to
+   [download](http://docs.seleniumhq.org/download) and install the WebDrivers
+   manually.
+
    Lovefield uses gulp as its build manager. Run
 
 ```bash

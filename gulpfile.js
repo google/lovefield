@@ -55,11 +55,12 @@ gulp.task('default', function() {
   log('      Start a debug server (default is test at port 8000)');
   log('  gulp lint: Lint against source files');
   log('  gulp test --target=spac: Run SPAC tests');
-  log('  gulp test --target=perf [--browser=<chrome|firefox>]:');
+  log('  gulp test --target=perf [--browser=<target>]:');
   log('      Run perf tests using webdriver (need separate install).');
   log('  gulp test --target=tests [--filter=<matching string> ' +
-      '--browser=<chrome|firefox>]:');
+      '--browser=<target>]:');
   log('      Run unit tests using webdriver (need separate install).');
+  log('      Currently, chrome|firefox|ie|safari are valid webdriver targets.');
 });
 
 
