@@ -664,7 +664,7 @@ function testBuilder_ReverseJoinPredicate() {
   var expected =
       'project(Job.title)\n' +
       '-join(type: outer, impl: nested_loop, ' +
-          'join_pred(Employee.jobId, Job.id))\n' +
+          'join_pred(Employee.jobId lt Job.id))\n' +
       '--table_access(Employee)\n' +
       '--table_access(Job)\n';
   assertEquals(expected, builder.explain());

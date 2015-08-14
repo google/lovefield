@@ -85,14 +85,14 @@ function getSchemaBuilder() {
 function testBothColumnsIndexed() {
   var treeBefore =
       'project()\n' +
-      '-join(type: inner, impl: hash, join_pred(TableA.id, TableB.id))\n' +
+      '-join(type: inner, impl: hash, join_pred(TableA.id eq TableB.id))\n' +
       '--table_access(TableA)\n' +
       '--table_access(TableB)\n';
 
   var treeAfter =
       'project()\n' +
       '-join(type: inner, impl: index_nested_loop, ' +
-          'join_pred(TableA.id, TableB.id))\n' +
+          'join_pred(TableA.id eq TableB.id))\n' +
       '--table_access(TableA)\n' +
       '--no_op_step(TableB)\n';
 
@@ -115,14 +115,14 @@ function testBothColumnsIndexed() {
 function testBothColumnsIndexed_ReversePredicate() {
   var treeBefore =
       'project()\n' +
-      '-join(type: inner, impl: hash, join_pred(TableB.id, TableA.id))\n' +
+      '-join(type: inner, impl: hash, join_pred(TableB.id eq TableA.id))\n' +
       '--table_access(TableA)\n' +
       '--table_access(TableB)\n';
 
   var treeAfter =
       'project()\n' +
       '-join(type: inner, impl: index_nested_loop, ' +
-          'join_pred(TableB.id, TableA.id))\n' +
+          'join_pred(TableB.id eq TableA.id))\n' +
       '--table_access(TableA)\n' +
       '--no_op_step(TableB)\n';
 
@@ -142,14 +142,14 @@ function testBothColumnsIndexed_ReversePredicate() {
 function testLeftTableColumnIndexed() {
   var treeBefore =
       'project()\n' +
-      '-join(type: inner, impl: hash, join_pred(TableA.id, TableC.id))\n' +
+      '-join(type: inner, impl: hash, join_pred(TableA.id eq TableC.id))\n' +
       '--table_access(TableA)\n' +
       '--table_access(TableC)\n';
 
   var treeAfter =
       'project()\n' +
       '-join(type: inner, impl: index_nested_loop, ' +
-          'join_pred(TableA.id, TableC.id))\n' +
+          'join_pred(TableA.id eq TableC.id))\n' +
       '--no_op_step(TableA)\n' +
       '--table_access(TableC)\n';
 
@@ -167,14 +167,14 @@ function testLeftTableColumnIndexed() {
 function testRightTableColumnIndexed() {
   var treeBefore =
       'project()\n' +
-      '-join(type: inner, impl: hash, join_pred(TableA.id, TableC.id))\n' +
+      '-join(type: inner, impl: hash, join_pred(TableA.id eq TableC.id))\n' +
       '--table_access(TableC)\n' +
       '--table_access(TableA)\n';
 
   var treeAfter =
       'project()\n' +
       '-join(type: inner, impl: index_nested_loop, ' +
-          'join_pred(TableA.id, TableC.id))\n' +
+          'join_pred(TableA.id eq TableC.id))\n' +
       '--table_access(TableC)\n' +
       '--no_op_step(TableA)\n';
 
@@ -193,13 +193,14 @@ function testRightTableColumnIndexed() {
 function testSelfJoinTree() {
   var treeBefore =
       'project()\n' +
-      '-join(type: inner, impl: hash, join_pred(t1.id, t2.id))\n' +
+      '-join(type: inner, impl: hash, join_pred(t1.id eq t2.id))\n' +
       '--table_access(TableA as t1)\n' +
       '--table_access(TableA as t2)\n';
 
   var treeAfter =
       'project()\n' +
-      '-join(type: inner, impl: index_nested_loop, join_pred(t1.id, t2.id))\n' +
+      '-join(type: inner, impl: index_nested_loop, ' +
+          'join_pred(t1.id eq t2.id))\n' +
       '--table_access(TableA as t1)\n' +
       '--no_op_step(t2)\n';
 
@@ -221,7 +222,7 @@ function testSelfJoinTree() {
 function testTreeUnaffected() {
   var treeBefore =
       'project()\n' +
-      '-join(type: inner, impl: hash, join_pred(TableC.id, TableB.id))\n' +
+      '-join(type: inner, impl: hash, join_pred(TableC.id eq TableB.id))\n' +
       '--table_access(TableC)\n' +
       '--select(value_pred(TableB.id gt 100))\n' +
       '---table_access(TableB)\n';

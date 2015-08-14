@@ -53,13 +53,13 @@ function testSimpleTree() {
   var j = schema.getJob();
 
   var treeBefore =
-      'select(join_pred(Employee.jobId, Job.id))\n' +
+      'select(join_pred(Employee.jobId eq Job.id))\n' +
       '-cross_product\n' +
       '--table_access(Employee)\n' +
       '--table_access(Job)\n';
 
   var treeAfter =
-      'join(type: inner, join_pred(Employee.jobId, Job.id))\n' +
+      'join(type: inner, join_pred(Employee.jobId eq Job.id))\n' +
       '-table_access(Employee)\n' +
       '-table_access(Job)\n';
 

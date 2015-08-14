@@ -182,8 +182,8 @@ function testTree_JoinPredicates() {
   var j = schema.getJob();
 
   var treeBefore =
-      'select(join_pred(Employee.jobId, Job.id))\n' +
-      '-select(join_pred(Employee.departmentId, Department.id))\n' +
+      'select(join_pred(Employee.jobId eq Job.id))\n' +
+      '-select(join_pred(Employee.departmentId eq Department.id))\n' +
       '--cross_product\n' +
       '---cross_product\n' +
       '----table_access(Employee)\n' +
@@ -191,9 +191,9 @@ function testTree_JoinPredicates() {
       '---table_access(Department)\n';
 
   var treeAfter =
-      'select(join_pred(Employee.departmentId, Department.id))\n' +
+      'select(join_pred(Employee.departmentId eq Department.id))\n' +
       '-cross_product\n' +
-      '--select(join_pred(Employee.jobId, Job.id))\n' +
+      '--select(join_pred(Employee.jobId eq Job.id))\n' +
       '---cross_product\n' +
       '----table_access(Employee)\n' +
       '----table_access(Job)\n' +
@@ -230,11 +230,11 @@ function testTree_JoinPredicates2() {
   var j = schema.getJob();
 
   var treeBefore =
-      'select(join_pred(Country.id, Department.id))\n' +
+      'select(join_pred(Country.id eq Department.id))\n' +
       '-select(value_pred(Employee.id eq empId))\n' +
-      '--select(join_pred(Employee.departmentId, Department.id))\n' +
-      '---select(join_pred(Employee.jobId, Job.id))\n' +
-      '----select(join_pred(JobHistory.jobId, Job.id))\n' +
+      '--select(join_pred(Employee.departmentId eq Department.id))\n' +
+      '---select(join_pred(Employee.jobId eq Job.id))\n' +
+      '----select(join_pred(JobHistory.jobId eq Job.id))\n' +
       '-----cross_product\n' +
       '------cross_product\n' +
       '-------cross_product\n' +
@@ -246,13 +246,13 @@ function testTree_JoinPredicates2() {
       '------table_access(Country)\n';
 
   var treeAfter =
-      'select(join_pred(Country.id, Department.id))\n' +
+      'select(join_pred(Country.id eq Department.id))\n' +
       '-cross_product\n' +
-      '--select(join_pred(JobHistory.jobId, Job.id))\n' +
+      '--select(join_pred(JobHistory.jobId eq Job.id))\n' +
       '---cross_product\n' +
-      '----select(join_pred(Employee.departmentId, Department.id))\n' +
+      '----select(join_pred(Employee.departmentId eq Department.id))\n' +
       '-----cross_product\n' +
-      '------select(join_pred(Employee.jobId, Job.id))\n' +
+      '------select(join_pred(Employee.jobId eq Job.id))\n' +
       '-------cross_product\n' +
       '--------select(value_pred(Employee.id eq empId))\n' +
       '---------table_access(Employee)\n' +
@@ -307,14 +307,14 @@ function testTree_JoinPredicates3() {
   var j2 = schema.getJob().as('j2');
 
   var treeBefore =
-      'select(join_pred(j1.maxSalary, j2.minSalary))\n' +
+      'select(join_pred(j1.maxSalary eq j2.minSalary))\n' +
       '-select(value_pred(j1.maxSalary lt 30000))\n' +
       '--cross_product\n' +
       '---table_access(Job as j1)\n' +
       '---table_access(Job as j2)\n';
 
   var treeAfter =
-      'select(join_pred(j1.maxSalary, j2.minSalary))\n' +
+      'select(join_pred(j1.maxSalary eq j2.minSalary))\n' +
       '-cross_product\n' +
       '--select(value_pred(j1.maxSalary lt 30000))\n' +
       '---table_access(Job as j1)\n' +

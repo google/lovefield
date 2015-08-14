@@ -110,8 +110,8 @@ function testCopy_Nested() {
       'combined_pred_and\n' +
       '-value_pred(Employee.salary gte 200)\n' +
       '-combined_pred_and\n' +
-      '--join_pred(Employee.jobId, Job.id)\n' +
-      '--join_pred(Employee.departmentId, Department.id)\n';
+      '--join_pred(Employee.jobId eq Job.id)\n' +
+      '--join_pred(Employee.departmentId eq Department.id)\n';
 
   var original = /** @type {!lf.pred.PredicateNode} */ (lf.op.and(
       e.salary.gte(200),

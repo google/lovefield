@@ -174,8 +174,6 @@ goog.DEPENDENCIES_ENABLED && (goog.included_ = {}, goog.dependencies_ = {pathIsM
     delete goog.dependencies_.deferred[abspath];
     goog.globalEval(src);
   }
-}, goog.loadModuleFromUrl = function(url) {
-  goog.retrieveAndExecModule_(url);
 }, goog.loadModule = function(moduleDef) {
   var previousState = goog.moduleLoaderState_;
   try {
@@ -7902,7 +7900,7 @@ lf.pred.JoinPredicate.prototype.eval = function(relation) {
   return new lf.proc.Relation(entries, relation.getTables());
 };
 lf.pred.JoinPredicate.prototype.toString = function() {
-  return "join_pred(" + this.leftColumn.getNormalizedName() + ", " + this.rightColumn.getNormalizedName() + ")";
+  return "join_pred(" + this.leftColumn.getNormalizedName() + " " + this.evaluatorType + " " + this.rightColumn.getNormalizedName() + ")";
 };
 lf.pred.JoinPredicate.prototype.appliesToLeft_ = function(relation) {
   return -1 != relation.getTables().indexOf(this.leftColumn.getTable().getEffectiveName());
