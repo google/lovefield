@@ -18,8 +18,7 @@ var chromeMod = /** @type {{Options: !Function}} */ (
     require('selenium-webdriver/chrome'));
 var firefoxMod = /** @type {{Profile: !Function, Options: !Function}} */ (
     require('selenium-webdriver/firefox'));
-var safariMod = /** @type {{Options: !Function}} */ (
-    require('selenium-webdriver/safari'));
+var safariMod;
 var ieMod = /** @type {{Options: !Function}} */ (
     require('selenium-webdriver/ie'));
 
@@ -186,6 +185,10 @@ function getWebDriver(browser) {
         setFirefoxOptions(firefoxOptions).
         build();
   } else if (browser == 'safari') {
+    if (!safariMod) {
+      safariMod = /** @type {{Options: !Function}} */ (
+          require('selenium-webdriver/safari'));
+    }
     var safariOptions = /** @type {!SafariOptions} */ (new safariMod.Options());
     safariOptions.setCleanSession();
     return /** @type {!WebDriverBuilder} */ (new webdriver.Builder()).

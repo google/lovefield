@@ -1230,6 +1230,24 @@ goog.functions.once = function(f) {
     }
   };
 };
+goog.functions.debounce = function(f, interval, opt_scope) {
+  opt_scope && (f = goog.bind(f, opt_scope));
+  var timeout = null;
+  return function() {
+    goog.global.clearTimeout(timeout);
+    timeout = goog.global.setTimeout(f, interval);
+  };
+};
+goog.functions.throttle = function(f, interval, opt_scope) {
+  opt_scope && (f = goog.bind(f, opt_scope));
+  var timeout = null, shouldFire = !1, handleTimeout = function() {
+    timeout = null;
+    shouldFire && (shouldFire = !1, timeout = goog.global.setTimeout(handleTimeout, interval), f());
+  };
+  return function() {
+    timeout ? shouldFire = !0 : (timeout = goog.global.setTimeout(handleTimeout, interval), f());
+  };
+};
 goog.array = {};
 goog.NATIVE_ARRAY_PROTOTYPES = goog.TRUSTED_SITE;
 goog.array.ASSUME_NATIVE_FUNCTIONS = !1;
@@ -3847,9 +3865,9 @@ goog.userAgent.isDocumentModeOrHigher = function(documentMode) {
   return goog.userAgent.DOCUMENT_MODE >= documentMode;
 };
 goog.userAgent.isDocumentMode = goog.userAgent.isDocumentModeOrHigher;
-var JSCompiler_inline_result$$0, doc$$inline_2 = goog.global.document, mode$$inline_3 = goog.userAgent.getDocumentMode_();
-JSCompiler_inline_result$$0 = doc$$inline_2 && goog.userAgent.IE ? mode$$inline_3 || ("CSS1Compat" == doc$$inline_2.compatMode ? parseInt(goog.userAgent.VERSION, 10) : 5) : void 0;
-goog.userAgent.DOCUMENT_MODE = JSCompiler_inline_result$$0;
+var JSCompiler_inline_result$$1, doc$$inline_5 = goog.global.document, mode$$inline_6 = goog.userAgent.getDocumentMode_();
+JSCompiler_inline_result$$1 = doc$$inline_5 && goog.userAgent.IE ? mode$$inline_6 || ("CSS1Compat" == doc$$inline_5.compatMode ? parseInt(goog.userAgent.VERSION, 10) : 5) : void 0;
+goog.userAgent.DOCUMENT_MODE = JSCompiler_inline_result$$1;
 goog.userAgent.product = {};
 goog.userAgent.product.ASSUME_FIREFOX = !1;
 goog.userAgent.product.ASSUME_IPHONE = !1;
