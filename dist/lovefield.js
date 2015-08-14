@@ -8931,6 +8931,9 @@ lf.query.DeleteBuilder.prototype.assertFromPreconditions_ = function() {
   }
 };
 lf.query.DeleteBuilder.prototype.assertWherePreconditions_ = function() {
+  if (!goog.isDefAndNotNull(this.query.from)) {
+    throw new lf.Exception(548);
+  }
   if (goog.isDefAndNotNull(this.query.where)) {
     throw new lf.Exception(516);
   }
@@ -9076,6 +9079,11 @@ lf.query.SelectBuilder.prototype.checkAggregations_ = function() {
     }
   }, this);
 };
+lf.query.SelectBuilder.prototype.checkFrom_ = function(code) {
+  if (!goog.isDefAndNotNull(this.query.from)) {
+    throw new lf.Exception(code);
+  }
+};
 lf.query.SelectBuilder.prototype.from = function(var_args) {
   if (this.fromAlreadyCalled_) {
     throw new lf.Exception(515);
@@ -9087,6 +9095,7 @@ lf.query.SelectBuilder.prototype.from = function(var_args) {
 };
 goog.exportProperty(lf.query.SelectBuilder.prototype, "from", lf.query.SelectBuilder.prototype.from);
 lf.query.SelectBuilder.prototype.where = function(predicate) {
+  this.checkFrom_(548);
   if (this.whereAlreadyCalled_) {
     throw new lf.Exception(516);
   }
@@ -9104,9 +9113,7 @@ lf.query.SelectBuilder.prototype.augmentWhereClause_ = function(predicate) {
   }
 };
 lf.query.SelectBuilder.prototype.innerJoin = function(table, predicate) {
-  if (!goog.isDefAndNotNull(this.query.from)) {
-    throw new lf.Exception(542);
-  }
+  this.checkFrom_(542);
   if (this.whereAlreadyCalled_) {
     throw new lf.Exception(547);
   }
@@ -9116,11 +9123,9 @@ lf.query.SelectBuilder.prototype.innerJoin = function(table, predicate) {
 };
 goog.exportProperty(lf.query.SelectBuilder.prototype, "innerJoin", lf.query.SelectBuilder.prototype.innerJoin);
 lf.query.SelectBuilder.prototype.leftOuterJoin = function(table, predicate) {
+  this.checkFrom_(542);
   if (!(predicate instanceof lf.pred.JoinPredicate)) {
     throw new lf.Exception(541);
-  }
-  if (!goog.isDefAndNotNull(this.query.from)) {
-    throw new lf.Exception(542);
   }
   if (this.whereAlreadyCalled_) {
     throw new lf.Exception(547);
@@ -9165,12 +9170,14 @@ lf.query.SelectBuilder.prototype.skip = function(numberOfRows) {
 };
 goog.exportProperty(lf.query.SelectBuilder.prototype, "skip", lf.query.SelectBuilder.prototype.skip);
 lf.query.SelectBuilder.prototype.orderBy = function(column, opt_order) {
+  this.checkFrom_(549);
   goog.isDefAndNotNull(this.query.orderBy) || (this.query.orderBy = []);
   this.query.orderBy.push({column:column, order:goog.isDefAndNotNull(opt_order) ? opt_order : lf.Order.ASC});
   return this;
 };
 goog.exportProperty(lf.query.SelectBuilder.prototype, "orderBy", lf.query.SelectBuilder.prototype.orderBy);
 lf.query.SelectBuilder.prototype.groupBy = function(var_args) {
+  this.checkFrom_(549);
   if (goog.isDefAndNotNull(this.query.groupBy)) {
     throw new lf.Exception(530);
   }

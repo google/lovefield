@@ -83,6 +83,8 @@
   "545": "Primary key column {0} can't be marked as nullable",
   "546": "Indices/constraints/columns can't re-use the table name {0}",
   "547": "where() cannot be called before innerJoin() or leftOuterJoin().",
+  "548": "from() has to be called before where().",
+  "549": "from() has to be called before orderBy() or groupBy().",
 
   "900": "Test error",
   "999": "Simulated error"

@@ -296,7 +296,9 @@ function testWhere_ThrowsAlreadyCalled() {
   var buildQuery = function() {
     var employeeTable = db.getSchema().getEmployee();
     var predicate = employeeTable.id.eq('testId');
-    query.where(predicate).where(predicate);
+    query.from(employeeTable).
+        where(predicate).
+        where(predicate);
   };
 
   // 516: where() has already been called.
@@ -312,7 +314,9 @@ function testGroupBy_ThrowsAlreadyCalled() {
 
   var buildQuery = function() {
     var employeeTable = db.getSchema().getEmployee();
-    query.groupBy(employeeTable.id).groupBy(employeeTable.jobId);
+    query.from(employeeTable).
+        groupBy(employeeTable.id).
+        groupBy(employeeTable.jobId);
   };
 
   // 530: groupBy() has already been called.
@@ -673,4 +677,40 @@ function testBuilder_ReverseJoinPredicate() {
   assertEquals(lf.eval.Type.LT,
       (/** @type {!lf.query.SelectBuilder} */(builder2)).
       getQuery().where.evaluatorType);
+}
+
+function testWhere_ThrowsFromNotCalled() {
+  var query = new lf.query.SelectBuilder(hr.db.getGlobal(), []);
+
+  var buildQuery = function() {
+    var j = db.getSchema().getJob();
+    query.where(j.id.eq('1')).
+        from(j);
+  };
+  // 548: from() has to be called before where().
+  lf.testing.util.assertThrowsError(548, buildQuery);
+}
+
+function testOrderBy_ThrowsFromNotCalled() {
+  var query = new lf.query.SelectBuilder(hr.db.getGlobal(), []);
+
+  var buildQuery = function() {
+    var j = db.getSchema().getJob();
+    query.orderBy(j.id).from(j);
+  };
+
+  // 549: from() has to be called before orderBy() or groupBy().
+  lf.testing.util.assertThrowsError(549, buildQuery);
+}
+
+function testGroupBy_ThrowsFromNotCalled() {
+  var query = new lf.query.SelectBuilder(hr.db.getGlobal(), []);
+
+  var buildQuery = function() {
+    var j = db.getSchema().getJob();
+    query.groupBy(j.id).from(j);
+  };
+
+  // 549: from() has to be called before orderBy() or groupBy().
+  lf.testing.util.assertThrowsError(549, buildQuery);
 }

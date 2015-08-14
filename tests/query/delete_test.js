@@ -42,13 +42,11 @@ function setUp() {
 
 
 /**
- * Tests that Insert#exec() fails if into() has not been called first.
+ * Tests that Delete#exec() fails if from() has not been called first.
  */
 function testExec_ThrowsMissingFrom() {
   asyncTestCase.waitForAsync('testExec_ThrowsMissingFrom');
   var query = new lf.query.DeleteBuilder(hr.db.getGlobal());
-  var employeeTable = db.getSchema().getEmployee();
-  query.where(employeeTable.jobId.eq('dummyJobId'));
   query.exec().then(
       fail,
       function(e) {
@@ -81,12 +79,23 @@ function testWhere_ThrowsAlreadyCalled() {
   var buildQuery = function() {
     var employeeTable = db.getSchema().getEmployee();
     var predicate = employeeTable.jobId.eq('dummyJobId');
-    query.where(predicate).where(predicate);
+    query.from(employeeTable).where(predicate).where(predicate);
   };
 
   assertThrows(buildQuery);
 }
 
+function testWhere_ThrowsCalledBeforeFrom() {
+  var query = new lf.query.DeleteBuilder(hr.db.getGlobal());
+
+  var buildQuery = function() {
+    var employeeTable = db.getSchema().getEmployee();
+    var predicate = employeeTable.jobId.eq('dummyJobId');
+    query.where(predicate).from(employeeTable);
+  };
+
+  assertThrows(buildQuery);
+}
 
 function testContext_Clone() {
   var j = db.getSchema().getJob();
