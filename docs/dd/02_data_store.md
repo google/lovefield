@@ -70,7 +70,18 @@ the logical transaction is committed. As a result, the IndexedDB transaction
 object is named `Tx` throughout the code to distinguish from the logical
 transaction object.
 
-### 2.4 Database Upgrade
+### 2.4 Firebase Store
+
+Lovefield can sit on top of [Firebase](https://www.firebase.com). Lovefield uses
+Firebase as a cloud backstore. As a result, one must follow these three rules
+when use Lovefield on top of Firebase:
+
+1. All clients accessing the database must use Lovefield.
+2. Only one client can be used to create the database.
+3. Database upgrade needs to be carried out in a different manner: clients must
+   not be using the database shall there be a database upgrade.
+
+### 2.5 Database Upgrade
 
 The upgrade process is triggered by bumping up the schema version. Lovefield
 will open the database using updated number, and in turn IndexedDB will fire the
@@ -84,7 +95,7 @@ will open the database using updated number, and in turn IndexedDB will fire the
 This design still exposes the user under the risk of accidentally auto-commit.
 However, there existed no known better alternative that works cross-browser.
 
-### 2.5 Bundled Mode Experiment
+### 2.6 Bundled Mode Experiment
 
 In bundled mode, Lovefield will store rows differently. Internally Lovefield
 assigns a unique row id to each logical row. In bundled mode, Lovefield will
@@ -128,3 +139,14 @@ Users who enabled bundled mode needs to keep the following facts in mind:
   the payload as string before storing them. This is done so because of way
   greater performance in Chrome (tested on v39.0.2171.36) for large JSON
   objects.
+
+### 2.7 WebSQL Experiment
+
+As of August, 2015, tests show that Lovefield's IndexedDB backstore could
+not be run on Safari 8 or Safari 9 beta. Safari simply throws mysterious DOM
+errors that did not happen on IE, Firefox and Chrome. This had been reported
+to WebKit/Apple but there's no word about ETA of fix.
+
+A WebSQL-based back store is created to fill this gap. The WebSQL backstore
+shall be considered a gap-stopping patch and will be removed as soon as Apple
+fixes IndexedDB bugs in Safari.
