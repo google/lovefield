@@ -40,8 +40,8 @@ A data store has three methods:
 
 ### 2.2 Memory Store
 
-Memory store internally is a goog.structs.Map which maps table name to table.
-The table is also a goog.structs.Map that maps row id to the lf.Row object of
+Memory store internally is a lf.structs.Map which maps table name to table.
+The table is also a lf.structs.Map that maps row id to the lf.Row object of
 that table. The memory store transaction is a naive Promise that will resolve
 on commit and reject on abort.
 
@@ -78,8 +78,9 @@ when use Lovefield on top of Firebase:
 
 1. All clients accessing the database must use Lovefield.
 2. Only one client can be used to create the database.
-3. Database upgrade needs to be carried out in a different manner: clients must
-   not be using the database shall there be a database upgrade.
+3. Database upgrade needs to be carried out in a different manner: clients other
+   than the upgrading one must not be using the database shall there be a
+   database upgrade.
 
 ### 2.5 Database Upgrade
 
