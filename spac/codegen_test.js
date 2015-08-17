@@ -18,9 +18,8 @@ var fs = require('fs');
 var glob = require('glob');
 var path = require('path');
 
-var validate = /** @type {{convert: !Function}} */ (
-    userRequire('parser')).convert;
-var CodeGenerator = userRequire('codegen').CodeGenerator;
+var validate = require('./parser').convert;
+var CodeGenerator = require('./codegen').CodeGenerator;
 
 
 /**

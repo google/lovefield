@@ -14,9 +14,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-var minijl = require('minijasminenode');
+var JasmineRunner = require('jasmine');
 var glob = require('glob');
 var path = require('path');
+
+var jRunner = new JasmineRunner();
 
 
 /** @type {Object} */
@@ -37,24 +39,21 @@ for (var i = 0; i < templateFiles.length; ++i) {
 }
 
 
-/**
- * @param {string} module
- * @return {!Object}
- */
-global.userRequire = function(module) {
-  var moduleFile = path.resolve(__dirname + '/' + module + '.js');
-  return require(moduleFile);
-};
+/** We resolve the paths manually, so set the base directory to empty string */
+jRunner.projectBaseDir = '';
+
+
+/** specDir must be set or jrunner.addSpecFiles crashes */
+jRunner.specDir = '';
 
 var testFiles = glob.sync('**/*_test.js', {cwd: __dirname});
 for (var i = 0; i < testFiles.length; ++i) {
-  minijl.addSpecs(path.resolve(__dirname, testFiles[i]));
+  jRunner.addSpecFiles([path.resolve(__dirname, testFiles[i])]);
 }
 
-// Run the tests and give correct exit code if error happened.
-minijl.executeSpecs({
-  onComplete: function(runner, log) {
-    var exitCode = (runner.results().failedCount > 0) ? 1 : 0;
-    process.exit(exitCode);
-  }
+jRunner.onComplete(function(passed) {
+  var exitCode = (runner.results().failedCount > 0) ? 1 : 0;
+  process.exit(exitCode);
 });
+
+jRunner.execute();

@@ -16,8 +16,7 @@
  */
 var fs = require('fs');
 var path = require('path');
-var parse = /** @type {{convert: !Function}} */ (
-    userRequire('parser')).convert;
+var parse = require('./parser').convert;
 
 describe('YAML Parser Test', function() {
   it('should parse codegen.yaml without issue', function() {

@@ -41,7 +41,7 @@
     "gulp-closure-compiler": "^0.2.18",
     "gulp-connect": "^2.2.0",
     "gulp-gjslint": "^0.1.4",
-    "minijasminenode": "^1.1.1",
+    "jasmine": "^2.3.2",
     "mkdirp": "^0.5.0",
     "request": "^2.55.0",
     "selenium-webdriver": "2.47.0",
