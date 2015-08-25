@@ -7772,7 +7772,7 @@ lf.pred.CombinedPredicate.prototype.copy = function() {
       return tempCopy;
     }
     return node.copy();
-  }.bind(this));
+  });
   return copy;
 };
 lf.pred.CombinedPredicate.prototype.getColumns = function(opt_results) {
