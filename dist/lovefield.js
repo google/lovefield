@@ -111,7 +111,7 @@ goog.LOAD_MODULE_USING_EVAL = !0;
 goog.SEAL_MODULE_EXPORTS = goog.DEBUG;
 goog.loadedModules_ = {};
 goog.DEPENDENCIES_ENABLED = !1;
-goog.DEPENDENCIES_ENABLED && (goog.included_ = {}, goog.dependencies_ = {pathIsModule:{}, nameToPath:{}, requires:{}, visited:{}, written:{}, deferred:{}}, goog.inHtmlDocument_ = function() {
+goog.DEPENDENCIES_ENABLED && (goog.dependencies_ = {pathIsModule:{}, nameToPath:{}, requires:{}, visited:{}, written:{}, deferred:{}}, goog.inHtmlDocument_ = function() {
   var doc = goog.global.document;
   return "undefined" != typeof doc && "write" in doc;
 }, goog.findBasePath_ = function() {
@@ -237,10 +237,11 @@ goog.DEPENDENCIES_ENABLED && (goog.included_ = {}, goog.dependencies_ = {pathIsM
 }, goog.lastNonModuleScriptIndex_ = 0, goog.onScriptLoad_ = function(script, scriptIndex) {
   "complete" == script.readyState && goog.lastNonModuleScriptIndex_ == scriptIndex && goog.loadQueuedModules_();
   return !0;
-}, goog.writeScripts_ = function() {
+}, goog.writeScripts_ = function(pathToLoad) {
   function visitNode(path) {
-    if (!(path in deps.written)) {
-      if (!(path in deps.visited) && (deps.visited[path] = !0, path in deps.requires)) {
+    if (!(path in deps.written || path in deps.visited)) {
+      deps.visited[path] = !0;
+      if (path in deps.requires) {
         for (var requireName in deps.requires[path]) {
           if (!goog.isProvided_(requireName)) {
             if (requireName in deps.nameToPath) {
@@ -254,12 +255,11 @@ goog.DEPENDENCIES_ENABLED && (goog.included_ = {}, goog.dependencies_ = {pathIsM
       path in seenScript || (seenScript[path] = !0, scripts.push(path));
     }
   }
-  var scripts = [], seenScript = {}, deps = goog.dependencies_, path$$0;
-  for (path$$0 in goog.included_) {
-    deps.written[path$$0] || visitNode(path$$0);
-  }
+  var scripts = [], seenScript = {}, deps = goog.dependencies_;
+  visitNode(pathToLoad);
   for (var i = 0;i < scripts.length;i++) {
-    path$$0 = scripts[i], goog.dependencies_.written[path$$0] = !0;
+    var path$$0 = scripts[i];
+    goog.dependencies_.written[path$$0] = !0;
   }
   var moduleState = goog.moduleLoaderState_;
   goog.moduleLoaderState_ = null;
@@ -6546,21 +6546,19 @@ lf.backstore.WebSql.prototype.scanRowId_ = function() {
 };
 lf.cache.Cache = function() {
 };
-lf.cache.DefaultCache = function() {
+lf.cache.DefaultCache = function(dbSchema) {
   this.map_ = lf.structs.map.create();
   this.tableRows_ = lf.structs.map.create();
-};
-lf.cache.DefaultCache.prototype.getTableSet_ = function(tableName) {
-  var set = this.tableRows_.get(tableName);
-  goog.isDef(set) || (set = lf.structs.set.create(), this.tableRows_.set(tableName, set));
-  return set;
+  dbSchema.tables().forEach(function(table) {
+    this.tableRows_.set(table.getName(), lf.structs.set.create());
+  }, this);
 };
 lf.cache.DefaultCache.prototype.set = function(tableName, row) {
   this.map_.set(row.id(), row);
-  this.getTableSet_(tableName).add(row.id());
+  this.tableRows_.get(tableName).add(row.id());
 };
 lf.cache.DefaultCache.prototype.setMany = function(tableName, rows) {
-  var tableSet = this.getTableSet_(tableName);
+  var tableSet = this.tableRows_.get(tableName);
   rows.forEach(function(row) {
     this.map_.set(row.id(), row);
     tableSet.add(row.id());
@@ -6575,7 +6573,7 @@ lf.cache.DefaultCache.prototype.getMany = function(ids) {
   }, this);
 };
 lf.cache.DefaultCache.prototype.getRange = function(tableName, fromId, toId) {
-  var data = [], min = Math.min(fromId, toId), max = Math.max(fromId, toId), tableSet = this.getTableSet_(tableName);
+  var data = [], min = Math.min(fromId, toId), max = Math.max(fromId, toId), tableSet = this.tableRows_.get(tableName);
   if (tableSet.size < max - min) {
     tableSet.forEach(function(key) {
       if (key >= min && key <= max) {
@@ -6597,10 +6595,10 @@ lf.cache.DefaultCache.prototype.getRange = function(tableName, fromId, toId) {
 };
 lf.cache.DefaultCache.prototype.remove = function(tableName, id) {
   this.map_.delete(id);
-  this.getTableSet_(tableName).delete(id);
+  this.tableRows_.get(tableName).delete(id);
 };
 lf.cache.DefaultCache.prototype.getCount = function(opt_tableName) {
-  return goog.isDefAndNotNull(opt_tableName) ? this.getTableSet_(opt_tableName).size : this.map_.size;
+  return goog.isDefAndNotNull(opt_tableName) ? this.tableRows_.get(opt_tableName).size : this.map_.size;
 };
 lf.cache.DefaultCache.prototype.clear = function() {
   this.map_.clear();
@@ -10568,7 +10566,7 @@ lf.ObserverRegistry.Entry_.prototype.updateResults = function(newResults) {
 };
 lf.base = {};
 lf.base.init = function(global, opt_options) {
-  var schema = global.getService(lf.service.SCHEMA), options = opt_options || {}, cache = new lf.cache.DefaultCache;
+  var schema = global.getService(lf.service.SCHEMA), options = opt_options || {}, cache = new lf.cache.DefaultCache(schema);
   global.registerService(lf.service.CACHE, cache);
   var backStore = null, observeExternalChanges = !1;
   if (lf.Flags.MEMORY_ONLY) {

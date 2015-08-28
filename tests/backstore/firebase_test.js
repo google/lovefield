@@ -118,9 +118,9 @@ function setUp() {
 
   asyncTestCase.waitForAsync('setUp');
 
-  cache = new lf.cache.DefaultCache();
   indexStore = new lf.index.MemoryIndexStore();
   schema = lf.testing.getSchemaBuilder('mock_schema').getSchema();
+  cache = new lf.cache.DefaultCache(schema);
 
   global = lf.Global.get();
   global.registerService(lf.service.CACHE, cache);

@@ -85,7 +85,6 @@ function setUp() {
   }
 
   var global = lf.Global.get();
-  global.registerService(lf.service.CACHE, new lf.cache.DefaultCache());
   global.registerService(
       lf.service.INDEX_STORE, new lf.index.MemoryIndexStore());
   upgradeGlobal = new lf.Global();
@@ -130,6 +129,8 @@ function testNewDBInstance() {
 
   var schema = getOldSchema();
   lf.Global.get().registerService(lf.service.SCHEMA, schema);
+  lf.Global.get().registerService(lf.service.CACHE,
+      new lf.cache.DefaultCache(schema));
 
   /**
    * @param {!lf.raw.BackStore} rawDb
@@ -210,6 +211,8 @@ function runTest(builder, onUpgrade, checker, opt_populateOldData) {
   return promise.then(function() {
     // Re-register schema
     upgradeGlobal.registerService(lf.service.SCHEMA, builder.getSchema());
+    upgradeGlobal.registerService(lf.service.CACHE,
+        new lf.cache.DefaultCache(builder.getSchema()));
     return builder.connect({
       onUpgrade: onUpgrade,
       storeType: lf.schema.DataStoreType.WEB_SQL

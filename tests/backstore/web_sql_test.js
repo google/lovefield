@@ -65,10 +65,10 @@ function setUp() {
     return;
   }
 
-  cache = new lf.cache.DefaultCache();
   // The schema name is on purpose padded with a timestamp to workaround the
   // issue that Chrome can't open the same WebSQL instance again.
   schema = lf.testing.getSchemaBuilder().getSchema();
+  cache = new lf.cache.DefaultCache(schema);
   indexStore = new lf.index.MemoryIndexStore();
   var global = lf.Global.get();
   global.registerService(lf.service.CACHE, cache);

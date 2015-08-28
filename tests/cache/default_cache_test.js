@@ -17,11 +17,17 @@
 goog.setTestOnly();
 goog.require('goog.testing.jsunit');
 goog.require('lf.Row');
+goog.require('lf.Type');
 goog.require('lf.cache.DefaultCache');
+goog.require('lf.schema.Builder');
 
 
 function testCache() {
-  var cache = new lf.cache.DefaultCache();
+  var builder = new lf.schema.Builder('test', 1);
+  builder.createTable('Foo').addColumn('id', lf.Type.STRING);
+  builder.createTable('Bar').addColumn('id', lf.Type.STRING);
+
+  var cache = new lf.cache.DefaultCache(builder.getSchema());
 
   assertArrayEquals([null, null], cache.getMany([1, 2]));
   var payload = {'id': 'something'};

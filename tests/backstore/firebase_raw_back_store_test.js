@@ -113,10 +113,10 @@ function setUp() {
     return;
   }
 
-  cache = new lf.cache.DefaultCache();
   indexStore = new lf.index.MemoryIndexStore();
   schema = new lf.testing.backstore.MockSchema();
   schema.setName(schema.name() + goog.now());
+  cache = new lf.cache.DefaultCache(schema);
 
   global = lf.Global.get();
   global.registerService(lf.service.CACHE, cache);

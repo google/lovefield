@@ -84,7 +84,7 @@ function testInit_IndexedDB_NonBundled() {
 function testInit_IndexedDB_Bundled() {
   var schema = randomizeSchemaName(hr.bdb.getSchema());
   var global = hr.bdb.getGlobal();
-  var cache = new lf.cache.DefaultCache();
+  var cache = new lf.cache.DefaultCache(schema);
   global.registerService(lf.service.CACHE, cache);
 
   checkInit_IndexedDB(schema, global);

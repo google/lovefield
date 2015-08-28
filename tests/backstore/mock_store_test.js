@@ -54,9 +54,9 @@ var schema;
 function setUp() {
   asyncTestCase.waitForAsync('setUp');
 
-  cache = new lf.cache.DefaultCache();
   var indexStore = new lf.index.MemoryIndexStore();
   schema = lf.testing.getSchemaBuilder().getSchema();
+  cache = new lf.cache.DefaultCache(schema);
 
   var global = lf.Global.get();
   global.registerService(lf.service.CACHE, cache);

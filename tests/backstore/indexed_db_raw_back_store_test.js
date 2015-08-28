@@ -72,7 +72,7 @@ function setUp() {
   schema = new Schema_();
 
   var global = lf.Global.get();
-  var cache = new lf.cache.DefaultCache();
+  var cache = new lf.cache.DefaultCache(schema);
   global.registerService(lf.service.CACHE, cache);
   capability = lf.testing.Capability.get();
 }

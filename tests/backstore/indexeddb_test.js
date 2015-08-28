@@ -74,8 +74,8 @@ function setUp() {
     return;
   }
 
-  cache = new lf.cache.DefaultCache();
   schema = new lf.testing.backstore.MockSchema();
+  cache = new lf.cache.DefaultCache(schema);
   indexStore = new lf.index.MemoryIndexStore();
   var global = lf.Global.get();
   global.registerService(lf.service.CACHE, cache);
