@@ -5160,7 +5160,7 @@ lf.proc.PhysicalQueryPlan.getCombinedScope = function(plans) {
 };
 lf.proc.Task = function() {
 };
-lf.proc.TaskPriority = {OBSERVER_QUERY_TASK:0, EXTERNAL_CHANGE_TASK:1, USER_QUERY_TASK:2, TRANSACTION_TASK:2};
+lf.proc.TaskPriority = {EXPORT_TASK:0, IMPORT_TASK:0, OBSERVER_QUERY_TASK:0, EXTERNAL_CHANGE_TASK:1, USER_QUERY_TASK:2, TRANSACTION_TASK:2};
 lf.proc.QueryTask = function(global, items) {
   this.global = global;
   this.backStore_ = global.getService(lf.service.BACK_STORE);
@@ -10620,6 +10620,38 @@ lf.base.closeDatabase = function(global) {
 };
 lf.Database = function() {
 };
+lf.proc.ExportTask = function(global) {
+  this.global_ = global;
+  this.schema_ = global.getService(lf.service.SCHEMA);
+  this.scope_ = lf.structs.set.create(this.schema_.tables());
+  this.resolver_ = goog.Promise.withResolver();
+};
+lf.proc.ExportTask.prototype.exec = function() {
+  var indexStore = this.global_.getService(lf.service.INDEX_STORE), cache = this.global_.getService(lf.service.CACHE), tables = {};
+  this.schema_.tables().forEach(function(table) {
+    var rowIds = indexStore.get(table.getRowIdIndexName()).getRange(), payloads = cache.getMany(rowIds).map(function(row) {
+      return row.payload();
+    });
+    tables[table.getName()] = payloads;
+  });
+  var results = {name:this.schema_.name(), version:this.schema_.version(), tables:tables}, entry = new lf.proc.RelationEntry(new lf.Row(lf.Row.DUMMY_ID, results), !0);
+  return goog.Promise.resolve([new lf.proc.Relation([entry], [])]);
+};
+lf.proc.ExportTask.prototype.getType = function() {
+  return lf.TransactionType.READ_ONLY;
+};
+lf.proc.ExportTask.prototype.getScope = function() {
+  return this.scope_;
+};
+lf.proc.ExportTask.prototype.getResolver = function() {
+  return this.resolver_;
+};
+lf.proc.ExportTask.prototype.getId = function() {
+  return goog.getUid(this);
+};
+lf.proc.ExportTask.prototype.getPriority = function() {
+  return lf.proc.TaskPriority.EXPORT_TASK;
+};
 lf.proc.TransactionTask = function(global, scope) {
   this.global_ = global;
   this.backStore_ = global.getService(lf.service.BACK_STORE);
@@ -10840,6 +10872,13 @@ lf.proc.Database.prototype.close = function() {
   this.initialized_ = !1;
 };
 goog.exportProperty(lf.proc.Database.prototype, "close", lf.proc.Database.prototype.close);
+lf.proc.Database.prototype.export = function() {
+  var runner = this.global_.getService(lf.service.RUNNER), task = new lf.proc.ExportTask(this.global_);
+  return runner.scheduleTask(task).then(function(results) {
+    return results[0].getPayloads()[0];
+  });
+};
+goog.exportProperty(lf.proc.Database.prototype, "export", lf.proc.Database.prototype.export);
 lf.schema.BaseColumn = function(table, name, isUnique, isNullable, type, opt_alias) {
   this.table_ = table;
   this.name_ = name;
