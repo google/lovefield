@@ -2286,8 +2286,8 @@ goog.Promise = function(resolver, opt_context) {
         }
         self.resolve_(goog.Promise.State_.REJECTED, reason);
       });
-    } catch (e$$0) {
-      this.resolve_(goog.Promise.State_.REJECTED, e$$0);
+    } catch (e) {
+      this.resolve_(goog.Promise.State_.REJECTED, e);
     }
   }
 };
@@ -2840,9 +2840,9 @@ goog.iter.forEach = function(iterable, f, opt_obj) {
       for (;;) {
         f.call(opt_obj, iterable.next(), void 0, iterable);
       }
-    } catch (ex$$0) {
-      if (ex$$0 !== goog.iter.StopIteration) {
-        throw ex$$0;
+    } catch (ex) {
+      if (ex !== goog.iter.StopIteration) {
+        throw ex;
       }
     }
   }
@@ -10722,8 +10722,8 @@ lf.proc.Transaction.prototype.exec = function(queryBuilders) {
       queryBuilder.assertExecPreconditions();
       taskItems.push(queryBuilder.getTaskItem());
     }, this);
-  } catch (e$$0) {
-    return this.stateTransition_(lf.proc.TransactionState_.FINALIZED), goog.Promise.reject(e$$0);
+  } catch (e) {
+    return this.stateTransition_(lf.proc.TransactionState_.FINALIZED), goog.Promise.reject(e);
   }
   var queryTask = new lf.proc.UserQueryTask(this.global_, taskItems);
   return this.runner_.scheduleTask(queryTask).then(function(results) {
@@ -11342,9 +11342,9 @@ lf.schema.TableBuilder.prototype.generateRowClass_ = function(columns$$0, indice
       });
     };
   }.bind(this), functionMap = {};
-  indices.forEach(function(index) {
-    var key = index.getNormalizedName(), JSCompiler_inline_result, index$$0 = index;
-    JSCompiler_inline_result = 1 == index$$0.columns.length ? getSingleKeyFn(index$$0.columns[0].schema) : getMultiKeyFn(index$$0.columns);
+  indices.forEach(function(index$$0) {
+    var key = index$$0.getNormalizedName(), JSCompiler_inline_result, index = index$$0;
+    JSCompiler_inline_result = 1 == index.columns.length ? getSingleKeyFn(index.columns[0].schema) : getMultiKeyFn(index.columns);
     functionMap[key] = JSCompiler_inline_result;
   });
   rowClass.prototype.keyOfIndex = function(indexName) {
