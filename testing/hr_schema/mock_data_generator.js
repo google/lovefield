@@ -478,17 +478,17 @@ lf.testing.hrSchema.MockDataGenerator.fromExportData = function(schema, data) {
     });
   };
 
-  var employeeSchema = schema.getEmployee();
+  var employeeSchema = schema.table('Employee');
   var employees = data.employees.map(function(obj) {
     return deserialize(employeeSchema, obj);
   });
 
-  var jobSchema = schema.getJob();
+  var jobSchema = schema.table('Job');
   var jobs = data.jobs.map(function(obj) {
     return deserialize(jobSchema, obj);
   });
 
-  var departmentSchema = schema.getDepartment();
+  var departmentSchema = schema.table('Department');
   var departments = data.departments.map(function(obj) {
     return deserialize(departmentSchema, obj);
   });

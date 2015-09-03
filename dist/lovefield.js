@@ -10652,6 +10652,68 @@ lf.proc.ExportTask.prototype.getId = function() {
 lf.proc.ExportTask.prototype.getPriority = function() {
   return lf.proc.TaskPriority.EXPORT_TASK;
 };
+lf.proc.ImportTask = function(global, data) {
+  this.schema_ = global.getService(lf.service.SCHEMA);
+  this.scope_ = lf.structs.set.create(this.schema_.tables());
+  this.resolver_ = goog.Promise.withResolver();
+  this.data_ = data;
+  this.backStore_ = global.getService(lf.service.BACK_STORE);
+  this.cache_ = global.getService(lf.service.CACHE);
+  this.indexStore_ = global.getService(lf.service.INDEX_STORE);
+};
+lf.proc.ImportTask.prototype.exec = function() {
+  if (!this.isEmptyDB_()) {
+    throw new lf.Exception(110);
+  }
+  if (this.schema_.name() != this.data_.name || this.schema_.version() != this.data_.version) {
+    throw new lf.Exception(111);
+  }
+  if (!goog.isDefAndNotNull(this.data_.tables)) {
+    throw new lf.Exception(112);
+  }
+  return this.importMemory_();
+};
+lf.proc.ImportTask.prototype.getType = function() {
+  return lf.TransactionType.READ_WRITE;
+};
+lf.proc.ImportTask.prototype.getScope = function() {
+  return this.scope_;
+};
+lf.proc.ImportTask.prototype.getResolver = function() {
+  return this.resolver_;
+};
+lf.proc.ImportTask.prototype.getId = function() {
+  return goog.getUid(this);
+};
+lf.proc.ImportTask.prototype.getPriority = function() {
+  return lf.proc.TaskPriority.IMPORT_TASK;
+};
+lf.proc.ImportTask.prototype.isEmptyDB_ = function() {
+  for (var tables = this.schema_.tables(), i = 0;i < tables.length;++i) {
+    var index = this.indexStore_.get(tables[i].getRowIdIndexName());
+    if (0 < index.stats().totalRows) {
+      return !1;
+    }
+  }
+  return !0;
+};
+lf.proc.ImportTask.prototype.importMemory_ = function() {
+  for (var tableName in this.data_.tables) {
+    var table = this.schema_.table(tableName), payloads = this.data_.tables[tableName], rows = payloads.map(function(value) {
+      return table.createRow(value);
+    }), memoryTable = this.backStore_.getTableInternal(tableName);
+    this.cache_.setMany(tableName, rows);
+    var indices = this.indexStore_.getTableIndices(tableName);
+    rows.forEach(function(row) {
+      indices.forEach(function(index) {
+        var key = row.keyOfIndex(index.getName());
+        index.add(key, row.id());
+      });
+    });
+    memoryTable.putSync(rows);
+  }
+  return goog.Promise.resolve([]);
+};
 lf.proc.TransactionTask = function(global, scope) {
   this.global_ = global;
   this.backStore_ = global.getService(lf.service.BACK_STORE);
@@ -10812,6 +10874,7 @@ lf.proc.Database.prototype.init = function(opt_options) {
   this.global_.registerService(lf.service.SCHEMA, this.schema_);
   return lf.base.init(this.global_, opt_options).then(function() {
     this.initialized_ = !0;
+    this.runner_ = this.global_.getService(lf.service.RUNNER);
     return this;
   }.bind(this));
 };
@@ -10852,11 +10915,13 @@ lf.proc.Database.prototype.delete = function() {
 };
 goog.exportProperty(lf.proc.Database.prototype, "delete", lf.proc.Database.prototype.delete);
 lf.proc.Database.prototype.observe = function(query, callback) {
+  this.checkInit_();
   var observerRegistry = this.global_.getService(lf.service.OBSERVER_REGISTRY);
   observerRegistry.addObserver(query, callback);
 };
 goog.exportProperty(lf.proc.Database.prototype, "observe", lf.proc.Database.prototype.observe);
 lf.proc.Database.prototype.unobserve = function(query, callback) {
+  this.checkInit_();
   var observerRegistry = this.global_.getService(lf.service.OBSERVER_REGISTRY);
   observerRegistry.removeObserver(query, callback);
 };
@@ -10873,12 +10938,21 @@ lf.proc.Database.prototype.close = function() {
 };
 goog.exportProperty(lf.proc.Database.prototype, "close", lf.proc.Database.prototype.close);
 lf.proc.Database.prototype.export = function() {
-  var runner = this.global_.getService(lf.service.RUNNER), task = new lf.proc.ExportTask(this.global_);
-  return runner.scheduleTask(task).then(function(results) {
+  this.checkInit_();
+  var task = new lf.proc.ExportTask(this.global_);
+  return this.runner_.scheduleTask(task).then(function(results) {
     return results[0].getPayloads()[0];
   });
 };
 goog.exportProperty(lf.proc.Database.prototype, "export", lf.proc.Database.prototype.export);
+lf.proc.Database.prototype.import = function(data) {
+  this.checkInit_();
+  var task = new lf.proc.ImportTask(this.global_, data);
+  return this.runner_.scheduleTask(task).then(function() {
+    return null;
+  });
+};
+goog.exportProperty(lf.proc.Database.prototype, "import", lf.proc.Database.prototype.import);
 lf.schema.BaseColumn = function(table, name, isUnique, isNullable, type, opt_alias) {
   this.table_ = table;
   this.name_ = name;

@@ -284,7 +284,7 @@ Tester.prototype.testApi_SchemaBuilder = function() {
 Tester.prototype.testApi_Db = function() {
   var methodNames = [
     'getSchema', 'select', 'insert', 'insertOrReplace', 'update', 'delete',
-    'observe', 'unobserve', 'createTransaction', 'close'
+    'observe', 'unobserve', 'createTransaction', 'close', 'import', 'export'
   ];
 
   assertMethods(this.db_, methodNames, 'db');

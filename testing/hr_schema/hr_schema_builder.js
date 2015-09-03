@@ -23,9 +23,13 @@ goog.require('lf.Type');
 goog.require('lf.schema');
 
 
-/** @return {!lf.schema.Builder} */
-lf.testing.hrSchema.getSchemaBuilder = function() {
-  var schemaBuilder = lf.schema.create('hr' + goog.now(), 1);
+/**
+ * @param {string=} opt_name Optional schema name, default is hr + timestamp.
+ * @return {!lf.schema.Builder}
+ */
+lf.testing.hrSchema.getSchemaBuilder = function(opt_name) {
+  var name = opt_name || 'hr' + goog.now();
+  var schemaBuilder = lf.schema.create(name, 1);
   schemaBuilder.createTable('Job').
       addColumn('id', lf.Type.STRING).
       addColumn('title', lf.Type.STRING).

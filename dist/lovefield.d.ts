@@ -80,7 +80,9 @@ declare module lf {
     close(): void
     createTransaction(type?: TransactionType): Transaction
     delete(): query.Delete
+    export(): Promise<Object>
     getSchema(): schema.Database
+    import(data: Object): Promise<void>
     insertOrReplace(): query.Insert
     insert(): query.Insert
     observe(query: query.Select, callback: Function): void

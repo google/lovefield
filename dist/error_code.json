@@ -17,6 +17,9 @@
   "107": "Invalid transaction state transition: {0} -> {1}.",
   "108": "Attempt to open a newer database with old code.",
   "109": "Attempt to insert a row number that already existed.",
+  "110": "Attempt to import into a non-empty database.",
+  "111": "Database name/version mismatch for import.",
+  "112": "Import data not found.",
 
   "200": "Constraint error",
   "201": "Duplicate keys are not allowed.",

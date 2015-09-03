@@ -165,6 +165,17 @@ lf.Database.prototype.unobserve = function(query, callback) {};
 lf.Database.prototype.update = function(table) {};
 
 
+/** @return {!IThenable<!Object>} */
+lf.Database.prototype.export = function() {};
+
+
+/**
+ * @param {!Object} data
+ * @return {!IThenable}
+ */
+lf.Database.prototype.import = function(data) {};
+
+
 lf.query = {};
 
 
