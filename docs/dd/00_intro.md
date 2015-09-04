@@ -2,14 +2,14 @@
 
 ## 0. Introduction
 
-Lovefield is a relational query engine and is built in a way very similar to
+Lovefield is a relational database and is built in a way very similar to
 traditional RDBMS in many aspects. In this chapter, the design philosophy of
 Lovefield and basic driving factors will be discussed.
 
 ### 0.1 Motivation
 
 The best thing of software engineering is that most problems can be solved in
-different ways. Object databases and relational database are invented to solve
+different ways. Object databases and relational databases are invented to solve
 data access problems from different points of view and requirements.
 Unfortunately the support of relational databases in browsers is in an
 unsatisfactory state after WebSQL being deprecated, and thus Lovefield is
@@ -17,19 +17,21 @@ created to offer the choice that developers shall be honored to have.
 
 ### 0.2 Data Store
 
-Originally Lovefield was bundled with IndexedDB only. Per popular requests, it
-is now engineered to wrap different storage technologies into a separate layer,
-and is able to couple different storage technologies with the query engine.
+Lovefield abstracts data persistence into classes implementing `lf.BackStore`.
+This makes Lovefield adaptive to different storage media and technologies.
+This also helps to decouple storage from the query engine.
 
-The supported data store types are:
+The supported data stores are:
 
-* IndexedDB - All data persisted on IndexedDB
-* Memory - All data are transient and stored in-memory
+* IndexedDB - All data persisted on IndexedDB provided by browser.
+* Memory - All data are transient and stored in-memory.
+* Firebase - Data is persisted in Firebase, a cloud database that synchronized
+  among all its clients.
 
 There are several experimental data stores:
 
-* WebSQL - Provided to fill in the gap of Safari lacking IndexedDB support
-* Firebase - Provided to test server-to-client end-to-end solution
+* WebSQL - Provided to fill in the gap of Safari lacking IndexedDB support.
+* LocalStorage - Provided for proof of concept for handling external changes.
 
 Each storage technology has different limitations and constraints. Lovefield
 contributors are required to have a good understanding of these boundary
@@ -58,14 +60,13 @@ Lovefield's codebase is checked by Closure compiler with very strict options.
 
 Lovefield consists following components:
 
-* Schema Parser and Code-generator (SPAC, `spac/`)
-* Schema (`lib/schema/`)
-* Caching support (`lib/cache/`)
+* Schema Management (`spac/` and `lib/schema`)
+* Caching and Memory Management (`lib/cache/`)
 * Query engine
     * Query builder (`lib/query/`)
     * Relation, query plan generator/optimizer/runner (`lib/proc/`)
     * Predicates (`lib/pred/`)
-* Data store management (`lib/backstore/`)
+* Data stores (`lib/backstore/`)
 * Indices (`lib/index/`)
 
 These components will be detailed in following chapters.

@@ -18,7 +18,9 @@ A row consists of columns, and the columns are defined in the schema.
 A schema is the way users define the layout of their database. Lovefield
 offers two different ways of defining a schema: dynamic and static. The default
 is dynamic schema creation, which is carried out using provided API. The
-static schema creation is considered advanced usage and is done via SPAC.
+static schema creation is considered advanced usage and is done via SPAC (
+Schema Parser and Code generator).
+
 The dynamic schema creation uses the builder pattern. There are two levels of
 builder:
 
@@ -29,9 +31,9 @@ builder:
 
 #### 1.2.1 `lf.schema.Builder`
 
-This builder will create a concrete object `lf.schema.DatabaseSchema_` which
-implements `lf.schema.Database`. The differences between the object and
-SPAC-generated code are minimum.
+This builder creates a concrete object `lf.schema.DatabaseSchema_` which
+implements `lf.schema.Database`. The differences between this object and the
+object from SPAC-generated class are minimum.
 
 #### 1.2.2 `lf.schema.TableBuilder`
 
@@ -47,10 +49,13 @@ keys).
 Once the table class object is generated, the `TableBuilder` instantiates
 an object of that class and returns it to the database builder.
 
-There are significant differences between SPAC-generated code and the table
-class from `TableBuilder`. The main difference is that the implementation from
-`TableBuilder` is more complicated because it needs to consider all different
-type combinations and conversions.
+There are significant differences between SPAC-generated class and the table
+class from `TableBuilder`. The main differences are:
+
+* Implementation from `TableBuilder` is more complicated because it needs to
+consider all different type combinations and conversions.
+* SPAC-generated class has better type annotations, thus better compiler
+coverage.
 
 In order to improve performance, the implementation uses a hash table to
 store functions for different data types, so that function selection according
@@ -117,10 +122,6 @@ converts it into &lt;escaped namespace&gt;_&lt;template name&gt;.js
 expansion. All macros start with the `#` sign, which is an invalid character
 for JavaScript so that errors can be spotted easily if the macros inside
 template were not fully expanded.
-
-Code generator has grown to a point that is quite hard to maintain. The plan
-is to divide the code generator into several different classes and make it
-easy to work with again.
 
 ##### 1.3.3.1 Simple Macros
 

@@ -60,6 +60,16 @@ Then, it will gather all the information and determine the next row id to
 use for this connection. All the ids are indexed by IndexedDB and theoretically
 the scan shall be done in O(N) time where N is the number of tables in schema.
 
+
+#### 3.2.3 Firebase Initialization
+
+For Firebase initialization, it first will attempt to obtain `@db/version` and
+`@rev/R` for database version and change revision. When there is a version
+mismatch, Lovefield will call your `onUpgrade` handler, but this time the name
+is a bit deceiving. In the case of Firebase, this typically means that the user
+is running a cached JS on browser, and what you really want to do is to have
+them refresh the session and reload an updated binary.
+
 #### 3.2.3 Service Initialization
 
 Object instances of the cache (`lf.cache.DefaultCache`), query engine
@@ -98,6 +108,14 @@ Lovefield made the design trade-off to have prefetcher perform bulk loading
 during database initialization, which is not optimal especially for large data
 sets. In the future, Lovefield plans to implement an MRU-based lazy-load cache
 that loads data in the background on demand.
+
+#### 3.2.5 Special Handling for Firebase
+
+For Firebase, the prefetch data will actually trigger Firebase to load data
+over the wire during the initialization of database. This generally is not a
+problem since Firebase.js may already had those data. If you had a large amount
+of data, you will need to fine tune your code and the Firebase server-side
+settings to overcome this issue.
 
 ### 3.3 Life of Query
 

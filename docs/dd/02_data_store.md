@@ -2,31 +2,30 @@
 
 ## 2. Data Store
 
-In the beginning of Lovefield design, it was identified that two different
-data stores need to exist: a persistent backstore for applications that need
-persistence, and a volatile in-memory backstore for remaining applications and
-for testing purposes. By defining the interface of `lf.raw.BackStore`, the
-need to use persistent backstore in tests is vastly reduced, and data stores
-can be swapped for better test-ability.
+In the beginning of Lovefield design, it was identified that two types of
+data stores need to exist: persistent data store for applications that need
+persistence, and volatile data store for remaining applications and testing.
+As time goes by, there are more needs to integrate with different
+persistent storage technologies. For example, the integration of Firebase allows
+developers to have the best of both worlds: a relational query engine on the
+browser-side, and a fully synchronized database among all clients on the
+Firebase server.
 
-> #### Why not persistent storage in testing?
-> One cruel fact of testing is that tests can fail, which is the reason why
-> tests exist. When tests fail, it needs to clean up after itself. Using a
-> persistent storage will make the clean-up way more complicated, especially
-> when a test is failed by a JavaScript exception. Moreover, most tests shall
-> not involve persistent storage anyway.
+As a result, Lovefield uses a plug-in architecture for data stores. All data
+stores implement `lf.BackStore` interface so that query engine can be decoupled
+from actual storage technology.
 
-As a result, there are two different data store implementations created:
-IndexedDB as the persistent store, and Memory as the temporary/volatile store.
+For databases that features "upgrade mode", an `lf.raw.BackStore` interface is
+provided to handle that special case.
 
 ### 2.1 Common Nominator
 
-A data store has three methods:
+All data stores has three methods in common:
 
 * `init`: indicate the initialization of a data store, which typically means
-  establishing connection to persisted instance. The database upgrade process
-  is also initiated here. The initialization also identifies maximum row id
-  to-date and continue row id generation from there.
+  establishing connection to a persisted instance. The database upgrade process
+  is also initiated here when needed. The initialization also identifies
+  maximum row id to-date and continue row id generation from there.
 
 * `createTx`: return a transaction object from data store, and hint the data
   store that an atomic writing operation is going to happen. The transaction
@@ -36,7 +35,8 @@ A data store has three methods:
   of a transaction into one single flush.
 
 * `close`: closes the connection to persisted instance. This call is
-  best-effort due to IndexedDB limitations.
+  best-effort due to technical limitations (e.g. both IndexedDB and WebSQL have
+  no reliable `close` call).
 
 ### 2.2 Memory Store
 
@@ -70,33 +70,18 @@ the logical transaction is committed. As a result, the IndexedDB transaction
 object is named `Tx` throughout the code to distinguish from the logical
 transaction object.
 
-### 2.4 Firebase Store
+#### 2.3.1 Storage Format
 
-Lovefield can sit on top of [Firebase](https://www.firebase.com). Lovefield uses
-Firebase as a cloud backstore. As a result, one must follow these three rules
-when use Lovefield on top of Firebase:
+The data will be stored in IndexedDB using following hierarchy
 
-1. All clients accessing the database must use Lovefield.
-2. Only one client can be used to create the database.
-3. Database upgrade needs to be carried out in a different manner: clients other
-   than the upgrading one must not be using the database shall there be a
-   database upgrade.
+* The whole database will be stored in an IndexedDB using database's name
+* Each table corresponds to an object store
+* Each row corresponds to an object in object store. A row contains two fields:
+  * id: unique row id across database
+  * value: actual payload of the row, each field in this object corresponds to
+    a column in schema
 
-### 2.5 Database Upgrade
-
-The upgrade process is triggered by bumping up the schema version. Lovefield
-will open the database using updated number, and in turn IndexedDB will fire the
-`onupgradeneeded` event. In that event, Lovefield will
-
-1. create tables (i.e. `objectstores`) which exist in schema but not in
-   IndexedDB
-2. wrap the database connection into `lf.backstore.IndexedDBRawBackstore`
-3. call user-provided `onUpgrade` function with the wrapped instance
-
-This design still exposes the user under the risk of accidentally auto-commit.
-However, there existed no known better alternative that works cross-browser.
-
-### 2.6 Bundled Mode Experiment
+#### 2.3.2 Bundled Mode Experiment
 
 In bundled mode, Lovefield will store rows differently. Internally Lovefield
 assigns a unique row id to each logical row. In bundled mode, Lovefield will
@@ -134,14 +119,55 @@ Users who enabled bundled mode needs to keep the following facts in mind:
 * Bundled mode is designed mainly for data tables with 10K+ rows. Smaller
   database may experience slower performance by enabling bundle mode. User is
   supposed to benchmark and determine if bundled mode is feasible.
-* There is no support for converting non-bundled to bundled database, and vice
-  versa. Manual conversion is possible but will not be easy.
+* To convert non-bundled to bundled database or the other way around:
+  * `db.export()` to get the JavaScript representation of the whole database
+  * Completely delete the original database using `window.deleteDatabase()`
+  * Recreate the database again using `connect()`
+  * Use `db.import()` to import previously exported data
 * Bundled database is harder to examine via developer tools. The pages serialize
   the payload as string before storing them. This is done so because of way
   greater performance in Chrome (tested on v39.0.2171.36) for large JSON
   objects.
 
-### 2.7 WebSQL Experiment
+### 2.4 Firebase Store
+
+Lovefield can sit on top of [Firebase](https://www.firebase.com). Lovefield uses
+Firebase as a cloud backstore. As a result, one must follow these three rules
+when use Lovefield on top of Firebase:
+
+1. All clients accessing the database must use Lovefield.
+2. Only one client can be used to create the database.
+3. Database upgrade needs to be carried out in a different manner: clients other
+   than the upgrading one must not be using the database shall there be a
+   database upgrade (this is typically done using Firebase security control
+   instead).
+
+#### 2.4.1 Storage Format
+
+For performance reasons, Lovefield stores data in Firebase very differently.
+The store is structured like this:
+
+```js
+<schema_name>: {
+  "@rev": {
+    R: <N>,
+  },
+  "@db": {
+    version: <schema version>
+  },
+  "@table": {
+    <table_name>: <table_id>
+  },
+  <row id 1>: { R: <N1>, T: <T1>, P: <object1> },
+  <row id 2>: { R: <N2>, T: <T2>, P: <object2> },
+  ...
+}
+```
+
+R stands for revision, T stands for table id, and P stands for payload. It's
+abbreviated to ensure optimal over-the-wire transmission.
+
+### 2.5 WebSQL Store
 
 As of August, 2015, tests show that Lovefield's IndexedDB backstore could
 not be run on Safari 8 or Safari 9 beta. Safari simply throws mysterious DOM
@@ -151,3 +177,44 @@ to WebKit/Apple but there's no word about ETA of fix.
 A WebSQL-based back store is created to fill this gap. The WebSQL backstore
 shall be considered a gap-stopping patch and will be removed as soon as Apple
 fixes IndexedDB bugs in Safari.
+
+#### 2.5.1 Storage Format
+
+WebSQL stores data similar to IndexedDB's structure:
+
+* The whole database will be stored in a WebSQL instance using database's name
+* A special table named `__lf_ver` that stores metadata for the whole database
+* Each table corresponds to a WebSQL table
+* Each row corresponds to a row in WebSQL table. A row contains two fields:
+  * id: unique row id across database
+  * value: serialized JSON string of the row's payload
+
+### 2.6 Database Upgrade
+
+The upgrade process is triggered by bumping up the schema version. Lovefield
+will open the database using updated number, and in turn IndexedDB will fire the
+`onupgradeneeded` event. In that event, Lovefield will
+
+1. create tables (i.e. `objectstores`) which exist in schema but not in
+   IndexedDB
+2. wrap the database connection into `lf.backstore.IndexedDBRawBackstore`
+3. call user-provided `onUpgrade` function with the wrapped instance
+
+This design still exposes the user under the risk of accidentally auto-commit.
+However, there existed no known better alternative that works cross-browser.
+
+### 2.7 External Change
+
+Contents inside a data store can be changed by other sessions or even other
+clients. Most data stores lack external change notifications. As a result,
+for cross-tab implementations, one need to use Web Worker or Service Worker to
+host the database. Lovefield team is aware of this problem and working closely
+with IndexedDB team to pursue a change notification standard for IndexedDB.
+
+Local Storage and Firebase change notifications to inform Lovefield that the
+contents have changed by external sources. By default, Lovefield listens to
+these changes, and will update
+
+* Database cache
+* Indices
+* Observed queries
