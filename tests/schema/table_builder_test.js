@@ -296,6 +296,59 @@ function testAddDuplicateIndexOnFK() {
 }
 
 
+function testFkChildColumnIndex_Unique() {
+  // Case1: addUnique called before addForeignKey.
+  var getSchema1 = function() {
+    var tableBuilder = new lf.schema.TableBuilder('Table');
+    tableBuilder.
+        addColumn('employeeId', lf.Type.INTEGER).
+        addUnique('uq_employeeId', ['employeeId']).
+        addForeignKey('fkEmployeeId', {
+          local: 'employeeId',
+          ref: 'Employee.id'
+        });
+    return tableBuilder.getSchema();
+  };
+  var fkIndexSchema = getSchema1()['employeeId'].getIndices()[1];
+  assertEquals('fkEmployeeId', fkIndexSchema.name);
+  assertTrue(fkIndexSchema.isUnique);
+
+  // Case2: addUnique called after addForeignKey.
+  var getSchema2 = function() {
+    var tableBuilder = new lf.schema.TableBuilder('Table');
+    tableBuilder.
+        addColumn('employeeId', lf.Type.INTEGER).
+        addForeignKey('fkEmployeeId', {
+          local: 'employeeId',
+          ref: 'Employee.id'
+        }).
+        addUnique('uq_employeeId', ['employeeId']);
+    return tableBuilder.getSchema();
+  };
+  fkIndexSchema = getSchema2()['employeeId'].getIndices()[0];
+  assertEquals('fkEmployeeId', fkIndexSchema.name);
+  assertTrue(fkIndexSchema.isUnique);
+}
+
+
+function testFkChildColumnIndex_NonUnique() {
+  // Case: Foreign key child column is not unique.
+  var getSchema = function() {
+    var tableBuilder = new lf.schema.TableBuilder('Table');
+    tableBuilder.
+        addColumn('employeeId', lf.Type.INTEGER).
+        addForeignKey('fkEmployeeId', {
+          local: 'employeeId',
+          ref: 'Employee.id'
+        });
+    return tableBuilder.getSchema();
+  };
+  var fkIndexSchema = getSchema()['employeeId'].getIndices()[0];
+  assertEquals('fkEmployeeId', fkIndexSchema.name);
+  assertFalse(fkIndexSchema.isUnique);
+}
+
+
 /**
  * Tests that the generated createRow() function produces the correct default
  * values for each column, based on the column's type and whether the column is

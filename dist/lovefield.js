@@ -11287,7 +11287,7 @@ lf.schema.TableBuilder.prototype.addForeignKey = function(name, rawSpec) {
     throw new lf.Exception(540, name);
   }
   this.fkSpecs_.push(spec);
-  this.addIndex(name, [spec.childColumn], !1);
+  this.addIndex(name, [spec.childColumn], this.uniqueColumns_.has(spec.childColumn));
   return this;
 };
 goog.exportProperty(lf.schema.TableBuilder.prototype, "addForeignKey", lf.schema.TableBuilder.prototype.addForeignKey);
@@ -11296,12 +11296,20 @@ lf.schema.TableBuilder.prototype.addUnique = function(name, columns) {
   this.checkNameConflicts_(name);
   var cols = this.normalizeColumns_(columns, !0);
   this.checkIndexedColumns_(name, cols);
-  1 == cols.length && this.uniqueColumns_.add(cols[0].name);
+  1 == cols.length && (this.uniqueColumns_.add(cols[0].name), this.markFkIndexForColumnUnique_(cols[0].name));
   this.indices_.set(name, cols);
   this.uniqueIndices_.add(name);
   return this;
 };
 goog.exportProperty(lf.schema.TableBuilder.prototype, "addUnique", lf.schema.TableBuilder.prototype.addUnique);
+lf.schema.TableBuilder.prototype.markFkIndexForColumnUnique_ = function(column) {
+  this.fkSpecs_.forEach(function(fkSpec) {
+    if (fkSpec.childColumn == column) {
+      var indexName = fkSpec.name.split(".")[1];
+      this.uniqueIndices_.add(indexName);
+    }
+  }, this);
+};
 lf.schema.TableBuilder.prototype.addNullable = function(columns) {
   var cols = this.normalizeColumns_(columns, !1);
   this.checkNullableColumns_(cols);
