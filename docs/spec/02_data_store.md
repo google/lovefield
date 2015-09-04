@@ -2,58 +2,17 @@
 
 ## 2. Data Store
 
-Lovefield stores its data in data store. There are two different type of data
-stores:
+Lovefield stores its data in data store. Lovefield currently supports following
+data stores:
 
-* Persistent: data are persisted between sessions. The default persistent
-  implementation uses IndexedDB.
+| Data Store Type | Persistent | Status | Description |
+|-----------------|------------|--------|-------------|
+|`lf.schema.DataStoreType.INDEXED_DB`|Yes (in browser)|Released|Data store using IndexedDB that persists data between sessions.|
+|`lf.schema.DataStoreType.MEMORY`|No|Released|Volatile store that only works for current session.|
+|`lf.schema.DataStoreType.FIREBASE`|Yes (in the cloud)|Released|Data store using Firebase that persists data in the cloud.|
+|`lf.schema.DataStoreType.WEB_SQL`|Yes (in browser)|Experimental|Data store using WebSQL to workaround iOS/Safari IndexedDB issue.|
 
-* Volatile: data are stored in memory and will be lost when session ends. This
-  is useful when the user only wants to use Lovefield's query engine but still
-  fetch all data from server.
-
-The data store is modeled in an interface, [`lf.raw.BackStore`](
-https://github.com/google/lovefield/blob/master/lib/raw.js).
-
-### 2.1 IndexedDB Features and Limitations
-
-There are some interesting caveats caused by IndexedDB specification, and they
-affects the specification design of Lovefield quite a bit. The features that
-affect Lovefield design are listed below:
-
-1. __Auto commit__: IndexedDB will automatically commit the transaction if the
-   transaction has gone out of its message loop. For example, an XHR call to the
-   server in IndexedDB event callback will effectively commit the transaction.
-
-2. __Upgrade__: IndexedDB schema can only be changed in the handler of
-   `onupgradeneeded` event. The event can only be triggered when database is
-   opened. As a result, to alter schema of Lovefield database, one can only do
-   it during initialization time. IndexedDB does not provide a way of renaming
-   table, therefore renaming a table will require recreating a table with exact
-   contents and deleting the old table, which cannot be done safely within the
-   upgrade transaction and user is supposed to do it manually outside of the
-   `onUpgrade` function.
-
-3. __Best effort closing__: IndexedDB does not guarantee the database fully
-   closed if there are connections to the database. As a result, Lovefield could
-   not offer a reliable way to ensure a database instance has brought down
-   completely and then opens it again to alter schema.
-
-4. __First writer wins__: IndexedDB supports multiple connections, which means
-   multiple processes/tabs can connect to the same database instance. IndexedDB
-   currently does not provide any cross-process locking and therefore the first
-   writer reaches the database will win, and the other writers with conflict
-   scope will be rolled back. IndexedDB also does not offer observer/events for
-   changes caused by other session/process/tab.
-
-5. __Event happy__: IndexedDB offers a variety of events for the developer to
-   listen and utilize. Unfortunately this also means a lot of unused events
-   fired by the browser during bulk load. If the database has more than 10K
-   rows in a single table, please consider use the [Bundled Mode](99_postfix.md)
-   to improve app loading time.
-
-
-### 2.2 Row
+### 2.1 Row
 
 In Lovefield, the unit of storage is a row. A row has a unique row id
 across the whole database instance, therefore there is a theoretical limit of
@@ -68,23 +27,39 @@ not `lf.Row` instances.
 
 On the other hand, users are supposed to use `createRow()` function to prepare
 data for `insert()` or `insertOrReplace()`, because this allows Lovefield to
-have a chance to safely convert user payload into Lovefield desired rows.
+have a chance to safely convert user payload into Lovefield desired format.
 In short, `lf.Row` abstracts how Lovefield serialize/deserialize a row from
 underlying data store. Further details will be provided in
 [Select and Insert](04_query.md).
 
-### 2.3 Persistence
+### 2.2 Persistence
 
-Data persistence is organized in a way that all rows of a given table will be
-stored in a grouped area. For example, all rows of a given table will be stored
-in the corresponding object store in IndexedDB by default. This allows easier
-debugging when the user needs to inspect raw data in the database.
+Data persistence is organized in a way that best suits the performance need for
+underlying data store. Detailed internal storage formats are documented in
+[Design Document](../dd/02_data_store.md). Lovefield can not guarantee that raw
+data will be easily inspectable from data store. There are cases it's not
+possible, for example, opting in the experimental feature
+[Bundle Mode](99_postfix.md).
 
-However, Lovefield can not guarantee that raw data will be easily inspectable
-from data store. There are cases it's not possible, for example, opting in the
-experimental feature [Bundle Mode](99_postfix.md).
-
-### 2.4 Quota Management
+Firebase data store actually stores data in the cloud (i.e. Firebase servers).
+They could not be retrieved if there were no network connectivity. Lovefield
+also assumes an authenticated Firebase instance is provided with sufficient
+privilege for Lovefield to read/write.
 
 Lovefield does not do quota management. The user is responsible for allocating
 enough storage quota since it may require UI interactions.
+
+### 2.3 Experimental Stores
+
+As of August, 2015, tests show that Lovefield's IndexedDB backstore could
+not be run on Safari 8 on both OSX/iOS, neither can it run on Safari 9 beta on
+iOS. Safari simply throws mysterious DOM errors that did not happen on IE,
+Firefox and Chrome. This had been reported to WebKit/Apple but there's no word
+regarding ETA of fix.
+
+A WebSQL-based back store is created to fill this gap. The WebSQL backstore
+shall be considered a gap-stopping patch and will be removed as soon as Apple
+fixes IndexedDB bugs in Safari.
+
+There is a LocalStorage-based store for Lovefield testing and will not be public
+unless sufficient interests arisen.

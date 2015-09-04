@@ -39,6 +39,7 @@ The JSON object accepts following fields:
 |:----------|:---------------------------------------|:----------------------|
 |`onUpgrade`|`function(!lf.raw.BackStore):!IThenable`|Database upgrade logic.|
 |`storeType`|`lf.schema.DataStoreType`               |Data store to use.     |
+|`firebase` |`Firebase`                              |Firebase instance      |
 
 The `onUpgrade` property is a function that is called back when Lovefield
 needs to [perform database upgrade](#33-database-upgrade).
@@ -47,22 +48,16 @@ The `storeType` property allows the user to specify what data store to use.
 
 * `lf.schema.DataStoreType.INDEXED_DB`: this is the default, which uses
   browser-provided IndexedDB.
+
 * `lf.schema.DataStoreType.MEMORY`: provides a purely memory-based data store,
-  which does not persist data after session ends.
- 
-In certain use cases, persistent storage is not required or even a bad idea. For
-example, persisting test data onto persistent storage in unit tests is typically
-undesirable. It slows down the test, and requires test infrastructure support
-for removing persisted data. In this case, one can use a pure in-memory storage
-to make sure all data are volatile by providing `lf.schema.DataStoreType.MEMORY`
-in the `storeType` property.
+  which does not persist data after session ends. If this type is specified,
+  `onUpgrade` must be `undefined` since upgrading volatile data store is not
+  applicable.
 
-```js
-schemaBuilder.connect({storeType: lf.schema.DataStoreType.MEMORY});
-```
-
-The `onUpgrade` must be `undefined` in this case since upgrading volatile data
-store is not applicable.
+* `lf.schema.DataStoreType.FIREBASE`: uses user-supplied Firebase instance as
+  data store. If this options is chosen, user *MUST* also supply property
+  `firebase` to provide an already connected and authenticated Firebase
+  instance. Field `firebase` will be ignored for all other data store types.
 
 ### 3.2 Multi-Process Connection
 
@@ -185,6 +180,16 @@ The interface [`lf.raw.BackStore`](
 https://github.com/google/lovefield/blob/master/lib/raw.js) contains detailed
 documentation for each of its member function.
 
+#### 3.3.1 Firebase-Specific Limitations
+
+For Firebase, there are two special rules to be observed:
+
+1. Only one client can be used to create the database.
+2. Database upgrade needs to be carried out in a different manner: clients other
+   than the upgrading one must not be using the database shall there be a
+   database upgrade (this is typically done using Firebase security control
+   instead).
+
 ### 3.4 `lf.Database`
 
 If the schema version matches, or the database upgrade procedure completed, the
@@ -258,3 +263,53 @@ The query building and the transaction model is documented at
 
 Lovefield does not support deleting a database, unfortunately. User is required
 to use IndexedDB API to delete the database if required.
+
+### 3.7 Import/Export
+
+Lovefield supports data backup and restore through `export()` and `import()`
+APIs provided in `lf.Database`. The `export()` API will export all data in the
+database (except persistent indices) into a big JavaScript object in following
+format:
+
+```js
+{
+  "name": <database_name>,
+  "version": <database_version>,
+  "tables": {
+    <table_name>: [
+      {
+        <column_name>: <value>,
+        <column_name>: <value>,
+        ...
+      },
+      { ... },
+      ...
+    ],
+    <table_name>: [ ... ],
+    ...
+  }
+}
+```
+
+Users can then take this object and store it somewhere else (e.g. over the
+network to a server).
+
+The `import()` *MUST* be performed on an empty database, and the provided data
+object must have same name and version. Lovefield *DOES NOT* check for data
+integrity during import. Most constraint checks, except primary keys and unique
+keys, will be turned off during import. Users are responsible for ensuring
+data integrity if the data does not come from Lovefield's `export()`.
+
+Both `import()` and `export()` will lock the database so that no transactions
+can be performed until the import/export is done. The code snippet below shows
+the usage of `import()` and `export()`:
+
+```js
+db.export().then(function(data) {
+  // The data object contains the contents of database
+});
+
+db.import(data).then(function() {
+  // Object data has successfully imported, you can use database as normal.
+});
+```
