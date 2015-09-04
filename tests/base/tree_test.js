@@ -20,15 +20,38 @@ goog.require('lf.structs.TreeNode');
 goog.require('lf.tree');
 
 
+
+/**
+ * @extends {lf.structs.TreeNode}
+ * @constructor
+ * @private
+ *
+ * @param {number} id The ID of this node.
+ */
+var TreeNode_ = function(id) {
+  TreeNode_.base(this, 'constructor');
+
+  /** @private {number} */
+  this.id_ = id;
+};
+goog.inherits(TreeNode_, lf.structs.TreeNode);
+
+
+/** @return {number} */
+TreeNode_.prototype.getId = function() {
+  return this.id_;
+};
+
+
 /**
  * Creates a tree to be used in various tests.
- * @return {!Array<!lf.structs.TreeNode>} An array holding all the nodes in
+ * @return {!Array<!TreeNode_>} An array holding all the nodes in
  *     the tree in pre-order traversal order.
  */
 function createTestTree1() {
   var nodes = new Array(11);
   for (var i = 0; i < nodes.length; i++) {
-    nodes[i] = new lf.structs.TreeNode(i, null);
+    nodes[i] = new TreeNode_(i);
   }
 
   // Creating a tree that has the following structure.
@@ -65,13 +88,13 @@ function createTestTree1() {
 
 /**
  * Creates a different tree to be used in various tests.
- * @return {!Array<!lf.structs.TreeNode>} An array holding all the nodes in
+ * @return {!Array<!TreeNode_>} An array holding all the nodes in
  *     the tree in pre-order traversal order.
  */
 function createTestTree2() {
   var nodes = new Array(7);
   for (var i = 0; i < nodes.length; i++) {
-    nodes[i] = new lf.structs.TreeNode(i, null);
+    nodes[i] = new TreeNode_(i);
   }
 
   // Creating a tree that has the following structure.
@@ -106,7 +129,7 @@ function createTestTree2() {
 function testMap1() {
   var nodes = new Array(6);
   for (var i = 0; i < nodes.length; i++) {
-    nodes[i] = new lf.structs.TreeNode(i, null);
+    nodes[i] = new TreeNode_(i);
   }
 
   nodes[2].addChild(nodes[3]);
@@ -132,12 +155,12 @@ function testMap2() {
 /**
  * Checks that the given tree is producing a tree with an identical structure
  * when cloned.
- * @param {!lf.structs.TreeNode} rootNode
+ * @param {!TreeNode_} rootNode
  */
 function checkMap(rootNode) {
   // Attempting to copy the tree.
   var copy = lf.tree.map(rootNode, function(node) {
-    return new lf.structs.TreeNode(node.getKey(), null);
+    return new TreeNode_(node.getId());
   });
 
   assertEquals(
@@ -154,16 +177,16 @@ function testRemoveNode_Intermediate() {
   var nodes = createTestTree1();
 
   var treeAfter =
-      '[0,null]\n' +
-      '-[2,null]\n' +
-      '-[3,null]\n' +
-      '-[4,null]\n' +
-      '-[5,null]\n' +
-      '--[6,null]\n' +
-      '---[7,null]\n' +
-      '----[8,null]\n' +
-      '----[9,null]\n' +
-      '-[10,null]\n';
+      '[0]\n' +
+      '-[2]\n' +
+      '-[3]\n' +
+      '-[4]\n' +
+      '-[5]\n' +
+      '--[6]\n' +
+      '---[7]\n' +
+      '----[8]\n' +
+      '----[9]\n' +
+      '-[10]\n';
 
   // Removing node n1.
   var removeResult = lf.tree.removeNode(nodes[1]);
@@ -182,16 +205,16 @@ function testRemoveNode_Leaf() {
   var nodes = createTestTree1();
 
   var treeAfter =
-      '[0,null]\n' +
-      '-[1,null]\n' +
-      '--[3,null]\n' +
-      '--[4,null]\n' +
-      '-[5,null]\n' +
-      '--[6,null]\n' +
-      '---[7,null]\n' +
-      '----[8,null]\n' +
-      '----[9,null]\n' +
-      '-[10,null]\n';
+      '[0]\n' +
+      '-[1]\n' +
+      '--[3]\n' +
+      '--[4]\n' +
+      '-[5]\n' +
+      '--[6]\n' +
+      '---[7]\n' +
+      '----[8]\n' +
+      '----[9]\n' +
+      '-[10]\n';
 
   // Removing node n2.
   var removeResult = lf.tree.removeNode(nodes[2]);
@@ -208,19 +231,19 @@ function testRemoveNode_Root() {
   var nodes = createTestTree1();
 
   var subTree1After =
-      '[1,null]\n' +
-      '-[2,null]\n' +
-      '-[3,null]\n' +
-      '-[4,null]\n';
+      '[1]\n' +
+      '-[2]\n' +
+      '-[3]\n' +
+      '-[4]\n';
 
   var subTree2After =
-      '[5,null]\n' +
-      '-[6,null]\n' +
-      '--[7,null]\n' +
-      '---[8,null]\n' +
-      '---[9,null]\n';
+      '[5]\n' +
+      '-[6]\n' +
+      '--[7]\n' +
+      '---[8]\n' +
+      '---[9]\n';
 
-  var subTree3After = '[10,null]\n';
+  var subTree3After = '[10]\n';
 
   // Removing node n0.
   var removeResult = lf.tree.removeNode(nodes[0]);
@@ -239,20 +262,20 @@ function testInsertNodeAt() {
   var nodes = createTestTree1();
 
   var treeAfter =
-      '[0,null]\n' +
-      '-[1,null]\n' +
-      '--[2,null]\n' +
-      '--[3,null]\n' +
-      '--[4,null]\n' +
-      '-[5,null]\n' +
-      '--[6,null]\n' +
-      '---[7,null]\n' +
-      '----[11,null]\n' +
-      '-----[8,null]\n' +
-      '-----[9,null]\n' +
-      '-[10,null]\n';
+      '[0]\n' +
+      '-[1]\n' +
+      '--[2]\n' +
+      '--[3]\n' +
+      '--[4]\n' +
+      '-[5]\n' +
+      '--[6]\n' +
+      '---[7]\n' +
+      '----[11]\n' +
+      '-----[8]\n' +
+      '-----[9]\n' +
+      '-[10]\n';
 
-  var newNode = new lf.structs.TreeNode(11, null);
+  var newNode = new TreeNode_(11);
   lf.tree.insertNodeAt(nodes[7], newNode);
   assertEquals(treeAfter, lf.tree.toString(nodes[0], stringFn));
 }
@@ -262,22 +285,22 @@ function testReplaceChainWithChain() {
   var nodes = createTestTree1();
 
   var treeAfter =
-      '[0,null]\n' +
-      '-[1,null]\n' +
-      '--[2,null]\n' +
-      '--[3,null]\n' +
-      '--[4,null]\n' +
-      '-[11,null]\n' +
-      '--[12,null]\n' +
-      '---[13,null]\n' +
-      '----[8,null]\n' +
-      '----[9,null]\n' +
-      '-[10,null]\n';
+      '[0]\n' +
+      '-[1]\n' +
+      '--[2]\n' +
+      '--[3]\n' +
+      '--[4]\n' +
+      '-[11]\n' +
+      '--[12]\n' +
+      '---[13]\n' +
+      '----[8]\n' +
+      '----[9]\n' +
+      '-[10]\n';
 
-  var newHead = new lf.structs.TreeNode(11, null);
-  var intermediate = new lf.structs.TreeNode(12, null);
+  var newHead = new TreeNode_(11);
+  var intermediate = new TreeNode_(12);
   newHead.addChild(intermediate);
-  var newTail = new lf.structs.TreeNode(13, null);
+  var newTail = new TreeNode_(13);
   intermediate.addChild(newTail);
 
   var head = nodes[5];
@@ -291,17 +314,17 @@ function testReplaceChainWithNode() {
   var nodes = createTestTree1();
 
   var treeAfter =
-      '[0,null]\n' +
-      '-[1,null]\n' +
-      '--[2,null]\n' +
-      '--[3,null]\n' +
-      '--[4,null]\n' +
-      '-[11,null]\n' +
-      '--[8,null]\n' +
-      '--[9,null]\n' +
-      '-[10,null]\n';
+      '[0]\n' +
+      '-[1]\n' +
+      '--[2]\n' +
+      '--[3]\n' +
+      '--[4]\n' +
+      '-[11]\n' +
+      '--[8]\n' +
+      '--[9]\n' +
+      '-[10]\n';
 
-  var newNode = new lf.structs.TreeNode(11, null);
+  var newNode = new TreeNode_(11);
   var head = nodes[5];
   var tail = nodes[7];
   lf.tree.replaceChainWithNode(head, tail, newNode);
@@ -313,24 +336,24 @@ function testReplaceNodeWithChain() {
   var nodes = createTestTree1();
 
   var treeAfter =
-      '[0,null]\n' +
-      '-[1,null]\n' +
-      '--[2,null]\n' +
-      '--[3,null]\n' +
-      '--[4,null]\n' +
-      '-[5,null]\n' +
-      '--[6,null]\n' +
-      '---[7,null]\n' +
-      '----[11,null]\n' +
-      '-----[12,null]\n' +
-      '------[13,null]\n' +
-      '----[9,null]\n' +
-      '-[10,null]\n';
+      '[0]\n' +
+      '-[1]\n' +
+      '--[2]\n' +
+      '--[3]\n' +
+      '--[4]\n' +
+      '-[5]\n' +
+      '--[6]\n' +
+      '---[7]\n' +
+      '----[11]\n' +
+      '-----[12]\n' +
+      '------[13]\n' +
+      '----[9]\n' +
+      '-[10]\n';
 
-  var head = new lf.structs.TreeNode(11, null);
-  var other = new lf.structs.TreeNode(12, null);
+  var head = new TreeNode_(11);
+  var other = new TreeNode_(12);
   head.addChild(other);
-  var tail = new lf.structs.TreeNode(13, null);
+  var tail = new TreeNode_(13);
   other.addChild(tail);
 
   lf.tree.replaceNodeWithChain(nodes[8], head, tail);
@@ -342,25 +365,25 @@ function testPushNodeBelowChild() {
   var nodes = createTestTree1();
 
   var treeAfter =
-      '[0,null]\n' +
-      '-[1,null]\n' +
-      '--[2,null]\n' +
-      '--[3,null]\n' +
-      '--[4,null]\n' +
-      '-[5,null]\n' +
-      '--[7,null]\n' +
-      '---[6,null]\n' +
-      '----[8,null]\n' +
-      '---[9,null]\n' +
-      '-[10,null]\n';
+      '[0]\n' +
+      '-[1]\n' +
+      '--[2]\n' +
+      '--[3]\n' +
+      '--[4]\n' +
+      '-[5]\n' +
+      '--[7]\n' +
+      '---[6]\n' +
+      '----[8]\n' +
+      '---[9]\n' +
+      '-[10]\n';
 
 
   var cloneFn = function(node) {
-    return new lf.structs.TreeNode(node.getKey(), null);
+    return new TreeNode_(node.getId());
   };
 
   var shouldPushDownFn = function(child) {
-    return child.getKey() == 8;
+    return child.getId() == 8;
   };
 
   // Pushing down n6, only to above grandchildren that have key == 8.
@@ -373,17 +396,17 @@ function testSwapNodeWithChild() {
   var nodes = createTestTree1();
 
   var treeAfter =
-      '[0,null]\n' +
-      '-[1,null]\n' +
-      '--[2,null]\n' +
-      '--[3,null]\n' +
-      '--[4,null]\n' +
-      '-[6,null]\n' +
-      '--[5,null]\n' +
-      '---[7,null]\n' +
-      '----[8,null]\n' +
-      '----[9,null]\n' +
-      '-[10,null]\n';
+      '[0]\n' +
+      '-[1]\n' +
+      '--[2]\n' +
+      '--[3]\n' +
+      '--[4]\n' +
+      '-[6]\n' +
+      '--[5]\n' +
+      '---[7]\n' +
+      '----[8]\n' +
+      '----[9]\n' +
+      '-[10]\n';
   var newSubtreeRoot = lf.tree.swapNodeWithChild(nodes[5]);
   assertEquals(nodes[6], newSubtreeRoot);
   assertEquals(treeAfter, lf.tree.toString(nodes[0], stringFn));
@@ -393,23 +416,24 @@ function testSwapNodeWithChild() {
 function testGetLeafNodes() {
   var nodes = createTestTree1();
   var leafNodes = lf.tree.getLeafNodes(nodes[0]);
-  var leafNodeKeys = leafNodes.map(function(node) {
-    return node.getKey();
-  });
+  var leafNodeKeys = leafNodes.map(
+      function(node) {
+        return /** @type {!TreeNode_} */ (node).getId();
+      });
   assertArrayEquals([2, 3, 4, 8 , 9, 10], leafNodeKeys);
 }
 
 
 function testFind() {
   var nodes = createTestTree1();
-  var minKey = 6;
+  var minId = 6;
   var retrievedNodes = lf.tree.find(
       nodes[0],
       function(node) {
-        return node.getKey() >= minKey;
+        return /** @type {!TreeNode_} */ (node).getId() >= minId;
       });
   retrievedNodes.forEach(function(node) {
-    assertTrue(node.getKey() >= minKey);
+    assertTrue(/** @type {!TreeNode_} */ (node).getId() >= minId);
 
   });
 }
@@ -417,19 +441,19 @@ function testFind() {
 
 function testFind_Stop() {
   var nodes = createTestTree1();
-  var minKey = 4;
+  var minId = 4;
   var retrievedNodes = lf.tree.find(
       nodes[0],
       function(node) {
-        return node.getKey() >= minKey;
+        return /** @type {!TreeNode_} */ (node).getId() >= minId;
       },
       function(node) {
-        return node.getKey() == 7;
+        return /** @type {!TreeNode_} */ (node).getId() == 7;
       });
   assertArrayEquals(
       [4, 5, 6, 7, 10],
       retrievedNodes.map(function(node) {
-        return node.getKey();
+        return /** @type {!TreeNode_} */ (node).getId();
       }));
 }
 
@@ -439,5 +463,5 @@ function testFind_Stop() {
  * @return {string} A string representation of the node.
  */
 function stringFn(node) {
-  return '[' + node.getKey() + ',' + node.getValue() + ']\n';
+  return '[' + /** @type {!TreeNode_} */ (node).getId() + ']\n';
 }

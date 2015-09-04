@@ -20,41 +20,39 @@ goog.require('lf.structs.TreeNode');
 
 
 function testConstructor() {
-  var node = new lf.structs.TreeNode('key', 'value');
-  assertEquals('key', node.getKey());
-  assertEquals('value', node.getValue());
+  var node = new lf.structs.TreeNode();
   assertNull(node.getParent());
   assertArrayEquals([], node.getChildren());
   assertTrue(node.isLeaf());
 }
 
 function testGetParent() {
-  var node1 = new lf.structs.TreeNode(1, null);
-  var node2 = new lf.structs.TreeNode(2, null);
+  var node1 = new lf.structs.TreeNode();
+  var node2 = new lf.structs.TreeNode();
   node1.addChild(node2);
   assertEquals(node1, node2.getParent());
   assertNull(node1.getParent());
 }
 
 function testIsLeaf() {
-  var node1 = new lf.structs.TreeNode(1, null);
-  var node2 = new lf.structs.TreeNode(2, null);
+  var node1 = new lf.structs.TreeNode();
+  var node2 = new lf.structs.TreeNode();
   node1.addChild(node2);
   assertFalse(node1.isLeaf());
   assertTrue(node2.isLeaf());
 }
 
 function testGetChildren() {
-  var node1 = new lf.structs.TreeNode(1, null);
-  var node2 = new lf.structs.TreeNode(2, null);
+  var node1 = new lf.structs.TreeNode();
+  var node2 = new lf.structs.TreeNode();
   node1.addChild(node2);
   assertArrayEquals([node2], node1.getChildren());
   assertArrayEquals([], node2.getChildren());
 }
 
 function testGetChildAt() {
-  var node1 = new lf.structs.TreeNode(1, null);
-  var node2 = new lf.structs.TreeNode(2, null);
+  var node1 = new lf.structs.TreeNode();
+  var node2 = new lf.structs.TreeNode();
   node1.addChild(node2);
   assertNull(node1.getChildAt(-1));
   assertEquals(node2, node1.getChildAt(0));
@@ -63,17 +61,17 @@ function testGetChildAt() {
 }
 
 function testGetChildCount() {
-  var node1 = new lf.structs.TreeNode(1, null);
-  var node2 = new lf.structs.TreeNode(2, null);
+  var node1 = new lf.structs.TreeNode();
+  var node2 = new lf.structs.TreeNode();
   node1.addChild(node2);
   assertEquals(1, node1.getChildCount());
   assertEquals(0, node2.getChildCount());
 }
 
 function testGetDepth() {
-  var node1 = new lf.structs.TreeNode(1, null);
-  var node2 = new lf.structs.TreeNode(2, null);
-  var node3 = new lf.structs.TreeNode(3, null);
+  var node1 = new lf.structs.TreeNode();
+  var node2 = new lf.structs.TreeNode();
+  var node3 = new lf.structs.TreeNode();
   node1.addChild(node2);
   node2.addChild(node3);
   assertEquals(0, node1.getDepth());
@@ -82,18 +80,18 @@ function testGetDepth() {
 }
 
 function testGetRoot() {
-  var node1 = new lf.structs.TreeNode(1, null);
-  var node2 = new lf.structs.TreeNode(2, null);
+  var node1 = new lf.structs.TreeNode();
+  var node2 = new lf.structs.TreeNode();
   node1.addChild(node2);
   assertEquals(node1, node1.getRoot());
   assertEquals(node1, node2.getRoot());
 }
 
 function testTraverse() {
-  var node1 = new lf.structs.TreeNode(1, null);
-  var node2 = new lf.structs.TreeNode(2, null);
-  var node3 = new lf.structs.TreeNode(3, null);
-  var node4 = new lf.structs.TreeNode(4, null);
+  var node1 = new lf.structs.TreeNode();
+  var node2 = new lf.structs.TreeNode();
+  var node3 = new lf.structs.TreeNode();
+  var node4 = new lf.structs.TreeNode();
   node1.addChild(node2);
   node2.addChild(node3);
   node2.addChild(node4);
@@ -115,9 +113,9 @@ function testTraverse() {
 }
 
 function testAddChild() {
-  var node1 = new lf.structs.TreeNode(1, null);
-  var node2 = new lf.structs.TreeNode(2, null);
-  var node3 = new lf.structs.TreeNode(3, null);
+  var node1 = new lf.structs.TreeNode();
+  var node2 = new lf.structs.TreeNode();
+  var node3 = new lf.structs.TreeNode();
   assertArrayEquals([], node1.getChildren());
   node1.addChild(node2);
   assertArrayEquals([node2], node1.getChildren());
@@ -127,11 +125,11 @@ function testAddChild() {
 }
 
 function testAddChildAt() {
-  var node1 = new lf.structs.TreeNode(1, null);
-  var node2 = new lf.structs.TreeNode(2, null);
-  var node3 = new lf.structs.TreeNode(3, null);
-  var node4 = new lf.structs.TreeNode(4, null);
-  var node5 = new lf.structs.TreeNode(5, null);
+  var node1 = new lf.structs.TreeNode();
+  var node2 = new lf.structs.TreeNode();
+  var node3 = new lf.structs.TreeNode();
+  var node4 = new lf.structs.TreeNode();
+  var node5 = new lf.structs.TreeNode();
   node1.addChildAt(node2, 0);
   assertArrayEquals([node2], node1.getChildren());
   assertEquals(node1, node2.getParent());
@@ -144,11 +142,11 @@ function testAddChildAt() {
 }
 
 function testReplaceChildAt() {
-  var root = new lf.structs.TreeNode(0, null);
-  var node1 = new lf.structs.TreeNode(1, null);
+  var root = new lf.structs.TreeNode();
+  var node1 = new lf.structs.TreeNode();
   root.addChild(node1);
 
-  var node2 = new lf.structs.TreeNode(2, null);
+  var node2 = new lf.structs.TreeNode();
   assertEquals(node1, root.replaceChildAt(node2, 0));
   assertEquals(root, node2.getParent());
   assertArrayEquals([node2], root.getChildren());
@@ -156,9 +154,9 @@ function testReplaceChildAt() {
 }
 
 function testRemoveChildAt() {
-  var node1 = new lf.structs.TreeNode(1, null);
-  var node2 = new lf.structs.TreeNode(2, null);
-  var node3 = new lf.structs.TreeNode(3, null);
+  var node1 = new lf.structs.TreeNode();
+  var node2 = new lf.structs.TreeNode();
+  var node3 = new lf.structs.TreeNode();
   node1.addChild(node2);
   node1.addChild(node3);
 
@@ -176,9 +174,9 @@ function testRemoveChildAt() {
 }
 
 function testRemoveChild() {
-  var node1 = new lf.structs.TreeNode(1, null);
-  var node2 = new lf.structs.TreeNode(2, null);
-  var node3 = new lf.structs.TreeNode(3, null);
+  var node1 = new lf.structs.TreeNode();
+  var node2 = new lf.structs.TreeNode();
+  var node3 = new lf.structs.TreeNode();
   node1.addChild(node2);
   node1.addChild(node3);
 

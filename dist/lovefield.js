@@ -4901,15 +4901,10 @@ lf.eval.buildDateEvaluatorMap_ = function() {
   });
   return map;
 };
-lf.structs.TreeNode = function(key, value) {
-  this.key_ = key;
-  this.value_ = value;
+lf.structs.TreeNode = function() {
   this.children_ = this.parent_ = null;
 };
 lf.structs.TreeNode.EMPTY_ARRAY_ = [];
-lf.structs.TreeNode.prototype.getValue = function() {
-  return this.value_;
-};
 lf.structs.TreeNode.prototype.getParent = function() {
   return this.parent_;
 };
@@ -4977,7 +4972,7 @@ lf.PredicateProvider = function() {
 };
 lf.pred = {};
 lf.pred.PredicateNode = function() {
-  lf.structs.TreeNode.call(this, "", "");
+  lf.structs.TreeNode.call(this);
   this.id_ = lf.pred.PredicateNode.nextId_++;
 };
 goog.inherits(lf.pred.PredicateNode, lf.structs.TreeNode);
@@ -8204,7 +8199,7 @@ lf.fn.geomean = function(col) {
 };
 goog.exportSymbol("lf.fn.geomean", lf.fn.geomean);
 lf.proc.PhysicalQueryPlanNode = function(numRelations, type) {
-  lf.structs.TreeNode.call(this, "", "");
+  lf.structs.TreeNode.call(this);
   this.execType_ = type;
   this.numRelations_ = numRelations;
 };
@@ -8381,7 +8376,7 @@ lf.proc.LogicalQueryPlan.prototype.getScope = function() {
   return this.scope_;
 };
 lf.proc.LogicalQueryPlanNode = function() {
-  lf.structs.TreeNode.call(this, "", "");
+  lf.structs.TreeNode.call(this);
 };
 goog.inherits(lf.proc.LogicalQueryPlanNode, lf.structs.TreeNode);
 lf.proc.InsertNode = function(table, values) {
