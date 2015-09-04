@@ -80,3 +80,76 @@ These components will be detailed in following chapters.
 * Query related APIs shall be as close to SQL syntax as possible. Do not
   change the order or terminology unless absolutely necessary (e.g. `AND`
   operator).
+
+### 0.7 API Design
+
+Although Lovefield's APIs look deceptively simple, the design behind it involves
+a lot of mind works. The general ideas are:
+
+* A set of APIs that are very friendly to SQL users offering most of SQL goodies
+* And avoid possible SQL injections
+* And can work with different JavaScript frameworks
+
+Similar works have been done before (e.g. Microsoft LINQ or FOAM framework).
+From implementation point of view, this type of syntax makes sense:
+
+```js
+db.from(job)
+  .where(function(x) { return x.id < 200; })
+  .select();
+```
+
+However, this breaks one major advantage of SQL: it just reads like natural
+language. Why should we care about "reading naturally"? Because we developers
+read way more code in our career than writing. APIs that can be read naturally
+are easier to use, maintain, and debug. So how about this version?
+
+```js
+db.select()
+  .from(job)
+  .where(function(x) { return x.id < 200; })
+  .exec();
+```
+
+This reads a lot better, in an expense of adding one additional call `exec()`.
+The problem of this syntax is that it does not work for relational query engine.
+The search conditions are treated as predicate trees that can be optimized. A
+user-provided function is not a good candidate for predicates, unfortunately.
+So how about this?
+
+```js
+db.select()
+  .from(job)
+  .where(LT(job.id, 200))
+  .exec();
+```
+
+LT is a provided predicate function. This looks promising and avoids injection
+threats. There are two minor problems here:
+
+* It pollutes global namespace: there are a handful operators and many
+  aggregation functions for SQL. If there's a symbol collision, it will be
+  pain to use (e.g. overriding $ when using jQuery).
+* It still does not read naturally.
+
+That's why Lovefield's APIs look like this:
+
+```js
+db.select()
+  .from(job)
+  .where(job.id.lt(200))
+  .exec();
+```
+
+It is very readable without the drawbacks. However, this syntax poses more
+challenges for implementation because now the `job` has to have a property
+`id` that has member function `lt`.
+
+The original solution is to use a Schema Parser and Code-Generator (SPAC) to
+generate JavaScript code. Lovefield team later developed a run-time solution
+without using `eval()`. These topics are further discussed in
+[Schema](01_schema.md).
+
+Following this design philosophy, Lovefield maps quite a few semantics from
+SQL 03 and therefore has the syntax as documented in
+[Specification](../spec_index.md).

@@ -17,76 +17,136 @@ Quote from our spec reviewer Scott Hess:
 Lovefield shares the same insight Scott has and tries to keep the index data
 type as simple as possible.
 
-Currently Lovefield does not allow indexing of nullable fields. This is still
-under evaluation and subjected to change in the future.
-
-
-
 ### 6.2 Data Structure for Indices
 
 Lovefield is designed to allow multiple index types from the very beginning.
 The philosophy behind this is to utilize the most efficient index structure
 for different scenarios.
 
-#### 6.2.1 AA Tree
+Lovefield explored different and algorithms for index structure implementation
+and carefully chose the algorithm based on performance benchmarks.
 
-Lovefield implements
-[Arne Andersson Tree](http://user.it.uu.se/~arnea/abs/simp.html). It is used
-to validate index testing infrastructure.
-
-The major reason is the implementation of AA tree is extremely small.
-Performance benchmarks have indicated that AA trees are not as competitive as
-B+ trees. Lovefield keeps AA Tree for verification purposes since it is very
-simple and comprehensive.
-
-AA Tree disallows non-unique index.
-
-#### 6.2.2 B+ Tree Index
-
-Lovefield implements B+ Tree as its default index data structure. The B+ Tree
-algorithm is based on the text book "Database Systems, the complete book", 2nd
-edition written by Hector Garcia Molina, Jeffery D. Ullman, and Jennifer Widom,
-published by Pearson.
-
-B+ Tree is a very complicated data structure and some argues the complexity
-of it makes physical optimization very hard. However, Lovefield has a
-different use case. The major performance bottleneck of Lovefield is I/O,
-especially IndexedDB I/O. Lovefield stores rows as IndexedDB objects, and
-therefore past experiences regarding physical plan optimization may not apply
-to Lovefield since they are under the assumption of using page-based disk I/O.
-B+ Tree is proven to have least writes and therefore considered suitable for
-Lovefield's persistence need.
-
-#### 6.2.3 Row ID Index
-
-This index type is a simple set. It is used for row id look up. Since the row
-ids are unique, a set shall suffice. The normalized name of the Row ID index is
-always in the form `TableName.#`.
-
-### 6.3 Unique and Non-Unique Index
+Values of Lovefield indices are row ids. When row ids are collected, the query
+engine can determine either to fetch the row ids from data store or through the
+cache.
 
 In Lovefield, *unique* index means that one key can only correspond to one row
 id. This property is also used for enforcing the unique constraint. When the
 insertion causes a key violation, it will throw an exception and thus will
 enforce either the primary key or unique constraint.
 
-Lovefield's implementation of non-unique B-Tree is to use an array to hold row
-ids. This design is quite different from traditional wisdom, which implements
-special internal nodes in B-Tree. The reasons are:
+#### 6.2.1 Performance Benchmark Design
 
-* It's simpler to implement and less error-prone.
-* It is assumed that the deletion of a single row is rare, and the cost of
-  deleting it from an array may not be too expensive since removing a null key
-  in the internal node is also removing an element from array.
+As a general-purpose database, Lovefield needs to consider various scenarios
+while evaluating performance. Performance is a very broad term and can be very
+distorted by usage pattern, browser implementation, or even CPU architectures.
 
-Lovefield has set up some performance monitoring for that and had not found any
-significant impact caused by this design yet.
+Currently Lovefield has following sets of performance benchmark:
 
-### 6.4 Cross-Column Index
+1. Loading/Initialization (for both empty database and populated)
+2. Bulk SCUD (Select/Create/Update/Delete) when no index exists
+3. Bulk SCUD for simple schemas (i.e. tables have only primary keys)
+4. Bulk SCUD for complex schemas (i.e. referential constraints in place)
+5. SELECT performance for all designed scenarios (i.e. index efficiency
+   regarding single value, range scan, full scan, sorting, joining, and
+   grouping)
+6. Special interest scenarios: transaction attach, select binding
 
-Cross-column index is implemented by abstracting the comparator from index data
-structure. Each index data structure will be associated with a comparator when
-it is created. The comparator is set up according to the order specification of
-the index (ascending or descending), and the columns of that index.
+Lovefield employs test-driven development for all performance-tuning changes:
+a set of tests will be created first to validate whether the performance is
+improved as expected or not.
 
-(still evolving, TBA)
+#### 6.2.2 AA Tree
+
+Originally Lovefield implements
+[Arne Andersson Tree](http://user.it.uu.se/~arnea/abs/simp.html) due to its
+code simplicity and good performance.
+
+Performance benchmarks have indicated that AA trees are not as competitive as
+B+ trees (especially in range queries). As a result, AA-Tree is retired
+permanently.
+
+#### 6.2.3 B+ Tree Index
+
+Lovefield implements B+ Tree as its default index data structure. The B+ Tree
+algorithm is based on the text book "Database Systems, the complete book", 2nd
+edition written by Hector Garcia Molina, Jeffery D. Ullman, and Jennifer Widom,
+published by Pearson. Of course, Lovefield adds quite some tweaks to that
+algorithm for various reasons: differences between C and JavaScript, actual
+performance tweaking for real-world usage, ... etc.
+
+B+ Tree is a very complicated data structure and some argues the complexity
+of it makes physical optimization very hard. However, past experiences regarding
+physical plan optimization do not apply to Lovefield since they are under the
+assumption of using page-based disk I/O, which is irrelavant for most data
+stores of Lovefield.
+
+Lovefield's B+ tree has following tweaks:
+
+1. It disallows NULL value as key to simplify the implementation.
+2. It abstracts comparator: the tree only cares about left and right (detailed
+   discussion will be provided in later sections)
+3. If the tree is declared as non-unique, the children will be an array instead
+   of single value, and this is very different from traditional implementation.
+   The reasons for doing so are mainly for simplicity of implementation.
+   Lovefield may switch back to traditional implementation to allow duplicated
+   keys in internal nodes to simplify cost estimation in the future.
+4. The B+ tree has a much bigger fan-out than usual (512 vs typical 64). This is
+   because the 4K page size is meaningless in JavaScript. A bigger fan-out
+   causes fewer split/merge operations in index construction, but may cause
+   additional iterations of key look up. The value 512 is picked based on
+   performance benchmarks done in 2014 and may change in the future if the
+   benchmarks suggested otherwise.
+
+#### 6.2.4 Row ID Index
+
+This index type is a simple set. It is used for row id look up. Since the row
+ids are unique, a set shall suffice. The normalized name of the Row ID index is
+always in the form `TableName.#`.
+
+#### 6.2.5 Nullable Index
+
+Index on a nullable column is implemented in a different way. `NULL` involves
+three-value logic and could not be directly compared. Lovefield currently uses
+a meta-index to wrap nullable index: a composite structure that keeps a set of
+row ids whose key is null, and a real B+ Tree to keep row ids whose keys are
+not null.
+
+Lovefield may alter this design later in order to support cross-column nullable
+indices.
+
+### 6.4 Comparator Abstraction
+
+Simple tree indices typically have one order and forge absolute comparison logic
+within. For example, a B+ tree on the text book always has the smallest value
+on the left, and largest value on the right.
+
+A general technique is to abstract the comparison into comparator so that the
+same interfaces can be used even with different data types. Lovefield uses this
+concept, but for different reasons.
+
+One reason is to create a different order of index by default. If the user
+already specified index to be built in descending order, Lovefield will just use
+a descending comparator to build that index. This makes the query plan simpler
+in most cases.
+
+Another reason is for supporting cross-column index. Currently, cross-column
+indices are implemented by abstracting the comparator from index data
+structure. Lovefield thinks that cross-column indices are orchestrated from
+composite keys, therefore it uses composite key comparators to construct the
+B+ Tree index.
+
+### 6.5 Future Researches
+
+Index structures and algorithms directly impact the database's performance.
+Lovefield team has explored following research directions but yet having time/
+resources to actually test these ideas out:
+
+* Multi-level B+ Tree indices instead of composite keys for cross-column
+  indices: composite keys may not be as efficient as just building individual
+  indices for each column and then do a set intersection.
+
+* Grid File: if the cross-column indices are created for multi-dimension range
+  queries all the time, a Grid File will be more effective in this case.
+
+* Quad Tree: Another data structure for cross-column indices.
