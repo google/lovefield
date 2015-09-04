@@ -18,6 +18,7 @@ goog.setTestOnly();
 goog.require('goog.testing.AsyncTestCase');
 goog.require('goog.testing.jsunit');
 goog.require('lf.schema.DataStoreType');
+goog.require('lf.testing.Capability');
 goog.require('lf.testing.hrSchema.MockDataGenerator');
 goog.require('lf.testing.hrSchema.getSchemaBuilder');
 goog.require('lf.testing.util');
@@ -28,20 +29,33 @@ var asyncTestCase = goog.testing.AsyncTestCase.createAndInstall(
     'ImportTaskTest');
 
 
-function testImport() {
-  var builder1 = lf.testing.hrSchema.getSchemaBuilder('hr');
-  var builder2 = lf.testing.hrSchema.getSchemaBuilder('hr');
+/** @type {number} */
+asyncTestCase.stepTimeout = 30 * 1000;  // 30 seconds.
+
+
+/** @type {!lf.testing.Capability} */
+var capability;
+
+
+function setUpPage() {
+  capability = lf.testing.Capability.get();
+}
+
+
+/**
+ * @param {!lf.schema.ConnectOptions} options Connect options.
+ * @return {!IThenable}
+ */
+function runTestImport(options) {
+  var builder1 = lf.testing.hrSchema.getSchemaBuilder();
+  var builder2 = lf.testing.hrSchema.getSchemaBuilder();
   var dataGen = new lf.testing.hrSchema.MockDataGenerator(builder1.getSchema());
   dataGen.generate(
       /* jobCount */ 100, /* employeeCount */ 1000, /* departmentCount */ 10);
 
-  asyncTestCase.waitForAsync('testImport');
-
   var db, db2;
   var data;
-  builder1.connect({
-    storeType: lf.schema.DataStoreType.MEMORY
-  }).then(function(dbInstance) {
+  return builder1.connect(options).then(function(dbInstance) {
     db = dbInstance;
     var d = db.getSchema().table('Department');
     var l = db.getSchema().table('Location');
@@ -64,20 +78,35 @@ function testImport() {
   }).then(function(exportedData) {
     data = exportedData;
     db.close();
-    return builder2.connect({storeType: lf.schema.DataStoreType.MEMORY});
+    return builder2.connect(options);
   }).then(function(dbInstance) {
     db2 = dbInstance;
+    data['name'] = builder2.getSchema().name();
     return db2.import(data);
   }).then(function() {
     return db2.export();
   }).then(function(exportedData) {
-    assertEquals(builder1.getSchema().name(), exportedData['name']);
-    assertEquals(builder1.getSchema().version(), exportedData['version']);
+    assertEquals(builder2.getSchema().name(), exportedData['name']);
+    assertEquals(builder2.getSchema().version(), exportedData['version']);
     assertObjectEquals(data, exportedData);
-    asyncTestCase.continueTesting();
   });
 }
 
+function testImport_MemDB() {
+  asyncTestCase.waitForAsync('testImport_MemDB');
+  runTestImport({storeType: lf.schema.DataStoreType.MEMORY}).then(
+      asyncTestCase.continueTesting.bind(asyncTestCase), fail);
+}
+
+function testImport_IndexedDB() {
+  if (!capability.indexedDb) {
+    return;
+  }
+
+  asyncTestCase.waitForAsync('testImport_IndexedDB');
+  runTestImport({storeType: lf.schema.DataStoreType.INDEXED_DB}).then(
+      asyncTestCase.continueTesting.bind(asyncTestCase), fail);
+}
 
 function disabledTestBenchmark() {
   var ROW_COUNT = 62500;

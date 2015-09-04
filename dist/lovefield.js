@@ -10648,6 +10648,7 @@ lf.proc.ExportTask.prototype.getPriority = function() {
   return lf.proc.TaskPriority.EXPORT_TASK;
 };
 lf.proc.ImportTask = function(global, data) {
+  this.global_ = global;
   this.schema_ = global.getService(lf.service.SCHEMA);
   this.scope_ = lf.structs.set.create(this.schema_.tables());
   this.resolver_ = goog.Promise.withResolver();
@@ -10657,6 +10658,9 @@ lf.proc.ImportTask = function(global, data) {
   this.indexStore_ = global.getService(lf.service.INDEX_STORE);
 };
 lf.proc.ImportTask.prototype.exec = function() {
+  if (!(this.backStore_ instanceof lf.backstore.IndexedDB || this.backStore_ instanceof lf.backstore.Memory)) {
+    throw new lf.Exception(300);
+  }
   if (!this.isEmptyDB_()) {
     throw new lf.Exception(110);
   }
@@ -10666,7 +10670,7 @@ lf.proc.ImportTask.prototype.exec = function() {
   if (!goog.isDefAndNotNull(this.data_.tables)) {
     throw new lf.Exception(112);
   }
-  return this.importMemory_();
+  return this.import_();
 };
 lf.proc.ImportTask.prototype.getType = function() {
   return lf.TransactionType.READ_WRITE;
@@ -10692,11 +10696,12 @@ lf.proc.ImportTask.prototype.isEmptyDB_ = function() {
   }
   return !0;
 };
-lf.proc.ImportTask.prototype.importMemory_ = function() {
-  for (var tableName in this.data_.tables) {
-    var table = this.schema_.table(tableName), payloads = this.data_.tables[tableName], rows = payloads.map(function(value) {
-      return table.createRow(value);
-    }), memoryTable = this.backStore_.getTableInternal(tableName);
+lf.proc.ImportTask.prototype.import_ = function() {
+  var journal = new lf.cache.Journal(this.global_, this.scope_), tx = this.backStore_.createTx(this.getType(), journal), tableName;
+  for (tableName in this.data_.tables) {
+    var tableSchema = this.schema_.table(tableName), payloads = this.data_.tables[tableName], rows = payloads.map(function(value) {
+      return tableSchema.createRow(value);
+    }), table = tx.getTable(tableName, tableSchema.deserializeRow);
     this.cache_.setMany(tableName, rows);
     var indices = this.indexStore_.getTableIndices(tableName);
     rows.forEach(function(row) {
@@ -10705,9 +10710,9 @@ lf.proc.ImportTask.prototype.importMemory_ = function() {
         index.add(key, row.id());
       });
     });
-    memoryTable.putSync(rows);
+    table.put(rows);
   }
-  return goog.Promise.resolve([]);
+  return tx.commit();
 };
 lf.proc.TransactionTask = function(global, scope) {
   this.global_ = global;
