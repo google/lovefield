@@ -71,6 +71,9 @@ table:
           local: albumId
           ref: Album.id
           action: cascade
+      unique:
+        uq_photoId:
+          column: [ photoId ]
 
   Curator:
     column:

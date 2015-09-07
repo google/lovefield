@@ -929,7 +929,7 @@ lovefield.db.schema.Details = function() {
 
   /** @type {!lf.schema.BaseColumn.<string>} */
   this.photoId = new lf.schema.BaseColumn(
-      this, 'photoId', false, false, lf.Type.STRING);
+      this, 'photoId', true, false, lf.Type.STRING);
   cols.push(this.photoId);
 
   /** @type {!lf.schema.BaseColumn.<string>} */
@@ -948,7 +948,11 @@ lovefield.db.schema.Details = function() {
           {schema: this.id1, order: lf.Order.ASC, autoIncrement: false},
           {schema: this.id2, order: lf.Order.ASC, autoIncrement: false}
         ]),
-    new lf.schema.Index('Details', 'fk_photoId', false,
+    new lf.schema.Index('Details', 'uq_photoId', true,
+        [
+          {schema: this.photoId, order: lf.Order.ASC}
+        ]),
+    new lf.schema.Index('Details', 'fk_photoId', true,
         [
           {schema: this.photoId, order: lf.Order.ASC}
         ]),
@@ -1107,6 +1111,8 @@ lovefield.db.row.Details.prototype.keyOfIndex = function(indexName) {
         this.payload().id1,
         this.payload().id2
       ];
+    case 'Details.uq_photoId':
+      return this.payload().photoId;
     case 'Details.fk_photoId':
       return this.payload().photoId;
     case 'Details.fk_albumId':
