@@ -21,7 +21,11 @@ section for missing features.
 
 [Design Documents](docs/dd_index.md)
 
-Live 30min overview presentation at JS.LA: Watch on
+Lovefield is
+[Day 98 of 100 days of Google Dev](https://www.youtube.com/watch?v=S1AUIq8GA1k).
+This is a quick 7-minute video filmed in August 2015.
+
+Live 30min overview presentation at JS.LA (February 2015): Watch on
 [YouTube](https://www.youtube.com/watch?v=wRiI4p5Uk4E) or
 [Vimeo](https://vimeo.com/118934273).
 
