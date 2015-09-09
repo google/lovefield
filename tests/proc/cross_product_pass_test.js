@@ -23,8 +23,9 @@ goog.require('lf.proc.CrossProductNode');
 goog.require('lf.proc.CrossProductPass');
 goog.require('lf.proc.SelectNode');
 goog.require('lf.proc.TableAccessNode');
+goog.require('lf.query.SelectContext');
 goog.require('lf.schema.DataStoreType');
-goog.require('lf.tree');
+goog.require('lf.testing.treeutil');
 
 
 /** @type {!goog.testing.AsyncTestCase} */
@@ -75,20 +76,23 @@ function testTree() {
       '---table_access(JobHistory)\n' +
       '--table_access(Department)\n';
 
-  var crossProductNode = new lf.proc.CrossProductNode();
-  crossProductNode.addChild(new lf.proc.TableAccessNode(e));
-  crossProductNode.addChild(new lf.proc.TableAccessNode(j));
-  crossProductNode.addChild(new lf.proc.TableAccessNode(schema.getLocation()));
-  crossProductNode.addChild(
-      new lf.proc.TableAccessNode(schema.getJobHistory()));
-  crossProductNode.addChild(new lf.proc.TableAccessNode(d));
+  var constructTree = function() {
+    var queryContext = new lf.query.SelectContext(hr.db.getSchema());
+    queryContext.from = [e, j, schema.getLocation(), schema.getJobHistory(), d];
+    queryContext.where = lf.op.and(e.jobId.eq(j.id), e.departmentId.eq(d.id));
 
-  var rootNodeBefore = new lf.proc.SelectNode(
-      lf.op.and(e.jobId.eq(j.id), e.departmentId.eq(d.id)));
-  rootNodeBefore.addChild(crossProductNode);
-  assertEquals(treeBefore, lf.tree.toString(rootNodeBefore));
+    var crossProductNode = new lf.proc.CrossProductNode();
+    queryContext.from.forEach(function(tableSchema) {
+      crossProductNode.addChild(new lf.proc.TableAccessNode(tableSchema));
+    });
+
+    var selectNode = new lf.proc.SelectNode(queryContext.where);
+    selectNode.addChild(crossProductNode);
+
+    return {queryContext: queryContext, root: selectNode};
+  };
 
   var pass = new lf.proc.CrossProductPass();
-  var rootNodeAfter = pass.rewrite(rootNodeBefore);
-  assertEquals(treeAfter, lf.tree.toString(rootNodeAfter));
+  lf.testing.treeutil.assertTreeTransformation(
+      constructTree(), treeBefore, treeAfter, pass);
 }

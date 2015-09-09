@@ -285,13 +285,14 @@ function testTree_IndexRangeScan_CrossColumnIndex_Unaffected() {
 function constructTree1(sortColumn, sortOrder) {
   var queryContext = new lf.query.SelectContext(hr.db.getSchema());
   queryContext.from = [e];
+  queryContext.orderBy = [{
+    column: sortColumn,
+    order: sortOrder
+  }];
   queryContext.where = e.id.gt('100');
 
   var rootNode = new lf.proc.ProjectStep([], null);
-  var orderByNode = new lf.proc.OrderByStep([{
-    column: sortColumn,
-    order: sortOrder
-  }]);
+  var orderByNode = new lf.proc.OrderByStep(queryContext.orderBy);
   var selectNode = new lf.proc.SelectStep(queryContext.where.getId());
   var tableAccessNode = new lf.proc.TableAccessFullStep(
       hr.db.getGlobal(), queryContext.from[0]);
@@ -318,9 +319,7 @@ function constructTree2(sortOrder1, sortOrder2) {
   var queryContext = new lf.query.SelectContext(hr.db.getSchema());
   queryContext.from = [dt];
   queryContext.where = dt.boolean.eq(false);
-
-  var projectNode = new lf.proc.ProjectStep([], null);
-  var orderByNode = new lf.proc.OrderByStep([
+  queryContext.orderBy = [
     {
       column: dt.string,
       order: sortOrder1
@@ -328,7 +327,10 @@ function constructTree2(sortOrder1, sortOrder2) {
       column: dt.number,
       order: sortOrder2
     }
-  ]);
+  ];
+
+  var projectNode = new lf.proc.ProjectStep([], null);
+  var orderByNode = new lf.proc.OrderByStep(queryContext.orderBy);
   var selectNode = new lf.proc.SelectStep(queryContext.where.getId());
   var tableAccessNode = new lf.proc.TableAccessFullStep(
       hr.db.getGlobal(), queryContext.from[0]);
@@ -355,9 +357,7 @@ function constructTree3(sortOrder1, sortOrder2) {
   var queryContext = new lf.query.SelectContext(hr.db.getSchema());
   queryContext.from = [dt];
   queryContext.where = dt.boolean.eq(false);
-
-  var projectNode = new lf.proc.ProjectStep([], null);
-  var orderByNode = new lf.proc.OrderByStep([
+  queryContext.orderBy = [
     {
       column: dt.string,
       order: sortOrder1
@@ -365,7 +365,10 @@ function constructTree3(sortOrder1, sortOrder2) {
       column: dt.number,
       order: sortOrder2
     }
-  ]);
+  ];
+
+  var projectNode = new lf.proc.ProjectStep([], null);
+  var orderByNode = new lf.proc.OrderByStep(queryContext.orderBy);
   var selectNode = new lf.proc.SelectStep(queryContext.where.getId());
   var tableAccessByRowIdNode = new lf.proc.TableAccessByRowIdStep(
       hr.db.getGlobal(), queryContext.from[0]);

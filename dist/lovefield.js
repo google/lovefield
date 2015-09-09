@@ -8549,7 +8549,10 @@ lf.proc.AndPredicatePass.prototype.createSelectNodeChain_ = function(predicates)
 lf.proc.CrossProductPass = function() {
 };
 goog.inherits(lf.proc.CrossProductPass, lf.proc.RewritePass);
-lf.proc.CrossProductPass.prototype.rewrite = function(rootNode) {
+lf.proc.CrossProductPass.prototype.rewrite = function(rootNode, queryContext) {
+  if (3 > queryContext.from.length) {
+    return rootNode;
+  }
   this.rootNode = rootNode;
   this.traverse_(this.rootNode);
   return this.rootNode;
@@ -9315,24 +9318,27 @@ lf.proc.DeleteLogicalPlanGenerator.prototype.generateInternal = function() {
 lf.proc.ImplicitJoinsPass = function() {
 };
 goog.inherits(lf.proc.ImplicitJoinsPass, lf.proc.RewritePass);
-lf.proc.ImplicitJoinsPass.prototype.rewrite = function(rootNode, query) {
+lf.proc.ImplicitJoinsPass.prototype.rewrite = function(rootNode, queryContext) {
+  if (2 > queryContext.from.length) {
+    return rootNode;
+  }
   this.rootNode = rootNode;
-  this.traverse_(this.rootNode, query);
+  this.traverse_(this.rootNode, queryContext);
   return this.rootNode;
 };
-lf.proc.ImplicitJoinsPass.prototype.traverse_ = function(rootNode, opt_query) {
+lf.proc.ImplicitJoinsPass.prototype.traverse_ = function(rootNode, queryContext) {
   if (rootNode instanceof lf.proc.SelectNode && rootNode.predicate instanceof lf.pred.JoinPredicate) {
     goog.asserts.assert(1 == rootNode.getChildCount(), "SelectNode must have exactly one child.");
     var predicateId = rootNode.predicate.getId(), child$$0 = rootNode.getChildAt(0);
     if (child$$0 instanceof lf.proc.CrossProductNode) {
-      var isOuterJoin = goog.isDef(opt_query) && goog.isDefAndNotNull(opt_query.outerJoinPredicates) && opt_query.outerJoinPredicates.has(predicateId), joinNode = new lf.proc.JoinNode(rootNode.predicate, isOuterJoin);
+      var isOuterJoin = goog.isDefAndNotNull(queryContext.outerJoinPredicates) && queryContext.outerJoinPredicates.has(predicateId), joinNode = new lf.proc.JoinNode(rootNode.predicate, isOuterJoin);
       lf.tree.replaceChainWithNode(rootNode, child$$0, joinNode);
       rootNode == this.rootNode && (this.rootNode = joinNode);
       rootNode = joinNode;
     }
   }
   rootNode.getChildren().forEach(function(child) {
-    this.traverse_(child, opt_query);
+    this.traverse_(child, queryContext);
   }, this);
 };
 lf.proc.PushDownSelectionsPass = function() {
@@ -9342,8 +9348,11 @@ goog.inherits(lf.proc.PushDownSelectionsPass, lf.proc.RewritePass);
 lf.proc.PushDownSelectionsPass.prototype.clear_ = function() {
   this.alreadyPushedDown_.clear();
 };
-lf.proc.PushDownSelectionsPass.prototype.rewrite = function(rootNode) {
+lf.proc.PushDownSelectionsPass.prototype.rewrite = function(rootNode, queryContext) {
   this.clear_();
+  if (!goog.isDef(queryContext.where)) {
+    return rootNode;
+  }
   this.rootNode = rootNode;
   this.traverse_(this.rootNode);
   this.clear_();
@@ -10113,17 +10122,17 @@ lf.proc.SkipStep.prototype.execInternal = function(journal, relations, context) 
 lf.proc.LimitSkipByIndexPass = function() {
 };
 goog.inherits(lf.proc.LimitSkipByIndexPass, lf.proc.RewritePass);
-lf.proc.LimitSkipByIndexPass.prototype.rewrite = function(rootNode) {
-  var nodes = lf.tree.find(rootNode, function(node) {
-    return node instanceof lf.proc.LimitStep || node instanceof lf.proc.SkipStep;
-  });
-  if (0 == nodes.length) {
+lf.proc.LimitSkipByIndexPass.prototype.rewrite = function(rootNode, queryContext) {
+  if (!goog.isDef(queryContext.limit) && !goog.isDef(queryContext.skip)) {
     return rootNode;
   }
   var indexRangeScanStep = this.findIndexRangeScanStep_(rootNode);
   if (goog.isNull(indexRangeScanStep)) {
     return rootNode;
   }
+  var nodes = lf.tree.find(rootNode, function(node) {
+    return node instanceof lf.proc.LimitStep || node instanceof lf.proc.SkipStep;
+  });
   nodes.forEach(function(node) {
     this.mergeToIndexRangeScanStep_(node, indexRangeScanStep);
   }, this);
@@ -10146,8 +10155,8 @@ lf.proc.OrderByIndexPass = function(global) {
   this.global_ = global;
 };
 goog.inherits(lf.proc.OrderByIndexPass, lf.proc.RewritePass);
-lf.proc.OrderByIndexPass.prototype.rewrite = function(rootNode) {
-  var orderByStep = lf.proc.OrderByIndexPass.findOrderByStep_(rootNode);
+lf.proc.OrderByIndexPass.prototype.rewrite = function(rootNode, queryContext) {
+  var orderByStep = lf.proc.OrderByIndexPass.findOrderByStep_(rootNode, queryContext);
   if (goog.isNull(orderByStep)) {
     return rootNode;
   }
@@ -10197,11 +10206,10 @@ lf.proc.OrderByIndexPass.findTableAccessFullStep_ = function(rootNode) {
   }, tableAccessFullSteps = lf.tree.find(rootNode, filterFn, stopFn);
   return 0 < tableAccessFullSteps.length ? tableAccessFullSteps[0] : null;
 };
-lf.proc.OrderByIndexPass.findOrderByStep_ = function(rootNode) {
-  var filterFn = function(node) {
+lf.proc.OrderByIndexPass.findOrderByStep_ = function(rootNode, queryContext) {
+  return goog.isDef(queryContext.orderBy) ? lf.tree.find(rootNode, function(node) {
     return node instanceof lf.proc.OrderByStep;
-  }, orderBySteps = lf.tree.find(rootNode, filterFn);
-  return 0 < orderBySteps.length ? orderBySteps[0] : null;
+  })[0] : null;
 };
 lf.proc.OrderByIndexPass.findIndexCandidateForOrderBy_ = function(tableSchema, orderBy) {
   for (var indexCandidate = null, indexSchemas = tableSchema.getIndices(), i = 0;i < indexSchemas.length && goog.isNull(indexCandidate);i++) {

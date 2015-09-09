@@ -18,6 +18,7 @@ goog.provide('lf.testing.treeutil');
 goog.provide('lf.testing.treeutil.Tree');
 
 goog.require('goog.testing.jsunit');
+goog.require('lf.proc.PhysicalQueryPlanNode');
 goog.require('lf.tree');
 
 
@@ -27,7 +28,7 @@ goog.scope(function() {
 /**
  * @typedef {{
  *   queryContext: !lf.query.SelectContext,
- *   root: !lf.proc.PhysicalQueryPlanNode
+ *   root: (!lf.proc.PhysicalQueryPlanNode|!lf.proc.LogicalQueryPlanNode)
  * }}
  */
 lf.testing.treeutil.Tree;
@@ -50,8 +51,15 @@ lf.testing.treeutil.assertTreeTransformation = function(
 };
 
 
+/**
+ * @param {!lf.query.Context} queryContext
+ * @param {!lf.structs.TreeNode} node
+ * @return {string}
+ */
 function toString(queryContext, node) {
-  return node.toContextString(queryContext) + '\n';
+  return (node instanceof lf.proc.PhysicalQueryPlanNode) ?
+      node.toContextString(queryContext) + '\n' :
+      node.toString() + '\n';
 }
 
 });  // goog.scope

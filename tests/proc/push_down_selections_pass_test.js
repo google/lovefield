@@ -19,13 +19,15 @@ goog.require('goog.testing.AsyncTestCase');
 goog.require('goog.testing.jsunit');
 goog.require('hr.db');
 goog.require('lf.Order');
+goog.require('lf.op');
 goog.require('lf.proc.CrossProductNode');
 goog.require('lf.proc.OrderByNode');
 goog.require('lf.proc.PushDownSelectionsPass');
 goog.require('lf.proc.SelectNode');
 goog.require('lf.proc.TableAccessNode');
+goog.require('lf.query.SelectContext');
 goog.require('lf.schema.DataStoreType');
-goog.require('lf.tree');
+goog.require('lf.testing.treeutil');
 
 
 /** @type {!goog.testing.AsyncTestCase} */
@@ -83,23 +85,33 @@ function testTree_ValuePredicates1() {
       '--select(value_pred(Job.minSalary gt 100))\n' +
       '---table_access(Job)\n';
 
-  var orderByNode = new lf.proc.OrderByNode(
-      [{column: e.id, order: lf.Order.ASC}]);
-  var selectNode1 = new lf.proc.SelectNode(e.salary.gt(1000));
-  orderByNode.addChild(selectNode1);
-  var selectNode2 = new lf.proc.SelectNode(j.minSalary.gt(100));
-  selectNode1.addChild(selectNode2);
-  var selectNode3 = new lf.proc.SelectNode(e.hireDate.lt(hireDate));
-  selectNode2.addChild(selectNode3);
-  var crossProductNode = new lf.proc.CrossProductNode();
-  selectNode3.addChild(crossProductNode);
-  crossProductNode.addChild(new lf.proc.TableAccessNode(e));
-  crossProductNode.addChild(new lf.proc.TableAccessNode(j));
-  var rootNodeBefore = orderByNode;
-  assertEquals(treeBefore, lf.tree.toString(rootNodeBefore));
+  var constructTree = function() {
+    var queryContext = new lf.query.SelectContext(hr.db.getSchema());
+    queryContext.from = [e, j];
+    var predicate1 = e.salary.gt(1000);
+    var predicate2 = j.minSalary.gt(100);
+    var predicate3 = e.hireDate.lt(hireDate);
+    queryContext.where = lf.op.and(predicate1, predicate2, predicate3);
+    queryContext.orderBy = [{column: e.id, order: lf.Order.ASC}];
 
-  var rootNodeAfter = pass.rewrite(rootNodeBefore);
-  assertEquals(treeAfter, lf.tree.toString(rootNodeAfter));
+    var orderByNode = new lf.proc.OrderByNode(queryContext.orderBy);
+    var selectNode1 = new lf.proc.SelectNode(predicate1);
+    orderByNode.addChild(selectNode1);
+    var selectNode2 = new lf.proc.SelectNode(predicate2);
+    selectNode1.addChild(selectNode2);
+    var selectNode3 = new lf.proc.SelectNode(predicate3);
+    selectNode2.addChild(selectNode3);
+    var crossProductNode = new lf.proc.CrossProductNode();
+    selectNode3.addChild(crossProductNode);
+    queryContext.from.forEach(function(tableSchema) {
+      crossProductNode.addChild(new lf.proc.TableAccessNode(tableSchema));
+    });
+
+    return {queryContext: queryContext, root: orderByNode};
+  };
+
+  lf.testing.treeutil.assertTreeTransformation(
+      constructTree(), treeBefore, treeAfter, pass);
 }
 
 
@@ -117,19 +129,27 @@ function testTree_ValuePredicates2() {
       '--select(value_pred(Employee.salary lt 20))\n' +
       '---table_access(Employee)\n';
 
-  var orderByNode = new lf.proc.OrderByNode(
-      [{column: e.id, order: lf.Order.ASC}]);
-  var selectNode1 = new lf.proc.SelectNode(e.salary.gt(10));
-  orderByNode.addChild(selectNode1);
-  var selectNode2 = new lf.proc.SelectNode(e.salary.lt(20));
-  selectNode1.addChild(selectNode2);
-  var tableAccess = new lf.proc.TableAccessNode(e);
-  selectNode2.addChild(tableAccess);
-  var rootNodeBefore = orderByNode;
-  assertEquals(treeBefore, lf.tree.toString(rootNodeBefore));
+  var constructTree = function() {
+    var queryContext = new lf.query.SelectContext(hr.db.getSchema());
+    queryContext.from = [e];
+    var predicate1 = e.salary.gt(10);
+    var predicate2 = e.salary.lt(20);
+    queryContext.where = lf.op.and(predicate1, predicate2);
+    queryContext.orderBy = [{column: e.id, order: lf.Order.ASC}];
 
-  var rootNodeAfter = pass.rewrite(rootNodeBefore);
-  assertEquals(treeBefore, lf.tree.toString(rootNodeAfter));
+    var orderByNode = new lf.proc.OrderByNode(queryContext.orderBy);
+    var selectNode1 = new lf.proc.SelectNode(predicate1);
+    orderByNode.addChild(selectNode1);
+    var selectNode2 = new lf.proc.SelectNode(predicate2);
+    selectNode1.addChild(selectNode2);
+    var tableAccess = new lf.proc.TableAccessNode(queryContext.from[0]);
+    selectNode2.addChild(tableAccess);
+
+    return {queryContext: queryContext, root: orderByNode};
+  };
+
+  lf.testing.treeutil.assertTreeTransformation(
+      constructTree(), treeBefore, treeBefore, pass);
 }
 
 
@@ -155,19 +175,27 @@ function testTree_ValuePredicates3() {
       '---table_access(Employee)\n' +
       '--table_access(Job)\n';
 
-  var orderByNode = new lf.proc.OrderByNode(
-      [{column: e.id, order: lf.Order.ASC}]);
-  var selectNode = new lf.proc.SelectNode(e.salary.gt(10));
-  orderByNode.addChild(selectNode);
-  var crossProductNode = new lf.proc.CrossProductNode();
-  selectNode.addChild(crossProductNode);
-  crossProductNode.addChild(new lf.proc.TableAccessNode(e));
-  crossProductNode.addChild(new lf.proc.TableAccessNode(j));
-  var rootNodeBefore = orderByNode;
-  assertEquals(treeBefore, lf.tree.toString(rootNodeBefore));
+  var constructTree = function() {
+    var queryContext = new lf.query.SelectContext(hr.db.getSchema());
+    queryContext.from = [e, j];
+    queryContext.where = e.salary.gt(10);
+    queryContext.orderBy = [{column: e.id, order: lf.Order.ASC}];
 
-  var rootNodeAfter = pass.rewrite(rootNodeBefore);
-  assertEquals(treeAfter, lf.tree.toString(rootNodeAfter));
+    var orderByNode = new lf.proc.OrderByNode(queryContext.orderBy);
+    var selectNode = new lf.proc.SelectNode(queryContext.where);
+    orderByNode.addChild(selectNode);
+    var crossProductNode = new lf.proc.CrossProductNode();
+    selectNode.addChild(crossProductNode);
+    queryContext.from.forEach(function(tableSchema) {
+      crossProductNode.addChild(new lf.proc.TableAccessNode(tableSchema));
+
+    });
+
+    return {queryContext: queryContext, root: orderByNode};
+  };
+
+  lf.testing.treeutil.assertTreeTransformation(
+      constructTree(), treeBefore, treeAfter, pass);
 }
 
 
@@ -199,21 +227,34 @@ function testTree_JoinPredicates() {
       '----table_access(Job)\n' +
       '--table_access(Department)\n';
 
-  var crossProductNode1 = new lf.proc.CrossProductNode();
-  crossProductNode1.addChild(new lf.proc.TableAccessNode(e));
-  crossProductNode1.addChild(new lf.proc.TableAccessNode(j));
-  var crossProductNode2 = new lf.proc.CrossProductNode();
-  crossProductNode2.addChild(crossProductNode1);
-  crossProductNode2.addChild(new lf.proc.TableAccessNode(d));
+  var constructTree = function() {
+    var queryContext = new lf.query.SelectContext(hr.db.getSchema());
+    queryContext.from = [e, j, d];
+    var predicate1 = e.departmentId.eq(d.id);
+    var predicate2 = e.jobId.eq(j.id);
+    queryContext.where = lf.op.and(predicate1, predicate2);
 
-  var selectNode = new lf.proc.SelectNode(e.departmentId.eq(d.id));
-  selectNode.addChild(crossProductNode2);
-  var rootNodeBefore = new lf.proc.SelectNode(e.jobId.eq(j.id));
-  rootNodeBefore.addChild(selectNode);
-  assertEquals(treeBefore, lf.tree.toString(rootNodeBefore));
+    var crossProductNode1 = new lf.proc.CrossProductNode();
+    crossProductNode1.addChild(
+        new lf.proc.TableAccessNode(queryContext.from[0]));
+    crossProductNode1.addChild(
+        new lf.proc.TableAccessNode(queryContext.from[1]));
+    var crossProductNode2 = new lf.proc.CrossProductNode();
+    crossProductNode2.addChild(crossProductNode1);
+    crossProductNode2.addChild(
+        new lf.proc.TableAccessNode(queryContext.from[2]));
 
-  var rootNodeAfter = pass.rewrite(rootNodeBefore);
-  assertEquals(treeAfter, lf.tree.toString(rootNodeAfter));
+    var selectNode1 = new lf.proc.SelectNode(predicate1);
+    selectNode1.addChild(crossProductNode2);
+    var selectNode2 = new lf.proc.SelectNode(predicate2);
+    selectNode2.addChild(selectNode1);
+
+
+    return {queryContext: queryContext, root: selectNode2};
+  };
+
+  lf.testing.treeutil.assertTreeTransformation(
+      constructTree(), treeBefore, treeAfter, pass);
 }
 
 
@@ -261,38 +302,49 @@ function testTree_JoinPredicates2() {
       '----table_access(JobHistory)\n' +
       '--table_access(Country)\n';
 
-  var crossProductNode1 = new lf.proc.CrossProductNode();
-  crossProductNode1.addChild(new lf.proc.TableAccessNode(e));
-  crossProductNode1.addChild(new lf.proc.TableAccessNode(j));
+  var constructTree = function() {
+    var queryContext = new lf.query.SelectContext(hr.db.getSchema());
+    queryContext.from = [e, j, d, jh, c];
+    var predicate1 = jh.jobId.eq(j.id);
+    var predicate2 = e.jobId.eq(j.id);
+    var predicate3 = e.departmentId.eq(d.id);
+    var predicate4 = e.id.eq('empId');
+    var predicate5 = c.id.eq(d.id);
+    queryContext.where = lf.op.and(
+        predicate1, predicate2, predicate3, predicate4, predicate5);
 
-  var crossProductNode2 = new lf.proc.CrossProductNode();
-  crossProductNode2.addChild(crossProductNode1);
-  crossProductNode2.addChild(new lf.proc.TableAccessNode(d));
+    var crossProductNode1 = new lf.proc.CrossProductNode();
+    crossProductNode1.addChild(new lf.proc.TableAccessNode(e));
+    crossProductNode1.addChild(new lf.proc.TableAccessNode(j));
 
-  var crossProductNode3 = new lf.proc.CrossProductNode();
-  crossProductNode3.addChild(crossProductNode2);
-  crossProductNode3.addChild(new lf.proc.TableAccessNode(jh));
+    var crossProductNode2 = new lf.proc.CrossProductNode();
+    crossProductNode2.addChild(crossProductNode1);
+    crossProductNode2.addChild(new lf.proc.TableAccessNode(d));
 
-  var crossProductNode4 = new lf.proc.CrossProductNode();
-  crossProductNode4.addChild(crossProductNode3);
-  crossProductNode4.addChild(new lf.proc.TableAccessNode(c));
+    var crossProductNode3 = new lf.proc.CrossProductNode();
+    crossProductNode3.addChild(crossProductNode2);
+    crossProductNode3.addChild(new lf.proc.TableAccessNode(jh));
 
-  var selectStep1 = new lf.proc.SelectNode(jh.jobId.eq(j.id));
-  selectStep1.addChild(crossProductNode4);
-  var selectStep2 = new lf.proc.SelectNode(e.jobId.eq(j.id));
-  selectStep2.addChild(selectStep1);
-  var selectStep3 = new lf.proc.SelectNode(e.departmentId.eq(d.id));
-  selectStep3.addChild(selectStep2);
-  var selectStep4 = new lf.proc.SelectNode(e.id.eq('empId'));
-  selectStep4.addChild(selectStep3);
-  var selectStep5 = new lf.proc.SelectNode(c.id.eq(d.id));
-  selectStep5.addChild(selectStep4);
+    var crossProductNode4 = new lf.proc.CrossProductNode();
+    crossProductNode4.addChild(crossProductNode3);
+    crossProductNode4.addChild(new lf.proc.TableAccessNode(c));
 
-  var rootNodeBefore = selectStep5;
-  assertEquals(treeBefore, lf.tree.toString(rootNodeBefore));
+    var selectStep1 = new lf.proc.SelectNode(predicate1);
+    selectStep1.addChild(crossProductNode4);
+    var selectStep2 = new lf.proc.SelectNode(predicate2);
+    selectStep2.addChild(selectStep1);
+    var selectStep3 = new lf.proc.SelectNode(predicate3);
+    selectStep3.addChild(selectStep2);
+    var selectStep4 = new lf.proc.SelectNode(predicate4);
+    selectStep4.addChild(selectStep3);
+    var selectStep5 = new lf.proc.SelectNode(predicate5);
+    selectStep5.addChild(selectStep4);
 
-  var rootNodeAfter = pass.rewrite(rootNodeBefore);
-  assertEquals(treeAfter, lf.tree.toString(rootNodeAfter));
+    return {queryContext: queryContext, root: selectStep5};
+  };
+
+  lf.testing.treeutil.assertTreeTransformation(
+      constructTree(), treeBefore, treeAfter, pass);
 }
 
 
@@ -320,19 +372,24 @@ function testTree_JoinPredicates3() {
       '---table_access(Job as j1)\n' +
       '--table_access(Job as j2)\n';
 
-  var crossProductNode = new lf.proc.CrossProductNode();
-  crossProductNode.addChild(new lf.proc.TableAccessNode(j1));
-  crossProductNode.addChild(new lf.proc.TableAccessNode(j2));
+  var constructTree = function() {
+    var queryContext = new lf.query.SelectContext(hr.db.getSchema());
+    queryContext.from = [j1, j2];
+    var predicate1 = j1.maxSalary.lt(30000);
+    var predicate2 = j1.maxSalary.eq(j2.minSalary);
+    queryContext.where = lf.op.and(predicate1, predicate2);
 
-  var selectNode1 = new lf.proc.SelectNode(j1.maxSalary.lt(30000));
-  selectNode1.addChild(crossProductNode);
+    var crossProductNode = new lf.proc.CrossProductNode();
+    crossProductNode.addChild(new lf.proc.TableAccessNode(j1));
+    crossProductNode.addChild(new lf.proc.TableAccessNode(j2));
+    var selectNode1 = new lf.proc.SelectNode(predicate1);
+    selectNode1.addChild(crossProductNode);
+    var selectNode2 = new lf.proc.SelectNode(predicate2);
+    selectNode2.addChild(selectNode1);
 
-  var selectNode2 = new lf.proc.SelectNode(j1.maxSalary.eq(j2.minSalary));
-  selectNode2.addChild(selectNode1);
+    return {queryContext: queryContext, root: selectNode2};
+  };
 
-  var rootNodeBefore = selectNode2;
-  assertEquals(treeBefore, lf.tree.toString(rootNodeBefore));
-
-  var rootNodeAfter = pass.rewrite(rootNodeBefore);
-  assertEquals(treeAfter, lf.tree.toString(rootNodeAfter));
+  lf.testing.treeutil.assertTreeTransformation(
+      constructTree(), treeBefore, treeAfter, pass);
 }

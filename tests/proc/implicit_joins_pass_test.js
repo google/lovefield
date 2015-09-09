@@ -22,8 +22,9 @@ goog.require('lf.proc.CrossProductNode');
 goog.require('lf.proc.ImplicitJoinsPass');
 goog.require('lf.proc.SelectNode');
 goog.require('lf.proc.TableAccessNode');
+goog.require('lf.query.SelectContext');
 goog.require('lf.schema.DataStoreType');
-goog.require('lf.tree');
+goog.require('lf.testing.treeutil');
 
 
 /** @type {!goog.testing.AsyncTestCase} */
@@ -63,14 +64,22 @@ function testSimpleTree() {
       '-table_access(Employee)\n' +
       '-table_access(Job)\n';
 
-  var rootNodeBefore = new lf.proc.SelectNode(e.jobId.eq(j.id));
-  var crossProductNode = new lf.proc.CrossProductNode();
-  rootNodeBefore.addChild(crossProductNode);
-  crossProductNode.addChild(new lf.proc.TableAccessNode(e));
-  crossProductNode.addChild(new lf.proc.TableAccessNode(j));
-  assertEquals(treeBefore, lf.tree.toString(rootNodeBefore));
+  var constructTree = function() {
+    var queryContext = new lf.query.SelectContext(schema);
+    queryContext.from = [e, j];
+    queryContext.where = e.jobId.eq(j.id);
+
+    var selectNode = new lf.proc.SelectNode(queryContext.where);
+    var crossProductNode = new lf.proc.CrossProductNode();
+    selectNode.addChild(crossProductNode);
+    queryContext.from.forEach(function(tableSchema) {
+      crossProductNode.addChild(new lf.proc.TableAccessNode(tableSchema));
+    });
+
+    return {queryContext: queryContext, root: selectNode};
+  };
 
   var pass = new lf.proc.ImplicitJoinsPass();
-  var rootNodeAfter = pass.rewrite(rootNodeBefore);
-  assertEquals(treeAfter, lf.tree.toString(rootNodeAfter));
+  lf.testing.treeutil.assertTreeTransformation(
+      constructTree(), treeBefore, treeAfter, pass);
 }
