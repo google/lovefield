@@ -28,8 +28,5 @@ html {
 footer {
   background-color: #f8f8f8;
   border-top: 1px solid #e7e7e7;
-  bottom: 0;
   margin-top: 20px;
-  position: absolute;
-  width: 100%;
 }
