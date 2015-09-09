@@ -885,7 +885,9 @@ goog.string.removeAll = function(s, ss) {
 goog.string.regExpEscape = function(s) {
   return String(s).replace(/([-()\[\]{}+?*.$\^|,:#<!\\])/g, "\\$1").replace(/\x08/g, "\\x08");
 };
-goog.string.repeat = function(string, length) {
+goog.string.repeat = String.prototype.repeat ? function(string, length) {
+  return string.repeat(length);
+} : function(string, length) {
   return Array(length + 1).join(string);
 };
 goog.string.padNumber = function(num, length, opt_precision) {
@@ -4233,7 +4235,7 @@ lf.Exception = function(code, var_args) {
   this.message = "http://sn.im/2a0j3wn?c=" + code;
   if (1 < arguments.length) {
     for (var i = 1;i <= Math.min(4, arguments.length - 1);++i) {
-      this.message += "&p" + (i - 1) + "=" + goog.string.urlEncode(arguments[i].toString().slice(0, 64));
+      this.message += "&p" + (i - 1) + "=" + encodeURIComponent(arguments[i].toString().slice(0, 64));
     }
   }
 };
