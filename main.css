@@ -1,5 +1,16 @@
 .small-logo {
-  height: 50px;
+  height: 64px;
+}
+
+.navbar {
+  padding-top: 4px;
+  padding-bottom: 4px;
+  height: 72px;
+}
+
+.navbar-nav>li>a {
+  padding-top: 19px;
+  padding-bottom: 19px;
 }
 
 .navbar-brand {
