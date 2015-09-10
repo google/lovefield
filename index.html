@@ -1,94 +1,107 @@
 <!doctype html>
 <html>
-  <head>
-    <title>Lovefield: The Data Access Library that Loves You</title>
-    <meta charset="utf8" />
-    <link href="bootstrap.min.css" rel="stylesheet" />
-    <link href="main.css" rel="stylesheet" />
-  </head>
-  <body>
-    <nav class="navbar navbar-default navbar-static-top">
-      <div class="container">
-        <div>
-          <a class="navbar-brand" href="#">
-            <img class="small-logo" src="logo-small.png"/>
-          </a>
-        </div>
-        <div class="collapse navbar-collapse">
-          <ul class="nav navbar-nav navbar-right">
-            <li><a href="#">Download</a></li>
-            <li><a href="#">Learn</a></li>
-            <li><a href="#">Demos</a></li>
-            <li><a href="https://github.com/google/lovefield">GitHub</a></li>
-          </ul>
-        </div>
+
+<head>
+  <title>Lovefield: The Data Access Library that Loves You</title>
+  <meta charset="utf8" />
+  <link href="bootstrap.min.css" rel="stylesheet" />
+  <link href="main.css" rel="stylesheet" />
+  <link rel="apple-touch-icon" sizes="57x57" href="assets/favicon/apple-icon-57x57.png">
+  <link rel="apple-touch-icon" sizes="60x60" href="assets/favicon/apple-icon-60x60.png">
+  <link rel="apple-touch-icon" sizes="72x72" href="assets/favicon/apple-icon-72x72.png">
+  <link rel="apple-touch-icon" sizes="76x76" href="assets/favicon/apple-icon-76x76.png">
+  <link rel="apple-touch-icon" sizes="114x114" href="assets/favicon/apple-icon-114x114.png">
+  <link rel="apple-touch-icon" sizes="120x120" href="assets/favicon/apple-icon-120x120.png">
+  <link rel="apple-touch-icon" sizes="144x144" href="assets/favicon/apple-icon-144x144.png">
+  <link rel="apple-touch-icon" sizes="152x152" href="assets/favicon/apple-icon-152x152.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="assets/favicon/apple-icon-180x180.png">
+  <link rel="icon" type="image/png" sizes="192x192" href="assets/favicon/android-icon-192x192.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="assets/favicon/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="96x96" href="assets/favicon/favicon-96x96.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="assets/favicon/favicon-16x16.png">
+  <link rel="manifest" href="assets/favicon/manifest.json">
+  <meta name="msapplication-TileColor" content="#ffffff">
+  <meta name="msapplication-TileImage" content="assets/favicon/ms-icon-144x144.png">
+  <meta name="theme-color" content="#ffffff">
+</head>
+
+<body>
+  <nav class="navbar navbar-default navbar-static-top">
+    <div class="container">
+      <div>
+        <a class="navbar-brand" href="#">
+          <img class="small-logo" src="assets/img/logotype64.png" />
+        </a>
       </div>
-    </nav>
-
-    <div class="contents">
-      <div class="container">
-        <div class="jumbotron">
-          <h1>Lovefield</h1>
-          <p class="lead">
-            Lovefield is a relational database for web apps.<br/>
-            It is written in JavaScript and works cross-browser.<br/>
-            It provides SQL-like APIs that are fast, safe, and easy to use.
-          </p>
+      <div class="collapse navbar-collapse">
+        <ul class="nav navbar-nav navbar-right">
+          <li><a href="#">Download</a></li>
+          <li><a href="#">Learn</a></li>
+          <li><a href="#">Demos</a></li>
+          <li><a href="https://github.com/google/lovefield">GitHub</a></li>
+        </ul>
+      </div>
+    </div>
+  </nav>
+  <div class="contents">
+    <div class="container">
+      <div class="jumbotron">
+        <p class="lead">
+          Lovefield is a relational database for web apps.
+          <br/> It is written in JavaScript and works cross-browser.
+          <br/> It provides SQL-like APIs that are fast, safe, and easy to use.
+        </p>
+      </div>
+    </div>
+    <div class="container text-center">
+      <iframe width="560" height="315" src="https://www.youtube.com/embed/S1AUIq8GA1k" frameborder="0" allowfullscreen></iframe>
+    </div>
+    <div class="container">
+      <div class="row">
+        <div class="col-md-4">
+          <h2>Download</h2>
+          <p>Install via npm</p>
+          <div class="highlight">
+            <pre><code>npm install lovefield</code></pre>
+          </div>
+          <p>Install via bower</p>
+          <div class="highlight">
+            <pre><code>bower install lovefield</code></pre>
+          </div>
+          <p>Or just download zip</p>
+          <a href="https://github.com/google/lovefield/archive/master.zip" class="btn btn-primary">Download ZIP File</a>
         </div>
-      </div>
-      <div class="container text-center">
-        <iframe width="560" height="315" src="https://www.youtube.com/embed/S1AUIq8GA1k" frameborder="0" allowfullscreen></iframe>
-      </div>
-      <div class="container">
-        <div class="row">
-
-          <div class="col-md-4">
-            <h2>Download</h2>
-            <p>Install via npm</p>
-            <div class="highlight">
-              <pre><code>npm install lovefield</code></pre>
-            </div>
-            <p>Install via bower</p>
-            <div class="highlight">
-              <pre><code>bower install lovefield</code></pre>
-            </div>
-            <p>Or just download zip</p>
-            <a href="https://github.com/google/lovefield/archive/master.zip" class="btn btn-primary">Download ZIP File</a>
-          </div>
-
-          <div class="col-md-4">
-            <h2>Learn</h2>
-            <p><a href="https://github.com/google/lovefield/blob/master/demos/todo/README.md" target="_blank">&lt;3 minutes Quick Start</a></p>
-            <p><a href="https://io2015codelabs.appspot.com/codelabs/lovefield#1">36 minutes Codelab</a></p>
-            <p>Live 30min overview presentation at JS.LA: Watch on
-              <a href="https://www.youtube.com/watch?v=wRiI4p5Uk4E" target="_blank">YouTube</a> or
-              <a href="https://vimeo.com/118934273" target="_blank">Vimeo</a>.</p>
-          </div>
-
-          <div class="col-md-4">
-            <h2>Demos</h2>
-            <p><a href="dashboard/src/dashboard.html" target="_blank">Lovefield Performance Dashboard</a></p>
-            <p><a href="demos/movie_db/demo.html" target="_blank">Movie Database demo (in jQuery)</a></p>
-            <p><a href="demos/olympia_db/demo.html" target="_blank">Olympic medals demo (in AngularJS)</a></p>
-            <p><a href="demos/movie_db/demo-binding.html" target="_blank">Data Binding / Observers</a></p>
-          </div>
-
+        <div class="col-md-4">
+          <h2>Learn</h2>
+          <p><a href="https://github.com/google/lovefield/blob/master/demos/todo/README.md" target="_blank">&lt;3 minutes Quick Start</a></p>
+          <p><a href="https://io2015codelabs.appspot.com/codelabs/lovefield#1">36 minutes Codelab</a></p>
+          <p>Live 30min overview presentation at JS.LA: Watch on
+            <a href="https://www.youtube.com/watch?v=wRiI4p5Uk4E" target="_blank">YouTube</a> or
+            <a href="https://vimeo.com/118934273" target="_blank">Vimeo</a>.</p>
+        </div>
+        <div class="col-md-4">
+          <h2>Demos</h2>
+          <p><a href="dashboard/src/dashboard.html" target="_blank">Lovefield Performance Dashboard</a></p>
+          <p><a href="demos/movie_db/demo.html" target="_blank">Movie Database demo (in jQuery)</a></p>
+          <p><a href="demos/olympia_db/demo.html" target="_blank">Olympic medals demo (in AngularJS)</a></p>
+          <p><a href="demos/movie_db/demo-binding.html" target="_blank">Data Binding / Observers</a></p>
         </div>
       </div>
     </div>
-
-    <footer class="footer">
-      <div class="container">
-        <div class="navbar-collapse collapse">
-          <ul class="nav navbar-nav">
-            <li><a href="https://github.com/google/lovefield">GitHub</a></li>
-            <li><a href="https://groups.google.com/forum/#!forum/lovefield-users">Forum</a></li>
-            <li><a href="https://github.com/google/lovefield/issues">File a bug</a></li>
-            <li><a href="https://github.com/google/lovefield/blob/master/LICENSE">License</a></li>
-          </ul>
-          <div class="copyright">© Google, Inc. 2014</div>
-        </div>
+  </div>
+  <footer class="footer">
+    <div class="container">
+      <div class="navbar-collapse collapse">
+        <ul class="nav navbar-nav">
+          <li><a href="https://github.com/google/lovefield">GitHub</a></li>
+          <li><a href="https://groups.google.com/forum/#!forum/lovefield-users">Forum</a></li>
+          <li><a href="https://github.com/google/lovefield/issues">File a bug</a></li>
+          <li><a href="https://github.com/google/lovefield/blob/master/LICENSE">License</a></li>
+        </ul>
+        <div class="copyright">© Google, Inc. 2014</div>
       </div>
-    </footer>
-  </body>
+    </div>
+  </footer>
+</body>
+
 </html>
