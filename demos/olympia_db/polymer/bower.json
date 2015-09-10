@@ -6,7 +6,7 @@
     "Demetrios Papadopoulos"
   ],
   "description": "A demo of te Lovefield library using a DB of olympic medals.",
-  "main": "demo-angular.js",
+  "main": "demo-polymer.js",
   "license": "http://www.apache.org/licenses/LICENSE-2.0",
   "ignore": [
     "**/.*",
@@ -14,8 +14,9 @@
     "bower_components"
   ],
   "dependencies": {
-    "core-ajax": "Polymer/core-ajax#~0.5.5",
+    "iron-ajax": "PolymerElements/iron-ajax#~1.0.4",
     "lovefield": "lovefield#master",
-    "polymer": "Polymer/polymer#~0.5.5"
+    "polymer": "Polymer/polymer#^1.0.0",
+    "iron-flex-layout": "PolymerElements/iron-flex-layout#~1.0.3"
   }
 }

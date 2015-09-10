@@ -35,7 +35,8 @@
         addColumn('sport', lf.Type.STRING).
         addColumn('year', lf.Type.NUMBER).
         addIndex('idx_year', ['year']).
-        addIndex('idx_lastName', ['lastName']);
+        addIndex('idx_lastName', ['lastName']).
+        addNullable(['firstName']);
     return schemaBuilder;
   }
 
@@ -73,19 +74,53 @@
     }));
   }
 
-  Polymer('olympia-query', {
-    initialized: false,
-    publish: {
-      limit: 100,
-      cities: null,
-      fromYear: null,
-      toYear: null,
-      countries: null,
-      disciplines: null,
-      events: null,
-      genders: null,
-      colors: null
+  Polymer({
+    is: 'olympia-query',
+    properties: {
+      limit: {
+        type: Number,
+        value: 100,
+        notify:true
+      },
+      cities: {
+        type: String,
+        value: null
+      },
+      fromYear: {
+        type: Number,
+        value: null
+      },
+      toYear: {
+        type: Number,
+        value: null
+      },
+      countries: {
+        type: String,
+        value: null
+      },
+      disciplines: {
+        type: String,
+        value: null
+      },
+      events: {
+        type: String,
+        value: null
+      },
+      genders: {
+        type: String,
+        value: null
+      },
+      colors: {
+        type: String,
+        value: null
+      },
+      results: {
+        type:Array,
+        value: function() {return [];},
+        notify:true
+      }
     },
+    initialized: false,
     created: function() {
       if (!db) {
         init_().then(function() {
