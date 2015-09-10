@@ -3,16 +3,15 @@
 <head>
   <meta charset="UTF-8">
   <title>Polymer Lovefield Demo</title>
-
-  <link rel="import" href="../bower_components/core-ajax/core-ajax.html">
+  <script src="bower_components/webcomponentsjs/webcomponents-lite.js"></script>
+  <link rel="import" href="bower_components/iron-ajax/iron-ajax.html">
+  <link rel="import" href="bower_components/iron-flex-layout/classes/iron-flex-layout.html">
   <link rel="import" href="olympia_query.html">
 
 </head>
 <body>
 
-  <polymer-element name="lovefield-demo">
-    <template>
-
+  <template is="dom-bind" id="demo">
       <style>
         .options {
           width: 200px;
@@ -22,7 +21,7 @@
         }
       </style>
 
-      <core-ajax auto url="../data/column_domains.json" response="{{columns}}"></core-ajax>
+      <iron-ajax auto url="../data/column_domains.json" last-response="{{columns}}" on-response="handleResponse"></iron-ajax>
 
       <olympia-query id="query"
           results="{{results}}"
@@ -38,30 +37,30 @@
           limit="{{limit}}">
       </olympia-query>
 
-      <div layout horizontal fit>
+      <div class="layout horizontal fit">
 
         <div class="options">
           <div>Limit</div>
-          <input type="number" value="{{limit}}">
+          <input type="number" value="{{limit::input}}">
 
-          <template repeat="{{columnsArray}}">
-            <div>{{name}}</div>
-            <select on-change="{{updatePredicate}}" name="{{name}}">
-              <template repeat="{{options as name}}">
+          <template is="dom-repeat" items="{{columnsArray}}">
+            <div>{{item.name}}</div>
+            <select on-change="updatePredicate" name="{{item.name}}">
+              <template is="dom-repeat" items="{{item.options}}" as="name">
                 <option>{{name}}</option>
               </template>
             </select>
           </template>
           <br><br>
-          <button on-tap="{{search}}">Search!</button>
+          <button on-tap="search">Search!</button>
         </div>
 
         <div flex>
 
-          <template repeat="{{results as result}}">
+         <template is="dom-repeat" items="{{results}}">
             <div>
-              <template repeat="{{ columnNames as field }}">
-                {{result[field]}} | 
+              <template is="dom-repeat" items="{{_getColumns(results)}}" as="field">
+                <span>{{_getCell(item,field)}}</span>| 
               </template>
             </div>
           </template>
@@ -71,12 +70,24 @@
 
       </div>
 
-    </template>
+  </template>
 
-    <script>
-      Polymer({
-        columnsChanged: function() {
-          var columns = [];
+  <script>
+     var app = document.querySelector('#demo');
+     app.search = function() {
+       this.$.query.search();
+     };
+     app.updatePredicate = function(e) {
+       this[e.target.name] = e.target.value;
+     };
+     app._getColumns = function(results) {
+       return Object.keys(this.results && this.results[0] || {});
+     };
+     app._getCell = function(item, field) {
+       return item[field];
+     };
+     app.handleResponse = function(response) {
+       var columns = [];
           Object.keys(this.columns).forEach(function(name) {
             options = this.columns[name];
             options.unshift('');
@@ -88,22 +99,10 @@
             }
           }, this);
           this.columnsArray = columns;
-        },
-        resultsChanged: function() {
-          this.columnNames = Object.keys(this.results && this.results[0] || {});
-        },
-        updatePredicate: function(e) {
-          this[e.target.name] = e.target.value;
-        },
-        search: function() {
-          this.$.query.search();
-        }
-      });
-    </script>
+     };
 
-  </polymer-element>
+  </script>
 
-  <lovefield-demo></lovefield-demo>
 
 </body>
 </html>
