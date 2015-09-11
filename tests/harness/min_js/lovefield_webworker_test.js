@@ -14,29 +14,38 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-goog.require('ApiTester');
-goog.require('TestReporter');
-
 
 function main() {
   var testReporter = new TestReporter();
   window['G_testRunner'] = testReporter;
-  var tester = new ApiTester();
   var header = document.getElementById('header');
+  var worker = new Worker('lovefield_webworker.js');
 
-  tester.run().then(function() {
+  var onSuccess = function() {
     testReporter.finished = true;
     testReporter.success = true;
     testReporter.report = 'Tests PASSED';
     header.classList.add('pass');
     header.textContent = testReporter.getReport();
-  }, function(e) {
+    worker.terminate();
+  };
+
+  var onError = function(errorMessage) {
     testReporter.finished = true;
     testReporter.success = false;
-    testReporter.report = 'Tests FAILED: ' + e.message;
+    testReporter.report = 'Tests FAILED: ' + errorMessage;
     header.classList.add('fail');
     header.textContent = testReporter.getReport();
-  });
+    worker.terminate();
+  };
+
+  worker.addEventListener('message', function(e) {
+    var message = e.data;
+    message.success ? onSuccess() : onError(message.error);
+  }, false);
+  worker.addEventListener('error', function(e) {
+    onError(e.message);
+  }, false);
 }
 
 

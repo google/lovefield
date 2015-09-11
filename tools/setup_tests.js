@@ -159,7 +159,9 @@ TestEnv.prototype.setupTestsWithHtml = function() {
 
     // Ensure that the parent dir of link target is constructed.
     fsMod.ensureDirSync(pathMod.dirname(dst));
-    fsMod.symlinkSync(src, dst, 'junction');
+    if (!fsMod.existsSync(dst)) {
+      fsMod.symlinkSync(src, dst, 'junction');
+    }
 
     return link;
   }, this);

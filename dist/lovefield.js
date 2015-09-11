@@ -1,3 +1,4 @@
+var window = this;
 (function(){'use strict';var $jscomp = {scope:{}}, goog = goog || {};
 goog.global = this;
 goog.isDef = function(val) {
