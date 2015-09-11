@@ -6275,8 +6275,7 @@ lf.backstore.WebSqlTable.prototype.get = function(ids) {
     }
     return rows;
   };
-  this.tx_.queue(sql, [], transformer);
-  return this.tx_.commit();
+  return this.tx_.queue(sql, [], transformer);
 };
 lf.backstore.WebSqlTable.prototype.put = function(rows) {
   if (0 == rows.length) {
@@ -6300,27 +6299,36 @@ lf.backstore.WebSqlTx = function(db, journal, txType) {
   this.commands_ = [];
 };
 goog.inherits(lf.backstore.WebSqlTx, lf.backstore.BaseTx);
+lf.backstore.WebSqlTx.INDEX_MARK = "__d__";
+lf.backstore.WebSqlTx.escapeTableName = function(tableName) {
+  return tableName.replace(".", lf.backstore.WebSqlTx.INDEX_MARK).replace("#", "__s__");
+};
 lf.backstore.WebSqlTx.prototype.getTable = function(tableName, deserializeFn) {
   var table = this.tables_.get(tableName) || null;
-  goog.isNull(table) && (table = new lf.backstore.WebSqlTable(this, tableName, deserializeFn), this.tables_.set(tableName, table));
+  goog.isNull(table) && (table = new lf.backstore.WebSqlTable(this, lf.backstore.WebSqlTx.escapeTableName(tableName), deserializeFn), this.tables_.set(tableName, table));
   return table;
 };
 lf.backstore.WebSqlTx.prototype.queue = function(statement, params, opt_transform) {
-  this.commands_.push({statement:statement, params:params, transform:opt_transform});
+  var resolver = goog.Promise.withResolver();
+  this.commands_.push({statement:statement, params:params, transform:opt_transform, resolver:resolver});
+  return resolver.promise;
 };
 lf.backstore.WebSqlTx.prototype.commitInternal = function() {
-  var lastResults, transformer, onTxError = this.resolver.reject.bind(this.resolver), onExecError = function(tx, e) {
+  var lastCommand = null, onTxError = this.resolver.reject.bind(this.resolver), onExecError = function(tx, e) {
     this.resolver.reject(e);
-  }.bind(this), callback = function(tx, opt_results) {
-    lastResults = opt_results;
-    if (this.commands_.length) {
+  }.bind(this), results = [], callback = function(tx, opt_results) {
+    if (!goog.isNull(lastCommand)) {
+      var ret = opt_results;
+      goog.isDefAndNotNull(lastCommand.transform) && goog.isDefAndNotNull(opt_results) && (ret = lastCommand.transform(opt_results));
+      results.push(ret);
+      lastCommand.resolver.resolve(ret);
+    }
+    if (0 < this.commands_.length) {
       var command = this.commands_.shift();
-      transformer = command.transform;
+      lastCommand = command;
       tx.executeSql(command.statement, command.params, callback, onExecError);
     } else {
-      var ret = lastResults;
-      goog.isDefAndNotNull(transformer) && goog.isDefAndNotNull(lastResults) && (ret = transformer(lastResults));
-      this.resolver.resolve(ret);
+      this.resolver.resolve(results);
     }
   }.bind(this);
   this.txType == lf.TransactionType.READ_ONLY ? this.db_.readTransaction(callback, onTxError) : this.db_.transaction(callback, onTxError);
@@ -6353,8 +6361,8 @@ lf.backstore.WebSqlRawBackStore.prototype.dumpTable_ = function(tableName) {
   var tx = this.createTx_();
   tx.queue("SELECT id, value FROM " + tableName, []);
   return tx.commit().then(function(results) {
-    for (var length = results.rows.length, rows = Array(length), i = 0;i < length;++i) {
-      rows[i] = {id:results.rows.item(i).id, value:JSON.parse(results.rows.item(i).value)};
+    for (var length = results[0].rows.length, rows = Array(length), i = 0;i < length;++i) {
+      rows[i] = {id:results[0].rows.item(i).id, value:JSON.parse(results[0].rows.item(i).value)};
     }
     return goog.Promise.resolve(rows);
   });
@@ -6417,7 +6425,7 @@ lf.backstore.WebSqlRawBackStore.prototype.dump = function() {
   lf.backstore.WebSqlRawBackStore.queueListTables(tx);
   var ret = {};
   tx.commit().then(function(results) {
-    var tables = results.filter(function(name) {
+    var tables = results[0].filter(function(name) {
       return "__lf_ver" != name && "__WebKitDatabaseInfoTable__" != name;
     }), promises = tables.map(function(tableName) {
       return this.dumpTable_(tableName).then(function(rows) {
@@ -6465,7 +6473,7 @@ lf.backstore.WebSql.prototype.checkVersion_ = function(onUpgrade) {
   tx.queue("SELECT v FROM __lf_ver WHERE id = 0", []);
   tx.commit().then(function(results) {
     var version = 0;
-    results.rows.length && (version = results.rows.item(0).v);
+    results[1].rows.length && (version = results[1].rows.item(0).v);
     version < this.schema_.version() ? this.onUpgrade_(onUpgrade, version).then(resolver.resolve.bind(resolver)) : version > this.schema_.version() ? resolver.reject(new lf.Exception(108)) : resolver.resolve();
   }.bind(this));
   return resolver.promise;
@@ -6505,20 +6513,37 @@ lf.backstore.WebSql.prototype.preUpgrade_ = function() {
   tx.queue("INSERT OR REPLACE INTO __lf_ver VALUES (0, ?)", [this.schema_.version()]);
   lf.backstore.WebSqlRawBackStore.queueListTables(tx);
   return tx.commit().then(function(results) {
-    results.filter(function(name) {
-      return -1 != name.indexOf(".");
+    var existingTables = results[1];
+    existingTables.filter(function(name) {
+      return -1 != name.indexOf(lf.backstore.WebSqlTx.INDEX_MARK);
     }).forEach(function(name) {
       tx2.queue("DROP TABLE " + name, []);
     });
-    var existingTables = results.filter(function(name) {
-      return -1 == name.indexOf(".");
-    }), newTables = tables.map(function(table) {
-      return table.getName();
-    }).filter(function(name) {
-      return -1 == existingTables.indexOf(name);
+    var newTables = [], persistentIndices = [], rowIdIndices = [];
+    tables.map(function(table) {
+      -1 == existingTables.indexOf(table.getName()) && newTables.push(table.getName());
+      if (table.persistentIndex) {
+        table.getIndices().forEach(function(index) {
+          var idxTableName = lf.backstore.WebSqlTx.escapeTableName(index.getNormalizedName());
+          newTables.push(idxTableName);
+          persistentIndices.push(idxTableName);
+        });
+        var rowIdTableName = lf.backstore.WebSqlTx.escapeTableName(table.getRowIdIndexName());
+        newTables.push(rowIdTableName);
+        rowIdIndices.push(rowIdTableName);
+      }
     });
     newTables.forEach(function(name) {
       tx2.queue("CREATE TABLE " + name + "(id INTEGER PRIMARY KEY, value TEXT)", []);
+    });
+    var createMetaRow = function(name, type) {
+      tx2.queue("INSERT INTO " + name + "(id, value) VALUES(?, ?)", [lf.index.IndexMetadataRow.ROW_ID, JSON.stringify(lf.index.IndexMetadataRow.forType(type).payload())]);
+    };
+    persistentIndices.forEach(function(name) {
+      createMetaRow(name, lf.index.IndexMetadata.Type.BTREE);
+    });
+    rowIdIndices.forEach(function(name) {
+      createMetaRow(name, lf.index.IndexMetadata.Type.ROW_ID);
     });
     return tx2.commit();
   });
@@ -6528,7 +6553,7 @@ lf.backstore.WebSql.prototype.scanRowId_ = function() {
     var tx = new lf.backstore.WebSqlTx(this.db_, this.getEmptyJournal_(), lf.TransactionType.READ_ONLY);
     tx.queue("SELECT MAX(id) FROM " + tableName, []);
     return tx.commit().then(function(results) {
-      var id = results.rows.item(0)[0];
+      var id = results[0].rows.item(0)[0];
       maxRowId = Math.max(id, maxRowId);
     });
   }.bind(this), promises = this.schema_.tables().map(function(table) {
@@ -7489,11 +7514,12 @@ lf.cache.Prefetcher.prototype.init = function(schema) {
   return execSequentially();
 };
 lf.cache.Prefetcher.prototype.fetchTable_ = function(table) {
-  var journal = new lf.cache.Journal(this.global_, lf.structs.set.create([table])), tx = this.backStore_.createTx(lf.TransactionType.READ_ONLY, journal), store = tx.getTable(table.getName(), table.deserializeRow.bind(table));
-  return store.get([]).then(function(results) {
+  var journal = new lf.cache.Journal(this.global_, lf.structs.set.create([table])), tx = this.backStore_.createTx(lf.TransactionType.READ_ONLY, journal), store = tx.getTable(table.getName(), table.deserializeRow.bind(table)), promise = store.get([]).then(function(results) {
     this.cache_.setMany(table.getName(), results);
     this.reconstructNonPersistentIndices_(table, results);
   }.bind(this));
+  tx.commit();
+  return promise;
 };
 lf.cache.Prefetcher.prototype.reconstructNonPersistentIndices_ = function(tableSchema, tableRows) {
   var indices = this.indexStore_.getTableIndices(tableSchema.getName());
@@ -7510,6 +7536,7 @@ lf.cache.Prefetcher.prototype.fetchTableWithPersistentIndices_ = function(tableS
   }.bind(this)), whenIndicesReconstructed = tableSchema.getIndices().map(function(indexSchema) {
     return this.reconstructPersistentIndex_(indexSchema, tx);
   }, this).concat(this.reconstructPersistentRowIdIndex_(tableSchema, tx));
+  tx.commit();
   return goog.Promise.all(whenIndicesReconstructed.concat(whenTableContentsFetched));
 };
 lf.cache.Prefetcher.prototype.reconstructPersistentIndex_ = function(indexSchema, tx) {

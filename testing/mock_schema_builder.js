@@ -25,16 +25,19 @@ goog.require('lf.schema');
 
 /**
  * @param {string=} opt_name
+ * @param {boolean=} opt_simulatePersistentIndex Simulate persistent index on
+ *     tableA, default to false.
  * @return {!lf.schema.Builder}
  */
-lf.testing.getSchemaBuilder = function(opt_name) {
+lf.testing.getSchemaBuilder = function(opt_name, opt_simulatePersistentIndex) {
   var schemaBuilder = lf.schema.create(opt_name || ('ms' + goog.now()), 1);
 
   schemaBuilder.createTable('tableA').
       addColumn('id', lf.Type.STRING).
       addColumn('name', lf.Type.STRING).
       addPrimaryKey(['id']).
-      addIndex('idxName', [{'name': 'name', 'order': lf.Order.DESC}]);
+      addIndex('idxName', [{'name': 'name', 'order': lf.Order.DESC}]).
+      persistentIndex(opt_simulatePersistentIndex || false);
 
   schemaBuilder.createTable('tableB').
       addColumn('id', lf.Type.STRING).

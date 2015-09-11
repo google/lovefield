@@ -22,6 +22,8 @@ goog.require('lf.Row');
 goog.require('lf.backstore.WebSql');
 goog.require('lf.cache.DefaultCache');
 goog.require('lf.index.MemoryIndexStore');
+goog.require('lf.schema');
+goog.require('lf.schema.DataStoreType');
 goog.require('lf.service');
 goog.require('lf.testing.Capability');
 goog.require('lf.testing.backstore.ScudTester');
@@ -71,6 +73,7 @@ function setUp() {
   cache = new lf.cache.DefaultCache(schema);
   indexStore = new lf.index.MemoryIndexStore();
   var global = lf.Global.get();
+  lf.Row.setNextId(0);
   global.registerService(lf.service.CACHE, cache);
   global.registerService(lf.service.INDEX_STORE, indexStore);
   global.registerService(lf.service.SCHEMA, schema);
@@ -100,9 +103,24 @@ function testRowId_Empty() {
   }
 
   asyncTestCase.waitForAsync('testScanRowId');
-  db = new lf.backstore.WebSql(lf.Global.get(), schema);
-  db.init().then(function() {
+  lf.schema.create('foo' + goog.now(), 1).connect({
+    storeType: lf.schema.DataStoreType.WEB_SQL
+  }).then(function(db) {
     assertEquals(0, lf.Row.getNextId());
     asyncTestCase.continueTesting();
   });
+}
+
+
+function testPersistentIndex() {
+  if (!capability.webSql) {
+    return;
+  }
+
+  asyncTestCase.waitForAsync('testPersistentIndex');
+  var builder = lf.testing.getSchemaBuilder('foo' + goog.now(), true);
+  builder.connect({storeType: lf.schema.DataStoreType.WEB_SQL}).then(
+      function(db) {
+        asyncTestCase.continueTesting();
+      });
 }

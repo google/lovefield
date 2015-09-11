@@ -114,7 +114,9 @@ lf.testing.backstore.ScudTester.prototype.select_ = function(rowIds) {
       this.tableSchema_.getName(),
       this.tableSchema_.deserializeRow.bind(this.tableSchema_)));
 
-  return store.get(rowIds);
+  var promise = store.get(rowIds);
+  tx.commit();
+  return promise;
 };
 
 
