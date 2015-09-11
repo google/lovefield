@@ -17,11 +17,11 @@ https://www.sqlite.org/lang.html).
 |`ATTACH DATABASE`   |Not applicable.                                         |
 |`COLLATE`           |*Not implemented. No plan to support in the future.*    |
 |`TRANSACTION`       |`createTransaction` is similar but not the same. Need some syntactical translation.|
-|`INDEX`             |Done in YAML schema definition. Does not support `WHERE` clause for indices.|
+|`INDEX`             |Done in schema definition. Does not support `WHERE` clause for indices.|
 |`TRIGGER`           |Only supports `SELECT` trigger by using observers.      |
 |`VIEW`              |*Not implemented. No plan to support in the future.*    |
 |`VIRTUAL TABLE`     |Not applicable.                                         |
-|Date/Time Functions |Piggy back on JavaScript.                               |
+|Date/Time Functions |User shall use JavaScript.                              |
 |`DELETE`            |Supported, except `ORDER BY LIMIT OFFSET`. No truncate optimization.|
 |`DETACH DATABASE`   |Not applicable.                                         |
 |`DROP INDEX`        |Implicit drop index implemented in upgrade procedure.   |
@@ -40,17 +40,31 @@ https://www.sqlite.org/lang.html).
 
 
 ### Transaction Model
-The transaction model difference is best described in examples:
+The immediate transaction model does not exist in SQLite:
 
 ```js
-var tx = db.createTransaction(lf.TransactionType.READ_WRITE);
+var tx = db.createTransaction();
 tx.exec([query1, query2]).then(committed, rolledBack);
 ```
 
-When a transaction failed in Lovefield, it is automatically rolled back. The
-transaction syntax is asynchronous in Lovefield, which is a major difference
-then what is provided in SQL.
+The syntax above auto-commit/rollback both queries. To manually control
+transaction commit/rollback like in SQLite, one need to use following syntax:
 
+```js
+// Suppose there are two queries, q1 and q2, using table t1 and t2.
+var tx = db.createTransaction();
+
+// Equivalent to BEGIN TRANSACTION, but you need to give the scope explicitly.
+tx.begin([t1, t2]).then(function() {
+  return tx.attach(q1);
+}).then(function(results) {  // results carry results performed by q1
+  return tx.attach(q2);
+}).then(function() {
+  // Commit transaction and flush everything to persistent store.
+  // If rollback() is called instead, the whole transaction will be cancelled.
+  return tx.commit();
+});
+```
 
 ### SQL Expressions
 Lovefield uses a combination of JavaScript expression and Lovefield-provided
@@ -58,8 +72,8 @@ operators to achieve most functionalities provided by SQL expressions.
 
 | SQLite operators   | Lovefield                                              |
 |--------------------|--------------------------------------------------------|
-|`||`                |Piggy back on JavaScript to concatenate strings.        |
-|`* / % + -`         |Piggy back on JavaScript for arithmetic operations.     |
+|`||`                |User shall use JavaScript to concatenate strings.       |
+|`* / % + -`         |User shall use JavaScript for arithmetic operations.    |
 |`<`                 |`<column>.lt`                                           |
 |`<=`                |`<column>.lte`                                          |
 |`>`                 |`<column>.gt`                                           |
@@ -75,7 +89,7 @@ operators to achieve most functionalities provided by SQL expressions.
 |`AND`               |`lf.op.and`                                             |
 |`OR`                |`lf.op.or`                                              |
 |`BETWEEN`           |`<column>.between`                                      |
-|`CASE`              |Piggy back on JavaScript switch-case.                   |
+|`CASE`              |User shall use JavaScript switch-case.                  |
 |`EXISTS`            |*Not implemented.*                                      |
 |Scalar subqueries   |*Not implemented.*                                      |
 |`ROWID OID _ROWID_` |Internally implemented, not open to the users.          |
@@ -87,34 +101,34 @@ operators to achieve most functionalities provided by SQL expressions.
 
 | SQL Function       | Lovefield                                              |
 |--------------------|--------------------------------------------------------|
-|`abs`               |Piggy back on `Math.abs`.                               |
+|`abs`               |User shall use JavaScript `Math.abs`.                   |
 |`changes`           |Has equivalent by using observers.                      |
-|`char`              |Piggy back on JavaScript string functions.              |
+|`char`              |User shall use JavaScript string functions.             |
 |`coalesce`          |*Not implemented.*                                      |
 |`glob`              |*Not implemented. No plan to support in the future.*    |
 |`ifnull`            |*Not implemented. No plan to support in the future.*    |
 |`instr`             |*Not implemented. No plan to support in the future.*    |
 |`hex`               |Internally implemented, not open to the users.          |
 |`last_inset_rowid`  |*Not implemented. No plan to support in the future.*    |
-|`length`            |Piggy back on Javascript `length`.                      |
+|`length`            |User shall use Javascript `length`.                     |
 |`like`              |*Not implemented. No plan to support in the future.*    |
 |`likelihood`        |*Not implemented. No plan to support in the future.*    |
 |`likely unlikely`   |*Not implemented. No plan to support in the future.*    |
 |`load_extension`    |*Not implemented. No plan to support in the future.*    |
-|`lower`             |Piggy back on JavaScript `toLowerCase`.                 |
-|`ltrim rtrim trim`  |Piggy back on JavaScript `trim`.                        |
+|`lower`             |User shall use JavaScript `toLowerCase`.                |
+|`ltrim rtrim trim`  |User shall use JavaScript `trim`.                       |
 |`max`               |`lf.fn.max`, only works for SELECT aggregation.         |
 |`min`               |`lf.fn.min`, only works for SELECT aggregation.         |
 |`nullif`            |*Not implemented. No plan to support in the future.*    |
 |`printf`            |*Not implemented. No plan to support in the future.*    |
 |`quote`             |*Not implemented. No plan to support in the future.*    |
-|`random`            |Piggy back on JavaScript `Math.random`.                 |
+|`random`            |User shall use JavaScript `Math.random`.                |
 |`randomblob`        |*Not implemented. No plan to support in the future.*    |
-|`replace`           |Piggy back on JavaScript string search/replace.         |
-|`round`             |Piggy back on JavaScript rounding.                      |
+|`replace`           |User shall use JavaScript string search/replace.        |
+|`round`             |User shall use JavaScript rounding.                     |
 |`soundex`           |*Not implemented. No plan to support in the future.*    |
 |`sqlite_*`          |Not applicable.                                         |
-|`substr`            |Piggy back on JavaScript string functions.              |
+|`substr`            |User shall use JavaScript string functions.             |
 |`totalchanges`      |Has equivalent by using observers.                      |
 |`typeof`            |*Not implemented.*                                      |
 |`unicode`           |JavaScript by default is Unicode.                       |
@@ -165,13 +179,10 @@ The search condition (a.k.a. `WHERE` clause) and uses expression describe in the
 ## Features on Roadmap
 
 The following features are on Lovefield's roadmap for SQLite feature parity, but
-not implemented yet (as of November 17, 2014).
+not implemented yet (as of September 10, 2015).
 
-* Index persistence
-* Smart cache
-* Logical plan optimizer
-* Physical plan optimizer, `ANALYZE`
-* Manual transaction abortion
-* Subqueries, `UNION`
-* Cross-column indices
-* Componentize Lovefield (i.e. multi-database support)
+* CASCADED DELETE/UPDATE
+* Cross-column index allowing nullable columns
+* LEFT OUTER JOIN accepting conditions
+* (Scalar) Expression and/or custom functions
+
