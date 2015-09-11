@@ -21,6 +21,11 @@ body {
 
 /* Disable ugly boxes around images in IE10 */
 
+a {
+  text-decoration: none;
+  color: #ff7800;
+}
+
 a img {
   border: 0px;
 }
