@@ -4,8 +4,8 @@
 <head>
   <title>Lovefield: The Data Access Library that Loves You</title>
   <meta charset="utf8" />
-  <link href="bootstrap.min.css" rel="stylesheet" />
-  <link href="main.css" rel="stylesheet" />
+  <link href="styles/material.min.css" rel="stylesheet" />
+  <link href="styles/main.css" rel="stylesheet" />
   <link rel="apple-touch-icon" sizes="57x57" href="assets/favicon/apple-icon-57x57.png">
   <link rel="apple-touch-icon" sizes="60x60" href="assets/favicon/apple-icon-60x60.png">
   <link rel="apple-touch-icon" sizes="72x72" href="assets/favicon/apple-icon-72x72.png">
@@ -15,7 +15,7 @@
   <link rel="apple-touch-icon" sizes="144x144" href="assets/favicon/apple-icon-144x144.png">
   <link rel="apple-touch-icon" sizes="152x152" href="assets/favicon/apple-icon-152x152.png">
   <link rel="apple-touch-icon" sizes="180x180" href="assets/favicon/apple-icon-180x180.png">
-  <link rel="icon" type="image/png" sizes="192x192" href="assets/favicon/android-icon-192x192.png">
+  <link rel="icon" type="image/png" sizes="192x192" href="assets/favicon/icon-192x192.png">
   <link rel="icon" type="image/png" sizes="32x32" href="assets/favicon/favicon-32x32.png">
   <link rel="icon" type="image/png" sizes="96x96" href="assets/favicon/favicon-96x96.png">
   <link rel="icon" type="image/png" sizes="16x16" href="assets/favicon/favicon-16x16.png">
@@ -23,85 +23,156 @@
   <meta name="msapplication-TileColor" content="#ffffff">
   <meta name="msapplication-TileImage" content="assets/favicon/ms-icon-144x144.png">
   <meta name="theme-color" content="#ffffff">
+  <style>
+  #view-source {
+    position: fixed;
+    display: block;
+    right: 0;
+    bottom: 0;
+    margin-right: 40px;
+    margin-bottom: 40px;
+    z-index: 900;
+  }
+  </style>
 </head>
 
 <body>
-  <nav class="navbar navbar-default navbar-static-top">
-    <div class="container">
-      <div>
-        <a class="navbar-brand" href="#">
-          <img class="small-logo" src="assets/img/logotype64.png" />
+  <div class="mdl-layout mdl-js-layout mdl-layout--fixed-header">
+    <div class="header mdl-layout__header ">
+      <div class="mdl-layout__header-row">
+        <span class="title mdl-layout-title"> 
+             <img class="logo-image" src="assets/img/logotype64.png" />
+          </span>
+        <!-- Add spacer, to align navigation to the right in desktop -->
+        <div class="header-spacer mdl-layout-spacer"></div>
+        <!-- Navigation -->
+        <div class="navigation-container">
+          <nav class="navigation mdl-navigation">
+            <a class="mdl-navigation__link mdl-typography--text-uppercase" href="#top">Get Started</a>
+            <a class="mdl-navigation__link mdl-typography--text-uppercase" href="#learn">Learn</a>
+            <a class="mdl-navigation__link mdl-typography--text-uppercase" href="#demos">Demos</a>
+            <a class="mdl-navigation__link mdl-typography--text-uppercase" href="https://github.com/google/lovefield">Github</a>
+          </nav>
+        </div>
+      </div>
+    </div>
+    <div class="content mdl-layout__content">
+      <a name="top"></a>
+      <div class="mission-section mdl-typography--text-center">
+        <div class="font slogan">Lovefield is a relational database for web apps. </div>
+        <div class="font sub-slogan">Written in JavaScript, works cross-browser. Provides SQL-like APIs that are fast, safe, and easy to use.</div>
+        <a href="https://github.com/google/lovefield">
+          <button class="fab mdl-button mdl-button--colored mdl-js-button mdl-button--fab mdl-js-ripple-effect" data-upgraded=",MaterialButton,MaterialRipple">
+            <img src="assets/img/github_icon.png" /><span class="mdl-button__ripple-container"><span class="mdl-ripple"></span></span>
+          </button>
         </a>
       </div>
-      <div class="collapse navbar-collapse">
-        <ul class="nav navbar-nav navbar-right">
-          <li><a href="#">Download</a></li>
-          <li><a href="#">Learn</a></li>
-          <li><a href="#">Demos</a></li>
-          <li><a href="https://github.com/google/lovefield">GitHub</a></li>
-        </ul>
-      </div>
-    </div>
-  </nav>
-  <div class="contents">
-    <div class="container">
-      <div class="jumbotron">
-        <p class="lead">
-          Lovefield is a relational database for web apps.
-          <br/> It is written in JavaScript and works cross-browser.
-          <br/> It provides SQL-like APIs that are fast, safe, and easy to use.
-        </p>
-      </div>
-    </div>
-    <div class="container text-center">
-      <iframe width="560" height="315" src="https://www.youtube.com/embed/S1AUIq8GA1k" frameborder="0" allowfullscreen></iframe>
-    </div>
-    <div class="container">
-      <div class="row">
-        <div class="col-md-4">
-          <h2>Download</h2>
-          <p>Install via npm</p>
-          <div class="highlight">
-            <pre><code>npm install lovefield</code></pre>
+      <div class="more-section">
+        <div class="section-title mdl-typography--display-1-color-contrast">Get Started</div>
+        <div class="card-container mdl-grid">
+          <div class="mdl-cell mdl-cell--8-col mdl-cell--8-col-tablet mdl-cell--8-col-phone mdl-card mdl-shadow--3dp">
+            <div class="mdl-card__media">
+              <iframe width="100%" height="375" src="https://www.youtube.com/embed/S1AUIq8GA1k" frameborder="0" allowfullscreen></iframe>
+            </div>
           </div>
-          <p>Install via bower</p>
-          <div class="highlight">
-            <pre><code>bower install lovefield</code></pre>
+          <div class="mdl-cell mdl-cell--4-col mdl-cell--4-col-tablet mdl-cell--4-col-phone mdl-card mdl-shadow--3dp">
+            <div class="mdl-card__title">
+              <h4 class="mdl-card__title-text">Download </h4>
+            </div>
+            <div class="mdl-card__supporting-text">
+              <div class="mdl-typography--font-light mdl-typography--subhead">Install via npm
+                <br />
+                <code> npm install lovefield
+ </code>
+                <hr />Install via bower
+                <br />
+                <code> bower install lovefield </code>
+                <hr /> Dowload latest snapshot
+                <code class="link mdl-button mdl-js-button  " href="https://github.com/google/lovefield/archive/master.zip">
+                   Download Zip File
+                 </code>
+              </div>
+            </div>
           </div>
-          <p>Or just download zip</p>
-          <a href="https://github.com/google/lovefield/archive/master.zip" class="btn btn-primary">Download ZIP File</a>
         </div>
-        <div class="col-md-4">
-          <h2>Learn</h2>
-          <p><a href="https://github.com/google/lovefield/blob/master/demos/todo/README.md" target="_blank">&lt;3 minutes Quick Start</a></p>
-          <p><a href="https://io2015codelabs.appspot.com/codelabs/lovefield#1">36 minutes Codelab</a></p>
-          <p>Live 30min overview presentation at JS.LA: Watch on
-            <a href="https://www.youtube.com/watch?v=wRiI4p5Uk4E" target="_blank">YouTube</a> or
-            <a href="https://vimeo.com/118934273" target="_blank">Vimeo</a>.</p>
+      </div>
+      <a name="learn"></a>
+      <div class="screen-section">
+        <div class="screen-container">
+          <div class="section-title  mdl-typography--display-1-color-contrast">Learn</div>
+          <div class="card-container mdl-grid">
+            <div class="mdl-cell mdl-cell--4-col mdl-cell--4-col-tablet mdl-cell--4-col-phone mdl-card mdl-shadow--3dp">
+              <div class="mdl-card__title">
+                <h4 class="mdl-card__title-text">Quick Start</h4>
+              </div>
+              <div class="mdl-card__supporting-text">
+                <span class="mdl-typography--font-light mdl-typography--subhead">3 minutes and you are up and running</span>
+              </div>
+              <div class="mdl-card__actions">
+                <a class="link mdl-button mdl-js-button mdl-typography--text-uppercase" href="https://github.com/google/lovefield/blob/master/demos/todo/README.md">
+                   Read Now 
+                 </a>
+              </div>
+            </div>
+            <div class="mdl-cell mdl-cell--4-col mdl-cell--4-col-tablet mdl-cell--4-col-phone mdl-card mdl-shadow--3dp">
+              <div class="mdl-card__title">
+                <h4 class="mdl-card__title-text">Codelab</h4>
+              </div>
+              <div class="mdl-card__supporting-text">
+                <span class="mdl-typography--font-light mdl-typography--subhead">Build an offline-capable web application in less than 30 minutes</span>
+              </div>
+              <div class="mdl-card__actions">
+                <a class="link mdl-button mdl-js-button mdl-typography--text-uppercase" href="https://io2015codelabs.appspot.com/codelabs/lovefield#1">
+                   Start Now
+                 </a>
+              </div>
+            </div>
+            <div class="mdl-cell mdl-cell--4-col mdl-cell--4-col-tablet mdl-cell--4-col-phone mdl-card mdl-shadow--3dp">
+              <div class="mdl-card__title">
+                <h4 class="mdl-card__title-text">LOVEFIELD  at JS.LA</h4>
+              </div>
+              <div class="mdl-card__supporting-text">
+                <span class="mdl-typography--font-light mdl-typography--subhead">Overview by Demetrios Papadopoulos</span>
+              </div>
+              <div class="mdl-card__actions">
+                <a class="link mdl-button mdl-js-button mdl-typography--text-uppercase" href="https://www.youtube.com/watch?v=wRiI4p5Uk4E">
+                   Watch now
+                 </a>
+              </div>
+            </div>
+          </div>
         </div>
-        <div class="col-md-4">
-          <h2>Demos</h2>
-          <p><a href="dashboard/src/dashboard.html" target="_blank">Lovefield Performance Dashboard</a></p>
-          <p><a href="demos/movie_db/demo.html" target="_blank">Movie Database demo (in jQuery)</a></p>
-          <p><a href="demos/olympia_db/demo.html" target="_blank">Olympic medals demo (in AngularJS)</a></p>
-          <p><a href="demos/movie_db/demo-binding.html" target="_blank">Data Binding / Observers</a></p>
+      </div>
+      <a name="demos"></a>
+      <div class="more-section">
+        <div class="section-title mdl-typography--display-1-color-contrast">Demos</div>
+        <div class="card-container mdl-grid">
+          <a href="https://google.github.io/lovefield/dashboard/src/dashboard.html" target="_blank" class="mdl-cell mdl-cell--3-col mdl-cell--3-col-tablet mdl-cell--3-col-phone mdl-button mdl-js-button mdl-button--raised mdl-js-ripple-effect mdl-color--accent mdl-color-text--accent-contrast">Lovefield Performance Dashboard</a>
+          <a href="https://google.github.io/lovefield/demos/movie_db/demo.html" target="_blank" class="mdl-cell mdl-cell--3-col mdl-cell--3-col-tablet mdl-cell--3-col-phone  mdl-button mdl-js-button mdl-button--raised mdl-js-ripple-effect mdl-color--accent mdl-color-text--accent-contrast">Movie Database (jQuery)</a>
+          <a href="https://google.github.io/lovefield/demos/olympia_db/demo.html" target="_blank" class="mdl-cell mdl-cell--3-col mdl-cell--3-col-tablet mdl-cell--3-col-phone  mdl-button mdl-js-button mdl-button--raised mdl-js-ripple-effect mdl-color--accent mdl-color-text--accent-contrast">Lovefield Olympic medals (AngularJs)</a>
+          <a href="https://google.github.io/lovefield/demos/movie_db/demo-binding.html" target="_blank" class="mdl-cell mdl-cell--3-col mdl-cell--3-col-tablet mdl-cell--3-col-phone  mdl-button mdl-js-button mdl-button--raised mdl-js-ripple-effect mdl-color--accent mdl-color-text--accent-contrast">Data Binding / Observer</a>
         </div>
       </div>
     </div>
+    <footer class="footer mdl-mega-footer">
+      <div class="mdl-mega-footer--top-section">
+        <div class="mdl-mega-footer--bottom-section">
+          <a href="https://groups.google.com/forum/#!forum/lovefield-users">Forum</a>
+          <a href="https://github.com/google/lovefield/issues">File a bug</a>
+          <a href="https://github.com/google/lovefield/blob/master/LICENSE">License</a>
+          <div class="mdl-mega-footer--right-section">
+            <span class="mdl-typography--font-light">
+                Google, Inc.
+            <script type="text/javascript">
+            document.write(new Date().getFullYear());
+            </script>
+              </span>
+          </div>
+        </div>
+      </div>
+    </footer>
   </div>
-  <footer class="footer">
-    <div class="container">
-      <div class="navbar-collapse collapse">
-        <ul class="nav navbar-nav">
-          <li><a href="https://github.com/google/lovefield">GitHub</a></li>
-          <li><a href="https://groups.google.com/forum/#!forum/lovefield-users">Forum</a></li>
-          <li><a href="https://github.com/google/lovefield/issues">File a bug</a></li>
-          <li><a href="https://github.com/google/lovefield/blob/master/LICENSE">License</a></li>
-        </ul>
-        <div class="copyright">© Google, Inc. 2014</div>
-      </div>
-    </div>
-  </footer>
+  <script src="scripts/material.min.js"></script>
 </body>
 
 </html>
