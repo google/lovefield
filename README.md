@@ -1,16 +1,16 @@
 # Lovefield
 
-Lovefield is a relational query engine written in pure JavaScript. It also
-provides help with persisting data on the browser side, e.g. using IndexedDB
-to store data locally. It provides SQL-like syntax and works cross-browser
-(currently supporting Chrome 37+, Firefox 31+, IE 10+, and Safari 5.1+, see note
-below).
+Lovefield is a relational database written in pure JavaScript.
+It provides SQL-like syntax and works cross-browser (currently supporting
+Chrome 37+, Firefox 31+, IE 10+, and Safari 5.1+, see note below).
 
 Please visit our
 [public forum](https://groups.google.com/forum/#!forum/lovefield-users) for
 general Q&A, feedback, and discussions.
 
 [Quick Start](demos/todo/README.md)
+
+[Frequently Asked Questions](docs/FAQ.md)
 
 [Specification](docs/spec_index.md) The spec is not fully implemented yet,
 please see the
