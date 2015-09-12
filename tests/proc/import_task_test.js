@@ -108,6 +108,16 @@ function testImport_IndexedDB() {
       asyncTestCase.continueTesting.bind(asyncTestCase), fail);
 }
 
+function testImport_WebSql() {
+  if (!capability.webSql) {
+    return;
+  }
+
+  asyncTestCase.waitForAsync('testImport_WebSql');
+  runTestImport({storeType: lf.schema.DataStoreType.WEB_SQL}).then(
+      asyncTestCase.continueTesting.bind(asyncTestCase), fail);
+}
+
 function disabledTestBenchmark() {
   var ROW_COUNT = 62500;
   var LOOP_COUNT = 30;

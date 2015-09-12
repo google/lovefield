@@ -10696,7 +10696,7 @@ lf.proc.ImportTask = function(global, data) {
   this.indexStore_ = global.getService(lf.service.INDEX_STORE);
 };
 lf.proc.ImportTask.prototype.exec = function() {
-  if (!(this.backStore_ instanceof lf.backstore.IndexedDB || this.backStore_ instanceof lf.backstore.Memory)) {
+  if (!(this.backStore_ instanceof lf.backstore.IndexedDB || this.backStore_ instanceof lf.backstore.Memory || this.backStore_ instanceof lf.backstore.WebSql)) {
     throw new lf.Exception(300);
   }
   if (!this.isEmptyDB_()) {
