@@ -1,0 +1,18 @@
+# Travis CI configuration file for Lovefield.
+language: node_js
+node_js:
+  - "0.12"
+
+sudo: false
+
+before_script:
+  - npm install -g gulp
+  - npm install
+
+script:
+  - gulp build --target=lib --mode=opt
+  - gulp build --target=tests
+  - gulp build --target=perf
+
+notifications:
+  email: false
