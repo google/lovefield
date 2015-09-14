@@ -3821,10 +3821,17 @@ goog.userAgent.X11 = goog.userAgent.PLATFORM_KNOWN_ ? goog.userAgent.ASSUME_X11 
 goog.userAgent.ANDROID = goog.userAgent.PLATFORM_KNOWN_ ? goog.userAgent.ASSUME_ANDROID : goog.labs.userAgent.platform.isAndroid();
 goog.userAgent.IPHONE = goog.userAgent.PLATFORM_KNOWN_ ? goog.userAgent.ASSUME_IPHONE : goog.labs.userAgent.platform.isIphone();
 goog.userAgent.IPAD = goog.userAgent.PLATFORM_KNOWN_ ? goog.userAgent.ASSUME_IPAD : goog.labs.userAgent.platform.isIpad();
+goog.userAgent.operaVersion_ = function() {
+  var version = goog.global.opera.version;
+  try {
+    return version();
+  } catch (e) {
+    return version;
+  }
+};
 goog.userAgent.determineVersion_ = function() {
   if (goog.userAgent.OPERA && goog.global.opera) {
-    var operaVersion = goog.global.opera.version;
-    return goog.isFunction(operaVersion) ? operaVersion() : operaVersion;
+    return goog.userAgent.operaVersion_();
   }
   var version = "", arr = goog.userAgent.getVersionRegexResult_();
   arr && (version = arr ? arr[1] : "");
@@ -11668,4 +11675,6 @@ lf.schema.create = function(dbName, dbVersion) {
   return new lf.schema.Builder(dbName, dbVersion);
 };
 goog.exportSymbol("lf.schema.create", lf.schema.create);
+goog.Promise.prototype.catch = goog.Promise.prototype.thenCatch;
+goog.exportProperty(goog.Promise.prototype, "catch", goog.Promise.prototype.catch);
 }.bind(window))()
