@@ -59,5 +59,50 @@ function sequentiallyRun(functionItems, opt_onStart) {
 }
 
 
+/**
+ * @param {!Array<!FunctionItem_>} tasks
+ * @param {number} maxRunners Max parallel tasks allowed
+ * @param {!function(!FunctionItem_, number):void=} opt_onStart A function
+ *     to call right before starting executing the next function.
+ * @return {!IThenable}
+ */
+function batchRun(tasks, maxRunners, opt_onStart) {
+  var results = new Array(tasks.length);
+  var counter = 0;
+
+  return new Promise(function(resolve, reject) {
+    var runBatch = function() {
+      var runnerCount = Math.min(maxRunners, tasks.length);
+      if (runnerCount <= 0) {
+        resolve(results);
+      }
+
+      var runners = new Array(runnerCount);
+      for (var i = 0; i < runnerCount; ++i) {
+        runners[i] = tasks.shift();
+      }
+
+      var promises = runners.map(function(task, index) {
+        if (opt_onStart) {
+          opt_onStart(task, counter + index);
+        }
+        return task.fn();
+      });
+      return Promise.all(promises).then(function(res) {
+        for (var j = 0; j < res.length; ++j) {
+          results[counter++] = res[j];
+        }
+        runBatch();
+      }, reject);
+    };
+    runBatch();
+  });
+}
+
+
 /** @type {!Function} */
 exports.sequentiallyRun = sequentiallyRun;
+
+
+/** @type {!Function} */
+exports.batchRun = batchRun;

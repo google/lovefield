@@ -12,7 +12,6 @@ before_script:
 script:
   - gulp build --target=lib --mode=opt
   - gulp build --target=tests
-  - gulp build --target=perf
 
 notifications:
   email: false
