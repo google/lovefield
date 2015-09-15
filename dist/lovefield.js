@@ -921,10 +921,9 @@ goog.string.compareVersions = function(version1, version2) {
 goog.string.compareElements_ = function(left, right) {
   return left < right ? -1 : left > right ? 1 : 0;
 };
-goog.string.HASHCODE_MAX_ = 4294967296;
 goog.string.hashCode = function(str) {
   for (var result = 0, i = 0;i < str.length;++i) {
-    result = 31 * result + str.charCodeAt(i), result %= goog.string.HASHCODE_MAX_;
+    result = 31 * result + str.charCodeAt(i) >>> 0;
   }
   return result;
 };
