@@ -2,7 +2,7 @@
   "name": "olympia-db",
   "version": "0.0.1",
   "description": "A demo of te Lovefield library using a database of Olympic medals.",
-  "main": "demo-polymer.html",
+  "main": "demo.html",
   "repository": {
     "type": "git",
     "url": "https://github.com/google/lovefield"

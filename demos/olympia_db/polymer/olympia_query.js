@@ -15,6 +15,13 @@
  * limitations under the License.
  */
 
+// Hack to please the linter.
+var goog = {require: function() {}};
+goog.require('lf.Type');
+goog.require('lf.op');
+goog.require('lf.schema');
+
+
 
 (function() {
 
@@ -80,7 +87,7 @@
       limit: {
         type: Number,
         value: 100,
-        notify:true
+        notify: true
       },
       cities: {
         type: String,
@@ -115,9 +122,9 @@
         value: null
       },
       results: {
-        type:Array,
+        type: Array,
         value: function() {return [];},
-        notify:true
+        notify: true
       }
     },
     initialized: false,

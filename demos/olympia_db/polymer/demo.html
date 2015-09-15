@@ -88,17 +88,17 @@
      };
      app.handleResponse = function(response) {
        var columns = [];
-          Object.keys(this.columns).forEach(function(name) {
-            options = this.columns[name];
-            options.unshift('');
-            if (name == 'years') {
-              columns.push({name: 'fromYear', options: options});
-              columns.push({name: 'toYear', options: options});
-            } else {
-              columns.push({name: name, options: options});
-            }
-          }, this);
-          this.columnsArray = columns;
+        Object.keys(this.columns).forEach(function(name) {
+          options = this.columns[name];
+          options.unshift('');
+          if (name == 'years') {
+            columns.push({name: 'fromYear', options: options});
+            columns.push({name: 'toYear', options: options});
+          } else {
+            columns.push({name: name, options: options});
+          }
+        }, this);
+        this.columnsArray = columns;
      };
 
   </script>
