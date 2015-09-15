@@ -43,14 +43,11 @@ var depsHelper = /** @type {{
         require(pathMod.resolve(__dirname + '/scan_deps.js')));
 var StripLicense = require(pathMod.resolve(
     pathMod.join(__dirname, '/strip_license.js'))).StripLicense;
-var batchRun = require(pathMod.resolve(
-    pathMod.join(__dirname, '/promise_util.js'))).batchRun;
+var sequentiallyRun = require(pathMod.resolve(
+    pathMod.join(__dirname, '/promise_util.js'))).sequentiallyRun;
 
 // Make linter happy
 var log = console['log'];
-
-// Max parallel builders
-var maxBuilders = process.env['MAX_BUILDERS'] || 4;
 
 
 function buildLib(options) {
@@ -75,7 +72,7 @@ function buildLib(options) {
 function buildTest(testFile) {
   // Some tests are built against the distritbuted lovefield.min.js and require
   // different setup.
-  if (testFile.indexOf('lovefield_min_test.js') != -1) {
+  if (testFile.indexOf('harness/min_js') != -1) {
     return buildMinJsTest_(testFile);
   }
 
@@ -119,8 +116,11 @@ function buildMinJsTest_(testFile) {
     externs: [config.LOVEFIELD_EXTERNS]
   }, getCompilerFlags('debug'));
 
+  var dir = pathMod.dirname(testFile);
+  var apiTester = pathMod.join(dir, 'api_tester.js');
+  var testReporter = pathMod.join(dir, 'test_reporter.js');
   return new Promise(function(resolve, reject) {
-    gulp.src([testFile]).pipe(closureCompiler({
+    gulp.src([apiTester, testReporter, testFile]).pipe(closureCompiler({
       compilerPath: config.CLOSURE_COMPILER_PATH,
       fileName: new temporary.File().path,
       compilerFlags: compilerFlags
@@ -150,11 +150,15 @@ function buildAllTests(options) {
     };
   });
 
-  var total = functionItems.length;
-  var onStart = function(functionItem, index) {
-    log('Building...', index + 1, 'of', total, functionItem.name);
+  var counter = 0;
+  var onStart = function(functionItem) {
+    counter++;
+    log(
+        'Building...', counter, 'of',
+        functionItems.length, functionItem.name);
   };
-  return batchRun(functionItems, maxBuilders, onStart);
+  return sequentiallyRun(functionItems, onStart);
+
 }
 
 
