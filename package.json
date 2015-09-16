@@ -1,7 +1,7 @@
 {
   "name": "lovefield",
   "version": "2.0.62",
-  "main": "dist/lovefield.js",
+  "main": "dist/lovefield.min.js",
   "description": "Lovefield - A Data Access Library",
   "keywords": [
     "lovefield"
