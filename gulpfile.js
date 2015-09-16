@@ -144,7 +144,7 @@ gulp.task('test', ['debug'], function() {
               log('JSUnit tests: ', failedCount > 0 ? chalk.red('FAILED') :
                   chalk.green('PASSED'));
               testServer.stopServer();
-              process.exit();
+              process.exit(failedCount == 0 ? 0 : 1);
             });
   }
   return whenTestsDone;

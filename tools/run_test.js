@@ -169,6 +169,7 @@ function getWebDriver(browser) {
   // Add Sauce credentials if they were set in the environment.
   if (process.env['SAUCE_USERNAME']) {
     usingServer = true;
+    capabilities.set('name', 'Travis Job ' + process.env['TRAVIS_JOB_NUMBER']);
     capabilities.set('username', process.env['SAUCE_USERNAME']);
     capabilities.set('accessKey', process.env['SAUCE_ACCESS_KEY']);
     capabilities.set('tunnel-identifier', process.env['TRAVIS_JOB_NUMBER']);
