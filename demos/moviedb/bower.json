@@ -14,9 +14,9 @@
     "bower_components"
   ],
   "dependencies": {
-    "bootstrap": "3.3.2",
-    "bootstrap-table": "~1.7.0",
-    "jquery": "~2.1.4",
+    "bootstrap": "^3.3.5",
+    "bootstrap-table": "^1.8.1",
+    "jquery": "^2.1.4",
     "lovefield": "lovefield#master"
   }
 }

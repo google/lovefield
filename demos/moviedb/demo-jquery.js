@@ -188,8 +188,8 @@ function generateDetails(id) {
   promises.push(
       db.select().
           from(ma).
-          where(ma.movieId.eq(id)).
           innerJoin(a, a.id.eq(ma.actorId)).
+          where(ma.movieId.eq(id)).
           orderBy(a.lastName).
           exec().then(function(rows) {
             details['actors'] = rows.map(function(row) {
