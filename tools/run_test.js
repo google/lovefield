@@ -84,8 +84,8 @@ function runBrowserTests(testPrefix, browser, testsFolder) {
       /** @type {{runMany: !Function}} */ (
           JsUnitTestRunner).runMany(driver, testUrls).then(
           function(results) {
-            driver.quit();
-            resolve(results);
+            var res = function() { resolve(results); };
+            driver.quit().then(res, res);
           }, reject);
     }, startupWaitInterval);
   });
@@ -164,6 +164,23 @@ function getWebDriver(browser) {
       new webdriver.Capabilities());
   capabilities.set('browserName', browser);
 
+  var usingServer = false;
+
+  // Add Sauce credentials if they were set in the environment.
+  if (process.env['SAUCE_USERNAME']) {
+    usingServer = true;
+    capabilities.set('username', process.env['SAUCE_USERNAME']);
+    capabilities.set('accessKey', process.env['SAUCE_ACCESS_KEY']);
+    capabilities.set('tunnel-identifier', process.env['TRAVIS_JOB_NUMBER']);
+  }
+
+  var builder = /** @type {!WebDriverBuilder} */ (new webdriver.Builder());
+  if (usingServer) {
+    builder.usingServer('http://' +
+        process.env['SAUCE_USERNAME'] + ':' + process.env['SAUCE_ACCESS_KEY'] +
+        '@ondemand.saucelabs.com:80/wd/hub');
+  }
+
   if (browser == 'chrome') {
     var chromeOptions = /** @type {!ChromeOptions} */ (
         new chromeMod.Options());
@@ -172,16 +189,14 @@ function getWebDriver(browser) {
       '--no-first-run'
     ]);
 
-    return /** @type {!WebDriverBuilder} */ (new webdriver.Builder()).
-        withCapabilities(capabilities).
+    return builder.withCapabilities(capabilities).
         setChromeOptions(chromeOptions).
         build();
   } else if (browser == 'firefox') {
     var firefoxOptions = /** @type {!FirefoxOptions} */ (
         new firefoxMod.Options());
     firefoxOptions.setProfile(new firefoxMod.Profile());
-    return /** @type {!WebDriverBuilder} */ (new webdriver.Builder()).
-        withCapabilities(capabilities).
+    return builder.withCapabilities(capabilities).
         setFirefoxOptions(firefoxOptions).
         build();
   } else if (browser == 'safari') {
@@ -191,15 +206,13 @@ function getWebDriver(browser) {
     }
     var safariOptions = /** @type {!SafariOptions} */ (new safariMod.Options());
     safariOptions.setCleanSession();
-    return /** @type {!WebDriverBuilder} */ (new webdriver.Builder()).
-        withCapabilities(capabilities).
+    return builder.withCapabilities(capabilities).
         setSafariOptions(safariOptions).
         build();
   } else if (browser == 'ie') {
     var ieOptions = /** @type {!IeOptions} */ (new ieMod.Options());
     ieOptions.ensureCleanSession();
-    return /** @type {!WebDriverBuilder} */ (new webdriver.Builder()).
-        withCapabilities(capabilities).
+    return builder.withCapabilities(capabilities).
         setIeOptions(ieOptions).
         build();
   } else {

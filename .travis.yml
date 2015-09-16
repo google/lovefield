@@ -5,12 +5,22 @@ node_js:
 
 sudo: false
 
+env:
+  global:
+    - secure: VNerOdUQKati7WSKtgLoq857jAG+CKwCE7g+/XtipO5PbS4J92xttyZuYkCThZoSMYEl8EXvO22fw2tLb+5ylQLrFS/+9TO+kU1C7z5R0+JPDoeuDmNLkAbUyV0k2JLz4AI8o4kAJtghnLjUKRS8piJCKwwtdAoBwn8qJlq8Fgg=
+    - secure: oKPKrHsFRPUAkg7lt4NfKuE9DhENlWTbyr6oGtKkjQHrRU6LPl5iYa4X3Nr30o4ehvtRX2qcCXSxM5jTAuUalxv6ANbYKMFpnqERr7O6OoYUeOAopy+WtTwABXsNctuwn9AUUpGYaBB4Ipj1Hss+Ez/zCs55qZcE2XNli2GbQ2o=
+
+addons:
+  sauce_connect: true
+
 before_script:
   - npm install -g gulp
   - npm install
 
 script:
   - gulp build --target=lib --mode=opt
+  - gulp test --target=spac
+  - gulp test --target=tests --browser=chrome
   - gulp build --target=tests
 
 notifications:
