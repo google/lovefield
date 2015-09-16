@@ -8666,8 +8666,15 @@ goog.inherits(lf.query.DeleteContext, lf.query.Context);
 lf.query.DeleteContext.prototype.getScope = function() {
   var scope = lf.structs.set.create();
   scope.add(this.from);
-  this.schema.info().getChildTables(this.from.getName()).forEach(scope.add.bind(scope));
+  this.expandTableScope_(this.from.getName(), scope);
   return scope;
+};
+lf.query.DeleteContext.prototype.expandTableScope_ = function(tableName, scopeSoFar) {
+  var cascadeChildTables = this.schema.info().getChildTables(tableName, lf.ConstraintAction.CASCADE), childTables = this.schema.info().getChildTables(tableName);
+  childTables.forEach(scopeSoFar.add.bind(scopeSoFar));
+  cascadeChildTables.forEach(function(childTable) {
+    this.expandTableScope_(childTable.getName(), scopeSoFar);
+  }, this);
 };
 lf.query.DeleteContext.prototype.clone = function() {
   var context = new lf.query.DeleteContext(this.schema);
@@ -11132,6 +11139,8 @@ lf.schema.Info = function(dbSchema) {
   this.parents_ = new lf.structs.MapSet;
   this.colParent_ = lf.structs.map.create();
   this.children_ = new lf.structs.MapSet;
+  this.cascadeChildren_ = new lf.structs.MapSet;
+  this.restrictChildren_ = new lf.structs.MapSet;
   this.colChild_ = new lf.structs.MapSet;
   this.init_();
 };
@@ -11142,6 +11151,7 @@ lf.schema.Info.prototype.init_ = function() {
       this.referringFk_.set(fkSpec.parentTable, fkSpec);
       this.parents_.set(tableName, this.schema_.table(fkSpec.parentTable));
       this.children_.set(fkSpec.parentTable, table);
+      fkSpec.action == lf.ConstraintAction.RESTRICT ? this.restrictChildren_.set(fkSpec.parentTable, table) : this.cascadeChildren_.set(fkSpec.parentTable, table);
       this.colParent_.set(table.getName() + "." + fkSpec.childColumn, fkSpec.parentTable);
       var ref = fkSpec.parentTable + "." + fkSpec.parentColumn;
       this.colChild_.set(ref, table.getName());
@@ -11169,8 +11179,8 @@ lf.schema.Info.prototype.getParentTablesByColumns = function(colNames) {
     return this.schema_.table(tableName);
   }, this);
 };
-lf.schema.Info.prototype.getChildTables = function(tableName) {
-  return this.expandScope_(tableName, this.children_);
+lf.schema.Info.prototype.getChildTables = function(tableName, opt_constraintAction) {
+  return goog.isDefAndNotNull(opt_constraintAction) ? opt_constraintAction == lf.ConstraintAction.RESTRICT ? this.expandScope_(tableName, this.restrictChildren_) : this.expandScope_(tableName, this.cascadeChildren_) : this.expandScope_(tableName, this.children_);
 };
 lf.schema.Info.prototype.getChildTablesByColumns = function(colNames) {
   var tableNames = lf.structs.set.create();

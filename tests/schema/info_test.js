@@ -17,6 +17,7 @@
 goog.setTestOnly();
 goog.require('goog.testing.jsunit');
 goog.require('hr.db');
+goog.require('lf.ConstraintAction');
 goog.require('lf.schema.Info');
 goog.require('lf.testing.hrSchema.getSchemaBuilder');
 
@@ -63,6 +64,7 @@ function invoke(toTest, arg) {
   });
 }
 
+
 function testGetParentTables() {
   [dynamicInfo, staticInfo].forEach(function(info) {
     var toTest = info.getParentTables.bind(info);
@@ -71,6 +73,7 @@ function testGetParentTables() {
     assertSameElements(['Country'], invoke(toTest, 'Location'));
   });
 }
+
 
 function testGetParentTablesByColumns() {
   [dynamicInfo, staticInfo].forEach(function(info) {
@@ -84,7 +87,8 @@ function testGetParentTablesByColumns() {
   });
 }
 
-function testGetChildTables() {
+
+function testGetChildTables_All() {
   [dynamicInfo, staticInfo].forEach(function(info) {
     var toTest = info.getChildTables.bind(info);
     assertEquals(0, invoke(toTest, 'DummyTable').length);
@@ -92,6 +96,32 @@ function testGetChildTables() {
     assertSameElements(['Location'], invoke(toTest, 'Country'));
   });
 }
+
+
+function testGetChildTables_Restrict() {
+  [dynamicInfo, staticInfo].forEach(function(info) {
+    var jobChildren = info.getChildTables('Job', lf.ConstraintAction.RESTRICT);
+    assertEquals(0, jobChildren.length);
+    var employeeChildren = info.getChildTables(
+        'Employee', lf.ConstraintAction.RESTRICT);
+    assertEquals(0, employeeChildren.length);
+  });
+}
+
+
+function testGetChildTables_Cascade() {
+  [dynamicInfo, staticInfo].forEach(function(info) {
+    var jobChildren = info.getChildTables('Job', lf.ConstraintAction.CASCADE);
+    assertEquals(1, jobChildren.length);
+    assertEquals('Employee', jobChildren[0].getName());
+
+    var employeeChildren = info.getChildTables(
+        'Employee', lf.ConstraintAction.CASCADE);
+    assertEquals(1, employeeChildren.length);
+    assertEquals('JobHistory', employeeChildren[0].getName());
+  });
+}
+
 
 function testGetChildTablesByColumns() {
   [dynamicInfo, staticInfo].forEach(function(info) {
