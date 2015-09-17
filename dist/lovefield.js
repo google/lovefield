@@ -7210,16 +7210,6 @@ lf.index.BTreeNode_.deserialize = function(rows, tree) {
   }
   return 1 < leaves.length ? lf.index.BTreeNode_.createInternals_(leaves[0]) : leaves[0];
 };
-lf.index.ComparatorFactory = {};
-lf.index.ComparatorFactory.create = function(indexSchema) {
-  if (1 == indexSchema.columns.length) {
-    return new lf.index.SimpleComparator(indexSchema.columns[0].order);
-  }
-  var orders = indexSchema.columns.map(function(col) {
-    return col.order;
-  });
-  return new lf.index.MultiKeyComparator(orders);
-};
 lf.index.SimpleComparator = function(order) {
   this.compare_ = order == lf.Order.DESC ? lf.index.SimpleComparator.compareDescending : lf.index.SimpleComparator.compareAscending;
   this.normalizeKeyRange_ = order == lf.Order.DESC ? function(opt_keyRange) {
@@ -7366,6 +7356,16 @@ lf.index.MultiKeyComparator.prototype.rangeToKeys = function(keyRange) {
     return this.comparators_[i].rangeToKeys(range)[1];
   }, this);
   return [startKey, endKey];
+};
+lf.index.ComparatorFactory = {};
+lf.index.ComparatorFactory.create = function(indexSchema) {
+  if (1 == indexSchema.columns.length) {
+    return new lf.index.SimpleComparator(indexSchema.columns[0].order);
+  }
+  var orders = indexSchema.columns.map(function(col) {
+    return col.order;
+  });
+  return new lf.index.MultiKeyComparator(orders);
 };
 lf.index.NullableIndex = function(index) {
   this.index_ = index;
