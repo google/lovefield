@@ -3402,6 +3402,9 @@ lf.Flags.MEMORY_ONLY = !1;
 lf.Flags.NATIVE_ES6 = !1;
 lf.structs = {};
 lf.structs.map = {};
+$jscomp.scope.detectUseNative = function() {
+  return lf.Flags.NATIVE_ES6 || goog.isDef(window.Map) && goog.isDef(window.Map.prototype.values) && goog.isDef(window.Map.prototype.forEach);
+};
 lf.structs.MapPolyFill_ = function() {
   this.map_ = new goog.structs.Map;
   Object.defineProperty(this, "size", {get:function() {
@@ -3432,8 +3435,9 @@ lf.structs.MapPolyFill_.prototype.set = function(key, value) {
   return this.map_.set(key, value);
 };
 goog.exportProperty(lf.structs.MapPolyFill_.prototype, "set", lf.structs.MapPolyFill_.prototype.set);
+$jscomp.scope.USE_NATIVE = (0,$jscomp.scope.detectUseNative)();
 lf.structs.map.create = function() {
-  return lf.Flags.NATIVE_ES6 ? new window.Map : window.Map && window.Map.prototype.values && window.Map.prototype.forEach ? new window.Map : new lf.structs.MapPolyFill_;
+  return $jscomp.scope.USE_NATIVE ? new window.Map : new lf.structs.MapPolyFill_;
 };
 lf.structs.map.keys = function(map) {
   if (map instanceof lf.structs.MapPolyFill_) {
@@ -3900,6 +3904,9 @@ goog.userAgent.product.isSafariDesktop_ = function() {
 };
 goog.userAgent.product.SAFARI = goog.userAgent.product.PRODUCT_KNOWN_ ? goog.userAgent.product.ASSUME_SAFARI : goog.userAgent.product.isSafariDesktop_();
 lf.structs.set = {};
+$jscomp.scope.detectUseNative$1 = function() {
+  return lf.Flags.NATIVE_ES6 || window.Set && window.Set.prototype.values && window.Set.prototype.forEach && !goog.userAgent.product.SAFARI;
+};
 lf.structs.SetPolyFill_ = function(opt_values) {
   this.set_ = new goog.structs.Set(opt_values);
   Object.defineProperty(this, "size", {get:function() {
@@ -3925,8 +3932,9 @@ lf.structs.SetPolyFill_.prototype.has = function(value) {
   return this.set_.contains(value);
 };
 goog.exportProperty(lf.structs.SetPolyFill_.prototype, "has", lf.structs.SetPolyFill_.prototype.has);
+$jscomp.scope.USE_NATIVE$1 = (0,$jscomp.scope.detectUseNative$1)();
 lf.structs.set.create = function(opt_iterable) {
-  return lf.Flags.NATIVE_ES6 ? goog.isDef(opt_iterable) ? new window.Set(opt_iterable) : new window.Set : window.Set && window.Set.prototype.values && window.Set.prototype.forEach && !goog.userAgent.product.SAFARI ? new window.Set(opt_iterable) : new lf.structs.SetPolyFill_(opt_iterable);
+  return $jscomp.scope.USE_NATIVE$1 ? goog.isDef(opt_iterable) ? new window.Set(opt_iterable) : new window.Set : new lf.structs.SetPolyFill_(opt_iterable);
 };
 lf.structs.set.values = function(set) {
   if (set instanceof lf.structs.SetPolyFill_) {
