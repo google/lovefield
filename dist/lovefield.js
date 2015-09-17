@@ -11149,7 +11149,8 @@ lf.Global.prototype.isRegistered = function(serviceId) {
 goog.exportProperty(lf.Global.prototype, "isRegistered", lf.Global.prototype.isRegistered);
 lf.schema.Info = function(dbSchema) {
   this.schema_ = dbSchema;
-  this.referringFk_ = new lf.structs.MapSet;
+  this.cascadeReferringFk_ = new lf.structs.MapSet;
+  this.restrictReferringFk_ = new lf.structs.MapSet;
   this.parents_ = new lf.structs.MapSet;
   this.colParent_ = lf.structs.map.create();
   this.children_ = new lf.structs.MapSet;
@@ -11162,18 +11163,21 @@ lf.schema.Info.prototype.init_ = function() {
   this.schema_.tables().forEach(function(table) {
     var tableName = table.getName();
     table.getConstraint().getForeignKeys().forEach(function(fkSpec) {
-      this.referringFk_.set(fkSpec.parentTable, fkSpec);
       this.parents_.set(tableName, this.schema_.table(fkSpec.parentTable));
       this.children_.set(fkSpec.parentTable, table);
-      fkSpec.action == lf.ConstraintAction.RESTRICT ? this.restrictChildren_.set(fkSpec.parentTable, table) : this.cascadeChildren_.set(fkSpec.parentTable, table);
+      fkSpec.action == lf.ConstraintAction.RESTRICT ? (this.restrictReferringFk_.set(fkSpec.parentTable, fkSpec), this.restrictChildren_.set(fkSpec.parentTable, table)) : (this.cascadeReferringFk_.set(fkSpec.parentTable, fkSpec), this.cascadeChildren_.set(fkSpec.parentTable, table));
       this.colParent_.set(table.getName() + "." + fkSpec.childColumn, fkSpec.parentTable);
       var ref = fkSpec.parentTable + "." + fkSpec.parentColumn;
       this.colChild_.set(ref, table.getName());
     }, this);
   }, this);
 };
-lf.schema.Info.prototype.getReferencingForeignKeys = function(tableName) {
-  return this.referringFk_.get(tableName);
+lf.schema.Info.prototype.getReferencingForeignKeys = function(tableName, opt_constraintAction) {
+  if (goog.isDefAndNotNull(opt_constraintAction)) {
+    return opt_constraintAction == lf.ConstraintAction.CASCADE ? this.cascadeReferringFk_.get(tableName) : this.restrictReferringFk_.get(tableName);
+  }
+  var cascadeConstraints = this.cascadeReferringFk_.get(tableName), restrictConstraints = this.restrictReferringFk_.get(tableName);
+  return goog.isNull(cascadeConstraints) && goog.isNull(restrictConstraints) ? null : (cascadeConstraints || []).concat(restrictConstraints || []);
 };
 lf.schema.Info.prototype.expandScope_ = function(tableName, map) {
   var values = map.get(tableName);
