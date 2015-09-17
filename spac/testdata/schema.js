@@ -604,7 +604,7 @@ lovefield.db.schema.Photo.prototype.getConstraint = function() {
           'ref': 'Album.id',
           'action': lf.ConstraintAction.CASCADE,
           'timing': lf.ConstraintTiming.IMMEDIATE
-        }, 'Photo.fk_albumId')
+        }, 'Photo', 'fk_albumId')
   ];
   this.constraint_ = new lf.schema.Constraint(
       pk, notNullable, foreignKeys);
@@ -1006,14 +1006,14 @@ lovefield.db.schema.Details.prototype.getConstraint = function() {
           'ref': 'Photo.id',
           'action': lf.ConstraintAction.CASCADE,
           'timing': lf.ConstraintTiming.IMMEDIATE
-        }, 'Details.fk_photoId'),
+        }, 'Details', 'fk_photoId'),
     new lf.schema.ForeignKeySpec(
         {
           'local': 'albumId',
           'ref': 'Album.id',
           'action': lf.ConstraintAction.CASCADE,
           'timing': lf.ConstraintTiming.IMMEDIATE
-        }, 'Details.fk_albumId')
+        }, 'Details', 'fk_albumId')
   ];
   this.constraint_ = new lf.schema.Constraint(
       pk, notNullable, foreignKeys);
@@ -1503,14 +1503,14 @@ lovefield.db.schema.PhotoCurator.prototype.getConstraint = function() {
           'ref': 'Photo.id',
           'action': lf.ConstraintAction.CASCADE,
           'timing': lf.ConstraintTiming.IMMEDIATE
-        }, 'PhotoCurator.fk_photoId'),
+        }, 'PhotoCurator', 'fk_photoId'),
     new lf.schema.ForeignKeySpec(
         {
           'local': 'curator',
           'ref': 'Curator.id',
           'action': lf.ConstraintAction.CASCADE,
           'timing': lf.ConstraintTiming.IMMEDIATE
-        }, 'PhotoCurator.fk_curator')
+        }, 'PhotoCurator', 'fk_curator')
   ];
   this.constraint_ = new lf.schema.Constraint(
       pk, notNullable, foreignKeys);
@@ -2013,7 +2013,7 @@ lovefield.db.schema.SelfLoop.prototype.getConstraint = function() {
           'ref': 'SelfLoop.id',
           'action': lf.ConstraintAction.CASCADE,
           'timing': lf.ConstraintTiming.IMMEDIATE
-        }, 'SelfLoop.fkAssociate')
+        }, 'SelfLoop', 'fkAssociate')
   ];
   this.constraint_ = new lf.schema.Constraint(
       pk, notNullable, foreignKeys);

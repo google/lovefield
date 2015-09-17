@@ -769,6 +769,10 @@ CodeGenerator.prototype.getForeignKeySpec_ = function(table) {
   };
 
   return table.getConstraint().getForeignKeys().map(function(spec) {
+    var parts = spec.name.split('.');
+    var childTable = parts[0];
+    var name = parts[1];
+
     return '    new lf.schema.ForeignKeySpec(\n' +
         '        {\n' +
         '          \'local\': \'' + spec.childColumn + '\',\n' +
@@ -776,7 +780,7 @@ CodeGenerator.prototype.getForeignKeySpec_ = function(table) {
             '\',\n' +
         '          \'action\': ' + getAction(spec.action) + ',\n' +
         '          \'timing\': ' + getTiming(spec.timing) + '\n' +
-        '        }, \'' + spec.name + '\')';
+        '        }, \'' + childTable + '\', \'' + name + '\')';
   }).join(',\n');
 };
 

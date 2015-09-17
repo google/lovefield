@@ -345,7 +345,7 @@ foo.db.schema.Foo.prototype.getConstraint = function() {
           'ref': 'Location.id',
           'action': lf.ConstraintAction.RESTRICT,
           'timing': lf.ConstraintTiming.IMMEDIATE
-        }, 'Foo.fk_loc')
+        }, 'Foo', 'fk_loc')
   ];
   this.constraint_ = new lf.schema.Constraint(
       pk, notNullable, foreignKeys);

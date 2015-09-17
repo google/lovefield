@@ -11226,7 +11226,7 @@ lf.schema.Constraint.prototype.getForeignKeys = function() {
   return this.foreignKeys_;
 };
 goog.exportProperty(lf.schema.Constraint.prototype, "getForeignKeys", lf.schema.Constraint.prototype.getForeignKeys);
-lf.schema.ForeignKeySpec = function(rawSpec, name) {
+lf.schema.ForeignKeySpec = function(rawSpec, childTable, name) {
   var array = rawSpec.ref.split(".");
   if (2 != array.length) {
     throw new lf.Exception(540, name);
@@ -11234,7 +11234,7 @@ lf.schema.ForeignKeySpec = function(rawSpec, name) {
   this.childColumn = rawSpec.local;
   this.parentTable = array[0];
   this.parentColumn = array[1];
-  this.name = name;
+  this.name = childTable + "." + name;
   this.action = rawSpec.action;
   this.timing = rawSpec.timing;
 };
@@ -11345,7 +11345,7 @@ goog.exportProperty(lf.schema.TableBuilder.prototype, "addPrimaryKey", lf.schema
 lf.schema.TableBuilder.prototype.addForeignKey = function(name, rawSpec) {
   this.checkNamingRules_(name);
   this.checkNameConflicts_(name);
-  var spec = new lf.schema.ForeignKeySpec(rawSpec, this.name_ + "." + name);
+  var spec = new lf.schema.ForeignKeySpec(rawSpec, this.name_, name);
   goog.isDef(spec.action) || (spec.action = lf.ConstraintAction.RESTRICT);
   goog.isDef(spec.timing) || (spec.timing = lf.ConstraintTiming.IMMEDIATE);
   if (spec.action == lf.ConstraintAction.CASCADE && spec.timing == lf.ConstraintTiming.DEFERRABLE) {
