@@ -426,12 +426,16 @@ function testMultiKeyComparator_SortKeyRanges_MixedOrder() {
   // NOT(BETWEEN([2, 'X'], [24, 'B'])) OR [22, 'D']
   var keyRanges = [
     [
-      new lf.index.SingleKeyRange(null, 2, false, true),
-      new lf.index.SingleKeyRange(null, 'B', false, true)
+      new lf.index.SingleKeyRange(
+          lf.index.SingleKeyRange.UNBOUND_VALUE, 2, false, true),
+      new lf.index.SingleKeyRange(
+          lf.index.SingleKeyRange.UNBOUND_VALUE, 'B', false, true)
     ],
     [
-      new lf.index.SingleKeyRange(24, null, true, false),
-      new lf.index.SingleKeyRange('X', null, true, false)
+      new lf.index.SingleKeyRange(
+          24, lf.index.SingleKeyRange.UNBOUND_VALUE, true, false),
+      new lf.index.SingleKeyRange(
+          'X', lf.index.SingleKeyRange.UNBOUND_VALUE, true, false)
     ],
     [
       lf.index.SingleKeyRange.only(22),

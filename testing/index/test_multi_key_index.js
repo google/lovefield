@@ -179,7 +179,6 @@ lf.testing.index.TestMultiKeyIndex.prototype.testMinMax = function(index) {
   // First try an empty index.
   assertNull(index.min());
   assertNull(index.max());
-
   this.populateIndex_(index);
   assertArrayEquals([[0, 'Z'], [2000]], index.min());
   assertArrayEquals([[25, 'A'], [2025]], index.max());
@@ -193,12 +192,16 @@ lf.testing.index.TestMultiKeyIndex.prototype.testMultiRange = function(index) {
   // Simulate NOT(BETWEEN([2, 'X'], [24, 'B']))
   // The optimizer already handles the range order.
   var range1 = [
-    new lf.index.SingleKeyRange(null, 2, false, true),
-    new lf.index.SingleKeyRange(null, 'B', false, true)
+    new lf.index.SingleKeyRange(
+        lf.index.SingleKeyRange.UNBOUND_VALUE, 2, false, true),
+    new lf.index.SingleKeyRange(
+        lf.index.SingleKeyRange.UNBOUND_VALUE, 'B', false, true)
   ];
   var range2 = [
-    new lf.index.SingleKeyRange(24, null, true, false),
-    new lf.index.SingleKeyRange('X', null, true, false)
+    new lf.index.SingleKeyRange(
+        24, lf.index.SingleKeyRange.UNBOUND_VALUE, true, false),
+    new lf.index.SingleKeyRange(
+        'X', lf.index.SingleKeyRange.UNBOUND_VALUE, true, false)
   ];
 
   var expected = [2000, 2001, 2025];

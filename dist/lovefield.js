@@ -4567,19 +4567,25 @@ lf.cache.Journal.prototype.checkScope_ = function(tableSchema) {
 lf.index.SingleKeyRange = function(from, to, excludeLower, excludeUpper) {
   this.from = from;
   this.to = to;
-  this.excludeLower = goog.isNull(this.from) ? !1 : excludeLower;
-  this.excludeUpper = goog.isNull(this.to) ? !1 : excludeUpper;
+  this.excludeLower = lf.index.SingleKeyRange.isUnbound(this.from) ? !1 : excludeLower;
+  this.excludeUpper = lf.index.SingleKeyRange.isUnbound(this.to) ? !1 : excludeUpper;
+};
+lf.index.UnboundKey = function() {
+};
+lf.index.SingleKeyRange.UNBOUND_VALUE = new lf.index.UnboundKey;
+lf.index.SingleKeyRange.isUnbound = function(value) {
+  return value == lf.index.SingleKeyRange.UNBOUND_VALUE;
 };
 lf.index.SingleKeyRange.prototype.toString = function() {
-  return (this.excludeLower ? "(" : "[") + (goog.isNull(this.from) ? "unbound" : this.from) + ", " + (goog.isNull(this.to) ? "unbound" : this.to) + (this.excludeUpper ? ")" : "]");
+  return (this.excludeLower ? "(" : "[") + (lf.index.SingleKeyRange.isUnbound(this.from) ? "unbound" : this.from) + ", " + (lf.index.SingleKeyRange.isUnbound(this.to) ? "unbound" : this.to) + (this.excludeUpper ? ")" : "]");
 };
 lf.index.SingleKeyRange.prototype.complement = function() {
-  if (goog.isNull(this.from) && goog.isNull(this.to)) {
+  if (this.isAll()) {
     return [];
   }
   var keyRangeLow = null, keyRangeHigh = null;
-  goog.isNull(this.from) || (keyRangeLow = new lf.index.SingleKeyRange(null, this.from, !1, !this.excludeLower));
-  goog.isNull(this.to) || (keyRangeHigh = new lf.index.SingleKeyRange(this.to, null, !this.excludeUpper, !1));
+  lf.index.SingleKeyRange.isUnbound(this.from) || (keyRangeLow = new lf.index.SingleKeyRange(lf.index.SingleKeyRange.UNBOUND_VALUE, this.from, !1, !this.excludeLower));
+  lf.index.SingleKeyRange.isUnbound(this.to) || (keyRangeHigh = new lf.index.SingleKeyRange(this.to, lf.index.SingleKeyRange.UNBOUND_VALUE, !this.excludeUpper, !1));
   return [keyRangeLow, keyRangeHigh].filter(function(keyRange) {
     return !goog.isNull(keyRange);
   });
@@ -4593,28 +4599,28 @@ lf.index.SingleKeyRange.prototype.overlaps = function(range) {
     return !0;
   }
   var left = favor == lf.index.Favor.RHS ? this : range, right = favor == lf.index.Favor.LHS ? this : range;
-  return goog.isNull(left.to) || left.to > right.from || left.to == right.from && !left.excludeUpper && !right.excludeLower;
+  return lf.index.SingleKeyRange.isUnbound(left.to) || left.to > right.from || left.to == right.from && !left.excludeUpper && !right.excludeLower;
 };
 lf.index.SingleKeyRange.upperBound = function(key, opt_shouldExclude) {
-  return new lf.index.SingleKeyRange(null, key, !1, opt_shouldExclude || !1);
+  return new lf.index.SingleKeyRange(lf.index.SingleKeyRange.UNBOUND_VALUE, key, !1, opt_shouldExclude || !1);
 };
 lf.index.SingleKeyRange.lowerBound = function(key, opt_shouldExclude) {
-  return new lf.index.SingleKeyRange(key, null, opt_shouldExclude || !1, !1);
+  return new lf.index.SingleKeyRange(key, lf.index.SingleKeyRange.UNBOUND_VALUE, opt_shouldExclude || !1, !1);
 };
 lf.index.SingleKeyRange.only = function(key) {
   return new lf.index.SingleKeyRange(key, key, !1, !1);
 };
 lf.index.SingleKeyRange.all = function() {
-  return new lf.index.SingleKeyRange(null, null, !1, !1);
+  return new lf.index.SingleKeyRange(lf.index.SingleKeyRange.UNBOUND_VALUE, lf.index.SingleKeyRange.UNBOUND_VALUE, !1, !1);
 };
 lf.index.SingleKeyRange.prototype.isAll = function() {
-  return goog.isNull(this.from) && goog.isNull(this.to);
+  return lf.index.SingleKeyRange.isUnbound(this.from) && lf.index.SingleKeyRange.isUnbound(this.to);
 };
 lf.index.SingleKeyRange.prototype.isOnly = function() {
-  return goog.isDefAndNotNull(this.from) && this.from == this.to && !this.excludeLower && !this.excludeUpper;
+  return this.from == this.to && !lf.index.SingleKeyRange.isUnbound(this.from) && !this.excludeLower && !this.excludeUpper;
 };
 lf.index.SingleKeyRange.prototype.contains = function(key) {
-  var left = goog.isNull(this.from) || key > this.from || key == this.from && !this.excludeLower, right = goog.isNull(this.to) || key < this.to || key == this.to && !this.excludeUpper;
+  var left = lf.index.SingleKeyRange.isUnbound(this.from) || key > this.from || key == this.from && !this.excludeLower, right = lf.index.SingleKeyRange.isUnbound(this.to) || key < this.to || key == this.to && !this.excludeUpper;
   return left && right;
 };
 lf.index.SingleKeyRange.prototype.equals = function(range) {
@@ -4629,7 +4635,7 @@ lf.index.SingleKeyRange.compareKey_ = function(l, r, isLeftHandSide, opt_exclude
   }, tieLogic = function() {
     return lf.index.SingleKeyRange.xor(excludeL, excludeR) ? excludeL ? flip(Favor.LHS) : flip(Favor.RHS) : Favor.TIE;
   };
-  return goog.isNull(l) ? goog.isNull(r) ? tieLogic() : flip(Favor.RHS) : goog.isNull(r) ? flip(Favor.LHS) : l < r ? Favor.RHS : l == r ? tieLogic() : Favor.LHS;
+  return lf.index.SingleKeyRange.isUnbound(l) ? lf.index.SingleKeyRange.isUnbound(r) ? tieLogic() : flip(Favor.RHS) : lf.index.SingleKeyRange.isUnbound(r) ? flip(Favor.LHS) : l < r ? Favor.RHS : l == r ? tieLogic() : Favor.LHS;
 };
 lf.index.SingleKeyRange.compare = function(lhs, rhs) {
   var result = lf.index.SingleKeyRange.compareKey_(lhs.from, rhs.from, !0, lhs.excludeLower, rhs.excludeLower);
@@ -4638,11 +4644,11 @@ lf.index.SingleKeyRange.compare = function(lhs, rhs) {
 };
 lf.index.SingleKeyRange.getBoundingRange = function(r1, r2) {
   var r = lf.index.SingleKeyRange.all();
-  if (!goog.isNull(r1.from) && !goog.isNull(r2.from)) {
+  if (!lf.index.SingleKeyRange.isUnbound(r1.from) && !lf.index.SingleKeyRange.isUnbound(r2.from)) {
     var favor = lf.index.SingleKeyRange.compareKey_(r1.from, r2.from, !0);
     favor != lf.index.Favor.LHS ? (r.from = r1.from, r.excludeLower = favor != lf.index.Favor.TIE ? r1.excludeLower : r1.excludeLower && r2.excludeLower) : (r.from = r2.from, r.excludeLower = r2.excludeLower);
   }
-  goog.isNull(r1.to) || goog.isNull(r2.to) || (favor = lf.index.SingleKeyRange.compareKey_(r1.to, r2.to, !1), favor != lf.index.Favor.RHS ? (r.to = r1.to, r.excludeUpper = favor != lf.index.Favor.TIE ? r1.excludeUpper : r1.excludeUpper && r2.excludeUpper) : (r.to = r2.to, r.excludeUpper = r2.excludeUpper));
+  lf.index.SingleKeyRange.isUnbound(r1.to) || lf.index.SingleKeyRange.isUnbound(r2.to) || (favor = lf.index.SingleKeyRange.compareKey_(r1.to, r2.to, !1), favor != lf.index.Favor.RHS ? (r.to = r1.to, r.excludeUpper = favor != lf.index.Favor.TIE ? r1.excludeUpper : r1.excludeUpper && r2.excludeUpper) : (r.to = r2.to, r.excludeUpper = r2.excludeUpper));
   return r;
 };
 lf.index.SingleKeyRange.and = function(r1, r2) {
@@ -4653,7 +4659,7 @@ lf.index.SingleKeyRange.and = function(r1, r2) {
   r.from = left.from;
   r.excludeLower = left.excludeLower;
   var right;
-  goog.isNull(r1.to) || goog.isNull(r2.to) ? right = goog.isNull(r1.to) ? r2 : r1 : (favor = lf.index.SingleKeyRange.compareKey_(r1.to, r2.to, !1), right = favor == lf.index.Favor.TIE ? r1.excludeUpper ? r1 : r2 : favor == lf.index.Favor.RHS ? r1 : r2);
+  lf.index.SingleKeyRange.isUnbound(r1.to) || lf.index.SingleKeyRange.isUnbound(r2.to) ? right = lf.index.SingleKeyRange.isUnbound(r1.to) ? r2 : r1 : (favor = lf.index.SingleKeyRange.compareKey_(r1.to, r2.to, !1), right = favor == lf.index.Favor.TIE ? r1.excludeUpper ? r1 : r2 : favor == lf.index.Favor.RHS ? r1 : r2);
   r.to = right.to;
   r.excludeUpper = right.excludeUpper;
   return r;
@@ -7237,7 +7243,7 @@ lf.index.SimpleComparator.orderRangeDescending = function(lhs, rhs) {
   return lf.index.SingleKeyRange.compare(rhs, lhs);
 };
 lf.index.SimpleComparator.prototype.compareRange = function(key, naturalRange) {
-  var range = this.normalizeKeyRange_(naturalRange), results = [goog.isNull(range.from), goog.isNull(range.to)];
+  var range = this.normalizeKeyRange_(naturalRange), results = [lf.index.SingleKeyRange.isUnbound(range.from), lf.index.SingleKeyRange.isUnbound(range.to)];
   if (!results[0]) {
     var favor = this.compare_(key, range.from);
     results[0] = range.excludeLower ? favor == lf.index.Favor.LHS : favor != lf.index.Favor.RHS;
@@ -7269,7 +7275,7 @@ lf.index.SimpleComparator.prototype.sortKeyRanges = function(keyRanges) {
   }.bind(this));
 };
 lf.index.SimpleComparator.prototype.isLeftOpen = function(range) {
-  return goog.isNull(this.normalizeKeyRange_(range).from);
+  return lf.index.SingleKeyRange.isUnbound(this.normalizeKeyRange_(range).from);
 };
 lf.index.SimpleComparator.prototype.rangeToKeys = function(naturalRange) {
   var range = this.normalizeKeyRange_(naturalRange);

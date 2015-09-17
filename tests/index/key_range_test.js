@@ -60,12 +60,12 @@ function testComplement_WithBounds() {
  * has an upper bound.
  */
 function testComplement_UpperBoundOnly() {
-  var keyRange = new lf.index.SingleKeyRange(null, 20, false, false);
+  var keyRange = lf.index.SingleKeyRange.upperBound(20);
   var complementKeyRanges = keyRange.complement();
   assertEquals(1, complementKeyRanges.length);
   assertEquals('(20, unbound]', complementKeyRanges[0].toString());
 
-  keyRange = new lf.index.SingleKeyRange(null, 20, false, true);
+  keyRange = lf.index.SingleKeyRange.upperBound(20, true);
   complementKeyRanges = keyRange.complement();
   assertEquals(1, complementKeyRanges.length);
   assertEquals('[20, unbound]', complementKeyRanges[0].toString());
@@ -77,12 +77,12 @@ function testComplement_UpperBoundOnly() {
  * has an lower bound.
  */
 function testComplement_LowerBoundOnly() {
-  var keyRange = new lf.index.SingleKeyRange(20, null, false, false);
+  var keyRange = lf.index.SingleKeyRange.lowerBound(20);
   var complementKeyRanges = keyRange.complement();
   assertEquals(1, complementKeyRanges.length);
   assertEquals('[unbound, 20)', complementKeyRanges[0].toString());
 
-  keyRange = new lf.index.SingleKeyRange(20, null, true, false);
+  keyRange = lf.index.SingleKeyRange.lowerBound(20, true);
   complementKeyRanges = keyRange.complement();
   assertEquals(1, complementKeyRanges.length);
   assertEquals('[unbound, 20]', complementKeyRanges[0].toString());
@@ -110,6 +110,26 @@ function testComplement_OnlyOneValue() {
   assertEquals(2, complementKeyRanges.length);
   assertEquals('[unbound, 20)', complementKeyRanges[0].toString());
   assertEquals('(20, unbound]', complementKeyRanges[1].toString());
+}
+
+
+/**
+ * Tests KeyRange#isOnly().
+ */
+function test_IsOnly() {
+  assertFalse(lf.index.SingleKeyRange.upperBound(20).isOnly());
+  assertFalse(lf.index.SingleKeyRange.all().isOnly());
+  assertTrue(lf.index.SingleKeyRange.only(20).isOnly());
+}
+
+
+/**
+ * Tests KeyRange#isAll().
+ */
+function test_IsAll() {
+  assertFalse(lf.index.SingleKeyRange.only(20).isAll());
+  assertFalse(lf.index.SingleKeyRange.upperBound(20).isAll());
+  assertTrue(lf.index.SingleKeyRange.all().isAll());
 }
 
 

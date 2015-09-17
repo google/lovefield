@@ -143,8 +143,10 @@ lf.testing.index.TestSingleRowNumericalKey.prototype.testMultiRange = function(
   }
 
   // Simulate NOT(BETWEEN(2, 18))
-  var range1 = new lf.index.SingleKeyRange(null, 2, false, true);
-  var range2 = new lf.index.SingleKeyRange(18, null, true, false);
+  var range1 = new lf.index.SingleKeyRange(
+      lf.index.SingleKeyRange.UNBOUND_VALUE, 2, false, true);
+  var range2 = new lf.index.SingleKeyRange(
+      18, lf.index.SingleKeyRange.UNBOUND_VALUE, true, false);
 
   var comparator = index.comparator();
   var expected = [0, 1, 19].sort(goog.bind(comparator.compare, comparator));
