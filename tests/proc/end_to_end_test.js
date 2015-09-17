@@ -35,7 +35,7 @@ var asyncTestCase = goog.testing.AsyncTestCase.createAndInstall(
 
 
 /** @type {number} */
-asyncTestCase.stepTimeout = 10 * 1000;  // 10 seconds
+asyncTestCase.stepTimeout = 30 * 1000;  // 30 seconds
 
 
 /** @type {!lf.testing.Capability} */
