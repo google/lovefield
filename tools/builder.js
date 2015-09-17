@@ -43,8 +43,8 @@ var depsHelper = /** @type {{
         require(pathMod.resolve(__dirname + '/scan_deps.js')));
 var StripLicense = require(pathMod.resolve(
     pathMod.join(__dirname, '/strip_license.js'))).StripLicense;
-var sequentiallyRun = require(pathMod.resolve(
-    pathMod.join(__dirname, '/promise_util.js'))).sequentiallyRun;
+var batchRun = require(pathMod.resolve(
+    pathMod.join(__dirname, '/promise_util.js'))).batchRun;
 
 // Make linter happy
 var log = console['log'];
@@ -150,15 +150,12 @@ function buildAllTests(options) {
     };
   });
 
-  var counter = 0;
-  var onStart = function(functionItem) {
-    counter++;
-    log(
-        'Building...', counter, 'of',
-        functionItems.length, functionItem.name);
+  var total = functionItems.length;
+  var maxRunners = process.env['CONCURRENT_BUILDER'] || 8;
+  var onStart = function(functionItem, index) {
+    log('Building...', index + 1, 'of', total, functionItem.name);
   };
-  return sequentiallyRun(functionItems, onStart);
-
+  return batchRun(functionItems, maxRunners, onStart);
 }
 
 
