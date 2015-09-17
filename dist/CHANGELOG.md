@@ -1,3 +1,18 @@
+Version: 2.0.63<br>
+Publish date: 20150917<br>
+Changes:
+ - Improved explain() output in the case of join predicates.
+ - Implemented DB import/export functionality.
+ - Fixed persisted indices implementation for WebSQL backing store.
+ - Fixed debug/release binaries to work within a WebWorker.
+ - Respecting column uniqueness for automatically created foreign key indices.
+ - Forced Safari to use Set polyfill instead of native Set to work around buggy
+   implementation.
+ - Removed unnecessary function binding for better performance.
+ - Create goog.Promise#catch alias for goog.Promise#thenCatch, such that
+   returned promises match the interface of native Promise.
+ - Enhanced nested loop join to be L1 cache aware.
+
 Version: 2.0.62<br>
 Publish date: 20150807<br>
 Changes:
