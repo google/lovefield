@@ -50,14 +50,14 @@ function testGetReferencingForeignKeys() {
     assertSameElements(['Country.fk_RegionId'], getRefs(info, 'Region'));
     assertSameElements(
         ['Country.fk_RegionId'],
-        getRefs(info, 'Region', lf.ConstraintAction.CASCADE));
-    assertNull(getRefs(info, 'Region', lf.ConstraintAction.RESTRICT));
+        getRefs(info, 'Region', lf.ConstraintAction.RESTRICT));
+    assertNull(getRefs(info, 'Region', lf.ConstraintAction.CASCADE));
 
     assertSameElements(['Location.fk_CountryId'], getRefs(info, 'Country'));
     assertSameElements(
         ['Location.fk_CountryId'],
-        getRefs(info, 'Country', lf.ConstraintAction.CASCADE));
-    assertNull(getRefs(info, 'Country', lf.ConstraintAction.RESTRICT));
+        getRefs(info, 'Country', lf.ConstraintAction.RESTRICT));
+    assertNull(getRefs(info, 'Country', lf.ConstraintAction.CASCADE));
   });
 }
 
@@ -110,10 +110,12 @@ function testGetChildTables_All() {
 function testGetChildTables_Restrict() {
   [dynamicInfo, staticInfo].forEach(function(info) {
     var jobChildren = info.getChildTables('Job', lf.ConstraintAction.RESTRICT);
-    assertEquals(0, jobChildren.length);
+    assertEquals(1, jobChildren.length);
+    assertEquals('Employee', jobChildren[0].getName());
     var employeeChildren = info.getChildTables(
         'Employee', lf.ConstraintAction.RESTRICT);
-    assertEquals(0, employeeChildren.length);
+    assertEquals(1, employeeChildren.length);
+    assertEquals('JobHistory', employeeChildren[0].getName());
   });
 }
 
@@ -121,13 +123,11 @@ function testGetChildTables_Restrict() {
 function testGetChildTables_Cascade() {
   [dynamicInfo, staticInfo].forEach(function(info) {
     var jobChildren = info.getChildTables('Job', lf.ConstraintAction.CASCADE);
-    assertEquals(1, jobChildren.length);
-    assertEquals('Employee', jobChildren[0].getName());
+    assertEquals(0, jobChildren.length);
 
     var employeeChildren = info.getChildTables(
         'Employee', lf.ConstraintAction.CASCADE);
-    assertEquals(1, employeeChildren.length);
-    assertEquals('JobHistory', employeeChildren[0].getName());
+    assertEquals(0, employeeChildren.length);
   });
 }
 

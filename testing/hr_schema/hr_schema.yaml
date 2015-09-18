@@ -29,11 +29,11 @@ table:
         fk_EmployeeId:
           local: employeeId
           ref: Employee.id
-          action: cascade
+          action: restrict
         fk_DepartmentId:
           local: departmentId
           ref: Department.id
-          action: cascade
+          action: restrict
 
   Employee:
     column:
@@ -59,11 +59,11 @@ table:
         fk_JobId:
           local: jobId
           ref: Job.id
-          action: cascade
+          action: restrict
         fk_DepartmentId:
           local: departmentId
           ref: Department.id
-          action: cascade
+          action: restrict
       nullable: [ hireDate ]
 
   Department:
@@ -78,7 +78,7 @@ table:
         fk_LocationId:
           local: locationId
           ref: Location.id
-          action: cascade
+          action: restrict
 
   Location:
     column:
@@ -94,7 +94,7 @@ table:
         fk_CountryId:
           local: countryId
           ref: Country.id
-          action: cascade
+          action: restrict
 
   Country:
     column:
@@ -109,7 +109,7 @@ table:
         fk_RegionId:
           local: regionId
           ref: Region.id
-          action: cascade
+          action: restrict
 
   Region:
     column:

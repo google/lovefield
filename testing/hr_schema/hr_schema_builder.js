@@ -47,12 +47,12 @@ lf.testing.hrSchema.getSchemaBuilder = function(opt_name) {
       addForeignKey('fk_EmployeeId', {
         local: 'employeeId',
         ref: 'Employee.id',
-        action: lf.ConstraintAction.CASCADE
+        action: lf.ConstraintAction.RESTRICT
       }).
       addForeignKey('fk_DepartmentId', {
         local: 'departmentId',
         ref: 'Department.id',
-        action: lf.ConstraintAction.CASCADE
+        action: lf.ConstraintAction.RESTRICT
       });
 
   schemaBuilder.createTable('Employee').
@@ -72,12 +72,12 @@ lf.testing.hrSchema.getSchemaBuilder = function(opt_name) {
       addForeignKey('fk_JobId', {
         local: 'jobId',
         ref: 'Job.id',
-        action: lf.ConstraintAction.CASCADE
+        action: lf.ConstraintAction.RESTRICT
       }).
       addForeignKey('fk_DepartmentId', {
         local: 'departmentId',
         ref: 'Department.id',
-        action: lf.ConstraintAction.CASCADE
+        action: lf.ConstraintAction.RESTRICT
       }).
       addIndex('idx_salary', ['salary'], false, lf.Order.DESC).
       addNullable(['hireDate']);
@@ -91,7 +91,7 @@ lf.testing.hrSchema.getSchemaBuilder = function(opt_name) {
       addForeignKey('fk_LocationId', {
         local: 'locationId',
         ref: 'Location.id',
-        action: lf.ConstraintAction.CASCADE
+        action: lf.ConstraintAction.RESTRICT
       });
 
   schemaBuilder.createTable('Location').
@@ -105,7 +105,7 @@ lf.testing.hrSchema.getSchemaBuilder = function(opt_name) {
       addForeignKey('fk_CountryId', {
         local: 'countryId',
         ref: 'Country.id',
-        action: lf.ConstraintAction.CASCADE
+        action: lf.ConstraintAction.RESTRICT
       });
 
   schemaBuilder.createTable('Country').
@@ -116,7 +116,7 @@ lf.testing.hrSchema.getSchemaBuilder = function(opt_name) {
       addForeignKey('fk_RegionId', {
         local: 'regionId',
         ref: 'Region.id',
-        action: lf.ConstraintAction.CASCADE
+        action: lf.ConstraintAction.RESTRICT
       });
 
   schemaBuilder.createTable('Region').
