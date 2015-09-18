@@ -4175,12 +4175,12 @@ lf.cache.InMemoryUpdater.prototype.updateIndicesForDiff_ = function(diff) {
   }, this);
 };
 lf.cache.InMemoryUpdater.prototype.updateTableIndicesForRow = function(table, modification) {
-  var indices = this.indexStore_.getTableIndices(table.getName()), updatedIndices = [];
+  var indices = this.indexStore_.getTableIndices(table.getName()), updatedIndices = 0;
   indices.forEach(function(index$$0) {
     try {
-      this.updateTableIndexForRow_(index$$0, modification), updatedIndices.push(index$$0);
+      this.updateTableIndexForRow_(index$$0, modification), updatedIndices++;
     } catch (e) {
-      throw updatedIndices.forEach(function(index) {
+      throw indices.slice(0, updatedIndices).forEach(function(index) {
         this.updateTableIndexForRow_(index, [modification[1], modification[0]]);
       }, this), e;
     }
