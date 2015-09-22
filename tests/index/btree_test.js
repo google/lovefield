@@ -1204,6 +1204,18 @@ function testMultiKeyGetRangeRegression() {
   ]];
   assertArrayEquals([9], tree.getRange(keyRange2));
 
+  var keyRange3 = [[
+    lf.index.SingleKeyRange.lowerBound('P'),
+    lf.index.SingleKeyRange.upperBound('D')
+  ]];
+  assertArrayEquals([10, 11, 12, 13], tree.getRange(keyRange3));
+
+  var keyRange4 = [[
+    lf.index.SingleKeyRange.lowerBound('S'),
+    lf.index.SingleKeyRange.all()
+  ]];
+  assertArrayEquals([10, 11, 12, 13], tree.getRange(keyRange4));
+
   assertArrayEquals(
       [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13],
       tree.getRange());
