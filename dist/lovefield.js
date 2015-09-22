@@ -4255,9 +4255,65 @@ lf.Exception = function(code, var_args) {
   }
 };
 goog.inherits(lf.Exception, Error);
+lf.structs.MapSet = function() {
+  this.map_ = lf.structs.map.create();
+  this.size = 0;
+};
+lf.structs.MapSet.prototype.has = function(key) {
+  return this.map_.has(key);
+};
+lf.structs.MapSet.prototype.set = function(key, value) {
+  var valueSet = this.map_.get(key) || null;
+  goog.isNull(valueSet) && (valueSet = lf.structs.set.create(), this.map_.set(key, valueSet));
+  valueSet.has(value) || (valueSet.add(value), this.size++);
+  return this;
+};
+lf.structs.MapSet.prototype.setMany = function(key, values) {
+  var valueSet = this.map_.get(key) || null;
+  goog.isNull(valueSet) && (valueSet = lf.structs.set.create(), this.map_.set(key, valueSet));
+  values.forEach(function(value) {
+    valueSet.has(value) || (valueSet.add(value), this.size++);
+  }, this);
+  return this;
+};
+lf.structs.MapSet.prototype.merge = function(mapSet) {
+  mapSet.keys().forEach(function(key) {
+    var values = mapSet.get(key);
+    this.setMany(key, values);
+  }, this);
+  return this;
+};
+lf.structs.MapSet.prototype.delete = function(key, value) {
+  var valueSet = this.map_.get(key, null);
+  if (goog.isNull(valueSet)) {
+    return !1;
+  }
+  var didRemove = valueSet.delete(value);
+  didRemove && (--this.size, 0 == valueSet.size && this.map_.delete(key));
+  return didRemove;
+};
+lf.structs.MapSet.prototype.get = function(key) {
+  var valueSet = this.map_.get(key) || null;
+  return goog.isNull(valueSet) ? null : lf.structs.set.values(valueSet);
+};
+lf.structs.MapSet.prototype.clear = function() {
+  this.map_.clear();
+  this.size = 0;
+};
+lf.structs.MapSet.prototype.keys = function() {
+  return lf.structs.map.keys(this.map_);
+};
+lf.structs.MapSet.prototype.values = function() {
+  var results = [];
+  this.map_.forEach(function(valueSet) {
+    results.push.apply(results, lf.structs.set.values(valueSet));
+  });
+  return results;
+};
 lf.cache.ConstraintChecker = function(global) {
   this.indexStore_ = global.getService(lf.service.INDEX_STORE);
   this.schema_ = global.getService(lf.service.SCHEMA);
+  this.cache_ = global.getService(lf.service.CACHE);
   this.foreignKeysParentIndices_ = null;
 };
 lf.cache.ConstraintChecker.prototype.findExistingRowIdInPkIndex = function(table, row) {
@@ -4310,21 +4366,38 @@ lf.cache.ConstraintChecker.didColumnValueChange_ = function(rowBefore, rowAfter,
   var deletionOrAddition = goog.isNull(rowBefore) ? !goog.isNull(rowAfter) : goog.isNull(rowAfter);
   return deletionOrAddition || rowBefore.keyOfIndex(indexName) != rowAfter.keyOfIndex(indexName);
 };
-lf.cache.ConstraintChecker.prototype.checkReferringKeys_ = function(table, modifications, constraintTiming) {
-  var parentForeignKeys = this.schema_.info().getReferencingForeignKeys(table.getName());
-  goog.isDefAndNotNull(parentForeignKeys) && parentForeignKeys.forEach(function(foreignKeySpec) {
-    if (foreignKeySpec.timing == constraintTiming) {
-      var childIndex = this.indexStore_.get(foreignKeySpec.name), parentIndex = this.getParentIndex_(foreignKeySpec);
-      modifications.forEach(function(modification) {
-        var didColumnValueChange = lf.cache.ConstraintChecker.didColumnValueChange_(modification[0], modification[1], parentIndex.getName());
-        if (didColumnValueChange) {
-          var rowBefore = modification[0], parentKey = rowBefore.payload()[foreignKeySpec.parentColumn];
-          if (childIndex.containsKey(parentKey)) {
-            throw new lf.Exception(203, foreignKeySpec.name);
-          }
-        }
-      }, this);
+lf.cache.ConstraintChecker.prototype.checkReferringKeys_ = function(table, modifications, constraintTiming, opt_constraintAction) {
+  var foreignKeySpecs = this.schema_.info().getReferencingForeignKeys(table.getName(), opt_constraintAction);
+  goog.isNull(foreignKeySpecs) || (foreignKeySpecs = foreignKeySpecs.filter(function(foreignKeySpec) {
+    return foreignKeySpec.timing == constraintTiming;
+  }), 0 != foreignKeySpecs.length && this.loopThroughReferringRows_(foreignKeySpecs, modifications, function(foreignKeySpec, childIndex, parentKey) {
+    if (childIndex.containsKey(parentKey)) {
+      throw new lf.Exception(203, foreignKeySpec.name);
     }
+  }));
+};
+lf.cache.ConstraintChecker.prototype.findReferringRowIds_ = function(table, modifications) {
+  var foreignKeySpecs = this.schema_.info().getReferencingForeignKeys(table.getName(), lf.ConstraintAction.CASCADE);
+  if (goog.isNull(foreignKeySpecs)) {
+    return null;
+  }
+  var referringRowIds = new lf.structs.MapSet;
+  this.loopThroughReferringRows_(foreignKeySpecs, modifications, function(foreignKeySpec, childIndex, parentKey) {
+    var childRowIds = childIndex.get(parentKey);
+    0 < childRowIds.length && referringRowIds.setMany(foreignKeySpec.childTable, childRowIds);
+  });
+  return referringRowIds;
+};
+lf.cache.ConstraintChecker.prototype.loopThroughReferringRows_ = function(foreignKeySpecs, modifications, callbackFn) {
+  foreignKeySpecs.forEach(function(foreignKeySpec) {
+    var childIndex = this.indexStore_.get(foreignKeySpec.name), parentIndex = this.getParentIndex_(foreignKeySpec);
+    modifications.forEach(function(modification) {
+      var didColumnValueChange = lf.cache.ConstraintChecker.didColumnValueChange_(modification[0], modification[1], parentIndex.getName());
+      if (didColumnValueChange) {
+        var rowBefore = modification[0], parentKey = rowBefore.payload()[foreignKeySpec.parentColumn];
+        callbackFn(foreignKeySpec, childIndex, parentKey);
+      }
+    }, this);
   }, this);
 };
 lf.cache.ConstraintChecker.prototype.checkForeignKeysForInsert = function(table, rows, constraintTiming) {
@@ -4343,8 +4416,27 @@ lf.cache.ConstraintChecker.prototype.checkForeignKeysForDelete = function(table,
     var modifications = rows.map(function(row) {
       return [row, null];
     });
-    this.checkReferringKeys_(table, modifications, constraintTiming);
+    this.checkReferringKeys_(table, modifications, constraintTiming, lf.ConstraintAction.RESTRICT);
   }
+};
+lf.cache.ConstraintChecker.prototype.detectCascadeDeletion = function(table$$0, rows) {
+  var result = {tableOrder:[], rowIdsPerTable:new lf.structs.MapSet}, lastRowIdsToDelete = new lf.structs.MapSet;
+  lastRowIdsToDelete.setMany(table$$0.getName(), rows.map(function(row) {
+    return row.id();
+  }));
+  do {
+    var newRowIdsToDelete = new lf.structs.MapSet;
+    lastRowIdsToDelete.keys().forEach(function(tableName) {
+      var table = this.schema_.table(tableName), rowIds = lastRowIdsToDelete.get(tableName), modifications = rowIds.map(function(rowId) {
+        var row = this.cache_.get(rowId);
+        return [row, null];
+      }, this), referringRowIds = this.findReferringRowIds_(table, modifications);
+      goog.isNull(referringRowIds) || (result.tableOrder.unshift.apply(result.tableOrder, referringRowIds.keys()), newRowIdsToDelete.merge(referringRowIds));
+    }, this);
+    lastRowIdsToDelete = newRowIdsToDelete;
+    result.rowIdsPerTable.merge(lastRowIdsToDelete);
+  } while (0 < lastRowIdsToDelete.size);
+  return result;
 };
 lf.cache.TableDiff = function(name) {
   this.added_ = lf.structs.map.create();
@@ -4401,6 +4493,17 @@ lf.cache.TableDiff.prototype.delete = function(row) {
     }
   }
 };
+lf.cache.TableDiff.prototype.merge = function(other) {
+  other.added_.forEach(function(row) {
+    this.add(row);
+  }, this);
+  other.modified_.forEach(function(modification) {
+    this.modify(modification);
+  }, this);
+  other.deleted_.forEach(function(row) {
+    this.delete(row);
+  }, this);
+};
 lf.cache.TableDiff.prototype.getAsModifications = function() {
   var modifications = [];
   this.added_.forEach(function(row) {
@@ -4438,6 +4541,7 @@ lf.cache.Journal = function(global, scope) {
   scope.forEach(function(tableSchema) {
     this.scope_.set(tableSchema.getName(), tableSchema);
   }, this);
+  this.schema_ = global.getService(lf.service.SCHEMA);
   this.cache_ = global.getService(lf.service.CACHE);
   this.indexStore_ = global.getService(lf.service.INDEX_STORE);
   this.constraintChecker_ = new lf.cache.ConstraintChecker(global);
@@ -4529,9 +4633,25 @@ lf.cache.Journal.prototype.insertOrReplace = function(table, rows) {
 lf.cache.Journal.prototype.remove = function(table, rows) {
   this.assertJournalWritable_();
   this.checkScope_(table);
+  this.removeByCascade_(table, rows);
   this.constraintChecker_.checkForeignKeysForDelete(table, rows, lf.ConstraintTiming.IMMEDIATE);
   for (var i = 0;i < rows.length;i++) {
     this.modifyRow_(table, [rows[i], null]);
+  }
+};
+lf.cache.Journal.prototype.removeByCascade_ = function(table$$0, rows$$0) {
+  var foreignKeySpecs = this.schema_.info().getReferencingForeignKeys(table$$0.getName(), lf.ConstraintAction.CASCADE);
+  if (!goog.isNull(foreignKeySpecs)) {
+    var cascadeDeletion = this.constraintChecker_.detectCascadeDeletion(table$$0, rows$$0), cascadeRowIds = cascadeDeletion.rowIdsPerTable;
+    cascadeDeletion.tableOrder.forEach(function(tableName) {
+      var table = this.schema_.table(tableName), rows = cascadeRowIds.get(tableName).map(function(rowId) {
+        return this.cache_.get(rowId);
+      }, this);
+      this.constraintChecker_.checkForeignKeysForDelete(table, rows, lf.ConstraintTiming.IMMEDIATE);
+      rows.forEach(function(row) {
+        this.modifyRow_(table, [row, null]);
+      }, this);
+    }, this);
   }
 };
 lf.cache.Journal.prototype.checkDeferredConstraints = function() {
@@ -7842,54 +7962,6 @@ lf.pred.CombinedPredicate.prototype.combineResults_ = function(results) {
 };
 lf.pred.CombinedPredicate.prototype.toString = function() {
   return "combined_pred_" + this.operator.toString();
-};
-lf.structs.MapSet = function() {
-  this.map_ = lf.structs.map.create();
-  this.size = 0;
-};
-lf.structs.MapSet.prototype.has = function(key) {
-  return this.map_.has(key);
-};
-lf.structs.MapSet.prototype.set = function(key, value) {
-  var valueSet = this.map_.get(key) || null;
-  goog.isNull(valueSet) && (valueSet = lf.structs.set.create(), this.map_.set(key, valueSet));
-  valueSet.has(value) || (valueSet.add(value), this.size++);
-  return this;
-};
-lf.structs.MapSet.prototype.setMany = function(key, values) {
-  var valueSet = this.map_.get(key) || null;
-  goog.isNull(valueSet) && (valueSet = lf.structs.set.create(), this.map_.set(key, valueSet));
-  values.forEach(function(value) {
-    valueSet.has(value) || (valueSet.add(value), this.size++);
-  }, this);
-  return this;
-};
-lf.structs.MapSet.prototype.delete = function(key, value) {
-  var valueSet = this.map_.get(key, null);
-  if (goog.isNull(valueSet)) {
-    return !1;
-  }
-  var didRemove = valueSet.delete(value);
-  didRemove && (--this.size, 0 == valueSet.size && this.map_.delete(key));
-  return didRemove;
-};
-lf.structs.MapSet.prototype.get = function(key) {
-  var valueSet = this.map_.get(key) || null;
-  return goog.isNull(valueSet) ? null : lf.structs.set.values(valueSet);
-};
-lf.structs.MapSet.prototype.clear = function() {
-  this.map_.clear();
-  this.size = 0;
-};
-lf.structs.MapSet.prototype.keys = function() {
-  return lf.structs.map.keys(this.map_);
-};
-lf.structs.MapSet.prototype.values = function() {
-  var results = [];
-  this.map_.forEach(function(valueSet) {
-    results.push.apply(results, lf.structs.set.values(valueSet));
-  });
-  return results;
 };
 lf.pred.JoinPredicate = function(leftColumn, rightColumn, evaluatorType) {
   lf.pred.PredicateNode.call(this);
@@ -11235,6 +11307,7 @@ lf.schema.ForeignKeySpec = function(rawSpec, childTable, name) {
   if (2 != array.length) {
     throw new lf.Exception(540, name);
   }
+  this.childTable = childTable;
   this.childColumn = rawSpec.local;
   this.parentTable = array[0];
   this.parentColumn = array[1];

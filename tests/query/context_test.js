@@ -17,95 +17,15 @@
 goog.setTestOnly();
 
 goog.require('goog.testing.jsunit');
+
 goog.require('lf.ConstraintAction');
+goog.require('lf.ConstraintTiming');
 goog.require('lf.Type');
 goog.require('lf.query.DeleteContext');
 goog.require('lf.query.InsertContext');
 goog.require('lf.query.UpdateContext');
 goog.require('lf.schema');
-
-
-/**
- * @param {!lf.ConstraintAction=} opt_constraintAction The type of foreign key
- *     constraints to be added to the schema.
- * @return {!lf.schema.Database} A schema where TableC refers to TableB, and
- *     TableB refers to tableA.
- */
-function getSchemaWithTableChain(opt_constraintAction) {
-  var constraintAction = opt_constraintAction || lf.ConstraintAction.RESTRICT;
-  var schemaBuilder = lf.schema.create('contexttest', 1);
-  schemaBuilder.createTable('TableA').
-      addColumn('id', lf.Type.STRING).
-      addPrimaryKey(['id']);
-  schemaBuilder.createTable('TableB').
-      addColumn('id', lf.Type.STRING).
-      addColumn('foreignKey', lf.Type.STRING).
-      addPrimaryKey(['id']).
-      addForeignKey('fk_tableA', {
-        local: 'foreignKey',
-        ref: 'TableA.id',
-        action: constraintAction
-      });
-  schemaBuilder.createTable('TableC').
-      addColumn('id', lf.Type.STRING).
-      addColumn('foreignKey', lf.Type.STRING).
-      addForeignKey('fk_tableB', {
-        local: 'foreignKey',
-        ref: 'TableB.id',
-        action: constraintAction
-      });
-  return schemaBuilder.getSchema();
-}
-
-
-/**
- * @return {!lf.schema.Database} A schema where table Child refers to Parent.
- */
-function getSchemaWithOneForeignKey() {
-  var schemaBuilder = lf.schema.create('contexttest', 1);
-  schemaBuilder.createTable('Child').
-      addColumn('id', lf.Type.STRING).
-      addForeignKey('fk_Id', {
-        local: 'id',
-        ref: 'Parent.id',
-        action: lf.ConstraintAction.RESTRICT
-      });
-  schemaBuilder.createTable('Parent').
-      addColumn('id', lf.Type.STRING).
-      addPrimaryKey(['id']);
-  return schemaBuilder.getSchema();
-}
-
-
-/**
- * @return {!lf.schema.Database} A schema where TableB1 and TableB2 both refer
- *     to TableA.
- */
-function getSchemaWithTwoForeignKeys() {
-  var schemaBuilder = lf.schema.create('contexttest', 1);
-  schemaBuilder.createTable('TableA').
-      addColumn('id1', lf.Type.STRING).
-      addColumn('id2', lf.Type.STRING).
-      addUnique('uq_id1', ['id1']).
-      addUnique('uq_id2', ['id2']);
-  schemaBuilder.createTable('TableB1').
-      addColumn('id', lf.Type.STRING).
-      addColumn('foreignKey', lf.Type.STRING).
-      addForeignKey('fk_tableA', {
-        local: 'foreignKey',
-        ref: 'TableA.id1',
-        action: lf.ConstraintAction.RESTRICT
-      });
-  schemaBuilder.createTable('TableB2').
-      addColumn('id', lf.Type.STRING).
-      addColumn('foreignKey', lf.Type.STRING).
-      addForeignKey('fk_tableA', {
-        local: 'foreignKey',
-        ref: 'TableA.id2',
-        action: lf.ConstraintAction.RESTRICT
-      });
-  return schemaBuilder.getSchema();
-}
+goog.require('lf.testing.schemas');
 
 
 /**
@@ -122,7 +42,8 @@ function getSchemaWithoutForeignKeys() {
 
 
 function testGetScope_Insert() {
-  var schema = getSchemaWithOneForeignKey();
+  var schema = lf.testing.schemas.getOneForeignKey(
+      lf.ConstraintTiming.IMMEDIATE);
   var context = new lf.query.InsertContext(schema);
   var childTable = schema.table('Child');
   var parentTable = schema.table('Parent');
@@ -150,7 +71,7 @@ function testGetScope_InsertNoExpansion() {
 
 
 function testGetScope_InsertOrReplace() {
-  var schema = getSchemaWithTableChain();
+  var schema = lf.testing.schemas.getTableChain(lf.ConstraintAction.RESTRICT);
   var context = new lf.query.InsertContext(schema);
   context.allowReplace = true;
   var tableA = schema.table('TableA');
@@ -182,7 +103,7 @@ function testGetScope_InsertOrReplaceNoExpansion() {
 
 
 function testGetScope_Delete_Restrict() {
-  var schema = getSchemaWithTableChain(lf.ConstraintAction.RESTRICT);
+  var schema = lf.testing.schemas.getTableChain(lf.ConstraintAction.RESTRICT);
   var context = new lf.query.DeleteContext(schema);
   var tableA = schema.table('TableA');
   var tableB = schema.table('TableB');
@@ -195,7 +116,7 @@ function testGetScope_Delete_Restrict() {
 
 
 function testGetScope_Delete_Cascade() {
-  var schema = getSchemaWithTableChain(lf.ConstraintAction.CASCADE);
+  var schema = lf.testing.schemas.getTableChain(lf.ConstraintAction.CASCADE);
   var context = new lf.query.DeleteContext(schema);
   var tableA = schema.table('TableA');
   var tableB = schema.table('TableB');
@@ -221,7 +142,8 @@ function testGetScope_DeleteNoExpansion() {
 
 
 function testGetScope_UpdateOneColumn() {
-  var schema = getSchemaWithTwoForeignKeys();
+  var schema = lf.testing.schemas.getTwoForeignKeys(
+      lf.ConstraintAction.RESTRICT);
   var context = new lf.query.UpdateContext(schema);
   var tableA = schema.table('TableA');
   var tableB1 = schema.table('TableB1');
@@ -235,7 +157,8 @@ function testGetScope_UpdateOneColumn() {
 
 
 function testGetScope_UpdateTwoColumns() {
-  var schema = getSchemaWithTwoForeignKeys();
+  var schema = lf.testing.schemas.getTwoForeignKeys(
+      lf.ConstraintAction.RESTRICT);
   var context = new lf.query.UpdateContext(schema);
   var tableA = schema.table('TableA');
   var tableB1 = schema.table('TableB1');
@@ -254,7 +177,7 @@ function testGetScope_UpdateTwoColumns() {
 
 
 function testGetScope_UpdateReferredColumn() {
-  var schema = getSchemaWithTableChain();
+  var schema = lf.testing.schemas.getTableChain(lf.ConstraintAction.RESTRICT);
   var context = new lf.query.UpdateContext(schema);
   var tableB = schema.table('TableB');
   var tableC = schema.table('TableC');
@@ -267,7 +190,7 @@ function testGetScope_UpdateReferredColumn() {
 }
 
 function testGetScope_UpdateReferredAndReferringColumn() {
-  var schema = getSchemaWithTableChain();
+  var schema = lf.testing.schemas.getTableChain(lf.ConstraintAction.RESTRICT);
   var context = new lf.query.UpdateContext(schema);
 
   var tableA = schema.table('TableA');

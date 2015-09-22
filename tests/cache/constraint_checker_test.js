@@ -24,6 +24,7 @@ goog.require('lf.Type');
 goog.require('lf.cache.ConstraintChecker');
 goog.require('lf.schema');
 goog.require('lf.testing.MockEnv');
+goog.require('lf.testing.schemas');
 goog.require('lf.testing.util');
 
 
@@ -53,29 +54,6 @@ function setUpEnvForSchema(schema) {
   return env.init().then(function() {
     checker = new lf.cache.ConstraintChecker(lf.Global.get());
   });
-}
-
-
-/**
- * Generates a schema with two tables, Parent and Child, linked with a RESTRICT
- * constraint of the given constraint timing.
- * @param {!lf.ConstraintTiming} constraintTiming
- * @return {!lf.schema.Database} A schema where table Child refers to Parent.
- */
-function getSchemaWithOneForeignKey(constraintTiming) {
-  var schemaBuilder = lf.schema.create('testschema', 1);
-  schemaBuilder.createTable('Child').
-      addColumn('id', lf.Type.STRING).
-      addForeignKey('fk_Id', {
-        local: 'id',
-        ref: 'Parent.id',
-        action: lf.ConstraintAction.RESTRICT,
-        timing: constraintTiming
-      });
-  schemaBuilder.createTable('Parent').
-      addColumn('id', lf.Type.STRING).
-      addPrimaryKey(['id']);
-  return schemaBuilder.getSchema();
 }
 
 
@@ -181,7 +159,7 @@ function testCheckForeignKeysForInsert_Deferrable() {
 function checkForeignKeysForInsert(constraintTiming, testName) {
   asyncTestCase.waitForAsync(testName);
 
-  var schema = getSchemaWithOneForeignKey(constraintTiming);
+  var schema = lf.testing.schemas.getOneForeignKey(constraintTiming);
   setUpEnvForSchema(schema).then(function() {
     var childTable = env.schema.table('Child');
     var childRow = childTable.createRow({id: 'dummyId'});
@@ -224,7 +202,7 @@ function testCheckForeignKeysForDelete_Deferrable() {
 function checkForeignKeysForDelete(constraintTiming, testName) {
   asyncTestCase.waitForAsync(testName);
 
-  var schema = getSchemaWithOneForeignKey(constraintTiming);
+  var schema = lf.testing.schemas.getOneForeignKey(constraintTiming);
   var parentTable = null;
   var parentRow = null;
   var childRow = null;
@@ -281,7 +259,7 @@ function testCheckForeignKeysForUpdate_Deferrable() {
 function checkForeignKeysForUpdate(constraintTiming, testName) {
   asyncTestCase.waitForAsync(testName);
 
-  var schema = getSchemaWithOneForeignKey(constraintTiming);
+  var schema = lf.testing.schemas.getOneForeignKey(constraintTiming);
   var parentTable = null;
   var parentRow = null;
   var childRow = null;
@@ -308,6 +286,131 @@ function checkForeignKeysForUpdate(constraintTiming, testName) {
     assertChecks(constraintTiming, checkFn);
     asyncTestCase.continueTesting();
   }, fail);
+}
+
+
+/**
+ * Tests that ConstraintChecker#detectCascadeDeletion() correctly detects
+ * referring rows of the rows that are about to be deleted.
+ */
+function testDetectCascadeDeletion_TableChain() {
+  asyncTestCase.waitForAsync('testDetectCascadeDeletion_TableChain');
+
+  var schema = lf.testing.schemas.getTableChain(lf.ConstraintAction.CASCADE);
+  var tableA;
+  var tableARow;
+  var tableB;
+  var tableBRow;
+  var tableC;
+  var tableCRow;
+
+  setUpEnvForSchema(schema).then(function() {
+    tableA = env.schema.table('TableA');
+    tableB = env.schema.table('TableB');
+    tableC = env.schema.table('TableC');
+    tableARow = tableA.createRow({id: 'tableADummyId'});
+    tableBRow = tableB.createRow({
+      id: 'tableBDummyId',
+      foreignKey: tableARow.payload()['id']
+    });
+    tableCRow = tableC.createRow({
+      id: 'tableCDummyId',
+      foreignKey: tableBRow.payload()['id']
+    });
+
+    return env.db.insert().into(tableA).values([tableARow]).exec();
+  }).then(function() {
+    // Checking the case where no referring rows exist.
+    var cascadedDeletion = checker.detectCascadeDeletion(tableA, [tableARow]);
+    assertEquals(0, cascadedDeletion.tableOrder.length);
+    assertEquals(0, cascadedDeletion.rowIdsPerTable.size);
+
+    // Inserting row referring to TableA's row.
+    return env.db.insert().into(tableB).values([tableBRow]).exec();
+  }).then(function() {
+    var cascadedDeletion = checker.detectCascadeDeletion(tableA, [tableARow]);
+    // Ensure that TableB's row has been detected for deletion.
+    assertEquals(1, cascadedDeletion.tableOrder.length);
+    assertArrayEquals([tableB.getName()], cascadedDeletion.tableOrder);
+    assertEquals(1, cascadedDeletion.rowIdsPerTable.size);
+    assertArrayEquals(
+        [tableBRow.id()],
+        cascadedDeletion.rowIdsPerTable.get(tableB.getName()));
+
+    // Inserting row referring to TableB's row.
+    return env.db.insert().into(tableC).values([tableCRow]).exec();
+  }).then(function() {
+    var cascadedDeletion = checker.detectCascadeDeletion(tableA, [tableARow]);
+    // Ensure that both TableC's and TableB's row have been detected for
+    // deletion.
+    assertEquals(2, cascadedDeletion.tableOrder.length);
+    assertArrayEquals(
+        [tableC.getName(), tableB.getName()], cascadedDeletion.tableOrder);
+    assertEquals(2, cascadedDeletion.rowIdsPerTable.size);
+    assertArrayEquals(
+        [tableBRow.id()],
+        cascadedDeletion.rowIdsPerTable.get(tableB.getName()));
+    assertArrayEquals(
+        [tableCRow.id()],
+        cascadedDeletion.rowIdsPerTable.get(tableC.getName()));
+
+    asyncTestCase.continueTesting();
+  });
+}
+
+
+function testDetectCascadeDeletion_TwoForeignKeys() {
+  asyncTestCase.waitForAsync('testDetectCascadeDeletion_TwoForeignKeys');
+
+  var schema = lf.testing.schemas.getTwoForeignKeys(
+      lf.ConstraintAction.CASCADE);
+  var tableA;
+  var tableARow;
+  var tableB1;
+  var tableB1Row;
+  var tableB2;
+  var tableB2Row;
+
+  setUpEnvForSchema(schema).then(function() {
+    tableA = env.schema.table('TableA');
+    tableB1 = env.schema.table('TableB1');
+    tableB2 = env.schema.table('TableB2');
+    tableARow = tableA.createRow({
+      id1: 'tableADummyId1',
+      id2: 'tableADummyId2'
+    });
+    tableB1Row = tableB1.createRow({
+      id: 'tableB1DummyId',
+      foreignKey: tableARow.payload()['id1']
+    });
+    tableB2Row = tableB2.createRow({
+      id: 'tableB2DummyId',
+      foreignKey: tableARow.payload()['id2']
+    });
+
+    var tx = env.db.createTransaction();
+    return tx.exec([
+      env.db.insert().into(tableA).values([tableARow]),
+      env.db.insert().into(tableB1).values([tableB1Row]),
+      env.db.insert().into(tableB2).values([tableB2Row])
+    ]);
+  }).then(function() {
+    var cascadedDeletion = checker.detectCascadeDeletion(tableA, [tableARow]);
+    // Ensure that both TableB1's and TableB2's row have been detected for
+    // deletion.
+    assertEquals(2, cascadedDeletion.tableOrder.length);
+    assertArrayEquals(
+        [tableB1.getName(), tableB2.getName()], cascadedDeletion.tableOrder);
+    assertEquals(2, cascadedDeletion.rowIdsPerTable.size);
+    assertArrayEquals(
+        [tableB1Row.id()],
+        cascadedDeletion.rowIdsPerTable.get(tableB1.getName()));
+    assertArrayEquals(
+        [tableB2Row.id()],
+        cascadedDeletion.rowIdsPerTable.get(tableB2.getName()));
+
+    asyncTestCase.continueTesting();
+  });
 }
 
 
