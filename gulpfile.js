@@ -87,7 +87,10 @@ gulp.task('build', function() {
   if (options.target == 'lib') {
     return builder.buildLib(options);
   } else {
-    return builder.buildAllTests(options);
+    return builder.buildAllTests(options).then(function() {
+      log('Everything built');
+      process.exit(0);
+    });
   }
 });
 
