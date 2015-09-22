@@ -1,6 +1,7 @@
 # Lovefield
 
-![Build Status](https://travis-ci.org/google/lovefield.svg?branch=master)
+[![Build Status](https://travis-ci.org/google/lovefield.svg?branch=master)](
+https://travis-ci.org/google/lovefield)
 
 Lovefield is a relational database written in pure JavaScript.
 It provides SQL-like syntax and works cross-browser (currently supporting
