@@ -9,6 +9,7 @@
     "fs-extra": "^0.24.0",
     "gulp": "^3.9.0",
     "gulp-gjslint": "^0.1.5",
-    "gulp-webserver": "^0.9.1"
+    "gulp-webserver": "^0.9.1",
+    "nopt": "^3.0.4"
   }
 }

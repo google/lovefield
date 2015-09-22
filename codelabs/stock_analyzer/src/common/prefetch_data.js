@@ -19,7 +19,7 @@
 // as a planB in case there is no network connectivity during demo.
 var fsMod = require('fs');
 var http = require('http');
-var Converter = require('csvtojson').core.Converter;
+var Converter = require('csvtojson').Converter;
 
 
 function getData(url) {
