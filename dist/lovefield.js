@@ -3572,8 +3572,10 @@ goog.userAgent.product.SAFARI = goog.userAgent.product.PRODUCT_KNOWN_ ? goog.use
  limitations under the License.
 */
 lf.Capability = function() {
-  (this.safariWebView_ = goog.userAgent.product.SAFARI || goog.userAgent.product.IPAD || goog.userAgent.product.IPHONE) || goog.userAgent.product.IE && goog.userAgent.isVersionOrHigher(10);
+  this.safariWebView_ = goog.userAgent.product.SAFARI || goog.userAgent.product.IPAD || goog.userAgent.product.IPHONE;
+  this.indexedDb = !(this.safariWebView_ || goog.userAgent.product.IE && !goog.userAgent.isVersionOrHigher(10));
   !goog.userAgent.product.IE || goog.userAgent.isVersionOrHigher(11);
+  this.webSql = goog.userAgent.product.CHROME || goog.userAgent.product.SAFARI;
   this.nativeMap = goog.isDef(window.Map) && goog.isDef(window.Map.prototype.values) && goog.isDef(window.Map.prototype.forEach) && !this.safariWebView_;
   this.nativeSet = goog.isDef(window.Set) && goog.isDef(window.Set.prototype.values) && goog.isDef(window.Set.prototype.forEach) && !this.safariWebView_;
 };
@@ -10741,8 +10743,17 @@ lf.base.init = function(global, opt_options) {
   if (lf.Flags.MEMORY_ONLY) {
     backStore = new lf.backstore.Memory(schema);
   } else {
-    var dataStoreType = options.storeType || lf.schema.DataStoreType.INDEXED_DB;
+    var dataStoreType;
+    if (goog.isDefAndNotNull(options.storeType)) {
+      dataStoreType = options.storeType;
+    } else {
+      var capability = lf.Capability.get();
+      dataStoreType = capability.indexedDb ? lf.schema.DataStoreType.INDEXED_DB : capability.webSql ? lf.schema.DataStoreType.WEB_SQL : lf.schema.DataStoreType.MEMORY;
+    }
     switch(dataStoreType) {
+      case lf.schema.DataStoreType.INDEXED_DB:
+        backStore = new lf.backstore.IndexedDB(global, schema);
+        break;
       case lf.schema.DataStoreType.MEMORY:
         backStore = new lf.backstore.Memory(schema);
         break;
@@ -10757,7 +10768,7 @@ lf.base.init = function(global, opt_options) {
         observeExternalChanges = !0;
         break;
       default:
-        backStore = new lf.backstore.IndexedDB(global, schema);
+        throw new lf.Exception(300);;
     }
   }
   global.registerService(lf.service.BACK_STORE, backStore);
