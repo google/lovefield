@@ -19,14 +19,14 @@ goog.require('goog.testing.jsunit');
 goog.require('lf.Order');
 goog.require('lf.index.Favor');
 goog.require('lf.index.SimpleComparator');
+goog.require('lf.index.SimpleComparatorWithNull');
 goog.require('lf.index.SingleKeyRange');
 
 
 var favor = lf.index.Favor;
 
-function testOrderAsc() {
-  var comparator = new lf.index.SimpleComparator(lf.Order.ASC);
-  var c = goog.bind(comparator.compare, comparator);
+function checkOrderAsc(comparator) {
+  var c = comparator.compare.bind(comparator);
 
   assertEquals(favor.TIE, c(0, 0));
   assertEquals(favor.TIE, c('', ''));
@@ -44,10 +44,21 @@ function testOrderAsc() {
   assertEquals(favor.RHS, c('bba', 'bbb'));
 }
 
+function testOrderAsc() {
+  var c1 = new lf.index.SimpleComparator(lf.Order.ASC);
+  checkOrderAsc(c1);
+  var c2 = new lf.index.SimpleComparatorWithNull(lf.Order.ASC);
+  checkOrderAsc(c2);
 
-function testOrderDesc() {
-  var comparator = new lf.index.SimpleComparator(lf.Order.DESC);
-  var c = goog.bind(comparator.compare, comparator);
+  // Null-specific tests
+  var c = c2.compare.bind(c2);
+  assertEquals(favor.TIE, c(null, null));
+  assertEquals(favor.LHS, c(0, null));
+  assertEquals(favor.RHS, c(null, 0));
+}
+
+function checkOrderDesc(comparator) {
+  var c = comparator.compare.bind(comparator);
 
   assertEquals(favor.TIE, c(0, 0));
   assertEquals(favor.TIE, c('', ''));
@@ -65,6 +76,18 @@ function testOrderDesc() {
   assertEquals(favor.LHS, c('bba', 'bbb'));
 }
 
+function testOrderDesc() {
+  var c1 = new lf.index.SimpleComparator(lf.Order.DESC);
+  checkOrderDesc(c1);
+  var c2 = new lf.index.SimpleComparatorWithNull(lf.Order.DESC);
+  checkOrderDesc(c2);
+
+  // Null-specific tests
+  var c = c2.compare.bind(c2);
+  assertEquals(favor.TIE, c(null, null));
+  assertEquals(favor.RHS, c(0, null));
+  assertEquals(favor.LHS, c(null, 0));
+}
 
 function testMin() {
   var c1 = new lf.index.SimpleComparator(lf.Order.DESC);
@@ -73,6 +96,14 @@ function testMin() {
   // Ensuring that Comparator#min() is not be affected by the order.
   var c2 = new lf.index.SimpleComparator(lf.Order.ASC);
   checkMin(c2);
+
+  var c3 = new lf.index.SimpleComparatorWithNull(lf.Order.DESC);
+  checkMin(c3);
+  checkMinWithNull(c3);
+
+  var c4 = new lf.index.SimpleComparatorWithNull(lf.Order.ASC);
+  checkMin(c4);
+  checkMinWithNull(c4);
 }
 
 
@@ -83,6 +114,14 @@ function testMax() {
   // Ensuring that Comparator#max() is not be affected by the order.
   var c2 = new lf.index.SimpleComparator(lf.Order.ASC);
   checkMax(c2);
+
+  var c3 = new lf.index.SimpleComparatorWithNull(lf.Order.DESC);
+  checkMax(c3);
+  checkMaxWithNull(c3);
+
+  var c4 = new lf.index.SimpleComparatorWithNull(lf.Order.ASC);
+  checkMax(c4);
+  checkMaxWithNull(c4);
 }
 
 
@@ -109,6 +148,17 @@ function checkMin(c) {
 
 
 /**
+ * Checks the min() method of the given comparator.
+ * @param {!lf.index.SimpleComparator} c
+ */
+function checkMinWithNull(c) {
+  assertEquals(favor.RHS, c.min(null, 1));
+  assertEquals(favor.LHS, c.min(1, null));
+  assertEquals(favor.TIE, c.min(null, null));
+}
+
+
+/**
  * Checks the max() method of the given comparator.
  * @param {!lf.index.SimpleComparator} c
  */
@@ -127,6 +177,17 @@ function checkMax(c) {
   assertEquals(favor.RHS, c.max('a', 'b'));
   assertEquals(favor.LHS, c.max('bbb', 'bba'));
   assertEquals(favor.RHS, c.max('bba', 'bbb'));
+}
+
+
+/**
+ * Checks the max() method of the given comparator.
+ * @param {!lf.index.SimpleComparator} c
+ */
+function checkMaxWithNull(c) {
+  assertEquals(favor.RHS, c.max(null, 1));
+  assertEquals(favor.LHS, c.max(1, null));
+  assertEquals(favor.TIE, c.max(null, null));
 }
 
 
@@ -168,8 +229,7 @@ function testOrderRange() {
 }
 
 
-function testIsInRange() {
-  var c = new lf.index.SimpleComparator(lf.Order.ASC);
+function checkIsInRange(c) {
   assertTrue(c.isInRange(2, lf.index.SingleKeyRange.all()));
   assertTrue(c.isInRange(2, lf.index.SingleKeyRange.lowerBound(2)));
   assertFalse(c.isInRange(2, lf.index.SingleKeyRange.lowerBound(2, true)));
@@ -177,6 +237,28 @@ function testIsInRange() {
   assertFalse(c.isInRange(2, lf.index.SingleKeyRange.upperBound(2, true)));
   assertTrue(c.isInRange(2, lf.index.SingleKeyRange.only(2)));
   assertFalse(c.isInRange(2, lf.index.SingleKeyRange.only(3)));
+}
+
+
+function testIsInRange() {
+  var c1 = new lf.index.SimpleComparator(lf.Order.ASC);
+  checkIsInRange(c1);
+
+  var c2 = new lf.index.SimpleComparatorWithNull(lf.Order.DESC);
+  checkIsInRange(c2);
+
+  // Null specific
+  assertTrue(c2.isInRange(null, lf.index.SingleKeyRange.all()));
+  var ranges = [
+    lf.index.SingleKeyRange.lowerBound(2),
+    lf.index.SingleKeyRange.lowerBound(2, true),
+    lf.index.SingleKeyRange.upperBound(2),
+    lf.index.SingleKeyRange.upperBound(2, true),
+    lf.index.SingleKeyRange.only(2)
+  ];
+  ranges.forEach(function(range) {
+    assertFalse(c2.isInRange(null, range));
+  });
 }
 
 

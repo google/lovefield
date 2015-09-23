@@ -178,7 +178,7 @@ goog.DEPENDENCIES_ENABLED && (goog.dependencies_ = {pathIsModule:{}, nameToPath:
 }, goog.loadModule = function(moduleDef) {
   var previousState = goog.moduleLoaderState_;
   try {
-    goog.moduleLoaderState_ = {moduleName:void 0};
+    goog.moduleLoaderState_ = {moduleName:void 0, declareLegacyNamespace:!1};
     var exports;
     if (goog.isFunction(moduleDef)) {
       exports = moduleDef.call(goog.global, {});
@@ -7331,7 +7331,7 @@ lf.index.BTreeNode_.deserialize = function(rows, tree) {
   return 1 < leaves.length ? lf.index.BTreeNode_.createInternals_(leaves[0]) : leaves[0];
 };
 lf.index.SimpleComparator = function(order) {
-  this.compare_ = order == lf.Order.DESC ? lf.index.SimpleComparator.compareDescending : lf.index.SimpleComparator.compareAscending;
+  this.compare = order == lf.Order.DESC ? lf.index.SimpleComparator.compareDescending : lf.index.SimpleComparator.compareAscending;
   this.normalizeKeyRange_ = order == lf.Order.DESC ? function(opt_keyRange) {
     return goog.isDefAndNotNull(opt_keyRange) ? opt_keyRange.reverse() : null;
   } : function(opt_keyRange) {
@@ -7355,14 +7355,14 @@ lf.index.SimpleComparator.orderRangeDescending = function(lhs, rhs) {
 lf.index.SimpleComparator.prototype.compareRange = function(key, naturalRange) {
   var range = this.normalizeKeyRange_(naturalRange), results = [lf.index.SingleKeyRange.isUnbound(range.from), lf.index.SingleKeyRange.isUnbound(range.to)];
   if (!results[0]) {
-    var favor = this.compare_(key, range.from);
+    var favor = this.compare(key, range.from);
     results[0] = range.excludeLower ? favor == lf.index.Favor.LHS : favor != lf.index.Favor.RHS;
   }
-  results[1] || (favor = this.compare_(key, range.to), results[1] = range.excludeUpper ? favor == lf.index.Favor.RHS : favor != lf.index.Favor.LHS);
+  results[1] || (favor = this.compare(key, range.to), results[1] = range.excludeUpper ? favor == lf.index.Favor.RHS : favor != lf.index.Favor.LHS);
   return results;
 };
 lf.index.SimpleComparator.prototype.compare = function(lhs, rhs) {
-  return this.compare_(lhs, rhs);
+  return this.compare(lhs, rhs);
 };
 lf.index.SimpleComparator.prototype.min = function(lhs, rhs) {
   return lhs < rhs ? lf.index.Favor.LHS : lhs == rhs ? lf.index.Favor.TIE : lf.index.Favor.RHS;
@@ -7392,7 +7392,34 @@ lf.index.SimpleComparator.prototype.rangeToKeys = function(naturalRange) {
   return [range.from, range.to];
 };
 lf.index.SimpleComparator.prototype.toString = function() {
-  return this.compare_ == lf.index.SimpleComparator.compareDescending ? "SimpleComparator_DESC" : "SimpleComparator_ASC";
+  return this.compare == lf.index.SimpleComparator.compareDescending ? "SimpleComparator_DESC" : "SimpleComparator_ASC";
+};
+lf.index.SimpleComparatorWithNull = function(order) {
+  lf.index.SimpleComparator.call(this, order);
+  this.compare = order == lf.Order.DESC ? lf.index.SimpleComparatorWithNull.compareDescending : lf.index.SimpleComparatorWithNull.compareAscending;
+};
+goog.inherits(lf.index.SimpleComparatorWithNull, lf.index.SimpleComparator);
+lf.index.SimpleComparatorWithNull.compareAscending = function(lhs, rhs) {
+  return goog.isNull(lhs) ? goog.isNull(rhs) ? lf.index.Favor.TIE : lf.index.Favor.RHS : goog.isNull(rhs) ? lf.index.Favor.LHS : lf.index.SimpleComparator.compareAscending(lhs, rhs);
+};
+lf.index.SimpleComparatorWithNull.compareDescending = function(lhs, rhs) {
+  return lf.index.SimpleComparatorWithNull.compareAscending(rhs, lhs);
+};
+lf.index.SimpleComparatorWithNull.prototype.isInRange = function(key, range) {
+  return goog.isNull(key) ? range.isAll() : lf.index.SimpleComparatorWithNull.superClass_.isInRange.call(this, key, range);
+};
+lf.index.SimpleComparatorWithNull.prototype.minMax_ = function(lhs, rhs) {
+  return goog.isNull(lhs) ? goog.isNull(rhs) ? lf.index.Favor.TIE : lf.index.Favor.RHS : goog.isNull(rhs) ? lf.index.Favor.LHS : null;
+};
+lf.index.SimpleComparatorWithNull.prototype.min = function(lhs, rhs) {
+  var results = this.minMax_(lhs, rhs);
+  goog.isNull(results) && (results = lf.index.SimpleComparatorWithNull.superClass_.min.call(this, lhs, rhs));
+  return results;
+};
+lf.index.SimpleComparatorWithNull.prototype.max = function(lhs, rhs) {
+  var results = this.minMax_(lhs, rhs);
+  goog.isNull(results) && (results = lf.index.SimpleComparatorWithNull.superClass_.max.call(this, lhs, rhs));
+  return results;
 };
 lf.index.MultiKeyComparator = function(orders) {
   this.comparators_ = orders.map(function(order) {
