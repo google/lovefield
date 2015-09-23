@@ -30,6 +30,7 @@ goog.require('goog.testing.AsyncTestCase');
 goog.require('goog.testing.PropertyReplacer');
 goog.require('goog.testing.jsunit');
 goog.require('goog.testing.recordFunction');
+goog.require('lf.Capability');
 goog.require('lf.Global');
 goog.require('lf.Type');
 goog.require('lf.backstore.WebSql');
@@ -39,14 +40,13 @@ goog.require('lf.schema');
 goog.require('lf.schema.DataStoreType');
 goog.require('lf.service');
 goog.require('lf.service.ServiceId');
-goog.require('lf.testing.Capability');
 
 
 /** @type {!goog.testing.AsyncTestCase} */
 var asyncTestCase = goog.testing.AsyncTestCase.createAndInstall('WebSqlRaw');
 
 
-/** @type {!lf.testing.Capability} */
+/** @type {!lf.Capability} */
 var capability;
 
 
@@ -67,7 +67,7 @@ var upgradeGlobal;
 
 
 function setUpPage() {
-  capability = lf.testing.Capability.get();
+  capability = lf.Capability.get();
   if (!capability.webSql) {
     return;
   }

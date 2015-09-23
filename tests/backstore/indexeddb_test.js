@@ -20,6 +20,7 @@ goog.require('goog.functions');
 goog.require('goog.testing.AsyncTestCase');
 goog.require('goog.testing.PropertyReplacer');
 goog.require('goog.testing.jsunit');
+goog.require('lf.Capability');
 goog.require('lf.Global');
 goog.require('lf.Row');
 goog.require('lf.TransactionType');
@@ -29,7 +30,6 @@ goog.require('lf.cache.Journal');
 goog.require('lf.index.MemoryIndexStore');
 goog.require('lf.service');
 goog.require('lf.structs.set');
-goog.require('lf.testing.Capability');
 goog.require('lf.testing.backstore.MockSchema');
 goog.require('lf.testing.backstore.ScudTester');
 goog.require('lf.testing.util');
@@ -59,13 +59,13 @@ var schema;
 var db;
 
 
-/** @type {!lf.testing.Capability} */
+/** @type {!lf.Capability} */
 var capability;
 
 
 function setUpPage() {
   propertyReplacer = new goog.testing.PropertyReplacer();
-  capability = lf.testing.Capability.get();
+  capability = lf.Capability.get();
 }
 
 

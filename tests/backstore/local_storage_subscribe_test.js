@@ -25,9 +25,9 @@ goog.require('goog.Promise');
 goog.require('goog.dom.iframe');
 goog.require('goog.testing.AsyncTestCase');
 goog.require('goog.testing.jsunit');
+goog.require('lf.Capability');
 goog.require('lf.Row');
 goog.require('lf.backstore.LocalStorage');
-goog.require('lf.testing.Capability');
 goog.require('lf.testing.getSchemaBuilder');
 
 
@@ -44,7 +44,7 @@ var resolver;
 
 
 function setUp() {
-  if (!lf.testing.Capability.get().localStorageEvent) {
+  if (!lf.Capability.get().localStorageEvent) {
     return;
   }
 
@@ -70,7 +70,7 @@ function sampleHandler(diffs) {
 
 
 function testSubscribe() {
-  if (!lf.testing.Capability.get().localStorageEvent) {
+  if (!lf.Capability.get().localStorageEvent) {
     return;
   }
 

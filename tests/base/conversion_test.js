@@ -19,13 +19,13 @@ goog.require('goog.Promise');
 goog.require('goog.testing.AsyncTestCase');
 goog.require('goog.testing.jsunit');
 goog.require('hr.db');
+goog.require('lf.Capability');
 goog.require('lf.Row');
 goog.require('lf.TransactionType');
 goog.require('lf.cache.Journal');
 goog.require('lf.schema.DataStoreType');
 goog.require('lf.service');
 goog.require('lf.structs.set');
-goog.require('lf.testing.Capability');
 
 
 /** @type {!goog.testing.AsyncTestCase} */
@@ -37,12 +37,12 @@ var asyncTestCase =
 var db;
 
 
-/** @type {!lf.testing.Capability} */
+/** @type {!lf.Capability} */
 var capability;
 
 
 function setUp() {
-  capability = lf.testing.Capability.get();
+  capability = lf.Capability.get();
   asyncTestCase.waitForAsync('setUp');
   var options = {
     storeType: !capability.indexedDb ? lf.schema.DataStoreType.MEMORY :

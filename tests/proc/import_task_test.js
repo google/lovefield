@@ -17,8 +17,8 @@
 goog.setTestOnly();
 goog.require('goog.testing.AsyncTestCase');
 goog.require('goog.testing.jsunit');
+goog.require('lf.Capability');
 goog.require('lf.schema.DataStoreType');
-goog.require('lf.testing.Capability');
 goog.require('lf.testing.hrSchema.MockDataGenerator');
 goog.require('lf.testing.hrSchema.getSchemaBuilder');
 goog.require('lf.testing.util');
@@ -33,12 +33,12 @@ var asyncTestCase = goog.testing.AsyncTestCase.createAndInstall(
 asyncTestCase.stepTimeout = 30 * 1000;  // 30 seconds.
 
 
-/** @type {!lf.testing.Capability} */
+/** @type {!lf.Capability} */
 var capability;
 
 
 function setUpPage() {
-  capability = lf.testing.Capability.get();
+  capability = lf.Capability.get();
 }
 
 

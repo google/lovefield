@@ -22,6 +22,7 @@ goog.require('goog.testing.PropertyReplacer');
 goog.require('goog.testing.jsunit');
 goog.require('hr.bdb');
 goog.require('hr.db');
+goog.require('lf.Capability');
 goog.require('lf.Row');
 goog.require('lf.backstore.BundledObjectStore');
 goog.require('lf.backstore.IndexedDB');
@@ -34,7 +35,6 @@ goog.require('lf.index.IndexMetadataRow');
 goog.require('lf.service');
 goog.require('lf.structs.map');
 goog.require('lf.structs.set');
-goog.require('lf.testing.Capability');
 
 
 /** @type {!goog.testing.AsyncTestCase} */
@@ -45,12 +45,12 @@ var asyncTestCase = goog.testing.AsyncTestCase.createAndInstall('IndexedDB');
 var propertyReplacer;
 
 
-/** @type {!lf.testing.Capability} */
+/** @type {!lf.Capability} */
 var capability;
 
 
 function setUp() {
-  capability = lf.testing.Capability.get();
+  capability = lf.Capability.get();
   propertyReplacer = new goog.testing.PropertyReplacer();
 }
 

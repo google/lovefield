@@ -18,19 +18,19 @@ goog.setTestOnly();
 goog.require('goog.testing.AsyncTestCase');
 goog.require('goog.testing.jsunit');
 goog.require('hr.db');
-goog.require('lf.testing.Capability');
+goog.require('lf.Capability');
 
 
 /** @type {!goog.testing.AsyncTestCase} */
 var asyncTestCase = goog.testing.AsyncTestCase.createAndInstall('CloseTest');
 
 
-/** @type {!lf.testing.Capability} */
+/** @type {!lf.Capability} */
 var capability;
 
 
 function setUpPage() {
-  capability = lf.testing.Capability.get();
+  capability = lf.Capability.get();
 }
 
 

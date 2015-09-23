@@ -18,10 +18,10 @@ goog.setTestOnly();
 goog.require('goog.Promise');
 goog.require('goog.testing.AsyncTestCase');
 goog.require('goog.testing.jsunit');
+goog.require('lf.Capability');
 goog.require('lf.Type');
 goog.require('lf.schema');
 goog.require('lf.schema.DataStoreType');
-goog.require('lf.testing.Capability');
 goog.require('lf.testing.SmokeTester');
 
 
@@ -37,7 +37,7 @@ var hrTester;
 var orderTester;
 
 
-/** @type {!lf.testing.Capability} */
+/** @type {!lf.Capability} */
 var capability;
 
 
@@ -60,7 +60,7 @@ function createSchemaBuilders() {
 
 
 function setUpPage() {
-  capability = lf.testing.Capability.get();
+  capability = lf.Capability.get();
 }
 
 

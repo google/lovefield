@@ -18,9 +18,9 @@ goog.setTestOnly();
 goog.require('goog.Promise');
 goog.require('goog.testing.AsyncTestCase');
 goog.require('goog.testing.jsunit');
+goog.require('lf.Capability');
 goog.require('lf.ConstraintTiming');
 goog.require('lf.schema.DataStoreType');
-goog.require('lf.testing.Capability');
 goog.require('lf.testing.perf.BenchmarkRunner');
 goog.require('lf.testing.perf.ForeignKeysBenchmark');
 goog.require('lf.testing.perf.FullTableBenchmark');
@@ -44,7 +44,7 @@ asyncTestCase.stepTimeout = 30 * 60 * 1000;  // 30 minutes
 var REPETITIONS = 5;
 
 
-/** @type {!lf.testing.Capability} */
+/** @type {!lf.Capability} */
 var capability;
 
 
@@ -57,7 +57,7 @@ var overallResults = [];
 
 
 function setUpPage() {
-  capability = lf.testing.Capability.get();
+  capability = lf.Capability.get();
 }
 
 

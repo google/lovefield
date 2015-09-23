@@ -17,6 +17,7 @@
 goog.setTestOnly();
 goog.require('goog.testing.AsyncTestCase');
 goog.require('goog.testing.jsunit');
+goog.require('lf.Capability');
 goog.require('lf.Global');
 goog.require('lf.Row');
 goog.require('lf.backstore.WebSql');
@@ -25,7 +26,6 @@ goog.require('lf.index.MemoryIndexStore');
 goog.require('lf.schema');
 goog.require('lf.schema.DataStoreType');
 goog.require('lf.service');
-goog.require('lf.testing.Capability');
 goog.require('lf.testing.backstore.ScudTester');
 goog.require('lf.testing.getSchemaBuilder');
 
@@ -54,12 +54,12 @@ var schema;
 var db;
 
 
-/** @type {!lf.testing.Capability} */
+/** @type {!lf.Capability} */
 var capability;
 
 
 function setUpPage() {
-  capability = lf.testing.Capability.get();
+  capability = lf.Capability.get();
 }
 
 function setUp() {

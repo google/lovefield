@@ -21,10 +21,10 @@ goog.require('goog.testing.jsunit');
 goog.require('goog.userAgent.product');
 goog.require('hr.bdb');
 goog.require('hr.db');
+goog.require('lf.Capability');
 goog.require('lf.Global');
 goog.require('lf.schema.DataStoreType');
 goog.require('lf.service.ServiceId');
-goog.require('lf.testing.Capability');
 goog.require('lf.testing.EndToEndTester');
 goog.require('lf.testing.hrSchema.getSchemaBuilder');
 
@@ -38,7 +38,7 @@ var asyncTestCase = goog.testing.AsyncTestCase.createAndInstall(
 asyncTestCase.stepTimeout = 30 * 1000;  // 30 seconds
 
 
-/** @type {!lf.testing.Capability} */
+/** @type {!lf.Capability} */
 var capability;
 
 
@@ -47,7 +47,7 @@ var stub;
 
 
 function setUpPage() {
-  capability = lf.testing.Capability.get();
+  capability = lf.Capability.get();
   stub = new goog.testing.PropertyReplacer();
 }
 

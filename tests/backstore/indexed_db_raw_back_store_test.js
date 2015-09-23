@@ -19,6 +19,7 @@ goog.require('goog.Promise');
 goog.require('goog.testing.AsyncTestCase');
 goog.require('goog.testing.jsunit');
 goog.require('goog.testing.recordFunction');
+goog.require('lf.Capability');
 goog.require('lf.Global');
 goog.require('lf.Row');
 goog.require('lf.Type');
@@ -32,7 +33,6 @@ goog.require('lf.schema.Database');
 goog.require('lf.schema.Info');
 goog.require('lf.schema.Table');
 goog.require('lf.service');
-goog.require('lf.testing.Capability');
 
 
 /** @type {!goog.testing.AsyncTestCase} */
@@ -55,12 +55,12 @@ var CONTENTS2 = {'id': 'hello2', 'name': 'world2'};
 var MAGIC = Math.pow(2, lf.backstore.Page.BUNDLE_EXPONENT);
 
 
-/** @type {!lf.testing.Capability} */
+/** @type {!lf.Capability} */
 var capability;
 
 
 function setUpPage() {
-  capability = lf.testing.Capability.get();
+  capability = lf.Capability.get();
 }
 
 
@@ -74,7 +74,7 @@ function setUp() {
   var global = lf.Global.get();
   var cache = new lf.cache.DefaultCache(schema);
   global.registerService(lf.service.CACHE, cache);
-  capability = lf.testing.Capability.get();
+  capability = lf.Capability.get();
 }
 
 function testConvert() {

@@ -18,9 +18,9 @@ goog.setTestOnly();
 goog.require('goog.Promise');
 goog.require('goog.testing.AsyncTestCase');
 goog.require('goog.testing.jsunit');
+goog.require('lf.Capability');
 goog.require('lf.Type');
 goog.require('lf.schema');
-goog.require('lf.testing.Capability');
 goog.require('lf.testing.SmokeTester');
 
 
@@ -32,7 +32,7 @@ var asyncTestCase = goog.testing.AsyncTestCase.createAndInstall('DBCRUDTest');
 var tester;
 
 
-/** @type {!lf.testing.Capability} */
+/** @type {!lf.Capability} */
 var capability;
 
 
@@ -52,7 +52,7 @@ function createSchemaBuilder() {
 
 
 function setUpPage() {
-  capability = lf.testing.Capability.get();
+  capability = lf.Capability.get();
 }
 
 

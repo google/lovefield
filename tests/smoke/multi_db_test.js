@@ -19,8 +19,8 @@ goog.require('goog.Promise');
 goog.require('goog.testing.AsyncTestCase');
 goog.require('goog.testing.jsunit');
 goog.require('hr.db');
+goog.require('lf.Capability');
 goog.require('lf.schema.DataStoreType');
-goog.require('lf.testing.Capability');
 goog.require('lf.testing.SmokeTester');
 goog.require('order.db');
 
@@ -41,12 +41,12 @@ var hrTester;
 var orderTester;
 
 
-/** @type {!lf.testing.Capability} */
+/** @type {!lf.Capability} */
 var capability;
 
 
 function setUp() {
-  capability = lf.testing.Capability.get();
+  capability = lf.Capability.get();
 
   asyncTestCase.waitForAsync('setUp');
   var options = {
