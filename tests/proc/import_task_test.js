@@ -47,8 +47,11 @@ function setUpPage() {
  * @return {!IThenable}
  */
 function runTestImport(options) {
-  var builder1 = lf.testing.hrSchema.getSchemaBuilder();
-  var builder2 = lf.testing.hrSchema.getSchemaBuilder();
+  // Need to guarantee that the two DBs have different names.
+  var builder1 = lf.testing.hrSchema.getSchemaBuilder(
+      'hr1_' + new Date().getTime());
+  var builder2 = lf.testing.hrSchema.getSchemaBuilder(
+      'hr2_' + new Date().getTime());
   var dataGen = new lf.testing.hrSchema.MockDataGenerator(builder1.getSchema());
   dataGen.generate(
       /* jobCount */ 100, /* employeeCount */ 1000, /* departmentCount */ 10);
