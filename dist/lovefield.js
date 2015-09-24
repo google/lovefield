@@ -4400,6 +4400,16 @@ lf.cache.ConstraintChecker.prototype.findReferringRowIds_ = function(table, modi
   });
   return referringRowIds;
 };
+lf.cache.ConstraintChecker.prototype.detectCascadeUpdates = function(table, modifications, foreignKeySpecs) {
+  var cascadedUpdates = new lf.structs.MapSet;
+  this.loopThroughReferringRows_(foreignKeySpecs, modifications, function(foreignKeySpec, childIndex, parentKey, modification) {
+    var childRowIds = childIndex.get(parentKey);
+    childRowIds.forEach(function(rowId) {
+      cascadedUpdates.set(rowId, {fkSpec:foreignKeySpec, originalUpdatedRow:modification[1]});
+    });
+  });
+  return cascadedUpdates;
+};
 lf.cache.ConstraintChecker.prototype.loopThroughReferringRows_ = function(foreignKeySpecs, modifications, callbackFn) {
   foreignKeySpecs.forEach(function(foreignKeySpec) {
     var childIndex = this.indexStore_.get(foreignKeySpec.name), parentIndex = this.getParentIndex_(foreignKeySpec);
@@ -4407,7 +4417,7 @@ lf.cache.ConstraintChecker.prototype.loopThroughReferringRows_ = function(foreig
       var didColumnValueChange = lf.cache.ConstraintChecker.didColumnValueChange_(modification[0], modification[1], parentIndex.getName());
       if (didColumnValueChange) {
         var rowBefore = modification[0], parentKey = rowBefore.payload()[foreignKeySpec.parentColumn];
-        callbackFn(foreignKeySpec, childIndex, parentKey);
+        callbackFn(foreignKeySpec, childIndex, parentKey, modification);
       }
     }, this);
   }, this);
@@ -4421,7 +4431,7 @@ lf.cache.ConstraintChecker.prototype.checkForeignKeysForInsert = function(table,
   }
 };
 lf.cache.ConstraintChecker.prototype.checkForeignKeysForUpdate = function(table, modifications, constraintTiming) {
-  0 != modifications.length && (this.checkReferredKeys_(table, modifications, constraintTiming), this.checkReferringKeys_(table, modifications, constraintTiming));
+  0 != modifications.length && (this.checkReferredKeys_(table, modifications, constraintTiming), this.checkReferringKeys_(table, modifications, constraintTiming, lf.ConstraintAction.RESTRICT));
 };
 lf.cache.ConstraintChecker.prototype.checkForeignKeysForDelete = function(table, rows, constraintTiming) {
   if (0 != rows.length) {
@@ -4619,11 +4629,15 @@ lf.cache.Journal.prototype.update = function(table, rows) {
   this.assertJournalWritable_();
   this.checkScope_(table);
   this.constraintChecker_.checkNotNullable(table, rows);
-  for (var i = 0;i < rows.length;i++) {
-    var row = rows[i], rowBefore = this.cache_.get(row.id()), modification = [rowBefore, row];
-    this.constraintChecker_.checkForeignKeysForUpdate(table, [modification], lf.ConstraintTiming.IMMEDIATE);
+  var modifications = rows.map(function(row) {
+    var rowBefore = this.cache_.get(row.id());
+    return [rowBefore, row];
+  }, this);
+  this.updateByCascade_(table, modifications);
+  this.constraintChecker_.checkForeignKeysForUpdate(table, modifications, lf.ConstraintTiming.IMMEDIATE);
+  modifications.forEach(function(modification) {
     this.modifyRow_(table, modification);
-  }
+  }, this);
 };
 lf.cache.Journal.prototype.insertOrReplace = function(table, rows) {
   this.assertJournalWritable_();
@@ -4649,6 +4663,20 @@ lf.cache.Journal.prototype.remove = function(table, rows) {
   this.constraintChecker_.checkForeignKeysForDelete(table, rows, lf.ConstraintTiming.IMMEDIATE);
   for (var i = 0;i < rows.length;i++) {
     this.modifyRow_(table, [rows[i], null]);
+  }
+};
+lf.cache.Journal.prototype.updateByCascade_ = function(table$$0, modifications) {
+  var foreignKeySpecs = this.schema_.info().getReferencingForeignKeys(table$$0.getName(), lf.ConstraintAction.CASCADE);
+  if (!goog.isNull(foreignKeySpecs)) {
+    var cascadedUpdates = this.constraintChecker_.detectCascadeUpdates(table$$0, modifications, foreignKeySpecs);
+    cascadedUpdates.keys().forEach(function(rowId) {
+      var updates = cascadedUpdates.get(rowId);
+      updates.forEach(function(update) {
+        var table = this.schema_.table(update.fkSpec.childTable), rowBefore = this.cache_.get(rowId), rowAfter = table.deserializeRow(rowBefore.serialize());
+        rowAfter.payload()[update.fkSpec.childColumn] = update.originalUpdatedRow.payload()[update.fkSpec.parentColumn];
+        this.modifyRow_(table, [rowBefore, rowAfter]);
+      }, this);
+    }, this);
   }
 };
 lf.cache.Journal.prototype.removeByCascade_ = function(table$$0, rows$$0) {
