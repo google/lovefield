@@ -25,33 +25,28 @@ goog.require('lf.index.SingleKeyRange');
 var favor = lf.index.Favor;
 
 
+/** @param {!Function} testFn */
+function shuffleAndTest(testFn) {
+  var ORDER = [lf.Order.DESC, lf.Order.ASC];
+  var NULLABLE = [false, true];
+  for (var i = 0; i < NULLABLE.length; ++i) {
+    for (var j = 0; j < ORDER.length; ++j) {
+      for (var k = 0; k < ORDER.length; ++k) {
+        var c = new lf.index.MultiKeyComparator(
+            [ORDER[j], ORDER[k]], NULLABLE[i]);
+        testFn(c);
+      }
+    }
+  }
+}
+
 function testMin() {
-  var c1 = new lf.index.MultiKeyComparator([lf.Order.DESC, lf.Order.ASC]);
-  checkMin(c1);
-
-  var c2 = new lf.index.MultiKeyComparator([lf.Order.DESC, lf.Order.DESC]);
-  checkMin(c2);
-
-  var c3 = new lf.index.MultiKeyComparator([lf.Order.ASC, lf.Order.DESC]);
-  checkMin(c3);
-
-  var c4 = new lf.index.MultiKeyComparator([lf.Order.ASC, lf.Order.ASC]);
-  checkMin(c4);
+  shuffleAndTest(checkMin);
 }
 
 
 function testMax() {
-  var c1 = new lf.index.MultiKeyComparator([lf.Order.DESC, lf.Order.ASC]);
-  checkMax(c1);
-
-  var c2 = new lf.index.MultiKeyComparator([lf.Order.DESC, lf.Order.DESC]);
-  checkMax(c2);
-
-  var c3 = new lf.index.MultiKeyComparator([lf.Order.ASC, lf.Order.DESC]);
-  checkMax(c3);
-
-  var c4 = new lf.index.MultiKeyComparator([lf.Order.ASC, lf.Order.ASC]);
-  checkMax(c4);
+  shuffleAndTest(checkMax);
 }
 
 
@@ -165,10 +160,8 @@ function testCustomOrder() {
 }
 
 
-function testIsInRange() {
-  // The orders do not really affect the judgement for this test, therefore
-  // two random orders are picked to make this test shorter.
-  var c = new lf.index.MultiKeyComparator([lf.Order.ASC, lf.Order.DESC]);
+/** @param {!lf.index.MultiKeyComparator} c */
+function checkIsInRange(c) {
   var lowerBound = lf.index.SingleKeyRange.lowerBound(2);
   var lowerBoundExclude = lf.index.SingleKeyRange.lowerBound(2, true);
   var upperBound = lf.index.SingleKeyRange.upperBound(2);
@@ -195,6 +188,32 @@ function testIsInRange() {
   assertFalse(c.isInRange([2, 2], [upperBoundExclude, lowerBoundExclude]));
 }
 
+function testIsInRange_MultiKeyComparator() {
+  // The orders do not really affect the judgement for this test, therefore
+  // two random orders are picked to make this test shorter.
+  var c = new lf.index.MultiKeyComparator([lf.Order.ASC, lf.Order.DESC]);
+  checkIsInRange(c);
+}
+
+function testIsInRange_MultiKeyComparatorWithNull() {
+  var c = new lf.index.MultiKeyComparatorWithNull(
+      [lf.Order.ASC, lf.Order.DESC]);
+  checkIsInRange(c);
+
+  // Null specific tests
+  var all = lf.index.SingleKeyRange.all();
+  var lowerBound = lf.index.SingleKeyRange.lowerBound(2);
+  assertTrue(c.isInRange([2, null], [all, all]));
+  assertTrue(c.isInRange([null, 2], [all, all]));
+  assertTrue(c.isInRange([2, null], [lowerBound, all]));
+  assertFalse(c.isInRange([2, null], [lowerBound, lowerBound]));
+  assertTrue(c.isInRange([null, 2], [all, lowerBound]));
+
+  assertTrue(c.isInRange([null, null], [all, all]));
+  assertFalse(c.isInRange([null, null], [lowerBound, all]));
+  assertFalse(c.isInRange([null, null], [all, lowerBound]));
+  assertFalse(c.isInRange([null, null], [lowerBound, lowerBound]));
+}
 
 function testSortKeyRanges_Asc() {
   var c = new lf.index.MultiKeyComparator([lf.Order.ASC, lf.Order.ASC]);
