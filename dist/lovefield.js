@@ -3665,15 +3665,21 @@ lf.backstore.BaseTx.prototype.getJournal = function() {
   return this.journal_;
 };
 lf.backstore.BaseTx.prototype.commit = function() {
+  return this.txType == lf.TransactionType.READ_ONLY ? this.commitReadOnly_() : this.commitReadWrite_();
+};
+lf.backstore.BaseTx.prototype.commitReadOnly_ = function() {
+  return this.commitInternal().then(function(results) {
+    this.journal_.commit();
+    return results;
+  }.bind(this));
+};
+lf.backstore.BaseTx.prototype.commitReadWrite_ = function() {
   try {
     this.journal_.checkDeferredConstraints();
   } catch (e) {
     return goog.Promise.reject(e);
   }
-  var mergeIntoBackstore = function() {
-    return this.txType == lf.TransactionType.READ_ONLY ? this.commitInternal() : this.mergeIntoBackstore_();
-  }.bind(this);
-  return mergeIntoBackstore().then(function(results) {
+  return this.mergeIntoBackstore_().then(function(results) {
     this.journal_.commit();
     return results;
   }.bind(this));
