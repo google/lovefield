@@ -13,7 +13,7 @@ i.e. `window`). This instance is unique and shared across all connections in
 the session.
 
 Each connection will [register](
-https://github.com/google/lovefield/blob/31f14db4995bb89fa053c99261a4b7501f87eb8d/lib/schema/builder.js#L75-85)
+https://github.com/google/lovefield/blob/31f14db4995bb89fa053c99261a4b7501f87eb8d/lib/schema/builder.js#L75-L85)
 its own global object with this session-unique instance. This global object
 serves as the service registry for that connection. Since Lovefield assumes
 one connection to a DB instance on data store at a given session, the
