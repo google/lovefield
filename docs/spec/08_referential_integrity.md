@@ -37,7 +37,7 @@ violated the constraint_. **"Parent"** table is the referenced table, and
   * Can't insert a row into the child table if there is no related row
     in the parent table.
 
-`UPDATE`
+`UPDATE`/`INSERT_OR_REPLACE`
 
   * Can't update the parent table's referenced column if the row being modified
     has related rows in the child table.
@@ -54,9 +54,11 @@ violated the constraint_. **"Parent"** table is the referenced table, and
 In this mode a constraint violation results in modifying related tables as
 necessary to maintain data integrity.
 
-`INSERT`
+`INSERT`/`INSERT_OR_REPLACE`
 
-  * Same as in the `RESTRICT` mode.
+  * Same as in the `RESTRICT` mode. Note that for `insertOrReplace()` queries,
+    there is no cascading. If cascading is desrired an `update()` query should
+    be used instead.
 
 `DELETE`
 
