@@ -977,6 +977,57 @@ function testGetRange_Numeric() {
   assertEquals(0, results.length);
 }
 
+function testGetRange_LimitSkip() {
+  var tree = new lf.index.BTree('test', c, true);
+  for (var i = -10; i <= 10; ++i) {
+    tree.set(i, i);
+  }
+
+  var results = tree.getRange();
+  var results2 = tree.getRange([lf.index.SingleKeyRange.all()]);
+  assertEquals(21, results.length);
+  assertArrayEquals(results, results2);
+  results2 = tree.getRange(undefined, /* reverse */ true);
+  assertArrayEquals(results, results2.reverse());
+  results2 = tree.getRange(undefined, false, /* limit */ 5, /* skip */ 10);
+  assertArrayEquals([0, 1, 2, 3, 4], results2);
+  results2 = tree.getRange(undefined, true, 3, 5);
+  assertArrayEquals([5, 4, 3], results2);
+  results2 = tree.getRange(undefined, false, 3);
+  assertArrayEquals([-10, -9, -8], results2);
+  results2 = tree.getRange(undefined, true, 3);
+  assertArrayEquals([10, 9, 8], results2);
+  results2 = tree.getRange(undefined, false, undefined, 17);
+  assertArrayEquals([7, 8, 9, 10], results2);
+  results2 = tree.getRange(undefined, true, undefined, 18);
+  assertArrayEquals([-8, -9, -10], results2);
+  results2 = tree.getRange(undefined, false, undefined, 22);
+  assertArrayEquals([], results2);
+  results2 = tree.getRange(undefined, true, undefined, 22);
+  assertArrayEquals([], results2);
+
+  var keyRange = [lf.index.SingleKeyRange.lowerBound(1)];
+  results = tree.getRange(keyRange, true);
+  assertEquals(10, results.length);
+  assertEquals(10, results[0]);
+  assertEquals(1, results[9]);
+
+  results = tree.getRange(keyRange, false, 4, 4);
+  assertArrayEquals([5, 6, 7, 8], results);
+  results = tree.getRange(keyRange, false, 4);
+  assertArrayEquals([1, 2, 3, 4], results);
+  results = tree.getRange(keyRange, true, 4);
+  assertArrayEquals([10, 9, 8, 7], results);
+  results = tree.getRange(keyRange, false, undefined, 18);
+  assertArrayEquals([], results);
+  results = tree.getRange(keyRange, false, undefined, 8);
+  assertArrayEquals([9, 10], results);
+  results = tree.getRange(keyRange, true, undefined, 8);
+  assertArrayEquals([2, 1], results);
+  results = tree.getRange(keyRange, true, 2, 8);
+  assertArrayEquals([2, 1], results);
+}
+
 function testGetRange_EmptyTree() {
   var tree = new lf.index.BTree(
       'test',
@@ -1209,6 +1260,8 @@ function testMultiKeyGetRangeRegression() {
     lf.index.SingleKeyRange.upperBound('D')
   ]];
   assertArrayEquals([10, 11, 12, 13], tree.getRange(keyRange3));
+  assertArrayEquals([11, 12], tree.getRange(keyRange3, false, 2, 1));
+  assertArrayEquals([12, 11, 10], tree.getRange(keyRange3, true, 3, 1));
 
   var keyRange4 = [[
     lf.index.SingleKeyRange.lowerBound('S'),
@@ -1231,6 +1284,12 @@ function testMultiKeyGetRangeRegression() {
   assertArrayEquals(
       [3, 2, 1, 0, 6, 5, 4, 9, 8, 7, 13, 12, 11, 10],
       tree2.getRange());
+  assertArrayEquals(
+      [1, 0, 6],
+      tree2.getRange(undefined, false, 3, 2));
+  assertArrayEquals(
+      [13, 7, 8, 9],
+      tree2.getRange(undefined, true, 4, 3));
 }
 
 function testStats() {

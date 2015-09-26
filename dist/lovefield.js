@@ -6941,10 +6941,10 @@ lf.index.BTree.prototype.getRange = function(opt_keyRanges, opt_reverseOrder, op
   var sortedKeyRanges = this.comparator_.sortKeyRanges(opt_keyRanges), results = Array(reverse ? this.stats_.totalRows : maxCount), params = {count:0, limit:results.length, reverse:reverse, skip:skip};
   sortedKeyRanges.forEach(function(range) {
     for (var keys = this.comparator_.rangeToKeys(range), key = this.comparator_.isLeftOpen(range) ? leftMostKey : keys[0], start = this.root_.getContainingLeaf(key), oldCount = params.count, strikeCount = 0;goog.isDefAndNotNull(start) && params.count < params.limit;) {
-      start.getRange(range, params, results), params.count != oldCount ? (strikeCount = 0, oldCount = params.count) : strikeCount++, start = 2 == strikeCount ? null : start.next();
+      start.getRange(range, params, results), params.count != oldCount || 0 < params.skip ? (strikeCount = 0, oldCount = params.count) : strikeCount++, start = 2 == strikeCount ? null : start.next();
     }
   }, this);
-  results.splice(params.count, maxCount - params.count);
+  results.length > params.count && results.splice(params.count, results.length - params.count);
   return reverse ? lf.index.slice(results, reverse, limit, skip) : results;
 };
 lf.index.BTree.prototype.clear = function() {
