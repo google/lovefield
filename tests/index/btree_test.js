@@ -21,6 +21,7 @@ goog.require('goog.testing.jsunit');
 goog.require('lf.Order');
 goog.require('lf.index.BTree');
 goog.require('lf.index.MultiKeyComparator');
+goog.require('lf.index.MultiKeyComparatorWithNull');
 goog.require('lf.index.SimpleComparator');
 goog.require('lf.index.SingleKeyRange');
 goog.require('lf.structs.set');
@@ -1366,4 +1367,71 @@ function testGetAll() {
   assertArrayEquals([14, 20, 21], tree2.getRange(undefined, false, 3, 4));
   assertArrayEquals([94], tree2.getRange(undefined, false, 10, 44));
   assertArrayEquals([], tree2.getRange(undefined, false, undefined, 99));
+}
+
+function testSmoke_MultiNullableKey() {
+  var comparator = new lf.index.MultiKeyComparatorWithNull(
+      lf.index.MultiKeyComparator.createOrders(2, lf.Order.ASC));
+  var tree = insertToTree2(23, comparator);
+  assertArrayEquals([1, '1'], tree.min()[0]);
+  assertArrayEquals([49, '49'], tree.max()[0]);
+
+  tree.set([-1, null], 9996);
+  tree.set([null, '33'], 9997);
+  tree.set([777, null], 9998);
+  tree.set([null, null], 9999);
+  assertEquals(SEQUENCE2.length + 4, tree.getRange().length);
+
+  assertArrayEquals([-1, null], tree.min()[0]);
+  assertArrayEquals([777, null], tree.max()[0]);
+
+  // Serialize and deserialize should have no problem.
+  var rows = tree.serialize();
+  var tree2 = deserializeTree(rows);
+  assertArrayEquals(tree.getRange(), tree2.getRange());
+}
+
+function testGetRange_MultiNullableKey() {
+  var comparator = new lf.index.MultiKeyComparatorWithNull(
+      lf.index.MultiKeyComparator.createOrders(2, lf.Order.ASC));
+  var tree = new lf.index.BTree('test', comparator, true);
+  var data = [
+    ['F', 'A'], ['F', 'B'], ['F', 'C'], ['F', 'D'],
+    ['G', 'B'], ['G', 'G'], ['G', 'X'],
+    ['P', 'K'], ['P', 'M'], ['P', 'P'],
+    ['S', 'A'], ['S', 'B'], ['S', 'C'], ['S', 'D'],
+    [null, 'Z'], ['Z', null], [null, null]
+  ];
+  for (var i = 0; i < data.length; ++i) {
+    tree.add(data[i], i);
+  }
+  var keyRange = [[
+    lf.index.SingleKeyRange.only('G'),
+    lf.index.SingleKeyRange.only('X')
+  ]];
+  assertArrayEquals([6], tree.getRange(keyRange));
+
+  var keyRange2 = [[
+    lf.index.SingleKeyRange.only('P'),
+    lf.index.SingleKeyRange.only('P')
+  ]];
+  assertArrayEquals([9], tree.getRange(keyRange2));
+
+  var keyRange3 = [[
+    lf.index.SingleKeyRange.lowerBound('P'),
+    lf.index.SingleKeyRange.upperBound('D')
+  ]];
+  assertArrayEquals([10, 11, 12, 13], tree.getRange(keyRange3));
+  assertArrayEquals([11, 12], tree.getRange(keyRange3, false, 2, 1));
+  assertArrayEquals([12, 11, 10], tree.getRange(keyRange3, true, 3, 1));
+
+  var keyRange4 = [[
+    lf.index.SingleKeyRange.lowerBound('S'),
+    lf.index.SingleKeyRange.all()
+  ]];
+  assertArrayEquals([10, 11, 12, 13, 15], tree.getRange(keyRange4));
+
+  assertArrayEquals(
+      [16, 14, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 15],
+      tree.getRange());
 }

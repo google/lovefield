@@ -6851,6 +6851,195 @@ lf.index.slice = function(rawArray, opt_reverseOrder, opt_limit, opt_skip) {
   var skip = Math.min(opt_skip || 0, array.length);
   return array.slice(skip, skip + limit);
 };
+lf.index.SimpleComparator = function(order) {
+  this.compareFn = order == lf.Order.DESC ? lf.index.SimpleComparator.compareDescending : lf.index.SimpleComparator.compareAscending;
+  this.normalizeKeyRange_ = order == lf.Order.DESC ? function(opt_keyRange) {
+    return goog.isDefAndNotNull(opt_keyRange) ? opt_keyRange.reverse() : null;
+  } : function(opt_keyRange) {
+    return opt_keyRange || null;
+  };
+  this.orderRange_ = order == lf.Order.DESC ? lf.index.SimpleComparator.orderRangeDescending : lf.index.SimpleComparator.orderRangeAscending;
+};
+goog.inherits(lf.index.SimpleComparator, lf.index.Comparator);
+lf.index.SimpleComparator.compareAscending = function(lhs, rhs) {
+  return lhs > rhs ? lf.index.Favor.LHS : lhs < rhs ? lf.index.Favor.RHS : lf.index.Favor.TIE;
+};
+lf.index.SimpleComparator.compareDescending = function(lhs, rhs) {
+  return lf.index.SimpleComparator.compareAscending(rhs, lhs);
+};
+lf.index.SimpleComparator.orderRangeAscending = function(lhs, rhs) {
+  return lf.index.SingleKeyRange.compare(lhs, rhs);
+};
+lf.index.SimpleComparator.orderRangeDescending = function(lhs, rhs) {
+  return lf.index.SingleKeyRange.compare(rhs, lhs);
+};
+lf.index.SimpleComparator.prototype.compareRange = function(key, naturalRange) {
+  var range = this.normalizeKeyRange_(naturalRange), results = [lf.index.SingleKeyRange.isUnbound(range.from), lf.index.SingleKeyRange.isUnbound(range.to)];
+  if (!results[0]) {
+    var favor = this.compareFn(key, range.from);
+    results[0] = range.excludeLower ? favor == lf.index.Favor.LHS : favor != lf.index.Favor.RHS;
+  }
+  results[1] || (favor = this.compareFn(key, range.to), results[1] = range.excludeUpper ? favor == lf.index.Favor.RHS : favor != lf.index.Favor.LHS);
+  return results;
+};
+lf.index.SimpleComparator.prototype.compare = function(lhs, rhs) {
+  return this.compareFn(lhs, rhs);
+};
+lf.index.SimpleComparator.prototype.min = function(lhs, rhs) {
+  return lhs < rhs ? lf.index.Favor.LHS : lhs == rhs ? lf.index.Favor.TIE : lf.index.Favor.RHS;
+};
+lf.index.SimpleComparator.prototype.max = function(lhs, rhs) {
+  return lhs > rhs ? lf.index.Favor.LHS : lhs == rhs ? lf.index.Favor.TIE : lf.index.Favor.RHS;
+};
+lf.index.SimpleComparator.prototype.isInRange = function(key, range) {
+  var results = this.compareRange(key, range);
+  return results[0] && results[1];
+};
+lf.index.SimpleComparator.prototype.orderKeyRange = function(lhs, rhs) {
+  return this.orderRange_(lhs, rhs);
+};
+lf.index.SimpleComparator.prototype.sortKeyRanges = function(keyRanges) {
+  return keyRanges.filter(function(range) {
+    return !goog.isNull(range);
+  }).sort(function(lhs, rhs) {
+    return this.orderRange_(lhs, rhs);
+  }.bind(this));
+};
+lf.index.SimpleComparator.prototype.isLeftOpen = function(range) {
+  return lf.index.SingleKeyRange.isUnbound(this.normalizeKeyRange_(range).from);
+};
+lf.index.SimpleComparator.prototype.rangeToKeys = function(naturalRange) {
+  var range = this.normalizeKeyRange_(naturalRange);
+  return [range.from, range.to];
+};
+lf.index.SimpleComparator.prototype.comparable = function(key) {
+  return !goog.isNull(key);
+};
+lf.index.SimpleComparator.prototype.toString = function() {
+  return this.compare == lf.index.SimpleComparator.compareDescending ? "SimpleComparator_DESC" : "SimpleComparator_ASC";
+};
+lf.index.SimpleComparatorWithNull = function(order) {
+  lf.index.SimpleComparator.call(this, order);
+  this.compareFn = order == lf.Order.DESC ? lf.index.SimpleComparatorWithNull.compareDescending : lf.index.SimpleComparatorWithNull.compareAscending;
+};
+goog.inherits(lf.index.SimpleComparatorWithNull, lf.index.SimpleComparator);
+lf.index.SimpleComparatorWithNull.compareAscending = function(lhs, rhs) {
+  return goog.isNull(lhs) ? goog.isNull(rhs) ? lf.index.Favor.TIE : lf.index.Favor.RHS : goog.isNull(rhs) ? lf.index.Favor.LHS : lf.index.SimpleComparator.compareAscending(lhs, rhs);
+};
+lf.index.SimpleComparatorWithNull.compareDescending = function(lhs, rhs) {
+  return lf.index.SimpleComparatorWithNull.compareAscending(rhs, lhs);
+};
+lf.index.SimpleComparatorWithNull.prototype.isInRange = function(key, range) {
+  return goog.isNull(key) ? range.isAll() : lf.index.SimpleComparatorWithNull.superClass_.isInRange.call(this, key, range);
+};
+lf.index.SimpleComparatorWithNull.prototype.minMax_ = function(lhs, rhs) {
+  return goog.isNull(lhs) ? goog.isNull(rhs) ? lf.index.Favor.TIE : lf.index.Favor.RHS : goog.isNull(rhs) ? lf.index.Favor.LHS : null;
+};
+lf.index.SimpleComparatorWithNull.prototype.min = function(lhs, rhs) {
+  var results = this.minMax_(lhs, rhs);
+  goog.isNull(results) && (results = lf.index.SimpleComparatorWithNull.superClass_.min.call(this, lhs, rhs));
+  return results;
+};
+lf.index.SimpleComparatorWithNull.prototype.max = function(lhs, rhs) {
+  var results = this.minMax_(lhs, rhs);
+  goog.isNull(results) && (results = lf.index.SimpleComparatorWithNull.superClass_.max.call(this, lhs, rhs));
+  return results;
+};
+lf.index.MultiKeyComparator = function(orders) {
+  this.comparators = orders.map(function(order) {
+    return new lf.index.SimpleComparator(order);
+  });
+};
+goog.inherits(lf.index.MultiKeyComparator, lf.index.Comparator);
+lf.index.MultiKeyComparator.createOrders = function(numKeys, order) {
+  for (var orders = Array(numKeys), i = 0;i < numKeys;++i) {
+    orders[i] = order;
+  }
+  return orders;
+};
+lf.index.MultiKeyComparator.prototype.forEach_ = function(lhs, rhs, fn) {
+  for (var favor = lf.index.Favor.TIE, i = 0;i < this.comparators.length && favor == lf.index.Favor.TIE;++i) {
+    favor = fn(this.comparators[i], lhs[i], rhs[i]);
+  }
+  return favor;
+};
+lf.index.MultiKeyComparator.prototype.compare = function(lhs, rhs) {
+  return this.forEach_(lhs, rhs, function(c, l, r) {
+    return l == lf.index.SingleKeyRange.UNBOUND_VALUE || r == lf.index.SingleKeyRange.UNBOUND_VALUE ? lf.index.Favor.TIE : c.compare(l, r);
+  });
+};
+lf.index.MultiKeyComparator.prototype.min = function(lhs, rhs) {
+  return this.forEach_(lhs, rhs, function(c, l, r) {
+    return c.min(l, r);
+  });
+};
+lf.index.MultiKeyComparator.prototype.max = function(lhs, rhs) {
+  return this.forEach_(lhs, rhs, function(c, l, r) {
+    return c.max(l, r);
+  });
+};
+lf.index.MultiKeyComparator.prototype.compareRange = function(key, range) {
+  for (var results = [!0, !0], i = 0;i < this.comparators.length && (results[0] || results[1]);++i) {
+    var dimensionResults = this.comparators[i].compareRange(key[i], range[i]);
+    results[0] = results[0] && dimensionResults[0];
+    results[1] = results[1] && dimensionResults[1];
+  }
+  return results;
+};
+lf.index.MultiKeyComparator.prototype.isInRange = function(key, range) {
+  for (var isInRange = !0, i = 0;i < this.comparators.length && isInRange;++i) {
+    isInRange = this.comparators[i].isInRange(key[i], range[i]);
+  }
+  return isInRange;
+};
+lf.index.MultiKeyComparator.prototype.sortKeyRanges = function(keyRanges) {
+  for (var outputKeyRanges = keyRanges.filter(function(range) {
+    return range.every(goog.isDefAndNotNull);
+  }), keysPerDimensions = Array(this.comparators.length), i$$0 = 0;i$$0 < keysPerDimensions.length;i$$0++) {
+    keysPerDimensions[i$$0] = outputKeyRanges.map(function(range) {
+      return range[i$$0];
+    });
+  }
+  keysPerDimensions.forEach(function(keys, i) {
+    keys.sort(function(lhs, rhs) {
+      return this.comparators[i].orderKeyRange(lhs, rhs);
+    }.bind(this));
+  }, this);
+  for (var finalKeyRanges = Array(outputKeyRanges.length), i$$0 = 0;i$$0 < finalKeyRanges.length;i$$0++) {
+    finalKeyRanges[i$$0] = keysPerDimensions.map(function(keys) {
+      return keys[i$$0];
+    });
+  }
+  return finalKeyRanges.sort(function(lhs, rhs) {
+    for (var favor = lf.index.Favor.TIE, i = 0;i < this.comparators.length && favor == lf.index.Favor.TIE;++i) {
+      favor = this.comparators[i].orderKeyRange(lhs[i], rhs[i]);
+    }
+    return favor;
+  }.bind(this));
+};
+lf.index.MultiKeyComparator.prototype.isLeftOpen = function(range) {
+  return this.comparators[0].isLeftOpen(range[0]);
+};
+lf.index.MultiKeyComparator.prototype.rangeToKeys = function(keyRange) {
+  var startKey = keyRange.map(function(range, i) {
+    return this.comparators[i].rangeToKeys(range)[0];
+  }, this), endKey = keyRange.map(function(range, i) {
+    return this.comparators[i].rangeToKeys(range)[1];
+  }, this);
+  return [startKey, endKey];
+};
+lf.index.MultiKeyComparator.prototype.comparable = function(key) {
+  return key.every(function(keyDimension, i) {
+    return this.comparators[i].comparable(keyDimension);
+  }, this);
+};
+lf.index.MultiKeyComparatorWithNull = function(orders) {
+  lf.index.MultiKeyComparator.call(this, orders);
+  this.comparators = orders.map(function(order) {
+    return new lf.index.SimpleComparatorWithNull(order);
+  });
+};
+goog.inherits(lf.index.MultiKeyComparatorWithNull, lf.index.MultiKeyComparator);
 lf.index.Stats = function() {
   this.totalRows = 0;
 };
@@ -6929,10 +7118,10 @@ lf.index.BTree.prototype.getRange = function(opt_keyRanges, opt_reverseOrder, op
   if (!goog.isDef(opt_keyRanges) || 1 == opt_keyRanges.length && opt_keyRanges[0] instanceof lf.index.SingleKeyRange && opt_keyRanges[0].isAll()) {
     return this.getAll_(maxCount, reverse, limit, skip);
   }
-  var sortedKeyRanges = this.comparator_.sortKeyRanges(opt_keyRanges), results = Array(reverse ? this.stats_.totalRows : maxCount), params = {count:0, limit:results.length, reverse:reverse, skip:skip};
+  var sortedKeyRanges = this.comparator_.sortKeyRanges(opt_keyRanges), results = Array(reverse ? this.stats_.totalRows : maxCount), params = {count:0, limit:results.length, reverse:reverse, skip:skip}, useFilter = this.comparator_ instanceof lf.index.MultiKeyComparatorWithNull;
   sortedKeyRanges.forEach(function(range) {
     for (var keys = this.comparator_.rangeToKeys(range), key = this.comparator_.isLeftOpen(range) ? leftMostKey : keys[0], start = this.root_.getContainingLeaf(key), oldCount = params.count, strikeCount = 0;goog.isDefAndNotNull(start) && params.count < params.limit;) {
-      start.getRange(range, params, results), params.count != oldCount || 0 < params.skip ? (strikeCount = 0, oldCount = params.count) : strikeCount++, start = 2 == strikeCount ? null : start.next();
+      useFilter ? start.getRangeWithFilter(range, params, results) : start.getRange(range, params, results), params.count != oldCount || 0 < params.skip ? (strikeCount = 0, oldCount = params.count) : strikeCount++, start = 2 == strikeCount ? null : start.next();
     }
   }, this);
   results.length > params.count && results.splice(params.count, results.length - params.count);
@@ -6951,13 +7140,51 @@ lf.index.BTree.prototype.min = function() {
 lf.index.BTree.prototype.max = function() {
   return this.minMax_(this.comparator_.max.bind(this.comparator_));
 };
-lf.index.BTree.prototype.minMax_ = function(compareFn) {
-  var leftMostNode = this.root_.getLeftMostNode(), rightMostNode = this.root_.getRightMostNode();
-  if (0 == leftMostNode.keys_.length && 0 == rightMostNode.keys_.length) {
-    return null;
+lf.index.BTree.prototype.checkNullKey_ = function(node, index) {
+  if (!this.comparator_.comparable(node.keys_[index])) {
+    if (1 < node.keys_[index].length) {
+      if (goog.isNull(node.keys_[index][0])) {
+        return null;
+      }
+    } else {
+      return null;
+    }
   }
-  var leftMostKey = leftMostNode.keys_[0], leftMostValues = leftMostNode.values_[0], rightMostKey = rightMostNode.keys_[rightMostNode.keys_.length - 1], rightMostValues = rightMostNode.values_[rightMostNode.keys_.length - 1];
-  return compareFn(leftMostKey, rightMostKey) == lf.index.Favor.LHS ? [leftMostKey, this.uniqueKeyOnly_ ? [leftMostValues] : leftMostValues] : [rightMostKey, this.uniqueKeyOnly_ ? [rightMostValues] : rightMostValues];
+  return [node.keys_[index], this.uniqueKeyOnly_ ? [node.values_[index]] : node.values_[index]];
+};
+lf.index.BTree.prototype.findLeftMost_ = function() {
+  var node = this.root_.getLeftMostNode(), index = 0;
+  do {
+    if (index >= node.keys_.length) {
+      node = node.next_, index = 0;
+    } else {
+      var results = this.checkNullKey_(node, index);
+      if (!goog.isNull(results)) {
+        return results;
+      }
+      index++;
+    }
+  } while (!goog.isNull(node));
+  return null;
+};
+lf.index.BTree.prototype.findRightMost_ = function() {
+  var node = this.root_.getRightMostNode(), index = node.keys_.length - 1;
+  do {
+    if (0 > index) {
+      node = node.prev_, index = 0;
+    } else {
+      var results = this.checkNullKey_(node, index);
+      if (!goog.isNull(results)) {
+        return results;
+      }
+      index--;
+    }
+  } while (!goog.isNull(node));
+  return null;
+};
+lf.index.BTree.prototype.minMax_ = function(compareFn) {
+  var leftMost = this.findLeftMost_(), rightMost = this.findRightMost_();
+  return goog.isNull(leftMost) || goog.isNull(rightMost) ? null : compareFn(leftMost[0], rightMost[0]) == lf.index.Favor.LHS ? leftMost : rightMost;
 };
 lf.index.BTree.prototype.isUniqueKey = function() {
   return this.uniqueKeyOnly_;
@@ -7000,7 +7227,7 @@ lf.index.BTreeNode_.prototype.isLeaf_ = function() {
   return 0 == this.height_;
 };
 lf.index.BTreeNode_.prototype.isRoot_ = function() {
-  return null == this.parent_;
+  return goog.isNull(this.parent_);
 };
 lf.index.BTreeNode_.prototype.next = function() {
   return this.next_;
@@ -7309,14 +7536,37 @@ lf.index.BTreeNode_.prototype.getRange = function(keyRange, params, results) {
     -1 != left && (right = findLastKey(left, right), -1 != right && right >= left && this.appendResults_(params, results, left, right + 1));
   }
 };
+lf.index.BTreeNode_.prototype.appendResultsAt_ = function(params, results, i) {
+  if (this.tree_.isUniqueKey()) {
+    !params.reverse && params.skip ? params.skip-- : results[params.count++] = this.values_[i];
+  } else {
+    for (var j = 0;j < this.values_[i].length && params.count < results.length;++j) {
+      !params.reverse && params.skip ? params.skip-- : results[params.count++] = this.values_[i][j];
+    }
+  }
+};
 lf.index.BTreeNode_.prototype.appendResults_ = function(params, results, from, to) {
   for (var i = from;i < to && (params.reverse || !(params.count >= params.limit));++i) {
-    if (this.tree_.isUniqueKey()) {
-      !params.reverse && params.skip ? params.skip-- : results[params.count++] = this.values_[i];
-    } else {
-      for (var j = 0;j < this.values_[i].length && params.count < results.length;++j) {
-        !params.reverse && params.skip ? params.skip-- : results[params.count++] = this.values_[i][j];
+    this.appendResultsAt_(params, results, i);
+  }
+};
+lf.index.BTreeNode_.prototype.getRangeWithFilter = function(keyRange, params, results) {
+  for (var c = this.tree_.comparator(), start = -1, i = 0;i < this.keys_.length;++i) {
+    if (c.isInRange(this.keys_[i], keyRange)) {
+      start = i;
+      break;
+    }
+  }
+  if (-1 != start) {
+    for (i = start;i < this.keys_.length && params.count < params.limit;++i) {
+      if (!c.isInRange(this.keys_[i], keyRange)) {
+        if (c.comparable(this.keys_[i])) {
+          break;
+        } else {
+          continue;
+        }
       }
+      this.appendResultsAt_(params, results, i);
     }
   }
 };
@@ -7367,187 +7617,6 @@ lf.index.BTreeNode_.deserialize = function(rows, tree) {
   }
   return 1 < leaves.length ? lf.index.BTreeNode_.createInternals_(leaves[0]) : leaves[0];
 };
-lf.index.SimpleComparator = function(order) {
-  this.compareFn = order == lf.Order.DESC ? lf.index.SimpleComparator.compareDescending : lf.index.SimpleComparator.compareAscending;
-  this.normalizeKeyRange_ = order == lf.Order.DESC ? function(opt_keyRange) {
-    return goog.isDefAndNotNull(opt_keyRange) ? opt_keyRange.reverse() : null;
-  } : function(opt_keyRange) {
-    return opt_keyRange || null;
-  };
-  this.orderRange_ = order == lf.Order.DESC ? lf.index.SimpleComparator.orderRangeDescending : lf.index.SimpleComparator.orderRangeAscending;
-};
-goog.inherits(lf.index.SimpleComparator, lf.index.Comparator);
-lf.index.SimpleComparator.compareAscending = function(lhs, rhs) {
-  return lhs > rhs ? lf.index.Favor.LHS : lhs < rhs ? lf.index.Favor.RHS : lf.index.Favor.TIE;
-};
-lf.index.SimpleComparator.compareDescending = function(lhs, rhs) {
-  return lf.index.SimpleComparator.compareAscending(rhs, lhs);
-};
-lf.index.SimpleComparator.orderRangeAscending = function(lhs, rhs) {
-  return lf.index.SingleKeyRange.compare(lhs, rhs);
-};
-lf.index.SimpleComparator.orderRangeDescending = function(lhs, rhs) {
-  return lf.index.SingleKeyRange.compare(rhs, lhs);
-};
-lf.index.SimpleComparator.prototype.compareRange = function(key, naturalRange) {
-  var range = this.normalizeKeyRange_(naturalRange), results = [lf.index.SingleKeyRange.isUnbound(range.from), lf.index.SingleKeyRange.isUnbound(range.to)];
-  if (!results[0]) {
-    var favor = this.compareFn(key, range.from);
-    results[0] = range.excludeLower ? favor == lf.index.Favor.LHS : favor != lf.index.Favor.RHS;
-  }
-  results[1] || (favor = this.compareFn(key, range.to), results[1] = range.excludeUpper ? favor == lf.index.Favor.RHS : favor != lf.index.Favor.LHS);
-  return results;
-};
-lf.index.SimpleComparator.prototype.compare = function(lhs, rhs) {
-  return this.compareFn(lhs, rhs);
-};
-lf.index.SimpleComparator.prototype.min = function(lhs, rhs) {
-  return lhs < rhs ? lf.index.Favor.LHS : lhs == rhs ? lf.index.Favor.TIE : lf.index.Favor.RHS;
-};
-lf.index.SimpleComparator.prototype.max = function(lhs, rhs) {
-  return lhs > rhs ? lf.index.Favor.LHS : lhs == rhs ? lf.index.Favor.TIE : lf.index.Favor.RHS;
-};
-lf.index.SimpleComparator.prototype.isInRange = function(key, range) {
-  var results = this.compareRange(key, range);
-  return results[0] && results[1];
-};
-lf.index.SimpleComparator.prototype.orderKeyRange = function(lhs, rhs) {
-  return this.orderRange_(lhs, rhs);
-};
-lf.index.SimpleComparator.prototype.sortKeyRanges = function(keyRanges) {
-  return keyRanges.filter(function(range) {
-    return !goog.isNull(range);
-  }).sort(function(lhs, rhs) {
-    return this.orderRange_(lhs, rhs);
-  }.bind(this));
-};
-lf.index.SimpleComparator.prototype.isLeftOpen = function(range) {
-  return lf.index.SingleKeyRange.isUnbound(this.normalizeKeyRange_(range).from);
-};
-lf.index.SimpleComparator.prototype.rangeToKeys = function(naturalRange) {
-  var range = this.normalizeKeyRange_(naturalRange);
-  return [range.from, range.to];
-};
-lf.index.SimpleComparator.prototype.toString = function() {
-  return this.compare == lf.index.SimpleComparator.compareDescending ? "SimpleComparator_DESC" : "SimpleComparator_ASC";
-};
-lf.index.SimpleComparatorWithNull = function(order) {
-  lf.index.SimpleComparator.call(this, order);
-  this.compareFn = order == lf.Order.DESC ? lf.index.SimpleComparatorWithNull.compareDescending : lf.index.SimpleComparatorWithNull.compareAscending;
-};
-goog.inherits(lf.index.SimpleComparatorWithNull, lf.index.SimpleComparator);
-lf.index.SimpleComparatorWithNull.compareAscending = function(lhs, rhs) {
-  return goog.isNull(lhs) ? goog.isNull(rhs) ? lf.index.Favor.TIE : lf.index.Favor.RHS : goog.isNull(rhs) ? lf.index.Favor.LHS : lf.index.SimpleComparator.compareAscending(lhs, rhs);
-};
-lf.index.SimpleComparatorWithNull.compareDescending = function(lhs, rhs) {
-  return lf.index.SimpleComparatorWithNull.compareAscending(rhs, lhs);
-};
-lf.index.SimpleComparatorWithNull.prototype.isInRange = function(key, range) {
-  return goog.isNull(key) ? range.isAll() : lf.index.SimpleComparatorWithNull.superClass_.isInRange.call(this, key, range);
-};
-lf.index.SimpleComparatorWithNull.prototype.minMax_ = function(lhs, rhs) {
-  return goog.isNull(lhs) ? goog.isNull(rhs) ? lf.index.Favor.TIE : lf.index.Favor.RHS : goog.isNull(rhs) ? lf.index.Favor.LHS : null;
-};
-lf.index.SimpleComparatorWithNull.prototype.min = function(lhs, rhs) {
-  var results = this.minMax_(lhs, rhs);
-  goog.isNull(results) && (results = lf.index.SimpleComparatorWithNull.superClass_.min.call(this, lhs, rhs));
-  return results;
-};
-lf.index.SimpleComparatorWithNull.prototype.max = function(lhs, rhs) {
-  var results = this.minMax_(lhs, rhs);
-  goog.isNull(results) && (results = lf.index.SimpleComparatorWithNull.superClass_.max.call(this, lhs, rhs));
-  return results;
-};
-lf.index.MultiKeyComparator = function(orders) {
-  this.comparators = orders.map(function(order) {
-    return new lf.index.SimpleComparator(order);
-  });
-};
-goog.inherits(lf.index.MultiKeyComparator, lf.index.Comparator);
-lf.index.MultiKeyComparator.createOrders = function(numKeys, order) {
-  for (var orders = Array(numKeys), i = 0;i < numKeys;++i) {
-    orders[i] = order;
-  }
-  return orders;
-};
-lf.index.MultiKeyComparator.prototype.forEach_ = function(lhs, rhs, fn) {
-  for (var favor = lf.index.Favor.TIE, i = 0;i < this.comparators.length && favor == lf.index.Favor.TIE;++i) {
-    favor = fn(this.comparators[i], lhs[i], rhs[i]);
-  }
-  return favor;
-};
-lf.index.MultiKeyComparator.prototype.compare = function(lhs, rhs) {
-  return this.forEach_(lhs, rhs, function(c, l, r) {
-    return l == lf.index.SingleKeyRange.UNBOUND_VALUE || r == lf.index.SingleKeyRange.UNBOUND_VALUE ? lf.index.Favor.TIE : c.compare(l, r);
-  });
-};
-lf.index.MultiKeyComparator.prototype.min = function(lhs, rhs) {
-  return this.forEach_(lhs, rhs, function(c, l, r) {
-    return c.min(l, r);
-  });
-};
-lf.index.MultiKeyComparator.prototype.max = function(lhs, rhs) {
-  return this.forEach_(lhs, rhs, function(c, l, r) {
-    return c.max(l, r);
-  });
-};
-lf.index.MultiKeyComparator.prototype.compareRange = function(key, range) {
-  for (var results = [!0, !0], i = 0;i < this.comparators.length && (results[0] || results[1]);++i) {
-    var dimensionResults = this.comparators[i].compareRange(key[i], range[i]);
-    results[0] = results[0] && dimensionResults[0];
-    results[1] = results[1] && dimensionResults[1];
-  }
-  return results;
-};
-lf.index.MultiKeyComparator.prototype.isInRange = function(key, range) {
-  for (var isInRange = !0, i = 0;i < this.comparators.length && isInRange;++i) {
-    isInRange = this.comparators[i].isInRange(key[i], range[i]);
-  }
-  return isInRange;
-};
-lf.index.MultiKeyComparator.prototype.sortKeyRanges = function(keyRanges) {
-  for (var outputKeyRanges = keyRanges.filter(function(range) {
-    return range.every(goog.isDefAndNotNull);
-  }), keysPerDimensions = Array(this.comparators.length), i$$0 = 0;i$$0 < keysPerDimensions.length;i$$0++) {
-    keysPerDimensions[i$$0] = outputKeyRanges.map(function(range) {
-      return range[i$$0];
-    });
-  }
-  keysPerDimensions.forEach(function(keys, i) {
-    keys.sort(function(lhs, rhs) {
-      return this.comparators[i].orderKeyRange(lhs, rhs);
-    }.bind(this));
-  }, this);
-  for (var finalKeyRanges = Array(outputKeyRanges.length), i$$0 = 0;i$$0 < finalKeyRanges.length;i$$0++) {
-    finalKeyRanges[i$$0] = keysPerDimensions.map(function(keys) {
-      return keys[i$$0];
-    });
-  }
-  return finalKeyRanges.sort(function(lhs, rhs) {
-    for (var favor = lf.index.Favor.TIE, i = 0;i < this.comparators.length && favor == lf.index.Favor.TIE;++i) {
-      favor = this.comparators[i].orderKeyRange(lhs[i], rhs[i]);
-    }
-    return favor;
-  }.bind(this));
-};
-lf.index.MultiKeyComparator.prototype.isLeftOpen = function(range) {
-  return this.comparators[0].isLeftOpen(range[0]);
-};
-lf.index.MultiKeyComparator.prototype.rangeToKeys = function(keyRange) {
-  var startKey = keyRange.map(function(range, i) {
-    return this.comparators[i].rangeToKeys(range)[0];
-  }, this), endKey = keyRange.map(function(range, i) {
-    return this.comparators[i].rangeToKeys(range)[1];
-  }, this);
-  return [startKey, endKey];
-};
-lf.index.MultiKeyComparatorWithNull = function(orders) {
-  lf.index.MultiKeyComparator.call(this, orders);
-  this.comparators = orders.map(function(order) {
-    return new lf.index.SimpleComparatorWithNull(order);
-  });
-};
-goog.inherits(lf.index.MultiKeyComparatorWithNull, lf.index.MultiKeyComparator);
 lf.index.ComparatorFactory = {};
 lf.index.ComparatorFactory.create = function(indexSchema) {
   if (1 == indexSchema.columns.length) {
@@ -7555,8 +7624,10 @@ lf.index.ComparatorFactory.create = function(indexSchema) {
   }
   var orders = indexSchema.columns.map(function(col) {
     return col.order;
+  }), nullable = indexSchema.columns.some(function(col) {
+    return col.schema.isNullable();
   });
-  return new lf.index.MultiKeyComparator(orders);
+  return nullable ? new lf.index.MultiKeyComparatorWithNull(orders) : new lf.index.MultiKeyComparator(orders);
 };
 lf.index.NullableIndex = function(index) {
   this.index_ = index;
