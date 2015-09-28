@@ -1,4 +1,4 @@
-var window = this;
+var window = window||this;
 (function(){'use strict';var $jscomp = {scope:{}}, goog = goog || {};
 goog.global = this;
 goog.isDef = function(val) {
@@ -11867,3 +11867,4 @@ goog.exportSymbol("lf.schema.create", lf.schema.create);
 goog.Promise.prototype.catch = goog.Promise.prototype.thenCatch;
 goog.exportProperty(goog.Promise.prototype, "catch", goog.Promise.prototype.catch);
 }.bind(window))()
+exports = lf;
