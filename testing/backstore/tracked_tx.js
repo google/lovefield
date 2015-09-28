@@ -32,10 +32,10 @@ goog.require('lf.testing.backstore.TrackedTable');
  *
  * @param {!lf.BackStore} store
  * @param {!lf.TransactionType} type
- * @param {!lf.cache.Journal} journal
+ * @param {!lf.cache.Journal=} opt_journal
  */
-lf.testing.backstore.TrackedTx = function(store, type, journal) {
-  lf.testing.backstore.TrackedTx.base(this, 'constructor', journal, type);
+lf.testing.backstore.TrackedTx = function(store, type, opt_journal) {
+  lf.testing.backstore.TrackedTx.base(this, 'constructor', type, opt_journal);
 
   /** @private {!lf.BackStore} */
   this.store_ = store;

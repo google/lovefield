@@ -22,14 +22,12 @@ goog.require('goog.testing.jsunit');
 goog.require('hr.db');
 goog.require('lf.Row');
 goog.require('lf.TransactionType');
-goog.require('lf.cache.Journal');
 goog.require('lf.index.BTree');
 goog.require('lf.index.ComparatorFactory');
 goog.require('lf.index.IndexMetadata');
 goog.require('lf.index.RowId');
 goog.require('lf.schema.DataStoreType');
 goog.require('lf.service');
-goog.require('lf.structs.set');
 
 
 /** @type {!goog.testing.AsyncTestCase} */
@@ -271,9 +269,7 @@ function generateSampleRows() {
  * @return {!IThenable} A signal that assertions finished.
  */
 function assertAllIndicesPopulated(rows) {
-  var tx = backStore.createTx(
-      lf.TransactionType.READ_ONLY,
-      new lf.cache.Journal(hr.db.getGlobal(), lf.structs.set.create([table])));
+  var tx = backStore.createTx(lf.TransactionType.READ_ONLY, [table]);
 
   var tableIndices = table.getIndices();
   var promises = tableIndices.map(function(indexSchema) {

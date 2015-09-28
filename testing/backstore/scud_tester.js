@@ -61,6 +61,7 @@ lf.testing.backstore.ScudTester = function(db, global, opt_reload) {
 lf.testing.backstore.ScudTester.prototype.insert_ = function(rows) {
   var tx = this.db_.createTx(
       lf.TransactionType.READ_WRITE,
+      [this.tableSchema_],
       new lf.cache.Journal(
           this.global_, lf.structs.set.create([this.tableSchema_])));
   var store = /** @type {!lf.Table} */ (tx.getTable(
@@ -80,6 +81,7 @@ lf.testing.backstore.ScudTester.prototype.insert_ = function(rows) {
 lf.testing.backstore.ScudTester.prototype.remove_ = function(rowIds) {
   var tx = this.db_.createTx(
       lf.TransactionType.READ_WRITE,
+      [this.tableSchema_],
       new lf.cache.Journal(
           this.global_, lf.structs.set.create([this.tableSchema_])));
   var store = /** @type {!lf.Table} */ (tx.getTable(
@@ -106,10 +108,7 @@ lf.testing.backstore.ScudTester.prototype.removeAll_ = function() {
  * @private
  */
 lf.testing.backstore.ScudTester.prototype.select_ = function(rowIds) {
-  var tx = this.db_.createTx(
-      lf.TransactionType.READ_ONLY,
-      new lf.cache.Journal(this.global_,
-          lf.structs.set.create([this.tableSchema_])));
+  var tx = this.db_.createTx(lf.TransactionType.READ_ONLY, [this.tableSchema_]);
   var store = /** @type {!lf.Table} */ (tx.getTable(
       this.tableSchema_.getName(),
       this.tableSchema_.deserializeRow.bind(this.tableSchema_)));

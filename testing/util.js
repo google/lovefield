@@ -18,11 +18,10 @@ goog.provide('lf.testing.util');
 
 goog.require('goog.Promise');
 goog.require('lf.TransactionType');
-goog.require('lf.cache.Journal');
 goog.require('lf.service');
-goog.require('lf.structs.set');
 
 goog.forwardDeclare('goog.testing.PropertyReplacer');
+goog.forwardDeclare('lf.Global');
 
 
 /**
@@ -98,9 +97,7 @@ lf.testing.util.assertThrowsErrorAsync = function(exceptionCode, fn) {
 lf.testing.util.selectAll = function(global, tableSchema) {
   var backStore = global.getService(lf.service.BACK_STORE);
 
-  var tx = backStore.createTx(
-      lf.TransactionType.READ_ONLY,
-      new lf.cache.Journal(global, lf.structs.set.create([tableSchema])));
+  var tx = backStore.createTx(lf.TransactionType.READ_ONLY, [tableSchema]);
   var table = tx.getTable(
       tableSchema.getName(),
       tableSchema.deserializeRow.bind(tableSchema));

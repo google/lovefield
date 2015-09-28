@@ -64,8 +64,8 @@ lf.testing.backstore.MockStore.prototype.getTableInternal =
 
 /** @override */
 lf.testing.backstore.MockStore.prototype.createTx = function(
-    mode, journal) {
-  return new lf.testing.backstore.TrackedTx(this, mode, journal);
+    mode, scope, opt_journal) {
+  return new lf.testing.backstore.TrackedTx(this, mode, opt_journal);
 };
 
 

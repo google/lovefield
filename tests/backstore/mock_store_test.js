@@ -138,9 +138,9 @@ function testSimulateExternalChange() {
   // are triggered via the MockStore should result in events firing on the
   // actual backing store observers.
   var tx = mockStore.createTx(
-      lf.TransactionType.READ_WRITE,
-      new lf.cache.Journal(lf.Global.get(),
-          lf.structs.set.create([tableSchema])));
+      lf.TransactionType.READ_WRITE, [tableSchema],
+      new lf.cache.Journal(
+          lf.Global.get(), lf.structs.set.create([tableSchema])));
   var table = tx.getTable(
       tableSchema.getName(), tableSchema.deserializeRow.bind(tableSchema));
 

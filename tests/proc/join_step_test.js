@@ -19,7 +19,6 @@ goog.require('goog.Promise');
 goog.require('goog.testing.AsyncTestCase');
 goog.require('goog.testing.jsunit');
 goog.require('lf.Type');
-goog.require('lf.cache.Journal');
 goog.require('lf.proc.JoinStep');
 goog.require('lf.proc.NoOpStep');
 goog.require('lf.proc.Relation');
@@ -146,13 +145,10 @@ function checkIndexJoin(tableARelation, tableBRelation, joinPredicate) {
   var expectedIds = lf.structs.set.values(
       setIntersection(tableAIds, tableBIds));
 
-  var journal = new lf.cache.Journal(
-      env.global, lf.structs.set.create([ta, tb]));
-
   // Choosing the left predicate column as the indexed column.
   joinStep.markAsIndexJoin(joinPredicate.leftColumn);
   assertTrue(joinStep.toString().indexOf('index_nested_loop') != -1);
-  return joinStep.exec(journal).then(function(relations) {
+  return joinStep.exec().then(function(relations) {
     assertEquals(1, relations.length);
     assertTableATableBJoin(relations[0], expectedIds);
   });

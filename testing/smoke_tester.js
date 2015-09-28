@@ -20,9 +20,7 @@ goog.provide('lf.testing.SmokeTester');
 goog.require('goog.Promise');
 goog.require('goog.testing.jsunit');
 goog.require('lf.TransactionType');
-goog.require('lf.cache.Journal');
 goog.require('lf.service');
-goog.require('lf.structs.set');
 
 
 
@@ -34,9 +32,6 @@ goog.require('lf.structs.set');
  * @param {!lf.Database} db Must compatible with HR schema's Region table.
  */
 lf.testing.SmokeTester = function(global, db) {
-  /** @private {!lf.Global} */
-  this.global_ = global;
-
   /** @private {!lf.Database} */
   this.db_ = db;
 
@@ -306,8 +301,6 @@ lf.testing.SmokeTester.prototype.generateSampleRowsWithSamePrimaryKey_ =
  */
 lf.testing.SmokeTester.prototype.selectAll_ = function() {
   var r = this.r_;
-  var tx = this.backStore_.createTx(
-      lf.TransactionType.READ_ONLY,
-      new lf.cache.Journal(this.global_, lf.structs.set.create([r])));
+  var tx = this.backStore_.createTx(lf.TransactionType.READ_ONLY, [r]);
   return tx.getTable(r.getName(), goog.bind(r.deserializeRow, r)).get([]);
 };

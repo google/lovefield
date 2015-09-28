@@ -200,30 +200,30 @@ function testSCUD() {
 
   var journal = createJournal([t2]);
   journal.insertOrReplace(t2, [row0, row1]);
-  var tx = db.createTx(lf.TransactionType.READ_WRITE, journal);
+  var tx = db.createTx(lf.TransactionType.READ_WRITE, [t2.getName()], journal);
   tx.commit().then(function() {
     checkRows([row0, row1]);
     journal = createJournal([t2]);
     journal.update(t2, [new lf.Row(2, CONTENTS2)]);
-    tx = db.createTx(lf.TransactionType.READ_WRITE, journal);
+    tx = db.createTx(lf.TransactionType.READ_WRITE, [t2.getName()], journal);
     return tx.commit();
   }).then(function() {
     checkRows([row0, row2]);
     journal = createJournal([t2]);
     journal.remove(t2, [row0]);
-    tx = db.createTx(lf.TransactionType.READ_WRITE, journal);
+    tx = db.createTx(lf.TransactionType.READ_WRITE, [t2.getName()], journal);
     return tx.commit();
   }).then(function() {
     checkRows([row2]);
     journal = createJournal([t2]);
     journal.insert(t2, [row0]);
-    tx = db.createTx(lf.TransactionType.READ_WRITE, journal);
+    tx = db.createTx(lf.TransactionType.READ_WRITE, [t2.getName()], journal);
     return tx.commit();
   }).then(function() {
     checkRows([row0, row2]);
     journal = createJournal([t2]);
     journal.remove(t2, [row0, row2]);
-    tx = db.createTx(lf.TransactionType.READ_WRITE, journal);
+    tx = db.createTx(lf.TransactionType.READ_WRITE, [t2.getName()], journal);
     return tx.commit();
   }).then(function() {
     checkRows([]);

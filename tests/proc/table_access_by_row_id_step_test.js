@@ -18,11 +18,9 @@ goog.setTestOnly();
 goog.require('goog.testing.AsyncTestCase');
 goog.require('goog.testing.jsunit');
 goog.require('lf.Global');
-goog.require('lf.cache.Journal');
 goog.require('lf.proc.NoOpStep');
 goog.require('lf.proc.Relation');
 goog.require('lf.proc.TableAccessByRowIdStep');
-goog.require('lf.structs.set');
 goog.require('lf.testing.MockEnv');
 goog.require('lf.testing.getSchemaBuilder');
 
@@ -82,9 +80,7 @@ function checkTableAccessByRowId(description, table) {
   step.addChild(new lf.proc.NoOpStep(
       [lf.proc.Relation.fromRows(rows, [table.getName()])]));
 
-  var journal = new lf.cache.Journal(
-      lf.Global.get(), lf.structs.set.create([table]));
-  step.exec(journal).then(
+  step.exec().then(
       function(relations) {
         var relation = relations[0];
         assertFalse(relation.isPrefixApplied());
@@ -112,9 +108,7 @@ function testTableAccessByRowId_Empty() {
   step.addChild(
       new lf.proc.NoOpStep([lf.proc.Relation.createEmpty()]));
 
-  var journal = new lf.cache.Journal(
-      lf.Global.get(), lf.structs.set.create([table]));
-  step.exec(journal).then(
+  step.exec().then(
       function(relations) {
         assertEquals(0, relations[0].entries.length);
         asyncTestCase.continueTesting();

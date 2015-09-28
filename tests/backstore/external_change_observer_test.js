@@ -207,6 +207,7 @@ function testOrder_Observer_ExternalChange() {
 function simulateInsertionModification(tableSchema, rows) {
   var tx = mockStore.createTx(
       lf.TransactionType.READ_WRITE,
+      [tableSchema],
       new lf.cache.Journal(hr.db.getGlobal(),
           lf.structs.set.create([tableSchema])));
   var table = tx.getTable(
@@ -226,6 +227,7 @@ function simulateInsertionModification(tableSchema, rows) {
 function simulateDeletion(tableSchema, rows) {
   var tx = mockStore.createTx(
       lf.TransactionType.READ_WRITE,
+      [tableSchema],
       new lf.cache.Journal(hr.db.getGlobal(),
           lf.structs.set.create([tableSchema])));
   var table = tx.getTable(
