@@ -1,0 +1,10 @@
+{
+  "name": "lovefield-browserify-demo",
+  "version": "0.0.1",
+  "description": "Quick-start todo example, Lovefield + Browserify",
+  "main": "todo.html",
+  "license": "http://www.apache.org/licenses/LICENSE-2.0",
+  "devDependencies": {
+    "browserify": "^11.2.0"
+  }
+}
