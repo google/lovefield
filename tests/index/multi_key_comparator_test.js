@@ -19,6 +19,7 @@ goog.require('goog.testing.jsunit');
 goog.require('lf.Order');
 goog.require('lf.index.Favor');
 goog.require('lf.index.MultiKeyComparator');
+goog.require('lf.index.MultiKeyComparatorWithNull');
 goog.require('lf.index.SingleKeyRange');
 
 
@@ -28,14 +29,10 @@ var favor = lf.index.Favor;
 /** @param {!Function} testFn */
 function shuffleAndTest(testFn) {
   var ORDER = [lf.Order.DESC, lf.Order.ASC];
-  var NULLABLE = [false, true];
-  for (var i = 0; i < NULLABLE.length; ++i) {
-    for (var j = 0; j < ORDER.length; ++j) {
-      for (var k = 0; k < ORDER.length; ++k) {
-        var c = new lf.index.MultiKeyComparator(
-            [ORDER[j], ORDER[k]], NULLABLE[i]);
-        testFn(c);
-      }
+  for (var j = 0; j < ORDER.length; ++j) {
+    for (var k = 0; k < ORDER.length; ++k) {
+      var c = new lf.index.MultiKeyComparator([ORDER[j], ORDER[k]]);
+      testFn(c);
     }
   }
 }

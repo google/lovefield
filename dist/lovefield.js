@@ -7368,7 +7368,7 @@ lf.index.BTreeNode_.deserialize = function(rows, tree) {
   return 1 < leaves.length ? lf.index.BTreeNode_.createInternals_(leaves[0]) : leaves[0];
 };
 lf.index.SimpleComparator = function(order) {
-  this.compare = order == lf.Order.DESC ? lf.index.SimpleComparator.compareDescending : lf.index.SimpleComparator.compareAscending;
+  this.compareFn = order == lf.Order.DESC ? lf.index.SimpleComparator.compareDescending : lf.index.SimpleComparator.compareAscending;
   this.normalizeKeyRange_ = order == lf.Order.DESC ? function(opt_keyRange) {
     return goog.isDefAndNotNull(opt_keyRange) ? opt_keyRange.reverse() : null;
   } : function(opt_keyRange) {
@@ -7392,14 +7392,14 @@ lf.index.SimpleComparator.orderRangeDescending = function(lhs, rhs) {
 lf.index.SimpleComparator.prototype.compareRange = function(key, naturalRange) {
   var range = this.normalizeKeyRange_(naturalRange), results = [lf.index.SingleKeyRange.isUnbound(range.from), lf.index.SingleKeyRange.isUnbound(range.to)];
   if (!results[0]) {
-    var favor = this.compare(key, range.from);
+    var favor = this.compareFn(key, range.from);
     results[0] = range.excludeLower ? favor == lf.index.Favor.LHS : favor != lf.index.Favor.RHS;
   }
-  results[1] || (favor = this.compare(key, range.to), results[1] = range.excludeUpper ? favor == lf.index.Favor.RHS : favor != lf.index.Favor.LHS);
+  results[1] || (favor = this.compareFn(key, range.to), results[1] = range.excludeUpper ? favor == lf.index.Favor.RHS : favor != lf.index.Favor.LHS);
   return results;
 };
 lf.index.SimpleComparator.prototype.compare = function(lhs, rhs) {
-  return this.compare(lhs, rhs);
+  return this.compareFn(lhs, rhs);
 };
 lf.index.SimpleComparator.prototype.min = function(lhs, rhs) {
   return lhs < rhs ? lf.index.Favor.LHS : lhs == rhs ? lf.index.Favor.TIE : lf.index.Favor.RHS;
@@ -7433,7 +7433,7 @@ lf.index.SimpleComparator.prototype.toString = function() {
 };
 lf.index.SimpleComparatorWithNull = function(order) {
   lf.index.SimpleComparator.call(this, order);
-  this.compare = order == lf.Order.DESC ? lf.index.SimpleComparatorWithNull.compareDescending : lf.index.SimpleComparatorWithNull.compareAscending;
+  this.compareFn = order == lf.Order.DESC ? lf.index.SimpleComparatorWithNull.compareDescending : lf.index.SimpleComparatorWithNull.compareAscending;
 };
 goog.inherits(lf.index.SimpleComparatorWithNull, lf.index.SimpleComparator);
 lf.index.SimpleComparatorWithNull.compareAscending = function(lhs, rhs) {
