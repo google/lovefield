@@ -1,4 +1,4 @@
-var window = window;
+var window = window===undefined ? this : window;
 (function(){'use strict';var $jscomp = {scope:{}}, goog = goog || {};
 goog.global = this;
 goog.isDef = function(val) {
