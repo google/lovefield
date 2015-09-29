@@ -36,6 +36,10 @@ function bootstrap(lovefieldBinary) {
   // Setting "window" to be Node's global context.
   global.window = global;
 
+  // Setting "self" to be Node's global context. This must be placed after
+  // global.window.
+  global.self = global;
+
   // Setting "document" to a dummy object, even though it is not actually used,
   // because it results in a runtime error when using lovefield.min.js.
   global.document = {};
