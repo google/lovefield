@@ -78,50 +78,6 @@ function testThrows_NonIndexableColumns() {
 }
 
 
-/**
- * Tests that if a cross-column index refers to a nullable column an exception
- * is thrown.
- */
-function testThrows_CrossColumnNullableIndex() {
-  // 507: Cross-column index {0} refers to nullable columns: {1}.
-  lf.testing.util.assertThrowsError(507, function() {
-    var tableBuilder = new lf.schema.TableBuilder('Table');
-    tableBuilder.
-        addColumn('id1', lf.Type.STRING).
-        addColumn('id2', lf.Type.STRING).
-        addNullable(['id1']).
-        addIndex('idx_indexName', ['id1', 'id2']);
-  });
-
-  lf.testing.util.assertThrowsError(507, function() {
-    var tableBuilder = new lf.schema.TableBuilder('Table');
-    tableBuilder.
-        addColumn('id1', lf.Type.STRING).
-        addColumn('id2', lf.Type.STRING).
-        addIndex('idx_indexName', ['id1', 'id2']).
-        addNullable(['id1']);
-  });
-
-  lf.testing.util.assertThrowsError(507, function() {
-    var tableBuilder = new lf.schema.TableBuilder('Table');
-    tableBuilder.
-        addColumn('id1', lf.Type.STRING).
-        addColumn('id2', lf.Type.STRING).
-        addNullable(['id1']).
-        addUnique('idx_indexName', ['id1', 'id2']);
-  });
-
-  lf.testing.util.assertThrowsError(507, function() {
-    var tableBuilder = new lf.schema.TableBuilder('Table');
-    tableBuilder.
-        addColumn('id1', lf.Type.STRING).
-        addColumn('id2', lf.Type.STRING).
-        addUnique('idx_indexName', ['id1', 'id2']).
-        addNullable(['id1']);
-  });
-}
-
-
 function testThrows_CrossColumnPkWithAutoInc() {
   // 505: Can not use autoIncrement with a cross-column primary key.
   lf.testing.util.assertThrowsError(505, function() {

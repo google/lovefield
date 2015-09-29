@@ -11590,7 +11590,6 @@ lf.schema.TableBuilder.prototype.addUnique = function(name, columns) {
   this.checkNamingRules_(name);
   this.checkNameConflicts_(name);
   var cols = this.normalizeColumns_(columns, !0);
-  this.checkIndexedColumns_(name, cols);
   1 == cols.length && (this.uniqueColumns_.add(cols[0].name), this.markFkIndexForColumnUnique_(cols[0].name));
   this.indices_.set(name, cols);
   this.uniqueIndices_.add(name);
@@ -11607,47 +11606,21 @@ lf.schema.TableBuilder.prototype.markFkIndexForColumnUnique_ = function(column) 
 };
 lf.schema.TableBuilder.prototype.addNullable = function(columns) {
   var cols = this.normalizeColumns_(columns, !1);
-  this.checkNullableColumns_(cols);
   cols.forEach(function(col) {
     this.nullable_.add(col.name);
   }, this);
   return this;
 };
 goog.exportProperty(lf.schema.TableBuilder.prototype, "addNullable", lf.schema.TableBuilder.prototype.addNullable);
-lf.schema.TableBuilder.prototype.checkNullableColumns_ = function(columns) {
-  lf.structs.map.keys(this.indices_).forEach(function(indexName) {
-    var indexedColumnNames = lf.structs.set.create();
-    this.indices_.get(indexName).forEach(function(indexedColumn) {
-      indexedColumnNames.add(indexedColumn.name);
-    });
-    var nullableColumns = columns.filter(function(nullableColumn) {
-      return indexedColumnNames.has(nullableColumn.name);
-    });
-    if (1 < indexedColumnNames.size && 0 < nullableColumns.length) {
-      throw new lf.Exception(507, indexName, nullableColumns.join(","));
-    }
-  }, this);
-};
 lf.schema.TableBuilder.prototype.addIndex = function(name, columns, opt_unique, opt_order) {
   this.checkNamingRules_(name);
   this.checkNameConflicts_(name);
   var cols = this.normalizeColumns_(columns, !0, opt_order);
-  this.checkIndexedColumns_(name, cols);
   opt_unique && this.uniqueIndices_.add(name);
   this.indices_.set(name, cols);
   return this;
 };
 goog.exportProperty(lf.schema.TableBuilder.prototype, "addIndex", lf.schema.TableBuilder.prototype.addIndex);
-lf.schema.TableBuilder.prototype.checkIndexedColumns_ = function(indexName, columns) {
-  if (1 < columns.length) {
-    var nullableColumns = columns.filter(function(column) {
-      return this.nullable_.has(column.name);
-    }, this);
-    if (0 < nullableColumns.length) {
-      throw new lf.Exception(507, indexName, nullableColumns.join(","));
-    }
-  }
-};
 lf.schema.TableBuilder.prototype.persistentIndex = function(value) {
   this.persistentIndex_ = value;
 };

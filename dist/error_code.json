@@ -45,7 +45,6 @@
   "504": "Can not use autoIncrement with a non-integer primary key.",
   "505": "Can not use autoIncrement with a cross-column primary key.",
   "506": "Lovefield allows only immediate evaluation of cascading constraints.",
-  "507": "Cross-column index {0} refers to nullable columns: {1}.",
   "508": "Table {0} does not have column: {1}.",
   "509": "Attempt to index table {0} on non-indexable column {1}.",
   "510": "Cannot bind to given array: out of range.",

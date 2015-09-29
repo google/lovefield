@@ -222,10 +222,6 @@ describe('YAML Parser Test', function() {
     thrower('index_on_nonexist_column.yaml');
   });
 
-  it('should throw if cross-column index on nullable column', function() {
-    thrower('index_on_nullable.yaml');
-  });
-
   it('should throw if index order were invalid', function() {
     thrower('invalid_index_order.yaml');
   });
