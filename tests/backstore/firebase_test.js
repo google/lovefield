@@ -36,6 +36,10 @@ goog.require('lf.testing.getSchemaBuilder');
 var asyncTestCase = goog.testing.AsyncTestCase.createAndInstall('Firebase');
 
 
+/** @type {number} */
+asyncTestCase.stepTimeout = 5000;  // Raise the timeout to 5 seconds
+
+
 /** @type {!Firebase} */
 var fb;
 
@@ -60,14 +64,6 @@ var cache;
 var schema;
 
 
-/** @const {string} */
-var FB_URL = 'https://torrid-inferno-8867.firebaseIO.com/test';
-
-
-/** @const {string} */
-var FB_TOKEN = '';
-
-
 /** @type {boolean} */
 var manualMode;
 
@@ -76,8 +72,8 @@ var manualMode;
 function getFirebaseRef() {
   var resolver = goog.Promise.withResolver();
 
-  var ref = new Firebase(FB_URL);
-  ref.authWithCustomToken(FB_TOKEN, function(err, authData) {
+  var ref = new Firebase(window['FIREBASE_URL']);
+  ref.authWithCustomToken(window['FIREBASE_TOKEN'], function(err, authData) {
     if (err) {
       resolver.reject(err);
     } else {

@@ -27,6 +27,15 @@ goog.require('goog.testing.jsunit');
 /** @type {boolean} */
 window.MANUAL_MODE = false;
 
+
+/** @const {string} */
+window.FIREBASE_URL = '';
+
+
+/** @const {string} */
+window.FIREBASE_TOKEN = '';
+
+
 if (window.MANUAL_MODE) {
   includeTestScript('https://cdn.firebase.com/js/client/2.2.6/firebase.js');
 }

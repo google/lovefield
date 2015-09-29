@@ -31,7 +31,6 @@ var pathMod = require('path');
 var JsUnitTestRunner = require('./jsunit_test_runner.js').JsUnitTestRunner;
 var webdriver = /** @type {{Capabilities: !Function, Builder: !Function}} */ (
     require('selenium-webdriver'));
-var EXCLUDE_TESTS = require('./setup_tests.js').EXCLUDE_TESTS;
 
 
 
@@ -132,10 +131,7 @@ function runJsPerfTests(browser) {
  * @return {!Array<string>} A list of all matching testing URLs.
  */
 function getTestUrls(testFolder, testPrefix) {
-  var relativeTestUrls = glob.sync(testFolder + '/**/*_test.js').filter(
-      function(filename) {
-        return EXCLUDE_TESTS.indexOf(filename) == -1;
-      }).map(
+  var relativeTestUrls = glob.sync(testFolder + '/**/*_test.js').map(
       function(filename) {
         var prefixLength = testFolder.length + 1;
         return filename.substr(prefixLength);

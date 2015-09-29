@@ -54,11 +54,10 @@ var log = console['log'];
 var SYMLINKS = ['lib', 'perf', 'testing', 'tests', 'dist'];
 
 
-// TODO(dpapad): Firebase tests currently will not work. because they modify
-// Closure's library expected path, so they are ignored.
-var EXCLUDE_TESTS = [
-  'tests/backstore/firebase_raw_back_store_test.js',
-  'tests/backstore/firebase_test.js'
+// Firebase tests need special treatment.
+var FIREBASE_TESTS = [
+  'tests/backstore/firebase_raw_back_store_test.html',
+  'tests/backstore/firebase_test.html'
 ];
 
 
@@ -140,7 +139,7 @@ TestEnv.prototype.setupTestsWithoutHtml = function() {
 TestEnv.prototype.setupTestsWithHtml = function() {
   // Creating symlinks for existing HTML files.
   var testFilesWithHtml = this.queryTestFiles(true).filter(function(test) {
-    return EXCLUDE_TESTS.indexOf(test) == -1;
+    return FIREBASE_TESTS.indexOf(test) == -1;
   });
   log('Found', testFilesWithHtml.length, 'test files with existing HTML... ');
   return testFilesWithHtml.map(function(testFile) {
@@ -207,8 +206,10 @@ TestEnv.prototype.queryTestFiles = function(withHtml) {
 
   var existingHtmlFilesSet = new Set();
   htmlFiles.forEach(function(file) {
-    // Stripping away the '.html' suffix and adding to the set.
-    existingHtmlFilesSet.add(file.substr(0, file.length - '.html'.length));
+    if (FIREBASE_TESTS.indexOf(file) == -1) {
+      // Stripping away the '.html' suffix and adding to the set.
+      existingHtmlFilesSet.add(file.substr(0, file.length - '.html'.length));
+    }
   });
   return testFiles.filter(function(jsFileName) {
     // Stripping away the '.js'.
@@ -294,6 +295,30 @@ function generateHtmlFile(script) {
 
 
 /**
+ * @param {string} script
+ * @return {string}
+ */
+function getFirebaseSpecial(script) {
+  var firebaseSpecial = '';
+  if (script.indexOf('firebase') != -1 &&
+      process.env['FIREBASE_URL'] &&
+      process.env['FIREBASE_TOKEN']) {
+    firebaseSpecial = [
+      '<script>',
+      'window.MANUAL_MODE = true;',
+      'window.FIREBASE_URL = \'' + process.env['FIREBASE_URL'] + '\';',
+      'window.FIREBASE_TOKEN = \'' + process.env['FIREBASE_TOKEN'] + '\';',
+      '</script>'
+    ].join('\r\n') + '\r\n';
+    firebaseSpecial =
+        '<script src="https://cdn.firebase.com/js/client/2.3.0/firebase.js">' +
+        '</script>\r\n' + firebaseSpecial;
+  }
+  return firebaseSpecial;
+}
+
+
+/**
  * @param {string} script Path of the script, e.g. tests/foo_test.js.
  * @param {string} moduleName Test module name.
  * @return {string} Generated file path.
@@ -304,6 +329,7 @@ function createTestModule(script, moduleName) {
   var level = target.match(/\//g).length;
   var prefix = new Array(level).join('../') + '../';
 
+  var firebaseSpecial = getFirebaseSpecial(script);
   var contents =
       '<!DOCTYPE html>\r\n' +
       '<html>\r\n' +
@@ -312,11 +338,13 @@ function createTestModule(script, moduleName) {
       '    <title>' + pathMod.basename(target).slice(0, -5) + '</title>\r\n' +
       '    <script src="' + prefix + 'closure/goog/base.js"></script>\r\n' +
       '    <script src="' + prefix + 'deps.js"></script>\r\n' +
+      firebaseSpecial +
       '    <script>' + genModuleDeps(script) + '</script>\r\n' +
       '    <script>goog.require(\'' + moduleName + '\');\r\n' +
       '    </script>\r\n' +
       '  </head>\r\n' +
       '</html>\r\n';
+
   fsMod.ensureDirSync(pathMod.dirname(target));
   fsMod.writeFileSync(target, contents);
 
@@ -335,6 +363,7 @@ function createTestFile(script) {
   var prefix = new Array(level).join('../') + '../';
   var fakeName = script.replace('/', '$').replace('.', '_');
   var scriptPath = pathMod.resolve(pathMod.join(__dirname, '../' + script));
+  var firebaseSpecial = getFirebaseSpecial(script);
   var contents =
       '<!DOCTYPE html>\r\n' +
       '<html>\r\n' +
@@ -345,6 +374,7 @@ function createTestFile(script) {
       '    <script src="' + prefix + 'deps.js"></script>\r\n' +
       '  </head>\r\n' +
       '  <body>\r\n' +
+      firebaseSpecial +
       '    <script>\r\n' +
       '      goog.addDependency(\r\n' +
       '          \'../' + prefix + script + '\',\r\n' +
@@ -390,7 +420,3 @@ exports.createTestEnv = createTestEnv;
 
 /** @type {!Function} */
 exports.cleanUp = cleanUp;
-
-
-/** @type {!Array<string>} */
-exports.EXCLUDE_TESTS = EXCLUDE_TESTS;
