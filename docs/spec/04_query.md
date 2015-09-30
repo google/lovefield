@@ -186,9 +186,6 @@ db.select(p.id, a.id, a.name).
   </tr>
 </table>
 
-* Note: left outer join is not implemented yet, see [the tracking bug](
-https://github.com/google/lovefield/issues/10).
-
 #### 4.1.3 Search Conditions
 
 Search conditions is the condition combinations used inside `where()`. In SQL,
