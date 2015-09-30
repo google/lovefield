@@ -29,8 +29,7 @@ var chalk = /** @type {{green: !Function, red: !Function}} */ (
 var pathMod = require('path');
 
 var JsUnitTestRunner = require('./jsunit_test_runner.js').JsUnitTestRunner;
-var webdriver = /** @type {{Capabilities: !Function, Builder: !Function}} */ (
-    require('selenium-webdriver'));
+var webdriver = /** @type {!WebDriver} */ (require('selenium-webdriver'));
 
 
 
@@ -159,6 +158,7 @@ function getWebDriver(browser) {
   var capabilities = /** @type {!WebDriverCapabilities} */ (
       new webdriver.Capabilities());
   capabilities.set('browserName', browser);
+  capabilities.set('loggingPrefs', { 'browser': 'ALL' });
 
   var usingServer = false;
 

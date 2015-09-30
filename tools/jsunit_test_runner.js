@@ -15,10 +15,14 @@
  * limitations under the License.
  */
 var pathMod = require('path');
-var chalk = /** @type {{green: !Function, red: !Function}} */ (
+var chalk =
+    /** @type {{green: !Function, red: !Function, yellow: !Function}} */ (
     require('chalk'));
 var sequentiallyRun = require(pathMod.resolve(
     pathMod.join(__dirname, '/promise_util.js'))).sequentiallyRun;
+var webdriver = /** @type {!WebDriver} */ (require('selenium-webdriver'));
+
+var log = console['log'].bind(console);
 
 
 
@@ -58,26 +62,21 @@ JsUnitTestRunner.prototype.run = function() {
   };
 
   this.driver_.get(this.url_);
-  return this.whenTestFinished_().then(
-      function() {
-        return this.didTestSucceed_();
-      }.bind(this)).then(
-      function(didSucceed) {
-        result.pass = didSucceed;
-        var parts = this.url_.split('/');
-        var testName = parts[parts.length - 2] + '/' + parts[parts.length - 1];
-        console['log'](
-            '[',
-            didSucceed ? chalk.green('PASS') : chalk.red('FAIL'),
-            ']',
-            testName);
-
-        return didSucceed ? this.extractResult_() : false;
-      }.bind(this)).then(
-      function(results) {
-        result.results = results;
-        return result;
-      }.bind(this));
+  return this.whenTestFinished_().then(function() {
+    return this.didTestSucceed_();
+  }.bind(this)).then(function(didSucceed) {
+    result.pass = didSucceed;
+    var parts = this.url_.split('/');
+    var testName = parts[parts.length - 2] + '/' + parts[parts.length - 1];
+    log('[',
+        didSucceed ? chalk.green('PASS') : chalk.red('FAIL'),
+        ']',
+        testName);
+    return didSucceed ? this.extractResult_() : this.extractLog_();
+  }.bind(this)).then(function(results) {
+    result.results = results;
+    return result;
+  }.bind(this));
 };
 
 
@@ -119,6 +118,34 @@ JsUnitTestRunner.prototype.extractResult_ = function() {
         // 'overallResults' array, if interested in exporting any results.
         return window['overallResults'] || null;
       });
+};
+
+
+/**
+ * @return {!IThenable}
+ * @private
+ */
+JsUnitTestRunner.prototype.extractLog_ = function() {
+  var logger = new webdriver.WebDriver.Logs(this.driver_);
+  return logger.get('browser').then(function(entries) {
+    log('============ WebDriver browser log ============');
+    entries.forEach(function(entry) {
+      var title = entry['level']['name'];
+      switch (title) {
+        case 'SEVERE':
+        case 'ERROR':
+          title = chalk.red(title);
+          break;
+        case 'WARNING':
+          title = chalk.yellow(title);
+          break;
+        default:
+          break;
+      }
+      log('[' + title + '] ', entry.message);
+    });
+    log('===============================================');
+  });
 };
 
 
