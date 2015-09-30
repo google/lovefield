@@ -7891,7 +7891,7 @@ lf.index.MemoryIndexStore.prototype.init = function(schema) {
 };
 lf.index.MemoryIndexStore.createIndex_ = function(indexSchema) {
   var comparator = lf.index.ComparatorFactory.create(indexSchema), index = new lf.index.BTree(indexSchema.getNormalizedName(), comparator, indexSchema.isUnique);
-  return indexSchema.hasNullableColumn() ? new lf.index.NullableIndex(index) : index;
+  return indexSchema.hasNullableColumn() && 1 == indexSchema.columns.length ? new lf.index.NullableIndex(index) : index;
 };
 lf.index.MemoryIndexStore.prototype.get = function(name) {
   return this.store_.get(name) || null;

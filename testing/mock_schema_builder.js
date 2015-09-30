@@ -102,5 +102,11 @@ lf.testing.getSchemaBuilder = function(opt_name, opt_simulatePersistentIndex) {
       addNullable(['name']).
       addIndex('idxName', [{'name': 'name', 'order': lf.Order.ASC}]);
 
+  schemaBuilder.createTable('tableJ').
+      addColumn('id', lf.Type.STRING).
+      addColumn('id2', lf.Type.STRING).
+      addNullable(['id', 'id2']).
+      addIndex('idxId', ['id', 'id2'], true);
+
   return schemaBuilder;
 };

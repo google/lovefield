@@ -88,6 +88,9 @@ function testMemoryIndexStore() {
     var tableGFkIndex = 'tableG.fk_Id';
     var tableGFkIndex2 = 'tableG.idx_Id';
 
+    // Table J index names.
+    var tableJIdIndex = 'tableJ.idxId';
+
     assertIndicesType(
         [tableARowIdIndex, tableBRowIdIndex, tableFRowIdIndex],
         lf.index.RowId);
@@ -96,7 +99,10 @@ function testMemoryIndexStore() {
     assertIndicesType([tableGFkIndex2], lf.index.BTree);
     assertIndicesType([tableANameIndex], lf.index.BTree);
     assertIndicesType([tableBPkIndex, tableBNameIndex], lf.index.BTree);
+    // Single-column nullable index is typed NullableIndex.
     assertIndicesType([tableFNameIndex], lf.index.NullableIndex);
+    // Cross-column nullable index is typed BTree.
+    assertIndicesType([tableJIdIndex], lf.index.BTree);
 
     asyncTestCase.continueTesting();
   }, fail);
