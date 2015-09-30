@@ -144,5 +144,23 @@ lf.testing.hrSchema.getSchemaBuilder = function(opt_name) {
       addUnique('uq_constraint', ['integer', 'string2']).
       addNullable(['datetime']);
 
+  schemaBuilder.createTable('CrossColumnTable').
+      addColumn('integer1', lf.Type.INTEGER).
+      addColumn('integer2', lf.Type.INTEGER).
+      addColumn('string1', lf.Type.STRING).
+      addColumn('string2', lf.Type.STRING).
+      addNullable(['string1', 'string2']).
+      addIndex('idx_ascDesc', [
+        {
+          'name': 'integer1',
+          'order': lf.Order.ASC
+        },
+        {
+          'name': 'integer2',
+          'order': lf.Order.DESC
+        }], true).
+      addIndex('idx_crossNull', ['string1', 'string2'], true).
+      persistentIndex(true);
+
   return schemaBuilder;
 };

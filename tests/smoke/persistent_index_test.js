@@ -47,12 +47,20 @@ var db;
 var table;
 
 
+/** @type {!lf.schema.Table} */
+var table2;
+
+
 /** @type {!lf.BackStore} */
 var backStore;
 
 
 /** @type {!Array<!lf.Row>} */
 var sampleRows;
+
+
+/** @type {!Array<!lf.Row>} */
+var sampleRows2;
 
 
 function setUpPage() {
@@ -84,7 +92,9 @@ function setUp() {
         db = database;
         backStore = hr.db.getGlobal().getService(lf.service.BACK_STORE);
         table = db.getSchema().getHoliday();
+        table2 = db.getSchema().getCrossColumnTable();
         sampleRows = generateSampleRows();
+        sampleRows2 = generateSampleRows2();
 
         asyncTestCase.continueTesting();
       }, fail);
@@ -195,31 +205,31 @@ function testPersistedIndices() {
 
   insertFn().then(
       function() {
-        return assertAllIndicesPopulated(sampleRows);
+        return assertAllIndicesPopulated(table, sampleRows);
       }).then(
       function() {
         return updateFn();
       }).then(
       function() {
-        return assertAllIndicesPopulated(sampleRows);
+        return assertAllIndicesPopulated(table, sampleRows);
       }).then(
       function() {
         return replaceFn();
       }).then(
       function() {
-        return assertAllIndicesPopulated(sampleRows);
+        return assertAllIndicesPopulated(table, sampleRows);
       }).then(
       function() {
         return deleteFn();
       }).then(
       function() {
-        return assertAllIndicesPopulated(sampleRows);
+        return assertAllIndicesPopulated(table, sampleRows);
       }).then(
       function() {
         return deleteAllFn();
       }).then(
       function() {
-        return assertAllIndicesPopulated(sampleRows);
+        return assertAllIndicesPopulated(table, sampleRows);
       }).then(
       function() {
         asyncTestCase.continueTesting();
@@ -264,24 +274,25 @@ function generateSampleRows() {
 
 /**
  * Asserts that all indices are populated with the given rows.
+ * @param {!lf.schema.Table} targetTable
  * @param {!Array<!lf.Row>} rows The only rows that should be present in the
  *     persistent index tables.
  * @return {!IThenable} A signal that assertions finished.
  */
-function assertAllIndicesPopulated(rows) {
+function assertAllIndicesPopulated(targetTable, rows) {
   var tx = backStore.createTx(lf.TransactionType.READ_ONLY, [table]);
 
-  var tableIndices = table.getIndices();
+  var tableIndices = targetTable.getIndices();
   var promises = tableIndices.map(function(indexSchema) {
     var indexName = indexSchema.getNormalizedName();
     return tx.getTable(indexName, lf.Row.deserialize).get([]);
   });
   promises.push(tx.getTable(
-      table.getRowIdIndexName(), lf.Row.deserialize).get([]));
+      targetTable.getRowIdIndexName(), lf.Row.deserialize).get([]));
 
   return goog.Promise.all(promises).then(function(results) {
     var rowIdIndexResults = results.splice(results.length - 1, 1)[0];
-    assertRowIdIndex(rowIdIndexResults, rows.length);
+    assertRowIdIndex(targetTable, rowIdIndexResults, rows.length);
 
     results.forEach(function(indexResults, i) {
       var indexSchema = tableIndices[i];
@@ -329,10 +340,11 @@ function assertIndexContents(indexSchema, serializedRows, dataRows) {
 /**
  * Asserts that the metadata and contents of the RowId index appear as expected
  * in the backing store.
+ * @param {!lf.schema.Table} targetTable
  * @param {!Array<!lf.Row>} serializedRows The serialized version of the index.
  * @param {number} expectedSize The expected number of rowIds in the index.
  */
-function assertRowIdIndex(serializedRows, expectedSize) {
+function assertRowIdIndex(targetTable, serializedRows, expectedSize) {
   assertEquals(2, serializedRows.length);
   var indexMetadataRow = serializedRows[0];
 
@@ -340,7 +352,141 @@ function assertRowIdIndex(serializedRows, expectedSize) {
       lf.index.IndexMetadata.Type.ROW_ID,
       indexMetadataRow.payload()['type']);
   var rowIdIndex = lf.index.RowId.deserialize(
-      table.getRowIdIndexName(),
+      targetTable.getRowIdIndexName(),
       serializedRows.slice(1));
   assertEquals(expectedSize, rowIdIndex.getRange().length);
 }
+
+
+/**
+ * Generates sample records to be used for testing.
+ * @return {!Array<!lf.Row>}
+ */
+function generateSampleRows2() {
+  return [
+    table2.createRow({
+      integer1: 1,
+      integer2: 2,
+      string1: 'A',
+      string2: 'B'
+    }),
+    table2.createRow({
+      integer1: 2,
+      integer2: 3,
+      string1: 'A',
+      string2: null
+    }),
+    table2.createRow({
+      integer1: 3,
+      integer2: 4,
+      string1: null,
+      string2: 'B'
+    }),
+    table2.createRow({
+      integer1: 4,
+      integer2: 5,
+      string1: null,
+      string2: null
+    }),
+    table2.createRow({
+      integer1: 5,
+      integer2: 6,
+      string1: 'C',
+      string2: 'D'
+    }),
+  ];
+}
+
+
+/**
+ * Performs insert, update, replace, delete operations and verifies that
+ * persisted indices are being updated appropriately on disk.
+ */
+function testPersistedIndices_CrossColumn() {
+  asyncTestCase.waitForAsync('testPersistedIndices_CrossColumn');
+
+  /** @return {!IThenable} */
+  var insertFn = function() {
+    return db.
+        insert().
+        into(table2).
+        values(generateSampleRows2()).
+        exec();
+  };
+
+  /** @return {!IThenable} */
+  var updateFn = function() {
+    sampleRows2[2].setInteger2(33);
+    sampleRows2[2].setString2('RR');
+    sampleRows2[4].setInteger1(99);
+    sampleRows2[4].setString2('KK');
+
+    var q1 = db.
+        update(table2).
+        where(table2.integer1.eq(3)).
+        set(table2.integer2, 33).
+        set(table2.string2, 'RR').
+        exec();
+    var q2 = db.
+        update(table2).
+        where(table2.string1.eq('C')).
+        set(table2.integer1, 99).
+        set(table2.string2, 'KK').
+        exec();
+    return goog.Promise.all([q1, q2]);
+  };
+
+  /**
+   * Deletes rows 2 and 3.
+   * @return {!IThenable}
+   */
+  var deleteFn = function() {
+    sampleRows2.splice(3, 1);
+    sampleRows2.splice(2, 1);
+
+    var q1 = db.
+        delete().
+        from(table2).
+        where(lf.op.and(table2.integer1.eq(3), table2.integer2.eq(33))).
+        exec();
+    var q2 = db.
+        delete().
+        from(table2).
+        where(lf.op.and(table2.string1.isNull(), table2.string2.isNull())).
+        exec();
+    return goog.Promise.all([q1, q2]);
+  };
+
+
+  /**
+   * Deletes all remaining rows.
+   * @return {!IThenable}
+   */
+  var deleteAllFn = function() {
+    sampleRows2 = [];
+
+    return db.
+        delete().
+        from(table2).
+        exec();
+  };
+
+  insertFn().then(function() {
+    return assertAllIndicesPopulated(table2, sampleRows2);
+  }).then(function() {
+    return updateFn();
+  }).then(function() {
+    return assertAllIndicesPopulated(table2, sampleRows2);
+  }).then(function() {
+    return deleteFn();
+  }).then(function() {
+    return assertAllIndicesPopulated(table2, sampleRows2);
+  }).then(function() {
+    return deleteAllFn();
+  }).then(function() {
+    return assertAllIndicesPopulated(table2, sampleRows2);
+  }).then(function() {
+    asyncTestCase.continueTesting();
+  }, fail);
+}
+

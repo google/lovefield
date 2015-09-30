@@ -145,13 +145,17 @@ table:
       primaryKey: [ string, number ]
       unique:
         uq_constraint:
-          column: [integer, string2]
+          column: [ integer, string2 ]
       nullable: [ datetime ]
 
   CrossColumnTable:
     column:
       integer1: integer
       integer2: integer
+      string1: string
+      string2: string
+    constraint:
+      nullable: [ string1, string2 ]
     index:
       idx_ascDesc:
         column:
@@ -159,3 +163,7 @@ table:
             order: asc
           - name: integer2
             order: desc
+      idx_crossNull:
+        column: [ string1, string2 ]
+    pragma:
+      persistentIndex: true
