@@ -5591,6 +5591,9 @@ lf.backstore.FirebaseTx.prototype.getTable = function(name) {
   return this.db_.getTableInternal(name);
 };
 lf.backstore.FirebaseTx.prototype.commitInternal = function() {
+  if (this.txType == lf.TransactionType.READ_ONLY) {
+    return this.resolver.resolve(), this.resolver.promise;
+  }
   var diffs = this.getJournal().getDiff(), numTableAffected = diffs.size;
   if (0 == numTableAffected) {
     this.resolver.resolve();

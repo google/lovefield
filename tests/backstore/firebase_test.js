@@ -231,6 +231,9 @@ function testSCUD() {
     tx = db.createTx(lf.TransactionType.READ_WRITE, [t2.getName()], journal);
     return tx.commit();
   }).then(function() {
+    tx = db.createTx(lf.TransactionType.READ_ONLY, [t2.getName()]);
+    return tx.commit();
+  }).then(function() {
     checkRows([]);
     asyncTestCase.continueTesting();
   });
