@@ -160,11 +160,6 @@ The user needs to specifically call out nullable columns by calling
 [`addNullable()`](https://github.com/google/lovefield/blob/8e47538d5f32986596a9e97ec97350cc6ed9ec1a/lib/schema/table_builder.js#L285-L297).
 
 
-Note 1: Currently [foreign key are not implemented nor honored/enforced](
-https://github.com/google/lovefield/issues/8) and the implementation is in
-progress.
-
-
 #### 1.3.3 Indices
 
 Lovefield implements its own indices without using indices provided by the
