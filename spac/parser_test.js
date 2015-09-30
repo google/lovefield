@@ -237,4 +237,16 @@ describe('YAML Parser Test', function() {
   it('should throw if table had invalid name', function() {
     thrower('invalid_table_name.yaml');
   });
+
+  it('should throw if primary key is also nullable', function() {
+    thrower('invalid_nullable.yaml');
+  });
+
+  it('should throw if cross-column primary key has invalid type', function() {
+    thrower('invalid_cross_column_key.yaml');
+  });
+
+  it('should throw if cross-column primary key is nullable', function() {
+    thrower('invalid_cross_column_key2.yaml');
+  });
 });

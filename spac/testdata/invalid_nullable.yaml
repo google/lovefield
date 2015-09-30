@@ -1,0 +1,13 @@
+%YAML 1.2
+---
+name: sample
+version: 1
+table:
+  Employee:
+    column:
+      id: string
+      name: string
+      proto: object
+    constraint:
+      primaryKey: [id]
+      nullable: [id]
