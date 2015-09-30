@@ -117,6 +117,15 @@ function setUp() {
 }
 
 
+function tearDown() {
+  if (!manualMode) {
+    return;
+  }
+
+  fb.child(schema.name()).remove();
+}
+
+
 // Tests that onUpgrade function is still called with version 0 for a new DB
 // instance.
 function testNewDBInstance() {

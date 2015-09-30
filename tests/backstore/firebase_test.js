@@ -107,6 +107,15 @@ function setUpPage() {
   });
 }
 
+function tearDownPage() {
+  manualMode = window['MANUAL_MODE'] || false;
+  if (!manualMode || !goog.isDefAndNotNull(fb)) {
+    return;
+  }
+
+  fb.child(schema.name()).remove();
+}
+
 function setUp() {
   if (!manualMode) {
     return;
