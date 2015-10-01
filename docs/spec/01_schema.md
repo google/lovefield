@@ -143,7 +143,6 @@ from 1.
 
 Foreign keys are added via [`addForeignKey()`](
 https://github.com/google/lovefield/blob/8e47538d5f32986596a9e97ec97350cc6ed9ec1a/lib/schema/table_builder.js#L228-L264).
-(Note 1)
 
 Primary key and foreign key constraint violations will cause transaction
 rejection, just like what happens in SQL. When `opt_cascade` is true for
