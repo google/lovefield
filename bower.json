@@ -5,7 +5,7 @@
     "Google Inc."
   ],
   "private": true,
-  "description": "Lovefield - A Data Access Library",
+  "description": "Lovefield - A relational database for web apps",
   "main": "dist/lovefield.min.js",
   "keywords": [
     "lovefield"
@@ -16,6 +16,7 @@
     "node_modules",
     "bower_components",
     "builddef",
+    "codelabs",
     "demos",
     "docs",
     "examples",
