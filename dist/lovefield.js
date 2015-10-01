@@ -5233,9 +5233,16 @@ lf.pred.ValuePredicate.prototype.isKeyRangeCompatible = function() {
 };
 lf.pred.ValuePredicate.prototype.toKeyRange = function() {
   goog.asserts.assert(this.isKeyRangeCompatible(), "Could not convert predicate to key range.");
-  var keyRange = null, keyRange = this.evaluatorType == lf.eval.Type.BETWEEN ? new lf.index.SingleKeyRange(this.value[0], this.value[1], !1, !1) : this.evaluatorType == lf.eval.Type.EQ ? lf.index.SingleKeyRange.only(this.value) : this.evaluatorType == lf.eval.Type.GTE ? lf.index.SingleKeyRange.lowerBound(this.value) : this.evaluatorType == lf.eval.Type.GT ? lf.index.SingleKeyRange.lowerBound(this.value, !0) : this.evaluatorType == lf.eval.Type.LTE ? lf.index.SingleKeyRange.upperBound(this.value) : 
-  lf.index.SingleKeyRange.upperBound(this.value, !0);
+  var keyRange = null;
+  if (this.evaluatorType == lf.eval.Type.BETWEEN) {
+    keyRange = new lf.index.SingleKeyRange(this.getValueAsKey_(this.value[0]), this.getValueAsKey_(this.value[1]), !1, !1);
+  } else {
+    var value = this.getValueAsKey_(this.value), keyRange = this.evaluatorType == lf.eval.Type.EQ ? lf.index.SingleKeyRange.only(value) : this.evaluatorType == lf.eval.Type.GTE ? lf.index.SingleKeyRange.lowerBound(value) : this.evaluatorType == lf.eval.Type.GT ? lf.index.SingleKeyRange.lowerBound(value, !0) : this.evaluatorType == lf.eval.Type.LTE ? lf.index.SingleKeyRange.upperBound(value) : lf.index.SingleKeyRange.upperBound(value, !0)
+  }
   return this.isComplement_ ? keyRange.complement() : [keyRange];
+};
+lf.pred.ValuePredicate.prototype.getValueAsKey_ = function(value) {
+  return this.column.getType() == lf.Type.DATE_TIME ? value.getTime() : value;
 };
 lf.query = {};
 lf.query.Context = function(schema) {

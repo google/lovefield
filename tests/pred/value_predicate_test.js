@@ -15,42 +15,53 @@
  * limitations under the License.
  */
 goog.setTestOnly();
-goog.require('goog.testing.AsyncTestCase');
 goog.require('goog.testing.jsunit');
 goog.require('lf.Binder');
+goog.require('lf.Type');
 goog.require('lf.bind');
 goog.require('lf.eval.Type');
 goog.require('lf.pred.JoinPredicate');
 goog.require('lf.pred.ValuePredicate');
 goog.require('lf.proc.Relation');
-goog.require('lf.testing.MockEnv');
-goog.require('lf.testing.getSchemaBuilder');
-
-
-/** @type {!goog.testing.AsyncTestCase} */
-var asyncTestCase = goog.testing.AsyncTestCase.createAndInstall(
-    'ValuePredicate');
+goog.require('lf.schema');
 
 
 /** @type {!lf.schema.Database} */
 var schema;
 
 
-function setUp() {
-  asyncTestCase.waitForAsync('setUp');
+/** @type {!lf.schema.Table} */
+var tableA;
 
-  schema = lf.testing.getSchemaBuilder().getSchema();
-  var env = new lf.testing.MockEnv(schema);
-  env.init().then(function() {
-    asyncTestCase.continueTesting();
-  }, fail);
+
+/** @type {!lf.schema.Table} */
+var tableB;
+
+
+function setUp() {
+  schema = getSchema();
+  tableA = schema.table('TableA');
+  tableB = schema.table('TableB');
+}
+
+
+function getSchema() {
+  var schemaBuilder = lf.schema.create('valuepredicate', 1);
+  schemaBuilder.createTable('TableA').
+      addColumn('id', lf.Type.STRING).
+      addColumn('name', lf.Type.STRING);
+  schemaBuilder.createTable('TableB').
+      addColumn('id', lf.Type.STRING).
+      addColumn('email', lf.Type.STRING);
+  schemaBuilder.createTable('TableC').
+      addColumn('hireDate', lf.Type.DATE_TIME);
+  return schemaBuilder.getSchema();
 }
 
 
 function testCopy() {
-  var table = schema.table('tableA');
   var original = new lf.pred.ValuePredicate(
-      table['id'], 'myId', lf.eval.Type.EQ);
+      tableA['id'], 'myId', lf.eval.Type.EQ);
   var copy = original.copy();
 
   assertTrue(copy instanceof lf.pred.ValuePredicate);
@@ -63,28 +74,27 @@ function testCopy() {
 
 
 function testGetColumns() {
-  var table = schema.table('tableA');
   var p = new lf.pred.ValuePredicate(
-      table['id'], 'myId', lf.eval.Type.EQ);
-  assertSameElements([table['id']], p.getColumns());
+      tableA['id'], 'myId', lf.eval.Type.EQ);
+  assertSameElements([tableA['id']], p.getColumns());
 }
 
 
 function testEval_Eq() {
-  checkEval_Eq(schema.table('tableA'));
+  checkEval_Eq(tableA);
 }
 
 
 function testEval_Eq_Alias() {
-  checkEval_Eq(schema.table('tableA').as('SomeTableAlias'));
+  checkEval_Eq(tableA.as('SomeTableAlias'));
 }
 
 
 /**
- * @param {!lf.schema.Table} table
+ * @param {!lf.schema.Table} table Must be either TableA or an alias.
  */
 function checkEval_Eq(table) {
-  var sampleRow = getSampleRows(1)[0];
+  var sampleRow = getTableARows(1)[0];
   var relation = lf.proc.Relation.fromRows(
       [sampleRow], [table.getEffectiveName()]);
 
@@ -101,25 +111,24 @@ function checkEval_Eq(table) {
 
 
 function testEval_Match() {
-  var table = schema.table('tableA');
-  var sampleRow = getSampleRows(1)[0];
+  var sampleRow = getTableARows(1)[0];
   var relation = lf.proc.Relation.fromRows(
-      [sampleRow], [table.getName()]);
+      [sampleRow], [tableA.getName()]);
 
   // Testing true case.
   var predicate1 = new lf.pred.ValuePredicate(
-      table['name'], /sampleName0/, lf.eval.Type.MATCH);
+      tableA['name'], /sampleName0/, lf.eval.Type.MATCH);
   var finalRelation1 = predicate1.eval(relation);
   assertEquals(1, finalRelation1.entries.length);
 
   var predicate2 = new lf.pred.ValuePredicate(
-      table['name'], /\bsample[A-Za-z0-9]+\b/, lf.eval.Type.MATCH);
+      tableA['name'], /\bsample[A-Za-z0-9]+\b/, lf.eval.Type.MATCH);
   var finalRelation2 = predicate2.eval(relation);
   assertEquals(1, finalRelation2.entries.length);
 
   // Testing false case.
   var predicate3 = new lf.pred.ValuePredicate(
-      table['name'], /SAMPLENAME0/, lf.eval.Type.MATCH);
+      tableA['name'], /SAMPLENAME0/, lf.eval.Type.MATCH);
   var finalRelation3 = predicate3.eval(relation);
   assertEquals(0, finalRelation3.entries.length);
 }
@@ -134,16 +143,15 @@ function testEval_Match() {
  * @param {boolean} isReverse
  */
 function checkEval_In(sampleRows, inValues, expectedValues, isReverse) {
-  var table = schema.table('tableA');
   var predicate = new lf.pred.ValuePredicate(
-      table['name'], inValues, lf.eval.Type.IN);
+      tableA['name'], inValues, lf.eval.Type.IN);
   if (isReverse) {
     predicate.setComplement(true);
   }
-  var inputRelation = lf.proc.Relation.fromRows(sampleRows, [table.getName()]);
+  var inputRelation = lf.proc.Relation.fromRows(sampleRows, [tableA.getName()]);
   var outputRelation = predicate.eval(inputRelation);
   var actualValues = outputRelation.entries.map(function(entry) {
-    return entry.getField(table['name']);
+    return entry.getField(tableA['name']);
   });
   assertArrayEquals(expectedValues, actualValues);
 }
@@ -154,7 +162,7 @@ function checkEval_In(sampleRows, inValues, expectedValues, isReverse) {
  * lf.eval.Type.IN and column does not have null.
  */
 function testEval_In_WithoutNull() {
-  var sampleRows = getSampleRows(6);
+  var sampleRows = getTableARows(6);
   var inValues = ['sampleName0', 'sampleName2', 'sampleName4'];
   checkEval_In(sampleRows, inValues, inValues, false);
 }
@@ -165,9 +173,8 @@ function testEval_In_WithoutNull() {
  * predicate is of type lf.eval.Type.IN.
  */
 function testEval_In_WithNull() {
-  var table = schema.table('tableA');
-  var sampleRows = getSampleRows(6);
-  sampleRows.push(table.createRow({
+  var sampleRows = getTableARows(6);
+  sampleRows.push(tableA.createRow({
     'id': 'sampleId6', 'name': null}));
   var inValues = ['sampleName0', 'sampleName2', 'sampleName4'];
   checkEval_In(sampleRows, inValues, inValues, false);
@@ -181,7 +188,7 @@ function testEval_In_WithNull() {
  * have null.
  */
 function testEval_In_Reversed_WithoutNull() {
-  var sampleRows = getSampleRows(6);
+  var sampleRows = getTableARows(6);
   var inValues = ['sampleName1', 'sampleName3', 'sampleName5'];
   var expectedValues = ['sampleName0', 'sampleName2', 'sampleName4'];
   checkEval_In(sampleRows, inValues, expectedValues, true);
@@ -193,9 +200,8 @@ function testEval_In_Reversed_WithoutNull() {
  * the predicate is of type lf.eval.Type.IN and the predicate has been reversed.
  */
 function testEval_In_Reversed_WithNull() {
-  var table = schema.table('tableA');
-  var sampleRows = getSampleRows(6);
-  sampleRows.push(table.createRow({
+  var sampleRows = getTableARows(6);
+  sampleRows.push(tableA.createRow({
     'id': 'sampleId6', 'name': null}));
   var inValues = ['sampleName1', 'sampleName3', 'sampleName5'];
   var expectedValues = ['sampleName0', 'sampleName2', 'sampleName4'];
@@ -205,16 +211,12 @@ function testEval_In_Reversed_WithNull() {
 
 
 function testEval_Eq_PreviousJoin() {
-  var table1 = schema.table('tableA');
-  var table2 = schema.table('tableE');
-  checkEval_Eq_PreviousJoin(table1, table2);
+  checkEval_Eq_PreviousJoin(tableA, tableB);
 }
 
 
 function testEval_Eq_PreviousJoin_Alias() {
-  var table1 = schema.table('tableA').as('table1');
-  var table2 = schema.table('tableE').as('table2');
-  checkEval_Eq_PreviousJoin(table1, table2);
+  checkEval_Eq_PreviousJoin(tableA.as('table1'), tableB.as('table2'));
 }
 
 
@@ -222,8 +224,8 @@ function testEval_Eq_PreviousJoin_Alias() {
  * Testing the case where a ValuePredicate is applied on a relation that is the
  * result of a previous join operation.
  *
- * @param {!lf.schema.Table} table1
- * @param {!lf.schema.Table} table2
+ * @param {!lf.schema.Table} table1 Must be TableA or alias.
+ * @param {!lf.schema.Table} table2 Must be TableB or alias.
  */
 function checkEval_Eq_PreviousJoin(table1, table2) {
   var leftRow = table1.createRow({
@@ -260,44 +262,86 @@ function checkEval_Eq_PreviousJoin(table1, table2) {
 
 
 /**
- * Tests the conversion of a value predicate to a KeyRange.
+ * Tests the conversion of a value predicate to a KeyRange for a column of type
+ * STRING.
  */
-function testToKeyRange() {
-  var table = schema.table('tableA');
-
-  var p = new lf.pred.ValuePredicate(
-      table['id'], 'otherId', lf.eval.Type.EQ);
+function testToKeyRange_String() {
+  var id1 = 'id1';
+  var id2 = 'id2';
+  var p = new lf.pred.ValuePredicate(tableA['id'], id1, lf.eval.Type.EQ);
   assertTrue(p.isKeyRangeCompatible());
-  assertEquals('[otherId, otherId]', p.toKeyRange().toString());
+  assertEquals('[id1, id1]', p.toKeyRange().toString());
 
-  p = new lf.pred.ValuePredicate(
-      table['id'], 10, lf.eval.Type.GTE);
+  p = new lf.pred.ValuePredicate(tableA['id'], id1, lf.eval.Type.GTE);
   assertTrue(p.isKeyRangeCompatible());
-  assertEquals('[10, unbound]', p.toKeyRange().toString());
+  assertEquals('[id1, unbound]', p.toKeyRange().toString());
 
-  p = new lf.pred.ValuePredicate(
-      table['id'], 10, lf.eval.Type.GT);
+  p = new lf.pred.ValuePredicate(tableA['id'], id1, lf.eval.Type.GT);
   assertTrue(p.isKeyRangeCompatible());
-  assertEquals('(10, unbound]', p.toKeyRange().toString());
+  assertEquals('(id1, unbound]', p.toKeyRange().toString());
 
-  p = new lf.pred.ValuePredicate(
-      table['id'], 10, lf.eval.Type.LTE);
+  p = new lf.pred.ValuePredicate(tableA['id'], id1, lf.eval.Type.LTE);
   assertTrue(p.isKeyRangeCompatible());
-  assertEquals('[unbound, 10]', p.toKeyRange().toString());
+  assertEquals('[unbound, id1]', p.toKeyRange().toString());
 
-  p = new lf.pred.ValuePredicate(
-      table['id'], 10, lf.eval.Type.LT);
+  p = new lf.pred.ValuePredicate(tableA['id'], id1, lf.eval.Type.LT);
   assertTrue(p.isKeyRangeCompatible());
-  assertEquals('[unbound, 10)', p.toKeyRange().toString());
+  assertEquals('[unbound, id1)', p.toKeyRange().toString());
 
   p = new lf.pred.ValuePredicate(
-      table['id'], [10, 20], lf.eval.Type.BETWEEN);
+      tableA['id'], [id1, id2], lf.eval.Type.BETWEEN);
   assertTrue(p.isKeyRangeCompatible());
-  assertEquals('[10, 20]', p.toKeyRange().toString());
+  assertEquals('[id1, id2]', p.toKeyRange().toString());
 
   p.setComplement(true);
   assertEquals(2, p.toKeyRange().length);
-  assertEquals('[unbound, 10),(20, unbound]', p.toKeyRange().toString());
+  assertEquals('[unbound, id1),(id2, unbound]', p.toKeyRange().toString());
+}
+
+
+/**
+ * Tests the conversion of a value predicate to a KeyRange for a column of type
+ * DATE_TIME.
+ */
+function testToKeyRange_DateTime() {
+  var table = schema.table('TableC');
+  var d1 = new Date(1443646468270);
+
+  var p = new lf.pred.ValuePredicate(table['hireDate'], d1, lf.eval.Type.EQ);
+  assertTrue(p.isKeyRangeCompatible());
+  assertEquals(
+      '[' + d1.getTime() + ', ' + d1.getTime() + ']',
+      p.toKeyRange().toString());
+
+  p = new lf.pred.ValuePredicate(table['hireDate'], d1, lf.eval.Type.GTE);
+  assertTrue(p.isKeyRangeCompatible());
+  assertEquals('[' + d1.getTime() + ', unbound]', p.toKeyRange().toString());
+
+  p = new lf.pred.ValuePredicate(table['hireDate'], d1, lf.eval.Type.GT);
+  assertTrue(p.isKeyRangeCompatible());
+  assertEquals('(' + d1.getTime() + ', unbound]', p.toKeyRange().toString());
+
+  p = new lf.pred.ValuePredicate(table['hireDate'], d1, lf.eval.Type.LTE);
+  assertTrue(p.isKeyRangeCompatible());
+  assertEquals('[unbound, ' + d1.getTime() + ']', p.toKeyRange().toString());
+
+  p = new lf.pred.ValuePredicate(table['hireDate'], d1, lf.eval.Type.LT);
+  assertTrue(p.isKeyRangeCompatible());
+  assertEquals('[unbound, ' + d1.getTime() + ')', p.toKeyRange().toString());
+
+  var d2 = new Date();
+  p = new lf.pred.ValuePredicate(
+      table['hireDate'], [d1, d2], lf.eval.Type.BETWEEN);
+  assertTrue(p.isKeyRangeCompatible());
+  assertEquals(
+      '[' + d1.getTime() + ', ' + d2.getTime() + ']',
+      p.toKeyRange().toString());
+
+  p.setComplement(true);
+  assertEquals(2, p.toKeyRange().length);
+  assertEquals(
+      '[unbound, ' + d1.getTime() + '),(' + d2.getTime() + ', unbound]',
+      p.toKeyRange().toString());
 }
 
 
@@ -306,24 +350,21 @@ function testToKeyRange() {
  * 'null' values.
  */
 function testIsKeyRangeCompatible_False() {
-  var table = schema.table('tableA');
-  var p = new lf.pred.ValuePredicate(
-      table['id'], null, lf.eval.Type.EQ);
+  var p = new lf.pred.ValuePredicate(tableA['id'], null, lf.eval.Type.EQ);
   assertFalse(p.isKeyRangeCompatible());
 }
 
 
 /**
- * Generates sample table rows.
+ * Generates sample TableA rows.
  * @param {number} rowCount The number of rows to be generated.
  * @return {!Array<!lf.Row>} The generated rows.
  */
-function getSampleRows(rowCount) {
-  var table = schema.table('tableA');
+function getTableARows(rowCount) {
   var sampleRows = new Array(rowCount);
 
   for (var i = 0; i < rowCount; i++) {
-    sampleRows[i] = table.createRow({
+    sampleRows[i] = tableA.createRow({
       'id': 'sampleId' + i.toString(),
       'name': 'sampleName' + i.toString()
     });
@@ -334,12 +375,11 @@ function getSampleRows(rowCount) {
 
 
 function testUnboundPredicate() {
-  var table = schema.table('tableA');
-  var sampleRow = getSampleRows(1)[0];
-  var relation = lf.proc.Relation.fromRows([sampleRow], [table.getName()]);
+  var sampleRow = getTableARows(1)[0];
+  var relation = lf.proc.Relation.fromRows([sampleRow], [tableA.getName()]);
 
   var binder = lf.bind(1);
-  var p = new lf.pred.ValuePredicate(table['id'], binder, lf.eval.Type.EQ);
+  var p = new lf.pred.ValuePredicate(tableA['id'], binder, lf.eval.Type.EQ);
 
   // Predicate shall be unbound.
   assertTrue(p.value instanceof lf.Binder);
@@ -362,15 +402,14 @@ function testUnboundPredicate() {
 
 
 function testUnboundPredicate_Array() {
-  var table = schema.table('tableA');
-  var sampleRows = getSampleRows(3);
+  var sampleRows = getTableARows(3);
   var ids = sampleRows.map(function(row) {
     return row.payload().id;
   });
-  var relation = lf.proc.Relation.fromRows(sampleRows, [table.getName()]);
+  var relation = lf.proc.Relation.fromRows(sampleRows, [tableA.getName()]);
 
   var binder = [lf.bind(0), lf.bind(1), lf.bind(2)];
-  var p = new lf.pred.ValuePredicate(table['id'], binder, lf.eval.Type.IN);
+  var p = new lf.pred.ValuePredicate(tableA['id'], binder, lf.eval.Type.IN);
 
   // Tests binding.
   p.bind(ids);
@@ -379,11 +418,10 @@ function testUnboundPredicate_Array() {
 
 
 function testCopy_UnboundPredicate() {
-  var table = schema.table('tableA');
-  var sampleRow = getSampleRows(1)[0];
+  var sampleRow = getTableARows(1)[0];
 
   var binder = lf.bind(1);
-  var p = new lf.pred.ValuePredicate(table['id'], binder, lf.eval.Type.EQ);
+  var p = new lf.pred.ValuePredicate(tableA['id'], binder, lf.eval.Type.EQ);
   var p2 = p.copy();
 
   // Both predicates shall be unbound.
@@ -396,21 +434,20 @@ function testCopy_UnboundPredicate() {
   assertEquals(sampleRow.payload().id, p3.value);
 
   // The clone should also be able to bind to a new array.
-  var sampleRow2 = getSampleRows(2)[1];
+  var sampleRow2 = getTableARows(2)[1];
   p3.bind([9999, sampleRow2.payload().id]);
   assertEquals(sampleRow2.payload().id, p3.value);
 }
 
 
 function testCopy_UnboundPredicate_Array() {
-  var table = schema.table('tableA');
-  var sampleRows = getSampleRows(6);
+  var sampleRows = getTableARows(6);
   var ids = sampleRows.map(function(row) {
     return row.payload().id;
   });
 
   var binder = [lf.bind(0), lf.bind(1), lf.bind(2)];
-  var p = new lf.pred.ValuePredicate(table['id'], binder, lf.eval.Type.IN);
+  var p = new lf.pred.ValuePredicate(tableA['id'], binder, lf.eval.Type.IN);
   p.bind(ids);
   var p2 = p.copy();
   assertArrayEquals(ids.slice(0, 3), p2.value);
