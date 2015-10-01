@@ -41,6 +41,11 @@ function setUp() {
 }
 
 
+function tearDown() {
+  db.close();
+}
+
+
 /**
  * Tests that Update#exec() fails if set() has not been called first.
  */

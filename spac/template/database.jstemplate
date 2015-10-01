@@ -4,6 +4,7 @@ goog.provide('#namespace');
 
 /// #sort
 goog.require('#namespace.schema.Database');
+goog.require('lf.Exception');
 goog.require('lf.Global');
 /** @suppress {extraRequire} */
 goog.require('lf.fn');
@@ -51,7 +52,19 @@ goog.require('lf.service.ServiceId');
  * @return {!IThenable<!lf.proc.Database>}
  */
 #namespace.connect = function(opt_options) {
-  #namespace.getSchema();
-  var db = new lf.proc.Database(#namespace.getGlobal());
-  return db.init(opt_options);
+  if (!goog.isNull(#namespace.db_) && #namespace.db_.isOpen()) {
+    // 113: Attempt to call connect() on an already opened DB connection.
+    throw new lf.Exception(113);
+  }
+
+  if (goog.isNull(#namespace.db_)) {
+    #namespace.getSchema();
+    #namespace.db_ = new lf.proc.Database(#namespace.getGlobal());
+  }
+
+  return #namespace.db_.init(opt_options);
 };
+
+
+/** @private {?lf.proc.Database} */
+#namespace.db_ = null;

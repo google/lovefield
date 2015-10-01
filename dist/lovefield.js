@@ -114,7 +114,7 @@ goog.loadedModules_ = {};
 goog.DEPENDENCIES_ENABLED = !1;
 goog.DEPENDENCIES_ENABLED && (goog.dependencies_ = {pathIsModule:{}, nameToPath:{}, requires:{}, visited:{}, written:{}, deferred:{}}, goog.inHtmlDocument_ = function() {
   var doc = goog.global.document;
-  return "undefined" != typeof doc && "write" in doc;
+  return null != doc && "write" in doc;
 }, goog.findBasePath_ = function() {
   if (goog.isDef(goog.global.CLOSURE_BASE_PATH)) {
     goog.basePath = goog.global.CLOSURE_BASE_PATH;
@@ -361,7 +361,7 @@ goog.hasUid = function(obj) {
   return !!obj[goog.UID_PROPERTY_];
 };
 goog.removeUid = function(obj) {
-  "removeAttribute" in obj && obj.removeAttribute(goog.UID_PROPERTY_);
+  null != obj && "removeAttribute" in obj && obj.removeAttribute(goog.UID_PROPERTY_);
   try {
     delete obj[goog.UID_PROPERTY_];
   } catch (ex) {
@@ -476,7 +476,7 @@ goog.setCssNameMapping = function(mapping, opt_style) {
 };
 goog.getMsg = function(str, opt_values) {
   opt_values && (str = str.replace(/\{\$([^}]+)}/g, function(match, key) {
-    return key in opt_values ? opt_values[key] : match;
+    return null != opt_values && key in opt_values ? opt_values[key] : match;
   }));
   return str;
 };
@@ -1257,10 +1257,9 @@ goog.array.peek = function(array) {
   return array[array.length - 1];
 };
 goog.array.last = goog.array.peek;
-goog.array.ARRAY_PROTOTYPE_ = Array.prototype;
-goog.array.indexOf = goog.NATIVE_ARRAY_PROTOTYPES && (goog.array.ASSUME_NATIVE_FUNCTIONS || goog.array.ARRAY_PROTOTYPE_.indexOf) ? function(arr, obj, opt_fromIndex) {
+goog.array.indexOf = goog.NATIVE_ARRAY_PROTOTYPES && (goog.array.ASSUME_NATIVE_FUNCTIONS || Array.prototype.indexOf) ? function(arr, obj, opt_fromIndex) {
   goog.asserts.assert(null != arr.length);
-  return goog.array.ARRAY_PROTOTYPE_.indexOf.call(arr, obj, opt_fromIndex);
+  return Array.prototype.indexOf.call(arr, obj, opt_fromIndex);
 } : function(arr, obj, opt_fromIndex) {
   var fromIndex = null == opt_fromIndex ? 0 : 0 > opt_fromIndex ? Math.max(0, arr.length + opt_fromIndex) : opt_fromIndex;
   if (goog.isString(arr)) {
@@ -1273,10 +1272,10 @@ goog.array.indexOf = goog.NATIVE_ARRAY_PROTOTYPES && (goog.array.ASSUME_NATIVE_F
   }
   return -1;
 };
-goog.array.lastIndexOf = goog.NATIVE_ARRAY_PROTOTYPES && (goog.array.ASSUME_NATIVE_FUNCTIONS || goog.array.ARRAY_PROTOTYPE_.lastIndexOf) ? function(arr, obj, opt_fromIndex) {
+goog.array.lastIndexOf = goog.NATIVE_ARRAY_PROTOTYPES && (goog.array.ASSUME_NATIVE_FUNCTIONS || Array.prototype.lastIndexOf) ? function(arr, obj, opt_fromIndex) {
   goog.asserts.assert(null != arr.length);
   var fromIndex = null == opt_fromIndex ? arr.length - 1 : opt_fromIndex;
-  return goog.array.ARRAY_PROTOTYPE_.lastIndexOf.call(arr, obj, fromIndex);
+  return Array.prototype.lastIndexOf.call(arr, obj, fromIndex);
 } : function(arr, obj, opt_fromIndex) {
   var fromIndex = null == opt_fromIndex ? arr.length - 1 : opt_fromIndex;
   0 > fromIndex && (fromIndex = Math.max(0, arr.length + fromIndex));
@@ -1290,9 +1289,9 @@ goog.array.lastIndexOf = goog.NATIVE_ARRAY_PROTOTYPES && (goog.array.ASSUME_NATI
   }
   return -1;
 };
-goog.array.forEach = goog.NATIVE_ARRAY_PROTOTYPES && (goog.array.ASSUME_NATIVE_FUNCTIONS || goog.array.ARRAY_PROTOTYPE_.forEach) ? function(arr, f, opt_obj) {
+goog.array.forEach = goog.NATIVE_ARRAY_PROTOTYPES && (goog.array.ASSUME_NATIVE_FUNCTIONS || Array.prototype.forEach) ? function(arr, f, opt_obj) {
   goog.asserts.assert(null != arr.length);
-  goog.array.ARRAY_PROTOTYPE_.forEach.call(arr, f, opt_obj);
+  Array.prototype.forEach.call(arr, f, opt_obj);
 } : function(arr, f, opt_obj) {
   for (var l = arr.length, arr2 = goog.isString(arr) ? arr.split("") : arr, i = 0;i < l;i++) {
     i in arr2 && f.call(opt_obj, arr2[i], i, arr);
@@ -1303,9 +1302,9 @@ goog.array.forEachRight = function(arr, f, opt_obj) {
     i in arr2 && f.call(opt_obj, arr2[i], i, arr);
   }
 };
-goog.array.filter = goog.NATIVE_ARRAY_PROTOTYPES && (goog.array.ASSUME_NATIVE_FUNCTIONS || goog.array.ARRAY_PROTOTYPE_.filter) ? function(arr, f, opt_obj) {
+goog.array.filter = goog.NATIVE_ARRAY_PROTOTYPES && (goog.array.ASSUME_NATIVE_FUNCTIONS || Array.prototype.filter) ? function(arr, f, opt_obj) {
   goog.asserts.assert(null != arr.length);
-  return goog.array.ARRAY_PROTOTYPE_.filter.call(arr, f, opt_obj);
+  return Array.prototype.filter.call(arr, f, opt_obj);
 } : function(arr, f, opt_obj) {
   for (var l = arr.length, res = [], resLength = 0, arr2 = goog.isString(arr) ? arr.split("") : arr, i = 0;i < l;i++) {
     if (i in arr2) {
@@ -1315,19 +1314,19 @@ goog.array.filter = goog.NATIVE_ARRAY_PROTOTYPES && (goog.array.ASSUME_NATIVE_FU
   }
   return res;
 };
-goog.array.map = goog.NATIVE_ARRAY_PROTOTYPES && (goog.array.ASSUME_NATIVE_FUNCTIONS || goog.array.ARRAY_PROTOTYPE_.map) ? function(arr, f, opt_obj) {
+goog.array.map = goog.NATIVE_ARRAY_PROTOTYPES && (goog.array.ASSUME_NATIVE_FUNCTIONS || Array.prototype.map) ? function(arr, f, opt_obj) {
   goog.asserts.assert(null != arr.length);
-  return goog.array.ARRAY_PROTOTYPE_.map.call(arr, f, opt_obj);
+  return Array.prototype.map.call(arr, f, opt_obj);
 } : function(arr, f, opt_obj) {
   for (var l = arr.length, res = Array(l), arr2 = goog.isString(arr) ? arr.split("") : arr, i = 0;i < l;i++) {
     i in arr2 && (res[i] = f.call(opt_obj, arr2[i], i, arr));
   }
   return res;
 };
-goog.array.reduce = goog.NATIVE_ARRAY_PROTOTYPES && (goog.array.ASSUME_NATIVE_FUNCTIONS || goog.array.ARRAY_PROTOTYPE_.reduce) ? function(arr, f, val, opt_obj) {
+goog.array.reduce = goog.NATIVE_ARRAY_PROTOTYPES && (goog.array.ASSUME_NATIVE_FUNCTIONS || Array.prototype.reduce) ? function(arr, f, val, opt_obj) {
   goog.asserts.assert(null != arr.length);
   opt_obj && (f = goog.bind(f, opt_obj));
-  return goog.array.ARRAY_PROTOTYPE_.reduce.call(arr, f, val);
+  return Array.prototype.reduce.call(arr, f, val);
 } : function(arr, f, val$$0, opt_obj) {
   var rval = val$$0;
   goog.array.forEach(arr, function(val, index) {
@@ -1335,10 +1334,10 @@ goog.array.reduce = goog.NATIVE_ARRAY_PROTOTYPES && (goog.array.ASSUME_NATIVE_FU
   });
   return rval;
 };
-goog.array.reduceRight = goog.NATIVE_ARRAY_PROTOTYPES && (goog.array.ASSUME_NATIVE_FUNCTIONS || goog.array.ARRAY_PROTOTYPE_.reduceRight) ? function(arr, f, val, opt_obj) {
+goog.array.reduceRight = goog.NATIVE_ARRAY_PROTOTYPES && (goog.array.ASSUME_NATIVE_FUNCTIONS || Array.prototype.reduceRight) ? function(arr, f, val, opt_obj) {
   goog.asserts.assert(null != arr.length);
   opt_obj && (f = goog.bind(f, opt_obj));
-  return goog.array.ARRAY_PROTOTYPE_.reduceRight.call(arr, f, val);
+  return Array.prototype.reduceRight.call(arr, f, val);
 } : function(arr, f, val$$0, opt_obj) {
   var rval = val$$0;
   goog.array.forEachRight(arr, function(val, index) {
@@ -1346,9 +1345,9 @@ goog.array.reduceRight = goog.NATIVE_ARRAY_PROTOTYPES && (goog.array.ASSUME_NATI
   });
   return rval;
 };
-goog.array.some = goog.NATIVE_ARRAY_PROTOTYPES && (goog.array.ASSUME_NATIVE_FUNCTIONS || goog.array.ARRAY_PROTOTYPE_.some) ? function(arr, f, opt_obj) {
+goog.array.some = goog.NATIVE_ARRAY_PROTOTYPES && (goog.array.ASSUME_NATIVE_FUNCTIONS || Array.prototype.some) ? function(arr, f, opt_obj) {
   goog.asserts.assert(null != arr.length);
-  return goog.array.ARRAY_PROTOTYPE_.some.call(arr, f, opt_obj);
+  return Array.prototype.some.call(arr, f, opt_obj);
 } : function(arr, f, opt_obj) {
   for (var l = arr.length, arr2 = goog.isString(arr) ? arr.split("") : arr, i = 0;i < l;i++) {
     if (i in arr2 && f.call(opt_obj, arr2[i], i, arr)) {
@@ -1357,9 +1356,9 @@ goog.array.some = goog.NATIVE_ARRAY_PROTOTYPES && (goog.array.ASSUME_NATIVE_FUNC
   }
   return !1;
 };
-goog.array.every = goog.NATIVE_ARRAY_PROTOTYPES && (goog.array.ASSUME_NATIVE_FUNCTIONS || goog.array.ARRAY_PROTOTYPE_.every) ? function(arr, f, opt_obj) {
+goog.array.every = goog.NATIVE_ARRAY_PROTOTYPES && (goog.array.ASSUME_NATIVE_FUNCTIONS || Array.prototype.every) ? function(arr, f, opt_obj) {
   goog.asserts.assert(null != arr.length);
-  return goog.array.ARRAY_PROTOTYPE_.every.call(arr, f, opt_obj);
+  return Array.prototype.every.call(arr, f, opt_obj);
 } : function(arr, f, opt_obj) {
   for (var l = arr.length, arr2 = goog.isString(arr) ? arr.split("") : arr, i = 0;i < l;i++) {
     if (i in arr2 && !f.call(opt_obj, arr2[i], i, arr)) {
@@ -1433,7 +1432,7 @@ goog.array.remove = function(arr, obj) {
 };
 goog.array.removeAt = function(arr, i) {
   goog.asserts.assert(null != arr.length);
-  return 1 == goog.array.ARRAY_PROTOTYPE_.splice.call(arr, i, 1).length;
+  return 1 == Array.prototype.splice.call(arr, i, 1).length;
 };
 goog.array.removeIf = function(arr, f, opt_obj) {
   var i = goog.array.findIndex(arr, f, opt_obj);
@@ -1447,10 +1446,10 @@ goog.array.removeAllIf = function(arr, f, opt_obj) {
   return removedCount;
 };
 goog.array.concat = function(var_args) {
-  return goog.array.ARRAY_PROTOTYPE_.concat.apply(goog.array.ARRAY_PROTOTYPE_, arguments);
+  return Array.prototype.concat.apply(Array.prototype, arguments);
 };
 goog.array.join = function(var_args) {
-  return goog.array.ARRAY_PROTOTYPE_.concat.apply(goog.array.ARRAY_PROTOTYPE_, arguments);
+  return Array.prototype.concat.apply(Array.prototype, arguments);
 };
 goog.array.toArray = function(object) {
   var length = object.length;
@@ -1479,11 +1478,11 @@ goog.array.extend = function(arr1, var_args) {
 };
 goog.array.splice = function(arr, index, howMany, var_args) {
   goog.asserts.assert(null != arr.length);
-  return goog.array.ARRAY_PROTOTYPE_.splice.apply(arr, goog.array.slice(arguments, 1));
+  return Array.prototype.splice.apply(arr, goog.array.slice(arguments, 1));
 };
 goog.array.slice = function(arr, start, opt_end) {
   goog.asserts.assert(null != arr.length);
-  return 2 >= arguments.length ? goog.array.ARRAY_PROTOTYPE_.slice.call(arr, start) : goog.array.ARRAY_PROTOTYPE_.slice.call(arr, start, opt_end);
+  return 2 >= arguments.length ? Array.prototype.slice.call(arr, start) : Array.prototype.slice.call(arr, start, opt_end);
 };
 goog.array.removeDuplicates = function(arr, opt_rv, opt_hashFn) {
   for (var returnArray = opt_rv || arr, defaultHashFn = function(item) {
@@ -1638,14 +1637,14 @@ goog.array.flatten = function(var_args) {
 };
 goog.array.rotate = function(array, n) {
   goog.asserts.assert(null != array.length);
-  array.length && (n %= array.length, 0 < n ? goog.array.ARRAY_PROTOTYPE_.unshift.apply(array, array.splice(-n, n)) : 0 > n && goog.array.ARRAY_PROTOTYPE_.push.apply(array, array.splice(0, -n)));
+  array.length && (n %= array.length, 0 < n ? Array.prototype.unshift.apply(array, array.splice(-n, n)) : 0 > n && Array.prototype.push.apply(array, array.splice(0, -n)));
   return array;
 };
 goog.array.moveItem = function(arr, fromIndex, toIndex) {
   goog.asserts.assert(0 <= fromIndex && fromIndex < arr.length);
   goog.asserts.assert(0 <= toIndex && toIndex < arr.length);
-  var removedItems = goog.array.ARRAY_PROTOTYPE_.splice.call(arr, fromIndex, 1);
-  goog.array.ARRAY_PROTOTYPE_.splice.call(arr, toIndex, 0, removedItems[0]);
+  var removedItems = Array.prototype.splice.call(arr, fromIndex, 1);
+  Array.prototype.splice.call(arr, toIndex, 0, removedItems[0]);
 };
 goog.array.zip = function(var_args) {
   if (!arguments.length) {
@@ -11182,13 +11181,13 @@ goog.exportProperty(lf.proc.Transaction.prototype, "rollback", lf.proc.Transacti
 lf.proc.Database = function(global) {
   this.global_ = global;
   this.schema_ = global.getService(lf.service.SCHEMA);
-  this.initialized_ = !1;
+  this.isActive_ = !1;
 };
 goog.exportSymbol("lf.proc.Database", lf.proc.Database);
 lf.proc.Database.prototype.init = function(opt_options) {
   this.global_.registerService(lf.service.SCHEMA, this.schema_);
   return lf.base.init(this.global_, opt_options).then(function() {
-    this.initialized_ = !0;
+    this.isActive_ = !0;
     this.runner_ = this.global_.getService(lf.service.RUNNER);
     return this;
   }.bind(this));
@@ -11198,62 +11197,62 @@ lf.proc.Database.prototype.getSchema = function() {
   return this.schema_;
 };
 goog.exportProperty(lf.proc.Database.prototype, "getSchema", lf.proc.Database.prototype.getSchema);
-lf.proc.Database.prototype.checkInit_ = function() {
-  if (!this.initialized_) {
+lf.proc.Database.prototype.checkActive_ = function() {
+  if (!this.isActive_) {
     throw new lf.Exception(2);
   }
 };
 lf.proc.Database.prototype.select = function(var_args) {
-  this.checkInit_();
+  this.checkActive_();
   var columns = 1 != arguments.length || goog.isDefAndNotNull(arguments[0]) ? Array.prototype.slice.call(arguments) : [];
   return new lf.query.SelectBuilder(this.global_, columns);
 };
 goog.exportProperty(lf.proc.Database.prototype, "select", lf.proc.Database.prototype.select);
 lf.proc.Database.prototype.insert = function() {
-  this.checkInit_();
+  this.checkActive_();
   return new lf.query.InsertBuilder(this.global_);
 };
 goog.exportProperty(lf.proc.Database.prototype, "insert", lf.proc.Database.prototype.insert);
 lf.proc.Database.prototype.insertOrReplace = function() {
-  this.checkInit_();
+  this.checkActive_();
   return new lf.query.InsertBuilder(this.global_, !0);
 };
 goog.exportProperty(lf.proc.Database.prototype, "insertOrReplace", lf.proc.Database.prototype.insertOrReplace);
 lf.proc.Database.prototype.update = function(table) {
-  this.checkInit_();
+  this.checkActive_();
   return new lf.query.UpdateBuilder(this.global_, table);
 };
 goog.exportProperty(lf.proc.Database.prototype, "update", lf.proc.Database.prototype.update);
 lf.proc.Database.prototype.delete = function() {
-  this.checkInit_();
+  this.checkActive_();
   return new lf.query.DeleteBuilder(this.global_);
 };
 goog.exportProperty(lf.proc.Database.prototype, "delete", lf.proc.Database.prototype.delete);
 lf.proc.Database.prototype.observe = function(query, callback) {
-  this.checkInit_();
+  this.checkActive_();
   var observerRegistry = this.global_.getService(lf.service.OBSERVER_REGISTRY);
   observerRegistry.addObserver(query, callback);
 };
 goog.exportProperty(lf.proc.Database.prototype, "observe", lf.proc.Database.prototype.observe);
 lf.proc.Database.prototype.unobserve = function(query, callback) {
-  this.checkInit_();
+  this.checkActive_();
   var observerRegistry = this.global_.getService(lf.service.OBSERVER_REGISTRY);
   observerRegistry.removeObserver(query, callback);
 };
 goog.exportProperty(lf.proc.Database.prototype, "unobserve", lf.proc.Database.prototype.unobserve);
 lf.proc.Database.prototype.createTransaction = function() {
-  this.checkInit_();
+  this.checkActive_();
   return new lf.proc.Transaction(this.global_);
 };
 goog.exportProperty(lf.proc.Database.prototype, "createTransaction", lf.proc.Database.prototype.createTransaction);
 lf.proc.Database.prototype.close = function() {
   lf.base.closeDatabase(this.global_);
   this.global_.clear();
-  this.initialized_ = !1;
+  this.isActive_ = !1;
 };
 goog.exportProperty(lf.proc.Database.prototype, "close", lf.proc.Database.prototype.close);
 lf.proc.Database.prototype.export = function() {
-  this.checkInit_();
+  this.checkActive_();
   var task = new lf.proc.ExportTask(this.global_);
   return this.runner_.scheduleTask(task).then(function(results) {
     return results[0].getPayloads()[0];
@@ -11261,13 +11260,16 @@ lf.proc.Database.prototype.export = function() {
 };
 goog.exportProperty(lf.proc.Database.prototype, "export", lf.proc.Database.prototype.export);
 lf.proc.Database.prototype.import = function(data) {
-  this.checkInit_();
+  this.checkActive_();
   var task = new lf.proc.ImportTask(this.global_, data);
   return this.runner_.scheduleTask(task).then(function() {
     return null;
   });
 };
 goog.exportProperty(lf.proc.Database.prototype, "import", lf.proc.Database.prototype.import);
+lf.proc.Database.prototype.isOpen = function() {
+  return this.isActive_;
+};
 lf.schema.BaseColumn = function(table, name, isUnique, isNullable, type, opt_alias) {
   this.table_ = table;
   this.name_ = name;
@@ -11773,6 +11775,7 @@ lf.schema.Builder = function(dbName, dbVersion) {
   this.schema_ = new lf.schema.DatabaseSchema(dbName, dbVersion);
   this.tableBuilders_ = lf.structs.map.create();
   this.finalized_ = !1;
+  this.db_ = null;
 };
 goog.exportSymbol("lf.schema.Builder", lf.schema.Builder);
 lf.schema.Builder.prototype.checkForeignKeyValidity_ = function(builder) {
@@ -11857,10 +11860,15 @@ lf.schema.Builder.prototype.getGlobal = function() {
 };
 goog.exportProperty(lf.schema.Builder.prototype, "getGlobal", lf.schema.Builder.prototype.getGlobal);
 lf.schema.Builder.prototype.connect = function(opt_options) {
-  var global = this.getGlobal();
-  global.isRegistered(lf.service.SCHEMA) || global.registerService(lf.service.SCHEMA, this.getSchema());
-  var db = new lf.proc.Database(global);
-  return db.init(opt_options);
+  if (!goog.isNull(this.db_) && this.db_.isOpen()) {
+    throw new lf.Exception(113);
+  }
+  if (goog.isNull(this.db_)) {
+    var global = this.getGlobal();
+    global.isRegistered(lf.service.SCHEMA) || global.registerService(lf.service.SCHEMA, this.getSchema());
+    this.db_ = new lf.proc.Database(global);
+  }
+  return this.db_.init(opt_options);
 };
 goog.exportProperty(lf.schema.Builder.prototype, "connect", lf.schema.Builder.prototype.connect);
 lf.schema.Builder.prototype.createTable = function(tableName) {

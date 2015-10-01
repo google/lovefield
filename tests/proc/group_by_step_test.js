@@ -20,7 +20,6 @@ goog.require('hr.db');
 goog.require('lf.proc.GroupByStep');
 goog.require('lf.proc.NoOpStep');
 goog.require('lf.proc.Relation');
-goog.require('lf.schema.DataStoreType');
 goog.require('lf.testing.hrSchema.MockDataGenerator');
 
 
@@ -42,7 +41,6 @@ function setUp() {
   e = schema.getEmployee();
   dataGenerator = new lf.testing.hrSchema.MockDataGenerator(schema);
   dataGenerator.generate(20, 100, 0);
-  return hr.db.connect({storeType: lf.schema.DataStoreType.MEMORY});
 }
 
 

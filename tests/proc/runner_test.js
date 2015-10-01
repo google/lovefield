@@ -56,6 +56,11 @@ function setUp() {
 }
 
 
+function tearDown() {
+  db.close();
+}
+
+
 /** @return {!lf.structs.Set<!lf.schema.Table>} */
 function createScope() {
   var scope = lf.structs.set.create();

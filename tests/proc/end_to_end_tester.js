@@ -91,6 +91,7 @@ lf.testing.EndToEndTester.prototype.run = function() {
   this.testCases_.forEach(function(testCase) {
     tests.push(this.setUp_.bind(this, testCase[1]));
     tests.push(testCase[0]);
+    tests.push(this.tearDown_.bind(this));
   }, this);
 
   return lf.testing.util.sequentiallyRun(tests);
@@ -130,6 +131,16 @@ lf.testing.EndToEndTester.prototype.setUp_ = function(addSampleData) {
           return this.addSampleData_();
         }
       }.bind(this));
+};
+
+
+/**
+ * @return {!IThenable}
+ * @private
+ */
+lf.testing.EndToEndTester.prototype.tearDown_ = function() {
+  this.db_.close();
+  return goog.Promise.resolve();
 };
 
 

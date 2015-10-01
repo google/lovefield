@@ -76,15 +76,13 @@ function testEndToEnd_StaticSchemaBundled() {
   }
 
   asyncTestCase.waitForAsync('testEndToEnd_StaticSchemaBundled');
-  var dbGlobal;
-
+  var dbGlobal = new lf.Global();
   var globalFn = function() {
     return dbGlobal;
   };
   var connectFn = function() {
     stub.reset();
     var dbName = 'hrbdb' + goog.now();
-    dbGlobal = new lf.Global();
     stub.replace(
         goog.getObjectByName('hr.bdb.schema.Database.prototype'),
         'name',

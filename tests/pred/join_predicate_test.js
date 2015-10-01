@@ -83,6 +83,11 @@ function setUp() {
 }
 
 
+function tearDown() {
+  db.close();
+}
+
+
 function testCopy() {
   var original = e.jobId.eq(j.id);
   var copy = original.copy();

@@ -78,6 +78,11 @@ function setUp() {
 }
 
 
+function tearDown() {
+  db.close();
+}
+
+
 function testExternalChangesApplied() {
   asyncTestCase.waitForAsync('testExternalChangesApplied');
 

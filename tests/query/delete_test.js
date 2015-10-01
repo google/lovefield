@@ -41,6 +41,11 @@ function setUp() {
 }
 
 
+function tearDown() {
+  db.close();
+}
+
+
 /**
  * Tests that Delete#exec() fails if from() has not been called first.
  */

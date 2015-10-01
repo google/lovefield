@@ -1,7 +1,7 @@
 {
   "0": "System error",
   "1": "Lovefield library version mismatch.",
-  "2": "The database has not initialized yet.",
+  "2": "The database connection is not active.",
   "3": "Operation timeout.",
   "4": "Operation blocked.",
   "5": "Storage quota exceeded.",
@@ -20,6 +20,7 @@
   "110": "Attempt to import into a non-empty database.",
   "111": "Database name/version mismatch for import.",
   "112": "Import data not found.",
+  "113": "Attempt to call connect() on an already opened DB connection.",
 
   "200": "Constraint error",
   "201": "Duplicate keys are not allowed.",

@@ -49,6 +49,11 @@ function setUp() {
 }
 
 
+function tearDown() {
+  db.close();
+}
+
+
 /**
  * Tests that when simulateErrors has been called BaseBuilder#exec() rejects.
  */

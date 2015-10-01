@@ -1,5 +1,6 @@
 goog.provide('lovefield.db');
 
+goog.require('lf.Exception');
 goog.require('lf.Global');
 /** @suppress {extraRequire} */
 goog.require('lf.fn');
@@ -47,7 +48,19 @@ lovefield.db.getSchema = function() {
  * @return {!IThenable<!lf.proc.Database>}
  */
 lovefield.db.connect = function(opt_options) {
-  lovefield.db.getSchema();
-  var db = new lf.proc.Database(lovefield.db.getGlobal());
-  return db.init(opt_options);
+  if (!goog.isNull(lovefield.db.db_) && lovefield.db.db_.isOpen()) {
+    // 113: Attempt to call connect() on an already opened DB connection.
+    throw new lf.Exception(113);
+  }
+
+  if (goog.isNull(lovefield.db.db_)) {
+    lovefield.db.getSchema();
+    lovefield.db.db_ = new lf.proc.Database(lovefield.db.getGlobal());
+  }
+
+  return lovefield.db.db_.init(opt_options);
 };
+
+
+/** @private {?lf.proc.Database} */
+lovefield.db.db_ = null;

@@ -55,6 +55,11 @@ function setUp() {
 }
 
 
+function tearDown() {
+  db.close();
+}
+
+
 /**
  * Deletes the contents of all tables.
  * @return {!IThenable}

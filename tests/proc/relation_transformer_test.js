@@ -16,7 +16,6 @@
  */
 goog.setTestOnly();
 goog.require('goog.object');
-goog.require('goog.testing.AsyncTestCase');
 goog.require('goog.testing.jsunit');
 goog.require('hr.db');
 goog.require('lf.Row');
@@ -26,14 +25,8 @@ goog.require('lf.pred.JoinPredicate');
 goog.require('lf.proc.Relation');
 goog.require('lf.proc.RelationEntry');
 goog.require('lf.proc.RelationTransformer');
-goog.require('lf.schema.DataStoreType');
 goog.require('lf.testing.hrSchema.EmployeeDataGenerator');
 goog.require('lf.testing.hrSchema.JobDataGenerator');
-
-
-/** @type {!goog.testing.AsyncTestCase} */
-var asyncTestCase = goog.testing.AsyncTestCase.createAndInstall(
-    'RelationTransformerTest');
 
 
 /** @type {!hr.db.schema.Job} */
@@ -53,22 +46,18 @@ var sampleEmployees;
 
 
 function setUp() {
-  asyncTestCase.waitForAsync('setUp');
-  hr.db.connect({storeType: lf.schema.DataStoreType.MEMORY}).then(function(db) {
-    j = db.getSchema().getJob();
-    e = db.getSchema().getEmployee();
-    generateSampleJobData(db);
-    asyncTestCase.continueTesting();
-  }, fail);
+  var schema = hr.db.getSchema();
+  j = schema.getJob();
+  e = schema.getEmployee();
+  generateSampleJobData(schema);
 }
 
 
 /**
  * Generates sample job data.
- * @param {!lf.Database} db The db connection.
+ * @param {!lf.schema.Database} schema The db schema.
  */
-function generateSampleJobData(db) {
-  var schema = /** @type {!hr.db.schema.Database} */ (db.getSchema());
+function generateSampleJobData(schema) {
   var jobGenerator =
       new lf.testing.hrSchema.JobDataGenerator(schema);
   var jobCount = 10;

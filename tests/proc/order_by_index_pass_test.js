@@ -38,6 +38,10 @@ var asyncTestCase = goog.testing.AsyncTestCase.createAndInstall(
     'OrderByIndexPassTest');
 
 
+/** @type {!lf.Database} */
+var db;
+
+
 /** @type {!hr.db.schema.Employee} */
 var e;
 
@@ -54,12 +58,18 @@ function setUp() {
   asyncTestCase.waitForAsync('setUp');
   hr.db.connect({storeType: lf.schema.DataStoreType.MEMORY}).then(function(
       database) {
+        db = database;
         e = database.getSchema().getEmployee();
         dt = database.getSchema().getDummyTable();
         pass = new lf.proc.OrderByIndexPass(hr.db.getGlobal());
       }).then(function() {
     asyncTestCase.continueTesting();
   }, fail);
+}
+
+
+function tearDown() {
+  db.close();
 }
 
 

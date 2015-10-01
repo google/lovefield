@@ -51,6 +51,11 @@ function setUp() {
 }
 
 
+function tearDown() {
+  db.close();
+}
+
+
 function testInsertToSql() {
   var query = new lf.query.InsertBuilder(hr.db.getGlobal());
   var job = lf.testing.hrSchemaSampleData.generateSampleJobData(db);

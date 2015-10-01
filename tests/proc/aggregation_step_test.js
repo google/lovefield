@@ -26,7 +26,6 @@ goog.require('lf.pred.JoinPredicate');
 goog.require('lf.proc.AggregationStep');
 goog.require('lf.proc.NoOpStep');
 goog.require('lf.proc.Relation');
-goog.require('lf.schema.DataStoreType');
 goog.require('lf.testing.NullableDataGenerator');
 goog.require('lf.testing.hrSchema.MockDataGenerator');
 
@@ -82,13 +81,11 @@ function testFloatEquals(expected, value) {
 
 
 function setUp() {
-  asyncTestCase.waitForAsync('setUp');
   var schema = hr.db.getSchema();
   j = schema.getJob();
   e = schema.getEmployee();
   dataGenerator = new lf.testing.hrSchema.MockDataGenerator(schema);
   dataGenerator.generate(20, 100, 0);
-  hr.db.connect({storeType: lf.schema.DataStoreType.MEMORY});
 
   // For the tests involving nullable integer columns, a different schema
   // is created. The tables in hr schema do not handle nullable integer
@@ -98,10 +95,6 @@ function setUp() {
   nullableGenerator = new
       lf.testing.NullableDataGenerator(schemaWithNullable);
   nullableGenerator.generate();
-  schemaBuilder.connect({storeType: lf.schema.DataStoreType.MEMORY}).
-      then(function() {
-            asyncTestCase.continueTesting();
-          });
 }
 
 

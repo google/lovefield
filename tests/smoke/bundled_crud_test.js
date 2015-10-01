@@ -61,6 +61,12 @@ function setUp() {
 }
 
 
+function tearDown() {
+  db.close();
+}
+
+
+
 function testCRUD() {
   if (!capability.indexedDb) {
     return;

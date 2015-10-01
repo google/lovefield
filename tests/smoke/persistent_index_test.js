@@ -103,6 +103,7 @@ function setUp() {
 
 function tearDown() {
   propertyReplacer.reset();
+  db.close();
 }
 
 

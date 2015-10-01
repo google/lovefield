@@ -42,6 +42,11 @@ function setUp() {
 }
 
 
+function tearDown() {
+  db.close();
+}
+
+
 /**
  * Tests that Insert#exec() fails if into() has not been called first.
  */

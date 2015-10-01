@@ -41,6 +41,10 @@ var asyncTestCase = goog.testing.AsyncTestCase.createAndInstall(
     'LimitSkipByIndexPassTest');
 
 
+/** @type {!lf.Database} */
+var db;
+
+
 /** @type {!hr.db.schema.Employee} */
 var e;
 
@@ -52,12 +56,21 @@ var pass;
 function setUp() {
   asyncTestCase.waitForAsync('setUp');
 
-  hr.db.connect({storeType: lf.schema.DataStoreType.MEMORY}).then(function(db) {
-    e = db.getSchema().getEmployee();
-    pass = new lf.proc.LimitSkipByIndexPass();
-  }).then(function() {
-    asyncTestCase.continueTesting();
-  }, fail);
+  var schema = hr.db.getSchema();
+  e = schema.getEmployee();
+  pass = new lf.proc.LimitSkipByIndexPass();
+  hr.db.connect({storeType: lf.schema.DataStoreType.MEMORY}).then(
+      function(database) {
+        db = database;
+      }).then(
+      function() {
+        asyncTestCase.continueTesting();
+      }, fail);
+}
+
+
+function tearDown() {
+  db.close();
 }
 
 

@@ -15,7 +15,6 @@
  * limitations under the License.
  */
 goog.setTestOnly();
-goog.require('goog.testing.AsyncTestCase');
 goog.require('goog.testing.jsunit');
 goog.require('hr.db');
 goog.require('lf.Order');
@@ -26,13 +25,7 @@ goog.require('lf.proc.PushDownSelectionsPass');
 goog.require('lf.proc.SelectNode');
 goog.require('lf.proc.TableAccessNode');
 goog.require('lf.query.SelectContext');
-goog.require('lf.schema.DataStoreType');
 goog.require('lf.testing.treeutil');
-
-
-/** @type {!goog.testing.AsyncTestCase} */
-var asyncTestCase = goog.testing.AsyncTestCase.createAndInstall(
-    'PushDownSelectionsPassTest');
 
 
 /** @type {!lf.schema.Database} */
@@ -44,13 +37,8 @@ var pass;
 
 
 function setUp() {
-  asyncTestCase.waitForAsync('setUp');
-  hr.db.connect({storeType: lf.schema.DataStoreType.MEMORY}).then(function(db) {
-    schema = db.getSchema();
-    pass = new lf.proc.PushDownSelectionsPass();
-  }).then(function() {
-    asyncTestCase.continueTesting();
-  }, fail);
+  schema = hr.db.getSchema();
+  pass = new lf.proc.PushDownSelectionsPass();
 }
 
 

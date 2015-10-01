@@ -41,6 +41,10 @@ var asyncTestCase = goog.testing.AsyncTestCase.createAndInstall(
     'IndexRangeScanPassTest');
 
 
+/** @type {!lf.Database} */
+var db;
+
+
 /** @type {!hr.db.schema.Employee} */
 var e;
 
@@ -73,22 +77,28 @@ function setUp() {
   asyncTestCase.waitForAsync('setUp');
   propertyReplacer = new goog.testing.PropertyReplacer();
 
-  hr.db.connect({storeType: lf.schema.DataStoreType.MEMORY}).then(function(db) {
-    e = db.getSchema().getEmployee();
-    j = db.getSchema().getJob();
-    d = db.getSchema().getDepartment();
-    dt = db.getSchema().getDummyTable();
-    indexStore =  /** @type {!lf.index.IndexStore} */ (
-        hr.db.getGlobal().getService(lf.service.INDEX_STORE));
-    pass = new lf.proc.IndexRangeScanPass(hr.db.getGlobal());
-  }).then(function() {
-    asyncTestCase.continueTesting();
-  }, fail);
+  var schema = hr.db.getSchema();
+  e = schema.getEmployee();
+  j = schema.getJob();
+  d = schema.getDepartment();
+  dt = schema.getDummyTable();
+
+  hr.db.connect({storeType: lf.schema.DataStoreType.MEMORY}).then(
+      function(database) {
+        db = database;
+        indexStore =  /** @type {!lf.index.IndexStore} */ (
+            hr.db.getGlobal().getService(lf.service.INDEX_STORE));
+        pass = new lf.proc.IndexRangeScanPass(hr.db.getGlobal());
+      }).then(
+      function() {
+        asyncTestCase.continueTesting();
+      }, fail);
 }
 
 
 function tearDown() {
   propertyReplacer.reset();
+  db.close();
 }
 
 

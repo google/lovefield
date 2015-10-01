@@ -46,6 +46,11 @@ function setUp() {
 }
 
 
+function tearDown() {
+  db.close();
+}
+
+
 /**
  * Tests that Select#exec() fails if from() has not been called first.
  */

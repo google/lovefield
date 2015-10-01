@@ -59,6 +59,11 @@ function setUp() {
 }
 
 
+function tearDown() {
+  db.close();
+}
+
+
 /**
  * Tests that copy() creates an identical tree where each node is a new
  * instance.

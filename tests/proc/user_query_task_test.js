@@ -72,6 +72,7 @@ function setUp() {
 function tearDown() {
   asyncTestCase.waitForAsync('tearDown');
   db.delete().from(j).exec().then(function() {
+    db.close();
     asyncTestCase.continueTesting();
   });
 }

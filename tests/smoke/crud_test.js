@@ -58,6 +58,11 @@ function setUp() {
 }
 
 
+function tearDown() {
+  db.close();
+}
+
+
 function testCRUD() {
   asyncTestCase.waitForAsync('testCRUD');
   tester.testCRUD().then(function() {

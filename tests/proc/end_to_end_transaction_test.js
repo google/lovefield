@@ -94,6 +94,11 @@ function setUp() {
 }
 
 
+function tearDown() {
+  db.close();
+}
+
+
 /**
  * Populates the database with sample data.
  * @return {!IThenable} A signal firing when the data has been added.
