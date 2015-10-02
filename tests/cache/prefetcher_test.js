@@ -23,8 +23,6 @@ goog.require('goog.testing.jsunit');
 goog.require('lf.Global');
 goog.require('lf.cache.Prefetcher');
 goog.require('lf.index.BTree');
-goog.require('lf.index.IndexMetadata');
-goog.require('lf.index.IndexMetadataRow');
 goog.require('lf.index.MemoryIndexStore');
 goog.require('lf.index.NullableIndex');
 goog.require('lf.index.RowId');
@@ -242,11 +240,7 @@ function simulatePersistedIndices(tableSchema, tableRows) {
     });
 
     var serializedIndices = indices.map(function(index) {
-      var indexType = index.getName() == tableSchema.getRowIdIndexName() ?
-          lf.index.IndexMetadata.Type.ROW_ID :
-          lf.index.IndexMetadata.Type.BTREE;
-      var indexMetadataRow = lf.index.IndexMetadataRow.forType(indexType);
-      return [indexMetadataRow].concat(index.serialize());
+      return index.serialize();
     });
     var whenIndexTablesPopulated = indices.map(function(index, i) {
       var indexTable = env.store.getTableInternal(index.getName());

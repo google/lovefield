@@ -1235,19 +1235,26 @@ goog.functions.once = function(f) {
 goog.functions.debounce = function(f, interval, opt_scope) {
   opt_scope && (f = goog.bind(f, opt_scope));
   var timeout = null;
-  return function() {
+  return function(var_args) {
     goog.global.clearTimeout(timeout);
-    timeout = goog.global.setTimeout(f, interval);
+    var args = arguments;
+    timeout = goog.global.setTimeout(function() {
+      f.apply(null, args);
+    }, interval);
   };
 };
 goog.functions.throttle = function(f, interval, opt_scope) {
   opt_scope && (f = goog.bind(f, opt_scope));
-  var timeout = null, shouldFire = !1, handleTimeout = function() {
+  var timeout = null, shouldFire = !1, args = [], handleTimeout = function() {
     timeout = null;
-    shouldFire && (shouldFire = !1, timeout = goog.global.setTimeout(handleTimeout, interval), f());
+    shouldFire && (shouldFire = !1, fire());
+  }, fire = function() {
+    timeout = goog.global.setTimeout(handleTimeout, interval);
+    f.apply(null, args);
   };
-  return function() {
-    timeout ? shouldFire = !0 : (timeout = goog.global.setTimeout(handleTimeout, interval), f());
+  return function(var_args) {
+    args = arguments;
+    timeout ? shouldFire = !0 : fire();
   };
 };
 goog.array = {};
@@ -2589,94 +2596,6 @@ goog.Promise.Resolver_ = function(promise, resolve, reject) {
   this.resolve = resolve;
   this.reject = reject;
 };
-/*
-
- Copyright 2014 The Lovefield Project Authors. All Rights Reserved.
-
- Licensed under the Apache License, Version 2.0 (the "License");
- you may not use this file except in compliance with the License.
- You may obtain a copy of the License at
-
-     http://www.apache.org/licenses/LICENSE-2.0
-
- Unless required by applicable law or agreed to in writing, software
- distributed under the License is distributed on an "AS IS" BASIS,
- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- See the License for the specific language governing permissions and
- limitations under the License.
-*/
-var lf = {Row:function(id, payload) {
-  this.id_ = id;
-  this.payload_ = payload || this.defaultPayload();
-}};
-lf.Row.nextId_ = 0;
-lf.Row.DUMMY_ID = -1;
-lf.Row.getNextId = function() {
-  return lf.Row.nextId_++;
-};
-lf.Row.setNextId = function(nextId) {
-  lf.Row.nextId_ = nextId;
-};
-lf.Row.prototype.id = function() {
-  return this.id_;
-};
-lf.Row.prototype.assignRowId = function(id) {
-  this.id_ = id;
-};
-lf.Row.prototype.payload = function() {
-  return this.payload_;
-};
-lf.Row.prototype.defaultPayload = function() {
-  return {};
-};
-lf.Row.prototype.toDbPayload = function() {
-  return this.payload_;
-};
-lf.Row.prototype.serialize = function() {
-  return {id:this.id_, value:this.toDbPayload()};
-};
-lf.Row.prototype.keyOfIndex = function(indexName) {
-  return "#" == indexName.substr(-1) ? this.id_ : null;
-};
-lf.Row.deserialize = function(data) {
-  return new lf.Row(data.id, data.value);
-};
-lf.Row.create = function(opt_payload) {
-  return new lf.Row(lf.Row.getNextId(), opt_payload || {});
-};
-lf.Row.binToHex = function(buffer) {
-  if (!goog.isDefAndNotNull(buffer)) {
-    return null;
-  }
-  for (var uint8Array = new Uint8Array(buffer), s = "", i = 0;i < uint8Array.length;++i) {
-    var chr = uint8Array[i].toString(16), s = s + (2 > chr.length ? "0" + chr : chr)
-  }
-  return s;
-};
-lf.Row.hexToBin = function(hex) {
-  if (!goog.isDefAndNotNull(hex) || "" == hex) {
-    return null;
-  }
-  0 != hex.length % 2 && (hex = "0" + hex);
-  for (var buffer = new ArrayBuffer(hex.length / 2), uint8Array = new Uint8Array(buffer), i = 0, j = 0;i < hex.length;i += 2) {
-    uint8Array[j++] = parseInt(hex.substr(i, 2), 16);
-  }
-  return buffer;
-};
-lf.index = {};
-lf.index.IndexMetadata = function(type) {
-  this.type = type;
-};
-lf.index.IndexMetadata.Type = {ROW_ID:"rowid", BTREE:"btree"};
-lf.index.IndexMetadataRow = function(payload) {
-  lf.Row.call(this, lf.index.IndexMetadataRow.ROW_ID, payload);
-};
-goog.inherits(lf.index.IndexMetadataRow, lf.Row);
-lf.index.IndexMetadataRow.ROW_ID = -1;
-lf.index.IndexMetadataRow.forType = function(indexType) {
-  var indexMetadata = new lf.index.IndexMetadata(indexType);
-  return new lf.index.IndexMetadataRow(indexMetadata);
-};
 goog.math = {};
 goog.math.randomInt = function(a) {
   return Math.floor(Math.random() * a);
@@ -3529,9 +3448,9 @@ goog.userAgent.isDocumentModeOrHigher = function(documentMode) {
   return goog.userAgent.DOCUMENT_MODE >= documentMode;
 };
 goog.userAgent.isDocumentMode = goog.userAgent.isDocumentModeOrHigher;
-var JSCompiler_inline_result$$1, doc$$inline_5 = goog.global.document, mode$$inline_6 = goog.userAgent.getDocumentMode_();
-JSCompiler_inline_result$$1 = doc$$inline_5 && goog.userAgent.IE ? mode$$inline_6 || ("CSS1Compat" == doc$$inline_5.compatMode ? parseInt(goog.userAgent.VERSION, 10) : 5) : void 0;
-goog.userAgent.DOCUMENT_MODE = JSCompiler_inline_result$$1;
+var JSCompiler_inline_result$$0, doc$$inline_2 = goog.global.document, mode$$inline_3 = goog.userAgent.getDocumentMode_();
+JSCompiler_inline_result$$0 = doc$$inline_2 && goog.userAgent.IE ? mode$$inline_3 || ("CSS1Compat" == doc$$inline_2.compatMode ? parseInt(goog.userAgent.VERSION, 10) : 5) : void 0;
+goog.userAgent.DOCUMENT_MODE = JSCompiler_inline_result$$0;
 goog.userAgent.product = {};
 goog.userAgent.product.ASSUME_FIREFOX = !1;
 goog.userAgent.product.ASSUME_IPHONE = !1;
@@ -3570,14 +3489,14 @@ goog.userAgent.product.SAFARI = goog.userAgent.product.PRODUCT_KNOWN_ ? goog.use
  See the License for the specific language governing permissions and
  limitations under the License.
 */
-lf.Capability = function() {
+var lf = {Capability:function() {
   this.safariWebView_ = goog.userAgent.product.SAFARI || goog.userAgent.product.IPAD || goog.userAgent.product.IPHONE;
   this.indexedDb = !(this.safariWebView_ || goog.userAgent.product.IE && !goog.userAgent.isVersionOrHigher(10));
   !goog.userAgent.product.IE || goog.userAgent.isVersionOrHigher(11);
   this.webSql = goog.userAgent.product.CHROME || goog.userAgent.product.SAFARI;
   this.nativeMap = goog.isDef(window.Map) && goog.isDef(window.Map.prototype.values) && goog.isDef(window.Map.prototype.forEach) && !this.safariWebView_;
   this.nativeSet = goog.isDef(window.Set) && goog.isDef(window.Set.prototype.values) && goog.isDef(window.Set.prototype.forEach) && !this.safariWebView_;
-};
+}};
 lf.Capability.get = function() {
   goog.isDef(lf.Capability.instance_) || (lf.Capability.instance_ = new lf.Capability);
   return lf.Capability.instance_;
@@ -3644,6 +3563,80 @@ lf.structs.map.values = function(map) {
   });
   return array;
 };
+/*
+
+ Copyright 2014 The Lovefield Project Authors. All Rights Reserved.
+
+ Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+     http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+*/
+lf.Row = function(id, payload) {
+  this.id_ = id;
+  this.payload_ = payload || this.defaultPayload();
+};
+lf.Row.nextId_ = 0;
+lf.Row.DUMMY_ID = -1;
+lf.Row.getNextId = function() {
+  return lf.Row.nextId_++;
+};
+lf.Row.setNextId = function(nextId) {
+  lf.Row.nextId_ = nextId;
+};
+lf.Row.prototype.id = function() {
+  return this.id_;
+};
+lf.Row.prototype.assignRowId = function(id) {
+  this.id_ = id;
+};
+lf.Row.prototype.payload = function() {
+  return this.payload_;
+};
+lf.Row.prototype.defaultPayload = function() {
+  return {};
+};
+lf.Row.prototype.toDbPayload = function() {
+  return this.payload_;
+};
+lf.Row.prototype.serialize = function() {
+  return {id:this.id_, value:this.toDbPayload()};
+};
+lf.Row.prototype.keyOfIndex = function(indexName) {
+  return "#" == indexName.substr(-1) ? this.id_ : null;
+};
+lf.Row.deserialize = function(data) {
+  return new lf.Row(data.id, data.value);
+};
+lf.Row.create = function(opt_payload) {
+  return new lf.Row(lf.Row.getNextId(), opt_payload || {});
+};
+lf.Row.binToHex = function(buffer) {
+  if (!goog.isDefAndNotNull(buffer)) {
+    return null;
+  }
+  for (var uint8Array = new Uint8Array(buffer), s = "", i = 0;i < uint8Array.length;++i) {
+    var chr = uint8Array[i].toString(16), s = s + (2 > chr.length ? "0" + chr : chr)
+  }
+  return s;
+};
+lf.Row.hexToBin = function(hex) {
+  if (!goog.isDefAndNotNull(hex) || "" == hex) {
+    return null;
+  }
+  0 != hex.length % 2 && (hex = "0" + hex);
+  for (var buffer = new ArrayBuffer(hex.length / 2), uint8Array = new Uint8Array(buffer), i = 0, j = 0;i < hex.length;i += 2) {
+    uint8Array[j++] = parseInt(hex.substr(i, 2), 16);
+  }
+  return buffer;
+};
 lf.TransactionType = {};
 goog.exportSymbol("lf.TransactionType", lf.TransactionType);
 lf.TransactionType.READ_ONLY = 0;
@@ -3698,12 +3691,8 @@ lf.backstore.BaseTx.prototype.mergeTableChanges_ = function() {
 lf.backstore.BaseTx.prototype.mergeIndexChanges_ = function() {
   var indices = this.journal_.getIndexDiff();
   indices.forEach(function(index) {
-    var indexTable = this.getTable(index.getName(), lf.Row.deserialize), metadataRows;
-    indexTable.get([lf.index.IndexMetadataRow.ROW_ID]).then(function(rows) {
-      metadataRows = rows;
-      return indexTable.remove([]);
-    }).then(function() {
-      indexTable.put(metadataRows);
+    var indexTable = this.getTable(index.getName(), lf.Row.deserialize);
+    indexTable.remove([]).then(function() {
       indexTable.put(index.serialize());
     }, this.handleError_.bind(this));
   }, this);
@@ -4150,6 +4139,7 @@ lf.backstore.BundledObjectStore.forTableType = function(global, store, deseriali
   var retrievePageFn = tableType == lf.backstore.TableType.DATA ? goog.partial(lf.backstore.BundledObjectStore.getDataTablePage_, global) : lf.backstore.BundledObjectStore.getIndexTablePage_;
   return new lf.backstore.BundledObjectStore(store, deserializeFn, retrievePageFn);
 };
+lf.index = {};
 lf.index.Favor = {RHS:-1, TIE:0, LHS:1};
 lf.index.Comparator = function() {
 };
@@ -6157,7 +6147,7 @@ lf.backstore.IndexedDB.prototype.init = function(opt_onUpgrade) {
 lf.backstore.IndexedDB.prototype.onUpgradeNeeded_ = function(onUpgrade, ev) {
   var db = ev.target.result, tx = ev.target.transaction, rawDb = new lf.backstore.IndexedDBRawBackStore(ev.oldVersion, db, tx, this.bundledMode_);
   this.removeIndexTables_(db, tx);
-  this.createTables_(db, tx);
+  this.createTables_(db);
   return onUpgrade(rawDb);
 };
 lf.backstore.IndexedDB.prototype.removeIndexTables_ = function(db) {
@@ -6172,25 +6162,21 @@ lf.backstore.IndexedDB.prototype.removeIndexTables_ = function(db) {
     }
   });
 };
-lf.backstore.IndexedDB.prototype.createTables_ = function(db, tx) {
-  this.schema_.tables().forEach(goog.partial(this.createObjectStoresForTable_, db, tx), this);
+lf.backstore.IndexedDB.prototype.createTables_ = function(db) {
+  this.schema_.tables().forEach(goog.partial(this.createObjectStoresForTable_, db), this);
 };
-lf.backstore.IndexedDB.prototype.createObjectStoresForTable_ = function(db, tx, tableSchema) {
+lf.backstore.IndexedDB.prototype.createObjectStoresForTable_ = function(db, tableSchema) {
   db.objectStoreNames.contains(tableSchema.getName()) || db.createObjectStore(tableSchema.getName(), {keyPath:"id"});
   if (tableSchema.persistentIndex()) {
     var tableIndices = tableSchema.getIndices();
     tableIndices.forEach(function(indexSchema) {
-      this.createIndexTable_(db, tx, indexSchema.getNormalizedName(), lf.index.IndexMetadata.Type.BTREE);
+      this.createIndexTable_(db, indexSchema.getNormalizedName());
     }, this);
-    this.createIndexTable_(db, tx, tableSchema.getRowIdIndexName(), lf.index.IndexMetadata.Type.ROW_ID);
+    this.createIndexTable_(db, tableSchema.getRowIdIndexName());
   }
 };
-lf.backstore.IndexedDB.prototype.createIndexTable_ = function(db, tx, indexName, indexType) {
-  if (!db.objectStoreNames.contains(indexName)) {
-    db.createObjectStore(indexName, {keyPath:"id"});
-    var store = tx.objectStore(indexName), objectStore = this.bundledMode_ ? lf.backstore.BundledObjectStore.forTableType(this.global_, store, lf.Row.deserialize, lf.backstore.TableType.INDEX) : new lf.backstore.ObjectStore(store, lf.Row.deserialize);
-    objectStore.put([lf.index.IndexMetadataRow.forType(indexType)]);
-  }
+lf.backstore.IndexedDB.prototype.createIndexTable_ = function(db, indexName) {
+  db.objectStoreNames.contains(indexName) || db.createObjectStore(indexName, {keyPath:"id"});
 };
 lf.backstore.IndexedDB.prototype.createTx = function(type, scope, opt_journal) {
   var nativeTx = this.db_.transaction(lf.backstore.IndexedDB.getIndexedDBScope_(scope), type == lf.TransactionType.READ_ONLY ? "readonly" : "readwrite");
@@ -6442,14 +6428,10 @@ lf.backstore.Memory.prototype.initTable_ = function(tableSchema) {
   if (tableSchema.persistentIndex()) {
     var tableIndices = tableSchema.getIndices();
     tableIndices.forEach(function(indexSchema) {
-      this.createIndexTable_(indexSchema.getNormalizedName(), lf.index.IndexMetadata.Type.BTREE);
+      this.createTable_(indexSchema.getNormalizedName());
     }, this);
-    this.createIndexTable_(tableSchema.getRowIdIndexName(), lf.index.IndexMetadata.Type.ROW_ID);
+    this.createTable_(tableSchema.getRowIdIndexName());
   }
-};
-lf.backstore.Memory.prototype.createIndexTable_ = function(indexName, indexType) {
-  var backstoreTable = this.createTable_(indexName);
-  goog.isNull(backstoreTable) || backstoreTable.put([lf.index.IndexMetadataRow.forType(indexType)]);
 };
 lf.backstore.Memory.prototype.close = function() {
 };
@@ -6740,15 +6722,6 @@ lf.backstore.WebSql.prototype.preUpgrade_ = function() {
     });
     newTables.forEach(function(name) {
       tx2.queue("CREATE TABLE " + name + "(id INTEGER PRIMARY KEY, value TEXT)", []);
-    });
-    var createMetaRow = function(name, type) {
-      tx2.queue("INSERT INTO " + name + "(id, value) VALUES(?, ?)", [lf.index.IndexMetadataRow.ROW_ID, JSON.stringify(lf.index.IndexMetadataRow.forType(type).payload())]);
-    };
-    persistentIndices.forEach(function(name) {
-      createMetaRow(name, lf.index.IndexMetadata.Type.BTREE);
-    });
-    rowIdIndices.forEach(function(name) {
-      createMetaRow(name, lf.index.IndexMetadata.Type.ROW_ID);
     });
     return tx2.commit();
   });
@@ -7851,13 +7824,12 @@ lf.cache.Prefetcher.prototype.fetchTableWithPersistentIndices_ = function(tableS
 lf.cache.Prefetcher.prototype.reconstructPersistentIndex_ = function(indexSchema, tx) {
   var indexTable = tx.getTable(indexSchema.getNormalizedName(), lf.Row.deserialize, lf.backstore.TableType.INDEX), comparator = lf.index.ComparatorFactory.create(indexSchema);
   return indexTable.get([]).then(function(serializedRows) {
-    goog.asserts.assert(serializedRows[0].payload().type == lf.index.IndexMetadata.Type.BTREE);
-    if (1 < serializedRows.length) {
+    if (0 < serializedRows.length) {
       if (indexSchema.hasNullableColumn()) {
-        var deserializeFn = lf.index.BTree.deserialize.bind(void 0, comparator, indexSchema.getNormalizedName(), indexSchema.isUnique), nullableIndex = lf.index.NullableIndex.deserialize(deserializeFn, serializedRows.slice(1));
+        var deserializeFn = lf.index.BTree.deserialize.bind(void 0, comparator, indexSchema.getNormalizedName(), indexSchema.isUnique), nullableIndex = lf.index.NullableIndex.deserialize(deserializeFn, serializedRows);
         this.indexStore_.set(indexSchema.tableName, nullableIndex);
       } else {
-        var btreeIndex = lf.index.BTree.deserialize(comparator, indexSchema.getNormalizedName(), indexSchema.isUnique, serializedRows.slice(1));
+        var btreeIndex = lf.index.BTree.deserialize(comparator, indexSchema.getNormalizedName(), indexSchema.isUnique, serializedRows);
         this.indexStore_.set(indexSchema.tableName, btreeIndex);
       }
     }
@@ -7866,9 +7838,8 @@ lf.cache.Prefetcher.prototype.reconstructPersistentIndex_ = function(indexSchema
 lf.cache.Prefetcher.prototype.reconstructPersistentRowIdIndex_ = function(tableSchema, tx) {
   var indexTable = tx.getTable(tableSchema.getRowIdIndexName(), lf.Row.deserialize, lf.backstore.TableType.INDEX);
   return indexTable.get([]).then(function(serializedRows) {
-    goog.asserts.assert(serializedRows[0].payload().type == lf.index.IndexMetadata.Type.ROW_ID);
-    if (1 < serializedRows.length) {
-      var rowIdIndex = lf.index.RowId.deserialize(tableSchema.getRowIdIndexName(), serializedRows.slice(1));
+    if (0 < serializedRows.length) {
+      var rowIdIndex = lf.index.RowId.deserialize(tableSchema.getRowIdIndexName(), serializedRows);
       this.indexStore_.set(tableSchema.getName(), rowIdIndex);
     }
   }.bind(this));

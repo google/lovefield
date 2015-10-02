@@ -24,8 +24,8 @@ goog.require('lf.Row');
 goog.require('lf.TransactionType');
 goog.require('lf.index.BTree');
 goog.require('lf.index.ComparatorFactory');
-goog.require('lf.index.IndexMetadata');
 goog.require('lf.index.RowId');
+goog.require('lf.op');
 goog.require('lf.schema.DataStoreType');
 goog.require('lf.service');
 
@@ -312,14 +312,8 @@ function assertAllIndicesPopulated(targetTable, rows) {
  *     index data).
  */
 function assertIndexContents(indexSchema, serializedRows, dataRows) {
-  // Expecting at least two serialized rows for each index. The 1st row holds
-  // the index's metadata. Remaining rows hold the actual index contents.
-  assertTrue(serializedRows.length >= 2);
-  var indexMetadataRow = serializedRows[0];
-
-  assertEquals(
-      lf.index.IndexMetadata.Type.BTREE,
-      indexMetadataRow.payload()['type']);
+  // Expecting at least one row for each index.
+  assertTrue(serializedRows.length >= 1);
 
   // Reconstructing the index and ensuring it contains all expected keys.
   var comparator = lf.index.ComparatorFactory.create(indexSchema);
@@ -327,7 +321,7 @@ function assertIndexContents(indexSchema, serializedRows, dataRows) {
       comparator,
       indexSchema.getNormalizedName(),
       indexSchema.isUnique,
-      serializedRows.slice(1));
+      serializedRows);
   assertEquals(dataRows.length, btreeIndex.getRange().length);
 
   dataRows.forEach(function(row) {
@@ -339,22 +333,17 @@ function assertIndexContents(indexSchema, serializedRows, dataRows) {
 
 
 /**
- * Asserts that the metadata and contents of the RowId index appear as expected
- * in the backing store.
+ * Asserts that the contents of the RowId index appear as expected in the
+ * backing store.
  * @param {!lf.schema.Table} targetTable
  * @param {!Array<!lf.Row>} serializedRows The serialized version of the index.
  * @param {number} expectedSize The expected number of rowIds in the index.
  */
 function assertRowIdIndex(targetTable, serializedRows, expectedSize) {
-  assertEquals(2, serializedRows.length);
-  var indexMetadataRow = serializedRows[0];
-
-  assertEquals(
-      lf.index.IndexMetadata.Type.ROW_ID,
-      indexMetadataRow.payload()['type']);
+  assertEquals(1, serializedRows.length);
   var rowIdIndex = lf.index.RowId.deserialize(
       targetTable.getRowIdIndexName(),
-      serializedRows.slice(1));
+      serializedRows);
   assertEquals(expectedSize, rowIdIndex.getRange().length);
 }
 
