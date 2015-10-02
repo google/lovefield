@@ -361,7 +361,7 @@ goog.hasUid = function(obj) {
   return !!obj[goog.UID_PROPERTY_];
 };
 goog.removeUid = function(obj) {
-  null != obj && "removeAttribute" in obj && obj.removeAttribute(goog.UID_PROPERTY_);
+  "removeAttribute" in obj && obj.removeAttribute(goog.UID_PROPERTY_);
   try {
     delete obj[goog.UID_PROPERTY_];
   } catch (ex) {
@@ -1650,16 +1650,16 @@ goog.array.zip = function(var_args) {
   if (!arguments.length) {
     return [];
   }
-  for (var result = [], i = 0;;i++) {
+  for (var result = [], minLen = arguments[0].length, i = 1;i < arguments.length;i++) {
+    arguments[i].length < minLen && (minLen = arguments[i].length);
+  }
+  for (i = 0;i < minLen;i++) {
     for (var value = [], j = 0;j < arguments.length;j++) {
-      var arr = arguments[j];
-      if (i >= arr.length) {
-        return result;
-      }
-      value.push(arr[i]);
+      value.push(arguments[j][i]);
     }
     result.push(value);
   }
+  return result;
 };
 goog.array.shuffle = function(arr, opt_randFn) {
   for (var randFn = opt_randFn || Math.random, i = arr.length - 1;0 < i;i--) {
@@ -1751,7 +1751,7 @@ goog.object.getValueByKeys = function(obj, var_args) {
   return obj;
 };
 goog.object.containsKey = function(obj, key) {
-  return key in obj;
+  return null !== obj && key in obj;
 };
 goog.object.containsValue = function(obj, val) {
   for (var key in obj) {
@@ -1789,13 +1789,13 @@ goog.object.remove = function(obj, key) {
   return rv;
 };
 goog.object.add = function(obj, key, val) {
-  if (key in obj) {
+  if (null !== obj && key in obj) {
     throw Error('The object already contains the key "' + key + '"');
   }
   goog.object.set(obj, key, val);
 };
 goog.object.get = function(obj, key, opt_val) {
-  return key in obj ? obj[key] : opt_val;
+  return null !== obj && key in obj ? obj[key] : opt_val;
 };
 goog.object.set = function(obj, key, value) {
   obj[key] = value;
@@ -3730,10 +3730,10 @@ lf.Table = function() {
 goog.structs.Collection = function() {
 };
 goog.structs.getCount = function(col) {
-  return "function" == typeof col.getCount ? col.getCount() : goog.isArrayLike(col) || goog.isString(col) ? col.length : goog.object.getCount(col);
+  return col.getCount && "function" == typeof col.getCount ? col.getCount() : goog.isArrayLike(col) || goog.isString(col) ? col.length : goog.object.getCount(col);
 };
 goog.structs.getValues = function(col) {
-  if ("function" == typeof col.getValues) {
+  if (col.getValues && "function" == typeof col.getValues) {
     return col.getValues();
   }
   if (goog.isString(col)) {
@@ -3748,10 +3748,10 @@ goog.structs.getValues = function(col) {
   return goog.object.getValues(col);
 };
 goog.structs.getKeys = function(col) {
-  if ("function" == typeof col.getKeys) {
+  if (col.getKeys && "function" == typeof col.getKeys) {
     return col.getKeys();
   }
-  if ("function" != typeof col.getValues) {
+  if (!col.getValues || "function" != typeof col.getValues) {
     if (goog.isArrayLike(col) || goog.isString(col)) {
       for (var rv = [], l = col.length, i = 0;i < l;i++) {
         rv.push(i);
@@ -3762,16 +3762,16 @@ goog.structs.getKeys = function(col) {
   }
 };
 goog.structs.contains = function(col, val) {
-  return "function" == typeof col.contains ? col.contains(val) : "function" == typeof col.containsValue ? col.containsValue(val) : goog.isArrayLike(col) || goog.isString(col) ? goog.array.contains(col, val) : goog.object.containsValue(col, val);
+  return col.contains && "function" == typeof col.contains ? col.contains(val) : col.containsValue && "function" == typeof col.containsValue ? col.containsValue(val) : goog.isArrayLike(col) || goog.isString(col) ? goog.array.contains(col, val) : goog.object.containsValue(col, val);
 };
 goog.structs.isEmpty = function(col) {
-  return "function" == typeof col.isEmpty ? col.isEmpty() : goog.isArrayLike(col) || goog.isString(col) ? goog.array.isEmpty(col) : goog.object.isEmpty(col);
+  return col.isEmpty && "function" == typeof col.isEmpty ? col.isEmpty() : goog.isArrayLike(col) || goog.isString(col) ? goog.array.isEmpty(col) : goog.object.isEmpty(col);
 };
 goog.structs.clear = function(col) {
-  "function" == typeof col.clear ? col.clear() : goog.isArrayLike(col) ? goog.array.clear(col) : goog.object.clear(col);
+  col.clear && "function" == typeof col.clear ? col.clear() : goog.isArrayLike(col) ? goog.array.clear(col) : goog.object.clear(col);
 };
 goog.structs.forEach = function(col, f, opt_obj) {
-  if ("function" == typeof col.forEach) {
+  if (col.forEach && "function" == typeof col.forEach) {
     col.forEach(f, opt_obj);
   } else {
     if (goog.isArrayLike(col) || goog.isString(col)) {

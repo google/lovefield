@@ -57,6 +57,10 @@ var j;
 var d;
 
 
+/** @type {!hr.db.schema.CrossColumnTable} */
+var cct;
+
+
 /** @type {!hr.db.schema.DummyTable} */
 var dt;
 
@@ -81,6 +85,7 @@ function setUp() {
   e = schema.getEmployee();
   j = schema.getJob();
   d = schema.getDepartment();
+  cct = schema.getCrossColumnTable();
   dt = schema.getDummyTable();
 
   hr.db.connect({storeType: lf.schema.DataStoreType.MEMORY}).then(
@@ -293,7 +298,8 @@ function testTree_MultiplePredicates_SingleColumnIndices() {
 
 /**
  * Tests a tree where
- *  - two cross-column indices exist, each index is indexing two columns.
+ *  - two cross-column indices exist, each index is indexing two columns (one of
+ *    which is a nullable index).
  *  - two predicates exist for the first cross-column index.
  *  - two predicates exist for the second cross-column index.
  *
@@ -302,20 +308,20 @@ function testTree_MultiplePredicates_SingleColumnIndices() {
  */
 function testTree_MultipleCrossColumnIndices() {
   var treeBefore =
-      'select(value_pred(DummyTable.string eq StringValue))\n' +
-      '-select(value_pred(DummyTable.integer gt 100))\n' +
-      '--select(value_pred(DummyTable.number gte 400))\n' +
-      '---select(value_pred(DummyTable.string2 eq StringValue2))\n' +
-      '----table_access(DummyTable)\n';
+      'select(value_pred(CrossColumnTable.string1 gt StringValue1))\n' +
+      '-select(value_pred(CrossColumnTable.integer2 gt 100))\n' +
+      '--select(value_pred(CrossColumnTable.integer1 gte 400))\n' +
+      '---select(value_pred(CrossColumnTable.string2 eq StringValue2))\n' +
+      '----table_access(CrossColumnTable)\n';
 
   var treeAfter =
-      'select(value_pred(DummyTable.string eq StringValue))\n' +
-      '-select(value_pred(DummyTable.number gte 400))\n' +
-      '--table_access_by_row_id(DummyTable)\n' +
-      '---index_range_scan(DummyTable.uq_constraint, ' +
-          '(100, unbound],[StringValue2, StringValue2], natural)\n';
+      'select(value_pred(CrossColumnTable.integer2 gt 100))\n' +
+      '-select(value_pred(CrossColumnTable.integer1 gte 400))\n' +
+      '--table_access_by_row_id(CrossColumnTable)\n' +
+      '---index_range_scan(CrossColumnTable.idx_crossNull, ' +
+          '(StringValue1, unbound],[StringValue2, StringValue2], natural)\n';
 
-  var indices = dt.getIndices();
+  var indices = cct.getIndices();
   lf.testing.util.simulateIndexCost(
       propertyReplacer, indexStore, indices[0], 100);
   lf.testing.util.simulateIndexCost(
@@ -323,12 +329,12 @@ function testTree_MultipleCrossColumnIndices() {
 
   var constructTree = function() {
     var queryContext = new lf.query.SelectContext(hr.db.getSchema());
-    queryContext.from = [dt];
+    queryContext.from = [cct];
     queryContext.where = lf.op.and(
-        dt.string.eq('StringValue'),
-        dt.integer.gt(100),
-        dt.number.gte(400),
-        dt.string2.eq('StringValue2'));
+        cct.string1.gt('StringValue1'),
+        cct.integer2.gt(100),
+        cct.integer1.gte(400),
+        cct.string2.eq('StringValue2'));
 
     var selectNode1 = createSelectStep(queryContext, 0);
     var selectNode2 = createSelectStep(queryContext, 1);
