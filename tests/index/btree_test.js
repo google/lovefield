@@ -1435,3 +1435,19 @@ function testGetRange_MultiNullableKey() {
       [16, 14, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 15],
       tree.getRange());
 }
+
+function testGetRange_MultiKey() {
+  var comparator = new lf.index.MultiKeyComparator(
+      lf.index.MultiKeyComparator.createOrders(2, lf.Order.ASC));
+  var tree = new lf.index.BTree('test', comparator, true);
+  for (var i = 1; i <= 10; ++i) {
+    tree.add([i, i * 10], i);
+  }
+  tree.add([11, 30], 11);
+
+  var keyRange = [[
+    lf.index.SingleKeyRange.lowerBound(2, true),
+    lf.index.SingleKeyRange.only(30)
+  ]];
+  assertArrayEquals([3, 11], tree.getRange(keyRange));
+}
