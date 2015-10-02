@@ -98,17 +98,6 @@ this codelab.
 
 
 # Step 0: Download and run the skeleton code
-There are two ways to get and run the skeleton code.
-
-## Using a zip file
-1. Download a zip file from [here](
-   http://google.github.io/lovefield/stock_analyzer/stock_analyzer.zip).
-2. Unzip the file.
-3. Start a local web server, for example `python -m SimpleHTTPServer`.
-4. Navigate to [http://localhost:8000/src/step1/index.html](
-   http://localhost:8000/src/step1/index.html).
-
-## Using Github repository
 1. Clone the Github repository from the command line.
    `git clone https://github.com/google/lovefield.git`
 2. Follow instructions in `lovefield/codelabs/stock_analyzer/README.md`.
