@@ -64,7 +64,7 @@ function testEndToEnd_StaticSchema() {
       }));
   tester.run().then(function() {
     asyncTestCase.continueTesting();
-  });
+  }, fail);
 }
 
 function testEndToEnd_StaticSchemaBundled() {
@@ -104,7 +104,7 @@ function testEndToEnd_StaticSchemaBundled() {
   var tester = new lf.testing.EndToEndTester(globalFn, connectFn);
   tester.run().then(function() {
     asyncTestCase.continueTesting();
-  });
+  }, fail);
 }
 
 function testEndToEnd_DynamicSchema() {
@@ -117,7 +117,7 @@ function testEndToEnd_DynamicSchema() {
       }));
   tester.run().then(function() {
     asyncTestCase.continueTesting();
-  });
+  }, fail);
 }
 
 function testEndToEnd_DynamicSchemaBundled() {
@@ -141,5 +141,5 @@ function testEndToEnd_DynamicSchemaBundled() {
   var tester = new lf.testing.EndToEndTester(globalFn, connectFn);
   tester.run().then(function() {
     asyncTestCase.continueTesting();
-  });
+  }, fail);
 }

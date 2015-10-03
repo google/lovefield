@@ -3646,6 +3646,7 @@ goog.exportProperty(lf.TransactionType, "READ_WRITE", lf.TransactionType.READ_WR
 lf.Transaction = function() {
 };
 lf.backstore = {};
+lf.backstore.TableType = {DATA:0, INDEX:1};
 lf.backstore.Tx = function() {
 };
 lf.backstore.BaseTx = function(txType, opt_journal) {
@@ -3678,7 +3679,7 @@ lf.backstore.BaseTx.prototype.mergeIntoBackstore_ = function() {
 lf.backstore.BaseTx.prototype.mergeTableChanges_ = function() {
   var diff = this.journal_.getDiff();
   diff.forEach(function(tableDiff, tableName) {
-    var tableSchema = this.journal_.getScope().get(tableName), table = this.getTable(tableSchema.getName(), tableSchema.deserializeRow.bind(tableSchema)), toDeleteRowIds = lf.structs.map.values(tableDiff.getDeleted()).map(function(row) {
+    var tableSchema = this.journal_.getScope().get(tableName), table = this.getTable(tableSchema.getName(), tableSchema.deserializeRow.bind(tableSchema), lf.backstore.TableType.DATA), toDeleteRowIds = lf.structs.map.values(tableDiff.getDeleted()).map(function(row) {
       return row.id();
     });
     0 < toDeleteRowIds.length && table.remove(toDeleteRowIds).thenCatch(this.handleError_, this);
@@ -3691,10 +3692,9 @@ lf.backstore.BaseTx.prototype.mergeTableChanges_ = function() {
 lf.backstore.BaseTx.prototype.mergeIndexChanges_ = function() {
   var indices = this.journal_.getIndexDiff();
   indices.forEach(function(index) {
-    var indexTable = this.getTable(index.getName(), lf.Row.deserialize);
-    indexTable.remove([]).then(function() {
-      indexTable.put(index.serialize());
-    }, this.handleError_.bind(this));
+    var indexTable = this.getTable(index.getName(), lf.Row.deserialize, lf.backstore.TableType.INDEX);
+    indexTable.remove([]);
+    indexTable.put(index.serialize());
   }, this);
 };
 lf.backstore.BaseTx.prototype.handleError_ = function(e) {
@@ -4010,7 +4010,6 @@ lf.backstore.Page.prototype.serialize = function() {
 lf.backstore.Page.deserialize = function(data) {
   return new lf.backstore.Page(data.id, JSON.parse(data.value));
 };
-lf.backstore.TableType = {DATA:0, INDEX:1};
 lf.backstore.BundledObjectStore = function(store, deserializeFn, retrievePageFn) {
   this.store_ = store;
   this.deserializeFn_ = deserializeFn;
@@ -7789,7 +7788,7 @@ lf.cache.Prefetcher.prototype.init = function(schema) {
   return execSequentially();
 };
 lf.cache.Prefetcher.prototype.fetchTable_ = function(table) {
-  var tx = this.backStore_.createTx(lf.TransactionType.READ_ONLY, [table]), store = tx.getTable(table.getName(), table.deserializeRow.bind(table)), promise = store.get([]).then(function(results) {
+  var tx = this.backStore_.createTx(lf.TransactionType.READ_ONLY, [table]), store = tx.getTable(table.getName(), table.deserializeRow.bind(table), lf.backstore.TableType.DATA), promise = store.get([]).then(function(results) {
     this.cache_.setMany(table.getName(), results);
     this.reconstructNonPersistentIndices_(table, results);
   }.bind(this));
@@ -7806,7 +7805,7 @@ lf.cache.Prefetcher.prototype.reconstructNonPersistentIndices_ = function(tableS
   });
 };
 lf.cache.Prefetcher.prototype.fetchTableWithPersistentIndices_ = function(tableSchema) {
-  var tx = this.backStore_.createTx(lf.TransactionType.READ_ONLY, [tableSchema]), store = tx.getTable(tableSchema.getName(), tableSchema.deserializeRow), whenTableContentsFetched = store.get([]).then(function(results) {
+  var tx = this.backStore_.createTx(lf.TransactionType.READ_ONLY, [tableSchema]), store = tx.getTable(tableSchema.getName(), tableSchema.deserializeRow, lf.backstore.TableType.DATA), whenTableContentsFetched = store.get([]).then(function(results) {
     this.cache_.setMany(tableSchema.getName(), results);
   }.bind(this)), whenIndicesReconstructed = tableSchema.getIndices().map(function(indexSchema) {
     return this.reconstructPersistentIndex_(indexSchema, tx);
@@ -10979,7 +10978,7 @@ lf.proc.ImportTask.prototype.import_ = function() {
   for (tableName in this.data_.tables) {
     var tableSchema = this.schema_.table(tableName), payloads = this.data_.tables[tableName], rows = payloads.map(function(value) {
       return tableSchema.createRow(value);
-    }), table = tx.getTable(tableName, tableSchema.deserializeRow);
+    }), table = tx.getTable(tableName, tableSchema.deserializeRow, lf.backstore.TableType.DATA);
     this.cache_.setMany(tableName, rows);
     var indices = this.indexStore_.getTableIndices(tableName);
     rows.forEach(function(row) {

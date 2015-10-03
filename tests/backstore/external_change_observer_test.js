@@ -21,6 +21,7 @@ goog.require('goog.testing.jsunit');
 goog.require('hr.db');
 goog.require('lf.TransactionType');
 goog.require('lf.backstore.ExternalChangeObserver');
+goog.require('lf.backstore.TableType');
 goog.require('lf.cache.Journal');
 goog.require('lf.schema.DataStoreType');
 goog.require('lf.service');
@@ -217,7 +218,8 @@ function simulateInsertionModification(tableSchema, rows) {
           lf.structs.set.create([tableSchema])));
   var table = tx.getTable(
       tableSchema.getName(),
-      tableSchema.deserializeRow.bind(tableSchema));
+      tableSchema.deserializeRow.bind(tableSchema),
+      lf.backstore.TableType.DATA);
   table.put(rows);
   return tx.commit();
 }
@@ -237,7 +239,8 @@ function simulateDeletion(tableSchema, rows) {
           lf.structs.set.create([tableSchema])));
   var table = tx.getTable(
       tableSchema.getName(),
-      tableSchema.deserializeRow.bind(tableSchema));
+      tableSchema.deserializeRow.bind(tableSchema),
+      lf.backstore.TableType.DATA);
 
   var rowIds = rows.map(function(row) { return row.id(); });
   table.remove(rowIds);

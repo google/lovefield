@@ -22,6 +22,7 @@ goog.require('goog.testing.jsunit');
 goog.require('hr.db');
 goog.require('lf.Row');
 goog.require('lf.TransactionType');
+goog.require('lf.backstore.TableType');
 goog.require('lf.index.BTree');
 goog.require('lf.index.ComparatorFactory');
 goog.require('lf.index.RowId');
@@ -286,10 +287,13 @@ function assertAllIndicesPopulated(targetTable, rows) {
   var tableIndices = targetTable.getIndices();
   var promises = tableIndices.map(function(indexSchema) {
     var indexName = indexSchema.getNormalizedName();
-    return tx.getTable(indexName, lf.Row.deserialize).get([]);
+    return tx.getTable(
+        indexName, lf.Row.deserialize, lf.backstore.TableType.INDEX).get([]);
   });
   promises.push(tx.getTable(
-      targetTable.getRowIdIndexName(), lf.Row.deserialize).get([]));
+      targetTable.getRowIdIndexName(),
+      lf.Row.deserialize,
+      lf.backstore.TableType.INDEX).get([]));
 
   return goog.Promise.all(promises).then(function(results) {
     var rowIdIndexResults = results.splice(results.length - 1, 1)[0];

@@ -25,6 +25,7 @@ goog.require('lf.Global');
 goog.require('lf.Row');
 goog.require('lf.TransactionType');
 goog.require('lf.backstore.IndexedDB');
+goog.require('lf.backstore.TableType');
 goog.require('lf.cache.DefaultCache');
 goog.require('lf.cache.Journal');
 goog.require('lf.index.MemoryIndexStore');
@@ -98,7 +99,10 @@ function tearDown() {
         var tx = db.createTx(
             lf.TransactionType.READ_WRITE, [table], createJournal([table]));
         var store = /** @type {!lf.backstore.ObjectStore} */ (
-            tx.getTable(table.getName(), table.deserializeRow.bind(table)));
+            tx.getTable(
+                table.getName(),
+                table.deserializeRow.bind(table),
+                lf.backstore.TableType.DATA));
 
         store.remove([]);
         return tx.commit();
@@ -177,12 +181,33 @@ function testTwoTableInserts_Bundled() {
   var row3 = lf.Row.create(CONTENTS2);
   var row4 = new lf.Row(row.id(), CONTENTS2);
 
+  /**
+   * @param {!lf.backstore.Tx} tx
+   * @return {!lf.backstore.ObjectStore}
+   */
+  var getTableA = function(tx) {
+    return /** @type {!lf.backstore.ObjectStore} */ (tx.getTable(
+        tableA.getName(),
+        tableA.deserializeRow.bind(tableA),
+        lf.backstore.TableType.DATA));
+  };
+
+  /**
+   * @param {!lf.backstore.Tx} tx
+   * @return {!lf.backstore.ObjectStore}
+   */
+  var getTableB = function(tx) {
+    return /** @type {!lf.backstore.ObjectStore} */ (tx.getTable(
+        tableB.getName(),
+        tableB.deserializeRow.bind(tableB),
+        lf.backstore.TableType.DATA));
+  };
+
   asyncTestCase.waitForAsync('testTwoTableInserts_Bundled');
   return db.init().then(function() {
     var tx = db.createTx(
         lf.TransactionType.READ_WRITE, [tableA], createJournal([tableA]));
-    var store = /** @type {!lf.backstore.ObjectStore} */ (
-        tx.getTable(tableA.getName(), tableA.deserializeRow.bind(tableA)));
+    var store = getTableA(tx);
 
     // insert row1 into table A
     store.put([row]);
@@ -190,16 +215,14 @@ function testTwoTableInserts_Bundled() {
   }).then(function() {
     var tx = db.createTx(
         lf.TransactionType.READ_WRITE, [tableB], createJournal([tableB]));
-    var store = /** @type {!lf.backstore.ObjectStore} */ (
-        tx.getTable(tableB.getName(), tableB.deserializeRow.bind(tableB)));
+    var store = getTableB(tx);
 
     // insert row2 into table B
     store.put([row2]);
     return tx.commit();
   }).then(function() {
     var tx = db.createTx(lf.TransactionType.READ_ONLY, [tableB]);
-    var store = /** @type {!lf.backstore.ObjectStore} */ (
-        tx.getTable(tableB.getName(), tableB.deserializeRow.bind(tableB)));
+    var store = getTableB(tx);
 
     // get row2 from table B
     return store.get([row2.id()]);
@@ -210,8 +233,7 @@ function testTwoTableInserts_Bundled() {
 
     var tx = db.createTx(
         lf.TransactionType.READ_WRITE, [tableA], createJournal([tableA]));
-    var store = /** @type {!lf.backstore.ObjectStore} */ (
-        tx.getTable(tableA.getName(), tableA.deserializeRow.bind(tableA)));
+    var store = getTableA(tx);
 
     // update row1, insert row3 into table A
     store.put([row4, row3]);
@@ -230,8 +252,7 @@ function testTwoTableInserts_Bundled() {
 
     var tx = db.createTx(
         lf.TransactionType.READ_WRITE, [tableA], createJournal([tableA]));
-    var store = /** @type {!lf.backstore.ObjectStore} */ (
-        tx.getTable(tableA.getName(), tableA.deserializeRow.bind(tableA)));
+    var store = getTableA(tx);
 
     // remove row1
     store.remove([row3.id()]);
@@ -277,7 +298,10 @@ function testScanRowId() {
     var tx = db.createTx(
         lf.TransactionType.READ_WRITE, [table], createJournal([table]));
     var store = /** @type {!lf.backstore.ObjectStore} */ (
-        tx.getTable(table.getName(), table.deserializeRow.bind(table)));
+        tx.getTable(
+            table.getName(),
+            table.deserializeRow.bind(table),
+            lf.backstore.TableType.DATA));
     store.put(rows);
     return tx.commit();
   };
@@ -336,7 +360,10 @@ function testScanRowId_BundledDB() {
     var tx = db.createTx(
         lf.TransactionType.READ_WRITE, [table], createJournal([table]));
     var store = /** @type {!lf.backstore.ObjectStore} */ (
-        tx.getTable(table.getName(), table.deserializeRow.bind(table)));
+        tx.getTable(
+            table.getName(),
+            table.deserializeRow.bind(table),
+            lf.backstore.TableType.DATA));
 
     store.put(rows);
     return tx.commit();
@@ -406,7 +433,10 @@ function testUpgrade() {
     var tx = db.createTx(
         lf.TransactionType.READ_WRITE, [table], createJournal([table]));
     var store = /** @type {!lf.backstore.ObjectStore} */ (
-        tx.getTable(table.getName(), table.deserializeRow.bind(table)));
+        tx.getTable(
+            table.getName(),
+            table.deserializeRow.bind(table),
+            lf.backstore.TableType.DATA));
     assertNotNull(store);
     asyncTestCase.continueTesting();
   });

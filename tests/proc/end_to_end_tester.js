@@ -19,6 +19,7 @@ goog.provide('lf.testing.EndToEndTester');
 
 goog.require('goog.Promise');
 goog.require('goog.testing.jsunit');
+goog.require('lf.backstore.TableType');
 goog.require('lf.bind');
 goog.require('lf.testing.hrSchema.JobDataGenerator');
 goog.require('lf.testing.hrSchema.MockDataGenerator');
@@ -60,6 +61,7 @@ lf.testing.EndToEndTester = function(globalFn, connectFn) {
     [this.testInsert_NoPrimaryKey.bind(this), true],
     [this.testInsert_CrossColumnPrimaryKey.bind(this), false],
     [this.testInsert_CrossColumnUniqueKey.bind(this), false],
+    [this.testInsert_CrossColumnNullableIndex.bind(this), false],
     [this.testInsert_AutoIncrement.bind(this), false],
     [this.testInsert_FkViolation.bind(this), false],
     [this.testInsertOrReplace_AutoIncrement.bind(this), false],
@@ -287,6 +289,54 @@ lf.testing.EndToEndTester.prototype.testInsert_CrossColumnUniqueKey =
         assertEquals(201, e.code);
         lf.testing.EndToEndTester.markDone_(
                 'testInsert_CrossColumnUniqueKey');
+      });
+};
+
+
+/** @return {!IThenable} */
+lf.testing.EndToEndTester.prototype.testInsert_CrossColumnNullableIndex =
+    function() {
+  var table = this.db_.getSchema().table('CrossColumnTable');
+
+  // Creating two rows where 'uq_constraint' is violated.
+  var row1 = table.createRow({
+    'integer1': 1,
+    'integer2': 2,
+    'string1': 'A',
+    'string2': 'Z',
+  });
+  var row2 = table.createRow({
+    'integer1': 2,
+    'integer2': 3,
+    'string1': 'B',
+    'string2': null
+  });
+  var row3 = table.createRow({
+    'integer1': 3,
+    'integer2': 4,
+    'string1': null,
+    'string2': 'Y',
+  });
+  var row4 = table.createRow({
+    'integer1': 5,
+    'integer2': 6,
+    'string1': null,
+    'string2': null,
+  });
+
+  var rows = [row1, row2, row3, row4];
+  return this.db_.insert().into(table).values(rows).exec().then(
+      function(results) {
+        assertEquals(4, results.length);
+        return this.db_.select().from(table).orderBy(table.integer1).exec();
+      }.bind(this)).then(
+      function(results) {
+        var expected = rows.map(function(row) {
+          return row.payload();
+        });
+        assertArrayEquals(expected, results);
+        lf.testing.EndToEndTester.markDone_(
+            'testInsert_CrossColumnNullableIndex');
       });
 };
 

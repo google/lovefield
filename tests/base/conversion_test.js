@@ -22,6 +22,7 @@ goog.require('hr.db');
 goog.require('lf.Capability');
 goog.require('lf.Row');
 goog.require('lf.TransactionType');
+goog.require('lf.backstore.TableType');
 goog.require('lf.schema.DataStoreType');
 goog.require('lf.service');
 
@@ -110,7 +111,10 @@ function testConversions() {
         hr.db.getGlobal().getService(lf.service.BACK_STORE));
     var tx = backStore.createTx(lf.TransactionType.READ_ONLY, [tableSchema]);
     var store = /** @type {!lf.backstore.ObjectStore} */ (
-        tx.getTable(tableSchema.getName(), tableSchema.deserializeRow));
+        tx.getTable(
+            tableSchema.getName(),
+            tableSchema.deserializeRow,
+            lf.backstore.TableType.DATA));
     return store.get([]);
   };
 

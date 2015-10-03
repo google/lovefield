@@ -20,6 +20,7 @@ goog.provide('lf.testing.SmokeTester');
 goog.require('goog.Promise');
 goog.require('goog.testing.jsunit');
 goog.require('lf.TransactionType');
+goog.require('lf.backstore.TableType');
 goog.require('lf.service');
 
 
@@ -302,5 +303,7 @@ lf.testing.SmokeTester.prototype.generateSampleRowsWithSamePrimaryKey_ =
 lf.testing.SmokeTester.prototype.selectAll_ = function() {
   var r = this.r_;
   var tx = this.backStore_.createTx(lf.TransactionType.READ_ONLY, [r]);
-  return tx.getTable(r.getName(), goog.bind(r.deserializeRow, r)).get([]);
+  return tx.getTable(
+      r.getName(), goog.bind(r.deserializeRow, r), lf.backstore.TableType.DATA).
+      get([]);
 };

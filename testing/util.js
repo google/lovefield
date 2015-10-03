@@ -18,6 +18,7 @@ goog.provide('lf.testing.util');
 
 goog.require('goog.Promise');
 goog.require('lf.TransactionType');
+goog.require('lf.backstore.TableType');
 goog.require('lf.service');
 
 goog.forwardDeclare('goog.testing.PropertyReplacer');
@@ -100,7 +101,8 @@ lf.testing.util.selectAll = function(global, tableSchema) {
   var tx = backStore.createTx(lf.TransactionType.READ_ONLY, [tableSchema]);
   var table = tx.getTable(
       tableSchema.getName(),
-      tableSchema.deserializeRow.bind(tableSchema));
+      tableSchema.deserializeRow.bind(tableSchema),
+      lf.backstore.TableType.DATA);
   return table.get([]);
 };
 
