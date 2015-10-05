@@ -60,6 +60,9 @@ lf.testing.EndToEndSelectTester = function(connectFn) {
   /** @private {!lf.schema.Table} */
   this.l_;
 
+  /** @private {!lf.schema.Table} */
+  this.cct_;
+
   /** @private {!lf.testing.hrSchema.MockDataGenerator} */
   this.dataGenerator_;
 
@@ -75,6 +78,7 @@ lf.testing.EndToEndSelectTester = function(connectFn) {
     this.testSkipIndex.bind(this),
     this.testSkipIndexZero.bind(this),
     this.testPredicate.bind(this),
+    this.testPredicate_IsNull.bind(this),
     this.testAs.bind(this),
     this.testColumnFiltering.bind(this),
     this.testImplicitJoin.bind(this),
@@ -85,6 +89,8 @@ lf.testing.EndToEndSelectTester = function(connectFn) {
     this.testMultiJoin_Explicit.bind(this),
     this.testPredicate_VarArgAnd.bind(this),
     this.testPredicate_VarArgOr.bind(this),
+    this.testCrossColumnNullable_PartialMatch.bind(this),
+    this.testCrossColumnNullable_FullMatch.bind(this),
     this.testExplicitJoin.bind(this),
     this.testOuterJoin.bind(this),
     this.testOuterInnerJoin.bind(this),
@@ -150,6 +156,7 @@ lf.testing.EndToEndSelectTester.prototype.setUp_ = function() {
         this.c_ = db.getSchema().table('Country');
         this.r_ = db.getSchema().table('Region');
         this.l_ = db.getSchema().table('Location');
+        this.cct_ = db.getSchema().table('CrossColumnTable');
         return this.addSampleData_();
       }.bind(this));
 };
@@ -165,9 +172,9 @@ lf.testing.EndToEndSelectTester.prototype.addSampleData_ = function() {
       /* employeeCount */ 300,
       /* departmentCount */ 10);
 
-  var r = this.db_.getSchema().table('Region');
-  var c = this.db_.getSchema().table('Country');
-  var l = this.db_.getSchema().table('Location');
+  var r = this.r_;
+  var c = this.c_;
+  var l = this.l_;
 
   return this.db_.createTransaction().exec([
     this.db_.insert().into(r).values(this.dataGenerator_.sampleRegions),
@@ -177,7 +184,37 @@ lf.testing.EndToEndSelectTester.prototype.addSampleData_ = function() {
         this.dataGenerator_.sampleDepartments),
     this.db_.insert().into(this.j_).values(this.dataGenerator_.sampleJobs),
     this.db_.insert().into(this.e_).values(this.dataGenerator_.sampleEmployees),
+    this.db_.insert().into(this.cct_).values(this.getSampleCrossColumnTable_())
   ]);
+};
+
+
+/**
+ * Sample rows for the CrossColumnTable, which contains a nullable cross-column
+ * index.
+ * @return {!Array<!lf.Row>}
+ * @private
+ */
+lf.testing.EndToEndSelectTester.prototype.getSampleCrossColumnTable_ =
+    function() {
+  var sampleRows = new Array(20);
+  var padZeros = function(n) {
+    return (n < 10) ? ('0' + n) : n;
+  };
+
+  for (var i = 0; i < 20; i++) {
+    sampleRows[i] = this.cct_.createRow({
+      integer1: i,
+      integer2: i * 10,
+      // Generating a null value for i = [10, 12, 14].
+      string1: (i % 2 == 0 && i >= 10 && i < 15) ?
+          null : ('string1_' + padZeros(i)),
+      // Generating a null value for i = 16 and 18.
+      string2: (i % 2 == 0 && i >= 15) ?
+          null : ('string2_' + (i * 10).toString())
+    });
+  }
+  return sampleRows;
 };
 
 
@@ -368,6 +405,89 @@ lf.testing.EndToEndSelectTester.prototype.testPredicate = function() {
       function(results) {
         assertEquals(1, results.length);
         assertEquals(targetId, results[0].id);
+      });
+};
+
+
+/** @return {!IThenable} */
+lf.testing.EndToEndSelectTester.prototype.testPredicate_IsNull =
+    function() {
+  var queryBuilder = /** @type {!lf.query.SelectBuilder} */ (this.db_.
+      select().
+      from(this.cct_).
+      where(this.cct_['string1'].isNull()));
+
+  // TODO(dpapad): Currently isNull() predicates do not leverage indices.
+  // Reverse the assertion below once addressed.
+  var plan = queryBuilder.explain();
+  assertFalse(plan.indexOf(
+      'index_range_scan(CrossColumnTable.idx_crossNull') != -1);
+
+  return queryBuilder.exec().then(
+      function(results) {
+        assertSameElements(
+            [10, 12, 14],
+            results.map(function(obj) { return obj['integer1'] }));
+      });
+};
+
+
+/**
+ * Tests the case where a cross-column nullable index is being used, even though
+ * the predicates only bind the first indexed column, but not the 2nd indexed
+ * column.
+ * @return {!IThenable}
+ */
+lf.testing.EndToEndSelectTester.prototype.testCrossColumnNullable_PartialMatch =
+    function() {
+  var targetValue = 'string1_09';
+  var queryBuilder = /** @type {!lf.query.SelectBuilder} */ (this.db_.
+      select().
+      from(this.cct_).
+      where(this.cct_['string1'].gt(targetValue)));
+
+  // Ensure that cross-column nullable index is being used.
+  var plan = queryBuilder.explain();
+  assertTrue(plan.indexOf(
+      'index_range_scan(CrossColumnTable.idx_crossNull') != -1);
+
+  return queryBuilder.exec().then(
+      function(results) {
+        // Rows with integer1 value of 14, 16 and 18 have string1 value of null,
+        // so should not appear in the results.
+        assertSameElements(
+            [11, 13, 15, 16, 17, 18, 19],
+            results.map(function(obj) { return obj['integer1'] }));
+      });
+};
+
+
+/**
+ * Tests the case where a cross-column nullable index is being used and both
+ * indexed columns are bound by predicates.
+ * @return {!IThenable}
+ */
+lf.testing.EndToEndSelectTester.prototype.testCrossColumnNullable_FullMatch =
+    function() {
+  var targetString1 = 'string1_08';
+  var targetString2 = 'string2_80';
+  var queryBuilder = /** @type {!lf.query.SelectBuilder} */ (this.db_.
+      select().
+      from(this.cct_).
+      where(lf.op.and(
+          this.cct_['string1'].eq(targetString1),
+          this.cct_['string2'].eq(targetString2))));
+
+  // Ensure that cross-column nullable index is being used.
+  var plan = queryBuilder.explain();
+  assertTrue(plan.indexOf(
+      'index_range_scan(CrossColumnTable.idx_crossNull') != -1);
+
+  return queryBuilder.exec().then(
+      function(results) {
+        assertSameElements(
+            [8],
+            results.map(function(obj) { return obj['integer1'] }));
       });
 };
 

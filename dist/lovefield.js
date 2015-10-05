@@ -678,8 +678,7 @@ goog.string.caseInsensitiveCompare = function(str1, str2) {
   var test1 = String(str1).toLowerCase(), test2 = String(str2).toLowerCase();
   return test1 < test2 ? -1 : test1 == test2 ? 0 : 1;
 };
-goog.string.numerateCompareRegExp_ = /(\.\d+)|(\d+)|(\D+)/g;
-goog.string.numerateCompare = function(str1, str2) {
+goog.string.numberAwareCompare_ = function(str1, str2, tokenizerRegExp) {
   if (str1 == str2) {
     return 0;
   }
@@ -689,7 +688,7 @@ goog.string.numerateCompare = function(str1, str2) {
   if (!str2) {
     return 1;
   }
-  for (var tokens1 = str1.toLowerCase().match(goog.string.numerateCompareRegExp_), tokens2 = str2.toLowerCase().match(goog.string.numerateCompareRegExp_), count = Math.min(tokens1.length, tokens2.length), i = 0;i < count;i++) {
+  for (var tokens1 = str1.toLowerCase().match(tokenizerRegExp), tokens2 = str2.toLowerCase().match(tokenizerRegExp), count = Math.min(tokens1.length, tokens2.length), i = 0;i < count;i++) {
     var a = tokens1[i], b = tokens2[i];
     if (a != b) {
       var num1 = parseInt(a, 10);
@@ -704,6 +703,13 @@ goog.string.numerateCompare = function(str1, str2) {
   }
   return tokens1.length != tokens2.length ? tokens1.length - tokens2.length : str1 < str2 ? -1 : 1;
 };
+goog.string.intAwareCompare = function(str1, str2) {
+  return goog.string.numberAwareCompare_(str1, str2, /\d+|\D+/g);
+};
+goog.string.floatAwareCompare = function(str1, str2) {
+  return goog.string.numberAwareCompare_(str1, str2, /\d+|\.\d+|\D+/g);
+};
+goog.string.numerateCompare = goog.string.floatAwareCompare;
 goog.string.urlEncode = function(str) {
   return encodeURIComponent(String(str));
 };
