@@ -1,3 +1,21 @@
+Version: 2.0.64<br>
+Publish date: 20151005<br>
+Changes:
+ - Implemented cascaded deletions/updates.
+ - Implemented cross-column nullable indices.
+ - Performance and memory improvements for READ_ONLY queries.
+ - Modified distributed binaries such that they can be imported as modules.
+ - Disable usage of native Map/Set for Safari or iOS Chrome.
+ - Fixed a bug in BTree#getRange() for the case of LIMIT and SKIP by index.
+ - Fixed a bug in BTree#getRange() for cross-column indices.
+ - Fixed a bug preventing persisted indices to be serialized correctly if
+   "bundled" mode is used.
+ - Expliticly disallowing multiple calls to connect(), to avoid misusage.
+ - Falling back to WEB_SQL or MEMORY data stores if no explicit data store type
+   is requested in `connectOptions` and INDEXED_DB is not available.
+ - Using the faster and experimental IDBObjectStore#getAll when available.
+ - Stop accidentally distributing the codelabs/ folder through bower.
+
 Version: 2.0.63<br>
 Publish date: 20150917<br>
 Changes:
