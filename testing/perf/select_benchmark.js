@@ -80,6 +80,7 @@ lf.testing.perf.SelectBenchmark.EPSILON_ = Math.pow(10, -9);
 /**
  * @typedef {{
 *    employeeId: string,
+*    employeeIds: !Array<string>,
 *    employeeEmail: string,
 *    employeeHireDateStart: !Date,
 *    employeeHireDateEnd: !Date,
@@ -113,6 +114,18 @@ lf.testing.perf.SelectBenchmark.prototype.generateQueryData_ = function() {
   queryData.employeeEmail =
       sampleEmployees[employeeEmailIndex].getEmail();
 
+  // Randomly select an employee somewhere in the first half.
+  var employeeIndex1 =
+      Math.floor(Math.random() * (sampleEmployees.length / 2));
+  // Randomly select an employee somewhere in the second half.
+  var employeeIndex2 = Math.floor(
+          (sampleEmployees.length / 2) +
+          Math.random() * (sampleEmployees.length / 2));
+  queryData.employeeIds = [
+    sampleEmployees[employeeIndex1].getId(),
+    sampleEmployees[Math.floor((employeeIndex1 + employeeIndex2) / 2)].getId(),
+    sampleEmployees[employeeIndex2].getId()
+  ];
 
   queryData.employeeSalariesSpacedOut = [];
   queryData.employeeHireDatesSpacedOut = [];
@@ -453,6 +466,36 @@ lf.testing.perf.SelectBenchmark.prototype.verifyMultiRowNonIndexedRange =
   }, this);
 
   return goog.Promise.resolve(validated);
+};
+
+
+/** @return {!IThenable} */
+lf.testing.perf.SelectBenchmark.prototype.queryMultiRowIndexedOrPredicate =
+    function() {
+  var predicates = this.queryData_.employeeIds.map(function(employeeId) {
+    return this.e_['id'].eq(employeeId);
+  }, this);
+
+  return this.db_.
+      select().
+      from(this.e_).
+      where(lf.op.or.apply(null, predicates)).
+      exec();
+};
+
+
+/**
+ * @param {!Array<!Object>} results
+ * @return {!IThenable<boolean>}
+ */
+lf.testing.perf.SelectBenchmark.prototype.verifyMultiRowIndexedOrPredicate =
+    function(results) {
+  assertEquals(this.queryData_.employeeIds.length, results.length);
+  var actualIds = results.map(function(obj) {
+    return obj[this.e_['id'].getName()];
+  }, this);
+  assertSameElements(this.queryData_.employeeIds, actualIds);
+  return goog.Promise.resolve(true);
 };
 
 
@@ -812,6 +855,10 @@ lf.testing.perf.SelectBenchmark.prototype.getTestCases = function() {
         'SelectMultiRowNonIndexedSpacedOut',
         this.queryMultiRowNonIndexedSpacedOut.bind(this),
         this.verifyMultiRowNonIndexedSpacedOut.bind(this)),
+    new lf.testing.perf.TestCase(
+        'SelectMultiRowIndexedOrPredicate',
+        this.queryMultiRowIndexedOrPredicate.bind(this),
+        this.verifyMultiRowIndexedOrPredicate.bind(this)),
     new lf.testing.perf.TestCase(
         'SelectOrderByIndexed',
         this.queryOrderByIndexed.bind(this),
