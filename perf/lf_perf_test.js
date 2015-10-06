@@ -123,7 +123,9 @@ function test2FullTableOps_Mem() {
   var benchmark = new lf.testing.perf.FullTableBenchmark(
       /* opt_volatile*/ true);
   var benchmarkRunner = new lf.testing.perf.BenchmarkRunner(
-      'Full table SCUD Mem');
+      'Full table SCUD Mem',
+      undefined,
+      benchmark.close.bind(benchmark));
   benchmarkRunner.schedule(benchmark);
 
   return benchmarkRunner.run(REPETITIONS).then(function(results) {
@@ -158,7 +160,9 @@ function test3PKTableOps_Mem() {
   var benchmark = new lf.testing.perf.PkTableBenchmark(
       /* opt_volatile */ true);
   var benchmarkRunner = new lf.testing.perf.BenchmarkRunner(
-      'PK-based SCUD Mem');
+      'PK-based SCUD Mem',
+      undefined,
+      benchmark.close.bind(benchmark));
   benchmarkRunner.schedule(benchmark);
 
   benchmarkRunner.run(REPETITIONS).then(function(results) {
@@ -175,22 +179,21 @@ function test3PKTableOps_Mem() {
  */
 function selectRunner(name, db) {
   var selectBenchmark;
-  var tearDown;
 
   return lf.testing.perf.SelectBenchmark.fromJson(
       'test4_mock_data_30k.json', db).then(function(benchmark) {
     selectBenchmark = benchmark;
-    tearDown = selectBenchmark.tearDown.bind(selectBenchmark);
 
     return selectBenchmark.insertSampleData();
   }).then(function() {
-    var benchmarkRunner = new lf.testing.perf.BenchmarkRunner(name);
+    var benchmarkRunner = new lf.testing.perf.BenchmarkRunner(
+        name, undefined, selectBenchmark.tearDown.bind(selectBenchmark));
     benchmarkRunner.schedule(selectBenchmark);
 
     return benchmarkRunner.run(REPETITIONS).then(function(results) {
       overallResults.push(results);
     });
-  }).then(tearDown, tearDown);
+  });
 }
 
 
@@ -243,11 +246,15 @@ function test5LoadingPopulatedDB() {
       return benchmark.loadTestData('default_benchmark_mock_data_50k.json');
     }).then(function() {
       return benchmark.insert(rowCount);
+    }).then(function() {
+      return benchmark.close(true /* skipDeletion */);
     });
   };
 
   var benchmarkRunner = new lf.testing.perf.BenchmarkRunner(
-      'Loading Populated DB', preRunSetup);
+      'Loading Populated DB',
+      preRunSetup,
+      benchmark.close.bind(benchmark));
   benchmarkRunner.schedule(benchmark);
 
   benchmarkRunner.run(REPETITIONS).then(function(results) {

@@ -69,11 +69,21 @@ lf.testing.perf.DefaultBenchmark_.prototype.init = function() {
 };
 
 
-/** @return {!IThenable} */
-lf.testing.perf.DefaultBenchmark_.prototype.close = function() {
-  return this.db_.delete().from(this.e_).exec().then(goog.bind(function() {
-    return this.db_.close();
-  }, this));
+/**
+ * @param {boolean=} opt_skipDeletion Whether to simply close the DB connection
+ *     without deleting the DB contents. Defaults to false.
+ * @return {!IThenable}
+ */
+lf.testing.perf.DefaultBenchmark_.prototype.close = function(opt_skipDeletion) {
+  var skipDeletion = opt_skipDeletion || false;
+  if (skipDeletion) {
+    this.db_.close();
+    return goog.Promise.resolve();
+  } else {
+    return this.db_.delete().from(this.e_).exec().then(function() {
+      this.db_.close();
+    }.bind(this));
+  }
 };
 
 

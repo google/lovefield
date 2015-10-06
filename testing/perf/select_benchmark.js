@@ -204,7 +204,9 @@ lf.testing.perf.SelectBenchmark.prototype.tearDown = function() {
   return tx.exec([
     this.db_.delete().from(this.e_),
     this.db_.delete().from(this.j_)
-  ]);
+  ]).then(function() {
+    this.db_.close();
+  }.bind(this));
 };
 
 
