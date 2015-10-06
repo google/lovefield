@@ -186,13 +186,13 @@ function selectRunner(name, db) {
 
     return selectBenchmark.insertSampleData();
   }).then(function() {
-    var benchmarkRunner = new lf.testing.perf.BenchmarkRunner(
-        name, undefined, selectBenchmark.tearDown.bind(selectBenchmark));
+    var benchmarkRunner = new lf.testing.perf.BenchmarkRunner(name);
     benchmarkRunner.schedule(selectBenchmark);
 
-    return benchmarkRunner.run(REPETITIONS).then(function(results) {
-      overallResults.push(results);
-    });
+    return benchmarkRunner.run(REPETITIONS);
+  }).then(function(results) {
+    overallResults.push(results);
+    return selectBenchmark.tearDown();
   });
 }
 
