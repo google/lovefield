@@ -19,7 +19,7 @@ var gulp = /** @type {{
     src: !Function}} */ (require('gulp'));
 var gjslint = /** @type {!Function} */ (require('gulp-gjslint'));
 var pathMod = require('path');
-var chalk = /** @type {{green: !Function, red: !Function}} */ (
+var chalk = /** @type {{green: !Function, red: !Function, cyan: !Function}} */ (
     require('chalk'));
 var nopt = /** @type {!Function} */ (require('nopt'));
 
@@ -61,6 +61,7 @@ gulp.task('default', function() {
       '--browser=<target>]:');
   log('      Run unit tests using webdriver (need separate install).');
   log('      Currently, chrome|firefox|ie|safari are valid webdriver targets.');
+  log('      Can pass multiple browsers by repeating the --browser flag.');
 });
 
 
@@ -116,12 +117,13 @@ gulp.task('debug', function() {
 
 gulp.task('test', ['debug'], function() {
   var knownOpts = {
-    'browser': [String, null],
+    'browser': [String, Array, null],
     'filter': [String, null],
     'target': [String]
   };
   var options = nopt(knownOpts);
-  options.browser = options.browser || 'chrome';
+  var browsers = options.browser instanceof Array ?
+      options.browser : [options.browser || 'chrome'];
 
   var whenTestsDone = null;
   if (options.target == 'perf') {
@@ -137,18 +139,28 @@ gulp.task('test', ['debug'], function() {
     whenTestsDone = runner.runSpacTests();
   } else {
     // Run only JSUnit tests.
-    whenTestsDone =
-        runner.runJsUnitTests(options.filter, options.browser).then(
-            function(results) {
-              var failedCount = results.reduce(function(prev, item) {
-                return prev + (item['pass'] ? 0 : 1);
-              }, 0);
-              log(results.length + ' tests, ' + failedCount + ' failure(s).');
-              log('JSUnit tests: ', failedCount > 0 ? chalk.red('FAILED') :
-                  chalk.green('PASSED'));
-              testServer.stopServer();
-              process.exit(failedCount == 0 ? 0 : 1);
-            });
+    var testBrowser = function(browser) {
+      return runner.runJsUnitTests(options.filter, browser).then(
+          function(results) {
+            var failedCount = results.reduce(function(prev, item) {
+              return prev + (item['pass'] ? 0 : 1);
+            }, 0);
+            log(results.length + ' tests, ' + failedCount + ' failure(s).');
+            log('[ ' + chalk.cyan(browser) + ' ] JSUnit tests: ',
+                failedCount > 0 ? chalk.red('FAILED') : chalk.green('PASSED'));
+            if (failedCount > 0) {
+              throw new Error();
+            }
+          });
+    };
+
+    var whenBrowsersDone = browsers.map(function(browser) {
+      return testBrowser(browser);
+    });
+    whenTestsDone = Promise.all(whenBrowsersDone).then(function() {
+      testServer.stopServer();
+      process.exit();
+    });
   }
   return whenTestsDone;
 });
