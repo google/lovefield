@@ -30,6 +30,7 @@ goog.require('lf.service');
 goog.require('lf.structs.map');
 goog.require('lf.structs.set');
 goog.require('lf.testing.getSchemaBuilder');
+goog.require('lf.testing.util');
 
 
 /** @type {!goog.testing.AsyncTestCase} */
@@ -361,6 +362,51 @@ function testExternalChange() {
     return testDelete();
   }).then(function() {
     db.unsubscribe();
+    asyncTestCase.continueTesting();
+  });
+}
+
+function testReload() {
+  if (!manualMode) {
+    return;
+  }
+
+  asyncTestCase.waitForAsync('testReload');
+
+  var mydb;
+  var options = {
+    storeType: lf.schema.DataStoreType.FIREBASE,
+    firebase: fb
+  };
+
+  var t;
+  var CONTENTS0 = {'id': 'hello0', 'name': 'world0'};
+  var CONTENTS1 = {'id': 'hello1', 'name': 'world1'};
+  var builder = lf.testing.getSchemaBuilder('mock_schema');
+  builder.connect(options).then(function(database) {
+    mydb = database;
+    t = mydb.getSchema().table('tableA');
+    var row0 = t.createRow(CONTENTS0);
+    var row1 = t.createRow(CONTENTS1);
+    return mydb.insert().into(t).values([row0, row1]).exec();
+  }).then(function() {
+    return mydb.select().from(t).orderBy(t['id']).exec();
+  }).then(function(results) {
+    assertArrayEquals([CONTENTS0, CONTENTS1], results);
+    mydb.close();
+    t = null;
+    return lf.testing.getSchemaBuilder('mock_schema').connect(options);
+  }).then(function(database2) {
+    assertTrue(database2 != mydb);
+    mydb = database2;
+    t = mydb.getSchema().table('tableA');
+    return mydb.select().from(t).exec();
+  }).then(function(results) {
+    assertEquals(2, results.length);
+    var row0 = t.createRow({'id': 'hello0', 'name': 'world0'});
+    var q = mydb.insert().into(t).values([row0]);
+    return lf.testing.util.assertThrowsErrorAsync(201, q.exec.bind(q));
+  }).then(function() {
     asyncTestCase.continueTesting();
   });
 }

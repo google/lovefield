@@ -5786,8 +5786,8 @@ lf.backstore.Firebase.prototype.generateDiff_ = function(snapshot) {
     if ("@rev" != child.key()) {
       var rowId = parseInt(child.key(), 10);
       if (!removedIds.has(rowId)) {
-        var row = child.val(), diff = diffs.get(row.T), table = this.tables_.get(diff.getName());
-        table.getData().has(rowId) ? diff.modify([table.getSync([rowId])[0], new lf.Row(rowId, row.P)]) : diff.add(new lf.Row(rowId, row.P));
+        var row = child.val(), diff = diffs.get(row.T), table = this.tables_.get(diff.getName()), tableSchema = this.schema_.table(diff.getName()), nowRow = tableSchema.deserializeRow({id:rowId, value:row.P});
+        table.getData().has(rowId) ? diff.modify([table.getSync([rowId])[0], nowRow]) : diff.add(nowRow);
       }
     }
   }.bind(this));
@@ -5796,11 +5796,11 @@ lf.backstore.Firebase.prototype.generateDiff_ = function(snapshot) {
   });
 };
 lf.backstore.Firebase.prototype.reloadTable = function(tableName) {
-  var resolver = goog.Promise.withResolver(), tid = this.getTableId(tableName);
+  var resolver = goog.Promise.withResolver(), tid = this.getTableId(tableName), tableSchema = this.schema_.table(tableName);
   this.db_.orderByChild("T").equalTo(tid).once("value", function(snapshot) {
     var memTable = new lf.backstore.MemoryTable, rows = [];
     snapshot.forEach(function(rowSnapshot) {
-      rows.push(new lf.Row(parseInt(rowSnapshot.key(), 10), rowSnapshot.val().P));
+      rows.push(tableSchema.deserializeRow({id:parseInt(rowSnapshot.key(), 10), value:rowSnapshot.val().P}));
     });
     memTable.putSync(rows);
     this.tables_.set(tableName, memTable);
