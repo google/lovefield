@@ -4351,7 +4351,7 @@ lf.cache.ConstraintChecker.prototype.checkReferredKey_ = function(foreignKeySpec
   modifications.forEach(function(modification) {
     var didColumnValueChange = lf.cache.ConstraintChecker.didColumnValueChange_(modification[0], modification[1], foreignKeySpec.name);
     if (didColumnValueChange) {
-      var rowAfter = modification[1], parentKey = rowAfter.payload()[foreignKeySpec.childColumn];
+      var rowAfter = modification[1], parentKey = rowAfter.keyOfIndex(foreignKeySpec.name);
       if (!goog.isNull(parentKey) && !parentIndex.containsKey(parentKey)) {
         throw new lf.Exception(203, foreignKeySpec.name);
       }
@@ -4410,7 +4410,7 @@ lf.cache.ConstraintChecker.prototype.loopThroughReferringRows_ = function(foreig
     modifications.forEach(function(modification) {
       var didColumnValueChange = lf.cache.ConstraintChecker.didColumnValueChange_(modification[0], modification[1], parentIndex.getName());
       if (didColumnValueChange) {
-        var rowBefore = modification[0], parentKey = rowBefore.payload()[foreignKeySpec.parentColumn];
+        var rowBefore = modification[0], parentKey = rowBefore.keyOfIndex(parentIndex.getName());
         callbackFn(foreignKeySpec, childIndex, parentKey, modification);
       }
     }, this);
