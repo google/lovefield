@@ -324,3 +324,19 @@ function testCompareRange() {
   assertArrayEquals([false, false],
       c.compareRange(key, [upperBoundExclude, upperBoundExclude]));
 }
+
+
+function testIsFirstKeyInRange() {
+  var c = new lf.index.MultiKeyComparatorWithNull(
+      [lf.Order.ASC, lf.Order.DESC]);
+  var all = lf.index.SingleKeyRange.all();
+  var only1 = lf.index.SingleKeyRange.only(1);
+  var only2 = lf.index.SingleKeyRange.only(2);
+
+  assertTrue(c.isFirstKeyInRange([1, 2], [only1, only1]));
+  assertTrue(c.isFirstKeyInRange([1, 2], [all, only1]));
+  assertTrue(c.isFirstKeyInRange([1, 2], [only1, null]));
+  assertTrue(c.isFirstKeyInRange([null, 2], [all, only1]));
+  assertFalse(c.isFirstKeyInRange([1, 2], [only2, all]));
+  assertFalse(c.isFirstKeyInRange([null, 2], [only1, all]));
+}

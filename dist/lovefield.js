@@ -6936,8 +6936,8 @@ lf.index.BTree.prototype.getRange = function(opt_keyRanges, opt_reverseOrder, op
   }
   var sortedKeyRanges = this.comparator_.sortKeyRanges(opt_keyRanges), results = Array(reverse ? this.stats_.totalRows : maxCount), params = {count:0, limit:results.length, reverse:reverse, skip:skip}, useFilter = 1 < leftMostKey.length;
   sortedKeyRanges.forEach(function(range) {
-    for (var keys = this.comparator_.rangeToKeys(range), key = this.comparator_.isLeftOpen(range) ? leftMostKey : keys[0], start = this.root_.getContainingLeaf(key), oldCount = params.count, strikeCount = 0;goog.isDefAndNotNull(start) && params.count < params.limit;) {
-      useFilter ? start.getRangeWithFilter(range, params, results) : (start.getRange(range, params, results), params.count != oldCount || 0 < params.skip ? (strikeCount = 0, oldCount = params.count) : strikeCount++), start = 2 == strikeCount ? null : start.next();
+    for (var keys = this.comparator_.rangeToKeys(range), key = this.comparator_.isLeftOpen(range) ? leftMostKey : keys[0], start = this.root_.getContainingLeaf(key), strikeCount = 0;goog.isDefAndNotNull(start) && params.count < params.limit;) {
+      useFilter ? start.getRangeWithFilter(range, params, results) : start.getRange(range, params, results), 0 != params.skip || start.isFirstKeyInRange(range) ? strikeCount = 0 : strikeCount++, start = 2 == strikeCount ? null : start.next();
     }
   }, this);
   results.length > params.count && results.splice(params.count, results.length - params.count);
@@ -7426,6 +7426,9 @@ lf.index.BTreeNode_.deserialize = function(rows, tree) {
   }
   return 1 < leaves.length ? lf.index.BTreeNode_.createInternals_(leaves[0]) : leaves[0];
 };
+lf.index.BTreeNode_.prototype.isFirstKeyInRange = function(range) {
+  return this.tree_.comparator().isFirstKeyInRange(this.keys_[0], range);
+};
 lf.index.SimpleComparator = function(order) {
   this.compareFn = order == lf.Order.DESC ? lf.index.SimpleComparator.compareDescending : lf.index.SimpleComparator.compareAscending;
   this.normalizeKeyRange_ = order == lf.Order.DESC ? function(opt_keyRange) {
@@ -7435,7 +7438,6 @@ lf.index.SimpleComparator = function(order) {
   };
   this.orderRange_ = order == lf.Order.DESC ? lf.index.SimpleComparator.orderRangeDescending : lf.index.SimpleComparator.orderRangeAscending;
 };
-goog.inherits(lf.index.SimpleComparator, lf.index.Comparator);
 lf.index.SimpleComparator.compareAscending = function(lhs, rhs) {
   return lhs > rhs ? lf.index.Favor.LHS : lhs < rhs ? lf.index.Favor.RHS : lf.index.Favor.TIE;
 };
@@ -7469,6 +7471,9 @@ lf.index.SimpleComparator.prototype.max = function(lhs, rhs) {
 lf.index.SimpleComparator.prototype.isInRange = function(key, range) {
   var results = this.compareRange(key, range);
   return results[0] && results[1];
+};
+lf.index.SimpleComparator.prototype.isFirstKeyInRange = function(key, range) {
+  return this.isInRange(key, range);
 };
 lf.index.SimpleComparator.prototype.orderKeyRange = function(lhs, rhs) {
   return this.orderRange_(lhs, rhs);
@@ -7525,7 +7530,6 @@ lf.index.MultiKeyComparator = function(orders) {
     return new lf.index.SimpleComparator(order);
   });
 };
-goog.inherits(lf.index.MultiKeyComparator, lf.index.Comparator);
 lf.index.MultiKeyComparator.createOrders = function(numKeys, order) {
   for (var orders = Array(numKeys), i = 0;i < numKeys;++i) {
     orders[i] = order;
@@ -7566,6 +7570,9 @@ lf.index.MultiKeyComparator.prototype.isInRange = function(key, range) {
     isInRange = this.comparators[i].isInRange(key[i], range[i]);
   }
   return isInRange;
+};
+lf.index.MultiKeyComparator.prototype.isFirstKeyInRange = function(key, range) {
+  return this.comparators[0].isInRange(key[0], range[0]);
 };
 lf.index.MultiKeyComparator.prototype.sortKeyRanges = function(keyRanges) {
   for (var outputKeyRanges = keyRanges.filter(function(range) {
