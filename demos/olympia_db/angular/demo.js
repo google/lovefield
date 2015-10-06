@@ -135,7 +135,7 @@ DbService.prototype.checkForExistingData_ = function() {
 
 /**
  * Inserts data to the DB.
- * @return {!IThenable}
+ * @return {!angular.$q.Promise}
  * @private
  */
 DbService.prototype.insertData_ = function() {
@@ -260,7 +260,7 @@ QueryBuilderController.prototype.clear = function() {
 
 
 /**
- * @return {!IThenable}
+ * @return {!angular.$q.Promise}
  * @private
  */
 QueryBuilderController.prototype.populateUi_ = function() {
