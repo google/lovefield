@@ -85,18 +85,21 @@ the *__instance__* implementing that schema. In the example, schema definition
 is carried out through a set of synchronous APIs:
 
 ```js
-// SQL equivalent: CREATE DATABASE todo
+// SQL equivalent: CREATE DATABASE IF NOT EXISTS todo
+// This schema definition (or data definition commands in SQL, DDL) is not
+// executed immediately. Lovefield uses builder pattern to build the schema
+// first, then performs necessary database open/creation later.
 var schemaBuilder = lf.schema.create('todo', 1);
 
 // SQL equivalent:
-// CREATE TABLE Item (
+// CREATE TABLE IF NOT EXISTS Item (
 //   id AS INTEGER,
 //   description AS INTEGER,
 //   deadline as DATE_TIME,
 //   done as BOOLEAN,
 //   PRIMARY KEY ON ('id')
 // );
-// CREATE INDEX idxDeadLine ON Item.deadline DESC;
+// ALTER TABLE Item ADD INDEX idxDeadLine(Item.deadline DESC);
 schemaBuilder.createTable('Item').
     addColumn('id', lf.Type.INTEGER).
     addColumn('description', lf.Type.STRING).
@@ -108,7 +111,7 @@ schemaBuilder.createTable('Item').
 
 The code above has pseudo SQL commands to demonstrate their equivalent concept
 in SQL. Once the schema is defined, Lovefield needs to be instructed to create
-the corresponding instance:
+or connect to the corresponding instance:
 
 ```js
 // Promise-based API to get the instance.
@@ -121,6 +124,10 @@ From this point on, the schema cannot be altered. Both the `connect()` and
 Lovefield offered query APIs are asynchronous Promise-based APIs. This design
 is to prevent Lovefield from blocking main thread since the queries can be
 long running and demanding quite some CPU and I/O cycles.
+
+If the database is brand new, Lovefield will create it using the schema. If the
+database already exists, Lovefield will attempt to identify the instance using
+database name specified in the schema, and connect to it.
 
 Lovefield also uses Promise chaining pattern extensively:
 
