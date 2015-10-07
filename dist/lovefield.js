@@ -4959,7 +4959,10 @@ lf.eval.Registry = function() {
   this.evalMaps_.set(lf.Type.INTEGER, numberOrIntegerEvalMap);
   this.evalMaps_.set(lf.Type.STRING, lf.eval.buildStringEvaluatorMap_());
 };
-goog.addSingletonGetter(lf.eval.Registry);
+lf.eval.Registry.get = function() {
+  goog.isDefAndNotNull(lf.eval.Registry.instance_) || (lf.eval.Registry.instance_ = new lf.eval.Registry);
+  return lf.eval.Registry.instance_;
+};
 lf.eval.Registry.prototype.getEvaluator = function(columnType, evaluatorType) {
   var evaluationMap = this.evalMaps_.get(columnType) || null;
   goog.asserts.assert(!goog.isNull(evaluationMap), "Could not find evaluation map for " + columnType);
@@ -5153,8 +5156,7 @@ lf.pred.ValuePredicate = function(column, value, evaluatorType) {
   this.column = column;
   this.value = value;
   this.evaluatorType = evaluatorType;
-  var registry = lf.eval.Registry.getInstance();
-  this.evaluatorFn_ = registry.getEvaluator(this.column.getType(), this.evaluatorType);
+  this.evaluatorFn_ = lf.eval.Registry.get().getEvaluator(this.column.getType(), this.evaluatorType);
   this.isComplement_ = !1;
   this.binder_ = value;
 };
@@ -8114,7 +8116,7 @@ lf.pred.JoinPredicate = function(leftColumn, rightColumn, evaluatorType) {
   this.rightColumn = rightColumn;
   this.evaluatorType = evaluatorType;
   this.nullPayload_ = null;
-  var registry = lf.eval.Registry.getInstance();
+  var registry = lf.eval.Registry.get();
   this.evaluatorFn_ = registry.getEvaluator(this.leftColumn.getType(), this.evaluatorType);
   this.keyOfIndexFn_ = registry.getKeyOfIndexEvaluator(this.leftColumn.getType());
 };
@@ -8168,7 +8170,7 @@ lf.pred.JoinPredicate.prototype.reverseSelf_ = function() {
       return;
   }
   this.evaluatorType = evaluatorType;
-  this.evaluatorFn_ = lf.eval.Registry.getInstance().getEvaluator(this.leftColumn.getType(), this.evaluatorType);
+  this.evaluatorFn_ = lf.eval.Registry.get().getEvaluator(this.leftColumn.getType(), this.evaluatorType);
 };
 lf.pred.JoinPredicate.prototype.eval = function(relation) {
   var entries = relation.entries.filter(function(entry) {
@@ -10734,7 +10736,7 @@ lf.proc.Runner.TaskQueue_.prototype.remove = function(task) {
   return goog.array.remove(this.queue_, task);
 };
 lf.DiffCalculator = function(query, observableResults) {
-  this.evalRegistry_ = lf.eval.Registry.getInstance();
+  this.evalRegistry_ = lf.eval.Registry.get();
   this.query_ = query;
   this.observableResults_ = observableResults;
   this.columns_ = this.detectColumns_();
@@ -11474,7 +11476,7 @@ lf.schema.ForeignKeySpec = function(rawSpec, childTable, name) {
 };
 lf.schema.TableBuilder = function(tableName) {
   this.checkNamingRules_(tableName);
-  this.evalRegistry_ = lf.eval.Registry.getInstance();
+  this.evalRegistry_ = lf.eval.Registry.get();
   this.name_ = tableName;
   this.columns_ = lf.structs.map.create();
   this.uniqueColumns_ = lf.structs.set.create();
