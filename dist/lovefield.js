@@ -2166,17 +2166,6 @@ goog.async.nextTick.wrapCallback_ = goog.functions.identity;
 goog.debug.entryPointRegistry.register(function(transformer) {
   goog.async.nextTick.wrapCallback_ = transformer;
 });
-goog.testing = {};
-goog.testing.watchers = {};
-goog.testing.watchers.resetWatchers_ = [];
-goog.testing.watchers.signalClockReset = function() {
-  for (var watchers = goog.testing.watchers.resetWatchers_, i = 0;i < watchers.length;i++) {
-    goog.testing.watchers.resetWatchers_[i]();
-  }
-};
-goog.testing.watchers.watchClockReset = function(fn) {
-  goog.testing.watchers.resetWatchers_.push(fn);
-};
 goog.async.WorkQueue = function() {
   this.workTail_ = this.workHead_ = null;
 };
@@ -2239,10 +2228,10 @@ goog.async.run.forceNextTick = function(opt_realSetTimeout) {
 };
 goog.async.run.workQueueScheduled_ = !1;
 goog.async.run.workQueue_ = new goog.async.WorkQueue;
-goog.DEBUG && (goog.async.run.resetQueue_ = function() {
+goog.DEBUG && (goog.async.run.resetQueue = function() {
   goog.async.run.workQueueScheduled_ = !1;
   goog.async.run.workQueue_ = new goog.async.WorkQueue;
-}, goog.testing.watchers.watchClockReset(goog.async.run.resetQueue_));
+});
 goog.async.run.processWorkQueue = function() {
   for (var item = null;item = goog.async.run.workQueue_.remove();) {
     try {

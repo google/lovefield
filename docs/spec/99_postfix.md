@@ -18,7 +18,7 @@ table:
 ```
 
 Bundled mode is created to workaround IndexedDB spec inefficiencies. For more
-details, see [design doc](../dd/03_backstore.md).
+details, see [design doc](../dd/02_data_store.md#232-bundled-mode-experiment).
 
 
 ## Future Features
