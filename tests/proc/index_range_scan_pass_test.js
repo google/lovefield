@@ -20,6 +20,7 @@ goog.require('goog.testing.PropertyReplacer');
 goog.require('goog.testing.jsunit');
 goog.require('hr.db');
 goog.require('lf.Order');
+goog.require('lf.index.Stats');
 goog.require('lf.op');
 goog.require('lf.proc.CrossProductStep');
 goog.require('lf.proc.IndexRangeScanPass');
@@ -149,8 +150,39 @@ function testSimpleTree() {
 }
 
 
-function toString(queryContext, node) {
-  return node.toContextString(queryContext) + '\n';
+/**
+ * Test a tree that has an IN predicate on a column that has an index. It
+ * ensures that the optimization is applied only if the number of values in the
+ * IN predicate is small enough compared to the total number of rows.
+ */
+function testTree_WithInPredicate() {
+  var treeBefore =
+      'project()\n' +
+      '-select(value_pred(Employee.id in 1,2,3))\n' +
+      '--table_access(Employee)\n';
+
+  var treeAfter =
+      'project()\n' +
+      '-table_access_by_row_id(Employee)\n' +
+      '--index_range_scan(' +
+          'Employee.pkEmployee, [1, 1],[2, 2],[3, 3], natural)\n';
+
+  var indexStats = new lf.index.Stats();
+  lf.testing.util.simulateIndexStats(
+      propertyReplacer, indexStore, e.getRowIdIndexName(), indexStats);
+
+  // Simulating case where the IN predicate has a low enough number of values
+  // with respect to the total number of rows to be eligible for optimization.
+  indexStats.totalRows = 200; // limit = 200 * 0.02 = 4
+  lf.testing.treeutil.assertTreeTransformation(
+      constructTreeWithInPredicate(3), treeBefore, treeAfter, pass);
+
+  // Simulating case where the IN predicate has a high enough number of values
+  // with respect to the total number of rows to NOT be eligible for
+  // optimization.
+  indexStats.totalRows = 100; // limit = 100 * 0.02 = 2
+  lf.testing.treeutil.assertTreeTransformation(
+      constructTreeWithInPredicate(3), treeBefore, treeBefore, pass);
 }
 
 
@@ -571,6 +603,35 @@ function constructTree3() {
   return {
     queryContext: queryContext,
     root: selectNode1
+  };
+}
+
+
+/**
+ * Constructs a tree that has an IN predicate.
+ * @param {number} valueCount The number of values in the IN predicate.
+ * @return {lf.testing.treeutil.Tree} The constructed tree and corresponding
+ *     query context.
+ */
+function constructTreeWithInPredicate(valueCount) {
+  var values = new Array(valueCount);
+  for (var i = 0; i < values.length; i++) {
+    values[i] = (i + 1).toString();
+  }
+  var queryContext = new lf.query.SelectContext(hr.db.getSchema());
+  queryContext.from = [e];
+  queryContext.where = e.id.in(values);
+
+  var projectNode = new lf.proc.ProjectStep([], null);
+  var selectNode = new lf.proc.SelectStep(queryContext.where.getId());
+  projectNode.addChild(selectNode);
+  var tableAccessNode = new lf.proc.TableAccessFullStep(
+      hr.db.getGlobal(), queryContext.from[0]);
+  selectNode.addChild(tableAccessNode);
+
+  return {
+    queryContext: queryContext,
+    root: projectNode
   };
 }
 

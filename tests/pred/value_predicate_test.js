@@ -296,6 +296,30 @@ function testToKeyRange_String() {
   p.setComplement(true);
   assertEquals(2, p.toKeyRange().length);
   assertEquals('[unbound, id1),(id2, unbound]', p.toKeyRange().toString());
+
+}
+
+
+function testToKeyRange_In_String() {
+  var values = ['id1', 'id2', 'id3'];
+  var p1 = new lf.pred.ValuePredicate(tableA['id'], values, lf.eval.Type.IN);
+  assertEquals(
+      '[id1, id1],[id2, id2],[id3, id3]',
+      p1.toKeyRange().toString());
+  p1.setComplement(true);
+  assertEquals(
+      '[unbound, id1),(id1, id2),(id2, id3),(id3, unbound]',
+      p1.toKeyRange().toString());
+
+  var p2 = new lf.pred.ValuePredicate(
+      tableA['id'], values.reverse(), lf.eval.Type.IN);
+  assertEquals(
+      '[id3, id3],[id2, id2],[id1, id1]',
+      p2.toKeyRange().toString());
+  p2.setComplement(true);
+  assertEquals(
+      '[unbound, id1),(id1, id2),(id2, id3),(id3, unbound]',
+      p2.toKeyRange().toString());
 }
 
 

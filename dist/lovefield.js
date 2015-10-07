@@ -4795,6 +4795,16 @@ lf.index.SingleKeyRange.and = function(r1, r2) {
   r.excludeUpper = right.excludeUpper;
   return r;
 };
+lf.index.SingleKeyRange.complement = function(keyRanges) {
+  if (0 == keyRanges.length) {
+    return [];
+  }
+  keyRanges.sort(lf.index.SingleKeyRange.compare);
+  for (var complementKeyRanges = Array(keyRanges.length + 1), i = 0;i < complementKeyRanges.length;i++) {
+    complementKeyRanges[i] = 0 == i ? lf.index.SingleKeyRange.upperBound(keyRanges[i].from, !0) : i == complementKeyRanges.length - 1 ? lf.index.SingleKeyRange.lowerBound(keyRanges[i - 1].to, !0) : new lf.index.SingleKeyRange(keyRanges[i - 1].to, keyRanges[i].from, !0, !0);
+  }
+  return complementKeyRanges;
+};
 lf.proc = {};
 lf.proc.Relation = function(entries, tables) {
   this.entries = entries;
@@ -5215,7 +5225,7 @@ lf.pred.ValuePredicate.prototype.toString = function() {
 };
 lf.pred.ValuePredicate.prototype.isKeyRangeCompatible = function() {
   this.checkBinding_();
-  return !goog.isNull(this.value) && (this.evaluatorType == lf.eval.Type.BETWEEN || this.evaluatorType == lf.eval.Type.EQ || this.evaluatorType == lf.eval.Type.GT || this.evaluatorType == lf.eval.Type.GTE || this.evaluatorType == lf.eval.Type.LT || this.evaluatorType == lf.eval.Type.LTE);
+  return !goog.isNull(this.value) && (this.evaluatorType == lf.eval.Type.BETWEEN || this.evaluatorType == lf.eval.Type.IN || this.evaluatorType == lf.eval.Type.EQ || this.evaluatorType == lf.eval.Type.GT || this.evaluatorType == lf.eval.Type.GTE || this.evaluatorType == lf.eval.Type.LT || this.evaluatorType == lf.eval.Type.LTE);
 };
 lf.pred.ValuePredicate.prototype.toKeyRange = function() {
   goog.asserts.assert(this.isKeyRangeCompatible(), "Could not convert predicate to key range.");
@@ -5223,7 +5233,13 @@ lf.pred.ValuePredicate.prototype.toKeyRange = function() {
   if (this.evaluatorType == lf.eval.Type.BETWEEN) {
     keyRange = new lf.index.SingleKeyRange(this.getValueAsKey_(this.value[0]), this.getValueAsKey_(this.value[1]), !1, !1);
   } else {
-    var value = this.getValueAsKey_(this.value), keyRange = this.evaluatorType == lf.eval.Type.EQ ? lf.index.SingleKeyRange.only(value) : this.evaluatorType == lf.eval.Type.GTE ? lf.index.SingleKeyRange.lowerBound(value) : this.evaluatorType == lf.eval.Type.GT ? lf.index.SingleKeyRange.lowerBound(value, !0) : this.evaluatorType == lf.eval.Type.LTE ? lf.index.SingleKeyRange.upperBound(value) : lf.index.SingleKeyRange.upperBound(value, !0)
+    if (this.evaluatorType == lf.eval.Type.IN) {
+      var keyRanges = this.value.map(function(value) {
+        return lf.index.SingleKeyRange.only(value);
+      });
+      return this.isComplement_ ? lf.index.SingleKeyRange.complement(keyRanges) : keyRanges;
+    }
+    var value$$0 = this.getValueAsKey_(this.value), keyRange = this.evaluatorType == lf.eval.Type.EQ ? lf.index.SingleKeyRange.only(value$$0) : this.evaluatorType == lf.eval.Type.GTE ? lf.index.SingleKeyRange.lowerBound(value$$0) : this.evaluatorType == lf.eval.Type.GT ? lf.index.SingleKeyRange.lowerBound(value$$0, !0) : this.evaluatorType == lf.eval.Type.LTE ? lf.index.SingleKeyRange.upperBound(value$$0) : lf.index.SingleKeyRange.upperBound(value$$0, !0);
   }
   return this.isComplement_ ? keyRange.complement() : [keyRange];
 };
@@ -10020,6 +10036,11 @@ lf.proc.IndexCostEstimator = function(global, tableSchema) {
   this.tableSchema_ = tableSchema;
   this.indexStore_ = global.getService(lf.service.INDEX_STORE);
 };
+$jscomp.scope.IN_PREDICATE_PERCENT_LIMIT = .02;
+lf.proc.IndexCostEstimator.prototype.getInPredicateValueLimit_ = function() {
+  var rowIdIndex = this.indexStore_.get(this.tableSchema_.getRowIdIndexName());
+  return Math.floor(rowIdIndex.stats().totalRows * $jscomp.scope.IN_PREDICATE_PERCENT_LIMIT);
+};
 lf.proc.IndexCostEstimator.prototype.chooseIndexFor = function(queryContext, predicates) {
   var candidatePredicates = predicates.filter(this.isCandidate_, this);
   if (0 == candidatePredicates.length) {
@@ -10049,7 +10070,7 @@ lf.proc.IndexCostEstimator.prototype.generateIndexRangeCandidates_ = function(pr
   });
 };
 lf.proc.IndexCostEstimator.prototype.isCandidate_ = function(predicate) {
-  return predicate instanceof lf.pred.ValuePredicate && predicate.isKeyRangeCompatible() ? predicate.column.getTable() == this.tableSchema_ : !1;
+  return !(predicate instanceof lf.pred.ValuePredicate && predicate.isKeyRangeCompatible()) || predicate.column.getTable() != this.tableSchema_ || predicate.evaluatorType == lf.eval.Type.IN && predicate.value.length > this.getInPredicateValueLimit_() ? !1 : !0;
 };
 lf.proc.IndexRangeCandidate = function(indexStore, indexSchema) {
   this.indexStore_ = indexStore;

@@ -120,3 +120,18 @@ lf.testing.util.simulateIndexCost = function(
   propertyReplacer.replace(
       index, 'cost', function() { return cost; });
 };
+
+
+/**
+ * Instruments the return value of lf.index.Index#stats().
+ * @param {!goog.testing.PropertyReplacer} propertyReplacer
+ * @param {!lf.index.IndexStore} indexStore
+ * @param {string} indexName
+ * @param {!lf.index.Stats} indexStats The stats to be used.
+ */
+lf.testing.util.simulateIndexStats = function(
+    propertyReplacer, indexStore, indexName, indexStats) {
+  var index = indexStore.get(indexName);
+  propertyReplacer.replace(
+      index, 'stats', function() { return indexStats; });
+};

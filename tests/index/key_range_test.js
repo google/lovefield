@@ -114,6 +114,32 @@ function testComplement_OnlyOneValue() {
 
 
 /**
+ * Tests the static KeyRange#complement() which accepts multiple key ranges.
+ */
+function testComplement_MultipleKeyRanges() {
+  var complementKeyRanges = lf.index.SingleKeyRange.complement([]);
+  assertEquals(0, complementKeyRanges.length);
+
+  var keyRange1 = lf.index.SingleKeyRange.only(20);
+  complementKeyRanges = lf.index.SingleKeyRange.complement([keyRange1]);
+  assertEquals('[unbound, 20),(20, unbound]', complementKeyRanges.join(','));
+
+  var keyRange2 = lf.index.SingleKeyRange.only(40);
+  complementKeyRanges = lf.index.SingleKeyRange.complement(
+      [keyRange1, keyRange2]);
+  assertEquals(
+      '[unbound, 20),(20, 40),(40, unbound]',
+      complementKeyRanges.join(','));
+
+  complementKeyRanges = lf.index.SingleKeyRange.complement(
+      [keyRange2, keyRange1]);
+  assertEquals(
+      '[unbound, 20),(20, 40),(40, unbound]',
+      complementKeyRanges.join(','));
+}
+
+
+/**
  * Tests KeyRange#isOnly().
  */
 function test_IsOnly() {
