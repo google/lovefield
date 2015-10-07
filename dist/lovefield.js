@@ -3464,9 +3464,10 @@ goog.userAgent.product.ASSUME_IPAD = !1;
 goog.userAgent.product.ASSUME_ANDROID = !1;
 goog.userAgent.product.ASSUME_CHROME = !1;
 goog.userAgent.product.ASSUME_SAFARI = !1;
-goog.userAgent.product.PRODUCT_KNOWN_ = goog.userAgent.ASSUME_IE || goog.userAgent.ASSUME_OPERA || goog.userAgent.product.ASSUME_FIREFOX || goog.userAgent.product.ASSUME_IPHONE || goog.userAgent.product.ASSUME_IPAD || goog.userAgent.product.ASSUME_ANDROID || goog.userAgent.product.ASSUME_CHROME || goog.userAgent.product.ASSUME_SAFARI;
+goog.userAgent.product.PRODUCT_KNOWN_ = goog.userAgent.ASSUME_IE || goog.userAgent.ASSUME_EDGE || goog.userAgent.ASSUME_OPERA || goog.userAgent.product.ASSUME_FIREFOX || goog.userAgent.product.ASSUME_IPHONE || goog.userAgent.product.ASSUME_IPAD || goog.userAgent.product.ASSUME_ANDROID || goog.userAgent.product.ASSUME_CHROME || goog.userAgent.product.ASSUME_SAFARI;
 goog.userAgent.product.OPERA = goog.userAgent.OPERA;
 goog.userAgent.product.IE = goog.userAgent.IE;
+goog.userAgent.product.EDGE = goog.userAgent.EDGE;
 goog.userAgent.product.FIREFOX = goog.userAgent.product.PRODUCT_KNOWN_ ? goog.userAgent.product.ASSUME_FIREFOX : goog.labs.userAgent.browser.isFirefox();
 goog.userAgent.product.isIphoneOrIpod_ = function() {
   return goog.labs.userAgent.platform.isIphone() || goog.labs.userAgent.platform.isIpod();

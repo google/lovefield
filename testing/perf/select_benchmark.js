@@ -484,6 +484,19 @@ lf.testing.perf.SelectBenchmark.prototype.queryMultiRowIndexedOrPredicate =
 };
 
 
+/** @return {!IThenable} */
+lf.testing.perf.SelectBenchmark.prototype.queryMultiRowIndexedInPredicate =
+    function() {
+  return this.db_.
+      select().
+      from(this.e_).
+      // TODO(dpapad): Figure out how to please the linter, complaining about
+      // 'in'.
+      where(this.e_['id']['in'](this.queryData_.employeeIds)).
+      exec();
+};
+
+
 /**
  * @param {!Array<!Object>} results
  * @return {!IThenable<boolean>}
@@ -858,6 +871,11 @@ lf.testing.perf.SelectBenchmark.prototype.getTestCases = function() {
     new lf.testing.perf.TestCase(
         'SelectMultiRowIndexedOrPredicate',
         this.queryMultiRowIndexedOrPredicate.bind(this),
+        this.verifyMultiRowIndexedOrPredicate.bind(this)),
+    new lf.testing.perf.TestCase(
+        'SelectMultiRowIndexedInPredicate',
+        this.queryMultiRowIndexedInPredicate.bind(this),
+        // Intentionally using the same verification method as with the OR case.
         this.verifyMultiRowIndexedOrPredicate.bind(this)),
     new lf.testing.perf.TestCase(
         'SelectOrderByIndexed',
