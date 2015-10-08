@@ -1440,14 +1440,57 @@ function testGetRange_MultiKey() {
   var comparator = new lf.index.MultiKeyComparator(
       lf.index.MultiKeyComparator.createOrders(2, lf.Order.ASC));
   var tree = new lf.index.BTree('test', comparator, true);
+  var tree2 = new lf.index.BTree('test2', comparator, false);
   for (var i = 1; i <= 10; ++i) {
     tree.add([i, i * 10], i);
+    tree2.add([i, i * 10], i);
+    tree2.add([i, i * 10], i * 100);
   }
   tree.add([11, 30], 11);
+  tree2.add([11, 30], 11);
+  tree2.add([11, 30], 1100);
 
   var keyRange = [[
     lf.index.SingleKeyRange.lowerBound(2, true),
     lf.index.SingleKeyRange.only(30)
   ]];
   assertArrayEquals([3, 11], tree.getRange(keyRange));
+  assertArrayEquals([3, 300, 11, 1100], tree2.getRange(keyRange));
+
+  var keyRange2 = [[
+    lf.index.SingleKeyRange.only(11),
+    lf.index.SingleKeyRange.all()
+  ]];
+  assertArrayEquals([11], tree.getRange(keyRange2));
+  assertArrayEquals([11, 1100], tree2.getRange(keyRange2));
+}
+
+function testGetRange_MultiUniqueKey() {
+  var comparator = new lf.index.MultiKeyComparator(
+      lf.index.MultiKeyComparator.createOrders(2, lf.Order.ASC));
+  var tree = new lf.index.BTree('test', comparator, true);
+
+  for (var i = 1; i <= 3; ++i) {
+    for (var j = 1; j <= 5; ++j) {
+      tree.add([i, j], i * 100 + j);
+    }
+  }
+
+  var all = lf.index.SingleKeyRange.all();
+  var only = lf.index.SingleKeyRange.only(2);
+  var lowerBound = lf.index.SingleKeyRange.lowerBound(2);
+  var lowerBoundEx = lf.index.SingleKeyRange.lowerBound(2, true);
+  var upperBound = lf.index.SingleKeyRange.upperBound(2);
+  var upperBoundEx = lf.index.SingleKeyRange.upperBound(2, true);
+
+  assertArrayEquals([201, 202, 203, 204, 205], tree.getRange([[only, all]]));
+
+  // This is a corner case: [2, 2] is the root node, and we want to test if
+  // it works correctly.
+  assertArrayEquals([202], tree.getRange([[only, only]]));
+
+  assertArrayEquals([202, 203, 204, 205], tree.getRange([[only, lowerBound]]));
+  assertArrayEquals([203, 204, 205], tree.getRange([[only, lowerBoundEx]]));
+  assertArrayEquals([201, 202], tree.getRange([[only, upperBound]]));
+  assertArrayEquals([201], tree.getRange([[only, upperBoundEx]]));
 }

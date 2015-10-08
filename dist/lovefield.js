@@ -6942,7 +6942,7 @@ lf.index.BTree.prototype.getRange = function(opt_keyRanges, opt_reverseOrder, op
   if (!goog.isDef(opt_keyRanges) || 1 == opt_keyRanges.length && opt_keyRanges[0] instanceof lf.index.SingleKeyRange && opt_keyRanges[0].isAll()) {
     return this.getAll_(maxCount, reverse, limit, skip);
   }
-  var sortedKeyRanges = this.comparator_.sortKeyRanges(opt_keyRanges), results = Array(reverse ? this.stats_.totalRows : maxCount), params = {count:0, limit:results.length, reverse:reverse, skip:skip}, useFilter = 1 < leftMostKey.length;
+  var sortedKeyRanges = this.comparator_.sortKeyRanges(opt_keyRanges), results = Array(reverse ? this.stats_.totalRows : maxCount), params = {count:0, limit:results.length, reverse:reverse, skip:skip}, useFilter = 1 < this.comparator().keyDimensions();
   sortedKeyRanges.forEach(function(range) {
     for (var keys = this.comparator_.rangeToKeys(range), key = this.comparator_.isLeftOpen(range) ? leftMostKey : keys[0], start = this.root_.getContainingLeaf(key), strikeCount = 0;goog.isDefAndNotNull(start) && params.count < params.limit;) {
       useFilter ? start.getRangeWithFilter(range, params, results) : start.getRange(range, params, results), 0 != params.skip || start.isFirstKeyInRange(range) ? strikeCount = 0 : strikeCount++, start = 2 == strikeCount ? null : start.next();
@@ -7016,9 +7016,6 @@ lf.index.BTree.prototype.isUniqueKey = function() {
 lf.index.BTree.prototype.comparator = function() {
   return this.comparator_;
 };
-lf.index.BTree.prototype.lt = function(lhs, rhs) {
-  return goog.isDefAndNotNull(lhs) ? this.comparator_.compare(lhs, rhs) == lf.index.Favor.RHS : !1;
-};
 lf.index.BTree.prototype.eq = function(lhs, rhs) {
   return goog.isDefAndNotNull(lhs) ? this.comparator_.compare(lhs, rhs) == lf.index.Favor.TIE : !1;
 };
@@ -7039,6 +7036,7 @@ lf.index.BTreeNode_ = function(id, tree) {
   this.keys_ = [];
   this.values_ = [];
   this.children_ = [];
+  this.getContainingLeaf = 1 == tree.comparator().keyDimensions() ? this.getContainingLeaf_ : this.getContainingLeafMultiKey_;
 };
 lf.index.BTreeNode_.MAX_COUNT_ = 512;
 lf.index.BTreeNode_.MAX_KEY_LEN_ = lf.index.BTreeNode_.MAX_COUNT_ - 1;
@@ -7299,17 +7297,30 @@ lf.index.BTreeNode_.prototype.splitInternal_ = function() {
   return root;
 };
 lf.index.BTreeNode_.prototype.searchKey_ = function(key) {
-  for (var left = 0, right = this.keys_.length;left < right;) {
+  for (var left = 0, right = this.keys_.length, c = this.tree_.comparator();left < right;) {
     var middle = left + right >> 1;
-    this.tree_.lt(this.keys_[middle], key) ? left = middle + 1 : right = middle;
+    c.compare(this.keys_[middle], key) == lf.index.Favor.RHS ? left = middle + 1 : right = middle;
   }
   return left;
 };
-lf.index.BTreeNode_.prototype.getContainingLeaf = function(key) {
+lf.index.BTreeNode_.prototype.getContainingLeaf_ = function(key) {
   if (!this.isLeaf_()) {
     var pos = this.searchKey_(key);
     this.tree_.eq(this.keys_[pos], key) && pos++;
-    return this.children_[pos].getContainingLeaf(key);
+    return this.children_[pos].getContainingLeaf_(key);
+  }
+  return this;
+};
+lf.index.BTreeNode_.prototype.getContainingLeafMultiKey_ = function(key) {
+  if (!this.isLeaf_()) {
+    var pos = this.searchKey_(key);
+    if (this.tree_.eq(this.keys_[pos], key)) {
+      var hasUnbound = key.some(function(dimension) {
+        return dimension == lf.index.SingleKeyRange.UNBOUND_VALUE;
+      });
+      hasUnbound || pos++;
+    }
+    return this.children_[pos].getContainingLeafMultiKey_(key);
   }
   return this;
 };
@@ -7503,6 +7514,9 @@ lf.index.SimpleComparator.prototype.rangeToKeys = function(naturalRange) {
 lf.index.SimpleComparator.prototype.comparable = function(key) {
   return !goog.isNull(key);
 };
+lf.index.SimpleComparator.prototype.keyDimensions = function() {
+  return 1;
+};
 lf.index.SimpleComparator.prototype.toString = function() {
   return this.compare == lf.index.SimpleComparator.compareDescending ? "SimpleComparator_DESC" : "SimpleComparator_ASC";
 };
@@ -7622,6 +7636,9 @@ lf.index.MultiKeyComparator.prototype.comparable = function(key) {
   return key.every(function(keyDimension, i) {
     return this.comparators[i].comparable(keyDimension);
   }, this);
+};
+lf.index.MultiKeyComparator.prototype.keyDimensions = function() {
+  return this.comparators.length;
 };
 lf.index.MultiKeyComparatorWithNull = function(orders) {
   lf.index.MultiKeyComparator.call(this, orders);
