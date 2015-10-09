@@ -16,8 +16,14 @@
  */
 var pathMod = require('path');
 var chalk =
-    /** @type {{green: !Function, red: !Function, yellow: !Function}} */ (
-    require('chalk'));
+    /**
+     * @type {{
+     *   cyan: !Function,
+     *   green: !Function,
+     *   red: !Function,
+     *   yellow: !Function
+     * }}
+     */ (require('chalk'));
 var sequentiallyRun = require(pathMod.resolve(
     pathMod.join(__dirname, '/promise_util.js'))).sequentiallyRun;
 var webdriver = /** @type {!WebDriver} */ (require('selenium-webdriver'));
@@ -29,10 +35,14 @@ var log = console['log'].bind(console);
 /**
  * @constructor
  *
+ * @param {string} name
  * @param {!WebDriver} driver
  * @param {string} url The URL of the test to be run.
  */
-var JsUnitTestRunner = function(driver, url) {
+var JsUnitTestRunner = function(name, driver, url) {
+  /** @private {string} */
+  this.name_ = name;
+
   /** @private {!WebDriver} */
   this.driver_ = driver;
 
@@ -70,6 +80,9 @@ JsUnitTestRunner.prototype.run = function() {
     var testName = parts[parts.length - 2] + '/' + parts[parts.length - 1];
     log('[',
         didSucceed ? chalk.green('PASS') : chalk.red('FAIL'),
+        ']',
+        '[',
+        chalk.cyan(this.name_),
         ']',
         testName);
     return didSucceed ? this.extractResult_() : this.extractLog_();
@@ -128,7 +141,7 @@ JsUnitTestRunner.prototype.extractResult_ = function() {
 JsUnitTestRunner.prototype.extractLog_ = function() {
   var logger = new webdriver.WebDriver.Logs(this.driver_);
   return logger.get('browser').then(function(entries) {
-    log('============ WebDriver browser log ============');
+    log('============ WebDriver [' + this.name_ + '] log ============');
     entries.forEach(function(entry) {
       var title = entry['level']['name'];
       switch (title) {
@@ -178,14 +191,15 @@ JsUnitTestRunner.prototype.whenTestFinished_ = function() {
 
 
 /**
+ * @param {string} name
  * @param {!WebDriver} driver
  * @param {!Array<string>} urls The URL of the tests to run.
  *
  * @return {!IThenable}
  */
-JsUnitTestRunner.runMany = function(driver, urls) {
+JsUnitTestRunner.runMany = function(name, driver, urls) {
   var testFunctions = urls.map(function(url) {
-    var runner = new JsUnitTestRunner(driver, url);
+    var runner = new JsUnitTestRunner(name, driver, url);
     return {
       fn: runner.run.bind(runner),
       name: url

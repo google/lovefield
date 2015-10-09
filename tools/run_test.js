@@ -28,7 +28,8 @@ var chalk = /** @type {{green: !Function, red: !Function}} */ (
     require('chalk'));
 var pathMod = require('path');
 
-var JsUnitTestRunner = require('./jsunit_test_runner.js').JsUnitTestRunner;
+var JsUnitTestRunner = /** @type {{runMany: !Function}} */ (
+    require('./jsunit_test_runner.js').JsUnitTestRunner);
 var webdriver = /** @type {!WebDriver} */ (require('selenium-webdriver'));
 
 
@@ -79,8 +80,7 @@ function runBrowserTests(testPrefix, browser, testsFolder) {
         'Waiting', startupWaitInterval,
         'ms for the browser to get ready.');
     setTimeout(function() {
-      /** @type {{runMany: !Function}} */ (
-          JsUnitTestRunner).runMany(driver, testUrls).then(
+      JsUnitTestRunner.runMany(browser, driver, testUrls).then(
           function(results) {
             var res = function() { resolve(results); };
             driver.quit().then(res, res);
@@ -151,32 +151,73 @@ function getTestUrls(testFolder, testPrefix) {
 
 
 /**
+ * TODO(arthurhsu): Safari will timeout when called. Need investigation.
+ * @param {string} browser
+ * @return {!WebDriver}
+ */
+function getRemoteWebDriver(browser) {
+  var builder = /** @type {!WebDriverBuilder} */ (new webdriver.Builder());
+  builder.usingServer('http://' +
+      process.env['SAUCE_USERNAME'] + ':' + process.env['SAUCE_ACCESS_KEY'] +
+      '@ondemand.saucelabs.com:80/wd/hub');
+  builder.disableEnvironmentOverrides();
+
+  var caps = {
+    'name': browser + ' ' + (process.env['TRAVIS_JOB_NUMBER'] || 'pilot'),
+    'username': process.env['SAUCE_USERNAME'],
+    'accessKey': process.env['SAUCE_ACCESS_KEY'],
+    'tunnel-identifier': process.env['TRAVIS_JOB_NUMBER'],
+    'loggingPrefs': {
+      'browser': 'ALL'
+    }
+  };
+  switch (browser) {
+    case 'chrome':
+      caps['browserName'] = 'chrome';
+      caps['platform'] = 'linux';
+      break;
+
+    case 'firefox':
+      caps['browserName'] = 'firefox';
+      caps['platform'] = 'linux';
+      break;
+
+    case 'safari':
+      caps['browserName'] = 'safari';
+      caps['platform'] = 'OS X 10.10';
+      break;
+
+    case 'ie':
+      caps['browserName'] = 'internet explorer';
+      caps['platform'] = 'Windows 7';
+      caps['version'] = '11.0';
+      break;
+
+    default:
+      throw new Error('Unsupported browser');
+      break;
+  }
+
+  return builder.withCapabilities(caps).build();
+}
+
+
+/**
  * @param {string} browser
  * @return {!WebDriver}
  */
 function getWebDriver(browser) {
-  var capabilities = /** @type {!WebDriverCapabilities} */ (
-      new webdriver.Capabilities());
-  capabilities.set('browserName', browser);
-  capabilities.set('loggingPrefs', { 'browser': 'ALL' });
-
-  var usingServer = false;
-
-  // Add Sauce credentials if they were set in the environment.
   if (process.env['SAUCE_USERNAME']) {
-    usingServer = true;
-    capabilities.set('name', 'Travis Job ' + process.env['TRAVIS_JOB_NUMBER']);
-    capabilities.set('username', process.env['SAUCE_USERNAME']);
-    capabilities.set('accessKey', process.env['SAUCE_ACCESS_KEY']);
-    capabilities.set('tunnel-identifier', process.env['TRAVIS_JOB_NUMBER']);
+    return getRemoteWebDriver(browser);
   }
+
+  var caps = /** @type {!WebDriverCapabilities} */ (
+      new webdriver.Capabilities());
+  caps.set('browserName', browser);
+  caps.set('loggingPrefs', { 'browser': 'ALL' });
 
   var builder = /** @type {!WebDriverBuilder} */ (new webdriver.Builder());
-  if (usingServer) {
-    builder.usingServer('http://' +
-        process.env['SAUCE_USERNAME'] + ':' + process.env['SAUCE_ACCESS_KEY'] +
-        '@ondemand.saucelabs.com:80/wd/hub');
-  }
+  builder.disableEnvironmentOverrides();
 
   if (browser == 'chrome') {
     var chromeOptions = /** @type {!ChromeOptions} */ (
@@ -186,14 +227,14 @@ function getWebDriver(browser) {
       '--no-first-run'
     ]);
 
-    return builder.withCapabilities(capabilities).
+    return builder.withCapabilities(caps).
         setChromeOptions(chromeOptions).
         build();
   } else if (browser == 'firefox') {
     var firefoxOptions = /** @type {!FirefoxOptions} */ (
         new firefoxMod.Options());
     firefoxOptions.setProfile(new firefoxMod.Profile());
-    return builder.withCapabilities(capabilities).
+    return builder.withCapabilities(caps).
         setFirefoxOptions(firefoxOptions).
         build();
   } else if (browser == 'safari') {
@@ -203,13 +244,13 @@ function getWebDriver(browser) {
     }
     var safariOptions = /** @type {!SafariOptions} */ (new safariMod.Options());
     safariOptions.setCleanSession();
-    return builder.withCapabilities(capabilities).
+    return builder.withCapabilities(caps).
         setSafariOptions(safariOptions).
         build();
   } else if (browser == 'ie') {
     var ieOptions = /** @type {!IeOptions} */ (new ieMod.Options());
     ieOptions.ensureCleanSession();
-    return builder.withCapabilities(capabilities).
+    return builder.withCapabilities(caps).
         setIeOptions(ieOptions).
         build();
   } else {
