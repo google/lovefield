@@ -1,3 +1,12 @@
+Version: 2.0.65<br>
+Publish date: 20151009<br>
+Changes:
+ - Optimize the IN predicate to leverage indices.
+ - Optimize certain class of OR predicate to leverage indices.
+ - Fix cross-column index getRange() bug that caused some results to be missing.
+ - Fix Firebase backstore incorrect serialization.
+
+Changes:
 Version: 2.0.64<br>
 Publish date: 20151005<br>
 Changes:

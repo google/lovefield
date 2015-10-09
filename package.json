@@ -1,6 +1,6 @@
 {
   "name": "lovefield",
-  "version": "2.0.64",
+  "version": "2.0.65",
   "main": "dist/lovefield.min.js",
   "description": "Lovefield - A relational database for web apps",
   "keywords": [
