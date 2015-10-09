@@ -129,8 +129,10 @@ function testTree1() {
         hr.db.getGlobal(),
         getIndexByName(e, 'idx_salary'),
         new lf.testing.proc.MockKeyRangeCalculator([
-          /** @type {!lf.pred.ValuePredicate} */ (child0).toKeyRange()[0],
-          /** @type {!lf.pred.ValuePredicate} */ (child1).toKeyRange()[0]
+          /** @type {!lf.pred.ValuePredicate} */ (
+              child0).toKeyRange().getValues()[0],
+          /** @type {!lf.pred.ValuePredicate} */ (
+              child1).toKeyRange().getValues()[0]
         ]),
         true);
     tableAccessByRowIdNode.addChild(indexRangeScanStep);

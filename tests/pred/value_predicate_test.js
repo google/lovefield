@@ -294,7 +294,6 @@ function testToKeyRange_String() {
   assertEquals('[id1, id2]', p.toKeyRange().toString());
 
   p.setComplement(true);
-  assertEquals(2, p.toKeyRange().length);
   assertEquals('[unbound, id1),(id2, unbound]', p.toKeyRange().toString());
 
 }
@@ -314,7 +313,7 @@ function testToKeyRange_In_String() {
   var p2 = new lf.pred.ValuePredicate(
       tableA['id'], values.reverse(), lf.eval.Type.IN);
   assertEquals(
-      '[id3, id3],[id2, id2],[id1, id1]',
+      '[id1, id1],[id2, id2],[id3, id3]',
       p2.toKeyRange().toString());
   p2.setComplement(true);
   assertEquals(
@@ -362,7 +361,6 @@ function testToKeyRange_DateTime() {
       p.toKeyRange().toString());
 
   p.setComplement(true);
-  assertEquals(2, p.toKeyRange().length);
   assertEquals(
       '[unbound, ' + d1.getTime() + '),(' + d2.getTime() + ', unbound]',
       p.toKeyRange().toString());
