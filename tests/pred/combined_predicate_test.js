@@ -212,6 +212,52 @@ function testSetComplement_Or() {
 }
 
 
+function testIsKeyRangeCompatbile_And() {
+  var predicate = lf.op.and(e.salary.gte(200), e.salary.lte(600));
+  assertFalse(predicate.isKeyRangeCompatible());
+}
+
+
+function testIsKeyRangeCompatbile_Or() {
+  var keyRangeCompatbilePredicates = [
+    lf.op.or(e.salary.eq(200), e.salary.eq(600)),
+    lf.op.or(e.salary.lte(200), e.salary.gte(600)),
+    lf.op.or(e.salary.eq(200))
+  ];
+  keyRangeCompatbilePredicates.forEach(function(p) {
+    assertTrue(p.isKeyRangeCompatible());
+  });
+
+  var notKeyRangeCompatbilePredicates = [
+    lf.op.or(e.firstName.match(/Foo/), e.firstName.eq('Bar')),
+    lf.op.or(e.firstName.neq('Foo'), e.firstName.eq('Bar')),
+    lf.op.or(e.salary.eq(100), lf.op.or(e.salary.eq(200), e.salary.eq(300))),
+    lf.op.or(e.salary.isNull(), e.salary.eq(600)),
+    lf.op.or(e.firstName.eq('Foo'), e.lastName.eq('Bar'))
+  ];
+  notKeyRangeCompatbilePredicates.forEach(function(p) {
+    assertFalse(p.isKeyRangeCompatible());
+  });
+}
+
+
+function testToKeyRange_Or() {
+  var testCases = [
+    [lf.op.or(e.salary.eq(200), e.salary.eq(600)), '[200, 200],[600, 600]'],
+    [lf.op.or(e.salary.lte(200), e.salary.gte(600)),
+     '[unbound, 200],[600, unbound]'],
+    [lf.op.or(e.salary.lt(200), e.salary.lt(100)), '[unbound, 200)'],
+    [lf.op.or(e.salary.eq(200), e.salary.eq(200)), '[200, 200]']
+  ];
+
+  testCases.forEach(function(testCase) {
+    var predicate = testCase[0];
+    var expected = testCase[1];
+    assertEquals(expected, predicate.toKeyRange().toString());
+  });
+}
+
+
 /**
  * Performs a series of tests for the setComplement() method.
  * @param {!lf.Predicate} predicate The combined predicate to be tested.

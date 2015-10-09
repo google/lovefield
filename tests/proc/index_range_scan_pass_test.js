@@ -186,6 +186,37 @@ function testTree_WithInPredicate() {
 }
 
 
+function testTree_WithOrPredicate() {
+  var treeBefore =
+      'project()\n' +
+      '-select(combined_pred_or)\n' +
+      '--table_access(Employee)\n';
+
+  var treeAfter =
+      'project()\n' +
+      '-table_access_by_row_id(Employee)\n' +
+      '--index_range_scan(' +
+          'Employee.pkEmployee, [1, 1],[2, 2],[3, 3], natural)\n';
+
+  var indexStats = new lf.index.Stats();
+  lf.testing.util.simulateIndexStats(
+      propertyReplacer, indexStore, e.getRowIdIndexName(), indexStats);
+
+  // Simulating case where the OR predicate has a low enough number of children
+  // with respect to the total number of rows to be eligible for optimization.
+  indexStats.totalRows = 200; // limit = 200 * 0.02 = 4
+  lf.testing.treeutil.assertTreeTransformation(
+      constructTreeWithOrPredicate(3), treeBefore, treeAfter, pass);
+
+  // Simulating case where the OR predicate has a high enough number of children
+  // with respect to the total number of rows to NOT be eligible for
+  // optimization.
+  indexStats.totalRows = 100; // limit = 100 * 0.02 = 2
+  lf.testing.treeutil.assertTreeTransformation(
+      constructTreeWithOrPredicate(3), treeBefore, treeBefore, pass);
+}
+
+
 function testTree1() {
   var treeBefore =
       'select(value_pred(Employee.id gt 100))\n' +
@@ -618,9 +649,24 @@ function constructTreeWithInPredicate(valueCount) {
   for (var i = 0; i < values.length; i++) {
     values[i] = (i + 1).toString();
   }
+  return constructTreeWithPredicate(e.id.in(values));
+}
+
+
+function constructTreeWithOrPredicate(valueCount) {
+  var predicates = new Array(valueCount);
+  for (var i = 0; i < predicates.length; i++) {
+    predicates[i] = e.id.eq((i + 1).toString());
+  }
+  var orPredicate = lf.op.or.apply(null, predicates);
+  return constructTreeWithPredicate(orPredicate);
+}
+
+
+function constructTreeWithPredicate(predicate) {
   var queryContext = new lf.query.SelectContext(hr.db.getSchema());
   queryContext.from = [e];
-  queryContext.where = e.id.in(values);
+  queryContext.where = predicate;
 
   var projectNode = new lf.proc.ProjectStep([], null);
   var selectNode = new lf.proc.SelectStep(queryContext.where.getId());

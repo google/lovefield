@@ -8133,6 +8133,33 @@ lf.pred.CombinedPredicate.prototype.combineResults_ = function(results) {
 lf.pred.CombinedPredicate.prototype.toString = function() {
   return "combined_pred_" + this.operator.toString();
 };
+lf.pred.CombinedPredicate.prototype.toKeyRange = function() {
+  goog.asserts.assert(this.isKeyRangeCompatible(), "Could not convert combined predicate to key range.");
+  if (this.operator == lf.pred.Operator.OR) {
+    var keyRangeSet = new lf.index.SingleKeyRangeSet;
+    this.getChildren().forEach(function(child) {
+      var childKeyRanges = child.toKeyRange().getValues();
+      keyRangeSet.add(childKeyRanges);
+    });
+    return keyRangeSet;
+  }
+  goog.asserts.fail("toKeyRange() called for an AND predicate.");
+  return new lf.index.SingleKeyRangeSet;
+};
+lf.pred.CombinedPredicate.prototype.isKeyRangeCompatible = function() {
+  return this.operator == lf.pred.Operator.OR ? this.isKeyRangeCompatibleOr_() : !1;
+};
+lf.pred.CombinedPredicate.prototype.isKeyRangeCompatibleOr_ = function() {
+  var predicateColumn = null;
+  return this.getChildren().every(function(child) {
+    var isCandidate = child instanceof lf.pred.ValuePredicate && child.isKeyRangeCompatible();
+    if (!isCandidate) {
+      return !1;
+    }
+    goog.isNull(predicateColumn) && (predicateColumn = child.column);
+    return predicateColumn.getNormalizedName() == child.column.getNormalizedName();
+  });
+};
 lf.pred.JoinPredicate = function(leftColumn, rightColumn, evaluatorType) {
   lf.pred.PredicateNode.call(this);
   this.leftColumn = leftColumn;
@@ -10053,10 +10080,10 @@ lf.proc.IndexCostEstimator = function(global, tableSchema) {
   this.tableSchema_ = tableSchema;
   this.indexStore_ = global.getService(lf.service.INDEX_STORE);
 };
-$jscomp.scope.IN_PREDICATE_PERCENT_LIMIT = .02;
-lf.proc.IndexCostEstimator.prototype.getInPredicateValueLimit_ = function() {
+$jscomp.scope.INDEX_QUERY_THRESHOLD_PERCENT = .02;
+lf.proc.IndexCostEstimator.prototype.getIndexQueryThreshold_ = function() {
   var rowIdIndex = this.indexStore_.get(this.tableSchema_.getRowIdIndexName());
-  return Math.floor(rowIdIndex.stats().totalRows * $jscomp.scope.IN_PREDICATE_PERCENT_LIMIT);
+  return Math.floor(rowIdIndex.stats().totalRows * $jscomp.scope.INDEX_QUERY_THRESHOLD_PERCENT);
 };
 lf.proc.IndexCostEstimator.prototype.chooseIndexFor = function(queryContext, predicates) {
   var candidatePredicates = predicates.filter(this.isCandidate_, this);
@@ -10087,7 +10114,17 @@ lf.proc.IndexCostEstimator.prototype.generateIndexRangeCandidates_ = function(pr
   });
 };
 lf.proc.IndexCostEstimator.prototype.isCandidate_ = function(predicate) {
-  return !(predicate instanceof lf.pred.ValuePredicate && predicate.isKeyRangeCompatible()) || predicate.column.getTable() != this.tableSchema_ || predicate.evaluatorType == lf.eval.Type.IN && predicate.value.length > this.getInPredicateValueLimit_() ? !1 : !0;
+  return predicate instanceof lf.pred.ValuePredicate ? this.isCandidateValuePredicate_(predicate) : predicate instanceof lf.pred.CombinedPredicate ? this.isCandidateCombinedPredicate_(predicate) : !1;
+};
+lf.proc.IndexCostEstimator.prototype.isCandidateCombinedPredicate_ = function(predicate) {
+  if (!predicate.isKeyRangeCompatible()) {
+    return !1;
+  }
+  var predicateColumn = predicate.getChildAt(0).column;
+  return predicateColumn.getTable() != this.tableSchema_ ? !1 : predicate.getChildCount() <= this.getIndexQueryThreshold_();
+};
+lf.proc.IndexCostEstimator.prototype.isCandidateValuePredicate_ = function(predicate) {
+  return !predicate.isKeyRangeCompatible() || predicate.column.getTable() != this.tableSchema_ || predicate.evaluatorType == lf.eval.Type.IN && predicate.value.length > this.getIndexQueryThreshold_() ? !1 : !0;
 };
 lf.proc.IndexRangeCandidate = function(indexStore, indexSchema) {
   this.indexStore_ = indexStore;
