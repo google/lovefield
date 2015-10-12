@@ -38,7 +38,7 @@ var asyncTestCase = goog.testing.AsyncTestCase.createAndInstall('Firebase');
 
 
 /** @type {number} */
-asyncTestCase.stepTimeout = 5000;  // Raise the timeout to 5 seconds
+asyncTestCase.stepTimeout = 20000;  // Raise the timeout to 20 seconds
 
 
 /** @type {!Firebase} */
@@ -125,7 +125,9 @@ function setUp() {
   asyncTestCase.waitForAsync('setUp');
 
   indexStore = new lf.index.MemoryIndexStore();
-  schema = lf.testing.getSchemaBuilder('mock_schema').getSchema();
+  var schemaName = 'msfb' + Date.now().toString() +
+      Math.floor(Math.random() * 1000).toString();
+  schema = lf.testing.getSchemaBuilder(schemaName).getSchema();
   cache = new lf.cache.DefaultCache(schema);
 
   global = lf.Global.get();

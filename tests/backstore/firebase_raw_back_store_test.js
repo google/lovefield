@@ -34,7 +34,7 @@ var asyncTestCase = goog.testing.AsyncTestCase.createAndInstall(
 
 
 /** @type {number} */
-asyncTestCase.stepTimeout = 5000;  // Raise the timeout to 5 seconds
+asyncTestCase.stepTimeout = 20000;  // Raise the timeout to 20 seconds
 
 
 /** @type {!Firebase} */
@@ -107,7 +107,8 @@ function setUp() {
 
   indexStore = new lf.index.MemoryIndexStore();
   schema = new lf.testing.backstore.MockSchema();
-  schema.setName(schema.name() + goog.now());
+  schema.setName('msfr' + Date.now().toString() +
+      Math.floor(Math.random() * 1000).toString());
   cache = new lf.cache.DefaultCache(schema);
 
   global = lf.Global.get();
