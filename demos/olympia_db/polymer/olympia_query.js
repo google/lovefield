@@ -41,6 +41,7 @@ goog.require('lf.schema');
         addColumn('lastName', lf.Type.STRING).
         addColumn('sport', lf.Type.STRING).
         addColumn('year', lf.Type.NUMBER).
+        addNullable(['firstName']).
         addIndex('idx_year', ['year']).
         addIndex('idx_lastName', ['lastName']).
         addNullable(['firstName']);

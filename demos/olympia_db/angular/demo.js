@@ -85,6 +85,7 @@ DbService.prototype.buildSchema_ = function() {
       addColumn('lastName', lf.Type.STRING).
       addColumn('sport', lf.Type.STRING).
       addColumn('year', lf.Type.NUMBER).
+      addNullable(['firstName']).
       addIndex('idx_year', ['year']).
       addIndex('idx_lastName', ['lastName']);
   return schemaBuilder;
