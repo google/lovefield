@@ -64,19 +64,34 @@ Curve.prototype.getYDomain = function() {
 
 
 /**
+ * @param {!d3.axisType} xAxis
+ * @param {!Object} d
+ * @return {number}
+ */
+Curve.prototype.getScaledXValue = function(xAxis, d) {
+  return xAxis(this.getXValue(d));
+};
+
+
+/**
+ * @param {!d3.axisType} yAxis
+ * @param {!Object} d
+ * @return {number}
+ */
+Curve.prototype.getScaledYValue = function(yAxis, d) {
+  return yAxis(this.getYValue(d));
+};
+
+
+/**
  * Draws this Curve.
  * @param {!d3.selection} svg The SVG container.
  * @param {!d3.axisType} xAxis
  * @param {!d3.axisType} yAxis
  */
 Curve.prototype.draw = function(svg, xAxis, yAxis) {
-  var getScaledXValue = (function(d) {
-    return xAxis(this.getXValue(d));
-  }.bind(this));
-  var getScaledYValue = (function(d) {
-    return yAxis(this.getYValue(d));
-  }.bind(this));
-
+  var getScaledXValue = this.getScaledXValue.bind(this, xAxis);
+  var getScaledYValue = this.getScaledYValue.bind(this, yAxis);
   this.drawDataLine_(svg, getScaledXValue, getScaledYValue);
   this.drawDataPoints_(svg, getScaledXValue, getScaledYValue);
 };
@@ -130,9 +145,11 @@ Curve.prototype.drawDataPoints_ = function(
  * @constructor
  *
  * @param {!HTMLElement} containerEl
+ * @param {!GraphPlotter.FocusInfoConfig} focusInfoConfig
  */
-var GraphPlotter = function(containerEl) {
+var GraphPlotter = function(containerEl, focusInfoConfig) {
   this.containerEl_ = containerEl;
+  this.focusInfoConfig_ = focusInfoConfig;
 
   var minWidth = 500;
   this.totalWidth = Math.max(minWidth, containerEl.scrollWidth - 100);
@@ -151,6 +168,15 @@ var GraphPlotter = function(containerEl) {
    */
   this.curves_ = new Map();
 };
+
+
+/**
+ * @typedef {!Array<{
+ *   label: string,
+ *   fn: function(!Object): string
+ * }>}
+ */
+GraphPlotter.FocusInfoConfig;
 
 
 /**
@@ -282,6 +308,7 @@ GraphPlotter.prototype.draw = function() {
   this.curves_.forEach(function(curve, curveName) {
     curve.draw(svg, this.x_, this.y_);
   }, this);
+  this.drawMouseOverlay_(svg);
 };
 
 
@@ -393,10 +420,9 @@ GraphPlotter.prototype.drawAxes_ = function(svg) {
  * Adds an ovrelay that is used for tracking mouse hovering and displaying the
  * y value at a given point in x.
  * @param {!d3.selection} svg
- * @param {!Array<!Object>} data
  * @private
  */
-GraphPlotter.prototype.drawMouseOverlay_ = function(svg, data) {
+GraphPlotter.prototype.drawMouseOverlay_ = function(svg) {
   var focusOverlay = svg.append('g').
       attr('class', 'focus-overlay').
       style('display', 'none');
@@ -405,37 +431,44 @@ GraphPlotter.prototype.drawMouseOverlay_ = function(svg, data) {
       attr('r', 4.0);
 
   focusOverlay.append('line').
-      attr('id', 'verticalHighlightLine').
+      attr('class', 'verticalHighlightLine').
       attr('x1', 0).
       attr('x2', 0).
       attr('y1', this.y_(this.y_.domain()[0])).
       attr('y2', this.y_(this.y_.domain()[1]));
 
   focusOverlay.append('line').
-      attr('id', 'horizontalHighlightLine').
+      attr('class', 'horizontalHighlightLine').
       attr('x1', this.x_(this.x_.domain()[0])).
       attr('x2', this.x_(this.x_.domain()[1])).
       attr('y1', 0).
       attr('y2', 0);
 
-  var focusInfo = new GraphPlotter.FocusInfo_(this, focusOverlay);
-
   svg.append('rect').
-      attr('id', 'overlay').
+      attr('class', 'mouse-overlay').
       attr('width', this.getWidth_()).
       attr('height', this.getHeight_()).
       // Adding mouse events.
       on('mouseover', function() { focusOverlay.style('display', null); }).
       on('mouseout', function() { focusOverlay.style('display', 'none'); }).
       on('mousemove', onMousemove.bind(
-          this, document.getElementById('overlay'))).
+          this, svg.select('.mouse-overlay')[0][0])).
 
       // Adding touch events.
       on('touchstart', function() { focusOverlay.style('display', null); }).
       on('touchmove', onMousemove.bind(
-          this, document.getElementById('overlay')));
+          this, svg.select('.mouse-overlay')[0][0]));
 
-  var bisectDate = d3.bisector(this.getXValue_).left;
+  // Currently only considering the first curve of the graph.
+  var mapIter = this.curves_.values();
+  var firstCurve = mapIter.next().value;
+  var getXValue = firstCurve.getXValue.bind(firstCurve);
+  var getScaledXValue = firstCurve.getScaledXValue.bind(firstCurve, this.x_);
+  var getScaledYValue = firstCurve.getScaledYValue.bind(firstCurve, this.y_);
+  var data = firstCurve.data.reverse();
+  var focusInfo = new GraphPlotter.FocusInfo_(
+      this.focusInfoConfig_, focusOverlay, getScaledXValue, getScaledYValue);
+  var bisectDate = d3.bisector(getXValue).left;
 
 
   /**
@@ -444,23 +477,23 @@ GraphPlotter.prototype.drawMouseOverlay_ = function(svg, data) {
    */
   function onMousemove(overlayElement) {
     var x0 = this.x_.invert(d3.mouse(overlayElement)[0]);
-    var i = bisectDate(data, x0, 1);
+    var i = Math.min(bisectDate(data, x0, 1), data.length - 1);
     var d0 = data[i - 1];
     var d1 = data[i];
-    var d = (x0 - this.getXValue_(d0).getTime() >
-        this.getXValue_(d1).getTime() - x0) ? d1 : d0;
+    var d = (x0 - getXValue(d0).getTime() >
+        getXValue(d1).getTime() - x0) ? d1 : d0;
     focusOverlay.attr(
         'transform',
-        'translate(' + this.getScaledXValue_(d) + ',' +
-            this.getScaledYValue_(d) + ')');
-    focusOverlay.select('#verticalHighlightLine').
+        'translate(' + getScaledXValue(d) + ',' +
+            getScaledYValue(d) + ')');
+    focusOverlay.select('.verticalHighlightLine').
         attr(
             'transform',
-            'translate(' + 0 + ',' + (-this.getScaledYValue_(d)) + ')');
-    focusOverlay.select('#horizontalHighlightLine').
+            'translate(' + 0 + ',' + (-getScaledYValue(d)) + ')');
+    focusOverlay.select('.horizontalHighlightLine').
         attr(
             'transform',
-            'translate(' + (-this.getScaledXValue_(d)) + ',' + 0 + ')');
+            'translate(' + (-getScaledXValue(d)) + ',' + 0 + ')');
     focusInfo.onMouseMove(d);
   }
 };
@@ -473,22 +506,28 @@ GraphPlotter.prototype.drawMouseOverlay_ = function(svg, data) {
  * @constructor
  * @private
  *
- * @param {!GraphPlotter} graphPlotter The parent graph plotter.
+ * @param {!GraphPlotter.FocusInfoConfig} config
  * @param {!d3.selection} container The element to place the focus information.
+ * @param {!Function} getScaledXValue
+ * @param {!Function} getScaledYValue
  */
-GraphPlotter.FocusInfo_ = function(graphPlotter, container) {
-  this.graphPlotter_ = graphPlotter;
-  this.width_ = 220;
+GraphPlotter.FocusInfo_ = function(
+    config, container, getScaledXValue, getScaledYValue) {
+  this.config_ = config;
+  this.getScaledXValue_ = getScaledXValue;
+  this.getScaledYValue_ = getScaledYValue;
+  this.width_ = 150;
   this.height_ = 140;
 
-  var rowNames = this.graphPlotter_.focusInfoConfig.map(
+  var rowNames = this.config_.map(
       function(configEntry) { return configEntry.label; });
   this.tableTemplateEl_ = this.generateTableTemplate_(rowNames);
 
   this.foreignObject_ = container.append('foreignObject').
       attr('width', this.width_).
       attr('height', this.height_).
-      attr('x', 10).
+      // Moving a bit to the right to not overlap with the graph's legend.
+      attr('x', 280).
       attr('y', 0);
 
   this.div_ = this.foreignObject_.append('xhtml:div').
@@ -508,7 +547,7 @@ GraphPlotter.FocusInfo_.prototype.populateTableTemplate_ = function(d) {
 
   tableRows.forEach(function(tableRow, index) {
     var valueEl = tableRow.getElementsByTagName('td')[1];
-    valueEl.textContent = this.graphPlotter_.focusInfoConfig[index].fn(d);
+    valueEl.textContent = this.config_[index].fn(d);
   }, this);
 };
 
@@ -523,8 +562,8 @@ GraphPlotter.FocusInfo_.prototype.onMouseMove = function(d) {
   this.foreignObject_.
       attr(
           'transform',
-          'translate(' + (-this.graphPlotter_.getScaledXValue_(d)) + ',' +
-              (-this.graphPlotter_.getScaledYValue_(d)) + ')');
+          'translate(' + (-this.getScaledXValue_(d)) + ',' +
+              (-this.getScaledYValue_(d)) + ')');
 };
 
 

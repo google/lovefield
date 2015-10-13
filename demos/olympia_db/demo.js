@@ -85,6 +85,7 @@ DbService.prototype.buildSchema_ = function() {
       addColumn('lastName', lf.Type.STRING).
       addColumn('sport', lf.Type.STRING).
       addColumn('year', lf.Type.NUMBER).
+      addNullable(['firstName']).
       addIndex('idx_year', ['year']).
       addIndex('idx_lastName', ['lastName']);
   return schemaBuilder;
@@ -135,7 +136,7 @@ DbService.prototype.checkForExistingData_ = function() {
 
 /**
  * Inserts data to the DB.
- * @return {!IThenable}
+ * @return {!angular.$q.Promise}
  * @private
  */
 DbService.prototype.insertData_ = function() {
@@ -260,7 +261,7 @@ QueryBuilderController.prototype.clear = function() {
 
 
 /**
- * @return {!IThenable}
+ * @return {!angular.$q.Promise}
  * @private
  */
 QueryBuilderController.prototype.populateUi_ = function() {

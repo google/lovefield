@@ -200,6 +200,7 @@ LovefieldService.prototype.getGeoMeanData = function() {
       select(this.pd_.date, lf.fn.geomean(this.pd_.execTime)).
       from(this.pd_).
       groupBy(this.pd_.date).
+      orderBy(this.pd_.date, lf.Order.DESC).
       exec();
 };
 
