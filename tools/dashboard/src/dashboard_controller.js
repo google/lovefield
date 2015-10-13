@@ -102,8 +102,21 @@ DashboardController.prototype.drawGraph_ = function(
             testSuiteName, curveName);
       }, this);
 
+  var focusInfoConfig = [
+    {
+      label: 'execTime',
+      fn: function(d) { return d['execTime'] + 'ms'; }
+    },
+    {
+      label: 'date',
+      fn: function(d) {
+        return d['date'].toLocaleDateString();
+      }
+    }
+  ];
+
   return Promise.all(promises).then(function(results) {
-    var graphPlotter = new GraphPlotter(containerEl);
+    var graphPlotter = new GraphPlotter(containerEl, focusInfoConfig);
     results.forEach(function(result, index) {
       var curve = new Curve(
           graph.curves[index],
@@ -126,11 +139,25 @@ DashboardController.prototype.drawGeoMean_ = function() {
   var containerEl = document.getElementById('geometric-mean');
   DashboardController.clearSvg_(containerEl);
 
+  var focusInfoConfig = [
+    {
+      label: 'date',
+      fn: function(d) {
+        return d['date'].toLocaleDateString();
+      }
+    },
+    {
+      label: 'geomean',
+      fn: function(d) {
+        return d['GEOMEAN(execTime)'].toFixed(2);
+      }
+    }
+  ];
+  var graphPlotter = new GraphPlotter(containerEl, focusInfoConfig);
+
   this.lovefieldService_.getGeoMeanData().then(function(results) {
-    var graphPlotter = new GraphPlotter(containerEl);
     var curve = new Curve(
-        'Daily Geometric Mean',
-        results,
+        'Daily Geometric Mean', results,
         function(d) { return d['date']; },
         function(d) { return d['GEOMEAN(execTime)']; });
     graphPlotter.addCurve(curve);
