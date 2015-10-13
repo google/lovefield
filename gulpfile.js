@@ -49,7 +49,7 @@ gulp.task('default', function() {
   log('Usage: ');
   log('  gulp build --target=lib --mode=<opt|debug>:');
   log('      Generate dist/lf.js using Closure compiler.');
-  log('  gulp build --target=tests --filter=<matching string>:');
+  log('  gulp build --target=tests --filter=<pattern>:');
   log('      Compile tests using Closure compiler.');
   log('  gulp debug [--target=<tests|perf>] [--port=<number>]:');
   log('      Start a debug server (default is test at port 8000)');
@@ -57,11 +57,11 @@ gulp.task('default', function() {
   log('  gulp test --target=spac: Run SPAC tests');
   log('  gulp test --target=perf [--browser=<target>]:');
   log('      Run perf tests using webdriver (need separate install).');
-  log('  gulp test --target=tests [--filter=<matching string> ' +
-      '--browser=<target>]:');
+  log('  gulp test --target=tests [--filter=<pattern> --browser=<target>]:');
   log('      Run unit tests using webdriver (need separate install).');
   log('      Currently, chrome|firefox|ie|safari are valid webdriver targets.');
   log('      Can pass multiple browsers by repeating the --browser flag.');
+  log('      Can pass multiple filters by repeating the --filter flag.');
 });
 
 
@@ -79,7 +79,7 @@ gulp.task('lint', function() {
 
 gulp.task('build', function() {
   var knownOpts = {
-    'filter': [String, null],
+    'filter': [Array, String, null],
     'mode': [String, null],
     'target': [String]
   };
@@ -117,13 +117,14 @@ gulp.task('debug', function() {
 
 gulp.task('test', ['debug'], function() {
   var knownOpts = {
-    'browser': [String, Array, null],
-    'filter': [String, null],
+    'browser': [Array, String, null],
+    'filter': [Array, String, null],
     'target': [String]
   };
   var options = nopt(knownOpts);
   var browsers = options.browser instanceof Array ?
-      options.browser : [options.browser || 'chrome'];
+      options.browser :
+      [options.browser || process.env['SELENIUM_BROWSER'] || 'chrome'];
 
   var whenTestsDone = null;
   if (options.target == 'perf') {

@@ -58,8 +58,8 @@ function runSpacTests() {
 
 /**
  * Runs tests in a browser context.
- * @param {?string} testPrefix Only tests that match the prefix will be
- *     returned. If null, all tests will run.
+ * @param {?string|?Array<string>} testPrefix Only tests that match the prefix
+ *     will be returned. If null, all tests will run.
  * @param {string} browser The browser to run the unit tests on.
  * @param {string} testsFolder The tests that contains all the test to be run.
  * @return {!IThenable}
@@ -92,8 +92,8 @@ function runBrowserTests(testPrefix, browser, testsFolder) {
 
 /**
  * Runs JSUnit tests.
- * @param {?string} testPrefix Only tests that match the prefix will be
- *     returned. If null, all tests will run.
+ * @param {?string|?Array<string>} testPrefix Only tests that match the prefix
+ *     will be returned. If null, all tests will run.
  * @param {string} browser The browser to run the unit tests on.
  * @return {!IThenable}
  */
@@ -125,19 +125,24 @@ function runJsPerfTests(browser) {
 
 /**
  * @param {string} testFolder The folder where the tests reside.
- * @param {?string} testPrefix Only tests that match the prefix will be
- *     returned. If null, all tests will run.
+ * @param {?string|?Array<string>} testPrefix Only tests that match the prefix
+ *     will be returned. If null, all tests will run.
  * @return {!Array<string>} A list of all matching testing URLs.
  */
 function getTestUrls(testFolder, testPrefix) {
+  var prefixes = testPrefix ?
+      (typeof(testPrefix) == 'string' ? [testPrefix] : testPrefix) :
+      [];
   var relativeTestUrls = glob.sync(testFolder + '/**/*_test.js').map(
       function(filename) {
         var prefixLength = testFolder.length + 1;
         return filename.substr(prefixLength);
       }).filter(
       function(filename) {
-        return testPrefix == null ?
-            true : (filename.indexOf(testPrefix) != -1);
+        var hasPrefix = prefixes.some(function(prefix) {
+          return filename.indexOf(prefix) != -1;
+        });
+        return testPrefix == null ? true : hasPrefix;
       }).map(
       function(filename) {
         return filename.replace(/\.js$/, '.html');

@@ -138,8 +138,12 @@ function buildAllTests(options) {
   var glob = /** @type {{sync:!Function}} */ (require('glob'));
   var testFiles = glob.sync('tests/**/*_test.js');
   if (options.filter) {
+    var filters = typeof(options.filter) == 'string' ? [options.filter] :
+        options.filter;
     testFiles = testFiles.filter(function(file) {
-      return file.indexOf(options.filter) != -1;
+      return filters.some(function(filter) {
+        return file.indexOf(filter) != -1;
+      });
     });
   }
 

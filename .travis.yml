@@ -11,7 +11,11 @@ env:
     - secure: "oKPKrHsFRPUAkg7lt4NfKuE9DhENlWTbyr6oGtKkjQHrRU6LPl5iYa4X3Nr30o4ehvtRX2qcCXSxM5jTAuUalxv6ANbYKMFpnqERr7O6OoYUeOAopy+WtTwABXsNctuwn9AUUpGYaBB4Ipj1Hss+Ez/zCs55qZcE2XNli2GbQ2o="
     - secure: "OP4me/rh3JpfIe6ZKL9x3ARXqSfJTqvSdJcp2NsYJyJkj0Ptg1o67WCFYhlElhBRzGwBjJbDQ09SXkV6TMGP3HSTZeVyAlTktL11Lmveg2VMyEnpZ94puxq3GCWSEwA8C4uEORpPcIQWHcD8scQf8hWyCQrqbqD9ZTQdK1ghlao="
     - secure: "E7/pAsztbZF+lrE7zwwYL6npd5Py//4990LiWynRCIX8MBSRp7ffpRSpkmF1IsUNXYOGnDByLnZwL/FkogJXc8/Da5kq93zuzm1ymTM1hDF4p3Zc5iWZfK82Af8UdZTcNgf69/fG4lOOTDjhw0dqV6bOkXCohgm9K3WdsBX8w74="
-
+  matrix:
+    - SELENIUM_BROWSER=builder1
+    - SELENIUM_BROWSER=builder2
+    - SELENIUM_BROWSER=builder3
+    - SELENIUM_BROWSER=chrome
 
 addons:
   sauce_connect:
@@ -23,10 +27,12 @@ before_script:
   - export FIREBASE_TOKEN=`cat tools/firebase_token.enc | openssl enc -aes-128-cbc -a -d -salt -pass pass:$FIREBASE_PWD`
 
 script:
-  - gulp build --target=lib --mode=opt
-  - gulp test --target=spac
-  - gulp test --target=tests --browser=chrome
-  - gulp build --target=tests
+  - >
+    if [[ $SELENIUM_BROWSER == builder* ]]; then
+      tools/builder.sh;
+    else
+      gulp test --target=tests;
+    fi
 
 notifications:
   email: false

@@ -175,6 +175,8 @@ goog.DEPENDENCIES_ENABLED && (goog.dependencies_ = {pathIsModule:{}, nameToPath:
     delete goog.dependencies_.deferred[abspath];
     goog.globalEval(src);
   }
+}, goog.loadModuleFromUrl = function(url) {
+  goog.retrieveAndExecModule_(url);
 }, goog.loadModule = function(moduleDef) {
   var previousState = goog.moduleLoaderState_;
   try {
