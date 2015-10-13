@@ -6203,7 +6203,10 @@ lf.backstore.IndexedDB.prototype.init = function(opt_onUpgrade) {
       reject(e);
       return;
     }
-    request.onerror = reject;
+    request.onerror = function(e) {
+      var error = e.target.error;
+      reject(new lf.Exception(361, error.name, error.message));
+    };
     request.onupgradeneeded = function(ev) {
       this.onUpgradeNeeded_(onUpgrade, ev).then(function() {
       }, reject);
