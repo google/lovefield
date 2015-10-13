@@ -108,12 +108,20 @@ always in the form `TableName.#`.
 
 Index on a nullable column is implemented in a different way. `NULL` involves
 three-value logic and could not be directly compared. Lovefield currently uses
-a meta-index to wrap nullable index: a composite structure that keeps a set of
-row ids whose key is null, and a real B+ Tree to keep row ids whose keys are
-not null.
+two different approaches to handle nullable index:
 
-Lovefield may alter this design later in order to support cross-column nullable
-indices.
+* For single-column nullable indices, use `NullableIndex`, which is a composite
+  structure that keeps a set of row ids whose key is null, and a real B+ Tree
+  to keep row ids whose keys are not null.
+
+* For multi-column nullable indices, use a special comparator that handles
+  null-related logic.
+
+The reason why we did not use the special comparator in single-column indices is
+performance. The special comparator requires one to two extra steps for each
+comparison it performs, which will slow down the cases where these comparisons
+are effectively no-ops.
+
 
 ### 6.4 Comparator Abstraction
 
@@ -142,11 +150,5 @@ Index structures and algorithms directly impact the database's performance.
 Lovefield team has explored following research directions but yet having time/
 resources to actually test these ideas out:
 
-* Multi-level B+ Tree indices instead of composite keys for cross-column
-  indices: composite keys may not be as efficient as just building individual
-  indices for each column and then do a set intersection.
-
 * Grid File: if the cross-column indices are created for multi-dimension range
   queries all the time, a Grid File will be more effective in this case.
-
-* Quad Tree: Another data structure for cross-column indices.
