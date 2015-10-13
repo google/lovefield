@@ -133,16 +133,29 @@ function getTestUrls(testFolder, testPrefix) {
   var prefixes = testPrefix ?
       (typeof(testPrefix) == 'string' ? [testPrefix] : testPrefix) :
       [];
+  var positivePatterns = [];
+  var negativePatterns = [];
+  prefixes.forEach(function(pattern) {
+    if (pattern.substring(0, 1) != '-') {
+      positivePatterns.push(pattern);
+    } else {
+      negativePatterns.push(pattern.slice(1));
+    }
+  });
   var relativeTestUrls = glob.sync(testFolder + '/**/*_test.js').map(
       function(filename) {
         var prefixLength = testFolder.length + 1;
         return filename.substr(prefixLength);
       }).filter(
       function(filename) {
-        var hasPrefix = prefixes.some(function(prefix) {
-          return filename.indexOf(prefix) != -1;
+        var hasPositivePattern = positivePatterns.some(function(pattern) {
+          return filename.indexOf(pattern) != -1;
         });
-        return testPrefix == null ? true : hasPrefix;
+        var hasNegativePattern = negativePatterns.some(function(pattern) {
+          return filename.indexOf(pattern) != -1;
+        });
+        return testPrefix == null ? true :
+            (hasPositivePattern && !hasNegativePattern);
       }).map(
       function(filename) {
         return filename.replace(/\.js$/, '.html');
