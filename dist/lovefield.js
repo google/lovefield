@@ -6717,16 +6717,17 @@ lf.backstore.WebSql.prototype.init = function(opt_onUpgrade) {
   var onUpgrade = opt_onUpgrade || function() {
     return goog.Promise.resolve();
   };
-  return new goog.Promise(function(resolve, reject) {
-    try {
-      var db = window.openDatabase(this.schema_.name(), "", this.schema_.name(), this.size_);
-      if (goog.isDefAndNotNull(db)) {
-        this.db_ = db, this.checkVersion_(onUpgrade).then(resolve, reject);
-      } else {
-        throw new lf.Exception(354);
-      }
-    } catch (e) {
-      reject(e);
+  return new goog.Promise(function(resolve) {
+    var db = window.openDatabase(this.schema_.name(), "", this.schema_.name(), this.size_);
+    if (goog.isDefAndNotNull(db)) {
+      this.db_ = db, this.checkVersion_(onUpgrade).then(resolve, function(e) {
+        if (e instanceof lf.Exception) {
+          throw e;
+        }
+        throw new lf.Exception(354, e.message);
+      });
+    } else {
+      throw new lf.Exception(354);
     }
   }, this);
 };
@@ -6738,7 +6739,7 @@ lf.backstore.WebSql.prototype.checkVersion_ = function(onUpgrade) {
     var version = 0;
     results[1].rows.length && (version = results[1].rows.item(0).v);
     version < this.schema_.version() ? this.onUpgrade_(onUpgrade, version).then(resolver.resolve.bind(resolver)) : version > this.schema_.version() ? resolver.reject(new lf.Exception(108)) : resolver.resolve();
-  }.bind(this));
+  }.bind(this), resolver.reject.bind(resolver));
   return resolver.promise;
 };
 lf.backstore.WebSql.prototype.createTx = function(type, scope, opt_journal) {

@@ -31,7 +31,7 @@
   "351": "Firebase does not have raw transaction.",
   "352": "IndexedDB is not supported by platform.",
   "353": "WebSQL is not supported by platform.",
-  "354": "Unable to open WebSQL database.",
+  "354": "Unable to open WebSQL database. {0}. See https://github.com/google/lovefield/blob/master/docs/FAQ.md for possible explanation.",
   "355": "WebSQL does not support change notification.",
   "356": "Use WebSQL instance to create transaction instead.",
   "357": "toSql() does not support predicate type: {0}.",
