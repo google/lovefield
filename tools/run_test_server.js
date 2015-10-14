@@ -32,6 +32,11 @@ var cleanUp =
 var stdin = process.stdin;
 var stdout = process.stdout;
 
+// The two variables guarding race conditions of killing a server while server
+// is starting.
+var killServer = false;
+var started = false;
+
 
 /**
  * @param {string} testsFolder The folder that contains the test to be included
@@ -41,6 +46,10 @@ var stdout = process.stdout;
  */
 function runTestServer(testsFolder, port) {
   return createTestEnv(testsFolder).then(function(tempPath) {
+    if (killServer) {
+      throw new Error('Debug server start inhibited');
+    }
+    started = true;
     connect.server({
       livereload: true,
       port: port,
@@ -69,7 +78,11 @@ function runPerfTestServer(port) {
 
 
 function stopServer() {
-  connect.serverClose();
+  if (started) {
+    connect.serverClose();
+  } else {
+    killServer = true;
+  }
 }
 
 

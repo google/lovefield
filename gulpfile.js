@@ -125,6 +125,17 @@ gulp.task('test', ['debug'], function() {
   var browsers = options.browser instanceof Array ?
       options.browser :
       [options.browser || process.env['SELENIUM_BROWSER'] || 'chrome'];
+  /** @param {*=} opt_error */
+  var finalize = function(opt_error) {
+    testServer.stopServer();
+    var exitCode = 0;
+    if (opt_error) {
+      var message = opt_error.message || opt_error.toString();
+      log('Error detected:', message);
+      exitCode = 1;
+    }
+    process.exit(exitCode);
+  };
 
   var whenTestsDone = null;
   if (options.target == 'perf') {
@@ -132,9 +143,8 @@ gulp.task('test', ['debug'], function() {
     whenTestsDone = runner.runJsPerfTests(options.browser).then(
         function(perfData) {
           log(JSON.stringify(perfData, null, 2));
-          testServer.stopServer();
-          process.exit();
-        });
+          finalize();
+        }, finalize);
   } else if (options.target == 'spac') {
     // Run only SPAC.
     whenTestsDone = runner.runSpacTests();
@@ -152,16 +162,14 @@ gulp.task('test', ['debug'], function() {
             if (failedCount > 0) {
               throw new Error();
             }
-          });
+          }, finalize);
     };
 
     var whenBrowsersDone = browsers.map(function(browser) {
       return testBrowser(browser);
     });
-    whenTestsDone = Promise.all(whenBrowsersDone).then(function() {
-      testServer.stopServer();
-      process.exit();
-    });
+    whenTestsDone = Promise.all(whenBrowsersDone).then(
+        function() { finalize(); }, finalize);
   }
   return whenTestsDone;
 });
