@@ -110,7 +110,7 @@ function setUpPage() {
   });
 }
 
-function tearDownPage() {
+function tearDown() {
   manualMode = window['MANUAL_MODE'] || false;
   if (!manualMode || !goog.isDefAndNotNull(fb)) {
     return;
@@ -377,6 +377,9 @@ function testReload() {
 
   asyncTestCase.waitForAsync('testReload');
 
+  // Remove the DB created by setUp because we don't need it.
+  fb.child(schema.name()).remove();
+
   var mydb;
   var options = {
     storeType: lf.schema.DataStoreType.FIREBASE,
@@ -386,7 +389,11 @@ function testReload() {
   var t;
   var CONTENTS0 = {'id': 'hello0', 'name': 'world0'};
   var CONTENTS1 = {'id': 'hello1', 'name': 'world1'};
-  var builder = lf.testing.getSchemaBuilder('mock_schema');
+  var schemaName = 'msfb' + Date.now().toString() +
+      Math.floor(Math.random() * 1000).toString();
+  var builder = lf.testing.getSchemaBuilder(schemaName);
+  schema = builder.getSchema();  // So that it can be properly cleared.
+
   builder.connect(options).then(function(database) {
     mydb = database;
     t = mydb.getSchema().table('tableA');
@@ -399,7 +406,7 @@ function testReload() {
     assertArrayEquals([CONTENTS0, CONTENTS1], results);
     mydb.close();
     t = null;
-    return lf.testing.getSchemaBuilder('mock_schema').connect(options);
+    return lf.testing.getSchemaBuilder(schemaName).connect(options);
   }).then(function(database2) {
     assertTrue(database2 != mydb);
     mydb = database2;
