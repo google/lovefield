@@ -469,7 +469,10 @@ lf.testing.perf.SelectBenchmark.prototype.verifyMultiRowNonIndexedRange =
 };
 
 
-/** @return {!IThenable} */
+/**
+ * Case where an OR predicate involving a single (indexed) column exists.
+ * @return {!IThenable}
+ */
 lf.testing.perf.SelectBenchmark.prototype.queryIndexedOrPredicate =
     function() {
   var predicates = this.queryData_.employeeIds.map(function(employeeId) {
@@ -481,6 +484,47 @@ lf.testing.perf.SelectBenchmark.prototype.queryIndexedOrPredicate =
       from(this.e_).
       where(lf.op.or.apply(null, predicates)).
       exec();
+};
+
+
+/**
+ * Case where an OR predicate involving multiple columns exists and each column
+ * has a dedicated index.
+ * @return {!IThenable}
+ */
+lf.testing.perf.SelectBenchmark.prototype.queryIndexedOrPredicateMultiColumn =
+    function() {
+  var targetSalary1 = this.queryData_.employeeSalaryStart;
+  var targetSalary2 = this.queryData_.employeeSalaryEnd;
+  var targetId = this.queryData_.employeeId;
+
+  return this.db_.
+      select().
+      from(this.e_).
+      where(lf.op.or(
+          this.e_['id'].eq(targetId),
+          this.e_['salary']['in']([targetSalary1, targetSalary2]))).
+      exec();
+};
+
+
+/**
+ * @param {!Array<!Object>} results
+ * @return {!IThenable<boolean>}
+ */
+lf.testing.perf.SelectBenchmark.prototype.verifyIndexedOrPredicateMultiColumn =
+    function(results) {
+  assertTrue(results.length >= 2);
+
+  var targetSalary1 = this.queryData_.employeeSalaryStart;
+  var targetSalary2 = this.queryData_.employeeSalaryEnd;
+  var targetId = this.queryData_.employeeId;
+
+  var validated = results.every(function(obj) {
+    return obj['id'] == targetId || obj['salary'] == targetSalary1 ||
+        obj['salary'] == targetSalary2;
+  });
+  return goog.Promise.resolve(validated);
 };
 
 
@@ -858,6 +902,9 @@ lf.testing.perf.SelectBenchmark.prototype.getTestCases = function() {
     ['IndexedOrPredicate',
       this.queryIndexedOrPredicate,
       this.verifyIndexedOrPredicate],
+    ['IndexedOrPredicateMultiColumn',
+      this.queryIndexedOrPredicateMultiColumn,
+      this.verifyIndexedOrPredicateMultiColumn],
     ['IndexedInPredicate',
       this.queryIndexedInPredicate,
       // Intentionally using the same verification method as with the OR case.
