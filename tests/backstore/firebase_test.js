@@ -37,8 +37,10 @@ goog.require('lf.testing.util');
 var asyncTestCase = goog.testing.AsyncTestCase.createAndInstall('Firebase');
 
 
+// Firebase WebSocket timeout is 30 seconds, so make sure this timeout is
+// greater than that value, otherwise it can flake.
 /** @type {number} */
-asyncTestCase.stepTimeout = 20000;  // Raise the timeout to 20 seconds
+asyncTestCase.stepTimeout = 40000;  // Raise the timeout to 40 seconds
 
 
 /** @type {!Firebase} */
