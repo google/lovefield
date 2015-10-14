@@ -30,6 +30,7 @@ var LovefieldService = function() {
 
   this.getTestCaseDataQuery_ = null;
   this.getTestCaseIdQuery_ = null;
+  this.latestSchemaVersion_ = 2;
 };
 
 
@@ -55,8 +56,6 @@ LovefieldService.prototype.onConnected_ = function() {
       where(lf.op.and(
           this.tc_.testSuiteName.eq(lf.bind(0)),
           this.tc_.testCaseName.eq(lf.bind(1))));
-
-  // TODO(dpapad): Build query templates here.
 };
 
 
@@ -76,7 +75,8 @@ LovefieldService.prototype.getDbConnection = function() {
 
   var connectOptions = {
     storeType: isSafari() ?
-        lf.schema.DataStoreType.MEMORY : lf.schema.DataStoreType.INDEXED_DB
+        lf.schema.DataStoreType.MEMORY : lf.schema.DataStoreType.INDEXED_DB,
+    onUpgrade: this.onUpgradeDb_.bind(this)
   };
 
   this.getDbConnection_ = this.buildSchema_().connect(connectOptions).then(
@@ -98,7 +98,7 @@ LovefieldService.prototype.getDbConnection = function() {
  * @private
  */
 LovefieldService.prototype.buildSchema_ = function() {
-  var schemaBuilder = lf.schema.create('dashboard', 1);
+  var schemaBuilder = lf.schema.create('dashboard', this.latestSchemaVersion_);
   schemaBuilder.createTable('TestCase').
       addColumn('id', lf.Type.INTEGER).
       addColumn('testSuiteName', lf.Type.STRING).
@@ -113,6 +113,27 @@ LovefieldService.prototype.buildSchema_ = function() {
       addUnique('uq_caseIdDate', ['testCaseId', 'date']);
 
   return schemaBuilder;
+};
+
+
+/**
+ * @param {!lf.raw.BackStore} rawDb
+ * @return {!IThenable}
+ * @private
+ */
+LovefieldService.prototype.onUpgradeDb_ = function(rawDb) {
+  if (rawDb.getVersion() < this.latestSchemaVersion_) {
+    // Empty the DB tables if the version has changed.
+    return new Promise(function(resolve, reject) {
+      var tx = rawDb.getRawTransaction();
+      tx.oncomplete = resolve;
+      tx.onabort = reject;
+      tx.objectStore('PerfData').clear();
+      tx.objectStore('TestCase').clear();
+    });
+  }
+
+  return Promise.resolve();
 };
 
 
