@@ -470,7 +470,7 @@ lf.testing.perf.SelectBenchmark.prototype.verifyMultiRowNonIndexedRange =
 
 
 /** @return {!IThenable} */
-lf.testing.perf.SelectBenchmark.prototype.queryMultiRowIndexedOrPredicate =
+lf.testing.perf.SelectBenchmark.prototype.queryIndexedOrPredicate =
     function() {
   var predicates = this.queryData_.employeeIds.map(function(employeeId) {
     return this.e_['id'].eq(employeeId);
@@ -485,7 +485,7 @@ lf.testing.perf.SelectBenchmark.prototype.queryMultiRowIndexedOrPredicate =
 
 
 /** @return {!IThenable} */
-lf.testing.perf.SelectBenchmark.prototype.queryMultiRowIndexedInPredicate =
+lf.testing.perf.SelectBenchmark.prototype.queryIndexedInPredicate =
     function() {
   return this.db_.
       select().
@@ -501,7 +501,7 @@ lf.testing.perf.SelectBenchmark.prototype.queryMultiRowIndexedInPredicate =
  * @param {!Array<!Object>} results
  * @return {!IThenable<boolean>}
  */
-lf.testing.perf.SelectBenchmark.prototype.verifyMultiRowIndexedOrPredicate =
+lf.testing.perf.SelectBenchmark.prototype.verifyIndexedOrPredicate =
     function(results) {
   assertEquals(this.queryData_.employeeIds.length, results.length);
   var actualIds = results.map(function(obj) {
@@ -839,85 +839,57 @@ lf.testing.perf.SelectBenchmark.prototype.verifyCountStar = function(results) {
 /** @override */
 lf.testing.perf.SelectBenchmark.prototype.getTestCases = function() {
   // TODO(dpapad): Convert all other methods to private.
-  return [
-    new lf.testing.perf.TestCase(
-        'SelectSingleRowIndexed',
-        this.querySingleRowIndexed.bind(this),
-        this.verifySingleRowIndexed.bind(this)),
-    new lf.testing.perf.TestCase(
-        'SelectSingleRowNonIndexed',
-        this.querySingleRowNonIndexed.bind(this),
-        this.verifySingleRowNonIndexed.bind(this)),
-    new lf.testing.perf.TestCase(
-        'SelectSingleRowMultipleIndices',
-        this.querySingleRowMultipleIndices.bind(this),
-        this.verifySingleRowMultipleIndices.bind(this)),
-    new lf.testing.perf.TestCase(
-        'SelectMultiRowIndexedRange',
-        this.queryMultiRowIndexedRange.bind(this),
-        this.verifyMultiRowIndexedRange.bind(this)),
-    new lf.testing.perf.TestCase(
-        'SelectMultiRowIndexedSpacedOut',
-        this.queryMultiRowIndexedSpacedOut.bind(this),
-        this.verifyMultiRowIndexedSpacedOut.bind(this)),
-    new lf.testing.perf.TestCase(
-        'SelectMultiRowNonIndexedRange',
-        this.queryMultiRowNonIndexedRange.bind(this),
-        this.verifyMultiRowNonIndexedRange.bind(this)),
-    new lf.testing.perf.TestCase(
-        'SelectMultiRowNonIndexedSpacedOut',
-        this.queryMultiRowNonIndexedSpacedOut.bind(this),
-        this.verifyMultiRowNonIndexedSpacedOut.bind(this)),
-    new lf.testing.perf.TestCase(
-        'SelectMultiRowIndexedOrPredicate',
-        this.queryMultiRowIndexedOrPredicate.bind(this),
-        this.verifyMultiRowIndexedOrPredicate.bind(this)),
-    new lf.testing.perf.TestCase(
-        'SelectMultiRowIndexedInPredicate',
-        this.queryMultiRowIndexedInPredicate.bind(this),
-        // Intentionally using the same verification method as with the OR case.
-        this.verifyMultiRowIndexedOrPredicate.bind(this)),
-    new lf.testing.perf.TestCase(
-        'SelectOrderByIndexed',
-        this.queryOrderByIndexed.bind(this),
-        this.verifyOrderByIndexed.bind(this)),
-    new lf.testing.perf.TestCase(
-        'SelectOrderByNonIndexed',
-        this.queryOrderByNonIndexed.bind(this),
-        this.verifyOrderByNonIndexed.bind(this)),
-    new lf.testing.perf.TestCase(
-        'SelectOrderByIndexedCrossColumn',
-        this.queryOrderByIndexedCrossColumn.bind(this),
-        this.verifyOrderByIndexedCrossColumn.bind(this)),
-    new lf.testing.perf.TestCase(
-        'SelectLimitSkipIndexed',
-        this.queryLimitSkipIndexed.bind(this),
-        this.verifyLimitSkipIndexed.bind(this)),
-    new lf.testing.perf.TestCase(
-        'SelectProjectNonAggregatedColumns',
-        this.queryProjectNonAggregatedColumns.bind(this),
-        this.verifyProjectNonAggregatedColumns.bind(this)),
-    new lf.testing.perf.TestCase(
-        'SelectProjectAggregateIndexed',
-        this.queryProjectAggregateIndexed.bind(this),
-        this.verifyProjectAggregateIndexed.bind(this)),
-    new lf.testing.perf.TestCase(
-        'SelectProjectAggregateNonIndexed',
-        this.queryProjectAggregateNonIndexed.bind(this),
-        this.verifyProjectAggregateNonIndexed.bind(this)),
-    new lf.testing.perf.TestCase(
-        'SelectJoinEqui',
-        this.queryJoinEqui.bind(this),
-        this.verifyJoinEqui.bind(this)),
-    new lf.testing.perf.TestCase(
-        'SelectJoinTheta',
-        this.queryJoinTheta.bind(this),
-        this.verifyJoinTheta.bind(this)),
-    new lf.testing.perf.TestCase(
-        'SelectCountStar',
-        this.queryCountStar.bind(this),
-        this.verifyCountStar.bind(this))
+  var testCases = [
+    ['SingleRowIndexed',
+     this.querySingleRowIndexed, this.verifySingleRowIndexed],
+    ['SingleRowNonIndexed',
+     this.querySingleRowNonIndexed, this.verifySingleRowNonIndexed],
+    ['SingleRowMultipleIndices',
+     this.querySingleRowMultipleIndices, this.verifySingleRowMultipleIndices],
+    ['MultiRowIndexedRange',
+     this.queryMultiRowIndexedRange, this.verifyMultiRowIndexedRange],
+    ['MultiRowIndexedSpacedOut',
+     this.queryMultiRowIndexedSpacedOut, this.verifyMultiRowIndexedSpacedOut],
+    ['MultiRowNonIndexedRange',
+     this.queryMultiRowNonIndexedRange, this.verifyMultiRowNonIndexedRange],
+    ['MultiRowNonIndexedSpacedOut',
+     this.queryMultiRowNonIndexedSpacedOut,
+     this.verifyMultiRowNonIndexedSpacedOut],
+    ['IndexedOrPredicate',
+      this.queryIndexedOrPredicate,
+      this.verifyIndexedOrPredicate],
+    ['IndexedInPredicate',
+      this.queryIndexedInPredicate,
+      // Intentionally using the same verification method as with the OR case.
+      this.verifyIndexedOrPredicate],
+    ['OrderByIndexed', this.queryOrderByIndexed, this.verifyOrderByIndexed],
+    ['OrderByNonIndexed',
+     this.queryOrderByNonIndexed, this.verifyOrderByNonIndexed],
+    ['OrderByIndexedCrossColumn',
+      this.queryOrderByIndexedCrossColumn,
+      this.verifyOrderByIndexedCrossColumn],
+    ['LimitSkipIndexed',
+     this.queryLimitSkipIndexed, this.verifyLimitSkipIndexed],
+    ['ProjectNonAggregatedColumns',
+      this.queryProjectNonAggregatedColumns,
+      this.verifyProjectNonAggregatedColumns],
+    ['ProjectAggregateIndexed',
+      this.queryProjectAggregateIndexed,
+      this.verifyProjectAggregateIndexed],
+    ['ProjectAggregateNonIndexed',
+      this.queryProjectAggregateNonIndexed,
+      this.verifyProjectAggregateNonIndexed],
+    ['JoinEqui', this.queryJoinEqui, this.verifyJoinEqui],
+    ['JoinTheta', this.queryJoinTheta, this.verifyJoinTheta],
+    ['CountStar', this.queryCountStar, this.verifyCountStar]
   ];
+
+  return testCases.map(function(testCase) {
+    var testCaseName = testCase[0];
+    var queryFn = testCase[1].bind(this);
+    var verifyFn = testCase[2].bind(this);
+    return new lf.testing.perf.TestCase(testCaseName, queryFn, verifyFn);
+  }, this);
 };
 
 

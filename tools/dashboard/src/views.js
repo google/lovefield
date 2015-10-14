@@ -156,50 +156,50 @@ var selectBenchmarkGraphs = [
   {
     name: 'Select single with predicates',
     curves: [
-      'SelectSingleRowIndexed',
-      'SelectSingleRowNonIndexed',
-      'SelectSingleRowMultipleIndices'
+      'SingleRowIndexed',
+      'SingleRowNonIndexed',
+      'SingleRowMultipleIndices'
     ]
   },
   {
     name: 'Select many with predicates',
     curves: [
-      'SelectMultiRowIndexedRange',
-      'SelectMultiRowIndexedSpacedOut',
-      'SelectMultiRowNonIndexedRange',
-      'SelectMultiRowNonIndexedSpacedOut',
-      'SelectMultiRowIndexedOrPredicate',
-      'SelectMultiRowIndexedInPredicate'
+      'MultiRowIndexedRange',
+      'MultiRowIndexedSpacedOut',
+      'MultiRowNonIndexedRange',
+      'MultiRowNonIndexedSpacedOut',
+      'IndexedOrPredicate',
+      'IndexedInPredicate'
     ]
   },
   {
     name: 'Select all with projections',
     curves: [
-      'SelectProjectNonAggregatedColumns',
-      'SelectProjectAggregateIndexed',
-      'SelectProjectAggregateNonIndexed'
+      'ProjectNonAggregatedColumns',
+      'ProjectAggregateIndexed',
+      'ProjectAggregateNonIndexed'
     ]
   },
   {
     name: 'Select all with ordering',
     curves: [
-      'SelectOrderByIndexed',
-      'SelectOrderByNonIndexed',
-      'SelectOrderByIndexedCrossColumn',
-      'SelectLimitSkipIndexed'
+      'OrderByIndexed',
+      'OrderByNonIndexed',
+      'OrderByIndexedCrossColumn',
+      'LimitSkipIndexed'
     ]
   },
   {
     name: 'Select all with join operations',
     curves: [
-      'SelectJoinEqui',
-      'SelectJoinTheta'
+      'JoinEqui',
+      'JoinTheta'
     ]
   },
   {
     name: 'Select with aggregate functions',
     curves: [
-      'SelectCountStar'
+      'CountStar'
     ]
   }
 ];
