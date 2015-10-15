@@ -21,6 +21,7 @@ goog.require('lf.Global');
 goog.require('lf.Order');
 goog.require('lf.index.SingleKeyRange');
 goog.require('lf.proc.IndexRangeScanStep');
+goog.require('lf.proc.MultiIndexRangeScanStep');
 goog.require('lf.testing.MockEnv');
 goog.require('lf.testing.getSchemaBuilder');
 goog.require('lf.testing.proc.MockKeyRangeCalculator');
@@ -96,4 +97,71 @@ function checkIndexRangeScan(order, description) {
 
         asyncTestCase.continueTesting();
       }, fail);
+}
+
+
+function testMultiIndexRangeScan_Empty() {
+  asyncTestCase.waitForAsync('testMultiIndexRangeScan_Empty');
+
+  var idKeyRange = new lf.index.SingleKeyRange(20, 21, false, false);
+  var nameKeyRange = new lf.index.SingleKeyRange(
+      'dummyName' + 200, 'dummyName' + 205, false, false);
+  assertMultiIndexRangeScanResult(
+      idKeyRange, nameKeyRange, []).then(function() {
+    asyncTestCase.continueTesting();
+  }, fail);
+}
+
+
+function testMultiIndexRangeScan() {
+  asyncTestCase.waitForAsync('testMultiIndexRangeScan');
+
+  var idKeyRange = new lf.index.SingleKeyRange(5, 8, false, false);
+  var nameKeyRange = new lf.index.SingleKeyRange(
+      'dummyName' + 3, 'dummyName' + 5, false, false);
+  // Expecting the idKeyRange to find rows with rowIDs 5, 6, 7, 8.
+  // Expecting the nameKeyRange to find rows with rowIDs 3, 4, 5.
+  var expectedRowIds = [3, 4, 5, 6, 7, 8];
+
+  assertMultiIndexRangeScanResult(
+      idKeyRange, nameKeyRange, expectedRowIds).then(function() {
+    asyncTestCase.continueTesting();
+  }, fail);
+}
+
+
+/**
+ * Asserts that MultiIndexRangeScanStep#exec() correctly combines the results of
+ * its children IndexRangeScanStep instances.
+ * @param {!lf.index.SingleKeyRange} idKeyRange
+ * @param {!lf.index.SingleKeyRange} nameKeyRange
+ * @param {!Array<number>} expectedRowIds
+ * @return {!IThenable}
+ */
+function assertMultiIndexRangeScanResult(
+    idKeyRange, nameKeyRange, expectedRowIds) {
+  var table = schema.table('tableA');
+  var idIndex = table['id'].getIndex();
+  var idRangeScanStep = new lf.proc.IndexRangeScanStep(
+      lf.Global.get(), idIndex,
+      new lf.testing.proc.MockKeyRangeCalculator([idKeyRange]), false);
+
+  var nameIndex = table['name'].getIndex();
+  var nameRangeScanStep = new lf.proc.IndexRangeScanStep(
+      lf.Global.get(), nameIndex,
+      new lf.testing.proc.MockKeyRangeCalculator([nameKeyRange]), false);
+
+  var step = new lf.proc.MultiIndexRangeScanStep();
+  step.addChild(idRangeScanStep);
+  step.addChild(nameRangeScanStep);
+
+  return step.exec().then(
+      function(relations) {
+        assertEquals(1, relations.length);
+        var relation = relations[0];
+        var actualRowIds = relation.entries.map(function(entry) {
+          return entry.row.id();
+        });
+        assertSameElements(expectedRowIds, actualRowIds);
+      });
 }

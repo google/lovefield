@@ -10202,6 +10202,23 @@ lf.proc.IndexRangeScanStep.prototype.execInternal = function(relations, opt_jour
   }, this);
   return [lf.proc.Relation.fromRows(rows, [this.index.tableName])];
 };
+lf.proc.MultiIndexRangeScanStep = function() {
+  lf.proc.PhysicalQueryPlanNode.call(this, lf.proc.PhysicalQueryPlanNode.ANY, lf.proc.PhysicalQueryPlanNode.ExecType.ALL);
+};
+goog.inherits(lf.proc.MultiIndexRangeScanStep, lf.proc.PhysicalQueryPlanNode);
+lf.proc.MultiIndexRangeScanStep.prototype.toString = function() {
+  return "multi_index_range_scan()";
+};
+lf.proc.MultiIndexRangeScanStep.prototype.execInternal = function(relations) {
+  var entriesUnion = lf.structs.map.create();
+  relations.forEach(function(relation) {
+    relation.entries.forEach(function(entry) {
+      entriesUnion.set(entry.row.id(), entry);
+    });
+  });
+  var entries = lf.structs.map.values(entriesUnion);
+  return [new lf.proc.Relation(entries, relations[0].getTables())];
+};
 lf.proc.SelectStep = function(predicateId) {
   lf.proc.PhysicalQueryPlanNode.call(this, 1, lf.proc.PhysicalQueryPlanNode.ExecType.FIRST_CHILD);
   this.predicateId = predicateId;
