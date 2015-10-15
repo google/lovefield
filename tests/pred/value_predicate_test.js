@@ -24,6 +24,7 @@ goog.require('lf.pred.JoinPredicate');
 goog.require('lf.pred.ValuePredicate');
 goog.require('lf.proc.Relation');
 goog.require('lf.schema');
+goog.require('lf.structs.set');
 
 
 /** @type {!lf.schema.Database} */
@@ -77,6 +78,23 @@ function testGetColumns() {
   var p = new lf.pred.ValuePredicate(
       tableA['id'], 'myId', lf.eval.Type.EQ);
   assertSameElements([tableA['id']], p.getColumns());
+
+  // Test case where optional parameter is provided.
+  var columns = [];
+  assertEquals(columns, p.getColumns(columns));
+  assertSameElements([tableA['id']], columns);
+}
+
+
+function testGetTables() {
+  var p = new lf.pred.ValuePredicate(
+      tableA['id'], 'myId', lf.eval.Type.EQ);
+  assertSameElements([tableA], lf.structs.set.values(p.getTables()));
+
+  // Test case where optional parameter is provided.
+  var tables = lf.structs.set.create();
+  assertEquals(tables, p.getTables(tables));
+  assertSameElements([tableA], lf.structs.set.values(tables));
 }
 
 

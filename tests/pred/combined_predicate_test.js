@@ -21,6 +21,7 @@ goog.require('hr.db');
 goog.require('lf.op');
 goog.require('lf.proc.Relation');
 goog.require('lf.schema.DataStoreType');
+goog.require('lf.structs.set');
 goog.require('lf.testing.hrSchemaSampleData');
 goog.require('lf.tree');
 
@@ -183,6 +184,27 @@ function testGetColumns() {
     j.id, d.id
   ];
   assertSameElements(expectedColumns, p3.getColumns());
+}
+
+
+function testGetTables() {
+  var p1 = /** @type {!lf.pred.PredicateNode} */ (
+      lf.op.and(e.salary.gte(200), e.salary.lte(600)));
+  var expectedTables = [e];
+  assertSameElements(expectedTables, lf.structs.set.values(p1.getTables()));
+
+  var p2 = /** @type {!lf.pred.PredicateNode} */ (
+      lf.op.and(e.salary.gte(200), j.maxSalary.lte(600)));
+  expectedTables = [e, j];
+  assertSameElements(expectedTables, lf.structs.set.values(p2.getTables()));
+
+  var p3 = /** @type {!lf.pred.PredicateNode} */ (lf.op.and(
+      j.maxSalary.gte(200),
+      lf.op.and(
+          e.jobId.eq(j.id),
+          e.departmentId.eq(d.id))));
+  expectedTables = [e, j, d];
+  assertSameElements(expectedTables, lf.structs.set.values(p3.getTables()));
 }
 
 

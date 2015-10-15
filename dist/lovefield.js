@@ -5230,6 +5230,11 @@ lf.pred.ValuePredicate.prototype.copy = function() {
 lf.pred.ValuePredicate.prototype.getColumns = function(opt_results) {
   return goog.isDefAndNotNull(opt_results) ? (opt_results.push(this.column), opt_results) : [this.column];
 };
+lf.pred.ValuePredicate.prototype.getTables = function(opt_results) {
+  var tables = goog.isDefAndNotNull(opt_results) ? opt_results : lf.structs.set.create();
+  tables.add(this.column.getTable());
+  return tables;
+};
 lf.pred.ValuePredicate.prototype.setComplement = function(isComplement) {
   this.isComplement_ = isComplement;
 };
@@ -8124,6 +8129,13 @@ lf.pred.CombinedPredicate.prototype.getColumns = function(opt_results) {
   var columnSet = lf.structs.set.create(columns);
   return lf.structs.set.values(columnSet);
 };
+lf.pred.CombinedPredicate.prototype.getTables = function(opt_results) {
+  var tables = goog.isDefAndNotNull(opt_results) ? opt_results : lf.structs.set.create();
+  this.traverse(function(child) {
+    child != this && child.getTables(tables);
+  }.bind(this));
+  return tables;
+};
 lf.pred.CombinedPredicate.prototype.setComplement = function(isComplement) {
   this.isComplement_ != isComplement && (this.isComplement_ = isComplement, this.operator = this.operator == lf.pred.Operator.AND ? lf.pred.Operator.OR : lf.pred.Operator.AND, this.getChildren().forEach(function(condition) {
     return condition.setComplement(isComplement);
@@ -8187,6 +8199,12 @@ lf.pred.JoinPredicate.prototype.copy = function() {
 };
 lf.pred.JoinPredicate.prototype.getColumns = function(opt_results) {
   return goog.isDefAndNotNull(opt_results) ? (opt_results.push(this.leftColumn), opt_results.push(this.rightColumn), opt_results) : [this.leftColumn, this.rightColumn];
+};
+lf.pred.JoinPredicate.prototype.getTables = function(opt_results) {
+  var tables = goog.isDefAndNotNull(opt_results) ? opt_results : lf.structs.set.create();
+  tables.add(this.leftColumn.getTable());
+  tables.add(this.rightColumn.getTable());
+  return tables;
 };
 lf.pred.JoinPredicate.prototype.reverse = function() {
   var evaluatorType = this.evaluatorType;
@@ -9721,13 +9739,13 @@ lf.proc.PushDownSelectionsPass.prototype.pushDownNodeRec_ = function(node$$0, sh
   return newRoot;
 };
 lf.proc.PushDownSelectionsPass.prototype.pushDownValuePredNodeRec_ = function(node) {
-  var selectNodeTables = lf.structs.set.create([node.predicate.column.getTable().getEffectiveName()]), shouldPushDownFn = function(child) {
+  var selectNodeTables = node.predicate.getTables(), shouldPushDownFn = function(child) {
     return this.doesReferToTables_(child, selectNodeTables);
   }.bind(this);
   return this.pushDownNodeRec_(node, shouldPushDownFn);
 };
 lf.proc.PushDownSelectionsPass.prototype.pushDownJoinPredNodeRec_ = function(node) {
-  var selectNodeTables = lf.structs.set.create([node.predicate.leftColumn.getTable().getEffectiveName(), node.predicate.rightColumn.getTable().getEffectiveName()]), shouldPushDownFn = function(child) {
+  var selectNodeTables = node.predicate.getTables(), shouldPushDownFn = function(child) {
     return this.doesReferToTables_(child, selectNodeTables);
   }.bind(this);
   return this.pushDownNodeRec_(node, shouldPushDownFn);
@@ -9735,9 +9753,9 @@ lf.proc.PushDownSelectionsPass.prototype.pushDownJoinPredNodeRec_ = function(nod
 lf.proc.PushDownSelectionsPass.prototype.doesReferToTables_ = function(root, tables) {
   var referredTables = lf.structs.set.create();
   lf.tree.getLeafNodes(root).forEach(function(tableAccessNode) {
-    referredTables.add(tableAccessNode.table.getEffectiveName());
+    referredTables.add(tableAccessNode.table);
   }, this);
-  root instanceof lf.proc.TableAccessNode && referredTables.add(root.table.getEffectiveName());
+  root instanceof lf.proc.TableAccessNode && referredTables.add(root.table);
   return lf.structs.set.isSubset(referredTables, tables);
 };
 lf.proc.PushDownSelectionsPass.prototype.isCandidateNode_ = function(node) {

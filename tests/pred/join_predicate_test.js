@@ -23,6 +23,7 @@ goog.require('lf.pred.JoinPredicate');
 goog.require('lf.proc.Relation');
 goog.require('lf.proc.RelationEntry');
 goog.require('lf.schema.DataStoreType');
+goog.require('lf.structs.set');
 goog.require('lf.testing.NullableDataGenerator');
 goog.require('lf.testing.hrSchemaSampleData');
 
@@ -104,6 +105,22 @@ function testCopy() {
 function testGetColumns() {
   var p = e.jobId.eq(j.id);
   assertSameElements([e.jobId, j.id], p.getColumns());
+
+  // Test case where optional parameter is provided.
+  var columns = [];
+  assertEquals(columns, p.getColumns(columns));
+  assertSameElements([e.jobId, j.id], columns);
+}
+
+
+function testGetTables() {
+  var p = e.jobId.eq(j.id);
+  assertSameElements([e, j], lf.structs.set.values(p.getTables()));
+
+  // Test case where optional parameter is provided.
+  var tables = lf.structs.set.create();
+  assertEquals(tables, p.getTables(tables));
+  assertSameElements([e, j], lf.structs.set.values(tables));
 }
 
 
