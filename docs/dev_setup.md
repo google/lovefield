@@ -58,10 +58,8 @@ TCC/LE, to overcome that limitation.
    gulp test --target=tests
    export SELENIUM_BROWSER=ie
    gulp test --target=tests
-
-   # We have no luck to make Safari testing automated yet.
-   #export SELENIUM_BROWSER=safari
-   #gulp test --target=tests
+   export SELENIUM_BROWSER=safari
+   gulp test --target=tests
    ```
    You can find your user name and sauce token
    [here](https://docs.saucelabs.com/tutorials/node-js).
@@ -87,10 +85,8 @@ TCC/LE, to overcome that limitation.
  gulp test --target=tests
  export SELENIUM_BROWSER=ie
  gulp test --target=tests
-
- # We have no luck to make Safari testing automated yet.
- #export SELENIUM_BROWSER=safari
- #gulp test --target=tests
+ export SELENIUM_BROWSER=safari
+ gulp test --target=tests
  ```
  [JavaScript style](https://google.github.io/styleguide/javascriptguide.xml)
  is strictly enforced with no mercy. Unfortunately, the linter will not lint

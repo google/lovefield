@@ -62,6 +62,10 @@ function setUp() {
 
 
 function tearDown() {
+  if (!capability.indexedDb) {
+    return;
+  }
+
   db.close();
 }
 

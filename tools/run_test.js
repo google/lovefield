@@ -75,17 +75,13 @@ function runBrowserTests(testPrefix, browser, testsFolder) {
   var driver = getWebDriver(browser);
 
   return new Promise(function(resolve, reject) {
-    var startupWaitInterval = 8 * 1000;
-    log(
-        'Waiting', startupWaitInterval,
-        'ms for the browser to get ready.');
-    setTimeout(function() {
+    driver.getSession().then(function() {
       JsUnitTestRunner.runMany(browser, driver, testUrls).then(
           function(results) {
             var res = function() { resolve(results); };
             driver.quit().then(res, res);
           }, reject);
-    }, startupWaitInterval);
+    }, reject);
   });
 }
 
@@ -202,7 +198,8 @@ function getRemoteWebDriver(browser) {
 
     case 'safari':
       caps['browserName'] = 'safari';
-      caps['platform'] = 'OS X 10.10';
+      caps['platform'] = 'OS X 10.11';
+      caps['version'] = '8.1';
       break;
 
     case 'ie':
