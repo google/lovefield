@@ -2,6 +2,8 @@
 
 [![Build Status](https://travis-ci.org/google/lovefield.svg?branch=master)](
 https://travis-ci.org/google/lovefield)
+[![NPM version](https://badge.fury.io/js/lovefield.svg)](https://badge.fury.io/js/lovefield)
+[![Bower version](https://badge.fury.io/bo/lovefield.svg)](https://badge.fury.io/bo/lovefield)
 
 Lovefield is a relational database written in pure JavaScript.
 It provides SQL-like syntax and works cross-browser (currently supporting
