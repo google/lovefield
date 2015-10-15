@@ -5763,6 +5763,8 @@ lf.backstore.Firebase.prototype.init = function(opt_onUpgrade) {
     return goog.isNull(version) ? lf.backstore.FirebaseRawBackStore.setValue(this.db_, this.createNewDb_(), !0).then(function() {
       var rawDb = new lf.backstore.FirebaseRawBackStore(0, this.db_);
       return onUpgrade(rawDb);
+    }.bind(this)).then(function() {
+      return this.init();
     }.bind(this)) : version == this.schema_.version() ? getValue(this.db_, "@rev/R").then(function(revision) {
       this.revision_ = revision;
       return getValue(this.db_, "@table");
