@@ -1,3 +1,10 @@
+Version: 2.0.66<br>
+Publish date: 20151014<br>
+Changes:
+ - Fix Firebase not listening to external changes for new instances.
+ - Intercepting database initialization failures to provide better error
+   message.
+
 Version: 2.0.65<br>
 Publish date: 20151009<br>
 Changes:
