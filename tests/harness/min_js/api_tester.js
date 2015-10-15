@@ -341,6 +341,15 @@ ApiTester.prototype.testApi_Column = function() {
  * @return {!IThenable}
  */
 ApiTester.prototype.testApi_RawBackStore = function() {
+  // Check Safari and iOS WebView
+  var userAgent = navigator.userAgent;
+  if (userAgent.indexOf('Safari') != -1 &&
+      (userAgent.indexOf('Chrome') == -1 ||
+       userAgent.indexOf('iPhone') != -1 ||
+       userAgent.indexOf('iPad') != -1)) {
+    return Promise.resolve();
+  }
+
   var onUpgrade = function(rawDb) {
     return new Promise(function(resolve, reject) {
       try {
