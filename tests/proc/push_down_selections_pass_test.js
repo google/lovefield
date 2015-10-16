@@ -381,3 +381,56 @@ function testTree_JoinPredicates3() {
   lf.testing.treeutil.assertTreeTransformation(
       constructTree(), treeBefore, treeAfter, pass);
 }
+
+
+/**
+ * Tests a tree where to OR predicates exist, each one refers to a single table.
+ * They should both be pushed down below the cross-product node, and
+ * specifically towards the branch that matches the table each predicate refers
+ * to.
+ */
+function testTree_CombinedPredicates_Or() {
+  var e = schema.getEmployee();
+  var j = schema.getJob();
+
+  var treeBefore =
+      'order_by(Employee.id ASC)\n' +
+      '-select(combined_pred_or)\n' +
+      '--select(combined_pred_or)\n' +
+      '---cross_product\n' +
+      '----table_access(Employee)\n' +
+      '----table_access(Job)\n';
+
+  var treeAfter =
+      'order_by(Employee.id ASC)\n' +
+      '-cross_product\n' +
+      '--select(combined_pred_or)\n' +
+      '---table_access(Employee)\n' +
+      '--select(combined_pred_or)\n' +
+      '---table_access(Job)\n';
+
+  var constructTree = function() {
+    var queryContext = new lf.query.SelectContext(hr.db.getSchema());
+    queryContext.from = [e, j];
+    var predicate1 = lf.op.or(e.salary.gt(1000), e.commissionPercent.gt(10));
+    var predicate2 = lf.op.or(j.minSalary.gt(100), j.maxSalary.gt(200));
+    queryContext.where = lf.op.and(predicate1, predicate2);
+    queryContext.orderBy = [{column: e.id, order: lf.Order.ASC}];
+
+    var orderByNode = new lf.proc.OrderByNode(queryContext.orderBy);
+    var selectNode1 = new lf.proc.SelectNode(predicate1);
+    var selectNode2 = new lf.proc.SelectNode(predicate2);
+    var crossProductNode = new lf.proc.CrossProductNode();
+    orderByNode.addChild(selectNode1);
+    selectNode1.addChild(selectNode2);
+    selectNode2.addChild(crossProductNode);
+    queryContext.from.forEach(function(tableSchema) {
+      crossProductNode.addChild(new lf.proc.TableAccessNode(tableSchema));
+    });
+
+    return {queryContext: queryContext, root: orderByNode};
+  };
+
+  lf.testing.treeutil.assertTreeTransformation(
+      constructTree(), treeBefore, treeAfter, pass);
+}
