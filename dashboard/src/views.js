@@ -169,6 +169,7 @@ var selectBenchmarkGraphs = [
       'MultiRowNonIndexedRange',
       'MultiRowNonIndexedSpacedOut',
       'IndexedOrPredicate',
+      'IndexedOrPredicateMultiColumn',
       'IndexedInPredicate'
     ]
   },

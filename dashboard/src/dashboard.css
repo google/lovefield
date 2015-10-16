@@ -72,6 +72,16 @@ path {
 }
 
 
+.curve-coral {
+  stroke: coral;
+}
+
+
+.curve-chartreuse {
+  stroke: chartreuse;
+}
+
+
 .axis path,
 .axis line {
     fill: none;

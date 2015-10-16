@@ -183,7 +183,8 @@ GraphPlotter.FocusInfoConfig;
  * CSS colors to be used for multi-line graphs.
  * @private {!Array<string>}
  */
-GraphPlotter.CURVE_COLORS_ = ['red', 'green', 'blue', 'violet', 'cyan'];
+GraphPlotter.CURVE_COLORS_ = [
+  'red', 'green', 'blue', 'violet', 'cyan', 'coral', 'chartreuse'];
 
 
 /**
