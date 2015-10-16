@@ -536,7 +536,6 @@ goog.base = function(me, opt_methodName, var_args) {
 goog.scope = function(fn) {
   fn.call(goog.global);
 };
-goog.MODIFY_FUNCTION_PROTOTYPES = !1;
 goog.defineClass = function(superClass, def) {
   var constructor = def.constructor, statics = def.statics;
   constructor && constructor != Object.prototype.constructor || (constructor = function() {
