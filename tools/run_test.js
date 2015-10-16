@@ -138,23 +138,27 @@ function getTestUrls(testFolder, testPrefix) {
       negativePatterns.push(pattern.slice(1));
     }
   });
+
+  var hasPattern = function(fileName, patterns) {
+    return patterns.some(function(pattern) {
+      return fileName.indexOf(pattern) != -1;
+    });
+  };
+
   var relativeTestUrls = glob.sync(testFolder + '/**/*_test.js').map(
-      function(filename) {
+      function(fileName) {
         var prefixLength = testFolder.length + 1;
-        return filename.substr(prefixLength);
+        return fileName.substr(prefixLength);
       }).filter(
-      function(filename) {
-        var hasPositivePattern = positivePatterns.some(function(pattern) {
-          return filename.indexOf(pattern) != -1;
-        });
-        var hasNegativePattern = negativePatterns.some(function(pattern) {
-          return filename.indexOf(pattern) != -1;
-        });
+      function(fileName) {
+        var hasPositivePattern = positivePatterns.length == 0 ||
+            hasPattern(fileName, positivePatterns);
+        var hasNegativePattern = hasPattern(fileName, negativePatterns);
         return testPrefix == null ? true :
             (hasPositivePattern && !hasNegativePattern);
       }).map(
-      function(filename) {
-        return filename.replace(/\.js$/, '.html');
+      function(fileName) {
+        return fileName.replace(/\.js$/, '.html');
       });
 
   return relativeTestUrls.map(
