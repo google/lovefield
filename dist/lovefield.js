@@ -1,6 +1,6 @@
-if(!self.window){window=this;}
+if(!self.window){window=self;}
 (function(){'use strict';var $jscomp = {scope:{}}, goog = goog || {};
-goog.global = this;
+goog.global = self;
 goog.isDef = function(val) {
   return void 0 !== val;
 };
