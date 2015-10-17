@@ -10518,6 +10518,57 @@ lf.proc.LimitSkipByIndexPass.prototype.findIndexRangeScanStep_ = function(rootNo
   }, indexRangeScanSteps = lf.tree.find(rootNode, filterFn, stopFn);
   return 0 < indexRangeScanSteps.length ? indexRangeScanSteps[0] : null;
 };
+lf.proc.MultiColumnOrPass = function(global) {
+  this.global_ = global;
+};
+goog.inherits(lf.proc.MultiColumnOrPass, lf.proc.RewritePass);
+lf.proc.MultiColumnOrPass.prototype.rewrite = function(rootNode, queryContext) {
+  this.rootNode = rootNode;
+  var orSelectSteps = this.findOrPredicates_(queryContext);
+  if (0 == orSelectSteps.length) {
+    return this.rootNode;
+  }
+  var indexRangeCandidates = null, orSelectStep = null, i = 0;
+  do {
+    orSelectStep = orSelectSteps[i++], indexRangeCandidates = this.findIndexRangeCandidates_(orSelectStep, queryContext);
+  } while (goog.isNull(indexRangeCandidates) && i < orSelectSteps.length);
+  return goog.isNull(indexRangeCandidates) ? this.rootNode : this.rootNode = this.replaceWithIndexRangeScan_(orSelectStep, indexRangeCandidates);
+};
+lf.proc.MultiColumnOrPass.prototype.findOrPredicates_ = function(queryContext) {
+  var filterFn = function(node) {
+    if (!(node instanceof lf.proc.SelectStep)) {
+      return !1;
+    }
+    var predicate = queryContext.getPredicate(node.predicateId);
+    return predicate instanceof lf.pred.CombinedPredicate && predicate.operator == lf.pred.Operator.OR;
+  };
+  return lf.tree.find(this.rootNode, filterFn);
+};
+lf.proc.MultiColumnOrPass.prototype.findIndexRangeCandidates_ = function(selectStep, queryContext) {
+  var predicate = queryContext.getPredicate(selectStep.predicateId), tables = predicate.getTables();
+  if (1 != tables.size) {
+    return null;
+  }
+  var tableSchema = lf.structs.set.values(tables)[0], indexCostEstimator = new lf.proc.IndexCostEstimator(this.global_, tableSchema), indexRangeCandidates = null, allIndexed = predicate.getChildren().every(function(childPredicate) {
+    var indexRangeCandidate = indexCostEstimator.chooseIndexFor(queryContext, [childPredicate]);
+    goog.isNull(indexRangeCandidate) || (goog.isNull(indexRangeCandidates) ? indexRangeCandidates = [indexRangeCandidate] : indexRangeCandidates.push(indexRangeCandidate));
+    return !goog.isNull(indexRangeCandidate);
+  });
+  return allIndexed ? indexRangeCandidates : null;
+};
+lf.proc.MultiColumnOrPass.prototype.replaceWithIndexRangeScan_ = function(selectStep, indexRangeCandidates) {
+  var tableAccessFullStep = lf.tree.find(this.rootNode, function(node) {
+    return node instanceof lf.proc.TableAccessFullStep && node.table.getName() == indexRangeCandidates[0].indexSchema.tableName;
+  })[0], tableAccessByRowIdStep = new lf.proc.TableAccessByRowIdStep(this.global_, tableAccessFullStep.table), multiIndexRangeScanStep = new lf.proc.MultiIndexRangeScanStep;
+  tableAccessByRowIdStep.addChild(multiIndexRangeScanStep);
+  indexRangeCandidates.forEach(function(candidate) {
+    var indexRangeScanStep = new lf.proc.IndexRangeScanStep(this.global_, candidate.indexSchema, candidate.getKeyRangeCalculator(), !1);
+    multiIndexRangeScanStep.addChild(indexRangeScanStep);
+  }, this);
+  lf.tree.removeNode(selectStep);
+  lf.tree.replaceNodeWithChain(tableAccessFullStep, tableAccessByRowIdStep, multiIndexRangeScanStep);
+  return multiIndexRangeScanStep.getRoot();
+};
 lf.proc.OrderByIndexPass = function(global) {
   this.global_ = global;
 };
@@ -10636,7 +10687,7 @@ lf.proc.UpdateStep.prototype.execInternal = function(relations, journal) {
 };
 lf.proc.PhysicalPlanFactory = function(global) {
   this.global_ = global;
-  this.selectOptimizationPasses_ = [new lf.proc.IndexJoinPass, new lf.proc.IndexRangeScanPass(this.global_), new lf.proc.OrderByIndexPass(this.global_), new lf.proc.LimitSkipByIndexPass, new lf.proc.GetRowCountPass(this.global_)];
+  this.selectOptimizationPasses_ = [new lf.proc.IndexJoinPass, new lf.proc.IndexRangeScanPass(this.global_), new lf.proc.MultiColumnOrPass(this.global_), new lf.proc.OrderByIndexPass(this.global_), new lf.proc.LimitSkipByIndexPass, new lf.proc.GetRowCountPass(this.global_)];
   this.deleteOptimizationPasses_ = [new lf.proc.IndexRangeScanPass(this.global_)];
 };
 lf.proc.PhysicalPlanFactory.prototype.create = function(logicalQueryPlan, queryContext) {

@@ -20,7 +20,9 @@ goog.require('goog.testing.jsunit');
 goog.require('lf.Order');
 goog.require('lf.Type');
 goog.require('lf.index.SingleKeyRange');
+goog.require('lf.op');
 goog.require('lf.proc.IndexRangeScanStep');
+goog.require('lf.proc.MultiIndexRangeScanStep');
 goog.require('lf.proc.OrderByIndexPass');
 goog.require('lf.proc.OrderByStep');
 goog.require('lf.proc.ProjectStep');
@@ -88,7 +90,8 @@ function getSchemaBuilder() {
       addColumn('id', lf.Type.INTEGER).
       addColumn('salary', lf.Type.INTEGER).
       addColumn('age', lf.Type.INTEGER).
-      addIndex('idx_salary', ['salary'], false, lf.Order.DESC);
+      addIndex('idx_salary', ['salary'], false, lf.Order.DESC).
+      addIndex('idx_age', ['age'], false, lf.Order.DESC);
 
   schemaBuilder.createTable('CrossColumnTable').
       addColumn('string', lf.Type.STRING).
@@ -190,17 +193,75 @@ function testTree2() {
  * Tests the case where an OrderByNode exists in the tree, but there is no index
  * for the column that is used for sorting. The tree should remain unaffected.
  */
-function testTree3() {
+function testTree3_Unaffected() {
   var treeBefore =
       'project()\n' +
-      '-order_by(SimpleTable.age ASC)\n' +
+      '-order_by(SimpleTable.id ASC)\n' +
       '--select(value_pred(SimpleTable.id gt 100))\n' +
       '---table_access(SimpleTable)\n';
 
   // Tree should be unaffected, since no index exists on SimpleTable#age.
   lf.testing.treeutil.assertTreeTransformation(
-      constructTree1(simpleTable['age'], lf.Order.ASC),
+      constructTree1(simpleTable['id'], lf.Order.ASC),
       treeBefore, treeBefore, pass);
+}
+
+
+/**
+ * Tests the case where a MultiIndexRangeScanStep exists in the tree, preventing
+ * this optimization from being applicable, even though on OrderByStep exists
+ * in the tree for a column where a corresponding IndexRangeScanStep also
+ * exists.
+ */
+function testTree_MultiColumnIndexRangeScan_Unaffected() {
+  var treeBefore =
+      'project()\n' +
+      '-order_by(SimpleTable.salary ASC)\n' +
+      '--table_access_by_row_id(SimpleTable)\n' +
+      '---multi_index_range_scan()\n' +
+      '----index_range_scan(SimpleTable.idx_salary, [100, 100], natural)\n' +
+      '----index_range_scan(SimpleTable.idx_age, [40, 40], natural)\n';
+
+  var constructTree = function() {
+    var queryContext = new lf.query.SelectContext(db.getSchema());
+    queryContext.from = [simpleTable];
+    var predicate1 = simpleTable['salary'].eq(100);
+    var predicate2 = simpleTable['age'].eq(40);
+    queryContext.where = lf.op.or(predicate1, predicate2);
+    queryContext.orderBy = [{
+      column: simpleTable['salary'],
+      order: lf.Order.ASC
+    }];
+
+    var indexRangeScanStep1 = new lf.proc.IndexRangeScanStep(
+        global, simpleTable['salary'].getIndex(),
+        new lf.testing.proc.MockKeyRangeCalculator(
+            predicate1.toKeyRange().getValues()),
+        false);
+    var indexRangeScanStep2 = new lf.proc.IndexRangeScanStep(
+        global, simpleTable['age'].getIndex(),
+        new lf.testing.proc.MockKeyRangeCalculator(
+            predicate2.toKeyRange().getValues()),
+        false);
+    var multiIndexRangeScanStep = new lf.proc.MultiIndexRangeScanStep();
+    var tableAccessByRowIdStep = new lf.proc.TableAccessByRowIdStep(
+        global, queryContext.from[0]);
+    var orderByStep = new lf.proc.OrderByStep(queryContext.orderBy);
+    var projectStep = new lf.proc.ProjectStep([], null);
+    projectStep.addChild(orderByStep);
+    orderByStep.addChild(tableAccessByRowIdStep);
+    tableAccessByRowIdStep.addChild(multiIndexRangeScanStep);
+    multiIndexRangeScanStep.addChild(indexRangeScanStep1);
+    multiIndexRangeScanStep.addChild(indexRangeScanStep2);
+
+    return {
+      queryContext: queryContext,
+      root: projectStep
+    };
+  };
+
+  lf.testing.treeutil.assertTreeTransformation(
+      constructTree(), treeBefore, treeBefore, pass);
 }
 
 
