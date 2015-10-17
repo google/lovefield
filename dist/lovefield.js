@@ -6708,7 +6708,7 @@ goog.exportProperty(lf.backstore.WebSqlRawBackStore.prototype, "dump", lf.backst
 lf.backstore.WebSql = function(global, schema, opt_size) {
   this.global_ = global;
   this.schema_ = schema;
-  this.size_ = opt_size || 4194304;
+  this.size_ = opt_size || 1;
 };
 lf.backstore.WebSql.prototype.getEmptyJournal_ = function() {
   return new lf.cache.Journal(this.global_, lf.structs.set.create());

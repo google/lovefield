@@ -184,7 +184,8 @@ function getRemoteWebDriver(browser) {
     'name': browser + ' ' + (process.env['TRAVIS_JOB_NUMBER'] || 'pilot'),
     'username': process.env['SAUCE_USERNAME'],
     'accessKey': process.env['SAUCE_ACCESS_KEY'],
-    'tunnel-identifier': process.env['TRAVIS_JOB_NUMBER'],
+    'tunnelIdentifier': process.env['TRAVIS_JOB_NUMBER'],
+    'maxDuration': 3600,
     'loggingPrefs': {
       'browser': 'ALL'
     }
