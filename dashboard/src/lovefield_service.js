@@ -110,7 +110,13 @@ LovefieldService.prototype.buildSchema_ = function() {
       addColumn('testCaseId', lf.Type.INTEGER).
       addColumn('date', lf.Type.DATE_TIME).
       addColumn('execTime', lf.Type.NUMBER).
-      addUnique('uq_caseIdDate', ['testCaseId', 'date']);
+      addUnique('uq_caseIdDate', ['testCaseId', 'date']).
+      addForeignKey('fk_testCaseId', {
+        local: 'testCaseId',
+        ref: 'TestCase.id',
+        action: lf.ConstraintAction.RESTRICT,
+        timing: lf.ConstraintTiming.IMMEDIATE
+      });
 
   return schemaBuilder;
 };
