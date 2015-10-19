@@ -156,6 +156,10 @@ DashboardController.prototype.drawGeoMean_ = function() {
   var graphPlotter = new GraphPlotter(containerEl, focusInfoConfig);
 
   this.lovefieldService_.getGeoMeanData().then(function(results) {
+    if (results.length == 0) {
+      // No data exist in the database yet, do nothing.
+      return;
+    }
     var curve = new Curve(
         'Daily Geometric Mean', results,
         function(d) { return d['date']; },
