@@ -36,6 +36,12 @@ var Curve = function(name, data, getXValueFn, getYValueFn) {
   this.getYValue = getYValueFn;
 
   this.color = null;
+
+  // Sorting data in ascending order by X axis, such that bisection can happen
+  // when hovering over the graph.
+  this.data.sort(function(a, b) {
+    return getXValueFn(a).getTime() - getXValueFn(b).getTime();
+  });
 };
 
 
@@ -460,16 +466,23 @@ GraphPlotter.prototype.drawMouseOverlay_ = function(svg) {
       on('touchmove', onMousemove.bind(
           this, svg.select('.mouse-overlay')[0][0]));
 
-  // Currently only considering the first curve of the graph.
+  // Getting a reference to the four accessor methods, getXValue, getYValue,
+  // getScaledXValue, getScaledYValue from the first curve of the graph. It is
+  // assumed that all curves in the graph have the same accessor methods.
   var mapIter = this.curves_.values();
   var firstCurve = mapIter.next().value;
   var getXValue = firstCurve.getXValue.bind(firstCurve);
+  var getYValue = firstCurve.getYValue.bind(firstCurve);
   var getScaledXValue = firstCurve.getScaledXValue.bind(firstCurve, this.x_);
   var getScaledYValue = firstCurve.getScaledYValue.bind(firstCurve, this.y_);
-  var data = firstCurve.data.reverse();
+
   var focusInfo = new GraphPlotter.FocusInfo_(
       this.focusInfoConfig_, focusOverlay, getScaledXValue, getScaledYValue);
+
+  var data = firstCurve.data;
   var bisectDate = d3.bisector(getXValue).left;
+  var bisectExecTime = d3.bisector(getYValue).left;
+  var dataPerDate = this.calculateDataPerDate_();
 
 
   /**
@@ -477,12 +490,35 @@ GraphPlotter.prototype.drawMouseOverlay_ = function(svg) {
    * @this {!GraphPlotter}
    */
   function onMousemove(overlayElement) {
-    var x0 = this.x_.invert(d3.mouse(overlayElement)[0]);
-    var i = Math.min(bisectDate(data, x0, 1), data.length - 1);
-    var d0 = data[i - 1];
-    var d1 = data[i];
-    var d = (x0 - getXValue(d0).getTime() >
-        getXValue(d1).getTime() - x0) ? d1 : d0;
+    var mousePosition = d3.mouse(overlayElement);
+    var x0 = this.x_.invert(mousePosition[0]);
+    var y0 = this.y_.invert(mousePosition[1]);
+
+    var detectXIndex = function() {
+      var i = Math.min(bisectDate(data, x0, 1), data.length - 1);
+      var d0 = data[i - 1];
+      var d1 = data[i];
+      return x0 - getXValue(d0).getTime() > getXValue(d1).getTime() - x0 ?
+          i : i - 1;
+    };
+
+    var detectYIndex = function(xIndex) {
+      var dataForDate = dataPerDate[xIndex];
+      if (dataForDate.length == 1) {
+        return 0;
+      } else {
+        var j = Math.min(
+            bisectExecTime(dataForDate, y0, 1), dataForDate.length - 1);
+        var d0 = dataForDate[j - 1];
+        var d1 = dataForDate[j];
+        return y0 - getYValue(d0) > getYValue(d1) - y0 ? j : j - 1;
+      }
+    };
+
+    var selectedXIndex = detectXIndex();
+    var selectedYIndex = detectYIndex(selectedXIndex);
+    var d = dataPerDate[selectedXIndex][selectedYIndex];
+
     focusOverlay.attr(
         'transform',
         'translate(' + getScaledXValue(d) + ',' +
@@ -497,6 +533,41 @@ GraphPlotter.prototype.drawMouseOverlay_ = function(svg) {
             'translate(' + (-getScaledXValue(d)) + ',' + 0 + ')');
     focusInfo.onMouseMove(d);
   }
+};
+
+
+/**
+ * @return {!Array<!Array<!Object>>} A 2D Array where the array at position i,
+ *     holds the ith data point of each curve in the graph. Used for quickly
+ *     calculating the position of the highlighted value when hovering.
+ * @private
+ */
+GraphPlotter.prototype.calculateDataPerDate_ = function() {
+  var data = [];
+  this.curves_.forEach(function(curve, curveIndex) {
+    curve.data.forEach(function(d, dataIndex) {
+      var dateData = null;
+      if (!data[dataIndex]) {
+        dateData = [];
+        data.push(dateData);
+      } else {
+        dateData = data[dataIndex];
+      }
+      dateData.push(d);
+    });
+  });
+
+  var mapIter = this.curves_.values();
+  var firstCurve = mapIter.next().value;
+  // Assuming that all curves in the graph have the same getYValue function.
+  var getYValue = firstCurve.getYValue;
+
+  data.forEach(function(dateData) {
+    // Sorting the data by Y-value (execTime) such that it can be bisected
+    // later.
+    dateData.sort(function(a, b) {return getYValue(a) - getYValue(b)});
+  });
+  return data;
 };
 
 

@@ -117,12 +117,11 @@ DashboardController.prototype.drawGraph_ = function(
 
   return Promise.all(promises).then(function(results) {
     var graphPlotter = new GraphPlotter(containerEl, focusInfoConfig);
+    var getXValue = function(d) { return d['date']; };
+    var getYValue = function(d) { return d['execTime']; };
     results.forEach(function(result, index) {
       var curve = new Curve(
-          graph.curves[index],
-          result,
-          function(d) { return d['date']; },
-          function(d) { return d['execTime']; });
+          graph.curves[index], result, getXValue, getYValue);
       graphPlotter.addCurve(curve);
     });
 
