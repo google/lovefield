@@ -10197,8 +10197,8 @@ lf.proc.IndexRangeScanStep.prototype.toContextString = function(context) {
   this.useSkip && (string = string.replace("?", context.skip.toString()));
   return string;
 };
-lf.proc.IndexRangeScanStep.prototype.execInternal = function(relations, opt_journal, context) {
-  var keyRanges = this.keyRangeCalculator.getKeyRangeCombinations(context), index = this.indexStore_.get(this.index.getNormalizedName()), rowIds;
+lf.proc.IndexRangeScanStep.prototype.execInternal = function(relations, opt_journal, opt_context) {
+  var context = opt_context, keyRanges = this.keyRangeCalculator.getKeyRangeCombinations(context), index = this.indexStore_.get(this.index.getNormalizedName()), rowIds;
   rowIds = 1 == keyRanges.length && keyRanges[0] instanceof lf.index.SingleKeyRange && keyRanges[0].isOnly() ? lf.index.slice(index.get(keyRanges[0].from), !1, this.useLimit ? context.limit : void 0, this.useSkip ? context.skip : void 0) : index.getRange(keyRanges, this.reverseOrder, this.useLimit ? context.limit : void 0, this.useSkip ? context.skip : void 0);
   var rows = rowIds.map(function(rowId) {
     return new lf.Row(rowId, {});
@@ -10234,8 +10234,8 @@ lf.proc.SelectStep.prototype.toContextString = function(context) {
   var predicate = context.getPredicate(this.predicateId);
   return this.toString().replace("?", predicate.toString());
 };
-lf.proc.SelectStep.prototype.execInternal = function(relations, opt_journal, context) {
-  var predicate = context.getPredicate(this.predicateId);
+lf.proc.SelectStep.prototype.execInternal = function(relations, opt_journal, opt_context) {
+  var context = opt_context, predicate = context.getPredicate(this.predicateId);
   return [predicate.eval(relations[0])];
 };
 lf.proc.TableAccessByRowIdStep = function(global, table) {
@@ -10341,7 +10341,8 @@ lf.proc.LimitStep.prototype.toString = function() {
 lf.proc.LimitStep.prototype.toContextString = function(context) {
   return this.toString().replace("?", context.limit.toString());
 };
-lf.proc.LimitStep.prototype.execInternal = function(relations, opt_journal, context) {
+lf.proc.LimitStep.prototype.execInternal = function(relations, opt_journal, opt_context) {
+  var context = opt_context;
   relations[0].entries.splice(context.limit);
   return relations;
 };
@@ -10482,7 +10483,8 @@ lf.proc.SkipStep.prototype.toString = function() {
 lf.proc.SkipStep.prototype.toContextString = function(context) {
   return this.toString().replace("?", context.skip.toString());
 };
-lf.proc.SkipStep.prototype.execInternal = function(relations, opt_journal, context) {
+lf.proc.SkipStep.prototype.execInternal = function(relations, opt_journal, opt_context) {
+  var context = opt_context;
   return [new lf.proc.Relation(relations[0].entries.slice(context.skip), relations[0].getTables())];
 };
 lf.proc.LimitSkipByIndexPass = function() {
