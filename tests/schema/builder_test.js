@@ -180,14 +180,10 @@ function testThrows_DuplicateTable() {
 
 function testDefaultIndexOnForeignKey() {
   var schemaBuilder = createBuilder();
-  var indexNames = lf.structs.set.create();
-  // TODO(sowmyasb) : optimize getting index name
-  // without looping through the array.
-  schemaBuilder.getSchema().table('Employee').
-      getIndices().forEach(function(index) {
-        indexNames.add(index.name);
-      });
-  assertTrue(indexNames.has('fk_JobId'));
+  var employee = schemaBuilder.getSchema().table('Employee');
+  assertEquals(
+      'Employee.fk_JobId',
+      employee['jobId'].getIndex().getNormalizedName());
 }
 
 function testThrows_InValidFKRefTableName() {
