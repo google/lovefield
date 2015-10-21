@@ -33,14 +33,14 @@ gulp.task('default', function() {
 
 
 gulp.task('lint', function() {
-  return gulp.src('src/**/*.js').
+  return gulp.src('www/src/**/*.js').
       pipe(gjslint()).
       pipe(gjslint.reporter('console'), {fail: true});
 });
 
 
 gulp.task('copy_dependencies', function() {
-  var libDir = 'lib';
+  var libDir = 'www/lib';
   if (!fs.existsSync(libDir)) { fs.mkdirSync(libDir); }
 
   var filesToCopy = [
@@ -91,7 +91,5 @@ gulp.task('debug', ['copy_dependencies'], function() {
 gulp.task('export', ['copy_dependencies'], function() {
   var distDir = 'dist';
   if (!fs.existsSync(distDir)) { fs.mkdirSync(distDir); }
-
-  fs.copySync('lib', path.join(distDir, 'lib'));
-  fs.copySync('src', path.join(distDir, 'src'));
+  fs.copySync('www', distDir);
 });
