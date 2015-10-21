@@ -10766,6 +10766,41 @@ lf.proc.DefaultQueryEngine.prototype.getPlan = function(query) {
   var logicalQueryPlan = this.logicalPlanFactory_.create(query);
   return this.physicalPlanFactory_.create(logicalQueryPlan, query);
 };
+lf.proc.ExportTask = function(global) {
+  this.global_ = global;
+  this.schema_ = global.getService(lf.service.SCHEMA);
+  this.scope_ = lf.structs.set.create(this.schema_.tables());
+  this.resolver_ = goog.Promise.withResolver();
+};
+lf.proc.ExportTask.prototype.execSync = function() {
+  var indexStore = this.global_.getService(lf.service.INDEX_STORE), cache = this.global_.getService(lf.service.CACHE), tables = {};
+  this.schema_.tables().forEach(function(table) {
+    var rowIds = indexStore.get(table.getRowIdIndexName()).getRange(), payloads = cache.getMany(rowIds).map(function(row) {
+      return row.payload();
+    });
+    tables[table.getName()] = payloads;
+  });
+  return {name:this.schema_.name(), version:this.schema_.version(), tables:tables};
+};
+lf.proc.ExportTask.prototype.exec = function() {
+  var results = this.execSync(), entry = new lf.proc.RelationEntry(new lf.Row(lf.Row.DUMMY_ID, results), !0);
+  return goog.Promise.resolve([new lf.proc.Relation([entry], [])]);
+};
+lf.proc.ExportTask.prototype.getType = function() {
+  return lf.TransactionType.READ_ONLY;
+};
+lf.proc.ExportTask.prototype.getScope = function() {
+  return this.scope_;
+};
+lf.proc.ExportTask.prototype.getResolver = function() {
+  return this.resolver_;
+};
+lf.proc.ExportTask.prototype.getId = function() {
+  return goog.getUid(this);
+};
+lf.proc.ExportTask.prototype.getPriority = function() {
+  return lf.proc.TaskPriority.EXPORT_TASK;
+};
 lf.proc.LockManager = function() {
   this.lockTable_ = lf.structs.map.create();
 };
@@ -11040,9 +11075,17 @@ lf.base.init = function(global, opt_options) {
       var externalChangeObserver = new lf.backstore.ExternalChangeObserver(global);
       externalChangeObserver.startObserving();
     }
+    options.enableInspector && lf.base.enableInspector_(global);
     var prefetcher = new lf.cache.Prefetcher(global);
     return prefetcher.init(schema);
   });
+};
+lf.base.enableInspector_ = function(global) {
+  var exportFn = function() {
+    var exportTask = new lf.proc.ExportTask(global);
+    return JSON.stringify(exportTask.execSync(), void 0, 2);
+  };
+  window["#lfExport"] = exportFn;
 };
 lf.base.closeDatabase = function(global) {
   try {
@@ -11052,38 +11095,6 @@ lf.base.closeDatabase = function(global) {
   }
 };
 lf.Database = function() {
-};
-lf.proc.ExportTask = function(global) {
-  this.global_ = global;
-  this.schema_ = global.getService(lf.service.SCHEMA);
-  this.scope_ = lf.structs.set.create(this.schema_.tables());
-  this.resolver_ = goog.Promise.withResolver();
-};
-lf.proc.ExportTask.prototype.exec = function() {
-  var indexStore = this.global_.getService(lf.service.INDEX_STORE), cache = this.global_.getService(lf.service.CACHE), tables = {};
-  this.schema_.tables().forEach(function(table) {
-    var rowIds = indexStore.get(table.getRowIdIndexName()).getRange(), payloads = cache.getMany(rowIds).map(function(row) {
-      return row.payload();
-    });
-    tables[table.getName()] = payloads;
-  });
-  var results = {name:this.schema_.name(), version:this.schema_.version(), tables:tables}, entry = new lf.proc.RelationEntry(new lf.Row(lf.Row.DUMMY_ID, results), !0);
-  return goog.Promise.resolve([new lf.proc.Relation([entry], [])]);
-};
-lf.proc.ExportTask.prototype.getType = function() {
-  return lf.TransactionType.READ_ONLY;
-};
-lf.proc.ExportTask.prototype.getScope = function() {
-  return this.scope_;
-};
-lf.proc.ExportTask.prototype.getResolver = function() {
-  return this.resolver_;
-};
-lf.proc.ExportTask.prototype.getId = function() {
-  return goog.getUid(this);
-};
-lf.proc.ExportTask.prototype.getPriority = function() {
-  return lf.proc.TaskPriority.EXPORT_TASK;
 };
 lf.proc.ImportTask = function(global, data) {
   this.global_ = global;
