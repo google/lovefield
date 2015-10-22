@@ -1,0 +1,9 @@
+{
+  "name": "lovefield-inspector",
+  "version": "0.0.1",
+  "description": "Chrome extension to allow inspection of Lovefield DB.",
+  "main": "devtools.js",
+  "devDependencies": {
+    "gulp-zip": "^3.0.2"
+  }
+}

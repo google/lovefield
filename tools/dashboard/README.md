@@ -7,8 +7,8 @@ Run the dashboard locally by doing the following:
 3. Pull dependencies in package.json, ```npm install .```
 4. Pull dependencies in bower.json, ```bower install```
 5. Start a local webserver, ```gulp debug```
-6. Navigate to [http://localhost:8000/src/dashboard.html](
-   http://localhost:8000/src/dashboard.html).
+6. Navigate to [http://localhost:8000/www/src/dashboard.html](
+   http://localhost:8000/www/src/dashboard.html).
 
 Package the dashboard as an Android app (using Cordova).
 

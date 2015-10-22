@@ -1,0 +1,41 @@
+<!doctype html>
+<html>
+  <head>
+    <title>Lovefield Performance Dashboard</title>
+    <meta charset="UTF-8">
+    <meta name="format-detection" content="telephone=no">
+    <meta name="viewport" content="user-scalable=no, initial-scale=1, maximum-scale=1, minimum-scale=1, width=device-width">
+
+    <script src="../lib/angular.min.js"></script>
+    <script src="../lib/lovefield.min.js"></script>
+    <script src="../lib/d3.min.js"></script>
+    <script src="../lib/Promise.min.js"></script>
+
+    <link href="../lib/bootstrap.min.css" rel="stylesheet">
+    <link href="dashboard.css" rel="stylesheet">
+  </head>
+  <body ng-app="lovefield-dashboard">
+    <div id="dashboard" ng-controller="DashboardController as dashboard">
+      <h2>Daily Geometric Mean</h2>
+      <div id="geometric-mean" class="graph-container">
+        <span>Daily Geometric Mean</span>
+      </div>
+
+      <div ng-repeat="testSuite in dashboard.testSuites" id={{testSuite}}>
+        <h2>{{testSuite}}</h2>
+        <div ng-repeat="graph in dashboard.viewMap_.get(testSuite).graphs"
+            class="graph-container">
+          <span >{{graph.name}}</span>
+        </div>
+      </div>
+    </div>
+
+    <script src="lovefield_service.js"></script>
+    <script src="data_fetcher.js"></script>
+    <script src="sync_service.js"></script>
+    <script src="graph_plotter.js"></script>
+    <script src="views.js"></script>
+    <script src="dashboard_controller.js"></script>
+    <script src="main.js"></script>
+  </body>
+</html>
