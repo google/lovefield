@@ -27,7 +27,7 @@ however, just assume yes, give it a try, and let us know if it does not work.
 
 Check our [performance dashboard](https://google.github.io/lovefield/dashboard/src/dashboard.html).
 Details of benchmark is provided [here](https://github.com/google/lovefield/tree/master/perf).
-Your milage can vary depending on the platform and browser you use, the best way
+Your mileage can vary depending on the platform and browser you use, the best way
 to verify is to run the benchmark yourself on your target platform and browser.
 
 ### How does Lovefield execute my query?
