@@ -24,6 +24,8 @@ gulp.task('zip', function() {
     'devtools.html',
     'devtools.js',
     'manifest.json',
+    'node_modules/jquery/dist/jquery.min.js',
+    'panel.css',
     'panel.html',
     'panel.js',
     'resources/*'

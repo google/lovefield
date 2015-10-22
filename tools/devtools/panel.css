@@ -1,0 +1,95 @@
+body {
+  font-family: Arial;
+}
+
+.breaker {
+  clear: both
+}
+
+div.container {
+  display: flex;
+  height: 100%;
+  width: 100%;
+}
+
+div.left-panel {
+  border:1px solid #ddd;
+  flex: 1;
+  min-width: 200px;
+}
+
+div.right-panel {
+  border:1px solid #ddd;
+  flex: 3;
+  min-width: 200px;
+}
+
+div.info {
+  background-color: #ddd;
+  display: flex;
+  height: 32px;
+}
+
+div.info-left {
+  width: 100%;
+}
+
+div.info-right {
+  width: 32px;
+}
+
+div.info-right > input {
+  background: url(resources/refresh.png) no-repeat center center;
+  border: none;
+  height: 24px;
+  margin: 4px;
+  width: 24px;
+}
+
+table {
+  border-spacing: 0px;
+  width: 100%
+}
+
+th {
+  background: #ccc;
+  border: 1px solid #ddd;
+  padding: 2px;
+}
+
+td {
+  border-top: none;
+  border: 1px solid #ddd;
+  padding: 2px;
+}
+
+tbody tr:nth-child(even) {
+  background: #eee
+}
+
+ul {
+  list-style-type: none;
+  margin: 0;
+  padding: 0;
+  width: 100%;
+}
+
+li {
+  border-bottom: 1px solid #ccc;
+  width: 100%;
+}
+
+li:last-child {
+  border: none;
+}
+
+li a {
+  color: #000;
+  display: block;
+  text-decoration: none;
+  width: 100%;
+}
+
+li a:hover {
+  background: #f6f6f6;
+}

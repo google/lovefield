@@ -1,21 +1,27 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <style>
-      #data {
-        white-space: pre;
-      }
-      input {
-        padding: 5px;
-        margin: 10px;
-      }
-    </style>
+    <link rel="stylesheet" type="text/css" href="panel.css" />
+    <script src="node_modules/jquery/dist/jquery.min.js"></script>
   </head>
   <body>
-    <h1>Lovefield MemoryDB</h1>
-    <input id="refresh" type="button" value="Refresh"/>
-    <div id='data'></div>
-
+    <div class="container">
+      <div class="left-panel" id="tables">
+        <div class="info">
+          <div class="info-left">
+            <b>Database:</b><span id="db_name"></span><br/>
+            <b>Version:</b><span id="db_version"></span>
+          </div>
+          <div class="info-right">
+            <input id="refresh" type="button" />
+          </div>
+        </div>
+        <ul id="table_list">
+        </ul>
+      </div>
+      <div class="right-panel" id="data"></div>
+    </div>
+    <span id="error_message"></span>
     <script src="panel.js"></script>
   </body>
 </html>
