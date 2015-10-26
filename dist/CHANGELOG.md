@@ -1,3 +1,13 @@
+Version: 2.1.0<br>
+Publish date: 20151026<br>
+Changes:
+ - OR and IN predicates will use index trees instead of full table scan when
+   possible.
+ - Continuous integration using Travis CI and Sauce Labs is now in place and
+   guarding all future submissions.
+ - Lovefield declares golden: all features in the specification are implemented,
+   unit-tested, and field-tested.
+
 Version: 2.0.66<br>
 Publish date: 20151014<br>
 Changes:
