@@ -2107,7 +2107,10 @@ goog.async.nextTick = function(callback, opt_context, opt_useSetImmediate) {
   var cb = callback;
   opt_context && (cb = goog.bind(callback, opt_context));
   cb = goog.async.nextTick.wrapCallback_(cb);
-  !goog.isFunction(goog.global.setImmediate) || !opt_useSetImmediate && goog.global.Window && goog.global.Window.prototype && goog.global.Window.prototype.setImmediate == goog.global.setImmediate ? (goog.async.nextTick.setImmediate_ || (goog.async.nextTick.setImmediate_ = goog.async.nextTick.getSetImmediateEmulator_()), goog.async.nextTick.setImmediate_(cb)) : goog.global.setImmediate(cb);
+  goog.isFunction(goog.global.setImmediate) && (opt_useSetImmediate || goog.async.nextTick.useSetImmediate_()) ? goog.global.setImmediate(cb) : (goog.async.nextTick.setImmediate_ || (goog.async.nextTick.setImmediate_ = goog.async.nextTick.getSetImmediateEmulator_()), goog.async.nextTick.setImmediate_(cb));
+};
+goog.async.nextTick.useSetImmediate_ = function() {
+  return goog.global.Window && goog.global.Window.prototype && !goog.labs.userAgent.browser.isEdge() && goog.global.Window.prototype.setImmediate == goog.global.setImmediate ? !1 : !0;
 };
 goog.async.nextTick.getSetImmediateEmulator_ = function() {
   var Channel = goog.global.MessageChannel;
@@ -10767,41 +10770,6 @@ lf.proc.DefaultQueryEngine.prototype.getPlan = function(query) {
   var logicalQueryPlan = this.logicalPlanFactory_.create(query);
   return this.physicalPlanFactory_.create(logicalQueryPlan, query);
 };
-lf.proc.ExportTask = function(global) {
-  this.global_ = global;
-  this.schema_ = global.getService(lf.service.SCHEMA);
-  this.scope_ = lf.structs.set.create(this.schema_.tables());
-  this.resolver_ = goog.Promise.withResolver();
-};
-lf.proc.ExportTask.prototype.execSync = function() {
-  var indexStore = this.global_.getService(lf.service.INDEX_STORE), cache = this.global_.getService(lf.service.CACHE), tables = {};
-  this.schema_.tables().forEach(function(table) {
-    var rowIds = indexStore.get(table.getRowIdIndexName()).getRange(), payloads = cache.getMany(rowIds).map(function(row) {
-      return row.payload();
-    });
-    tables[table.getName()] = payloads;
-  });
-  return {name:this.schema_.name(), version:this.schema_.version(), tables:tables};
-};
-lf.proc.ExportTask.prototype.exec = function() {
-  var results = this.execSync(), entry = new lf.proc.RelationEntry(new lf.Row(lf.Row.DUMMY_ID, results), !0);
-  return goog.Promise.resolve([new lf.proc.Relation([entry], [])]);
-};
-lf.proc.ExportTask.prototype.getType = function() {
-  return lf.TransactionType.READ_ONLY;
-};
-lf.proc.ExportTask.prototype.getScope = function() {
-  return this.scope_;
-};
-lf.proc.ExportTask.prototype.getResolver = function() {
-  return this.resolver_;
-};
-lf.proc.ExportTask.prototype.getId = function() {
-  return goog.getUid(this);
-};
-lf.proc.ExportTask.prototype.getPriority = function() {
-  return lf.proc.TaskPriority.EXPORT_TASK;
-};
 lf.proc.LockManager = function() {
   this.lockTable_ = lf.structs.map.create();
 };
@@ -10915,6 +10883,90 @@ lf.proc.Runner.TaskQueue_.prototype.getValues = function() {
 };
 lf.proc.Runner.TaskQueue_.prototype.remove = function(task) {
   return goog.array.remove(this.queue_, task);
+};
+lf.Global = function() {
+  this.services_ = lf.structs.map.create();
+};
+lf.Global.get = function() {
+  lf.Global.instance_ || (lf.Global.instance_ = new lf.Global);
+  return lf.Global.instance_;
+};
+lf.Global.prototype.clear = function() {
+  this.services_.clear();
+};
+goog.exportProperty(lf.Global.prototype, "clear", lf.Global.prototype.clear);
+lf.Global.prototype.registerService = function(serviceId, service) {
+  this.services_.set(serviceId.toString(), service);
+  return service;
+};
+goog.exportProperty(lf.Global.prototype, "registerService", lf.Global.prototype.registerService);
+lf.Global.prototype.getService = function(serviceId) {
+  var service = this.services_.get(serviceId.toString()) || null;
+  if (goog.isNull(service)) {
+    throw new lf.Exception(7, serviceId.toString());
+  }
+  return service;
+};
+goog.exportProperty(lf.Global.prototype, "getService", lf.Global.prototype.getService);
+lf.Global.prototype.isRegistered = function(serviceId) {
+  return this.services_.has(serviceId.toString());
+};
+goog.exportProperty(lf.Global.prototype, "isRegistered", lf.Global.prototype.isRegistered);
+lf.Global.prototype.listServices = function() {
+  return lf.structs.map.keys(this.services_);
+};
+lf.debug = {};
+lf.debug.inspect = function(dbName, tableName, opt_limit, opt_skip) {
+  return goog.isDefAndNotNull(dbName) ? goog.isDefAndNotNull(tableName) ? lf.debug.inspectTable_(dbName, tableName, opt_limit, opt_skip) : lf.debug.listTables_(dbName) : lf.debug.listDb_();
+};
+lf.debug.toString_ = function(data) {
+  var value = "";
+  try {
+    value = JSON.stringify(data);
+  } catch (e) {
+  }
+  return value;
+};
+lf.debug.getGlobal_ = function(dbName) {
+  var global = lf.Global.get(), ns = new lf.service.ServiceId("ns_" + dbName);
+  return global.isRegistered(ns) ? global.getService(ns) : null;
+};
+lf.debug.listDb_ = function() {
+  var global = lf.Global.get(), dbList = {};
+  global.listServices().forEach(function(service) {
+    if ("ns_" == service.substring(0, 3)) {
+      var dbName = service.substring(3);
+      dbList[dbName] = lf.debug.getGlobal_(dbName).getService(lf.service.SCHEMA).version();
+    }
+  });
+  return lf.debug.toString_(dbList);
+};
+lf.debug.listTables_ = function(dbName) {
+  var global = lf.debug.getGlobal_(dbName), tables = {};
+  if (goog.isDefAndNotNull(global)) {
+    var indexStore = global.getService(lf.service.INDEX_STORE);
+    global.getService(lf.service.SCHEMA).tables().forEach(function(table) {
+      tables[table.getName()] = indexStore.get(table.getRowIdIndexName()).stats().totalRows;
+    });
+  }
+  return lf.debug.toString_(tables);
+};
+lf.debug.inspectTable_ = function(dbName, tableName, opt_limit, opt_skip) {
+  var global = lf.debug.getGlobal_(dbName), contents = [];
+  if (goog.isDefAndNotNull(global)) {
+    var table = null;
+    try {
+      table = global.getService(lf.service.SCHEMA).table(tableName);
+    } catch (e) {
+    }
+    if (goog.isDefAndNotNull(table)) {
+      var indexStore = global.getService(lf.service.INDEX_STORE), cache = global.getService(lf.service.CACHE), rowIds = indexStore.get(table.getRowIdIndexName()).getRange(void 0, !1, opt_limit, opt_skip);
+      rowIds.length && (contents = cache.getMany(rowIds).map(function(row) {
+        return row.payload();
+      }));
+    }
+  }
+  return lf.debug.toString_(contents);
 };
 lf.DiffCalculator = function(query, observableResults) {
   this.evalRegistry_ = lf.eval.Registry.get();
@@ -11081,12 +11133,8 @@ lf.base.init = function(global, opt_options) {
     return prefetcher.init(schema);
   });
 };
-lf.base.enableInspector_ = function(global) {
-  var exportFn = function() {
-    var exportTask = new lf.proc.ExportTask(global);
-    return JSON.stringify(exportTask.execSync(), void 0, 2);
-  };
-  window["#lfExport"] = exportFn;
+lf.base.enableInspector_ = function() {
+  window.top["#lfInspect"] = lf.debug.inspect;
 };
 lf.base.closeDatabase = function(global) {
   try {
@@ -11096,6 +11144,41 @@ lf.base.closeDatabase = function(global) {
   }
 };
 lf.Database = function() {
+};
+lf.proc.ExportTask = function(global) {
+  this.global_ = global;
+  this.schema_ = global.getService(lf.service.SCHEMA);
+  this.scope_ = lf.structs.set.create(this.schema_.tables());
+  this.resolver_ = goog.Promise.withResolver();
+};
+lf.proc.ExportTask.prototype.execSync = function() {
+  var indexStore = this.global_.getService(lf.service.INDEX_STORE), cache = this.global_.getService(lf.service.CACHE), tables = {};
+  this.schema_.tables().forEach(function(table) {
+    var rowIds = indexStore.get(table.getRowIdIndexName()).getRange(), payloads = cache.getMany(rowIds).map(function(row) {
+      return row.payload();
+    });
+    tables[table.getName()] = payloads;
+  });
+  return {name:this.schema_.name(), version:this.schema_.version(), tables:tables};
+};
+lf.proc.ExportTask.prototype.exec = function() {
+  var results = this.execSync(), entry = new lf.proc.RelationEntry(new lf.Row(lf.Row.DUMMY_ID, results), !0);
+  return goog.Promise.resolve([new lf.proc.Relation([entry], [])]);
+};
+lf.proc.ExportTask.prototype.getType = function() {
+  return lf.TransactionType.READ_ONLY;
+};
+lf.proc.ExportTask.prototype.getScope = function() {
+  return this.scope_;
+};
+lf.proc.ExportTask.prototype.getResolver = function() {
+  return this.resolver_;
+};
+lf.proc.ExportTask.prototype.getId = function() {
+  return goog.getUid(this);
+};
+lf.proc.ExportTask.prototype.getPriority = function() {
+  return lf.proc.TaskPriority.EXPORT_TASK;
 };
 lf.proc.ImportTask = function(global, data) {
   this.global_ = global;
@@ -11507,34 +11590,6 @@ lf.schema.BaseColumn.prototype.as = function(name) {
   return new lf.schema.BaseColumn(this.table_, this.name_, this.isUnique_, this.isNullable_, this.type_, name);
 };
 goog.exportProperty(lf.schema.BaseColumn.prototype, "as", lf.schema.BaseColumn.prototype.as);
-lf.Global = function() {
-  this.services_ = lf.structs.map.create();
-};
-lf.Global.get = function() {
-  lf.Global.instance_ || (lf.Global.instance_ = new lf.Global);
-  return lf.Global.instance_;
-};
-lf.Global.prototype.clear = function() {
-  this.services_.clear();
-};
-goog.exportProperty(lf.Global.prototype, "clear", lf.Global.prototype.clear);
-lf.Global.prototype.registerService = function(serviceId, service) {
-  this.services_.set(serviceId.toString(), service);
-  return service;
-};
-goog.exportProperty(lf.Global.prototype, "registerService", lf.Global.prototype.registerService);
-lf.Global.prototype.getService = function(serviceId) {
-  var service = this.services_.get(serviceId.toString()) || null;
-  if (goog.isNull(service)) {
-    throw new lf.Exception(7, serviceId.toString());
-  }
-  return service;
-};
-goog.exportProperty(lf.Global.prototype, "getService", lf.Global.prototype.getService);
-lf.Global.prototype.isRegistered = function(serviceId) {
-  return this.services_.has(serviceId.toString());
-};
-goog.exportProperty(lf.Global.prototype, "isRegistered", lf.Global.prototype.isRegistered);
 lf.schema.Info = function(dbSchema) {
   this.schema_ = dbSchema;
   this.cascadeReferringFk_ = new lf.structs.MapSet;

@@ -9,7 +9,7 @@
       <div class="left-panel" id="tables">
         <div class="info">
           <div class="info-left">
-            <b>Database:</b><span id="db_name"></span><br/>
+            <b>Database:</b><select id="db_name"></select><br/>
             <b>Version:</b><span id="db_version"></span>
           </div>
           <div class="info-right">
@@ -19,7 +19,13 @@
         <ul id="table_list">
         </ul>
       </div>
-      <div class="right-panel" id="data"></div>
+      <div class="right-panel">
+        <div>Page <select id="page_list"></select> of
+          <span id="page_count"></span>
+        </div>
+        <div id="data">
+        </div>
+      </div>
     </div>
     <span id="error_message"></span>
     <script src="panel.js"></script>
