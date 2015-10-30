@@ -1,3 +1,9 @@
+Version: 2.1.1<br>
+Publish date: 20151030<br>
+Changes:
+ - Add better debug inspector support that requires much less memory for the
+   inspector extension.
+
 Version: 2.1.0<br>
 Publish date: 20151026<br>
 Changes:
