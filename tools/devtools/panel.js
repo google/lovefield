@@ -109,6 +109,7 @@
   function selectTable(tableName) {
     $('#data').empty();
     $('#page_list').empty();
+    currentPage = 0;
 
     var rowCount = tableList[tableName];
     if (rowCount <= 0) return;

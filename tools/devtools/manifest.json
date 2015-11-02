@@ -1,6 +1,6 @@
 {
   "name": "Lovefield DB Inspector",
-  "version": "0.0.4",
+  "version": "0.0.5",
   "description": "Chrome extension to allow inspection of Lovefield DB.",
   "minimum_chrome_version": "43.0",
   "devtools_page": "devtools.html",
