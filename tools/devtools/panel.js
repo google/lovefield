@@ -112,7 +112,11 @@
     currentPage = 0;
 
     var rowCount = tableList[tableName];
-    if (rowCount <= 0) return;
+    if (rowCount == 0) {
+      $('#page_count').text('0');
+      $('#data').append($('<p></p>').text(tableName + ' has no data.'));
+      return;
+    }
 
     var pageCount = Math.ceil(rowCount / 50);
     $('#page_count').text(pageCount.toString());
