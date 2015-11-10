@@ -4282,7 +4282,7 @@ lf.structs.MapSet.prototype.merge = function(mapSet) {
   return this;
 };
 lf.structs.MapSet.prototype.delete = function(key, value) {
-  var valueSet = this.map_.get(key, null);
+  var valueSet = this.map_.get(key) || null;
   if (goog.isNull(valueSet)) {
     return !1;
   }
