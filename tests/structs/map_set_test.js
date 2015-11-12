@@ -57,8 +57,16 @@ function testDelete() {
   assertTrue(mapSet.delete(10, 12));
   assertEquals(4, mapSet.size);
 
-  // Test that removing a non-existing value does not modify the map.
+  // Test that removing a non-existing value for an existing key does not modify
+  // the map.
+  assertTrue(mapSet.has(10));
   assertFalse(mapSet.delete(10, 13));
+  assertEquals(4, mapSet.size);
+
+  // Test that removing a non-existing value for a non-existing key does not
+  // modify the map or throw any errors.
+  assertFalse(mapSet.has(100));
+  assertFalse(mapSet.delete(100, 2000));
   assertEquals(4, mapSet.size);
 
   assertTrue(mapSet.delete(10, 11));
