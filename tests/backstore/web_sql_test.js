@@ -124,3 +124,31 @@ function testPersistentIndex() {
         asyncTestCase.continueTesting();
       });
 }
+
+
+function testReservedWordAsTableName() {
+  if (!capability.webSql) {
+    return;
+  }
+
+  asyncTestCase.waitForAsync('testReservedWordAsTableName');
+  var builder = lf.schema.create('foo' + goog.now(), 1);
+  builder.createTable('Group').
+      addColumn('id', lf.Type.INTEGER);
+  var db;
+  var g;
+  builder.connect({storeType: lf.schema.DataStoreType.WEB_SQL}).then(
+      function(instance) {
+        db = instance;
+        g = db.getSchema().table('Group');
+        return db.insert().into(g).values([g.createRow({'id': 1})]).exec();
+      }).then(function() {
+    return db.select().from(g).exec();
+  }).then(function(results) {
+    assertEquals(1, results.length);
+    assertEquals(1, results[0]['id']);
+    return db.delete().from(g).exec();
+  }).then(function() {
+    asyncTestCase.continueTesting();
+  }, fail);
+}

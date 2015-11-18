@@ -6534,7 +6534,7 @@ lf.backstore.ObservableStore.prototype.notify = function(changes) {
 };
 lf.backstore.WebSqlTable = function(tx, name, deserializeFn) {
   this.tx_ = tx;
-  this.name_ = name;
+  this.name_ = '"' + name + '"';
   this.deserializeFn_ = deserializeFn;
 };
 lf.backstore.WebSqlTable.prototype.get = function(ids) {
@@ -6778,6 +6778,9 @@ lf.backstore.WebSql.prototype.onUpgrade_ = function(onUpgrade, oldVersion) {
   }.bind(this), resolver.reject.bind(resolver));
   return resolver.promise;
 };
+lf.backstore.WebSql.escape_ = function(tableName) {
+  return '"' + tableName + '"';
+};
 lf.backstore.WebSql.prototype.preUpgrade_ = function() {
   var tables = this.schema_.tables(), tx = new lf.backstore.WebSqlTx(this.db_, lf.TransactionType.READ_WRITE, this.getEmptyJournal_()), tx2 = new lf.backstore.WebSqlTx(this.db_, lf.TransactionType.READ_WRITE, this.getEmptyJournal_());
   tx.queue("INSERT OR REPLACE INTO __lf_ver VALUES (0, ?)", [this.schema_.version()]);
@@ -6787,7 +6790,7 @@ lf.backstore.WebSql.prototype.preUpgrade_ = function() {
     existingTables.filter(function(name) {
       return -1 != name.indexOf(lf.backstore.WebSqlTx.INDEX_MARK);
     }).forEach(function(name) {
-      tx2.queue("DROP TABLE " + name, []);
+      tx2.queue("DROP TABLE " + lf.backstore.WebSql.escape_(name), []);
     });
     var newTables = [], persistentIndices = [], rowIdIndices = [];
     tables.map(function(table) {
@@ -6804,7 +6807,7 @@ lf.backstore.WebSql.prototype.preUpgrade_ = function() {
       }
     });
     newTables.forEach(function(name) {
-      tx2.queue("CREATE TABLE " + name + "(id INTEGER PRIMARY KEY, value TEXT)", []);
+      tx2.queue("CREATE TABLE " + lf.backstore.WebSql.escape_(name) + "(id INTEGER PRIMARY KEY, value TEXT)", []);
     });
     return tx2.commit();
   });
@@ -6812,7 +6815,7 @@ lf.backstore.WebSql.prototype.preUpgrade_ = function() {
 lf.backstore.WebSql.prototype.scanRowId_ = function() {
   var maxRowId = 0, resolver = goog.Promise.withResolver(), selectIdFromTable = function(tableName) {
     var tx = new lf.backstore.WebSqlTx(this.db_, lf.TransactionType.READ_ONLY);
-    tx.queue("SELECT MAX(id) FROM " + tableName, []);
+    tx.queue("SELECT MAX(id) FROM " + lf.backstore.WebSql.escape_(tableName), []);
     return tx.commit().then(function(results) {
       var id = results[0].rows.item(0)[0];
       maxRowId = Math.max(id, maxRowId);
