@@ -1,3 +1,12 @@
+Version: 2.1.2<br>
+Publish date: 20151120<br>
+Changes:
+- Fix inspector not showing some pages.
+- Fix TypeScript definition errors.
+- Fix a bug in lf.structs.MapSet#delete.
+- Fix WebSQL error when table name is a SQL reserved word.
+- Add transaction statistics.
+
 Version: 2.1.1<br>
 Publish date: 20151030<br>
 Changes:
