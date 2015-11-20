@@ -262,10 +262,23 @@ ApiTester.prototype.testApi_Schema = function() {
 };
 
 
+/** Tests transaction stats API */
+ApiTester.prototype.testApi_TransactionStats = function() {
+  var methodNames = [
+    'success', 'insertedRowCount', 'updatedRowCount', 'deletedRowCount',
+    'changedTableCount'
+  ];
+
+  var tx = this.db_.createTransaction();
+  tx.commit();
+  assertMethods(tx.stats(), methodNames, 'lf.TransactionStats');
+};
+
+
 /** Tests transaction API */
 ApiTester.prototype.testApi_Transaction = function() {
   var methodNames = [
-    'exec', 'begin', 'attach', 'commit', 'rollback'
+    'exec', 'begin', 'attach', 'commit', 'rollback', 'stats'
   ];
 
   var tx = this.db_.createTransaction();

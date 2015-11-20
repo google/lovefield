@@ -229,6 +229,12 @@ lf.testing.SmokeTester.prototype.testTransaction = function() {
     return this.selectAll_();
   }, this)).then(function(results) {
     assertEquals(5, results.length);
+    var stats = tx.stats();
+    assertEquals(true, stats.success());
+    assertEquals(1, stats.changedTableCount());
+    assertEquals(5, stats.insertedRowCount());
+    assertEquals(0, stats.updatedRowCount());
+    assertEquals(0, stats.deletedRowCount());
 
     // Transaction shall not be able to be executed again after committed.
     var select = db.select().from(r);

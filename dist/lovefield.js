@@ -3643,6 +3643,37 @@ lf.TransactionType.READ_WRITE = 1;
 goog.exportProperty(lf.TransactionType, "READ_WRITE", lf.TransactionType.READ_WRITE);
 lf.Transaction = function() {
 };
+lf.TransactionStats = function(success, insertedRows, updatedRows, deletedRows, tablesChanged) {
+  this.success_ = success;
+  this.insertedRowCount_ = insertedRows;
+  this.updatedRowCount_ = updatedRows;
+  this.deletedRowCount_ = deletedRows;
+  this.changedTableCount_ = tablesChanged;
+};
+goog.exportSymbol("lf.TransactionStats", lf.TransactionStats);
+lf.TransactionStats.prototype.success = function() {
+  return this.success_;
+};
+goog.exportProperty(lf.TransactionStats.prototype, "success", lf.TransactionStats.prototype.success);
+lf.TransactionStats.prototype.insertedRowCount = function() {
+  return this.insertedRowCount_;
+};
+goog.exportProperty(lf.TransactionStats.prototype, "insertedRowCount", lf.TransactionStats.prototype.insertedRowCount);
+lf.TransactionStats.prototype.updatedRowCount = function() {
+  return this.updatedRowCount_;
+};
+goog.exportProperty(lf.TransactionStats.prototype, "updatedRowCount", lf.TransactionStats.prototype.updatedRowCount);
+lf.TransactionStats.prototype.deletedRowCount = function() {
+  return this.deletedRowCount_;
+};
+goog.exportProperty(lf.TransactionStats.prototype, "deletedRowCount", lf.TransactionStats.prototype.deletedRowCount);
+lf.TransactionStats.prototype.changedTableCount = function() {
+  return this.changedTableCount_;
+};
+goog.exportProperty(lf.TransactionStats.prototype, "changedTableCount", lf.TransactionStats.prototype.changedTableCount);
+lf.TransactionStats.getDefault = function() {
+  return new lf.TransactionStats(!1, 0, 0, 0, 0);
+};
 lf.backstore = {};
 lf.backstore.TableType = {DATA:0, INDEX:1};
 lf.backstore.Tx = function() {
@@ -3651,12 +3682,18 @@ lf.backstore.BaseTx = function(txType, opt_journal) {
   this.txType = txType;
   this.journal_ = opt_journal || null;
   this.resolver = goog.Promise.withResolver();
+  this.success_ = !1;
+  this.stats_ = null;
 };
 lf.backstore.BaseTx.prototype.getJournal = function() {
   return this.journal_;
 };
 lf.backstore.BaseTx.prototype.commit = function() {
-  return this.txType == lf.TransactionType.READ_ONLY ? this.commitInternal() : this.commitReadWrite_();
+  var promise = this.txType == lf.TransactionType.READ_ONLY ? this.commitInternal() : this.commitReadWrite_();
+  return promise.then(function(results) {
+    this.success_ = !0;
+    return results;
+  }.bind(this));
 };
 lf.backstore.BaseTx.prototype.commitReadWrite_ = function() {
   try {
@@ -3697,6 +3734,27 @@ lf.backstore.BaseTx.prototype.mergeIndexChanges_ = function() {
 };
 lf.backstore.BaseTx.prototype.handleError_ = function(e) {
   this.resolver.reject(e);
+};
+lf.backstore.BaseTx.prototype.stats = function() {
+  if (goog.isNull(this.stats_)) {
+    if (this.success_) {
+      if (this.txType == lf.TransactionType.READ_ONLY) {
+        this.stats_ = new lf.TransactionStats(!0, 0, 0, 0, 0);
+      } else {
+        var diff = this.journal_.getDiff(), insertedRows = 0, deletedRows = 0, updatedRows = 0, tablesChanged = 0;
+        diff.forEach(function(tableDiff) {
+          tablesChanged++;
+          insertedRows += tableDiff.getAdded().size;
+          updatedRows += tableDiff.getModified().size;
+          deletedRows += tableDiff.getDeleted().size;
+        });
+        this.stats_ = new lf.TransactionStats(!0, insertedRows, updatedRows, deletedRows, tablesChanged);
+      }
+    } else {
+      this.stats_ = lf.TransactionStats.getDefault();
+    }
+  }
+  return this.stats_;
 };
 lf.service = {};
 lf.service.ServiceId = function(serviceId) {
@@ -5431,8 +5489,8 @@ lf.proc.QueryTask.prototype.exec = function() {
     return goog.Promise.resolve();
   };
   return sequentiallyExec().then(function() {
-    var tx = this.backStore_.createTx(this.txType_, lf.structs.set.values(this.combinedScope_), journal);
-    return tx.commit();
+    this.tx_ = this.backStore_.createTx(this.txType_, lf.structs.set.values(this.combinedScope_), journal);
+    return this.tx_.commit();
   }.bind(this)).then(function() {
     this.onSuccess(results);
     return results;
@@ -5454,6 +5512,11 @@ lf.proc.QueryTask.prototype.getId = function() {
   return goog.getUid(this);
 };
 lf.proc.QueryTask.prototype.onSuccess = function() {
+};
+lf.proc.QueryTask.prototype.stats = function() {
+  var results = null;
+  goog.isDefAndNotNull(this.tx_) && (results = this.tx_.stats());
+  return goog.isNull(results) ? lf.TransactionStats.getDefault() : results;
 };
 lf.proc.ObserverQueryTask = function(global, items) {
   lf.proc.QueryTask.call(this, global, items);
@@ -11296,8 +11359,8 @@ lf.proc.TransactionTask.prototype.attachQuery = function(queryBuilder) {
   }.bind(this));
 };
 lf.proc.TransactionTask.prototype.commit = function() {
-  var tx = this.backStore_.createTx(this.getType(), lf.structs.set.values(this.scope_), this.journal_);
-  tx.commit().then(function() {
+  this.tx_ = this.backStore_.createTx(this.getType(), lf.structs.set.values(this.scope_), this.journal_);
+  this.tx_.commit().then(function() {
     this.scheduleObserverTask_();
     this.execResolver_.resolve();
   }.bind(this), function(e) {
@@ -11318,10 +11381,15 @@ lf.proc.TransactionTask.prototype.scheduleObserverTask_ = function() {
     this.runner_.scheduleTask(observerTask);
   }
 };
+lf.proc.TransactionTask.prototype.stats = function() {
+  var results = null;
+  goog.isDefAndNotNull(this.tx_) && (results = this.tx_.stats());
+  return goog.isNull(results) ? lf.TransactionStats.getDefault() : results;
+};
 lf.proc.Transaction = function(global) {
   this.global_ = global;
   this.runner_ = global.getService(lf.service.RUNNER);
-  this.transactionTask_ = null;
+  this.task_ = null;
   this.state_ = lf.proc.TransactionState_.CREATED;
   0 == lf.proc.StateTransitions_.size && this.initStateTransitions_();
 };
@@ -11355,8 +11423,8 @@ lf.proc.Transaction.prototype.exec = function(queryBuilders) {
   } catch (e) {
     return this.stateTransition_(lf.proc.TransactionState_.FINALIZED), goog.Promise.reject(e);
   }
-  var queryTask = new lf.proc.UserQueryTask(this.global_, taskItems);
-  return this.runner_.scheduleTask(queryTask).then(function(results) {
+  this.task_ = new lf.proc.UserQueryTask(this.global_, taskItems);
+  return this.runner_.scheduleTask(this.task_).then(function(results) {
     this.stateTransition_(lf.proc.TransactionState_.FINALIZED);
     return results.map(function(relation) {
       return relation.getPayloads();
@@ -11369,15 +11437,15 @@ lf.proc.Transaction.prototype.exec = function(queryBuilders) {
 goog.exportProperty(lf.proc.Transaction.prototype, "exec", lf.proc.Transaction.prototype.exec);
 lf.proc.Transaction.prototype.begin = function(scope) {
   this.stateTransition_(lf.proc.TransactionState_.ACQUIRING_SCOPE);
-  this.transactionTask_ = new lf.proc.TransactionTask(this.global_, scope);
-  return this.transactionTask_.acquireScope().then(function() {
+  this.task_ = new lf.proc.TransactionTask(this.global_, scope);
+  return this.task_.acquireScope().then(function() {
     this.stateTransition_(lf.proc.TransactionState_.ACQUIRED_SCOPE);
   }.bind(this));
 };
 goog.exportProperty(lf.proc.Transaction.prototype, "begin", lf.proc.Transaction.prototype.begin);
 lf.proc.Transaction.prototype.attach = function(query) {
   this.stateTransition_(lf.proc.TransactionState_.EXECUTING_QUERY);
-  return this.transactionTask_.attachQuery(query).then(function(result) {
+  return this.task_.attachQuery(query).then(function(result) {
     this.stateTransition_(lf.proc.TransactionState_.ACQUIRED_SCOPE);
     return result;
   }.bind(this), function(e) {
@@ -11388,18 +11456,25 @@ lf.proc.Transaction.prototype.attach = function(query) {
 goog.exportProperty(lf.proc.Transaction.prototype, "attach", lf.proc.Transaction.prototype.attach);
 lf.proc.Transaction.prototype.commit = function() {
   this.stateTransition_(lf.proc.TransactionState_.COMMITTING);
-  return this.transactionTask_.commit().then(function() {
+  return this.task_.commit().then(function() {
     this.stateTransition_(lf.proc.TransactionState_.FINALIZED);
   }.bind(this));
 };
 goog.exportProperty(lf.proc.Transaction.prototype, "commit", lf.proc.Transaction.prototype.commit);
 lf.proc.Transaction.prototype.rollback = function() {
   this.stateTransition_(lf.proc.TransactionState_.ROLLING_BACK);
-  return this.transactionTask_.rollback().then(function() {
+  return this.task_.rollback().then(function() {
     this.stateTransition_(lf.proc.TransactionState_.FINALIZED);
   }.bind(this));
 };
 goog.exportProperty(lf.proc.Transaction.prototype, "rollback", lf.proc.Transaction.prototype.rollback);
+lf.proc.Transaction.prototype.stats = function() {
+  if (this.state_ != lf.proc.TransactionState_.FINALIZED) {
+    throw new lf.Exception(105);
+  }
+  return this.task_.stats();
+};
+goog.exportProperty(lf.proc.Transaction.prototype, "stats", lf.proc.Transaction.prototype.stats);
 lf.proc.Database = function(global) {
   this.global_ = global;
   this.schema_ = global.getService(lf.service.SCHEMA);

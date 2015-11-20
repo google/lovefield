@@ -132,6 +132,7 @@ function rollbackFn() { tx.rollback(); }
 function attachFn() { tx.attach(db.select().from(j)); }
 function beginFn() { tx.begin([j, e]); }
 function execFn() { tx.exec([db.select().from(e)]); }
+function statsFn() { return tx.stats(); }
 
 
 /**
@@ -206,6 +207,8 @@ function testThrows_StateAcquiringScope() {
   lf.testing.util.assertThrowsError(107, commitFn);
   lf.testing.util.assertThrowsError(107, rollbackFn);
   lf.testing.util.assertThrowsError(107, execFn);
+  // 105: Attempt to access in-flight transaction states.
+  lf.testing.util.assertThrowsError(105, statsFn);
 
   whenDone.then(function() {
     asyncTestCase.continueTesting();
@@ -245,6 +248,14 @@ function testExec() {
     assertEquals(sampleJobs.length, results[0][0]['jid']);
     assertEquals(sampleDepartments.length, results[1][0]['did']);
     assertEquals(0, results[4][0]['jid']);
+
+    var stats = tx.stats();
+    assertTrue(stats.success());
+    assertEquals(350, stats.deletedRowCount());
+    assertEquals(0, stats.updatedRowCount());
+    assertEquals(0, stats.insertedRowCount());
+    assertEquals(2, stats.changedTableCount());
+
     asyncTestCase.continueTesting();
   }, fail);
 }
@@ -297,6 +308,13 @@ function testAttach_Success() {
 
     return tx.commit();
   }).then(function() {
+    var stats = tx.stats();
+    assertTrue(stats.success());
+    assertEquals(2, stats.changedTableCount());
+    assertEquals(350, stats.deletedRowCount());  // 50 jobs + 300 employees.
+    assertEquals(0, stats.insertedRowCount());
+    assertEquals(0, stats.updatedRowCount());
+
     // Expecting all job rows to have been deleted from disk, now that the
     // transaction was committed.
     return lf.testing.util.selectAll(global, j);
@@ -420,6 +438,12 @@ function testRollback() {
     // should allow the following query to complete.
     return db.select().from(j).exec();
   }).then(function() {
+    var stats = tx.stats();
+    assertFalse(stats.success());
+    assertEquals(0, stats.insertedRowCount());
+    assertEquals(0, stats.updatedRowCount());
+    assertEquals(0, stats.deletedRowCount());
+    assertEquals(0, stats.changedTableCount());
     asyncTestCase.continueTesting();
   });
 }

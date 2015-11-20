@@ -66,12 +66,21 @@ declare module lf {
 
   function bind(index: number): Binder;
 
+  export interface TransactionStats {
+    success(): boolean
+    insertedRowCount(): Number
+    updatedRowCount(): Number
+    deletedRowCount(): Number
+    changedTableCount(): Number
+  }
+
   export interface Transaction {
     attach(query: query.Builder): Promise<Array<Object>>
     begin(scope: Array<schema.Table>): Promise<void>
     commit(): Promise<void>
     exec(queries: Array<query.Builder>): Promise<Array<Array<Object>>>
     rollback(): Promise<void>
+    stats(): TransactionStats
   }
 
   export enum TransactionType { READ_ONLY, READ_WRITE }

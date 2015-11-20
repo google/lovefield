@@ -74,6 +74,31 @@ lf.Row = function() {};
 
 
 /** @interface */
+lf.TransactionStats = function() {};
+
+
+/** @return {boolean} */
+lf.TransactionStats.prototype.success = function() {};
+
+
+/** @return {number} */
+lf.TransactionStats.prototype.insertedRowCount = function() {};
+
+
+/** @return {number} */
+lf.TransactionStats.prototype.updatedRowCount = function() {};
+
+
+/** @return {number} */
+lf.TransactionStats.prototype.deletedRowCount = function() {};
+
+
+/** @return {number} */
+lf.TransactionStats.prototype.changedTableCount = function() {};
+
+
+
+/** @interface */
 lf.Transaction = function() {};
 
 
@@ -104,6 +129,10 @@ lf.Transaction.prototype.exec = function(queryBuilders) {};
 
 /** @return {!IThenable} */
 lf.Transaction.prototype.rollback = function() {};
+
+
+/** @return {!lf.TransactionStats} */
+lf.Transaction.prototype.stats = function() {};
 
 
 

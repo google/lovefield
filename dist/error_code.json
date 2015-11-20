@@ -13,6 +13,7 @@
   "101": "Table {0} not found.",
   "102": "Data corruption detected.",
   "103": "Row id must be numbers.",
+  "105": "Attempt to access in-flight transaction states.",
   "106": "Attempt to access {0} outside of specified scope.",
   "107": "Invalid transaction state transition: {0} -> {1}.",
   "108": "Attempt to open a newer database with old code.",
