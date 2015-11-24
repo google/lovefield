@@ -129,6 +129,8 @@ ApiTester.prototype.run = function() {
 
     this.testApi_Table();
     this.testApi_Column();
+
+    return this.testApi_ChangeRecord();
   }.bind(this));
 };
 
@@ -346,6 +348,27 @@ ApiTester.prototype.testApi_Column = function() {
     'eq', 'neq', 'lt', 'lte', 'gt', 'gte', 'match', 'between', 'in',
     'isNull', 'isNotNull', 'as',
   ], 'columnSchema');
+};
+
+
+/**
+ * Tests the plain ChangeRecord object passed to observers.
+ * @return {!IThenable}
+ */
+ApiTester.prototype.testApi_ChangeRecord = function() {
+  return new Promise(function(resolve, reject) {
+    var q = this.db_.select().from(this.table_);
+    this.db_.observe(q, function(changes) {
+      assertAttributes(
+          changes[0],
+          ['addedCount', 'index', 'object', 'removed', 'type'],
+          'ChangeRecord');
+      resolve();
+    });
+
+    var row = this.table_.createRow();
+    this.db_.insert().into(this.table_).values([row]).exec();
+  }.bind(this));
 };
 
 
