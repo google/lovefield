@@ -66,13 +66,14 @@ function buildLib(options) {
 
 
 /**
- * @param {string} testFile
+ * @param {string} testFilePath
  * @return {!IThenable}
  */
-function buildTest(testFile) {
+function buildTest(testFilePath) {
   // Some tests are built against the distritbuted lovefield.min.js and require
   // different setup.
-  if (testFile.indexOf('harness/min_js') != -1) {
+  var testFile = pathMod.normalize(testFilePath);
+  if (testFile.indexOf(pathMod.join('harness', 'min_js')) != -1) {
     return buildMinJsTest_(testFile);
   }
 
