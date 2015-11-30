@@ -197,7 +197,7 @@ declare module lf {
     }
 
     export interface Builder {
-      connect(options: ConnectOptions): Promise<lf.Database>
+      connect(options?: ConnectOptions): Promise<lf.Database>
       createTable(tableName: string): TableBuilder
       getSchema(): Database
       setPragma(pragma: DatabasePragma): void
