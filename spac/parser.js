@@ -64,7 +64,7 @@ var ForeignKeySpec_;
  *   }>),
  *   nullable: !Array<string>,
  *   unique: {column: !Array<string>},
- *   foreignKey: !Array<!ForeignKeySpec_>
+ *   foreignKey: !Object<!ForeignKeySpec_>
  * }}
  * @private
  */

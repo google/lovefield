@@ -44,7 +44,7 @@ lf.testing.backstore.TrackedTable = function(table, tableName) {
 
   /**
    * A list of all async operations that have been spawned for this table.
-   * @private {!Array<!goog.Thenable>}
+   * @private {!Array<!IThenable>}
    */
   this.requests_ = [];
 

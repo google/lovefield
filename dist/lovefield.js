@@ -9846,7 +9846,7 @@ lf.proc.SelectLogicalPlanGenerator.prototype.generateNodes_ = function() {
   this.generateProjectNode_();
 };
 lf.proc.SelectLogicalPlanGenerator.prototype.connectNodes_ = function() {
-  for (var parentOrder = [this.limitNode_, this.skipNode_, this.projectNode_, this.orderByNode_, this.aggregationNode_, this.groupByNode_, this.selectNode_, this.crossProductNode_], lastExistingParentIndex = null, rootNode = null, i = 0;i < parentOrder.length;i++) {
+  for (var parentOrder = [this.limitNode_, this.skipNode_, this.projectNode_, this.orderByNode_, this.aggregationNode_, this.groupByNode_, this.selectNode_, this.crossProductNode_], lastExistingParentIndex = -1, rootNode = null, i = 0;i < parentOrder.length;i++) {
     var node = parentOrder[i];
     goog.isNull(node) || (goog.isNull(rootNode) ? rootNode = node : parentOrder[lastExistingParentIndex].addChild(node), lastExistingParentIndex = i);
   }
