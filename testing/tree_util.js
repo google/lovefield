@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+goog.setTestOnly('lf.testing.treeutil');
 goog.provide('lf.testing.treeutil');
 goog.provide('lf.testing.treeutil.Tree');
 

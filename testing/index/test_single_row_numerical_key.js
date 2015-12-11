@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+goog.setTestOnly('lf.testing.index.TestSingleRowNumericalKey');
 goog.provide('lf.testing.index.TestSingleRowNumericalKey');
 
 goog.require('goog.testing.jsunit');
