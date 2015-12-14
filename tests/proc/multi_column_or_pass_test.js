@@ -18,14 +18,17 @@ goog.setTestOnly();
 goog.require('goog.testing.AsyncTestCase');
 goog.require('goog.testing.jsunit');
 goog.require('lf.op');
+goog.require('lf.proc.IndexRangeScanStep');
 goog.require('lf.proc.JoinStep');
 goog.require('lf.proc.MultiColumnOrPass');
 goog.require('lf.proc.ProjectStep');
 goog.require('lf.proc.SelectStep');
+goog.require('lf.proc.TableAccessByRowIdStep');
 goog.require('lf.proc.TableAccessFullStep');
 goog.require('lf.query.SelectContext');
 goog.require('lf.schema.DataStoreType');
 goog.require('lf.testing.hrSchema.getSchemaBuilder');
+goog.require('lf.testing.proc.MockKeyRangeCalculator');
 goog.require('lf.testing.treeutil');
 
 
@@ -216,6 +219,50 @@ function testCrossTableOrPredicates_Unaffected() {
     selectStep.addChild(joinStep);
     joinStep.addChild(tableAccessStep1);
     joinStep.addChild(tableAccessStep2);
+
+    return {
+      queryContext: queryContext,
+      root: projectStep
+    };
+  };
+
+  lf.testing.treeutil.assertTreeTransformation(
+      constructTree(), treeBefore, treeBefore, pass);
+}
+
+
+/**
+ * Test the case where a predicate of the form AND(c1, OR(c2, c3)) exists and
+ * c1 has already been optimized by previous optimization passes. This
+ * optimization does not apply.
+ */
+function testAlreadyOptimized_Unaffected() {
+  var treeBefore =
+      'project()\n' +
+      '-select(combined_pred_or)\n' +
+      '--table_access_by_row_id(Job)\n' +
+      '---index_range_scan(Job.pkJob, [1, 1], natural)\n';
+
+  var constructTree = function() {
+    var queryContext = new lf.query.SelectContext(schema);
+    queryContext.from = [j];
+    var simplePredicate = j['id'].eq('1');
+    var orPredicate = lf.op.or(
+        j['id'].eq('2'), j['maxSalary'].eq(100));
+    queryContext.where = lf.op.and(simplePredicate, orPredicate);
+
+    var projectStep = new lf.proc.ProjectStep([], null);
+    var selectStep = new lf.proc.SelectStep(orPredicate.getId());
+    var tableAccessByRowIdStep = new lf.proc.TableAccessByRowIdStep(
+        global, queryContext.from[0]);
+    var indexRangeScanStep = new lf.proc.IndexRangeScanStep(
+        global, j['id'].getIndex(),
+        new lf.testing.proc.MockKeyRangeCalculator(
+            simplePredicate.toKeyRange()), false);
+
+    projectStep.addChild(selectStep);
+    selectStep.addChild(tableAccessByRowIdStep);
+    tableAccessByRowIdStep.addChild(indexRangeScanStep);
 
     return {
       queryContext: queryContext,

@@ -10603,7 +10603,11 @@ lf.proc.MultiColumnOrPass.prototype.rewrite = function(rootNode, queryContext) {
   do {
     orSelectStep = orSelectSteps[i++], indexRangeCandidates = this.findIndexRangeCandidates_(orSelectStep, queryContext);
   } while (goog.isNull(indexRangeCandidates) && i < orSelectSteps.length);
-  return goog.isNull(indexRangeCandidates) ? this.rootNode : this.rootNode = this.replaceWithIndexRangeScan_(orSelectStep, indexRangeCandidates);
+  if (goog.isNull(indexRangeCandidates)) {
+    return this.rootNode;
+  }
+  var tableAccessFullStep = this.findTableAccessFullStep_(indexRangeCandidates[0].indexSchema.tableName);
+  return goog.isNull(tableAccessFullStep) ? this.rootNode : this.rootNode = this.replaceWithIndexRangeScan_(orSelectStep, tableAccessFullStep, indexRangeCandidates);
 };
 lf.proc.MultiColumnOrPass.prototype.findOrPredicates_ = function(queryContext) {
   var filterFn = function(node) {
@@ -10614,6 +10618,11 @@ lf.proc.MultiColumnOrPass.prototype.findOrPredicates_ = function(queryContext) {
     return predicate instanceof lf.pred.CombinedPredicate && predicate.operator == lf.pred.Operator.OR;
   };
   return lf.tree.find(this.rootNode, filterFn);
+};
+lf.proc.MultiColumnOrPass.prototype.findTableAccessFullStep_ = function(tableName) {
+  return lf.tree.find(this.rootNode, function(node) {
+    return node instanceof lf.proc.TableAccessFullStep && node.table.getName() == tableName;
+  })[0] || null;
 };
 lf.proc.MultiColumnOrPass.prototype.findIndexRangeCandidates_ = function(selectStep, queryContext) {
   var predicate = queryContext.getPredicate(selectStep.predicateId), tables = predicate.getTables();
@@ -10627,10 +10636,8 @@ lf.proc.MultiColumnOrPass.prototype.findIndexRangeCandidates_ = function(selectS
   });
   return allIndexed ? indexRangeCandidates : null;
 };
-lf.proc.MultiColumnOrPass.prototype.replaceWithIndexRangeScan_ = function(selectStep, indexRangeCandidates) {
-  var tableAccessFullStep = lf.tree.find(this.rootNode, function(node) {
-    return node instanceof lf.proc.TableAccessFullStep && node.table.getName() == indexRangeCandidates[0].indexSchema.tableName;
-  })[0], tableAccessByRowIdStep = new lf.proc.TableAccessByRowIdStep(this.global_, tableAccessFullStep.table), multiIndexRangeScanStep = new lf.proc.MultiIndexRangeScanStep;
+lf.proc.MultiColumnOrPass.prototype.replaceWithIndexRangeScan_ = function(selectStep, tableAccessFullStep, indexRangeCandidates) {
+  var tableAccessByRowIdStep = new lf.proc.TableAccessByRowIdStep(this.global_, tableAccessFullStep.table), multiIndexRangeScanStep = new lf.proc.MultiIndexRangeScanStep;
   tableAccessByRowIdStep.addChild(multiIndexRangeScanStep);
   indexRangeCandidates.forEach(function(candidate) {
     var indexRangeScanStep = new lf.proc.IndexRangeScanStep(this.global_, candidate.indexSchema, candidate.getKeyRangeCalculator(), !1);
