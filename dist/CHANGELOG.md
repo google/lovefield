@@ -1,3 +1,14 @@
+Version: 2.1.3<br>
+Publish date: 20151216<br>
+Changes:
+ - Fixed execution of queries that involve leftOuterJoin and have a where clause
+   such that the result matches that of other SQL engines.
+ - Fixed error thrown by MultiColumnOrPass optimization if tree was already
+   optimized.
+ - Fixed ChangeRecord objects returned to observers to not be renamed by the
+   compiler.
+ - Fixed Typescript definitions for Builder#connect.
+
 Version: 2.1.2<br>
 Publish date: 20151120<br>
 Changes:
