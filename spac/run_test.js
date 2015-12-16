@@ -52,8 +52,7 @@ for (var i = 0; i < testFiles.length; ++i) {
 }
 
 jRunner.onComplete(function(passed) {
-  var exitCode = (runner.results().failedCount > 0) ? 1 : 0;
-  process.exit(exitCode);
+  process.exit(passed ? 0 : 1);
 });
 
 jRunner.execute();
