@@ -93,6 +93,7 @@ lf.testing.EndToEndSelectTester = function(connectFn) {
     this.testCrossColumnNullable_FullMatch.bind(this),
     this.testExplicitJoin.bind(this),
     this.testOuterJoin.bind(this),
+    this.testOuterJoinWithWhere.bind(this),
     this.testOuterInnerJoin.bind(this),
     this.testInnerOuterJoin.bind(this),
     this.testOuterJoin_reversePredicate.bind(this),
@@ -944,6 +945,35 @@ lf.testing.EndToEndSelectTester.prototype.testOuterJoin = function() {
   return queryBuilder.exec().then(
       function(results) {
         this.assertOuterJoinResult_(r, c, results);
+      }.bind(this));
+};
+
+
+/**
+ * Tests a SELECT query with an outer join and a where clause. It ensures that
+ * the where clause is applied on the result of the join (and not before the
+ * join has been calculated).
+ * @return {!IThenable}
+ */
+lf.testing.EndToEndSelectTester.prototype.testOuterJoinWithWhere = function() {
+  var c = this.c_;
+  var r = this.r_;
+  var countryId = 2;
+  var queryBuilder = /** @type {!lf.query.SelectBuilder} */ (
+      this.db_.select().
+      from(r).
+      leftOuterJoin(c, r.id.eq(c.regionId)).
+      orderBy(r.id, lf.Order.ASC)).
+      where(c.id.eq(countryId));
+
+  return queryBuilder.exec().then(
+      function(results) {
+        assertEquals(1, results.length);
+        assertEquals(countryId, results[0][c.getName()][c.id.getName()]);
+        assertNotNull(results[0][r.getName()]);
+        assertEquals(
+            results[0][c.getName()][c.regionId.getName()],
+            results[0][r.getName()][r.id.getName()]);
       }.bind(this));
 };
 

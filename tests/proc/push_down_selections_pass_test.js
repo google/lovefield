@@ -108,7 +108,7 @@ function testTree_ValuePredicates1() {
  * pushed further down. Ensuring that no endless recursion occurs (swapping the
  * select nodes with each other indefinitely).
  */
-function testTree_ValuePredicates2() {
+function testTree_ValuePredicates2_Unaffected() {
   var e = schema.getEmployee();
 
   var treeBefore =
@@ -380,6 +380,49 @@ function testTree_JoinPredicates3() {
 
   lf.testing.treeutil.assertTreeTransformation(
       constructTree(), treeBefore, treeAfter, pass);
+}
+
+
+/**
+ * Tests a tree that involves a left outer join and also has an additional
+ * where() clause. It ensures that the value predicate is not pushed below the
+ * join predicate, such that the join operation is performed before the value
+ * predicate is applied.
+ */
+function testTree_OuterJoinPredicate_Unaffected() {
+  var r = schema.getRegion();
+  var c = schema.getCountry();
+
+  var treeBefore =
+      'select(value_pred(Country.id eq 1))\n' +
+      '-select(join_pred(Region.id eq Country.regionId))\n' +
+      '--cross_product\n' +
+      '---table_access(Region)\n' +
+      '---table_access(Country)\n';
+
+  var constructTree = function() {
+    var queryContext = new lf.query.SelectContext(hr.db.getSchema());
+    queryContext.from = [r, c];
+    var valuePredicate = c.id.eq(1);
+    var joinPredicate = r.id.eq(c.regionId);
+    queryContext.where = lf.op.and(valuePredicate, joinPredicate);
+    queryContext.outerJoinPredicates = lf.structs.set.create();
+    queryContext.outerJoinPredicates.add(joinPredicate.getId());
+
+    var selectNode1 = new lf.proc.SelectNode(valuePredicate);
+    var selectNode2 = new lf.proc.SelectNode(joinPredicate);
+    var crossProductNode = new lf.proc.CrossProductNode();
+
+    selectNode1.addChild(selectNode2);
+    selectNode2.addChild(crossProductNode);
+    crossProductNode.addChild(new lf.proc.TableAccessNode(r));
+    crossProductNode.addChild(new lf.proc.TableAccessNode(c));
+
+    return {queryContext: queryContext, root: selectNode1};
+  };
+
+  lf.testing.treeutil.assertTreeTransformation(
+      constructTree(), treeBefore, treeBefore, pass);
 }
 
 

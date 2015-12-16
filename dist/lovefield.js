@@ -9769,28 +9769,28 @@ lf.proc.PushDownSelectionsPass.prototype.rewrite = function(rootNode, queryConte
   }
   this.clear_();
   this.rootNode = rootNode;
-  this.traverse_(this.rootNode);
+  this.traverse_(this.rootNode, queryContext);
   this.clear_();
   return this.rootNode;
 };
-lf.proc.PushDownSelectionsPass.prototype.traverse_ = function(node) {
+lf.proc.PushDownSelectionsPass.prototype.traverse_ = function(node, queryContext) {
   if (this.isCandidateNode_(node)) {
     var selectNode = node, selectNodeTables = selectNode.predicate.getTables(), shouldPushDownFn = function(child) {
       return this.doesReferToTables_(child, selectNodeTables);
-    }.bind(this), newRoot = this.pushDownNodeRec_(selectNode, shouldPushDownFn);
+    }.bind(this), newRoot = this.pushDownNodeRec_(queryContext, selectNode, shouldPushDownFn);
     this.alreadyPushedDown_.add(selectNode);
     newRoot == selectNode && (newRoot = selectNode.getChildAt(0));
-    goog.isNull(newRoot) || (goog.isNull(newRoot.getParent()) && (this.rootNode = newRoot), this.isCandidateNode_(newRoot) && !this.alreadyPushedDown_.has(newRoot) && this.traverse_(newRoot));
+    goog.isNull(newRoot) || (goog.isNull(newRoot.getParent()) && (this.rootNode = newRoot), this.isCandidateNode_(newRoot) && !this.alreadyPushedDown_.has(newRoot) && this.traverse_(newRoot, queryContext));
   } else {
     node.getChildren().forEach(function(child) {
-      this.traverse_(child);
+      this.traverse_(child, queryContext);
     }, this);
   }
 };
-lf.proc.PushDownSelectionsPass.prototype.pushDownNodeRec_ = function(node$$0, shouldPushDownFn) {
+lf.proc.PushDownSelectionsPass.prototype.pushDownNodeRec_ = function(queryContext, node$$0, shouldPushDownFn) {
   var newRoot = node$$0;
-  if (this.shouldSwapWithChild_(node$$0)) {
-    newRoot = lf.tree.swapNodeWithChild(node$$0), this.pushDownNodeRec_(node$$0, shouldPushDownFn);
+  if (this.shouldSwapWithChild_(queryContext, node$$0)) {
+    newRoot = lf.tree.swapNodeWithChild(node$$0), this.pushDownNodeRec_(queryContext, node$$0, shouldPushDownFn);
   } else {
     if (this.shouldPushBelowChild_(node$$0)) {
       var newNodes = [], cloneFn = function(node) {
@@ -9799,7 +9799,7 @@ lf.proc.PushDownSelectionsPass.prototype.pushDownNodeRec_ = function(node$$0, sh
         return newNode;
       }, newRoot = lf.tree.pushNodeBelowChild(node$$0, shouldPushDownFn, cloneFn);
       newNodes.forEach(function(newNode) {
-        this.pushDownNodeRec_(newNode, shouldPushDownFn);
+        this.pushDownNodeRec_(queryContext, newNode, shouldPushDownFn);
       }, this);
     }
   }
@@ -9820,8 +9820,9 @@ lf.proc.PushDownSelectionsPass.prototype.shouldPushBelowChild_ = function(node) 
   var child = node.getChildAt(0);
   return child instanceof lf.proc.CrossProductNode || child instanceof lf.proc.JoinNode;
 };
-lf.proc.PushDownSelectionsPass.prototype.shouldSwapWithChild_ = function(node) {
-  return node.getChildAt(0) instanceof lf.proc.SelectNode;
+lf.proc.PushDownSelectionsPass.prototype.shouldSwapWithChild_ = function(queryContext, node) {
+  var child = node.getChildAt(0);
+  return child instanceof lf.proc.SelectNode && !(goog.isDefAndNotNull(queryContext.outerJoinPredicates) && queryContext.outerJoinPredicates.has(child.predicate.getId()));
 };
 lf.proc.SelectLogicalPlanGenerator = function(query, rewritePasses) {
   lf.proc.BaseLogicalPlanGenerator.call(this, query);
@@ -10348,7 +10349,14 @@ lf.proc.IndexRangeScanPass.prototype.rewrite = function(rootNode, queryContext) 
 };
 lf.proc.IndexRangeScanPass.prototype.findSelectSteps_ = function(startNode) {
   for (var selectSteps = [], node = startNode.getParent();node;) {
-    node instanceof lf.proc.SelectStep && selectSteps.push(node), node = node.getParent();
+    if (node instanceof lf.proc.SelectStep) {
+      selectSteps.push(node);
+    } else {
+      if (node instanceof lf.proc.JoinStep) {
+        break;
+      }
+    }
+    node = node.getParent();
   }
   return selectSteps;
 };
