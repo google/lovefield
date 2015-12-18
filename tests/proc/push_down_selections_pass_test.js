@@ -25,6 +25,7 @@ goog.require('lf.proc.PushDownSelectionsPass');
 goog.require('lf.proc.SelectNode');
 goog.require('lf.proc.TableAccessNode');
 goog.require('lf.query.SelectContext');
+goog.require('lf.structs.set');
 goog.require('lf.testing.treeutil');
 
 
@@ -188,15 +189,83 @@ function testTree_ValuePredicates3() {
 
 
 /**
+ * Tests a tree where two value predicates and two join predicates exist (one
+ * outer, one inner).
+ * It ensures that
+ *  1) The two value predicates are not pushed below the outer join predicates.
+ *  2) The join predicate closer to the root is pushed below the outer join
+ *     predicate further from the root..
+ */
+function testTree_MixedJoinPredicates_WithWhere() {
+  var treeBefore =
+      'select(value_pred(Department.id eq null))\n' +
+      '-select(value_pred(Job.id eq null))\n' +
+      '--select(join_pred(Employee.jobId eq Job.id))\n' +
+      '---select(join_pred(Employee.departmentId eq Department.id))\n' +
+      '----cross_product\n' +
+      '-----cross_product\n' +
+      '------table_access(Employee)\n' +
+      '------table_access(Job)\n' +
+      '-----table_access(Department)\n';
+
+  var treeAfter =
+      'select(value_pred(Department.id eq null))\n' +
+      '-select(value_pred(Job.id eq null))\n' +
+      '--select(join_pred(Employee.departmentId eq Department.id))\n' +
+      '---cross_product\n' +
+      '----select(join_pred(Employee.jobId eq Job.id))\n' +
+      '-----cross_product\n' +
+      '------table_access(Employee)\n' +
+      '------table_access(Job)\n' +
+      '----table_access(Department)\n';
+
+  var constructTree = function() {
+    var d = schema.getDepartment();
+    var e = schema.getEmployee();
+    var j = schema.getJob();
+
+    var queryContext = new lf.query.SelectContext(hr.db.getSchema());
+    queryContext.from = [e, j, d];
+    var innerJoinPredicate = e.jobId.eq(j.id);
+    var outerJoinPredicate = e.departmentId.eq(d.id);
+    var valuePredicate1 = d.id.isNull();
+    var valuePredicate2 = j.id.isNull();
+    queryContext.where = lf.op.and(
+        valuePredicate1, valuePredicate2,
+        innerJoinPredicate, outerJoinPredicate);
+    queryContext.outerJoinPredicates = lf.structs.set.create();
+    queryContext.outerJoinPredicates.add(outerJoinPredicate.getId());
+
+    var crossProductNode1 = new lf.proc.CrossProductNode();
+    crossProductNode1.addChild(new lf.proc.TableAccessNode(e));
+    crossProductNode1.addChild(new lf.proc.TableAccessNode(j));
+    var crossProductNode2 = new lf.proc.CrossProductNode();
+    crossProductNode2.addChild(crossProductNode1);
+    crossProductNode2.addChild(new lf.proc.TableAccessNode(d));
+
+    var selectNode1 = new lf.proc.SelectNode(valuePredicate1);
+    var selectNode2 = new lf.proc.SelectNode(valuePredicate2);
+    var selectNode3 = new lf.proc.SelectNode(innerJoinPredicate);
+    var selectNode4 = new lf.proc.SelectNode(outerJoinPredicate);
+    selectNode1.addChild(selectNode2);
+    selectNode2.addChild(selectNode3);
+    selectNode3.addChild(selectNode4);
+    selectNode4.addChild(crossProductNode2);
+
+    return {queryContext: queryContext, root: selectNode1};
+  };
+
+  lf.testing.treeutil.assertTreeTransformation(
+      constructTree(), treeBefore, treeAfter, pass);
+}
+
+
+/**
  * Tests a tree that involves a 3 table join. It ensures that the JoinPredicate
  * nodes are pushed down until they become parents of the appropriate cross
  * product node.
  */
 function testTree_JoinPredicates() {
-  var d = schema.getDepartment();
-  var e = schema.getEmployee();
-  var j = schema.getJob();
-
   var treeBefore =
       'select(join_pred(Employee.jobId eq Job.id))\n' +
       '-select(join_pred(Employee.departmentId eq Department.id))\n' +
@@ -216,6 +285,10 @@ function testTree_JoinPredicates() {
       '--table_access(Department)\n';
 
   var constructTree = function() {
+    var d = schema.getDepartment();
+    var e = schema.getEmployee();
+    var j = schema.getJob();
+
     var queryContext = new lf.query.SelectContext(hr.db.getSchema());
     queryContext.from = [e, j, d];
     var predicate1 = e.departmentId.eq(d.id);
@@ -385,7 +458,7 @@ function testTree_JoinPredicates3() {
 
 /**
  * Tests a tree that involves a left outer join and also has an additional
- * where() clause. It ensures that the value predicate is not pushed below the
+ * value predicate. It ensures that the value predicate is not pushed below the
  * join predicate, such that the join operation is performed before the value
  * predicate is applied.
  */

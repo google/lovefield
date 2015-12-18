@@ -94,6 +94,7 @@ lf.testing.EndToEndSelectTester = function(connectFn) {
     this.testExplicitJoin.bind(this),
     this.testOuterJoin.bind(this),
     this.testOuterJoinWithWhere.bind(this),
+    this.testOuterMultiJoinWithWhere.bind(this),
     this.testOuterInnerJoin.bind(this),
     this.testInnerOuterJoin.bind(this),
     this.testOuterJoin_reversePredicate.bind(this),
@@ -963,8 +964,8 @@ lf.testing.EndToEndSelectTester.prototype.testOuterJoinWithWhere = function() {
       this.db_.select().
       from(r).
       leftOuterJoin(c, r.id.eq(c.regionId)).
-      orderBy(r.id, lf.Order.ASC)).
-      where(c.id.eq(countryId));
+      orderBy(r.id, lf.Order.ASC).
+      where(c.id.eq(countryId)));
 
   return queryBuilder.exec().then(
       function(results) {
@@ -974,6 +975,31 @@ lf.testing.EndToEndSelectTester.prototype.testOuterJoinWithWhere = function() {
         assertEquals(
             results[0][c.getName()][c.regionId.getName()],
             results[0][r.getName()][r.id.getName()]);
+      }.bind(this));
+};
+
+
+/**
+ * Tests a query with two outer joins and a composite where clause.
+ * @return {!IThenable}
+ */
+lf.testing.EndToEndSelectTester.prototype.testOuterMultiJoinWithWhere =
+    function() {
+  var d = this.d_;
+  var e = this.e_;
+  var j = this.j_;
+  var queryBuilder = /** @type {!lf.query.SelectBuilder} */ (
+      this.db_.select().
+      from(e).
+      leftOuterJoin(j, e.jobId.eq(j.id)).
+      leftOuterJoin(d, e.departmentId.eq(d.id)).
+      where(lf.op.and(j.id.isNull(), d.id.isNull())));
+
+  return queryBuilder.exec().then(
+      function(results) {
+        // Since every employee corresponds to an existing jobId and
+        // departmentId expecting an empty result.
+        assertEquals(0, results.length);
       }.bind(this));
 };
 
