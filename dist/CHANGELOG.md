@@ -1,3 +1,10 @@
+Version: 2.1.4<br>
+Publish date: 20151222<br>
+Changes:
+ - Fixed PushDownSelectionsPass case where nodes were not pushed down (which was
+   affecting queries with multiple joins).
+ - Fixed Tyepescript definitions for TableBuilder#addForeignKey.
+
 Version: 2.1.3<br>
 Publish date: 20151216<br>
 Changes:
