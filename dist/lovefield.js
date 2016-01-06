@@ -987,7 +987,7 @@ goog.string.editDistance = function(a, b) {
   for (i = 0;i < a.length;i++) {
     v1[0] = i + 1;
     for (var j = 0;j < b.length;j++) {
-      var cost = a[i] != b[j];
+      var cost = Number(a[i] != b[j]);
       v1[j + 1] = Math.min(v1[j] + 1, v0[j + 1] + 1, v0[j] + cost);
     }
     for (j = 0;j < v0.length;j++) {
@@ -3442,7 +3442,7 @@ goog.userAgent.isVersionOrHigher = function(version) {
 };
 goog.userAgent.isVersion = goog.userAgent.isVersionOrHigher;
 goog.userAgent.isDocumentModeOrHigher = function(documentMode) {
-  return goog.userAgent.DOCUMENT_MODE >= documentMode;
+  return Number(goog.userAgent.DOCUMENT_MODE) >= documentMode;
 };
 goog.userAgent.isDocumentMode = goog.userAgent.isDocumentModeOrHigher;
 var JSCompiler_inline_result$$0, doc$$inline_2 = goog.global.document, mode$$inline_3 = goog.userAgent.getDocumentMode_();
