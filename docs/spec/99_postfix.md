@@ -25,7 +25,7 @@ details, see [design doc](../dd/02_data_store.md#232-bundled-mode-experiment).
 
 ### Advanced Grouping
 
-Support for group by multi columns, ROLLUP, and CUBE equivalent.
+Support for ROLLUP and CUBE equivalent.
 
 ### Multi-Connection
 

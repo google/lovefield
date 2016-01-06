@@ -1,7 +1,6 @@
 # Lovefield Specification
 
 ## 8. Referential integrity
-NOTE: The following spec is not implemented yet.
 
 ### 8.1 Constraint semantics
 

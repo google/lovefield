@@ -162,24 +162,25 @@ function onUpgrade(rawDb) {
   // This call is synchronous.
   rawDb.dropTable('Progress');
 
+  // All async upgrade helpers are supposed to chain one after another.
+
   // Add column agent (type string) to Purchase with default value 'Smith'.
-  var p1 = rawDb.addTableColumn('Purchase', 'agent', 'Smith');
+  return rawDb.addTableColumn('Purchase', 'agent', 'Smith').then(function() {
+    // Delete column metadata from Photo.
+    return rawDb.dropTableColumn('Photo', 'metadata');
+  }).then(function() {
+    // Rename Photo.isLocal to Photo.local.
+    return rawDb.renameTableColumn('Photo', 'isLocal', 'local');
+  }).then(function() {
+    // Transformations are not supported because of IndexedDB auto-commit:
+    // Firefox immediately commits the transaction when Lovefield tries to
+    // return a promise from scanning existing object stores. Users are
+    // supposed to do a dump and make the transformation outside of onUpgrade
+    // routine.
 
-  // Delete column metadata from Photo.
-  var p2 = rawDb.dropTableColumn('Photo', 'metadata');
-
-  // Rename Photo.isLocal to Photo.local.
-  var p3 = rawDb.renameTableColumn('Photo', 'isLocal', 'local');
-
-  // Transformations are not supported because of IndexedDB auto-commit: Firefox
-  // immediately commits the transaction when Lovefield tries to return a
-  // promise from scanning existing object stores. Users are supposed to do a
-  // dump and make the transformation outside of onUpgrade routine.
-
-  // DUMP the whole DB into a JS object.
-  var p4 = rawDb.dump();
-
-  return Promise.all([p1, p2, p3, p4]);
+    // DUMP the whole DB into a JS object.
+    return rawDb.dump();
+  });
 }
 ```
 
