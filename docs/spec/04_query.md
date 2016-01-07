@@ -489,7 +489,8 @@ db.update(order).
     set(order.amount, 51).
     set(order.currency, 'EUR').
     where(lf.op.and(
-        order.currency.eq('DEM'), order.amount.eq(100)));
+        order.currency.eq('DEM'), order.amount.eq(100))).
+    exec();  // Returns a Promise.
 ```
 
 The `where()` function is shared with select query since they are both search
