@@ -1,3 +1,8 @@
+Version: 2.1.5<br>
+Publish date: 20160107<br>
+Changes:
+ - Fixed WebSQL back store initial row ID scanning bug.
+
 Version: 2.1.4<br>
 Publish date: 20151222<br>
 Changes:
