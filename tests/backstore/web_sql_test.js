@@ -38,12 +38,8 @@ var asyncTestCase = goog.testing.AsyncTestCase.createAndInstall('WebSql');
 asyncTestCase.stepTimeout = 5000;  // Raise the timeout to 5 seconds.
 
 
-/** @type {!lf.cache.Cache} */
-var cache;
-
-
-/** @type {!lf.index.IndexStore} */
-var indexStore;
+/** @type {string} */
+var schemaName;
 
 
 /** @type {!lf.schema.Database} */
@@ -60,6 +56,7 @@ var capability;
 
 function setUpPage() {
   capability = lf.Capability.get();
+  schemaName = 'wsql' + goog.now();
 }
 
 function setUp() {
@@ -67,15 +64,14 @@ function setUp() {
     return;
   }
 
-  // The schema name is on purpose padded with a timestamp to workaround the
-  // issue that Chrome can't open the same WebSQL instance again.
   schema = lf.testing.getSchemaBuilder().getSchema();
-  cache = new lf.cache.DefaultCache(schema);
-  indexStore = new lf.index.MemoryIndexStore();
   var global = lf.Global.get();
+  global.clear();
+
   lf.Row.setNextId(0);
-  global.registerService(lf.service.CACHE, cache);
-  global.registerService(lf.service.INDEX_STORE, indexStore);
+  global.registerService(lf.service.CACHE, new lf.cache.DefaultCache(schema));
+  global.registerService(
+      lf.service.INDEX_STORE, new lf.index.MemoryIndexStore());
   global.registerService(lf.service.SCHEMA, schema);
 }
 
@@ -85,6 +81,9 @@ function testSCUD() {
     return;
   }
 
+  // The schema name is on purpose padded with a timestamp to workaround the
+  // issue that Chrome can't open the same WebSQL instance again if this test
+  // has been run twice.
   db = new lf.backstore.WebSql(lf.Global.get(), schema);
   var scudTester = new lf.testing.backstore.ScudTester(db, lf.Global.get());
 
@@ -102,13 +101,61 @@ function testRowId_Empty() {
     return;
   }
 
-  asyncTestCase.waitForAsync('testScanRowId');
+  asyncTestCase.waitForAsync('testRowId_Empty');
   lf.schema.create('foo' + goog.now(), 1).connect({
     storeType: lf.schema.DataStoreType.WEB_SQL
   }).then(function(db) {
-    assertEquals(0, lf.Row.getNextId());
+    assertEquals(1, lf.Row.getNextId());
     asyncTestCase.continueTesting();
   });
+}
+
+
+/** @return {!lf.schema.Builder} */
+function getSchemaBuilder() {
+  var builder = lf.schema.create(schemaName, 1);
+  builder.createTable('foo').addColumn('id', lf.Type.INTEGER);
+  return builder;
+}
+
+
+/**
+ * The following two tests test scanRowId() for non-empty database.
+ * The test name is crafted so that it makes sure it runs one after the other.
+ */
+function test1_AddRow() {
+  if (!capability.webSql) {
+    return;
+  }
+
+  var builder = getSchemaBuilder();
+  asyncTestCase.waitForAsync('test1_AddRow');
+  builder.connect({
+    storeType: lf.schema.DataStoreType.WEB_SQL
+  }).then(function(db) {
+    var t = db.getSchema().table('foo');
+    var row = t.createRow({'id': 1});
+
+    return db.insert().into(t).values([row]).exec();
+  }).then(function() {
+    asyncTestCase.continueTesting();
+  }, fail);
+}
+
+function test2_ScanRowId() {
+  if (!capability.webSql) {
+    return;
+  }
+
+  asyncTestCase.waitForAsync('test2_RowId');
+
+  var builder = getSchemaBuilder();
+  builder.connect({
+    storeType: lf.schema.DataStoreType.WEB_SQL
+  }).then(function(db) {
+    assertEquals(2, lf.Row.getNextId());
+    asyncTestCase.continueTesting();
+  }, fail);
 }
 
 

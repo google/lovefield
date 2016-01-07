@@ -6786,10 +6786,12 @@ lf.backstore.WebSql.prototype.init = function(opt_onUpgrade) {
   var onUpgrade = opt_onUpgrade || function() {
     return goog.Promise.resolve();
   };
-  return new goog.Promise(function(resolve) {
+  return new goog.Promise(function(resolve, reject) {
     var db = window.openDatabase(this.schema_.name(), "", this.schema_.name(), this.size_);
     if (goog.isDefAndNotNull(db)) {
-      this.db_ = db, this.checkVersion_(onUpgrade).then(resolve, function(e) {
+      this.db_ = db, this.checkVersion_(onUpgrade).then(function() {
+        this.scanRowId_().then(resolve, reject);
+      }.bind(this), function(e) {
         if (e instanceof lf.Exception) {
           throw e;
         }
@@ -6832,14 +6834,10 @@ lf.backstore.WebSql.prototype.notify = function() {
   this.notSupported_();
 };
 lf.backstore.WebSql.prototype.onUpgrade_ = function(onUpgrade, oldVersion) {
-  var resolver = goog.Promise.withResolver();
-  this.preUpgrade_().then(function() {
+  return this.preUpgrade_().then(function() {
     var rawDb = new lf.backstore.WebSqlRawBackStore(this.global_, oldVersion, this.db_);
-    onUpgrade(rawDb).then(function() {
-      return this.scanRowId_();
-    }.bind(this)).then(resolver.resolve.bind(resolver));
-  }.bind(this), resolver.reject.bind(resolver));
-  return resolver.promise;
+    return onUpgrade(rawDb);
+  }.bind(this));
 };
 lf.backstore.WebSql.escape_ = function(tableName) {
   return '"' + tableName + '"';
@@ -6880,14 +6878,15 @@ lf.backstore.WebSql.prototype.scanRowId_ = function() {
     var tx = new lf.backstore.WebSqlTx(this.db_, lf.TransactionType.READ_ONLY);
     tx.queue("SELECT MAX(id) FROM " + lf.backstore.WebSql.escape_(tableName), []);
     return tx.commit().then(function(results) {
-      var id = results[0].rows.item(0)[0];
+      var id = results[0].rows.item(0)["MAX(id)"];
       maxRowId = Math.max(id, maxRowId);
     });
   }.bind(this), promises = this.schema_.tables().map(function(table) {
     return selectIdFromTable(table.getName());
   });
   goog.Promise.all(promises).then(function() {
-    resolver.resolve(maxRowId);
+    lf.Row.setNextId(maxRowId + 1);
+    resolver.resolve();
   }, function(e) {
     resolver.reject(e);
   });
