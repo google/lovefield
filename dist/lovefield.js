@@ -1152,6 +1152,14 @@ goog.functions.nth = function(n) {
     return arguments[n];
   };
 };
+goog.functions.partialRight = function(fn, var_args) {
+  var rightArgs = Array.prototype.slice.call(arguments, 1);
+  return function() {
+    var newArgs = Array.prototype.slice.call(arguments);
+    newArgs.push.apply(newArgs, rightArgs);
+    return fn.apply(this, newArgs);
+  };
+};
 goog.functions.withReturnValue = function(f, retValue) {
   return goog.functions.sequence(f, goog.functions.constant(retValue));
 };
@@ -7001,9 +7009,11 @@ lf.index.slice = function(rawArray, opt_reverseOrder, opt_limit, opt_skip) {
 };
 lf.index.Stats = function() {
   this.totalRows = 0;
+  this.maxKeyEncountered = null;
 };
 lf.index.Stats.prototype.add = function(key, rowCount) {
   this.totalRows += rowCount;
+  goog.isNull(this.maxKeyEncountered) ? this.maxKeyEncountered = key : this.maxKeyEncountered = key > this.maxKeyEncountered ? key : this.maxKeyEncountered;
 };
 lf.index.Stats.prototype.remove = function(key, removedCount) {
   this.totalRows -= removedCount;
@@ -10399,7 +10409,7 @@ lf.proc.InsertStep.prototype.execInternal = function(relations, journal, context
 lf.proc.InsertStep.assignAutoIncrementPks_ = function(table, values, indexStore) {
   var pkIndexSchema = table.getConstraint().getPrimaryKey(), autoIncrement = goog.isNull(pkIndexSchema) ? !1 : pkIndexSchema.columns[0].autoIncrement;
   if (autoIncrement) {
-    var pkColumnName = pkIndexSchema.columns[0].schema.getName(), index = indexStore.get(pkIndexSchema.getNormalizedName()), max = index.max(), maxKey = goog.isNull(max) ? 0 : max[0];
+    var pkColumnName = pkIndexSchema.columns[0].schema.getName(), index = indexStore.get(pkIndexSchema.getNormalizedName()), max = index.stats().maxKeyEncountered, maxKey = goog.isNull(max) ? 0 : max;
     values.forEach(function(row) {
       0 != row.payload()[pkColumnName] && goog.isDefAndNotNull(row.payload()[pkColumnName]) || (maxKey++, row.payload()[pkColumnName] = maxKey);
     });

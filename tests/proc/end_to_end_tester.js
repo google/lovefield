@@ -529,7 +529,8 @@ lf.testing.EndToEndTester.prototype.checkAutoIncrement_ = function(builderFn) {
 
   // Adding a row with a manually assigned primary key. This ID should not be
   // replaced by an automatically assigned ID.
-  var manuallyAssignedId = 1000;
+  var manuallyAssignedId = firstBatch.length + secondBatch.length +
+      thirdBatch.length + 1000;
   var manualRow = c.createRow();
   manualRow.payload()['id'] = manuallyAssignedId;
   manualRow.payload()['regionId'] = 'regionId';
@@ -570,6 +571,25 @@ lf.testing.EndToEndTester.prototype.checkAutoIncrement_ = function(builderFn) {
             assertEquals(manuallyAssignedId, row.payload()['id']);
           }
         });
+
+        // Testing that previously assigned primary keys that have now been
+        // freed are not re-used.
+        // Removing the row with the max primary key encountered so far.
+        return this.db_.delete().from(c).where(
+            c.id.eq(manuallyAssignedId)).exec();
+      }.bind(this)).then(
+      function() {
+        // Adding a new row. Expecting that the automatically assigned primary
+        // key will be greater than the max primary key ever encountered in this
+        // table (even if that key has now been freed).
+        var manualRow2 = c.createRow();
+        manualRow2.payload()['id'] = null;
+        manualRow2.payload()['regionId'] = 'regionId';
+        return builderFn().into(c).values([manualRow2]).exec();
+      }).then(
+      function(results) {
+        assertEquals(1, results.length);
+        assertEquals(manuallyAssignedId + 1, results[0][c.id.getName()]);
       });
 };
 

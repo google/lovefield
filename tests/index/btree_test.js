@@ -1293,54 +1293,91 @@ function testMultiKeyGetRangeRegression() {
       tree2.getRange(undefined, true, 4, 3));
 }
 
-function testStats() {
+
+/**
+ * Tests the stats of a unique tree (each key has only one associated value).
+ */
+function testStats_UniqueTree() {
   var tree = insertToTree(23, false);
-  assertEquals(23, tree.stats().totalRows);
+  var expectedMaxKeyEncountered = Math.max.apply(null, SEQUENCE);
+
+  var stats = tree.stats();
+  assertEquals(23, stats.totalRows);
+  assertEquals(expectedMaxKeyEncountered, stats.maxKeyEncountered);
+
+  // Testing deletions.
   tree.remove(9);
   tree.remove(17);
   tree.remove(21);
-  assertEquals(20, tree.stats().totalRows);
+  assertEquals(20, stats.totalRows);
+
+  // Testing additions.
   tree.add(9, 9);
   tree.add(21, 21);
-  assertEquals(22, tree.stats().totalRows);
+  assertEquals(22, stats.totalRows);
+
+  // Testing replacements.
   tree.set(9, 8);
-  assertEquals(22, tree.stats().totalRows);
+  assertEquals(22, stats.totalRows);
+
+  // Testing stats.maxKeyEncountered.
   tree.set(999, 888);
-  assertEquals(23, tree.stats().totalRows);
+  assertEquals(23, stats.totalRows);
+  expectedMaxKeyEncountered = 999;
+  assertEquals(expectedMaxKeyEncountered, stats.maxKeyEncountered);
+
+  // Testing removing everything from the index.
   tree.clear();
-  assertEquals(0, tree.stats().totalRows);
+  assertEquals(0, stats.totalRows);
+  assertEquals(expectedMaxKeyEncountered, stats.maxKeyEncountered);
+
   for (var i = 0; i < 23; ++i) {
     tree.set(i, i);
   }
   assertEquals(23, tree.stats().totalRows);
 
-  // Non-unique tree, each key has two rows.
-  tree = insertToTree(23, true);
-  assertEquals(46, tree.stats().totalRows);
+  // Test stats after serialization/deserialization.
+  var rows = insertToTree(23, false).serialize();
+  var deserializedTree = lf.index.BTree.deserialize(c, 'dummyTree', true, rows);
+  assertEquals(23, deserializedTree.stats().totalRows);
+}
+
+
+/**
+ * Tests the stats of a non-unique tree where each key has two associated
+ * values.
+ */
+function testStats_NonUniqueTree() {
+  var tree = insertToTree(23, true);
+  var expectedMaxKeyEncountered = Math.max.apply(null, SEQUENCE);
+
+  var stats = tree.stats();
+  assertEquals(46, stats.totalRows);
+  assertEquals(expectedMaxKeyEncountered, stats.maxKeyEncountered);
   // Remove all rows for the given key.
   tree.remove(21);
-  assertEquals(44, tree.stats().totalRows);
+  assertEquals(44, stats.totalRows);
   // Remove only one row for the given key.
   tree.remove(17, 17);
-  assertEquals(43, tree.stats().totalRows);
+  assertEquals(43, stats.totalRows);
   tree.remove(17, 9999);  // remove non-existing row
-  assertEquals(43, tree.stats().totalRows);
+  assertEquals(43, stats.totalRows);
   tree.set(17, 7777);
   tree.add(17, 8888);
   tree.add(17, 9999);
-  assertEquals(45, tree.stats().totalRows);
+  assertEquals(45, stats.totalRows);
   tree.add(9, 889);
-  assertEquals(46, tree.stats().totalRows);
+  assertEquals(46, stats.totalRows);
   tree.remove(9);
-  assertEquals(43, tree.stats().totalRows);
+  assertEquals(43, stats.totalRows);
+  assertEquals(expectedMaxKeyEncountered, stats.maxKeyEncountered);
 
   var rows = tree.serialize();
-  var tree2 = lf.index.BTree.deserialize(c, 't2', false, rows);
-  assertEquals(43, tree2.stats().totalRows);
-
-  rows = insertToTree(23, false).serialize();
-  var tree3 = lf.index.BTree.deserialize(c, 't3', true, rows);
-  assertEquals(23, tree3.stats().totalRows);
+  var deserializedTree =
+      lf.index.BTree.deserialize(c, 'dummyTree', false, rows);
+  assertEquals(43, deserializedTree.stats().totalRows);
+  assertEquals(
+      expectedMaxKeyEncountered, deserializedTree.stats().maxKeyEncountered);
 }
 
 function testGetAll() {
