@@ -7,9 +7,9 @@
   "devDependencies": {
     "gulp": "^3.9.0",
     "gulp-tsd": "^0.0.4",
-    "gulp-typescript": "^2.8.3",
+    "gulp-typescript": "^2.10.0",
     "gulp-webserver": "^0.9.1",
-    "nopt": "^3.0.4",
-    "tsd": "^0.6.4"
+    "nopt": "^3.0.6",
+    "tsd": "^0.6.5"
   }
 }

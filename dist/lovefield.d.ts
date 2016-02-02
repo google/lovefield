@@ -212,8 +212,8 @@ declare module lf {
     type RawForeignKeySpec = {
       local: string
       ref: string
-      action: lf.ConstraintAction
-      timing: lf.ConstraintTiming
+      action?: lf.ConstraintAction
+      timing?: lf.ConstraintTiming
     }
 
     export interface TableBuilder {
