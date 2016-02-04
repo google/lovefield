@@ -115,11 +115,14 @@ default (even if `addNullable()` is not explicitly called).
 to `addNullable()` is made. Note this is very different from typical SQL engine
 behavior.
 
-Lovefield internally accepts only string or number as index key. Array buffers
-and objects are not indexable (i.e. they cannot be put as index or any of the
-constraints) nor searchable (i.e. them cannot be part of `WHERE` clause).
-Implicit conversions will be performed internally if the following types are
-used as index / primary key or being placed as a unique constraint:
+Lovefield internally accepts only string or number as index key. Columns of type
+`lf.Type.ARRAY_BUFFER` and `lf.Type.OBJECT` are not indexable (i.e. they cannot
+be part of an index or any of the constraints). `lf.Type.ARRAY_BUFFER` columns
+are not searchable (i.e. them cannot be part of `WHERE` clause), where as
+`lf.Type.OBJECT` columns can only be used in predicates with `isNull` and
+`isNotNull` (otherwise an `lf.Exception` will be thrown). Implicit conversions
+will be performed internally if the following types are used as index / primary
+key or being placed as a unique constraint:
 
 * `lf.Type.BOOLEAN`: convert to `lf.Type.STRING`
 * `lf.Type.DATE_TIME`: convert to `lf.Type.NUMBER`

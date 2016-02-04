@@ -760,7 +760,7 @@ goog.string.unescapeEntitiesUsingDom_ = function(str, opt_document) {
       return value;
     }
     if ("#" == entity.charAt(0)) {
-      var n = +("0" + entity.substr(1));
+      var n = Number("0" + entity.substr(1));
       isNaN(n) || (value = String.fromCharCode(n));
     }
     value || (div.innerHTML = s + " ", value = div.firstChild.nodeValue.slice(0, -1));
@@ -780,7 +780,7 @@ goog.string.unescapePureXmlEntities_ = function(str) {
         return '"';
       default:
         if ("#" == entity.charAt(0)) {
-          var n = +("0" + entity.substr(1));
+          var n = Number("0" + entity.substr(1));
           if (!isNaN(n)) {
             return String.fromCharCode(n);
           }
@@ -936,7 +936,7 @@ goog.string.createUniqueString = function() {
   return "goog_" + goog.string.uniqueStringCounter_++;
 };
 goog.string.toNumber = function(str) {
-  var num = +str;
+  var num = Number(str);
   return 0 == num && goog.string.isEmptyOrWhitespace(str) ? NaN : num;
 };
 goog.string.isLowerCamelCase = function(str) {
@@ -987,7 +987,7 @@ goog.string.editDistance = function(a, b) {
   for (i = 0;i < a.length;i++) {
     v1[0] = i + 1;
     for (var j = 0;j < b.length;j++) {
-      var cost = +(a[i] != b[j]);
+      var cost = Number(a[i] != b[j]);
       v1[j + 1] = Math.min(v1[j] + 1, v0[j + 1] + 1, v0[j] + cost);
     }
     for (j = 0;j < v0.length;j++) {
@@ -3450,7 +3450,7 @@ goog.userAgent.isVersionOrHigher = function(version) {
 };
 goog.userAgent.isVersion = goog.userAgent.isVersionOrHigher;
 goog.userAgent.isDocumentModeOrHigher = function(documentMode) {
-  return +goog.userAgent.DOCUMENT_MODE >= documentMode;
+  return Number(goog.userAgent.DOCUMENT_MODE) >= documentMode;
 };
 goog.userAgent.isDocumentMode = goog.userAgent.isDocumentModeOrHigher;
 var JSCompiler_inline_result$$0, doc$$inline_2 = goog.global.document, mode$$inline_3 = goog.userAgent.getDocumentMode_();
@@ -5082,6 +5082,7 @@ lf.eval.Registry = function() {
   this.evalMaps_.set(lf.Type.NUMBER, numberOrIntegerEvalMap);
   this.evalMaps_.set(lf.Type.INTEGER, numberOrIntegerEvalMap);
   this.evalMaps_.set(lf.Type.STRING, lf.eval.buildStringEvaluatorMap_());
+  this.evalMaps_.set(lf.Type.OBJECT, lf.eval.buildObjectEvaluatorMap_());
 };
 lf.eval.Registry.get = function() {
   goog.isDefAndNotNull(lf.eval.Registry.instance_) || (lf.eval.Registry.instance_ = new lf.eval.Registry);
@@ -5089,9 +5090,13 @@ lf.eval.Registry.get = function() {
 };
 lf.eval.Registry.prototype.getEvaluator = function(columnType, evaluatorType) {
   var evaluationMap = this.evalMaps_.get(columnType) || null;
-  goog.asserts.assert(!goog.isNull(evaluationMap), "Could not find evaluation map for " + columnType);
+  if (goog.isNull(evaluationMap)) {
+    throw new lf.Exception(550);
+  }
   var evaluatorFn = evaluationMap.get(evaluatorType) || null;
-  goog.asserts.assert(!goog.isNull(evaluatorFn), "Could not find evaluator for " + columnType + ", " + evaluatorType);
+  if (goog.isNull(evaluatorFn)) {
+    throw new lf.Exception(550);
+  }
   return evaluatorFn;
 };
 lf.eval.Registry.prototype.getKeyOfIndexEvaluator = function(columnType) {
@@ -5158,6 +5163,22 @@ lf.eval.buildStringEvaluatorMap_ = function() {
     }
     var re = new RegExp(regex);
     return re.test(value);
+  });
+  return map;
+};
+lf.eval.buildObjectEvaluatorMap_ = function() {
+  var map = lf.structs.map.create(), checkNull = function(value) {
+    if (!goog.isNull(value)) {
+      throw new lf.Exception(550);
+    }
+  };
+  map.set(lf.eval.Type.EQ, function(a, b) {
+    checkNull(b);
+    return goog.isNull(a);
+  });
+  map.set(lf.eval.Type.NEQ, function(a, b) {
+    checkNull(b);
+    return !goog.isNull(a);
   });
   return map;
 };

@@ -23,6 +23,9 @@ goog.require('lf.service');
 
 goog.forwardDeclare('goog.testing.PropertyReplacer');
 goog.forwardDeclare('lf.Global');
+goog.forwardDeclare('lf.Row');
+goog.forwardDeclare('lf.index.Stats');
+goog.forwardDeclare('lf.schema.Index');
 
 
 /**
