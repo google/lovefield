@@ -75,10 +75,12 @@ goog.globalize = function(obj, opt_global) {
     global[x] = obj[x];
   }
 };
-goog.addDependency = function(relPath, provides, requires, opt_isModule) {
+goog.addDependency = function(relPath, provides, requires, opt_loadFlags) {
   if (goog.DEPENDENCIES_ENABLED) {
-    for (var provide, require, path = relPath.replace(/\\/g, "/"), deps = goog.dependencies_, i = 0;provide = provides[i];i++) {
-      deps.nameToPath[provide] = path, deps.pathIsModule[path] = !!opt_isModule;
+    var provide, require, path = relPath.replace(/\\/g, "/"), deps = goog.dependencies_;
+    opt_loadFlags && "boolean" !== typeof opt_loadFlags || (opt_loadFlags = opt_loadFlags ? {module:"goog"} : {});
+    for (var i = 0;provide = provides[i];i++) {
+      deps.nameToPath[provide] = path, deps.pathIsModule[path] = "goog" == opt_loadFlags.module;
     }
     for (var j = 0;require = requires[j];j++) {
       path in deps.requires || (deps.requires[path] = {}), deps.requires[path][require] = !0;
@@ -8837,18 +8839,13 @@ goog.inherits(lf.proc.DeleteNode, lf.proc.LogicalQueryPlanNode);
 lf.proc.DeleteNode.prototype.toString = function() {
   return "delete(" + this.table.getName() + ")";
 };
-lf.proc.UpdateNode = function(table, updates) {
+lf.proc.UpdateNode = function(table) {
   lf.proc.LogicalQueryPlanNode.call(this);
   this.table = table;
-  this.updates = updates;
 };
 goog.inherits(lf.proc.UpdateNode, lf.proc.LogicalQueryPlanNode);
 lf.proc.UpdateNode.prototype.toString = function() {
-  var columns = [];
-  this.updates && (columns = this.updates.map(function(update) {
-    return update.column.getName();
-  }, this));
-  return "update(" + this.table.getName() + ", [" + columns.join(",") + "])";
+  return "update(" + this.table.getName() + ")";
 };
 lf.proc.SelectNode = function(predicate) {
   lf.proc.LogicalQueryPlanNode.call(this);
@@ -9137,7 +9134,7 @@ lf.query.UpdateContext.prototype.clone = function() {
   var context = new lf.query.UpdateContext(this.schema);
   context.cloneBase(this);
   context.table = this.table;
-  context.set = this.set ? this.set.slice() : this.set;
+  context.set = this.set ? lf.query.UpdateContext.cloneSet_(this.set) : this.set;
   return context;
 };
 lf.query.UpdateContext.prototype.bind = function(values) {
@@ -9147,6 +9144,15 @@ lf.query.UpdateContext.prototype.bind = function(values) {
   });
   this.bindValuesInSearchCondition(values);
   return this;
+};
+lf.query.UpdateContext.cloneSet_ = function(set) {
+  return set.map(function(src) {
+    var dst = {}, key;
+    for (key in src) {
+      dst[key] = src[key];
+    }
+    return dst;
+  });
 };
 lf.query.escapeSqlValue_ = function(type, value) {
   if (!goog.isDefAndNotNull(value)) {
@@ -9734,7 +9740,7 @@ lf.proc.UpdateLogicalPlanGenerator = function(query) {
 };
 goog.inherits(lf.proc.UpdateLogicalPlanGenerator, lf.proc.BaseLogicalPlanGenerator);
 lf.proc.UpdateLogicalPlanGenerator.prototype.generateInternal = function() {
-  var updateNode = new lf.proc.UpdateNode(this.query.table, this.query.set), selectNode = goog.isDefAndNotNull(this.query.where) ? new lf.proc.SelectNode(this.query.where.copy()) : null, tableAccessNode = new lf.proc.TableAccessNode(this.query.table);
+  var updateNode = new lf.proc.UpdateNode(this.query.table), selectNode = goog.isDefAndNotNull(this.query.where) ? new lf.proc.SelectNode(this.query.where.copy()) : null, tableAccessNode = new lf.proc.TableAccessNode(this.query.table);
   goog.isNull(selectNode) ? updateNode.addChild(tableAccessNode) : (selectNode.addChild(tableAccessNode), updateNode.addChild(selectNode));
   return updateNode;
 };
@@ -10793,19 +10799,18 @@ lf.proc.PhysicalPlanRewriter.prototype.generate = function() {
   }, this);
   return this.rootNode_;
 };
-lf.proc.UpdateStep = function(table, updates) {
+lf.proc.UpdateStep = function(table) {
   lf.proc.PhysicalQueryPlanNode.call(this, 1, lf.proc.PhysicalQueryPlanNode.ExecType.FIRST_CHILD);
   this.table_ = table;
-  this.updates_ = updates;
 };
 goog.inherits(lf.proc.UpdateStep, lf.proc.PhysicalQueryPlanNode);
 lf.proc.UpdateStep.prototype.toString = function() {
   return "update(" + this.table_.getName() + ")";
 };
-lf.proc.UpdateStep.prototype.execInternal = function(relations, journal) {
+lf.proc.UpdateStep.prototype.execInternal = function(relations, journal, context) {
   var rows = relations[0].entries.map(function(entry) {
     var clone = this.table_.deserializeRow(entry.row.serialize());
-    this.updates_.forEach(function(update) {
+    context.set.forEach(function(update) {
       clone.payload()[update.column.getName()] = update.value;
     }, this);
     return clone;
@@ -10873,7 +10878,7 @@ lf.proc.PhysicalPlanFactory.prototype.mapFn_ = function(node) {
     return new lf.proc.DeleteStep(node.table);
   }
   if (node instanceof lf.proc.UpdateNode) {
-    return new lf.proc.UpdateStep(node.table, node.updates);
+    return new lf.proc.UpdateStep(node.table);
   }
   if (node instanceof lf.proc.InsertOrReplaceNode) {
     return new lf.proc.InsertOrReplaceStep(this.global_, node.table);

@@ -180,7 +180,7 @@ function testCreate_UpdatePlan() {
       /** @type {!lf.pred.PredicateNode} */ (query.where).getChildCount());
 
   var expectedTree =
-      'update(tableA, [name])\n' +
+      'update(tableA)\n' +
       '-select(combined_pred_and)\n' +
       '--table_access(tableA)\n';
 

@@ -102,6 +102,7 @@ function testContext_Clone() {
   assertObjectEquals(context.table, context2.table);
   assertObjectEquals(context.set, context2.set);
   assertObjectEquals(context.where, context2.where);
+  assertFalse(context.set[0] === context2.set[0]);
   assertTrue(context2.clonedFrom == context);
   assertTrue(goog.getUid(context) != goog.getUid(context2));
   assertTrue(goog.getUid(context.where) != goog.getUid(context2.where));

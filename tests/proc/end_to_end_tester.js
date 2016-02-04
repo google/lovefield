@@ -73,6 +73,7 @@ lf.testing.EndToEndTester = function(globalFn, connectFn) {
     [this.testUpdate_FkViolation1.bind(this), true],
     [this.testUpdate_FkViolation2.bind(this), true],
     [this.testUpdate_Predicate.bind(this), true],
+    [this.testUpdate_BindMultiple.bind(this), true],
     [this.testUpdate_UnboundPredicate.bind(this), true],
     [this.testDelete_FkViolation.bind(this), true],
     [this.testDelete_Predicate.bind(this), true],
@@ -620,6 +621,46 @@ lf.testing.EndToEndTester.prototype.testUpdate_All = function() {
         });
         lf.testing.EndToEndTester.markDone_('testUpdate_All');
       });
+};
+
+
+/**
+ * Tests a templatized UPDATE query where multiple queries are executed in
+ * parallel. It ensures that each query respects the values it was bound too.
+ * @return {!IThenable}
+ */
+lf.testing.EndToEndTester.prototype.testUpdate_BindMultiple = function() {
+  var jobId1 = this.sampleJobs_[0].payload()['id'];
+  var jobId2 = this.sampleJobs_[1].payload()['id'];
+  var minSalary1After = 0;
+  var maxSalary1After = 105;
+  var minSalary2After = 100;
+  var maxSalary2After = 305;
+  var bindValues = [
+    [minSalary1After, maxSalary1After, jobId1],
+    [minSalary2After, maxSalary2After, jobId2]
+  ];
+  var query = this.db_.update(this.j_).
+      set(this.j_.minSalary, lf.bind(0)).
+      set(this.j_.maxSalary, lf.bind(1)).
+      where(this.j_.id.eq(lf.bind(2)));
+
+  var promises = bindValues.map(function(values) {
+    return query.bind(values).exec();
+  });
+  return goog.Promise.all(promises).then(function() {
+    return this.db_.select().
+        from(this.j_).
+        where(this.j_.id.in([jobId1, jobId2])).
+        orderBy(this.j_.id, lf.Order.ASC).
+        exec();
+  }.bind(this)).then(function(results) {
+    assertEquals(minSalary1After, results[0].minSalary);
+    assertEquals(maxSalary1After, results[0].maxSalary);
+    assertEquals(minSalary2After, results[1].minSalary);
+    assertEquals(maxSalary2After, results[1].maxSalary);
+    lf.testing.EndToEndTester.markDone_('testUpdate_BindMultiple');
+  });
 };
 
 
