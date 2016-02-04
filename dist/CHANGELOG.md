@@ -1,3 +1,11 @@
+Version: 2.1.6<br>
+Publish date: 20160204<br>
+Changes:
+ - Changed the algorithm of assigning auto-increment primary keys.
+ - Allowed isNull() and isNotNull() predicate for lf.Type.OBJECT columns.
+ - Fixed update queries incorrectly handling parameter binding.
+ - Fixed incorrect TypeScript definitions.
+
 Version: 2.1.5<br>
 Publish date: 20160107<br>
 Changes:
