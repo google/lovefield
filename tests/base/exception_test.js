@@ -20,7 +20,8 @@ goog.require('lf.Exception');
 
 
 function testException() {
-  var BASE_URL = 'http://sn.im/2a0j3wn?c=';
+  var BASE_URL =
+      'http://google.github.io/lovefield/error_lookup/src/error_lookup.html?c=';
 
   var e0 = new lf.Exception(0);
   assertEquals(BASE_URL + '0', e0.message);

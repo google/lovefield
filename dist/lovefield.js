@@ -4305,7 +4305,7 @@ lf.type.DEFAULT_VALUES = {0:null, 1:!1, 2:Object.freeze(new Date(0)), 3:0, 4:0, 
 goog.exportSymbol("lf.type.DEFAULT_VALUES", lf.type.DEFAULT_VALUES);
 lf.Exception = function(code, var_args) {
   this.code = code;
-  this.message = "http://sn.im/2a0j3wn?c=" + code;
+  this.message = "http://google.github.io/lovefield/error_lookup/src/error_lookup.html?c=" + code;
   if (1 < arguments.length) {
     for (var i = 1;i <= Math.min(4, arguments.length - 1);++i) {
       this.message += "&p" + (i - 1) + "=" + encodeURIComponent(arguments[i].toString().slice(0, 64));
