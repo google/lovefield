@@ -22,6 +22,9 @@ goog.STRICT_MODE_COMPATIBLE = !1;
 goog.DISALLOW_TEST_ONLY_CODE = !goog.DEBUG;
 goog.ENABLE_CHROME_APP_SAFE_SCRIPT_LOADING = !1;
 goog.provide = function(name) {
+  if (goog.isInModuleLoader_()) {
+    throw Error("goog.provide can not be used within a goog.module.");
+  }
   goog.constructNamespace_(name);
 };
 goog.constructNamespace_ = function(name, opt_obj) {
@@ -536,6 +539,9 @@ goog.base = function(me, opt_methodName, var_args) {
   throw Error("goog.base called from a method of one name to a method of a different name");
 };
 goog.scope = function(fn) {
+  if (goog.isInModuleLoader_()) {
+    throw Error("goog.scope is not supported within a goog.module.");
+  }
   fn.call(goog.global);
 };
 goog.defineClass = function(superClass, def) {
@@ -1536,13 +1542,13 @@ goog.array.stableSort = function(arr, opt_compareFn) {
   function stableCompareFn(obj1, obj2) {
     return valueCompareFn(obj1.value, obj2.value) || obj1.index - obj2.index;
   }
-  for (var i = 0;i < arr.length;i++) {
-    arr[i] = {index:i, value:arr[i]};
+  for (var compArr = Array(arr.length), i = 0;i < arr.length;i++) {
+    compArr[i] = {index:i, value:arr[i]};
   }
   var valueCompareFn = opt_compareFn || goog.array.defaultCompare;
-  goog.array.sort(arr, stableCompareFn);
+  goog.array.sort(compArr, stableCompareFn);
   for (i = 0;i < arr.length;i++) {
-    arr[i] = arr[i].value;
+    arr[i] = compArr[i].value;
   }
 };
 goog.array.sortByKey = function(arr, keyFn, opt_compareFn) {
