@@ -90,6 +90,7 @@
   "547": "where() cannot be called before innerJoin() or leftOuterJoin().",
   "548": "from() has to be called before where().",
   "549": "from() has to be called before orderBy() or groupBy().",
+  "550": "where() clause includes an invalid predicate",
 
   "900": "Test error",
   "999": "Simulated error"
