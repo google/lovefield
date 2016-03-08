@@ -1,3 +1,8 @@
+Version: 2.1.7<br>
+Publish date: 20160307<br>
+Changes:
+ - Changed exception description URL to point to GitHub.
+
 Version: 2.1.6<br>
 Publish date: 20160204<br>
 Changes:

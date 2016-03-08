@@ -981,6 +981,20 @@ goog.string.splitLimit = function(str, separator, limit) {
   parts.length && returnVal.push(parts.join(separator));
   return returnVal;
 };
+goog.string.lastComponent = function(str, separators) {
+  if (separators) {
+    "string" == typeof separators && (separators = [separators]);
+  } else {
+    return str;
+  }
+  for (var lastSeparatorIndex = -1, i = 0;i < separators.length;i++) {
+    if ("" != separators[i]) {
+      var currentSeparatorIndex = str.lastIndexOf(separators[i]);
+      currentSeparatorIndex > lastSeparatorIndex && (lastSeparatorIndex = currentSeparatorIndex);
+    }
+  }
+  return -1 == lastSeparatorIndex ? str : str.slice(lastSeparatorIndex + 1);
+};
 goog.string.editDistance = function(a, b) {
   var v0 = [], v1 = [];
   if (a == b) {
@@ -1457,6 +1471,10 @@ goog.array.remove = function(arr, obj) {
   var i = goog.array.indexOf(arr, obj), rv;
   (rv = 0 <= i) && goog.array.removeAt(arr, i);
   return rv;
+};
+goog.array.removeLast = function(arr, obj) {
+  var i = goog.array.lastIndexOf(arr, obj);
+  return 0 <= i ? (goog.array.removeAt(arr, i), !0) : !1;
 };
 goog.array.removeAt = function(arr, i) {
   goog.asserts.assert(null != arr.length);
