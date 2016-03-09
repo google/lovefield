@@ -446,8 +446,9 @@ As a result, Lovefield does not perform the flattening by default.
 ### 4.2 INSERT Query Builder
 
 There are two different insert builders: `lf.Database#insert` and
-`lf.Database#insertOrReplace`. The former allows insertion of new rows only (
-based on primary key), while the latter will overwrite any existing row.
+`lf.Database#insertOrReplace`. The former allows insertion of new rows only
+(determined based on primary key), while the latter will overwrite any existing
+row.
 
 Both builders implement the interface [`lf.query.Insert`](
 https://github.com/google/lovefield/blob/0146b8c1a951ecc2cf282075e6653d63aac1aed9/lib/query.js#L154-L173).
@@ -466,9 +467,17 @@ var row = infoCard.createRow({
 
 All insert queries assume multiple rows will be inserted at the same time,
 therefore the user must wrap their row in an array even if there is only one.
+All the inserted/replaced rows are returned in the success callback, as shown
+below.
 
 ```js
-db.insertOrReplace().into(infoCard).values([row]).exec();
+db.insertOrReplace().into(infoCard).values([row]).exec().then(
+  function(rows) {
+    console.log(rows[0]['id']); // 'something'
+    // The payloads of the rows that were inserted/replaced are returned here.
+    // This is especially useful when an auto-increment primary key is being
+    // used, because it reveals the automatically assigned primary keys.
+  });
 ```
 
 All functions provided by insert query builder can only be called once,
