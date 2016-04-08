@@ -139,7 +139,7 @@ goog.DEPENDENCIES_ENABLED && (goog.dependencies_ = {pathIsModule:{}, nameToPath:
   importScript(src, opt_sourceText) && (goog.dependencies_.written[src] = !0);
 }, goog.IS_OLD_IE_ = !(goog.global.atob || !goog.global.document || !goog.global.document.all), goog.importModule_ = function(src) {
   var bootstrap = 'goog.retrieveAndExecModule_("' + src + '");';
-  goog.importScript_("", bootstrap) && (goog.dependencies_.written[src] = !0);
+  goog.importScript_("", bootstrap);
 }, goog.queuedModules_ = [], goog.wrapModule_ = function(srcUrl, scriptText) {
   return goog.LOAD_MODULE_USING_EVAL && goog.isDef(goog.global.JSON) ? "goog.loadModule(" + goog.global.JSON.stringify(scriptText + "\n//# sourceURL=" + srcUrl + "\n") + ");" : 'goog.loadModule(function(exports) {"use strict";' + scriptText + "\n;return exports});\n//# sourceURL=" + srcUrl + "\n";
 }, goog.loadQueuedModules_ = function() {
@@ -559,19 +559,19 @@ goog.defineClass = function(superClass, def) {
 };
 goog.defineClass.SEAL_CLASS_INSTANCES = goog.DEBUG;
 goog.defineClass.createSealingConstructor_ = function(ctr, superClass) {
-  if (goog.defineClass.SEAL_CLASS_INSTANCES && Object.seal instanceof Function) {
-    if (superClass && superClass.prototype && superClass.prototype[goog.UNSEALABLE_CONSTRUCTOR_PROPERTY_]) {
-      return ctr;
-    }
-    var wrappedCtr = function() {
-      var instance = ctr.apply(this, arguments) || this;
-      instance[goog.UID_PROPERTY_] = instance[goog.UID_PROPERTY_];
-      this.constructor === wrappedCtr && Object.seal(instance);
-      return instance;
-    };
-    return wrappedCtr;
+  if (!goog.defineClass.SEAL_CLASS_INSTANCES) {
+    return ctr;
   }
-  return ctr;
+  var superclassSealable = !goog.defineClass.isUnsealable_(superClass), wrappedCtr = function() {
+    var instance = ctr.apply(this, arguments) || this;
+    instance[goog.UID_PROPERTY_] = instance[goog.UID_PROPERTY_];
+    this.constructor === wrappedCtr && superclassSealable && Object.seal instanceof Function && Object.seal(instance);
+    return instance;
+  };
+  return wrappedCtr;
+};
+goog.defineClass.isUnsealable_ = function(ctr) {
+  return ctr && ctr.prototype && ctr.prototype[goog.UNSEALABLE_CONSTRUCTOR_PROPERTY_];
 };
 goog.defineClass.OBJECT_PROTOTYPE_FIELDS_ = "constructor hasOwnProperty isPrototypeOf propertyIsEnumerable toLocaleString toString valueOf".split(" ");
 goog.defineClass.applyProperties_ = function(target, source) {
@@ -1722,6 +1722,9 @@ goog.array.copyByIndex = function(arr, index_arr) {
   return result;
 };
 goog.object = {};
+goog.object.is = function(v, v2) {
+  return v === v2 ? 0 !== v || 1 / v === 1 / v2 : v !== v && v2 !== v2;
+};
 goog.object.forEach = function(obj, f, opt_obj) {
   for (var key in obj) {
     f.call(opt_obj, obj[key], key, obj);
@@ -1979,7 +1982,7 @@ goog.labs.userAgent.util.extractVersionTuples = function(userAgent) {
 };
 goog.labs.userAgent.browser = {};
 goog.labs.userAgent.browser.matchOpera_ = function() {
-  return goog.labs.userAgent.util.matchUserAgent("Opera") || goog.labs.userAgent.util.matchUserAgent("OPR");
+  return goog.labs.userAgent.util.matchUserAgent("Opera");
 };
 goog.labs.userAgent.browser.matchIE_ = function() {
   return goog.labs.userAgent.util.matchUserAgent("Trident") || goog.labs.userAgent.util.matchUserAgent("MSIE");
@@ -2000,7 +2003,7 @@ goog.labs.userAgent.browser.matchIosWebview_ = function() {
   return (goog.labs.userAgent.util.matchUserAgent("iPad") || goog.labs.userAgent.util.matchUserAgent("iPhone")) && !goog.labs.userAgent.browser.matchSafari_() && !goog.labs.userAgent.browser.matchChrome_() && !goog.labs.userAgent.browser.matchCoast_() && goog.labs.userAgent.util.matchUserAgent("AppleWebKit");
 };
 goog.labs.userAgent.browser.matchChrome_ = function() {
-  return (goog.labs.userAgent.util.matchUserAgent("Chrome") || goog.labs.userAgent.util.matchUserAgent("CriOS")) && !goog.labs.userAgent.browser.matchOpera_() && !goog.labs.userAgent.browser.matchEdge_();
+  return (goog.labs.userAgent.util.matchUserAgent("Chrome") || goog.labs.userAgent.util.matchUserAgent("CriOS")) && !goog.labs.userAgent.browser.matchEdge_();
 };
 goog.labs.userAgent.browser.matchAndroidBrowser_ = function() {
   return goog.labs.userAgent.util.matchUserAgent("Android") && !(goog.labs.userAgent.browser.isChrome() || goog.labs.userAgent.browser.isFirefox() || goog.labs.userAgent.browser.isOpera() || goog.labs.userAgent.browser.isSilk());
@@ -2033,7 +2036,7 @@ goog.labs.userAgent.browser.getVersion = function() {
   });
   var versionMapHasKey = goog.partial(goog.object.containsKey, versionMap);
   if (goog.labs.userAgent.browser.isOpera()) {
-    return lookUpValueWithKeys(["Version", "Opera", "OPR"]);
+    return lookUpValueWithKeys(["Version", "Opera"]);
   }
   if (goog.labs.userAgent.browser.isEdge()) {
     return lookUpValueWithKeys(["Edge"]);
@@ -3986,7 +3989,7 @@ goog.structs.Set.prototype.__iterator__ = function() {
   return this.map_.__iterator__(!1);
 };
 lf.structs.set = {};
-$jscomp.scope.detectUseNative$1 = function() {
+$jscomp.scope.detectUseNative$jscomp$1 = function() {
   return lf.Flags.NATIVE_ES6 || lf.Capability.get().nativeSet;
 };
 lf.structs.SetPolyFill_ = function(opt_values) {
@@ -4014,9 +4017,9 @@ lf.structs.SetPolyFill_.prototype.has = function(value) {
   return this.set_.contains(value);
 };
 goog.exportProperty(lf.structs.SetPolyFill_.prototype, "has", lf.structs.SetPolyFill_.prototype.has);
-$jscomp.scope.USE_NATIVE$1 = (0,$jscomp.scope.detectUseNative$1)();
+$jscomp.scope.USE_NATIVE$jscomp$1 = (0,$jscomp.scope.detectUseNative$jscomp$1)();
 lf.structs.set.create = function(opt_iterable) {
-  return $jscomp.scope.USE_NATIVE$1 ? goog.isDef(opt_iterable) ? new window.Set(opt_iterable) : new window.Set : new lf.structs.SetPolyFill_(opt_iterable);
+  return $jscomp.scope.USE_NATIVE$jscomp$1 ? goog.isDef(opt_iterable) ? new window.Set(opt_iterable) : new window.Set : new lf.structs.SetPolyFill_(opt_iterable);
 };
 lf.structs.set.values = function(set) {
   if (set instanceof lf.structs.SetPolyFill_) {
