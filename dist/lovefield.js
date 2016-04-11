@@ -12287,4 +12287,4 @@ goog.exportSymbol("lf.schema.create", lf.schema.create);
 goog.Promise.prototype.catch = goog.Promise.prototype.thenCatch;
 goog.exportProperty(goog.Promise.prototype, "catch", goog.Promise.prototype.catch);
 
-try{if(module){module.exports=lf;}}catch(e){}}.bind(window))()
+try{if(module){module.exports=lf;}}catch(e){}}.bind(window))();
