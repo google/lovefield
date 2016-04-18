@@ -5,8 +5,8 @@
 You will need to have Java, git, and Node.js in a working state. They must be
 searchable from your PATH.
 
-Lovefield uses node.js for various development tools. Due to the ES6 APIs used,
-version of installed node.js must be greater than 0.12.
+Lovefield uses node.js for various development tools, see package.json for
+suggested version.
 
 ### Special Notes for Windows Users
 

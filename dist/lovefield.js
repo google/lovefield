@@ -1721,6 +1721,9 @@ goog.array.copyByIndex = function(arr, index_arr) {
   });
   return result;
 };
+goog.array.concatMap = function(arr, f, opt_obj) {
+  return goog.array.concat.apply([], goog.array.map(arr, f, opt_obj));
+};
 goog.object = {};
 goog.object.is = function(v, v2) {
   return v === v2 ? 0 !== v || 1 / v === 1 / v2 : v !== v && v2 !== v2;
