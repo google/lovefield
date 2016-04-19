@@ -49,5 +49,5 @@ function testException() {
   assertEquals(BASE_URL + '999&p0=' + expected, e4.message);
 
   var e5 = new lf.Exception(999, 3, undefined);
-  assertEquals(BASE_URL + '999&p0=3&p1=', e5.message);
+  assertEquals(BASE_URL + '999&p0=3&p1=undefined', e5.message);
 }
