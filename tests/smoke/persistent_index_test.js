@@ -16,7 +16,6 @@
  */
 goog.setTestOnly();
 goog.require('goog.Promise');
-goog.require('goog.testing.AsyncTestCase');
 goog.require('goog.testing.PropertyReplacer');
 goog.require('goog.testing.jsunit');
 goog.require('hr.db');
@@ -29,11 +28,6 @@ goog.require('lf.index.RowId');
 goog.require('lf.op');
 goog.require('lf.schema.DataStoreType');
 goog.require('lf.service');
-
-
-/** @type {!goog.testing.AsyncTestCase} */
-var asyncTestCase = goog.testing.AsyncTestCase.createAndInstall(
-    'PersistentIndexTest');
 
 
 /** @type {!goog.testing.PropertyReplacer} */
@@ -84,11 +78,9 @@ function instrumentBTree() {
 
 
 function setUp() {
-  asyncTestCase.waitForAsync('setUp');
-
   instrumentBTree();
 
-  hr.db.connect({storeType: lf.schema.DataStoreType.MEMORY}).then(
+  return hr.db.connect({storeType: lf.schema.DataStoreType.MEMORY}).then(
       function(database) {
         db = database;
         backStore = hr.db.getGlobal().getService(lf.service.BACK_STORE);
@@ -96,9 +88,7 @@ function setUp() {
         table2 = db.getSchema().getCrossColumnTable();
         sampleRows = generateSampleRows();
         sampleRows2 = generateSampleRows2();
-
-        asyncTestCase.continueTesting();
-      }, fail);
+      });
 }
 
 
@@ -111,10 +101,9 @@ function tearDown() {
 /**
  * Performs insert, update, replace, delete operations and verifies that
  * persisted indices are being updated appropriately on disk.
+ * @return {!IThenable}
  */
 function testPersistedIndices() {
-  asyncTestCase.waitForAsync('testPersistedIndices');
-
   /**
    * Inserts 5 records to the database.
    * @return {!IThenable}
@@ -205,7 +194,7 @@ function testPersistedIndices() {
         exec();
   };
 
-  insertFn().then(
+  return insertFn().then(
       function() {
         return assertAllIndicesPopulated(table, sampleRows);
       }).then(
@@ -232,10 +221,7 @@ function testPersistedIndices() {
       }).then(
       function() {
         return assertAllIndicesPopulated(table, sampleRows);
-      }).then(
-      function() {
-        asyncTestCase.continueTesting();
-      }, fail);
+      });
 }
 
 
@@ -395,10 +381,9 @@ function generateSampleRows2() {
 /**
  * Performs insert, update, replace, delete operations and verifies that
  * persisted indices are being updated appropriately on disk.
+ * @return {!IThenable}
  */
 function testPersistedIndices_CrossColumn() {
-  asyncTestCase.waitForAsync('testPersistedIndices_CrossColumn');
-
   /** @return {!IThenable} */
   var insertFn = function() {
     return db.
@@ -465,7 +450,7 @@ function testPersistedIndices_CrossColumn() {
         exec();
   };
 
-  insertFn().then(function() {
+  return insertFn().then(function() {
     return assertAllIndicesPopulated(table2, sampleRows2);
   }).then(function() {
     return updateFn();
@@ -479,8 +464,6 @@ function testPersistedIndices_CrossColumn() {
     return deleteAllFn();
   }).then(function() {
     return assertAllIndicesPopulated(table2, sampleRows2);
-  }).then(function() {
-    asyncTestCase.continueTesting();
-  }, fail);
+  });
 }
 

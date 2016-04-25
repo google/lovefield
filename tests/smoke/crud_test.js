@@ -15,16 +15,11 @@
  * limitations under the License.
  */
 goog.setTestOnly();
-goog.require('goog.testing.AsyncTestCase');
 goog.require('goog.testing.jsunit');
 goog.require('hr.db');
 goog.require('lf.Capability');
 goog.require('lf.schema.DataStoreType');
 goog.require('lf.testing.SmokeTester');
-
-
-/** @type {!goog.testing.AsyncTestCase} */
-var asyncTestCase = goog.testing.AsyncTestCase.createAndInstall('CRUDTest');
 
 
 /** @type {!lf.testing.SmokeTester} */
@@ -42,19 +37,16 @@ var db;
 function setUp() {
   capability = lf.Capability.get();
 
-  asyncTestCase.waitForAsync('setUp');
   var options = {
     'storeType': !capability.indexedDb ? lf.schema.DataStoreType.MEMORY :
         lf.schema.DataStoreType.INDEXED_DB
   };
-  hr.db.connect(options).then(function(database) {
+  return hr.db.connect(options).then(function(database) {
     db = database;
     tester = new lf.testing.SmokeTester(hr.db.getGlobal(), database);
     // Delete any left-overs from previous tests.
     return tester.clearDb();
-  }).then(function() {
-    asyncTestCase.continueTesting();
-  }, fail);
+  });
 }
 
 
@@ -64,26 +56,17 @@ function tearDown() {
 
 
 function testCRUD() {
-  asyncTestCase.waitForAsync('testCRUD');
-  tester.testCRUD().then(function() {
-    asyncTestCase.continueTesting();
-  }, fail);
+  return tester.testCRUD();
 }
 
 
 function testOverlappingScope_MultipleInserts() {
-  asyncTestCase.waitForAsync('testOverlappingScope_MultipleInserts');
-  tester.testOverlappingScope_MultipleInserts().then(function() {
-    asyncTestCase.continueTesting();
-  }, fail);
+  return tester.testOverlappingScope_MultipleInserts();
 }
 
 
 function testTransaction() {
-  asyncTestCase.waitForAsync('testTransaction');
-  tester.testTransaction().then(function() {
-    asyncTestCase.continueTesting();
-  }, fail);
+  return tester.testTransaction();
 }
 
 

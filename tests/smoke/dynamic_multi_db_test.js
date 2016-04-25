@@ -16,17 +16,12 @@
  */
 goog.setTestOnly();
 goog.require('goog.Promise');
-goog.require('goog.testing.AsyncTestCase');
 goog.require('goog.testing.jsunit');
 goog.require('lf.Capability');
 goog.require('lf.Type');
 goog.require('lf.schema');
 goog.require('lf.schema.DataStoreType');
 goog.require('lf.testing.SmokeTester');
-
-
-/** @type {!goog.testing.AsyncTestCase} */
-var asyncTestCase = goog.testing.AsyncTestCase.createAndInstall('MultiDBTest');
 
 
 /** @type {!lf.testing.SmokeTester} */
@@ -65,13 +60,12 @@ function setUpPage() {
 
 
 function setUp() {
-  asyncTestCase.waitForAsync('setUp');
   var options = {
     storeType: !capability.indexedDb ? lf.schema.DataStoreType.MEMORY :
         lf.schema.DataStoreType.INDEXED_DB
   };
   var builders = createSchemaBuilders();
-  goog.Promise.all([
+  return goog.Promise.all([
     builders[0].connect(options),
     builders[1].connect(options)
   ]).then(function(dbs) {
@@ -79,17 +73,10 @@ function setUp() {
     orderTester = new lf.testing.SmokeTester(builders[1].getGlobal(), dbs[1]);
 
     return goog.Promise.all([hrTester.clearDb(), orderTester.clearDb()]);
-  }).then(function() {
-    asyncTestCase.continueTesting();
-  }, fail);
+  });
 }
 
 
 function testCRUD() {
-  asyncTestCase.waitForAsync('testCRUD');
-
-  goog.Promise.all([hrTester.testCRUD(), orderTester.testCRUD()]).then(
-      function() {
-        asyncTestCase.continueTesting();
-      }, fail);
+  return goog.Promise.all([hrTester.testCRUD(), orderTester.testCRUD()]);
 }

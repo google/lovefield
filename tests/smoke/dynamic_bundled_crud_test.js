@@ -16,16 +16,11 @@
  */
 goog.setTestOnly();
 goog.require('goog.Promise');
-goog.require('goog.testing.AsyncTestCase');
 goog.require('goog.testing.jsunit');
 goog.require('lf.Capability');
 goog.require('lf.Type');
 goog.require('lf.schema');
 goog.require('lf.testing.SmokeTester');
-
-
-/** @type {!goog.testing.AsyncTestCase} */
-var asyncTestCase = goog.testing.AsyncTestCase.createAndInstall('DBCRUDTest');
 
 
 /** @type {!lf.testing.SmokeTester} */
@@ -61,15 +56,12 @@ function setUp() {
     return;
   }
 
-  asyncTestCase.waitForAsync('setUp');
   var builder = createSchemaBuilder();
-  builder.connect().then(function(database) {
+  return builder.connect().then(function(database) {
     tester = new lf.testing.SmokeTester(builder.getGlobal(), database);
     // Delete any left-overs from previous tests.
     return tester.clearDb();
-  }).then(function() {
-    asyncTestCase.continueTesting();
-  }, fail);
+  });
 }
 
 
@@ -78,10 +70,7 @@ function testCRUD() {
     return;
   }
 
-  asyncTestCase.waitForAsync('testCRUD');
-  tester.testCRUD().then(function() {
-    asyncTestCase.continueTesting();
-  }, fail);
+  return tester.testCRUD();
 }
 
 
@@ -90,10 +79,7 @@ function testOverlappingScope_MultipleInserts() {
     return;
   }
 
-  asyncTestCase.waitForAsync('testOverlappingScope_MultipleInserts');
-  tester.testOverlappingScope_MultipleInserts().then(function() {
-    asyncTestCase.continueTesting();
-  }, fail);
+  return tester.testOverlappingScope_MultipleInserts();
 }
 
 
@@ -102,8 +88,5 @@ function testTransaction() {
     return;
   }
 
-  asyncTestCase.waitForAsync('testTransaction');
-  tester.testTransaction().then(function() {
-    asyncTestCase.continueTesting();
-  }, fail);
+  return tester.testTransaction();
 }

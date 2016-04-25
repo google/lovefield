@@ -16,21 +16,13 @@
  */
 goog.setTestOnly();
 goog.require('goog.Promise');
-goog.require('goog.testing.AsyncTestCase');
+goog.require('goog.testing.TestCase');
 goog.require('goog.testing.jsunit');
 goog.require('hr.db');
 goog.require('lf.Capability');
 goog.require('lf.schema.DataStoreType');
 goog.require('lf.testing.SmokeTester');
 goog.require('order.db');
-
-
-/** @type {!goog.testing.AsyncTestCase} */
-var asyncTestCase = goog.testing.AsyncTestCase.createAndInstall('MultiDBTest');
-
-
-/** @type {number} */
-asyncTestCase.stepTimeout = 5 * 1000;  // 5 seconds
 
 
 /** @type {!lf.testing.SmokeTester} */
@@ -45,15 +37,18 @@ var orderTester;
 var capability;
 
 
+function setUpPage() {
+  goog.testing.TestCase.getActiveTestCase().promiseTimeout = 5 * 1000;  // 5s
+}
+
 function setUp() {
   capability = lf.Capability.get();
 
-  asyncTestCase.waitForAsync('setUp');
   var options = {
     storeType: !capability.indexedDb ? lf.schema.DataStoreType.MEMORY :
         lf.schema.DataStoreType.INDEXED_DB
   };
-  goog.Promise.all([
+  return goog.Promise.all([
     hr.db.connect(options),
     order.db.connect(options)
   ]).then(function(dbs) {
@@ -61,17 +56,10 @@ function setUp() {
     orderTester = new lf.testing.SmokeTester(order.db.getGlobal(), dbs[1]);
 
     return goog.Promise.all([hrTester.clearDb(), orderTester.clearDb()]);
-  }).then(function() {
-    asyncTestCase.continueTesting();
-  }, fail);
+  });
 }
 
 
 function testCRUD() {
-  asyncTestCase.waitForAsync('testCRUD');
-
-  goog.Promise.all([hrTester.testCRUD(), orderTester.testCRUD()]).then(
-      function() {
-        asyncTestCase.continueTesting();
-      }, fail);
+  return goog.Promise.all([hrTester.testCRUD(), orderTester.testCRUD()]);
 }

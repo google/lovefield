@@ -4338,7 +4338,7 @@ lf.Exception = function(code, var_args) {
   this.message = "http://google.github.io/lovefield/error_lookup/src/error_lookup.html?c=" + code;
   if (1 < arguments.length) {
     for (var i = 1;i <= Math.min(4, arguments.length - 1);++i) {
-      this.message += "&p" + (i - 1) + "=" + encodeURIComponent(arguments[i].toString().slice(0, 64));
+      this.message += "&p" + (i - 1) + "=" + encodeURIComponent(String(arguments[i]).slice(0, 64));
     }
   }
 };
