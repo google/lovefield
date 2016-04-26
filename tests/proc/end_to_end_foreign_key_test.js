@@ -117,11 +117,9 @@ function testDeferrable_ImplicitTx_Error() {
 
   var childRow = sampleRows[1];
 
-  lf.testing.util.assertThrowsErrorAsync(
+  lf.testing.util.assertPromiseReject(
       203,
-      function() {
-        return db.insert().into(childTable).values([childRow]).exec();
-      }).then(
+      db.insert().into(childTable).values([childRow]).exec()).then(
       function() {
         asyncTestCase.continueTesting();
       });
@@ -168,11 +166,7 @@ function testDeferrable_ExplicitTx_Insert_Error() {
     var q1 = db.insert().into(childTable).values([childRow]);
     return tx.attach(q1);
   }).then(function() {
-    return lf.testing.util.assertThrowsErrorAsync(
-        203,
-        function() {
-          return tx.commit();
-        });
+    return lf.testing.util.assertPromiseReject(203, tx.commit());
   }).then(function() {
     asyncTestCase.continueTesting();
   }, fail);
@@ -201,11 +195,7 @@ function testDeferrable_ExplicitTx_Delete_Error() {
     // Deleting parent even though the child row refers to it.
     return tx2.attach(db.delete().from(parentTable));
   }).then(function() {
-    return lf.testing.util.assertThrowsErrorAsync(
-        203,
-        function() {
-          return tx2.commit();
-        });
+    return lf.testing.util.assertPromiseReject(203, tx2.commit());
   }).then(function() {
     asyncTestCase.continueTesting();
   }, fail);
@@ -235,11 +225,7 @@ function testDeferrable_ExplicitTx_Update_Error() {
     var q = db.update(childTable).set(childTable['parentId'], 'otherParentId');
     return tx2.attach(q);
   }).then(function() {
-    return lf.testing.util.assertThrowsErrorAsync(
-        203,
-        function() {
-          return tx2.commit();
-        });
+    return lf.testing.util.assertPromiseReject(203, tx2.commit());
   }).then(function() {
     asyncTestCase.continueTesting();
   }, fail);

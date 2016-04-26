@@ -362,15 +362,10 @@ lf.testing.EndToEndTester.prototype.testInsert_AutoIncrement = function() {
  * @return {!IThenable}
  */
 lf.testing.EndToEndTester.prototype.testInsert_FkViolation = function() {
-  return lf.testing.util.assertThrowsErrorAsync(
+  return lf.testing.util.assertPromiseReject(
       203,
-      function() {
-        return this.db_.
-            insert().
-            into(this.e_).
-            values(this.dataGenerator_.sampleEmployees.slice(0, 1)).
-            exec();
-      }.bind(this));
+      this.db_.insert().into(this.e_).values(
+          this.dataGenerator_.sampleEmployees.slice(0, 1)).exec());
 };
 
 
@@ -397,15 +392,10 @@ lf.testing.EndToEndTester.prototype.testInsertOrReplace_AutoIncrement =
  */
 lf.testing.EndToEndTester.prototype.testInsertOrReplace_FkViolation1 =
     function() {
-  return lf.testing.util.assertThrowsErrorAsync(
+  return lf.testing.util.assertPromiseReject(
       203,
-      function() {
-        return this.db_.
-            insertOrReplace().
-            into(this.e_).
-            values(this.dataGenerator_.sampleEmployees.slice(0, 1)).
-            exec();
-      }.bind(this));
+      this.db_.insertOrReplace().into(this.e_).values(
+          this.dataGenerator_.sampleEmployees.slice(0, 1)).exec());
 };
 
 
@@ -416,26 +406,19 @@ lf.testing.EndToEndTester.prototype.testInsertOrReplace_FkViolation1 =
  */
 lf.testing.EndToEndTester.prototype.testInsertOrReplace_FkViolation2 =
     function() {
-  return lf.testing.util.assertThrowsErrorAsync(
-      203,
-      function() {
-        var d = this.db_.getSchema().table('Department');
+  var d = this.db_.getSchema().table('Department');
 
-        var rowBefore = this.dataGenerator_.sampleDepartments[0];
-        var rowAfter = d.createRow({
-          id: rowBefore.payload()['id'],
-          name: rowBefore.payload()['name'],
-          managerId: rowBefore.payload()['managerId'],
-          // Updating locationId to point to a non-existing foreign key.
-          locationId: 'otherLocationId'
-        });
+  var rowBefore = this.dataGenerator_.sampleDepartments[0];
+  var rowAfter = d.createRow({
+    id: rowBefore.payload()['id'],
+    name: rowBefore.payload()['name'],
+    managerId: rowBefore.payload()['managerId'],
+    // Updating locationId to point to a non-existing foreign key.
+    locationId: 'otherLocationId'
+  });
 
-        return this.db_.
-            insertOrReplace().
-            into(d).
-            values([rowAfter]).
-            exec();
-      }.bind(this));
+  return lf.testing.util.assertPromiseReject(
+      203, this.db_.insertOrReplace().into(d).values([rowAfter]).exec());
 };
 
 
@@ -670,17 +653,13 @@ lf.testing.EndToEndTester.prototype.testUpdate_BindMultiple = function() {
  * @return {!IThenable}
  */
 lf.testing.EndToEndTester.prototype.testUpdate_FkViolation1 = function() {
-  return lf.testing.util.assertThrowsErrorAsync(
+  var l = this.db_.getSchema().table('Location');
+  var referringRow = this.dataGenerator_.sampleDepartments[0];
+
+  return lf.testing.util.assertPromiseReject(
       203,
-      function() {
-        var l = this.db_.getSchema().table('Location');
-        var referringRow = this.dataGenerator_.sampleDepartments[0];
-        return this.db_.
-            update(l).
-            set(l.id, 'otherLocationId').
-            where(l.id.eq(referringRow.payload()['locationId'])).
-            exec();
-      }.bind(this));
+      this.db_.update(l).set(l.id, 'otherLocationId').where(
+          l.id.eq(referringRow.payload()['locationId'])).exec());
 };
 
 
@@ -690,17 +669,12 @@ lf.testing.EndToEndTester.prototype.testUpdate_FkViolation1 = function() {
  * @return {!IThenable}
  */
 lf.testing.EndToEndTester.prototype.testUpdate_FkViolation2 = function() {
-  return lf.testing.util.assertThrowsErrorAsync(
+  var d = this.db_.getSchema().table('Department');
+  var referredRow = this.dataGenerator_.sampleLocations[0];
+  return lf.testing.util.assertPromiseReject(
       203,
-      function() {
-        var d = this.db_.getSchema().table('Department');
-        var referredRow = this.dataGenerator_.sampleLocations[0];
-        return this.db_.
-            update(d).
-            set(d.locationId, 'otherLocationId').
-            where(d.locationId.eq(referredRow.payload()['id'])).
-            exec();
-      }.bind(this));
+      this.db_.update(d).set(d.locationId, 'otherLocationId').where(
+          d.locationId.eq(referredRow.payload()['id'])).exec());
 };
 
 
@@ -773,17 +747,12 @@ lf.testing.EndToEndTester.prototype.testUpdate_UnboundPredicate = function() {
  * @return {!IThenable}
  */
 lf.testing.EndToEndTester.prototype.testDelete_FkViolation = function() {
-  return lf.testing.util.assertThrowsErrorAsync(
+  var l = this.db_.getSchema().table('Location');
+  var referringRow = this.dataGenerator_.sampleDepartments[0];
+  return lf.testing.util.assertPromiseReject(
       203,
-      function() {
-        var l = this.db_.getSchema().table('Location');
-        var referringRow = this.dataGenerator_.sampleDepartments[0];
-        return this.db_.
-            delete().
-            from(l).
-            where(l.id.eq(referringRow.payload()['locationId'])).
-            exec();
-      }.bind(this));
+      this.db_.delete().from(l).where(
+          l.id.eq(referringRow.payload()['locationId'])).exec());
 };
 
 

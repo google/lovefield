@@ -416,7 +416,7 @@ function testReload() {
     assertEquals(2, results.length);
     var row0 = t.createRow({'id': 'hello0', 'name': 'world0'});
     var q = mydb.insert().into(t).values([row0]);
-    return lf.testing.util.assertThrowsErrorAsync(201, q.exec.bind(q));
+    return lf.testing.util.assertPromiseReject(201, q.exec());
   }).then(function() {
     asyncTestCase.continueTesting();
   });

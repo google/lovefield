@@ -78,13 +78,13 @@ lf.testing.util.assertThrowsError = function(exceptionCode, fn) {
 
 
 /**
- * Asserts that the given exception type is thrown asynchronounly.
+ * Asserts promise rejects with given exception code.
  * @param {number} exceptionCode The expected exception type.
- * @param {!function(): !IThenable} fn The function to be checked.
+ * @param {!IThenable} promise
  * @return {!IThenable}
  */
-lf.testing.util.assertThrowsErrorAsync = function(exceptionCode, fn) {
-  return fn.call().then(
+lf.testing.util.assertPromiseReject = function(exceptionCode, promise) {
+  return promise.then(
       fail, function(e) {
         assertEquals(exceptionCode, e.code);
       });
