@@ -16,16 +16,10 @@
  */
 goog.setTestOnly();
 goog.require('goog.Promise');
-goog.require('goog.testing.AsyncTestCase');
 goog.require('goog.testing.jsunit');
 goog.require('hr.db');
 goog.require('lf.op');
 goog.require('lf.schema.DataStoreType');
-
-
-/** @type {!goog.testing.AsyncTestCase} */
-var asyncTestCase =
-    goog.testing.AsyncTestCase.createAndInstall('NotOperatorTest');
 
 
 /** @type {!lf.Database} */
@@ -37,8 +31,7 @@ var rowCount = 8;
 
 
 function setUp() {
-  asyncTestCase.waitForAsync('setUp');
-  hr.db.connect({storeType: lf.schema.DataStoreType.MEMORY}).then(
+  return hr.db.connect({storeType: lf.schema.DataStoreType.MEMORY}).then(
       function(database) {
         db = database;
 
@@ -48,10 +41,7 @@ function setUp() {
       function() {
         // Add some sample data to the database.
         return populateDatabase();
-      }).then(
-      function() {
-        asyncTestCase.continueTesting();
-      }, fail);
+      });
 }
 
 
@@ -109,8 +99,6 @@ function populateDatabase() {
 
 
 function test_Not_In() {
-  asyncTestCase.waitForAsync('test_Not_In');
-
   var tableSchema = db.getSchema().getDummyTable();
   var excludeIds = ['string3', 'string5', 'string1'];
   var expectedIds = ['string0', 'string2', 'string4', 'string6', 'string7'];
@@ -127,15 +115,14 @@ function test_Not_In() {
         exec();
   };
 
-  selectFn().then(
+  return selectFn().then(
       function(results) {
         var actualIds = results.map(function(result) {
           return result.string;
         });
 
         assertSameElements(expectedIds, actualIds);
-        asyncTestCase.continueTesting();
-      }, fail);
+      });
 }
 
 
@@ -143,10 +130,9 @@ function test_Not_In() {
  * Tests the case where not() is used on an indexed property. This exercises the
  * code path where an IndexRangeScanStep is used during query execution as
  * opposed to a SelectStep.
+ * @return {!IThenable}
  */
 function test_Not_Eq() {
-  asyncTestCase.waitForAsync('test_Not_Eq');
-
   var tableSchema = db.getSchema().getDummyTable();
   var excludedId = 'string1';
 
@@ -162,20 +148,17 @@ function test_Not_Eq() {
         exec();
   };
 
-  selectFn().then(
+  return selectFn().then(
       function(results) {
         assertEquals(rowCount - 1, results.length);
         assertFalse(results.some(function(result) {
           return result.string == excludedId;
         }));
-        asyncTestCase.continueTesting();
-      }, fail);
+      });
 }
 
 
 function test_And_Not() {
-  asyncTestCase.waitForAsync('test_And_Not');
-
   var tableSchema = db.getSchema().getDummyTable();
   var excludedId = 'string1';
 
@@ -193,7 +176,7 @@ function test_And_Not() {
         exec();
   };
 
-  selectFn().then(
+  return selectFn().then(
       function(results) {
         assertEquals(2, results.length);
 
@@ -201,16 +184,15 @@ function test_And_Not() {
           return result.string;
         });
         assertSameElements(actualIds, ['string2', 'string3']);
-        asyncTestCase.continueTesting();
-      }, fail);
+      });
 }
 
 
 /**
  * Tests the case where a combined AND predicate is used with the NOT operator.
+ * @return {!IThenable}
  */
 function test_Not_And() {
-  asyncTestCase.waitForAsync('test_Not_And');
   var tableSchema = db.getSchema().getDummyTable();
 
   /**
@@ -229,23 +211,22 @@ function test_Not_And() {
         exec();
   };
 
-  selectFn().then(
+  return selectFn().then(
       function(results) {
         var actualValues = results.map(function(result) {
           return result.integer;
         });
         var expectedValues = [0, 100, 700];
         assertSameElements(expectedValues, actualValues);
-        asyncTestCase.continueTesting();
-      }, fail);
+      });
 }
 
 
 /**
  * Tests the case where a combined OR predicate is used with the NOT operator.
+ * @return {!IThenable}
  */
 function test_Not_Or() {
-  asyncTestCase.waitForAsync('test_Not_Or');
   var tableSchema = db.getSchema().getDummyTable();
 
   /**
@@ -264,13 +245,12 @@ function test_Not_Or() {
         exec();
   };
 
-  selectFn().then(
+  return selectFn().then(
       function(results) {
         var actualValues = results.map(function(result) {
           return result.integer;
         });
         var expectedValues = [500, 400, 300];
         assertSameElements(expectedValues, actualValues);
-        asyncTestCase.continueTesting();
-      }, fail);
+      });
 }

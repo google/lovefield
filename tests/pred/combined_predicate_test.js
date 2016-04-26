@@ -15,7 +15,6 @@
  * limitations under the License.
  */
 goog.setTestOnly();
-goog.require('goog.testing.AsyncTestCase');
 goog.require('goog.testing.jsunit');
 goog.require('hr.db');
 goog.require('lf.op');
@@ -24,11 +23,6 @@ goog.require('lf.schema.DataStoreType');
 goog.require('lf.structs.set');
 goog.require('lf.testing.hrSchemaSampleData');
 goog.require('lf.tree');
-
-
-/** @type {!goog.testing.AsyncTestCase} */
-var asyncTestCase = goog.testing.AsyncTestCase.createAndInstall(
-    'CombinedPredicate');
 
 
 /** @type {!lf.Database} */
@@ -48,15 +42,13 @@ var d;
 
 
 function setUp() {
-  asyncTestCase.waitForAsync('setUp');
-  hr.db.connect({storeType: lf.schema.DataStoreType.MEMORY}).then(
+  return hr.db.connect({storeType: lf.schema.DataStoreType.MEMORY}).then(
       function(database) {
         db = database;
         d = db.getSchema().getDepartment();
         e = db.getSchema().getEmployee();
         j = db.getSchema().getJob();
-        asyncTestCase.continueTesting();
-      }, fail);
+      });
 }
 
 

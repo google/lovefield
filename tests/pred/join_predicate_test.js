@@ -15,7 +15,6 @@
  * limitations under the License.
  */
 goog.setTestOnly();
-goog.require('goog.testing.AsyncTestCase');
 goog.require('goog.testing.jsunit');
 goog.require('hr.db');
 goog.require('lf.eval.Type');
@@ -26,11 +25,6 @@ goog.require('lf.schema.DataStoreType');
 goog.require('lf.structs.set');
 goog.require('lf.testing.NullableDataGenerator');
 goog.require('lf.testing.hrSchemaSampleData');
-
-
-/** @type {!goog.testing.AsyncTestCase} */
-var asyncTestCase = goog.testing.AsyncTestCase.createAndInstall(
-    'JoinPredicate');
 
 
 /** @type {!lf.Database} */
@@ -60,9 +54,8 @@ var schemaWithNullable;
 var nullableGenerator;
 
 function setUp() {
-  asyncTestCase.waitForAsync('setUp');
   var connectOptions = {storeType: lf.schema.DataStoreType.MEMORY};
-  hr.db.connect(connectOptions).then(
+  return hr.db.connect(connectOptions).then(
       function(database) {
         db = database;
         d = db.getSchema().getDepartment();
@@ -76,11 +69,8 @@ function setUp() {
         nullableGenerator =
             new lf.testing.NullableDataGenerator(schemaWithNullable);
         nullableGenerator.generate();
-        schemaBuilder.connect(connectOptions).
-            then(function() {
-                  asyncTestCase.continueTesting();
-                });
-      }, fail);
+        schemaBuilder.connect(connectOptions);
+      });
 }
 
 

@@ -16,15 +16,9 @@
  */
 goog.setTestOnly();
 goog.require('goog.Promise');
-goog.require('goog.testing.AsyncTestCase');
 goog.require('goog.testing.jsunit');
 goog.require('hr.db');
 goog.require('lf.schema.DataStoreType');
-
-
-/** @type {!goog.testing.AsyncTestCase} */
-var asyncTestCase =
-    goog.testing.AsyncTestCase.createAndInstall('NullPredicateTest');
 
 
 /** @type {!lf.Database} */
@@ -32,8 +26,7 @@ var db;
 
 
 function setUp() {
-  asyncTestCase.waitForAsync('setUp');
-  hr.db.connect({storeType: lf.schema.DataStoreType.MEMORY}).then(
+  return hr.db.connect({storeType: lf.schema.DataStoreType.MEMORY}).then(
       function(database) {
         db = database;
 
@@ -43,10 +36,7 @@ function setUp() {
       function() {
         // Add some sample data to the database.
         return populateDatabase();
-      }).then(
-      function() {
-        asyncTestCase.continueTesting();
-      }, fail);
+      });
 }
 
 
@@ -132,10 +122,9 @@ function populateDatabase() {
 
 /**
  * Tests the case where an isNull() predicate is used on a non-indexed field.
+ * @return {!IThenable}
  */
 function test_IsNull_NonIndexed() {
-  asyncTestCase.waitForAsync('test_IsNull_NonIndexed');
-
   var tableSchema = db.getSchema().getDummyTable();
   // Ensure that the 'datetime' field is not indexed.
   assertEquals(0, tableSchema.datetime.getIndices().length);
@@ -153,25 +142,22 @@ function test_IsNull_NonIndexed() {
         exec();
   };
 
-  selectFn().then(
+  return selectFn().then(
       function(result) {
         assertEquals(1, result.length);
 
         // Expecting the second sample row to have been retrieved.
         var retrievedEmployee = result[0];
         assertEquals(sampleData[1].getString(), retrievedEmployee.string);
-
-        asyncTestCase.continueTesting();
-      }, fail);
+      });
 }
 
 
 /**
  * Tests the case where an isNotNull() predicate is used on a non-indexed field.
+ * @return {!IThenable}
  */
 function test_IsNotNull_NonIndexed() {
-  asyncTestCase.waitForAsync('test_IsNotNull_NonIndexed');
-
   var tableSchema = db.getSchema().getDummyTable();
   // Ensure that the 'datetime' field is not indexed.
   assertEquals(0, tableSchema.datetime.getIndices().length);
@@ -189,25 +175,22 @@ function test_IsNotNull_NonIndexed() {
         exec();
   };
 
-  selectFn().then(
+  return selectFn().then(
       function(result) {
         assertEquals(1, result.length);
 
         // Expecting the first sample row to have been retrieved.
         var retrievedEmployee = result[0];
         assertEquals(sampleData[0].getString(), retrievedEmployee.string);
-
-        asyncTestCase.continueTesting();
-      }, fail);
+      });
 }
 
 
 /**
  * Tests the case where an isNull() predicate is used on an indexed field.
+ * @return {!IThenable}
  */
 function test_IsNull_Indexed() {
-  asyncTestCase.waitForAsync('test_IsNull_Indexed');
-
   var tableSchema = db.getSchema().getRegion();
   // Ensure that the 'id' field is indexed.
   assertTrue(tableSchema.id.getIndices().length >= 1);
@@ -224,20 +207,18 @@ function test_IsNull_Indexed() {
         exec();
   };
 
-  selectFn().then(
+  return selectFn().then(
       function(result) {
         assertEquals(0, result.length);
-        asyncTestCase.continueTesting();
-      }, fail);
+      });
 }
 
 
 /**
  * Tests the case where an isNotNull() predicate is used on a indexed field.
+ * @return {!IThenable}
  */
 function test_IsNotNull_Indexed() {
-  asyncTestCase.waitForAsync('test_IsNotNull_Indexed');
-
   var tableSchema = db.getSchema().getRegion();
   // Ensure that the 'id' field is indexed.
   assertTrue(tableSchema.id.getIndices().length >= 1);
@@ -255,9 +236,8 @@ function test_IsNotNull_Indexed() {
         exec();
   };
 
-  selectFn().then(
+  return selectFn().then(
       function(result) {
         assertEquals(sampleData.length, result.length);
-        asyncTestCase.continueTesting();
-      }, fail);
+      });
 }
