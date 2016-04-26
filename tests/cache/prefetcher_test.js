@@ -17,7 +17,6 @@
 goog.setTestOnly();
 goog.require('goog.Promise');
 goog.require('goog.functions');
-goog.require('goog.testing.AsyncTestCase');
 goog.require('goog.testing.PropertyReplacer');
 goog.require('goog.testing.jsunit');
 goog.require('lf.Global');
@@ -28,10 +27,6 @@ goog.require('lf.index.NullableIndex');
 goog.require('lf.index.RowId');
 goog.require('lf.testing.MockEnv');
 goog.require('lf.testing.getSchemaBuilder');
-
-
-/** @type {!goog.testing.AsyncTestCase} */
-var asyncTestCase = goog.testing.AsyncTestCase.createAndInstall('Prefetcher');
 
 
 /** @type {!goog.testing.PropertyReplacer} */
@@ -60,15 +55,11 @@ function setUp() {
       env.schema.table('tableA'), 'persistentIndex', goog.functions.TRUE);
   propertyReplacer.replace(
       env.schema.table('tableF'), 'persistentIndex', goog.functions.TRUE);
-
-  asyncTestCase.waitForAsync('init');
-  env.init().then(goog.bind(asyncTestCase.continueTesting, asyncTestCase));
+  return env.init();
 }
 
 
 function testPrefetcher() {
-  asyncTestCase.waitForAsync('testPrefetcher');
-
   // Setup some data first.
   var tableSchema = env.schema.table('tableB');
   var rows = getSampleRows(tableSchema, 19, 0);
@@ -79,7 +70,7 @@ function testPrefetcher() {
   var nameIndex = indices[2];
   var table = env.store.getTableInternal(tableSchema.getName());
 
-  table.put(rows).then(function() {
+  return table.put(rows).then(function() {
     assertEquals(0, env.cache.getCount());
     assertArrayEquals([], rowIdIndex.get(1001));
     assertEquals(0, rowIdIndex.getRange().length);
@@ -88,7 +79,7 @@ function testPrefetcher() {
 
     var prefetcher = new lf.cache.Prefetcher(lf.Global.get());
     return prefetcher.init(env.schema);
-  }, fail).then(function() {
+  }).then(function() {
     assertEquals(rows.length, env.cache.getCount());
     assertEquals(rows[1], env.cache.get(pkIndex.get(1001)[0]));
 
@@ -96,8 +87,6 @@ function testPrefetcher() {
     assertEquals(rows.length, rowIdIndex.getRange().length);
     assertEquals(rows.length, pkIndex.getRange().length);
     assertEquals(rows.length, nameIndex.getRange().length);
-
-    asyncTestCase.continueTesting();
   });
 }
 
@@ -105,14 +94,13 @@ function testPrefetcher() {
 /**
  * Tests that Prefetcher is reconstructing persisted indices from the backing
  * store.
+ * @return {!IThenable}
  */
 function testInit_PersistentIndices() {
-  asyncTestCase.waitForAsync('testInit_PersistentIndices');
-
   var tableSchema = env.schema.table('tableA');
   var rows = getSampleRows(tableSchema, 10, 0);
 
-  simulatePersistedIndices(tableSchema, rows).then(
+  return simulatePersistedIndices(tableSchema, rows).then(
       function() {
         var prefetcher = new lf.cache.Prefetcher(lf.Global.get());
         return prefetcher.init(env.schema);
@@ -130,25 +118,22 @@ function testInit_PersistentIndices() {
           assertTrue(index instanceof lf.index.BTree);
           assertEquals(rows.length, index.getRange().length);
         });
-
-        asyncTestCase.continueTesting();
-      }, fail);
+      });
 }
 
 
 /**
  * Tests that Prefetcher is correctly reconstructing persisted indices from the
  * backing store for the case where indices with nullable columns exist.
+ * @return {!IThenable}
  */
 function testInit_PersistentIndices_NullableIndex() {
-  asyncTestCase.waitForAsync('testInit_PersistentIndices_NullableIndex');
-
   var tableSchema = env.schema.table('tableF');
   var nonNullKeyRows = 4;
   var nullKeyRows = 5;
   var rows = getSampleRows(tableSchema, nonNullKeyRows, nullKeyRows);
 
-  simulatePersistedIndices(tableSchema, rows).then(
+  return simulatePersistedIndices(tableSchema, rows).then(
       function() {
         var prefetcher = new lf.cache.Prefetcher(lf.Global.get());
         return prefetcher.init(env.schema);
@@ -167,9 +152,7 @@ function testInit_PersistentIndices_NullableIndex() {
           assertEquals(rows.length, index.getRange().length);
           assertEquals(nullKeyRows, index.get(null).length);
         });
-
-        asyncTestCase.continueTesting();
-      }, fail);
+      });
 }
 
 

@@ -15,7 +15,6 @@
  * limitations under the License.
  */
 goog.setTestOnly();
-goog.require('goog.testing.AsyncTestCase');
 goog.require('goog.testing.jsunit');
 goog.require('lf.ConstraintAction');
 goog.require('lf.ConstraintTiming');
@@ -26,11 +25,6 @@ goog.require('lf.schema');
 goog.require('lf.testing.MockEnv');
 goog.require('lf.testing.schemas');
 goog.require('lf.testing.util');
-
-
-/** @type {!goog.testing.AsyncTestCase} */
-var asyncTestCase = goog.testing.AsyncTestCase.createAndInstall(
-    'ConstraintCheckerTest');
 
 
 /** @type {!lf.testing.MockEnv} */
@@ -58,8 +52,6 @@ function setUpEnvForSchema(schema) {
 
 
 function testFindExistingRowIdInPkIndex() {
-  asyncTestCase.waitForAsync('testFindExistingRowIdInPkIndex');
-
   var getSchema = function() {
     var schemaBuilder = lf.schema.create('testschema', 1);
     schemaBuilder.createTable('TableA').
@@ -68,7 +60,7 @@ function testFindExistingRowIdInPkIndex() {
     return schemaBuilder.getSchema();
   };
 
-  setUpEnvForSchema(getSchema()).then(function() {
+  return setUpEnvForSchema(getSchema()).then(function() {
     var table = env.schema.table('TableA');
     var pkIndexSchema = table.getConstraint().getPrimaryKey();
     var pkIndex = env.indexStore.get(pkIndexSchema.getNormalizedName());
@@ -91,14 +83,11 @@ function testFindExistingRowIdInPkIndex() {
     assertEquals(
         row2.id(), checker.findExistingRowIdInPkIndex(table, row4));
     assertNull(checker.findExistingRowIdInPkIndex(table, row5));
-    asyncTestCase.continueTesting();
-  }, fail);
+  });
 }
 
 
 function testCheckNotNullable() {
-  asyncTestCase.waitForAsync('testCheckNotNullable');
-
   var getSchema = function() {
     var schemaBuilder = lf.schema.create('testschema', 1);
     schemaBuilder.createTable('TableA').
@@ -108,7 +97,7 @@ function testCheckNotNullable() {
     return schemaBuilder.getSchema();
   };
 
-  setUpEnvForSchema(getSchema()).then(function() {
+  return setUpEnvForSchema(getSchema()).then(function() {
     var table = env.schema.table('TableA');
 
     // Attempting to insert rows that violate the NOT_NULLABLE constraint.
@@ -130,22 +119,17 @@ function testCheckNotNullable() {
     assertNotThrows(function() {
       checker.checkNotNullable(table, validRows);
     });
-    asyncTestCase.continueTesting();
-  }, fail);
+  });
 }
 
 
 function testCheckForeignKeysForInsert_Immediate() {
-  checkForeignKeysForInsert(
-      lf.ConstraintTiming.IMMEDIATE,
-      'testCheckForeignKeysForInsert_Immediate');
+  return checkForeignKeysForInsert(lf.ConstraintTiming.IMMEDIATE);
 }
 
 
 function testCheckForeignKeysForInsert_Deferrable() {
-  checkForeignKeysForInsert(
-      lf.ConstraintTiming.DEFERRABLE,
-      'testCheckForeignKeysForInsert_Deferrable');
+  return checkForeignKeysForInsert(lf.ConstraintTiming.DEFERRABLE);
 }
 
 
@@ -154,13 +138,11 @@ function testCheckForeignKeysForInsert_Deferrable() {
  * the referred keys do not exist, for constraints that are of the given
  * constraint timing.
  * @param {!lf.ConstraintTiming} constraintTiming
- * @param {string} testName
+ * @return {!IThenable}
  */
-function checkForeignKeysForInsert(constraintTiming, testName) {
-  asyncTestCase.waitForAsync(testName);
-
+function checkForeignKeysForInsert(constraintTiming) {
   var schema = lf.testing.schemas.getOneForeignKey(constraintTiming);
-  setUpEnvForSchema(schema).then(function() {
+  return setUpEnvForSchema(schema).then(function() {
     var childTable = env.schema.table('Child');
     var childRow = childTable.createRow({id: 'dummyId'});
 
@@ -168,45 +150,40 @@ function checkForeignKeysForInsert(constraintTiming, testName) {
       checker.checkForeignKeysForInsert(childTable, [childRow], timing);
     };
     assertChecks(constraintTiming, checkFn);
-    asyncTestCase.continueTesting();
-  }, fail);
+  });
 }
 
 
 /**
  * Tests that ConstraintChecker#checkForeignKeysForDelete() throws an error if
  * referring keys do exist, for constraints that are IMMEDIATE.
+ * @return {!IThenable}
  */
 function testCheckForeignKeysForDelete_Immediate() {
-  checkForeignKeysForDelete(
-      lf.ConstraintTiming.IMMEDIATE,
-      'testCheckForeignKeysForDelete_Immediate');
+  return checkForeignKeysForDelete(lf.ConstraintTiming.IMMEDIATE);
 }
 
 
 /**
  * Tests that ConstraintChecker#checkForeignKeysForDelete() throws an error if
  * referring keys do exist, for constraints that are DEFERRABLE.
+ * @return {!IThenable}
  */
 function testCheckForeignKeysForDelete_Deferrable() {
-  checkForeignKeysForDelete(
-      lf.ConstraintTiming.DEFERRABLE,
-      'testCheckForeignKeysForDelete_Deferrable');
+  return checkForeignKeysForDelete(lf.ConstraintTiming.DEFERRABLE);
 }
 
 
 /**
  * @param {!lf.ConstraintTiming} constraintTiming
- * @param {string} testName
+ * @return {!IThenable}
  */
-function checkForeignKeysForDelete(constraintTiming, testName) {
-  asyncTestCase.waitForAsync(testName);
-
+function checkForeignKeysForDelete(constraintTiming) {
   var schema = lf.testing.schemas.getOneForeignKey(constraintTiming);
   var parentTable = null;
   var parentRow = null;
   var childRow = null;
-  setUpEnvForSchema(schema).then(function() {
+  return setUpEnvForSchema(schema).then(function() {
     parentTable = env.schema.table('Parent');
     var childTable = env.schema.table('Child');
     parentRow = parentTable.createRow({id: 'dummyId'});
@@ -223,8 +200,7 @@ function checkForeignKeysForDelete(constraintTiming, testName) {
           /** @type {!lf.schema.Table} */ (parentTable), [parentRow], timing);
     };
     assertChecks(constraintTiming, checkFn);
-    asyncTestCase.continueTesting();
-  }, fail);
+  });
 }
 
 
@@ -232,11 +208,10 @@ function checkForeignKeysForDelete(constraintTiming, testName) {
  * Tests that ConstraintChecker#checkForeignKeysForUpdate() throws an error if
  * referring keys do exist for a column that is being updated, for constraints
  * that are IMMEDIATE.
+ * @return {!IThenable}
  */
 function testCheckForeignKeysForUpdate_Immediate() {
-  checkForeignKeysForUpdate(
-      lf.ConstraintTiming.IMMEDIATE,
-      'testCheckForeignKeysForUpdate_Immediate');
+  return checkForeignKeysForUpdate(lf.ConstraintTiming.IMMEDIATE);
 }
 
 
@@ -244,26 +219,23 @@ function testCheckForeignKeysForUpdate_Immediate() {
  * Tests that ConstraintChecker#checkForeignKeysForUpdate() throws an error if
  * invalid referred keys are introduced for a column that is being updated, for
  * constraints that are DEFERRABLE.
+ * @return {!IThenable}
  */
 function testCheckForeignKeysForUpdate_Deferrable() {
-  checkForeignKeysForUpdate(
-      lf.ConstraintTiming.DEFERRABLE,
-      'testCheckForeignKeysForUpdate_Deferrable');
+  return checkForeignKeysForUpdate(lf.ConstraintTiming.DEFERRABLE);
 }
 
 
 /**
  * @param {!lf.ConstraintTiming} constraintTiming
- * @param {string} testName
+ * @return {!IThenable}
  */
-function checkForeignKeysForUpdate(constraintTiming, testName) {
-  asyncTestCase.waitForAsync(testName);
-
+function checkForeignKeysForUpdate(constraintTiming) {
   var schema = lf.testing.schemas.getOneForeignKey(constraintTiming);
   var parentTable = null;
   var parentRow = null;
   var childRow = null;
-  setUpEnvForSchema(schema).then(function() {
+  return setUpEnvForSchema(schema).then(function() {
     parentTable = env.schema.table('Parent');
     var childTable = env.schema.table('Child');
     parentRow = parentTable.createRow({id: 'dummyId'});
@@ -284,18 +256,16 @@ function checkForeignKeysForUpdate(constraintTiming, testName) {
           [modification], timing);
     };
     assertChecks(constraintTiming, checkFn);
-    asyncTestCase.continueTesting();
-  }, fail);
+  });
 }
 
 
 /**
  * Tests that ConstraintChecker#detectCascadeDeletion() correctly detects
  * referring rows of the rows that are about to be deleted.
+ * @return {!IThenable}
  */
 function testDetectCascadeDeletion_TableChain() {
-  asyncTestCase.waitForAsync('testDetectCascadeDeletion_TableChain');
-
   var schema = lf.testing.schemas.getTableChain(lf.ConstraintAction.CASCADE);
   var tableA;
   var tableARow;
@@ -304,7 +274,7 @@ function testDetectCascadeDeletion_TableChain() {
   var tableC;
   var tableCRow;
 
-  setUpEnvForSchema(schema).then(function() {
+  return setUpEnvForSchema(schema).then(function() {
     tableA = env.schema.table('TableA');
     tableB = env.schema.table('TableB');
     tableC = env.schema.table('TableC');
@@ -353,15 +323,11 @@ function testDetectCascadeDeletion_TableChain() {
     assertArrayEquals(
         [tableCRow.id()],
         cascadedDeletion.rowIdsPerTable.get(tableC.getName()));
-
-    asyncTestCase.continueTesting();
   });
 }
 
 
 function testDetectCascadeDeletion_TwoForeignKeys() {
-  asyncTestCase.waitForAsync('testDetectCascadeDeletion_TwoForeignKeys');
-
   var schema = lf.testing.schemas.getTwoForeignKeys(
       lf.ConstraintAction.CASCADE);
   var tableA;
@@ -371,7 +337,7 @@ function testDetectCascadeDeletion_TwoForeignKeys() {
   var tableB2;
   var tableB2Row;
 
-  setUpEnvForSchema(schema).then(function() {
+  return setUpEnvForSchema(schema).then(function() {
     tableA = env.schema.table('TableA');
     tableB1 = env.schema.table('TableB1');
     tableB2 = env.schema.table('TableB2');
@@ -408,8 +374,6 @@ function testDetectCascadeDeletion_TwoForeignKeys() {
     assertArrayEquals(
         [tableB2Row.id()],
         cascadedDeletion.rowIdsPerTable.get(tableB2.getName()));
-
-    asyncTestCase.continueTesting();
   });
 }
 

@@ -15,7 +15,6 @@
  * limitations under the License.
  */
 goog.setTestOnly();
-goog.require('goog.testing.AsyncTestCase');
 goog.require('goog.testing.jsunit');
 goog.require('lf.Global');
 goog.require('lf.Row');
@@ -27,21 +26,13 @@ goog.require('lf.testing.getSchemaBuilder');
 goog.require('lf.testing.util');
 
 
-/** @type {!goog.testing.AsyncTestCase} */
-var asyncTestCase = goog.testing.AsyncTestCase.createAndInstall(
-    'JournalTest');
-
-
 /** @type {!lf.testing.MockEnv} */
 var env;
 
 
 function setUp() {
-  asyncTestCase.waitForAsync('setUp');
   env = new lf.testing.MockEnv(lf.testing.getSchemaBuilder().getSchema());
-  env.init().then(function() {
-    asyncTestCase.continueTesting();
-  });
+  return env.init();
 }
 
 
