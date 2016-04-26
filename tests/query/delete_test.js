@@ -15,16 +15,12 @@
  * limitations under the License.
  */
 goog.setTestOnly();
-goog.require('goog.testing.AsyncTestCase');
 goog.require('goog.testing.jsunit');
 goog.require('hr.db');
 goog.require('lf.bind');
 goog.require('lf.query.DeleteBuilder');
 goog.require('lf.schema.DataStoreType');
-
-
-/** @type {!goog.testing.AsyncTestCase} */
-var asyncTestCase = goog.testing.AsyncTestCase.createAndInstall('Delete');
+goog.require('lf.testing.util');
 
 
 /** @type {!lf.Database} */
@@ -32,12 +28,10 @@ var db;
 
 
 function setUp() {
-  asyncTestCase.waitForAsync('setUp');
-  hr.db.connect({storeType: lf.schema.DataStoreType.MEMORY}).then(function(
-      database) {
+  return hr.db.connect({storeType: lf.schema.DataStoreType.MEMORY}).then(
+      function(database) {
         db = database;
-        asyncTestCase.continueTesting();
-      }, fail);
+      });
 }
 
 
@@ -48,15 +42,12 @@ function tearDown() {
 
 /**
  * Tests that Delete#exec() fails if from() has not been called first.
+ * @return {!IThenable}
  */
 function testExec_ThrowsMissingFrom() {
-  asyncTestCase.waitForAsync('testExec_ThrowsMissingFrom');
   var query = new lf.query.DeleteBuilder(hr.db.getGlobal());
-  query.exec().then(
-      fail,
-      function(e) {
-        asyncTestCase.continueTesting();
-      });
+  // 517: Invalid usage of delete().
+  return lf.testing.util.assertPromiseReject(517, query.exec());
 }
 
 
@@ -71,7 +62,8 @@ function testFrom_ThrowsAlreadyCalled() {
     query.from(e).from(e);
   };
 
-  assertThrows(buildQuery);
+  // 515: from() has already been called.
+  lf.testing.util.assertThrowsError(515, buildQuery);
 }
 
 
@@ -87,7 +79,8 @@ function testWhere_ThrowsAlreadyCalled() {
     query.from(employeeTable).where(predicate).where(predicate);
   };
 
-  assertThrows(buildQuery);
+  // 516: where() has already been called.
+  lf.testing.util.assertThrowsError(516, buildQuery);
 }
 
 function testWhere_ThrowsCalledBeforeFrom() {
@@ -99,7 +92,8 @@ function testWhere_ThrowsCalledBeforeFrom() {
     query.where(predicate).from(employeeTable);
   };
 
-  assertThrows(buildQuery);
+  // 548: from() has to be called before where().
+  lf.testing.util.assertThrowsError(548, buildQuery);
 }
 
 function testContext_Clone() {

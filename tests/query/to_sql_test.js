@@ -15,7 +15,6 @@
  * limitations under the License.
  */
 goog.setTestOnly();
-goog.require('goog.testing.AsyncTestCase');
 goog.require('goog.testing.jsunit');
 goog.require('hr.db');
 goog.require('lf.Order');
@@ -28,10 +27,6 @@ goog.require('lf.schema.DataStoreType');
 goog.require('lf.testing.hrSchemaSampleData');
 
 
-/** @type {!goog.testing.AsyncTestCase} */
-var asyncTestCase = goog.testing.AsyncTestCase.createAndInstall('toSql');
-
-
 /** @type {!lf.Database} */
 var db;
 
@@ -41,13 +36,11 @@ var j;
 
 
 function setUp() {
-  asyncTestCase.waitForAsync('setUp');
-  hr.db.connect({storeType: lf.schema.DataStoreType.MEMORY}).then(function(
-      database) {
+  return hr.db.connect({storeType: lf.schema.DataStoreType.MEMORY}).then(
+      function(database) {
         db = database;
         j = db.getSchema().getJob();
-        asyncTestCase.continueTesting();
-      }, fail);
+      });
 }
 
 

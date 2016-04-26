@@ -15,16 +15,12 @@
  * limitations under the License.
  */
 goog.setTestOnly();
-goog.require('goog.testing.AsyncTestCase');
 goog.require('goog.testing.jsunit');
 goog.require('hr.db');
 goog.require('lf.bind');
 goog.require('lf.query.UpdateBuilder');
 goog.require('lf.schema.DataStoreType');
-
-
-/** @type {!goog.testing.AsyncTestCase} */
-var asyncTestCase = goog.testing.AsyncTestCase.createAndInstall('Update');
+goog.require('lf.testing.util');
 
 
 /** @type {!lf.Database} */
@@ -32,12 +28,10 @@ var db;
 
 
 function setUp() {
-  asyncTestCase.waitForAsync('setUp');
-  hr.db.connect({storeType: lf.schema.DataStoreType.MEMORY}).then(function(
-      database) {
+  return hr.db.connect({storeType: lf.schema.DataStoreType.MEMORY}).then(
+      function(database) {
         db = database;
-        asyncTestCase.continueTesting();
-      }, fail);
+      });
 }
 
 
@@ -48,17 +42,14 @@ function tearDown() {
 
 /**
  * Tests that Update#exec() fails if set() has not been called first.
+ * @return {!IThenable}
  */
 function testExec_ThrowsMissingSet() {
-  asyncTestCase.waitForAsync('testExec_ThrowsMissingSet');
   var employeeTable = db.getSchema().getEmployee();
   var query = new lf.query.UpdateBuilder(hr.db.getGlobal(), employeeTable);
   query.where(employeeTable.jobId.eq('dummyJobId'));
-  query.exec().then(
-      fail,
-      function(e) {
-        asyncTestCase.continueTesting();
-      });
+  // 532: Invalid usage of update().
+  return lf.testing.util.assertPromiseReject(532, query.exec());
 }
 
 
@@ -74,22 +65,19 @@ function testWhere_ThrowsAlreadyCalled() {
     query.where(predicate).where(predicate);
   };
 
-  assertThrows(buildQuery);
+  // 516: where() has already been called.
+  lf.testing.util.assertThrowsError(516, buildQuery);
 }
 
 
 function testSet_ThrowsMissingBinding() {
-  asyncTestCase.waitForAsync('testExec_ThrowsMissingBinding');
   var employeeTable = db.getSchema().getEmployee();
   var query = new lf.query.UpdateBuilder(hr.db.getGlobal(), employeeTable);
   query.set(employeeTable.minSalary, lf.bind(0));
   query.set(employeeTable.maxSalary, 20000);
   query.where(employeeTable.jobId.eq('dummyJobId'));
-  query.exec().then(
-      fail,
-      function(e) {
-        asyncTestCase.continueTesting();
-      });
+  // 501: Value is not bounded.
+  return lf.testing.util.assertPromiseReject(501, query.exec());
 }
 
 

@@ -16,7 +16,6 @@
  */
 goog.setTestOnly();
 goog.require('goog.Promise');
-goog.require('goog.testing.AsyncTestCase');
 goog.require('goog.testing.jsunit');
 goog.require('hr.db');
 goog.require('lf.bind');
@@ -28,21 +27,15 @@ goog.require('lf.schema.DataStoreType');
 goog.require('lf.testing.util');
 
 
-/** @type {!goog.testing.AsyncTestCase} */
-var asyncTestCase = goog.testing.AsyncTestCase.createAndInstall('Select');
-
-
 /** @type {!lf.Database} */
 var db;
 
 
 function setUp() {
-  asyncTestCase.waitForAsync('setUp');
-  hr.db.connect({storeType: lf.schema.DataStoreType.MEMORY}).then(function(
-      database) {
+  return hr.db.connect({storeType: lf.schema.DataStoreType.MEMORY}).then(
+      function(database) {
         db = database;
-        asyncTestCase.continueTesting();
-      }, fail);
+      });
 }
 
 
@@ -53,83 +46,65 @@ function tearDown() {
 
 /**
  * Tests that Select#exec() fails if from() has not been called first.
+ * @return {!IThenable}
  */
 function testExec_ThrowsMissingFrom() {
-  asyncTestCase.waitForAsync('testExec_ThrowsMissingFrom');
   var query = new lf.query.SelectBuilder(hr.db.getGlobal(), []);
-  query.exec().then(
-      fail,
-      function(e) {
-        asyncTestCase.continueTesting();
-      });
+  // 522: Invalid usage of select().
+  return lf.testing.util.assertPromiseReject(522, query.exec());
 }
 
 
 /**
  * Tests that constructing a query fails if an invalid projection list is
  * requested.
+ * @return {!IThenable}
  */
 function testExec_ThrowsInvalidProjectionList() {
-  asyncTestCase.waitForAsync('testExec_ThrowsInvalidProjectionList');
-
   var e = db.getSchema().getEmployee();
   var query = new lf.query.SelectBuilder(
       hr.db.getGlobal(), [e.email, lf.fn.avg(e.salary)]);
-  query.from(e).exec().then(
-      fail,
-      function(e) {
-        // 526: Invalid projection list: mixing aggregated with non-aggregated.
-        assertEquals(526, e.code);
-        asyncTestCase.continueTesting();
-      });
+
+  // 526: Invalid projection list: mixing aggregated with non-aggregated.
+  return lf.testing.util.assertPromiseReject(526, query.from(e).exec());
 }
 
 
 /**
  * Tests that constructing a query involving Select#groupBy() fails if an
  * invalid combination of projection and groupBy list is requested.
+ * @return {!IThenable}
  */
 function testExec_ThrowsInvalidProjectionList_GroupBy() {
-  asyncTestCase.waitForAsync('testExec_ThrowsInvalidProjectionList_GroupBy');
-
   var e = db.getSchema().getEmployee();
   var query = new lf.query.SelectBuilder(
       hr.db.getGlobal(), [e.email, e.salary]);
-  query.from(e).groupBy(e.jobId).exec().then(
-      fail,
-      function(e) {
-        // 525: Invalid projection list or groupBy columns.
-        assertEquals(525, e.code);
-        asyncTestCase.continueTesting();
-      });
+  return lf.testing.util.assertPromiseReject(
+      525,  // 525: Invalid projection list or groupBy columns.
+      query.from(e).groupBy(e.jobId).exec());
 }
 
 
 /**
  * Tests that groupBy on non-indexable fields will fail.
+ * @return {!IThenable}
  */
 function testExec_ThrowsGroupByNonIndexableColumn() {
-  asyncTestCase.waitForAsync('testExec_ThrowsGroupByNonIndexableColumn');
-
   var e = db.getSchema().getEmployee();
   var query = new lf.query.SelectBuilder(
       hr.db.getGlobal(), [e.email, e.salary, e.photo]);
-  query.from(e).groupBy(e.photo).exec().then(
-      fail,
-      function(e) {
-        // 525: Invalid projection list or groupBy columns.
-        assertEquals(525, e.code);
-        asyncTestCase.continueTesting();
-      });
+  return lf.testing.util.assertPromiseReject(
+      525,  // 525: Invalid projection list or groupBy columns.
+      query.from(e).groupBy(e.photo).exec());
 }
 
 
 /**
  * Tests that constructing a query succeeds if a valid projection list is
  * requested (and if no other violation occurs).
+ * @return {!IThenable}
  */
 function testExec_ValidProjectionList() {
-  asyncTestCase.waitForAsync('testExec_ValidProjectionList');
   var e = db.getSchema().getEmployee();
 
   // Constructing a query where all requested columns are aggregated.
@@ -142,13 +117,10 @@ function testExec_ValidProjectionList() {
       hr.db.getGlobal(), [e.salary, e.salary]);
   query2.from(e);
 
-  goog.Promise.all([
+  return goog.Promise.all([
     query1.exec(),
     query2.exec()
-  ]).then(
-      function(e) {
-        asyncTestCase.continueTesting();
-      }, fail);
+  ]);
 }
 
 
@@ -157,34 +129,26 @@ function testExec_ValidProjectionList() {
  * valid combination of projection and groupBy list is requested. This test
  * checks that columns in groupBy() does not necessarily exist in projection
  * list.
+ * @return {!IThenable}
  */
 function testExec_ValidProjectionList_GroupBy() {
-  asyncTestCase.waitForAsync('testExec_ValidProjectionList_GroupBy');
-
   var e = db.getSchema().getEmployee();
   var query = new lf.query.SelectBuilder(
       hr.db.getGlobal(), [e.jobId, lf.fn.avg(e.salary)]);
-  query.from(e).groupBy(e.jobId, e.departmentId).exec().then(
-      function(e) {
-        asyncTestCase.continueTesting();
-      }, fail);
+  return query.from(e).groupBy(e.jobId, e.departmentId).exec();
 }
 
 
 /**
  * Tests that unbound parameterized search condition will throw.
+ * @return {!IThenable}
  */
 function testExec_UnboundPredicateThrows() {
-  asyncTestCase.waitForAsync('testsExec_UnboundPredicateThrows');
-
   var emp = db.getSchema().getEmployee();
   var query = new lf.query.SelectBuilder(hr.db.getGlobal(), [emp.jobId]);
-  query.from(emp).where(emp.jobId.eq(lf.bind(0))).exec().then(fail,
-      function(e) {
-        // 501: Value is not bounded.
-        assertEquals(501, e.code);
-        asyncTestCase.continueTesting();
-      });
+  return lf.testing.util.assertPromiseReject(
+      501,  // 501: Value is not bounded.
+      query.from(emp).where(emp.jobId.eq(lf.bind(0))).exec());
 }
 
 
@@ -597,12 +561,8 @@ function testInvalidBindingRejects() {
       limit(lf.bind(0)).
       skip(lf.bind(1));
 
-  asyncTestCase.waitForAsync('testInvalidBindingRejects');
-  query.exec().then(fail, function(e) {
-    // 523: Binding parameters of limit/skip without providing values.
-    assertEquals(523, e.code);
-    asyncTestCase.continueTesting();
-  });
+  // 523: Binding parameters of limit/skip without providing values.
+  return lf.testing.util.assertPromiseReject(523, query.exec());
 }
 
 

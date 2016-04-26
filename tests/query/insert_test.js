@@ -15,17 +15,13 @@
  * limitations under the License.
  */
 goog.setTestOnly();
-goog.require('goog.testing.AsyncTestCase');
 goog.require('goog.testing.jsunit');
 goog.require('hr.db');
 goog.require('lf.bind');
 goog.require('lf.query.InsertBuilder');
 goog.require('lf.schema.DataStoreType');
 goog.require('lf.testing.hrSchemaSampleData');
-
-
-/** @type {!goog.testing.AsyncTestCase} */
-var asyncTestCase = goog.testing.AsyncTestCase.createAndInstall('Insert');
+goog.require('lf.testing.util');
 
 
 /** @type {!lf.Database} */
@@ -33,12 +29,10 @@ var db;
 
 
 function setUp() {
-  asyncTestCase.waitForAsync('setUp');
-  hr.db.connect({storeType: lf.schema.DataStoreType.MEMORY}).then(function(
-      database) {
+  return hr.db.connect({storeType: lf.schema.DataStoreType.MEMORY}).then(
+      function(database) {
         db = database;
-        asyncTestCase.continueTesting();
-      }, fail);
+      });
 }
 
 
@@ -49,42 +43,35 @@ function tearDown() {
 
 /**
  * Tests that Insert#exec() fails if into() has not been called first.
+ * @return {!IThenable}
  */
 function testExec_ThrowsMissingInto() {
-  asyncTestCase.waitForAsync('testExec_ThrowsMissingInto');
   var query = new lf.query.InsertBuilder(hr.db.getGlobal());
   var job = lf.testing.hrSchemaSampleData.generateSampleJobData(db);
   query.values([job]);
-  query.exec().then(
-      fail,
-      function(e) {
-        asyncTestCase.continueTesting();
-      });
+  // 518: Invalid usage of insert().
+  return lf.testing.util.assertPromiseReject(518, query.exec());
 }
 
 
 /**
  * Tests that Insert#exec() fails if values() has not been called first.
+ * @return {!IThenable}
  */
 function testExec_ThrowsMissingValues() {
-  asyncTestCase.waitForAsync('testExec_ThrowsMissingValues');
   var query = new lf.query.InsertBuilder(hr.db.getGlobal());
   query.into(db.getSchema().getJob());
-  query.exec().then(
-      fail,
-      function(e) {
-        asyncTestCase.continueTesting();
-      });
+  // 518: Invalid usage of insert().
+  return lf.testing.util.assertPromiseReject(518, query.exec());
 }
 
 
 /**
  * Tests that Insert#exec() fails if allowReplace is true, for a table that has
  * no primary key.
+ * @return {!IThenable}
  */
 function testExec_ThrowsNoPrimaryKey() {
-  asyncTestCase.waitForAsync('testExec_ThrowsNoPrimaryKey');
-
   var jobHistoryRow = lf.testing.hrSchemaSampleData.
       generateSampleJobHistoryData(db);
   var query = new lf.query.InsertBuilder(
@@ -93,11 +80,8 @@ function testExec_ThrowsNoPrimaryKey() {
   query.
       into(db.getSchema().getJobHistory()).
       values([jobHistoryRow]);
-  query.exec().then(
-      fail,
-      function(e) {
-        asyncTestCase.continueTesting();
-      });
+  // 519: Attempted to insert or replace in a table with no primary key.
+  return lf.testing.util.assertPromiseReject(519, query.exec());
 }
 
 
@@ -112,7 +96,8 @@ function testValues_ThrowsAlreadyCalled() {
     query.values([job]).values([job]);
   };
 
-  assertThrows(buildQuery);
+  // 521: values() has already been called.
+  lf.testing.util.assertThrowsError(521, buildQuery);
 }
 
 
@@ -127,19 +112,17 @@ function testInto_ThrowsAlreadyCalled() {
     query.into(jobTable).into(jobTable);
   };
 
-  assertThrows(buildQuery);
+  // 520: into() has already been called.
+  lf.testing.util.assertThrowsError(520, buildQuery);
 }
 
 
 function testValues_ThrowMissingBinding() {
-  asyncTestCase.waitForAsync('testExec_ThrowsMissingBinding');
-
   var query = new lf.query.InsertBuilder(hr.db.getGlobal());
   var jobTable = db.getSchema().getJob();
   query.into(jobTable).values(lf.bind(0));
-  query.exec().then(fail, function(e) {
-    asyncTestCase.continueTesting();
-  });
+  // 518: Invalid usage of insert().
+  return lf.testing.util.assertPromiseReject(518, query.exec());
 }
 
 
