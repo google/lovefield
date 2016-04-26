@@ -16,7 +16,7 @@
  */
 goog.setTestOnly();
 
-goog.require('goog.testing.AsyncTestCase');
+goog.require('goog.Promise');
 goog.require('goog.testing.jsunit');
 goog.require('lf.DiffCalculator');
 goog.require('lf.Global');
@@ -26,23 +26,14 @@ goog.require('lf.testing.MockEnv');
 goog.require('lf.testing.getSchemaBuilder');
 
 
-/** @type {!goog.testing.AsyncTestCase} */
-var asyncTestCase = goog.testing.AsyncTestCase.createAndInstall(
-    'DiffCalculatorTest');
-
-
 /** @type {!lf.schema.Database} */
 var schema;
 
 
 function setUp() {
-  asyncTestCase.waitForAsync('setUp');
-
   schema = lf.testing.getSchemaBuilder().getSchema();
   var env = new lf.testing.MockEnv(schema);
-  env.init().then(function() {
-    asyncTestCase.continueTesting();
-  }, fail);
+  return env.init();
 }
 
 
@@ -96,7 +87,7 @@ function testDiffCalculation_ImplicitColumns() {
  *     for debug purposes.
  */
 function checkDiffCalculation(query, description) {
-  asyncTestCase.waitForAsync('testDiffCalculation_' + description);
+  var promiseResolver = goog.Promise.withResolver();
 
   var callback = function(currentVersion, changes) {
     switch (currentVersion) {
@@ -170,8 +161,9 @@ function checkDiffCalculation(query, description) {
           assertEquals(i, change.index);
         });
 
-        asyncTestCase.continueTesting();
+        promiseResolver.resolve();
     }
+    return promiseResolver.promise;
   };
 
   var rows = generateSamlpeRows();

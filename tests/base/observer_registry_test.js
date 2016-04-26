@@ -16,7 +16,7 @@
  */
 goog.setTestOnly();
 
-goog.require('goog.testing.AsyncTestCase');
+goog.require('goog.Promise');
 goog.require('goog.testing.jsunit');
 goog.require('lf.Global');
 goog.require('lf.proc.Relation');
@@ -24,11 +24,6 @@ goog.require('lf.query.SelectBuilder');
 goog.require('lf.structs.set');
 goog.require('lf.testing.MockEnv');
 goog.require('lf.testing.getSchemaBuilder');
-
-
-/** @type {!goog.testing.AsyncTestCase} */
-var asyncTestCase = goog.testing.AsyncTestCase.createAndInstall(
-    'ObserverRegistryTest');
 
 
 /** @type {!lf.ObserverRegistry} */
@@ -40,30 +35,28 @@ var schema;
 
 
 function setUp() {
-  asyncTestCase.waitForAsync('setUp');
-
   schema = lf.testing.getSchemaBuilder().getSchema();
   var env = new lf.testing.MockEnv(schema);
-  env.init().then(function() {
+  return env.init().then(function() {
     registry = env.observerRegistry;
-    asyncTestCase.continueTesting();
-  }, fail);
+  });
 }
 
 
 /**
  * Tests that addObserver() works as expected by checking that observers are
  * notified when the observable results are modified.
+ * @return {!IThenable}
  */
 function testAddObserver() {
-  asyncTestCase.waitForAsync('testObserve');
+  var promiseResolver = goog.Promise.withResolver();
 
   var table = schema.tables()[0];
   var builder = new lf.query.SelectBuilder(lf.Global.get(), []);
   builder.from(table);
 
   var callback = function(changes) {
-    asyncTestCase.continueTesting();
+    promiseResolver.resolve();
   };
 
   registry.addObserver(builder, callback);
@@ -76,6 +69,7 @@ function testAddObserver() {
   var secondResults = lf.proc.Relation.fromRows(
       [row1, row2], [table.getName()]);
   assertTrue(registry.updateResultsForQuery(builder.getQuery(), secondResults));
+  return promiseResolver.promise;
 }
 
 

@@ -15,16 +15,10 @@
  * limitations under the License.
  */
 goog.setTestOnly();
-goog.require('goog.testing.AsyncTestCase');
 goog.require('goog.testing.jsunit');
 goog.require('hr.db');
 goog.require('lf.Order');
 goog.require('lf.schema.DataStoreType');
-
-
-/** @type {!goog.testing.AsyncTestCase} */
-var asyncTestCase =
-    goog.testing.AsyncTestCase.createAndInstall('DateIndexTest');
 
 
 /** @type {!lf.Database} */
@@ -36,12 +30,10 @@ var holiday;
 
 
 function setUp() {
-  asyncTestCase.waitForAsync('setUp');
-  hr.db.connect({storeType: lf.schema.DataStoreType.MEMORY}).then(
+  return hr.db.connect({storeType: lf.schema.DataStoreType.MEMORY}).then(
       function(database) {
         db = database;
         holiday = db.getSchema().getHoliday();
-        asyncTestCase.continueTesting();
       });
 }
 
@@ -97,14 +89,12 @@ function generateSampleRows() {
 
 
 function testDateIndex() {
-  asyncTestCase.waitForAsync('testDateIndex');
-
   var rows = generateSampleRows();
   var expected = rows.map(function(row) {
     return row.getName();
   }).slice(1).reverse();
 
-  db.insert().into(holiday).values(rows).exec().then(function() {
+  return db.insert().into(holiday).values(rows).exec().then(function() {
     var query = db.select().
         from(holiday).
         where(holiday.begin.gt(new Date(2014, 0, 1))).
@@ -115,6 +105,5 @@ function testDateIndex() {
     assertArrayEquals(expected, results.map(function(row) {
       return row['name'];
     }));
-    asyncTestCase.continueTesting();
   });
 }

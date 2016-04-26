@@ -16,17 +16,12 @@
  */
 goog.setTestOnly();
 
-goog.require('goog.testing.AsyncTestCase');
 goog.require('goog.testing.PropertyReplacer');
 goog.require('goog.testing.jsunit');
 goog.require('hr.db');
 goog.require('lf.schema.DataStoreType');
 goog.require('lf.testing');
-
-
-/** @type {!goog.testing.AsyncTestCase} */
-var asyncTestCase = goog.testing.AsyncTestCase.createAndInstall(
-    'SimulateErrorTest');
+goog.require('lf.testing.util');
 
 
 /** @type {!lf.Database} */
@@ -38,13 +33,11 @@ var employee;
 
 
 function setUp() {
-  asyncTestCase.waitForAsync('setUp');
-  hr.db.connect({
+  return hr.db.connect({
     'storeType': lf.schema.DataStoreType.MEMORY
   }).then(function(database) {
     db = database;
     employee = db.getSchema().getEmployee();
-    asyncTestCase.continueTesting();
   });
 }
 
@@ -56,75 +49,74 @@ function tearDown() {
 
 /**
  * Tests that when simulateErrors has been called BaseBuilder#exec() rejects.
+ * @return {!IThenable}
  */
 function testBuilderExec() {
-  asyncTestCase.waitForAsync('testBuilderExec');
   var propertyReplacer = new goog.testing.PropertyReplacer();
   lf.testing.simulateErrors(propertyReplacer);
 
-  /** @type {!IThenable<!Array>} */ (
-      db.select().from(employee).exec().then(
-      fail,
-      function(error) {
-        assertEquals(999, error.code);
+  var selectFn = function() {
+    return db.select().from(employee).exec();
+  };
+
+  return lf.testing.util.assertPromiseReject(999, selectFn()).then(
+      function() {
         propertyReplacer.reset();
-        return db.select().from(employee).exec();
-      })).then(
+        return selectFn();
+      }).then(
       function(results) {
         assertEquals(0, results.length);
-        asyncTestCase.continueTesting();
-      }, fail);
+      });
 }
 
 
 /**
  * Tests that when simulateErrors has been called Transaction#exec() rejects.
+ * @return {!IThenable}
  */
 function testTransactionExec() {
-  asyncTestCase.waitForAsync('testTransactionExec');
   var propertyReplacer = new goog.testing.PropertyReplacer();
   lf.testing.simulateErrors(propertyReplacer);
 
-  var tx1 = db.createTransaction();
-  /** @type {!IThenable<!Array>} */ (
-      tx1.exec([db.select().from(employee)]).then(
-      fail,
-      function(error) {
-        assertEquals(999, error.code);
-        propertyReplacer.reset();
+  var selectFn = function() {
+    var tx = db.createTransaction();
+    return tx.exec([db.select().from(employee)]);
+  };
 
-        var tx2 = db.createTransaction();
-        return tx2.exec([db.select().from(employee)]);
-      })).then(
+  return lf.testing.util.assertPromiseReject(999, selectFn()).then(
+      function() {
+        propertyReplacer.reset();
+        return selectFn();
+      }).then(
       function(results) {
         assertEquals(1, results.length);
         assertEquals(0, results[0].length);
-        asyncTestCase.continueTesting();
-      }, fail);
+      });
 }
 
 
 /**
  * Tests that when simulateErrors has been called Transaction#attach() rejects.
+ * @return {!IThenable}
  */
 function testTransactionAttach() {
-  asyncTestCase.waitForAsync('testTransactionAttach');
   var propertyReplacer = new goog.testing.PropertyReplacer();
   lf.testing.simulateErrors(propertyReplacer);
 
-  var tx1 = db.createTransaction();
-  /** @type {!IThenable<!Array>} */ (
-      tx1.begin([employee]).then(function() {
-        return tx1.attach(db.select().from(employee));
+  var tx = db.createTransaction();
+  var selectFn = function() {
+    return tx.attach(db.select().from(employee));
+  };
+
+  return tx.begin([employee]).then(
+      function() {
+        return lf.testing.util.assertPromiseReject(999, selectFn());
       }).then(
-      fail,
-      function(error) {
-        assertEquals(999, error.code);
+      function() {
         propertyReplacer.reset();
-        return tx1.attach(db.select().from(employee));
-      })).then(
+        return selectFn();
+      }).then(
       function(results) {
         assertEquals(0, results.length);
-        asyncTestCase.continueTesting();
-      }, fail);
+      });
 }

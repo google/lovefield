@@ -15,14 +15,9 @@
  * limitations under the License.
  */
 goog.setTestOnly();
-goog.require('goog.testing.AsyncTestCase');
 goog.require('goog.testing.jsunit');
 goog.require('hr.db');
 goog.require('lf.Capability');
-
-
-/** @type {!goog.testing.AsyncTestCase} */
-var asyncTestCase = goog.testing.AsyncTestCase.createAndInstall('CloseTest');
 
 
 /** @type {!lf.Capability} */
@@ -39,8 +34,7 @@ function testClose() {
     return;
   }
 
-  asyncTestCase.waitForAsync('testClose');
-  hr.db.connect().then(function(database) {
+  return hr.db.connect().then(function(database) {
     // Test that all queries after closing are throwing.
     database.close();
     var thrower = function() {
@@ -50,8 +44,7 @@ function testClose() {
 
     // Test that db can be opened again.
     return hr.db.connect();
-  }, fail).then(function(database) {
+  }).then(function(database) {
     assertNotNull(database);
-    asyncTestCase.continueTesting();
-  }, fail);
+  });
 }

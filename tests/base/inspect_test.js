@@ -16,16 +16,11 @@
  */
 goog.setTestOnly();
 goog.require('goog.Promise');
-goog.require('goog.testing.AsyncTestCase');
 goog.require('goog.testing.jsunit');
 goog.require('lf.Type');
 goog.require('lf.debug.inspect');
 goog.require('lf.schema');
 goog.require('lf.schema.DataStoreType');
-
-
-/** @type {!goog.testing.AsyncTestCase} */
-var asyncTestCase = goog.testing.AsyncTestCase.createAndInstall('Inspect');
 
 
 /** @type {!Date} */
@@ -89,7 +84,6 @@ function addSample2(db) {
 
 
 function testInspector() {
-  asyncTestCase.waitForAsync('testInspector');
   var builders = createSchemaBuilders();
   var promises = builders.map(function(builder) {
     return builder.connect({
@@ -100,7 +94,7 @@ function testInspector() {
 
   var db1;
   var db2;
-  goog.Promise.all(promises).then(function(connections) {
+  return goog.Promise.all(promises).then(function(connections) {
     db1 = connections[0];
     db2 = connections[1];
     return goog.Promise.all([addSample1(db1), addSample2(db2)]);
@@ -113,6 +107,5 @@ function testInspector() {
     assertEquals('[]', lf.debug.inspect('hr', 'Region', undefined, 100));
     assertEquals('[{"id":77,"date":' + JSON.stringify(expectedDate) + '}]',
         lf.debug.inspect('order', 'Region', 1, 77));
-    asyncTestCase.continueTesting();
   });
 }

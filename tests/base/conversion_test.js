@@ -16,7 +16,6 @@
  */
 goog.setTestOnly();
 goog.require('goog.Promise');
-goog.require('goog.testing.AsyncTestCase');
 goog.require('goog.testing.jsunit');
 goog.require('hr.db');
 goog.require('lf.Capability');
@@ -25,11 +24,6 @@ goog.require('lf.TransactionType');
 goog.require('lf.backstore.TableType');
 goog.require('lf.schema.DataStoreType');
 goog.require('lf.service');
-
-
-/** @type {!goog.testing.AsyncTestCase} */
-var asyncTestCase =
-    goog.testing.AsyncTestCase.createAndInstall('ConversionTest');
 
 
 /** @type {!lf.Database} */
@@ -42,21 +36,17 @@ var capability;
 
 function setUp() {
   capability = lf.Capability.get();
-  asyncTestCase.waitForAsync('setUp');
   var options = {
     storeType: !capability.indexedDb ? lf.schema.DataStoreType.MEMORY :
         lf.schema.DataStoreType.INDEXED_DB
   };
-  hr.db.connect(options).then(
+  return hr.db.connect(options).then(
       function(database) {
         db = database;
 
         // Delete any left-overs from previous tests.
         return clearDb();
-      }).then(
-      function() {
-        asyncTestCase.continueTesting();
-      }, fail);
+      });
 }
 
 
@@ -75,8 +65,6 @@ function clearDb() {
 
 
 function testConversions() {
-  asyncTestCase.waitForAsync('testConversions');
-
   var tableSchema = db.getSchema().getDummyTable();
   var row = tableSchema.createRow({
     arrayBuffer: new ArrayBuffer(0),
@@ -118,7 +106,7 @@ function testConversions() {
     return store.get([]);
   };
 
-  insertFn().then(
+  return insertFn().then(
       function() {
         return selectWithoutCacheFn();
       }).then(
@@ -137,7 +125,5 @@ function testConversions() {
         assertEquals(
             lf.Row.binToHex(insertedRow.arraybuffer),
             lf.Row.binToHex(retrievedRow.arraybuffer));
-
-        asyncTestCase.continueTesting();
-      }, fail);
+      });
 }
