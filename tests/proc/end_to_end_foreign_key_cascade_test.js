@@ -15,7 +15,6 @@
  * limitations under the License.
  */
 goog.setTestOnly();
-goog.require('goog.testing.AsyncTestCase');
 goog.require('goog.testing.jsunit');
 goog.require('lf.ConstraintAction');
 goog.require('lf.Type');
@@ -24,41 +23,28 @@ goog.require('lf.schema');
 goog.require('lf.schema.DataStoreType');
 
 
-/** @type {!goog.testing.AsyncTestCase} */
-var asyncTestCase = goog.testing.AsyncTestCase.createAndInstall(
-    'EndToEndForeignKeyCascadeTest');
-
-
 function testDelete_CascadeOnly_Success() {
-  asyncTestCase.waitForAsync('testDelete_CascadeOnly_Success');
   var testCase = new DeleteTestCase_();
-  testCase.runCascadeOnlySuccess().then(
-      function() { asyncTestCase.continueTesting(); }, fail);
+  return testCase.runCascadeOnlySuccess();
 }
 
 
 function testDelete_CascadeAndRestrict_Fail() {
-  asyncTestCase.waitForAsync('testDelete_CascadeAndRestrict_Fail');
   var testCase = new DeleteTestCase_();
-  testCase.runCascadeRestrictFail().then(
-      function() { asyncTestCase.continueTesting(); }, fail);
+  return testCase.runCascadeRestrictFail();
 }
 
 
 function testUpdate_OneForeignKey() {
-  asyncTestCase.waitForAsync('testUpdate_OneForeignKey');
   var testCase = new UpdateOneForeignKeyTestCase_();
-  testCase.run().then(
-      function() { asyncTestCase.continueTesting(); }, fail);
+  return testCase.run();
 }
 
 
 
 function testUpdate_TwoForeignKey_() {
-  asyncTestCase.waitForAsync('testUpdate_TwoForeignKeys');
   var testCase = new UpdateTwoForeignKeysTestCase_();
-  testCase.run().then(
-      function() { asyncTestCase.continueTesting(); }, fail);
+  return testCase.run();
 }
 
 

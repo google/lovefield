@@ -15,7 +15,6 @@
  * limitations under the License.
  */
 goog.setTestOnly();
-goog.require('goog.testing.AsyncTestCase');
 goog.require('goog.testing.jsunit');
 goog.require('hr.db');
 goog.require('lf.op');
@@ -28,22 +27,15 @@ goog.require('lf.schema.DataStoreType');
 goog.require('lf.testing.treeutil');
 
 
-/** @type {!goog.testing.AsyncTestCase} */
-var asyncTestCase = goog.testing.AsyncTestCase.createAndInstall(
-    'CrossProductPassTest');
-
-
 /** @type {!lf.schema.Database} */
 var schema;
 
 
 function setUp() {
-  asyncTestCase.waitForAsync('setUp');
-  hr.db.connect({storeType: lf.schema.DataStoreType.MEMORY}).then(function(db) {
-    schema = db.getSchema();
-  }).then(function() {
-    asyncTestCase.continueTesting();
-  }, fail);
+  return hr.db.connect({storeType: lf.schema.DataStoreType.MEMORY}).then(
+      function(db) {
+        schema = db.getSchema();
+      });
 }
 
 

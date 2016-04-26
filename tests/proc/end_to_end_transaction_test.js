@@ -15,7 +15,8 @@
  * limitations under the License.
  */
 goog.setTestOnly();
-goog.require('goog.testing.AsyncTestCase');
+goog.require('goog.Promise');
+goog.require('goog.testing.TestCase');
 goog.require('goog.testing.jsunit');
 goog.require('hr.db');
 goog.require('lf.fn');
@@ -25,13 +26,9 @@ goog.require('lf.testing.hrSchema.MockDataGenerator');
 goog.require('lf.testing.util');
 
 
-/** @type {!goog.testing.AsyncTestCase} */
-var asyncTestCase = goog.testing.AsyncTestCase.createAndInstall(
-    'EndToEndTransactionTest');
-
-
-/** @type {number} */
-asyncTestCase.stepTimeout = 5 * 1000;  // 5 seconds
+function setUpPage() {
+  goog.testing.TestCase.getActiveTestCase().promiseTimeout = 5 * 1000;  // 5s
+}
 
 
 /** @private {!lf.Database} */
@@ -75,9 +72,8 @@ var tx;
 
 
 function setUp() {
-  asyncTestCase.waitForAsync('setUp');
-  hr.db.connect({storeType: lf.schema.DataStoreType.MEMORY}).then(function(
-      database) {
+  return hr.db.connect({storeType: lf.schema.DataStoreType.MEMORY}).then(
+      function(database) {
         db = database;
         j = db.getSchema().getJob();
         e = db.getSchema().getEmployee();
@@ -88,9 +84,7 @@ function setUp() {
 
         tx = db.createTransaction();
         return addSampleData();
-      }).then(function() {
-    asyncTestCase.continueTesting();
-  }, fail);
+      });
 }
 
 
@@ -153,12 +147,11 @@ function testThrows_StateCreated() {
 /**
  * Tests that an lf.Exception.TRANSACTION is thrown when any operation is
  * attempted while a query is executing.
+ * @return {!IThenable}
  */
 function testThrows_StateExecutingQuery() {
-  asyncTestCase.waitForAsync('testThrows_StateExecutingQuery');
-
   // 107: Invalid transaction state transition: {0} -> {1}.
-  tx.begin([j, e]).then(function() {
+  return tx.begin([j, e]).then(function() {
     tx.attach(db.select().from(e));
 
     lf.testing.util.assertThrowsError(107, attachFn);
@@ -166,20 +159,18 @@ function testThrows_StateExecutingQuery() {
     lf.testing.util.assertThrowsError(107, commitFn);
     lf.testing.util.assertThrowsError(107, rollbackFn);
     lf.testing.util.assertThrowsError(107, execFn);
-    asyncTestCase.continueTesting();
-  }, fail);
+  });
 }
 
 
 /**
  * Tests that an lf.Exception.TRANSACTION is thrown when any operation is
  * attempted after transaction has been finalized.
+ * @return {!IThenable}
  */
 function testThrows_StateFinalized() {
-  asyncTestCase.waitForAsync('testThrows_StateFinalized');
-
   // 107: Invalid transaction state transition: {0} -> {1}.
-  tx.begin([e]).then(function() {
+  return tx.begin([e]).then(function() {
     var whenDone = tx.commit();
     lf.testing.util.assertThrowsError(107, beginFn);
     lf.testing.util.assertThrowsError(107, attachFn);
@@ -188,18 +179,16 @@ function testThrows_StateFinalized() {
     lf.testing.util.assertThrowsError(107, execFn);
 
     return whenDone;
-  }).then(function() {
-    asyncTestCase.continueTesting();
-  }, fail);
+  });
 }
 
 
 /**
  * Tests that an lf.Exception.TRANSACTION is thrown when any operation is
  * attempted while a transaction is still initializing.
+ * @return {!IThenable}
  */
 function testThrows_StateAcquiringScope() {
-  asyncTestCase.waitForAsync('testThrows_StateAcquiringScope');
   var whenDone = tx.begin([e]);
   // 107: Invalid transaction state transition: {0} -> {1}.
   lf.testing.util.assertThrowsError(107, beginFn);
@@ -210,18 +199,16 @@ function testThrows_StateAcquiringScope() {
   // 105: Attempt to access in-flight transaction states.
   lf.testing.util.assertThrowsError(105, statsFn);
 
-  whenDone.then(function() {
-    asyncTestCase.continueTesting();
-  }, fail);
+  return whenDone;
 }
 
 
 /**
  * Tests that an lf.Exception.TRANSACTION is thrown when a set of queries that
  * will be automatically committed (no need to call commit), is in progress.
+ * @return {!IThenable}
  */
 function testThrows_StateExecutingAndCommitting() {
-  asyncTestCase.waitForAsync('testThrows_StateExecutingAndCommitting');
   var whenDone = tx.exec([db.select().from(e)]);
   // 107: Invalid transaction state transition: {0} -> {1}.
   lf.testing.util.assertThrowsError(107, beginFn);
@@ -230,20 +217,17 @@ function testThrows_StateExecutingAndCommitting() {
   lf.testing.util.assertThrowsError(107, rollbackFn);
   lf.testing.util.assertThrowsError(107, execFn);
 
-  whenDone.then(function() {
-    asyncTestCase.continueTesting();
-  }, fail);
+  return whenDone;
 }
 
 
 function testExec() {
-  asyncTestCase.waitForAsync('testExec');
   var tx = db.createTransaction();
   var q1 = db.select(lf.fn.count(j.id).as('jid')).from(j);
   var q2 = db.select(lf.fn.count(d.id).as('did')).from(d);
   var q3 = db.delete().from(e);
   var q4 = db.delete().from(j);
-  tx.exec([q1, q2, q3, q4, q1]).then(function(results) {
+  return tx.exec([q1, q2, q3, q4, q1]).then(function(results) {
     assertEquals(5, results.length);
     assertEquals(sampleJobs.length, results[0][0]['jid']);
     assertEquals(sampleDepartments.length, results[1][0]['did']);
@@ -255,17 +239,13 @@ function testExec() {
     assertEquals(0, stats.updatedRowCount());
     assertEquals(0, stats.insertedRowCount());
     assertEquals(2, stats.changedTableCount());
-
-    asyncTestCase.continueTesting();
-  }, fail);
+  });
 }
 
 
 function testAttach_Success() {
-  asyncTestCase.waitForAsync('testAttach_Success');
-
   var scope = [j, e];
-  tx.begin(scope).then(function() {
+  return tx.begin(scope).then(function() {
     var q1 = db.select().from(j);
     return tx.attach(q1);
   }).then(function(results) {
@@ -326,21 +306,19 @@ function testAttach_Success() {
     return db.select().from(e).exec();
   }).then(function(results) {
     assertTrue(results.length < sampleEmployees.length);
-    asyncTestCase.continueTesting();
-  }, fail);
+  });
 }
 
 
 /**
  * Tests that if an attached query fails, the entire transaction is rolled back.
+ * @return {!IThenable}
  */
 function testAttach_Error() {
-  asyncTestCase.waitForAsync('testAttach_Error');
-
   var scope = [j, e];
   var newJobId = 'SomeUniqueId';
 
-  tx.begin(scope).then(function() {
+  return tx.begin(scope).then(function() {
     var q0 = db.select().from(j);
     return tx.attach(q0);
   }).then(function(results) {
@@ -387,7 +365,6 @@ function testAttach_Error() {
     return db.select().from(j).exec();
   }).then(function(results) {
     assertEquals(sampleJobs.length, results.length);
-    asyncTestCase.continueTesting();
   });
 }
 
@@ -395,14 +372,13 @@ function testAttach_Error() {
 /**
  * Tests that when a transaction is explicitly rolled back, all changes that
  * were made as part of this transaction are discarded.
+ * @return {!IThenable}
  */
 function testRollback() {
-  asyncTestCase.waitForAsync('testRollback');
-
   var scope = [j, e];
   var newJobId = 'SomeUniqueId';
 
-  tx.begin(scope).then(function() {
+  return tx.begin(scope).then(function() {
     // Adding a new job row.
     var newJob = j.createRow();
     newJob.setId(newJobId);
@@ -444,7 +420,6 @@ function testRollback() {
     assertEquals(0, stats.updatedRowCount());
     assertEquals(0, stats.deletedRowCount());
     assertEquals(0, stats.changedTableCount());
-    asyncTestCase.continueTesting();
   });
 }
 
@@ -452,9 +427,10 @@ function testRollback() {
 /**
  * Tests the case where an attached query modifiess the results of an observed
  * query and ensures that observers are triggered.
+ * @return {!IThenable}
  */
 function testAttach_WithObservers() {
-  asyncTestCase.waitForAsync('testAttach_WithObservers');
+  var promiseResolver = goog.Promise.withResolver();
   var scope = [j];
 
   var initialJobCount = sampleJobs.length;
@@ -475,7 +451,7 @@ function testAttach_WithObservers() {
         initialJobCount + additionalJobCount,
         changeEvents[0]['object'].length);
 
-    asyncTestCase.continueTesting();
+    promiseResolver.resolve();
   };
 
   var q = db.select().from(j);
@@ -491,5 +467,8 @@ function testAttach_WithObservers() {
     return tx.attach(q2);
   }).then(function() {
     return tx.commit();
-  }, fail);
+  }, function(e) {
+    promiseResolver.reject(e);
+  });
+  return promiseResolver.promise;
 }

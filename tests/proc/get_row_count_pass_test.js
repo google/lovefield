@@ -15,7 +15,6 @@
  * limitations under the License.
  */
 goog.setTestOnly();
-goog.require('goog.testing.AsyncTestCase');
 goog.require('goog.testing.jsunit');
 goog.require('lf.Type');
 goog.require('lf.fn');
@@ -28,11 +27,6 @@ goog.require('lf.query.SelectContext');
 goog.require('lf.schema');
 goog.require('lf.schema.DataStoreType');
 goog.require('lf.testing.treeutil');
-
-
-/** @type {!goog.testing.AsyncTestCase} */
-var asyncTestCase = goog.testing.AsyncTestCase.createAndInstall(
-    'GetRowCountPassTest');
 
 
 /** @type {!lf.schema.Database} */
@@ -48,14 +42,13 @@ var pass;
 
 
 function setUp() {
-  asyncTestCase.waitForAsync('setUp');
-  getSchemaBuilder().connect({storeType: lf.schema.DataStoreType.MEMORY}).then(
+  var connectOptions = {storeType: lf.schema.DataStoreType.MEMORY};
+  return getSchemaBuilder().connect(connectOptions).then(
       function(db) {
         schema = db.getSchema();
         global = db.global_;
         pass = new lf.proc.GetRowCountPass(global);
-        asyncTestCase.continueTesting();
-      }, fail);
+      });
 }
 
 

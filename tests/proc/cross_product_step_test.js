@@ -15,7 +15,6 @@
  * limitations under the License.
  */
 goog.setTestOnly();
-goog.require('goog.testing.AsyncTestCase');
 goog.require('goog.testing.jsunit');
 goog.require('lf.proc.CrossProductStep');
 goog.require('lf.proc.NoOpStep');
@@ -24,32 +23,22 @@ goog.require('lf.testing.MockEnv');
 goog.require('lf.testing.getSchemaBuilder');
 
 
-/** @type {!goog.testing.AsyncTestCase} */
-var asyncTestCase = goog.testing.AsyncTestCase.createAndInstall(
-    'CrossProductTest');
-
-
 /** @type {!lf.schema.Database} */
 var schema;
 
 
 function setUp() {
-  asyncTestCase.waitForAsync('setUp');
-
   schema = lf.testing.getSchemaBuilder().getSchema();
   var env = new lf.testing.MockEnv(schema);
-  env.init().then(function() {
-    asyncTestCase.continueTesting();
-  }, fail);
+  return env.init();
 }
 
 
 /**
  * Tests that a cross product is calculated correctly.
+ * @return {!IThenable}
  */
 function testCrossProduct() {
-  asyncTestCase.waitForAsync('testCrossProduct');
-
   var leftRowCount = 3;
   var rightRowCount = 4;
 
@@ -80,7 +69,7 @@ function testCrossProduct() {
   step.addChild(leftChild);
   step.addChild(rightChild);
 
-  step.exec().then(function(relations) {
+  return step.exec().then(function(relations) {
     var relation = relations[0];
     assertEquals(leftRowCount * rightRowCount, relation.entries.length);
     relation.entries.forEach(function(entry) {
@@ -89,14 +78,11 @@ function testCrossProduct() {
       assertTrue(goog.isDefAndNotNull(entry.getField(rightTable['id'])));
       assertTrue(goog.isDefAndNotNull(entry.getField(rightTable['email'])));
     });
-    asyncTestCase.continueTesting();
-  }, fail);
+  });
 }
 
 
 function testCrossProduct_PreviousJoins() {
-  asyncTestCase.waitForAsync('testCrossProduct_PreviousJoins');
-
   var relation1Count = 3;
   var relation2Count = 4;
   var relation3Count = 5;
@@ -148,7 +134,7 @@ function testCrossProduct_PreviousJoins() {
   crossProductStep123.addChild(crossProductStep12);
   crossProductStep123.addChild(relation3Step);
 
-  crossProductStep123.exec().then(function(results) {
+  return crossProductStep123.exec().then(function(results) {
     var result = results[0];
 
     // Expecting the final result to be a cross product of all 3 tables.
@@ -163,6 +149,5 @@ function testCrossProduct_PreviousJoins() {
       assertTrue(goog.isDefAndNotNull(entry.getField(table3['id'])));
       assertTrue(goog.isDefAndNotNull(entry.getField(table3['email'])));
     });
-    asyncTestCase.continueTesting();
-  }, fail);
+  });
 }

@@ -15,16 +15,10 @@
  * limitations under the License.
  */
 goog.setTestOnly();
-goog.require('goog.testing.AsyncTestCase');
 goog.require('goog.testing.jsunit');
 goog.require('hr.db');
 goog.require('lf.schema.DataStoreType');
 goog.require('lf.testing.hrSchemaSampleData');
-
-
-/** @type {!goog.testing.AsyncTestCase} */
-var asyncTestCase = goog.testing.AsyncTestCase.createAndInstall(
-    'ExportTaskTest');
 
 
 /** @type {!lf.Database} */
@@ -40,21 +34,16 @@ var ROW_COUNT = 2;
 
 
 function setUp() {
-  asyncTestCase.waitForAsync('setUp');
-  hr.db.connect({storeType: lf.schema.DataStoreType.MEMORY}).then(function(
-      database) {
+  return hr.db.connect({storeType: lf.schema.DataStoreType.MEMORY}).then(
+      function(database) {
         db = database;
         j = db.getSchema().getJob();
-        asyncTestCase.continueTesting();
-      }, fail);
+      });
 }
 
 
 function tearDown() {
-  asyncTestCase.waitForAsync('tearDown');
-  db.delete().from(j).exec().then(function() {
-    asyncTestCase.continueTesting();
-  });
+  return db.delete().from(j).exec();
 }
 
 
@@ -104,11 +93,9 @@ function testExport() {
     }
   };
 
-  asyncTestCase.waitForAsync('testExport');
-  insertSampleJobs().then(function() {
+  return insertSampleJobs().then(function() {
     return db.export();
   }).then(function(results) {
     assertObjectEquals(EXPECTED, results);
-    asyncTestCase.continueTesting();
   });
 }

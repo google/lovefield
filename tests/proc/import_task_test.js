@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 goog.setTestOnly();
-goog.require('goog.testing.AsyncTestCase');
+goog.require('goog.testing.TestCase');
 goog.require('goog.testing.jsunit');
 goog.require('lf.Capability');
 goog.require('lf.schema.DataStoreType');
@@ -24,21 +24,13 @@ goog.require('lf.testing.hrSchema.getSchemaBuilder');
 goog.require('lf.testing.util');
 
 
-/** @type {!goog.testing.AsyncTestCase} */
-var asyncTestCase = goog.testing.AsyncTestCase.createAndInstall(
-    'ImportTaskTest');
-
-
-/** @type {number} */
-asyncTestCase.stepTimeout = 30 * 1000;  // 30 seconds.
-
-
 /** @type {!lf.Capability} */
 var capability;
 
 
 function setUpPage() {
   capability = lf.Capability.get();
+  goog.testing.TestCase.getActiveTestCase().promiseTimeout = 30 * 1000;  // 30s
 }
 
 
@@ -96,9 +88,7 @@ function runTestImport(options) {
 }
 
 function testImport_MemDB() {
-  asyncTestCase.waitForAsync('testImport_MemDB');
-  runTestImport({storeType: lf.schema.DataStoreType.MEMORY}).then(
-      asyncTestCase.continueTesting.bind(asyncTestCase), fail);
+  return runTestImport({storeType: lf.schema.DataStoreType.MEMORY});
 }
 
 function testImport_IndexedDB() {
@@ -106,9 +96,7 @@ function testImport_IndexedDB() {
     return;
   }
 
-  asyncTestCase.waitForAsync('testImport_IndexedDB');
-  runTestImport({storeType: lf.schema.DataStoreType.INDEXED_DB}).then(
-      asyncTestCase.continueTesting.bind(asyncTestCase), fail);
+  return runTestImport({storeType: lf.schema.DataStoreType.INDEXED_DB});
 }
 
 function testImport_WebSql() {
@@ -116,9 +104,7 @@ function testImport_WebSql() {
     return;
   }
 
-  asyncTestCase.waitForAsync('testImport_WebSql');
-  runTestImport({storeType: lf.schema.DataStoreType.WEB_SQL}).then(
-      asyncTestCase.continueTesting.bind(asyncTestCase), fail);
+  return runTestImport({storeType: lf.schema.DataStoreType.WEB_SQL});
 }
 
 function disabledTestBenchmark() {
@@ -195,12 +181,10 @@ function disabledTestBenchmark() {
   };
 
 
-  asyncTestCase.waitForAsync('testBenchmark');
-  lf.testing.util.sequentiallyRun(fill(runImport)).then(function() {
+  return lf.testing.util.sequentiallyRun(fill(runImport)).then(function() {
     compute();
     return lf.testing.util.sequentiallyRun(fill(runInsert));
   }).then(function() {
     compute();
-    asyncTestCase.continueTesting();
   });
 }

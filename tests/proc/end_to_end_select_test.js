@@ -15,38 +15,28 @@
  * limitations under the License.
  */
 goog.setTestOnly();
-goog.require('goog.testing.AsyncTestCase');
+goog.require('goog.testing.TestCase');
 goog.require('goog.testing.jsunit');
 goog.require('hr.db');
 goog.require('lf.testing.EndToEndSelectTester');
 goog.require('lf.testing.hrSchema.getSchemaBuilder');
 
 
-/** @type {!goog.testing.AsyncTestCase} */
-var asyncTestCase = goog.testing.AsyncTestCase.createAndInstall(
-    'EndToEndSelectTest');
-
-
-/** @type {number} */
-asyncTestCase.stepTimeout = 10 * 1000;  // 10 seconds
+function setUpPage() {
+  goog.testing.TestCase.getActiveTestCase().promiseTimeout = 10 * 1000;  // 10s
+}
 
 
 function testEndToEnd_StaticSchema() {
-  asyncTestCase.waitForAsync('testEndToEnd_StaticSchema');
   var selectTester = new lf.testing.EndToEndSelectTester(
       hr.db.connect);
-  selectTester.run().then(function() {
-    asyncTestCase.continueTesting();
-  });
+  return selectTester.run();
 }
 
 
 function testEndToEnd_DynamicSchema() {
-  asyncTestCase.waitForAsync('testEndToEnd_DynamicSchema');
   var schemaBuilder = lf.testing.hrSchema.getSchemaBuilder();
   var selectTester = new lf.testing.EndToEndSelectTester(
       schemaBuilder.connect.bind(schemaBuilder));
-  selectTester.run().then(function() {
-    asyncTestCase.continueTesting();
-  });
+  return selectTester.run();
 }

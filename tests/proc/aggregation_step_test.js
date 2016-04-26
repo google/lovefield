@@ -17,7 +17,6 @@
 goog.setTestOnly();
 goog.require('goog.Promise');
 goog.require('goog.math');
-goog.require('goog.testing.AsyncTestCase');
 goog.require('goog.testing.jsunit');
 goog.require('hr.db');
 goog.require('lf.eval.Type');
@@ -28,11 +27,6 @@ goog.require('lf.proc.NoOpStep');
 goog.require('lf.proc.Relation');
 goog.require('lf.testing.NullableDataGenerator');
 goog.require('lf.testing.hrSchema.MockDataGenerator');
-
-
-/** @type {!goog.testing.AsyncTestCase} */
-var asyncTestCase = goog.testing.AsyncTestCase.createAndInstall(
-    'AggregationStepTest');
 
 
 /** @type {!hr.db.schema.Employee} */
@@ -63,7 +57,7 @@ var nullableGenerator;
  * @param {number|string|!Date} value
  * @return {boolean}
  */
-function testEquals(expected, value) {
+function checkEquals(expected, value) {
   return expected == value;
 }
 
@@ -73,7 +67,7 @@ function testEquals(expected, value) {
  * @param {number} value
  * @return {boolean}
  */
-function testFloatEquals(expected, value) {
+function checkFloatEquals(expected, value) {
   // The precision to use when comparing floating point numbers.
   var epsilon = Math.pow(10, -9);
   return goog.math.nearlyEquals(expected, value, epsilon);
@@ -116,355 +110,308 @@ function getEmployeeDatasetWithNulls() {
 }
 
 function testExec_Min() {
-  asyncTestCase.waitForAsync('testExec_Min');
-  checkCalculation(
+  return checkCalculation(
       lf.fn.min(j.maxSalary),
       dataGenerator.jobGroundTruth.minMaxSalary,
-      testEquals).
-      then(asyncTestCase.continueTesting.bind(asyncTestCase), fail);
+      checkEquals);
 }
 
 
 function testExec_MinNullableColumn() {
   var data = getEmployeeDatasetWithNulls();
-  asyncTestCase.waitForAsync('testExec_MinNullableColumn');
   var inputRelation = lf.proc.Relation.fromRows(
       dataGenerator.sampleEmployees.concat(data), [e.getName()]);
-  checkCalculationForRelation(
+  return checkCalculationForRelation(
       inputRelation, lf.fn.min(e.hireDate),
-      dataGenerator.employeeGroundTruth.minHireDate, testEquals).
-      then(asyncTestCase.continueTesting.bind(asyncTestCase), fail);
+      dataGenerator.employeeGroundTruth.minHireDate, checkEquals);
 }
 
 
 function testExec_MinEmptyTable() {
-  asyncTestCase.waitForAsync('testExec_MinEmptyTable');
   var inputRelation = lf.proc.Relation.fromRows([], [e.getName()]);
-  checkCalculationForRelation(
+  return checkCalculationForRelation(
       inputRelation, lf.fn.min(e.hireDate),
-      null, testEquals).
-      then(asyncTestCase.continueTesting.bind(asyncTestCase), fail);
+      null, checkEquals);
 }
 
 
 function testExec_Max() {
-  asyncTestCase.waitForAsync('testExec_Max');
-  checkCalculation(
+  return checkCalculation(
       lf.fn.max(j.maxSalary),
       dataGenerator.jobGroundTruth.maxMaxSalary,
-      testEquals).
-      then(asyncTestCase.continueTesting.bind(asyncTestCase), fail);
+      checkEquals);
 }
 
 
 function testExec_MaxNullableColumn() {
   var data = getEmployeeDatasetWithNulls();
-  asyncTestCase.waitForAsync('testExec_MaxNullableColumn');
   var inputRelation = lf.proc.Relation.fromRows(
       dataGenerator.sampleEmployees.concat(data), [e.getName()]);
-  checkCalculationForRelation(
+  return checkCalculationForRelation(
       inputRelation, lf.fn.max(e.hireDate),
-      dataGenerator.employeeGroundTruth.maxHireDate, testEquals).
-      then(asyncTestCase.continueTesting.bind(asyncTestCase), fail);
+      dataGenerator.employeeGroundTruth.maxHireDate, checkEquals);
 }
 
 
 function testExec_MaxEmptyTable() {
-  asyncTestCase.waitForAsync('testExec_MaxEmptyTable');
   var inputRelation = lf.proc.Relation.fromRows([], [e.getName()]);
-  checkCalculationForRelation(
+  return checkCalculationForRelation(
       inputRelation, lf.fn.max(e.hireDate),
-      null, testEquals).
-      then(asyncTestCase.continueTesting.bind(asyncTestCase), fail);
+      null, checkEquals);
 }
 
 
 function testExec_Distinct() {
-  asyncTestCase.waitForAsync('testExec_Distinct');
-  checkCalculation(
+  return checkCalculation(
       lf.fn.distinct(j.maxSalary),
       dataGenerator.jobGroundTruth.distinctMaxSalary,
-      testEquals).
-      then(asyncTestCase.continueTesting.bind(asyncTestCase), fail);
+      checkEquals);
 }
 
 
 function testExec_DistinctNullableColumn() {
   var data = getEmployeeDatasetWithNulls();
-  asyncTestCase.waitForAsync('testExec_DistinctNullableColumn');
   var expectedHireDates = dataGenerator.employeeGroundTruth.distinctHireDates;
   expectedHireDates.push(null);
   var inputRelation = lf.proc.Relation.fromRows(
       dataGenerator.sampleEmployees.concat(data), [e.getName()]);
-  checkCalculationForRelation(
+  return checkCalculationForRelation(
       inputRelation, lf.fn.distinct(e.hireDate),
-      expectedHireDates, testEquals).
-      then(asyncTestCase.continueTesting.bind(asyncTestCase), fail);
+      expectedHireDates, checkEquals);
 }
 
 
 /**
  * Count on a distinct column ignores nulls returned from distinct.
+ * @return {!IThenable}
  */
 function testExec_CountDistinctNullableColumn() {
-  asyncTestCase.waitForAsync('testExec_CountDistinctNullableColumn');
   var data = getEmployeeDatasetWithNulls();
   var inputRelation = lf.proc.Relation.fromRows(
       dataGenerator.sampleEmployees.concat(data), [e.getName()]);
-  checkCalculationForRelation(
+  return checkCalculationForRelation(
       inputRelation,
       lf.fn.count(lf.fn.distinct(e.hireDate)),
       dataGenerator.employeeGroundTruth.distinctHireDates.length,
-      testEquals).
-      then(asyncTestCase.continueTesting.bind(asyncTestCase), fail);
+      checkEquals);
 }
 
 
 function testExec_Count_Distinct() {
-  asyncTestCase.waitForAsync('testExec_Count_Distinct');
-  checkCalculation(
+  return checkCalculation(
       lf.fn.count(lf.fn.distinct(j.minSalary)),
       dataGenerator.jobGroundTruth.countDistinctMinSalary,
-      testEquals).
-      then(asyncTestCase.continueTesting.bind(asyncTestCase), fail);
+      checkEquals);
 }
 
 
 function testExec_CountNullableColumn() {
-  asyncTestCase.waitForAsync('testExec_CountNullableColumn');
   var data = getEmployeeDatasetWithNulls();
   var inputRelation = lf.proc.Relation.fromRows(
       dataGenerator.sampleEmployees.concat(data), [e.getName()]);
-  checkCalculationForRelation(
+  return checkCalculationForRelation(
       inputRelation, lf.fn.count(e.hireDate),
-      dataGenerator.sampleEmployees.length, testEquals).
-      then(asyncTestCase.continueTesting.bind(asyncTestCase), fail);
+      dataGenerator.sampleEmployees.length, checkEquals);
 }
 
 
 function testExec_CountStar() {
-  asyncTestCase.waitForAsync('testExec_CountStar');
   var data = getEmployeeDatasetWithNulls();
   var inputRelation = lf.proc.Relation.fromRows(
       dataGenerator.sampleEmployees.concat(data), [e.getName()]);
-  checkCalculationForRelation(
+  return checkCalculationForRelation(
       inputRelation, lf.fn.count(),
-      dataGenerator.sampleEmployees.length + data.length, testEquals).
-      then(asyncTestCase.continueTesting.bind(asyncTestCase), fail);
+      dataGenerator.sampleEmployees.length + data.length, checkEquals);
 }
 
 
 function testExec_Avg_Distinct() {
-  asyncTestCase.waitForAsync('testExec_Avg_Distinct');
-  checkCalculation(
+  return checkCalculation(
       lf.fn.avg(lf.fn.distinct(j.minSalary)),
       dataGenerator.jobGroundTruth.avgDistinctMinSalary,
-      testFloatEquals).
-      then(asyncTestCase.continueTesting.bind(asyncTestCase), fail);
+      checkFloatEquals);
 }
 
 
 /**
  * Tests for average distinct on TableA which has a mix of null and
  * non-null values for the column.
+ * @return {!IThenable}
  */
 function testExec_AvgDistinctNullableColumn() {
-  asyncTestCase.waitForAsync('testExec_AvgDistinctNullableColumn');
   var tableA = schemaWithNullable.table('TableA');
   var inputRelation = lf.proc.Relation.fromRows(
       nullableGenerator.sampleTableARows, [tableA.getName()]);
-  checkCalculationForRelation(
+  return checkCalculationForRelation(
       inputRelation, lf.fn.avg(lf.fn.distinct(tableA['id'])),
-      nullableGenerator.tableAGroundTruth.avgDistinctId, testFloatEquals).
-      then(asyncTestCase.continueTesting.bind(asyncTestCase), fail);
+      nullableGenerator.tableAGroundTruth.avgDistinctId, checkFloatEquals);
 }
 
 
 /**
  * Tests for average on TableB which has only null values for the
+ * @return {!IThenable}
  * column.
  */
 function testExec_Avg_NullRows() {
-  asyncTestCase.waitForAsync('testExec_Avg_NullRows');
   var tableB = schemaWithNullable.table('TableB');
   var inputRelation = lf.proc.Relation.fromRows(
       nullableGenerator.sampleTableBRows, [tableB.getName()]);
-  checkCalculationForRelation(
+  return checkCalculationForRelation(
       inputRelation, lf.fn.avg(tableB['id']),
-      null, testEquals).
-      then(asyncTestCase.continueTesting.bind(asyncTestCase), fail);
+      null, checkEquals);
 }
 
 
 function testExec_Avg_Empty() {
-  asyncTestCase.waitForAsync('testExec_Avg_Empty');
   var inputRelation = lf.proc.Relation.createEmpty();
-  checkCalculationForRelation(
+  return checkCalculationForRelation(
       inputRelation, lf.fn.avg(j.maxSalary),
-      null, testEquals).
-      then(asyncTestCase.continueTesting.bind(asyncTestCase), fail);
+      null, checkEquals);
 }
 
 
 function testExec_Sum_Distinct() {
-  asyncTestCase.waitForAsync('testExec_Sum_Distinct');
-  checkCalculation(
+  return checkCalculation(
       lf.fn.sum(lf.fn.distinct(j.minSalary)),
       dataGenerator.jobGroundTruth.sumDistinctMinSalary,
-      testEquals).
-      then(asyncTestCase.continueTesting.bind(asyncTestCase), fail);
+      checkEquals);
 }
 
 
 /**
  * Tests for sum distinct on TableA which has a mix of null and
+ * @return {!IThenable}
  * non-null values for the column.
  */
 function testExec_SumDistinctNullableColumn() {
-  asyncTestCase.waitForAsync('testExec_SumDistinctNullableColumn');
   var tableA = schemaWithNullable.table('TableA');
   var inputRelation = lf.proc.Relation.fromRows(
       nullableGenerator.sampleTableARows, [tableA.getName()]);
-  checkCalculationForRelation(
+  return checkCalculationForRelation(
       inputRelation, lf.fn.sum(lf.fn.distinct(tableA['id'])),
-      nullableGenerator.tableAGroundTruth.sumDistinctId, testEquals).
-      then(asyncTestCase.continueTesting.bind(asyncTestCase), fail);
+      nullableGenerator.tableAGroundTruth.sumDistinctId, checkEquals);
 }
 
 
 /**
  * Tests for sum on empty table.
+ * @return {!IThenable}
  */
 function testExec_SumEmptyTable() {
-  asyncTestCase.waitForAsync('testExec_SumEmptyTable');
   var inputRelation = lf.proc.Relation.createEmpty();
-  checkCalculationForRelation(
+  return checkCalculationForRelation(
       inputRelation, lf.fn.sum(j.maxSalary),
-      null, testEquals).
-      then(asyncTestCase.continueTesting.bind(asyncTestCase), fail);
+      null, checkEquals);
 }
 
 
 /**
  * Tests for sum on TableB which has only null values for the
  * column.
+ * @return {!IThenable}
  */
 function testExec_Sum_NullRows() {
-  asyncTestCase.waitForAsync('testExec_Sum_NullRows');
   var tableB = schemaWithNullable.table('TableB');
   var inputRelation = lf.proc.Relation.fromRows(
       nullableGenerator.sampleTableBRows, [tableB.getName()]);
-  checkCalculationForRelation(
+  return checkCalculationForRelation(
       inputRelation, lf.fn.sum(tableB['id']),
-      null, testEquals).
-      then(asyncTestCase.continueTesting.bind(asyncTestCase), fail);
+      null, checkEquals);
 }
 
 
 function testExec_Stddev_Distinct() {
-  asyncTestCase.waitForAsync('testExec_Stddev_Distinct');
-  checkCalculation(
+  return checkCalculation(
       lf.fn.stddev(lf.fn.distinct(j.minSalary)),
       dataGenerator.jobGroundTruth.stddevDistinctMinSalary,
-      testFloatEquals).
-      then(asyncTestCase.continueTesting.bind(asyncTestCase), fail);
+      checkFloatEquals);
 }
 
 
 /**
  * Tests for Stddev distinct on TableA which has a mix of null and
  * non-null values for the column.
+ * @return {!IThenable}
  */
 function testExec_StddevDistinctNullableColumn() {
-  asyncTestCase.waitForAsync('testExec_StddevDistinctNullableColumn');
   var tableA = schemaWithNullable.table('TableA');
   var inputRelation = lf.proc.Relation.fromRows(
       nullableGenerator.sampleTableARows, [tableA.getName()]);
-  checkCalculationForRelation(
+  return checkCalculationForRelation(
       inputRelation, lf.fn.stddev(lf.fn.distinct(tableA['id'])),
-      nullableGenerator.tableAGroundTruth.stddevDistinctId, testFloatEquals).
-      then(asyncTestCase.continueTesting.bind(asyncTestCase), fail);
+      nullableGenerator.tableAGroundTruth.stddevDistinctId, checkFloatEquals);
 }
 
 
 /**
  * Tests for Stddev on empty table.
+ * @return {!IThenable}
  */
 function testExec_StddevEmptyTable() {
-  asyncTestCase.waitForAsync('testExec_StddevEmptyTable');
   var inputRelation = lf.proc.Relation.createEmpty();
-  checkCalculationForRelation(
+  return checkCalculationForRelation(
       inputRelation, lf.fn.stddev(j.maxSalary),
-      null, testEquals).
-      then(asyncTestCase.continueTesting.bind(asyncTestCase), fail);
+      null, checkEquals);
 }
 
 
 /**
  * Tests for Stddev on TableB which has only null values for the column.
+ * @return {!IThenable}
  */
 function testExec_Stddev_NullRows() {
-  asyncTestCase.waitForAsync('testExec_Stddev_NullRows');
   var tableB = schemaWithNullable.table('TableB');
   var inputRelation = lf.proc.Relation.fromRows(
       nullableGenerator.sampleTableBRows, [tableB.getName()]);
-  checkCalculationForRelation(
+  return checkCalculationForRelation(
       inputRelation, lf.fn.stddev(tableB['id']),
-      null, testEquals).
-      then(asyncTestCase.continueTesting.bind(asyncTestCase), fail);
+      null, checkEquals);
 }
 
 
 function testExec_Geomean_Distinct() {
-  asyncTestCase.waitForAsync('testExec_Geomean_Distinct');
-  checkCalculation(
+  return checkCalculation(
       lf.fn.geomean(lf.fn.distinct(j.maxSalary)),
       dataGenerator.jobGroundTruth.geomeanDistinctMaxSalary,
-      testFloatEquals).
-      then(asyncTestCase.continueTesting.bind(asyncTestCase), fail);
+      checkFloatEquals);
 }
 
 
 function testExec_Geomean_Empty() {
-  asyncTestCase.waitForAsync('testExec_Geomean_Empty');
-  var inputRelation = lf.proc.Relation.createEmpty();
-  checkCalculationForRelation(
-      inputRelation, lf.fn.geomean(j.maxSalary),
-      null, testEquals).
-      then(asyncTestCase.continueTesting.bind(asyncTestCase), fail);
+  return checkCalculationForRelation(
+      lf.proc.Relation.createEmpty(),
+      lf.fn.geomean(j.maxSalary),
+      null, checkEquals);
 }
 
 
 /**
  * Tests for geomean distinct on TableA which has a mix of null and
  * non-null values for the column.
+ * @return {!IThenable}
  */
 function testExec_GeomeanDistinctNullableColumn() {
-  asyncTestCase.waitForAsync('testExec_GeomeanDistinctNullableColumn');
   var tableA = schemaWithNullable.table('TableA');
   var inputRelation = lf.proc.Relation.fromRows(
       nullableGenerator.sampleTableARows, [tableA.getName()]);
-  checkCalculationForRelation(
+  return checkCalculationForRelation(
       inputRelation, lf.fn.geomean(lf.fn.distinct(tableA['id'])),
-      nullableGenerator.tableAGroundTruth.geomeanDistinctId, testFloatEquals).
-      then(asyncTestCase.continueTesting.bind(asyncTestCase), fail);
+      nullableGenerator.tableAGroundTruth.geomeanDistinctId, checkFloatEquals);
 }
 
 
 /**
  * Tests for Geomean on TableB which has only null values for the
  * column.
+ * @return {!IThenable}
  */
 function testExec_Geomean_NullRows() {
-  asyncTestCase.waitForAsync('testExec_Geomean_NullRows');
   var tableB = schemaWithNullable.table('TableB');
   var inputRelation = lf.proc.Relation.fromRows(
       nullableGenerator.sampleTableBRows, [tableB.getName()]);
-  checkCalculationForRelation(
-      inputRelation,
-      lf.fn.geomean(tableB['id']),
-      null, testEquals).
-      then(asyncTestCase.continueTesting.bind(asyncTestCase), fail);
+  return checkCalculationForRelation(
+      inputRelation, lf.fn.geomean(tableB['id']), null, checkEquals);
 }
 
 
@@ -558,10 +505,9 @@ function checkCalculationForRelation(
 /**
  * Tests that AggregationStep is using existing aggregation result
  * (pre-calculated by previous steps).
+ * @return {!IThenable}
  */
 function testExec_UsesExistingResult() {
-  asyncTestCase.waitForAsync('testExec_UsesExistingResult');
-
   var inputRelation = lf.proc.Relation.fromRows([], [j.getName()]);
   var aggregatedColumn = lf.fn.count();
   var aggregationResult = 100;
@@ -570,10 +516,9 @@ function testExec_UsesExistingResult() {
   var aggregationStep = new lf.proc.AggregationStep([aggregatedColumn]);
   aggregationStep.addChild(childStep);
 
-  aggregationStep.exec().then(function(relations) {
+  return aggregationStep.exec().then(function(relations) {
     assertEquals(
         aggregationResult,
         relations[0].getAggregationResult(aggregatedColumn));
-    asyncTestCase.continueTesting();
-  }, fail);
+  });
 }

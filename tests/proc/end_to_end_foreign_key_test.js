@@ -15,18 +15,12 @@
  * limitations under the License.
  */
 goog.setTestOnly();
-goog.require('goog.testing.AsyncTestCase');
 goog.require('goog.testing.jsunit');
 goog.require('lf.ConstraintTiming');
 goog.require('lf.Type');
 goog.require('lf.schema');
 goog.require('lf.schema.DataStoreType');
 goog.require('lf.testing.util');
-
-
-/** @type {!goog.testing.AsyncTestCase} */
-var asyncTestCase = goog.testing.AsyncTestCase.createAndInstall(
-    'EndToEndForeignKeyTest');
 
 
 /** @type {!lf.Database} */
@@ -50,9 +44,8 @@ var childTable;
 
 
 function setUp() {
-  asyncTestCase.waitForAsync('setUp');
   var builder = getSchemaBuilder();
-  builder.connect({
+  return builder.connect({
     storeType: lf.schema.DataStoreType.MEMORY
   }).then(function(database) {
     db = database;
@@ -60,8 +53,6 @@ function setUp() {
     sampleRows = getSampleRows();
     parentTable = db.getSchema().table('Parent');
     childTable = db.getSchema().table('Child');
-
-    asyncTestCase.continueTesting();
   });
 }
 
@@ -90,102 +81,87 @@ function getSchemaBuilder() {
 /**
  * Tests that a query that does not violate DEFERRABLE constraints completes
  * successfully when an implicit transaction is used.
+ * @return {!IThenable}
  */
 function testDeferrable_ImplicitTx_Success() {
-  asyncTestCase.waitForAsync('testDeferrable_ImplicitTx_Error');
-
   var parentRow = sampleRows[0];
 
-  db.insert().into(parentTable).values([parentRow]).exec().then(
+  return db.insert().into(parentTable).values([parentRow]).exec().then(
       function() {
         return lf.testing.util.selectAll(global, parentTable);
       }).then(
       function(results) {
         assertEquals(1, results.length);
         assertEquals(parentRow.payload()['id'], results[0].payload()['id']);
-        asyncTestCase.continueTesting();
-      }, fail);
+      });
 }
 
 
 /**
  * Tests that a DEFERRABLE constraint violation results in the appropriate error
  * when an implicit transaction is used.
+ * @return {!IThenable}
  */
 function testDeferrable_ImplicitTx_Error() {
-  asyncTestCase.waitForAsync('testDeferrable_ImplicitTx_Error');
-
-  var childRow = sampleRows[1];
-
-  lf.testing.util.assertPromiseReject(
-      203,
-      db.insert().into(childTable).values([childRow]).exec()).then(
-      function() {
-        asyncTestCase.continueTesting();
-      });
+  return lf.testing.util.assertPromiseReject(
+      203, db.insert().into(childTable).values([sampleRows[1]]).exec());
 }
 
 
 /**
  * Tests that a child column value of null, does not trigger a foreign key
  * constraint violation, instead it is ignored.
+ * @return {!IThenable}
  */
 function testDeferrable_ImplicitTx_IgnoreNull() {
-  asyncTestCase.waitForAsync('testDeferrable_ImplicitTx_IgnoreNull');
-
   var childRow = childTable.createRow({
     id: 'childId',
     parentId: null,
     name: 'childName'
   });
 
-  db.insert().into(childTable).values([childRow]).exec().then(
+  return db.insert().into(childTable).values([childRow]).exec().then(
       function() {
         return lf.testing.util.selectAll(global, childTable);
       }).then(
       function(results) {
         assertEquals(1, results.length);
         assertNull(results[0].payload()['parentId']);
-        asyncTestCase.continueTesting();
-      }, fail);
+      });
 }
 
 
 /**
  * Tests that a DEFERRABLE constraint violation during insertion, results in the
  * appropriate error when an explicit transaction is used.
+ * @return {!IThenable}
  */
 function testDeferrable_ExplicitTx_Insert_Error() {
-  asyncTestCase.waitForAsync('testDeferrable_ExplicitTx_Insert_Error');
-
   var childTable = db.getSchema().table('Child');
   var childRow = getSampleRows()[1];
 
   var tx = db.createTransaction();
-  tx.begin([childTable]).then(function() {
+  return tx.begin([childTable]).then(function() {
     var q1 = db.insert().into(childTable).values([childRow]);
     return tx.attach(q1);
   }).then(function() {
     return lf.testing.util.assertPromiseReject(203, tx.commit());
-  }).then(function() {
-    asyncTestCase.continueTesting();
-  }, fail);
+  });
 }
 
 
 /**
  * Tests that a DEFERRABLE constraint violation during deletion, results in the
  * appropriate error when an explicit transaction is used.
+ * @return {!IThenable}
  */
 function testDeferrable_ExplicitTx_Delete_Error() {
-  asyncTestCase.waitForAsync('testDeferrable_ExplicitTx_Delete_Error');
-
   var parentRow = sampleRows[0];
   var childRow = sampleRows[1];
 
   var tx1 = db.createTransaction();
   var tx2 = null;
-  tx1.exec([
+  return tx1.exec([
     db.insert().into(parentTable).values([parentRow]),
     db.insert().into(childTable).values([childRow])
   ]).then(function() {
@@ -196,25 +172,22 @@ function testDeferrable_ExplicitTx_Delete_Error() {
     return tx2.attach(db.delete().from(parentTable));
   }).then(function() {
     return lf.testing.util.assertPromiseReject(203, tx2.commit());
-  }).then(function() {
-    asyncTestCase.continueTesting();
-  }, fail);
+  });
 }
 
 
 /**
  * Tests that a DEFERRABLE constraint violation during updating, results in the
  * appropriate error when an explicit transaction is used.
+ * @return {!IThenable}
  */
 function testDeferrable_ExplicitTx_Update_Error() {
-  asyncTestCase.waitForAsync('testDeferrable_ExplicitTx_Delete_Error');
-
   var parentRow = sampleRows[0];
   var childRow = sampleRows[1];
 
   var tx1 = db.createTransaction();
   var tx2 = null;
-  tx1.exec([
+  return tx1.exec([
     db.insert().into(parentTable).values([parentRow]),
     db.insert().into(childTable).values([childRow])
   ]).then(function() {
@@ -226,24 +199,21 @@ function testDeferrable_ExplicitTx_Update_Error() {
     return tx2.attach(q);
   }).then(function() {
     return lf.testing.util.assertPromiseReject(203, tx2.commit());
-  }).then(function() {
-    asyncTestCase.continueTesting();
-  }, fail);
+  });
 }
 
 
 /**
  * Tests that a DEFERRABLE constraint violation does NOT result in an error, if
  * the constraint is met by the time the transaction is committed.
+ * @return {!IThenable}
  */
 function testDeferrable_ExplicitTx_Success() {
-  asyncTestCase.waitForAsync('testDeferrable_ExplicitTx_Success');
-
   var parentRow = sampleRows[0];
   var childRow = sampleRows[1];
 
   var tx = db.createTransaction();
-  tx.begin([parentTable, childTable]).then(function() {
+  return tx.begin([parentTable, childTable]).then(function() {
     // Inserting child first, even though parent does not exist yet.
     var q1 = db.insert().into(childTable).values([childRow]);
     return tx.attach(q1);
@@ -262,8 +232,7 @@ function testDeferrable_ExplicitTx_Success() {
   }).then(function(results) {
     assertEquals(1, results.length);
     assertEquals(childRow.payload()['id'], results[0].payload()['id']);
-    asyncTestCase.continueTesting();
-  }, fail);
+  });
 }
 
 
