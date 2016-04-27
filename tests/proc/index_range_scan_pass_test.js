@@ -15,7 +15,6 @@
  * limitations under the License.
  */
 goog.setTestOnly();
-goog.require('goog.testing.AsyncTestCase');
 goog.require('goog.testing.PropertyReplacer');
 goog.require('goog.testing.jsunit');
 goog.require('hr.db');
@@ -35,11 +34,6 @@ goog.require('lf.schema.DataStoreType');
 goog.require('lf.service');
 goog.require('lf.testing.treeutil');
 goog.require('lf.testing.util');
-
-
-/** @type {!goog.testing.AsyncTestCase} */
-var asyncTestCase = goog.testing.AsyncTestCase.createAndInstall(
-    'IndexRangeScanPassTest');
 
 
 /** @type {!lf.Database} */
@@ -79,7 +73,6 @@ var propertyReplacer;
 
 
 function setUp() {
-  asyncTestCase.waitForAsync('setUp');
   propertyReplacer = new goog.testing.PropertyReplacer();
 
   var schema = hr.db.getSchema();
@@ -89,16 +82,13 @@ function setUp() {
   cct = schema.getCrossColumnTable();
   dt = schema.getDummyTable();
 
-  hr.db.connect({storeType: lf.schema.DataStoreType.MEMORY}).then(
+  return hr.db.connect({storeType: lf.schema.DataStoreType.MEMORY}).then(
       function(database) {
         db = database;
         indexStore =  /** @type {!lf.index.IndexStore} */ (
             hr.db.getGlobal().getService(lf.service.INDEX_STORE));
         pass = new lf.proc.IndexRangeScanPass(hr.db.getGlobal());
-      }).then(
-      function() {
-        asyncTestCase.continueTesting();
-      }, fail);
+      });
 }
 
 

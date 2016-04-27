@@ -15,7 +15,6 @@
  * limitations under the License.
  */
 goog.setTestOnly();
-goog.require('goog.testing.AsyncTestCase');
 goog.require('goog.testing.jsunit');
 goog.require('lf.Row');
 goog.require('lf.proc.LimitStep');
@@ -26,43 +25,34 @@ goog.require('lf.testing.MockEnv');
 goog.require('lf.testing.getSchemaBuilder');
 
 
-/** @type {!goog.testing.AsyncTestCase} */
-var asyncTestCase = goog.testing.AsyncTestCase.createAndInstall(
-    'LimitStepTest');
-
-
 /** @type {!lf.schema.Database} */
 var schema;
 
 
 function setUp() {
-  asyncTestCase.waitForAsync('setUp');
-
   schema = lf.testing.getSchemaBuilder().getSchema();
   var env = new lf.testing.MockEnv(schema);
-  env.init().then(function() {
-    asyncTestCase.continueTesting();
-  }, fail);
+  return env.init();
 }
 
 
 function testExec_LimitLessThanResults() {
-  checkExec(/* sampleDataCount */ 20, /* limit */ 10);
+  return checkExec(/* sampleDataCount */ 20, /* limit */ 10);
 }
 
 
 function testExec_LimitMoreThanResults() {
-  checkExec(/* sampleDataCount */ 20, /* limit */ 100);
+  return checkExec(/* sampleDataCount */ 20, /* limit */ 100);
 }
 
 
 function testExec_LimitEqualToResults() {
-  checkExec(/* sampleDataCount */ 20, /* limit */ 20);
+  return checkExec(/* sampleDataCount */ 20, /* limit */ 20);
 }
 
 
 function testExec_LimitZero() {
-  checkExec(/* sampleDataCount */ 20, /* limit */ 0);
+  return checkExec(/* sampleDataCount */ 20, /* limit */ 0);
 }
 
 
@@ -70,9 +60,9 @@ function testExec_LimitZero() {
  * Checks that the number of returned results is as expected.
  * @param {number} sampleDataCount The total number of rows available.
  * @param {number} limit The max number of rows requested by the user.
+ * @return {!IThenable}
  */
 function checkExec(sampleDataCount, limit) {
-  asyncTestCase.waitForAsync('testExec' + sampleDataCount + limit);
   var rows = generateSampleRows(sampleDataCount);
   var tableName = 'dummyTable';
   var childStep = new lf.proc.NoOpStep(
@@ -84,12 +74,11 @@ function checkExec(sampleDataCount, limit) {
   var step = new lf.proc.LimitStep();
   step.addChild(childStep);
 
-  step.exec(undefined, queryContext).then(function(relations) {
+  return step.exec(undefined, queryContext).then(function(relations) {
     assertEquals(
         Math.min(limit, sampleDataCount),
         relations[0].entries.length);
-    asyncTestCase.continueTesting();
-  }, fail);
+  });
 }
 
 

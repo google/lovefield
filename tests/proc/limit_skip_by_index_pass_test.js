@@ -15,7 +15,6 @@
  * limitations under the License.
  */
 goog.setTestOnly();
-goog.require('goog.testing.AsyncTestCase');
 goog.require('goog.testing.jsunit');
 goog.require('hr.db');
 goog.require('lf.Order');
@@ -36,11 +35,6 @@ goog.require('lf.testing.proc.MockKeyRangeCalculator');
 goog.require('lf.testing.treeutil');
 
 
-/** @type {!goog.testing.AsyncTestCase} */
-var asyncTestCase = goog.testing.AsyncTestCase.createAndInstall(
-    'LimitSkipByIndexPassTest');
-
-
 /** @type {!lf.Database} */
 var db;
 
@@ -54,18 +48,13 @@ var pass;
 
 
 function setUp() {
-  asyncTestCase.waitForAsync('setUp');
-
   var schema = hr.db.getSchema();
   e = schema.getEmployee();
   pass = new lf.proc.LimitSkipByIndexPass();
-  hr.db.connect({storeType: lf.schema.DataStoreType.MEMORY}).then(
+  return hr.db.connect({storeType: lf.schema.DataStoreType.MEMORY}).then(
       function(database) {
         db = database;
-      }).then(
-      function() {
-        asyncTestCase.continueTesting();
-      }, fail);
+      });
 }
 
 

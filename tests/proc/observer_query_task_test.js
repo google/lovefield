@@ -16,17 +16,11 @@
  */
 goog.setTestOnly();
 goog.require('goog.Promise');
-goog.require('goog.testing.AsyncTestCase');
 goog.require('goog.testing.jsunit');
 goog.require('hr.db');
 goog.require('lf.proc.ObserverQueryTask');
 goog.require('lf.schema.DataStoreType');
 goog.require('lf.testing.hrSchemaSampleData');
-
-
-/** @type {!goog.testing.AsyncTestCase} */
-var asyncTestCase = goog.testing.AsyncTestCase.createAndInstall(
-    'ObserverTaskTest');
 
 
 /** @type {!lf.Database} */
@@ -42,22 +36,16 @@ var ROW_COUNT = 3;
 
 
 function setUp() {
-  asyncTestCase.waitForAsync('setUp');
-  hr.db.connect({storeType: lf.schema.DataStoreType.MEMORY}).then(function(
-      database) {
+  return hr.db.connect({storeType: lf.schema.DataStoreType.MEMORY}).then(
+      function(database) {
         db = database;
         j = db.getSchema().getJob();
-      }).then(function() {
-    asyncTestCase.continueTesting();
-  }, fail);
+      });
 }
 
 
 function tearDown() {
-  asyncTestCase.waitForAsync('tearDown');
-  db.delete().from(j).exec().then(function() {
-    asyncTestCase.continueTesting();
-  });
+  return db.delete().from(j).exec();
 }
 
 
@@ -79,9 +67,10 @@ function insertSampleJobs() {
 /**
  * Tests that registered observers are notified as a result of executing an
  * ObserveTask.
+ * @return {!IThenable}
  */
 function testExec() {
-  asyncTestCase.waitForAsync('testExec');
+  var promiseResolver = goog.Promise.withResolver();
 
   var selectQuery = /** @type {!lf.query.SelectBuilder} */ (
       db.select().from(j));
@@ -94,7 +83,7 @@ function testExec() {
     });
 
     db.unobserve(selectQuery, observerCallback);
-    asyncTestCase.continueTesting();
+    promiseResolver.resolve();
   };
 
   insertSampleJobs().then(function() {
@@ -103,5 +92,9 @@ function testExec() {
     var observerTask = new lf.proc.ObserverQueryTask(
         hr.db.getGlobal(), [selectQuery.getObservableTaskItem()]);
     return observerTask.exec();
-  }, fail);
+  }, function(e) {
+    promiseResolver.reject(e);
+  });
+
+  return promiseResolver.promise;
 }

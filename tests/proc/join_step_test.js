@@ -16,7 +16,6 @@
  */
 goog.setTestOnly();
 goog.require('goog.Promise');
-goog.require('goog.testing.AsyncTestCase');
 goog.require('goog.testing.jsunit');
 goog.require('lf.Type');
 goog.require('lf.proc.JoinStep');
@@ -25,11 +24,6 @@ goog.require('lf.proc.Relation');
 goog.require('lf.schema');
 goog.require('lf.structs.set');
 goog.require('lf.testing.MockEnv');
-
-
-/** @type {!goog.testing.AsyncTestCase} */
-var asyncTestCase = goog.testing.AsyncTestCase.createAndInstall(
-    'JoinStepTest');
 
 
 /** @type {!lf.testing.MockEnv} */
@@ -53,16 +47,12 @@ var tableBRows;
 
 
 function setUp() {
-  asyncTestCase.waitForAsync('setUp');
-
   env = new lf.testing.MockEnv(getSchema());
-  env.init().then(function() {
+  return env.init().then(function() {
     ta = env.schema.table('TableA');
     tb = env.schema.table('TableB');
     return insertSampleData();
-  }).then(function() {
-    asyncTestCase.continueTesting();
-  }, fail);
+  });
 }
 
 
@@ -174,51 +164,43 @@ function setIntersection(set1, set2) {
 /**
  * Tests index join for the case where the entire tableA and tabelB contents are
  * joined.
+ * @return {!IThenable}
  */
 function testIndexJoin_EntireTables() {
-  asyncTestCase.waitForAsync('testIndexJoin_EntireTables');
   var tableARelation = lf.proc.Relation.fromRows(tableARows, [ta.getName()]);
   var tableBRelation = lf.proc.Relation.fromRows(tableBRows, [tb.getName()]);
 
-  goog.Promise.all([
+  return goog.Promise.all([
     // First calculate index join using the index of TableA's index.
     checkIndexJoin(tableARelation, tableBRelation, ta['id'].eq(tb['id'])),
     // Then calculate index join using the index of TableB's index.
     checkIndexJoin(tableARelation, tableBRelation, tb['id'].eq(ta['id']))
-  ]).then(function() {
-    asyncTestCase.continueTesting();
-  }, fail);
+  ]);
 }
 
 
 /**
  * Tests index join for the case where a subset of TableA is joined with the
  * entire TableB (using TableB's index for the join).
+ * @return {!IThenable}
  */
 function testIndexJoin_PartialTable() {
-  asyncTestCase.waitForAsync('testIndexJoin_PartialTable');
   var tableARelation = lf.proc.Relation.fromRows(
       tableARows.slice(2), [ta.getName()]);
   var tableBRelation = lf.proc.Relation.fromRows(tableBRows, [tb.getName()]);
-  checkIndexJoin(tableARelation, tableBRelation, tb['id'].eq(ta['id'])).then(
-      function() {
-        asyncTestCase.continueTesting();
-      }, fail);
+  return checkIndexJoin(tableARelation, tableBRelation, tb['id'].eq(ta['id']));
 }
 
 
 /**
  * Tests index join for the case where an empty relation is joined with the
  * entire TableB (using TableB's index for the join).
+ * @return {!IThenable}
  */
 function testIndexJoin_EmptyTable() {
-  asyncTestCase.waitForAsync('testIndexJoin_EmptyTable');
   var tableARelation = lf.proc.Relation.fromRows([], [ta.getName()]);
   var tableBRelation = lf.proc.Relation.fromRows(tableBRows, [tb.getName()]);
-  checkIndexJoin(tableARelation, tableBRelation, tb['id'].eq(ta['id'])).then(
-      function() {
-        asyncTestCase.continueTesting();
-      }, fail);
+  return checkIndexJoin(tableARelation, tableBRelation, tb['id'].eq(ta['id']));
 }
 
 

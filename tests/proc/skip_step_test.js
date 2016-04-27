@@ -15,7 +15,6 @@
  * limitations under the License.
  */
 goog.setTestOnly();
-goog.require('goog.testing.AsyncTestCase');
 goog.require('goog.testing.jsunit');
 goog.require('lf.Global');
 goog.require('lf.Row');
@@ -28,42 +27,33 @@ goog.require('lf.testing.MockEnv');
 goog.require('lf.testing.getSchemaBuilder');
 
 
-/** @type {!goog.testing.AsyncTestCase} */
-var asyncTestCase = goog.testing.AsyncTestCase.createAndInstall(
-    'SkipStepTest');
-
-
 /** @type {!lf.schema.Database} */
 var schema;
 
 function setUp() {
-  asyncTestCase.waitForAsync('setUp');
-
   schema = lf.testing.getSchemaBuilder().getSchema();
   var env = new lf.testing.MockEnv(schema);
-  env.init().then(function() {
-    asyncTestCase.continueTesting();
-  }, fail);
+  return env.init();
 }
 
 
 function testExec_SkipLessThanResults() {
-  checkExec(/* sampleDataCount */ 20, /* skip */ 11);
+  return checkExec(/* sampleDataCount */ 20, /* skip */ 11);
 }
 
 
 function testExec_SkipMoreThanResults() {
-  checkExec(/* sampleDataCount */ 20, /* skip */ 100);
+  return checkExec(/* sampleDataCount */ 20, /* skip */ 100);
 }
 
 
 function testExec_SkipEqualToResults() {
-  checkExec(/* sampleDataCount */ 20, /* skip */ 20);
+  return checkExec(/* sampleDataCount */ 20, /* skip */ 20);
 }
 
 
 function testExec_SkipZero() {
-  checkExec(/* sampleDataCount */ 20, /* skip */ 0);
+  return checkExec(/* sampleDataCount */ 20, /* skip */ 0);
 }
 
 
@@ -71,9 +61,9 @@ function testExec_SkipZero() {
  * Checks that the returned results do not include skipped rows.
  * @param {number} sampleDataCount The total number of rows available.
  * @param {number} skip The number of rows to be skipped.
+ * @return {!IThenable}
  */
 function checkExec(sampleDataCount, skip) {
-  asyncTestCase.waitForAsync('testExec' + sampleDataCount + skip);
   var rows = generateSampleRows(sampleDataCount);
   var tableName = 'dummyTable';
   var childStep = new lf.proc.NoOpStep([
@@ -84,7 +74,7 @@ function checkExec(sampleDataCount, skip) {
   var step = new lf.proc.SkipStep();
   step.addChild(childStep);
 
-  step.exec(undefined, queryContext).then(function(relations) {
+  return step.exec(undefined, queryContext).then(function(relations) {
     var relation = relations[0];
     var expectedResults = Math.max(sampleDataCount - skip, 0);
     assertEquals(expectedResults, relation.entries.length);
@@ -96,8 +86,7 @@ function checkExec(sampleDataCount, skip) {
             relation.entries[i].row.payload().id);
       }
     }
-    asyncTestCase.continueTesting();
-  }, fail);
+  });
 }
 
 

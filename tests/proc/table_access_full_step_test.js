@@ -15,7 +15,6 @@
  * limitations under the License.
  */
 goog.setTestOnly();
-goog.require('goog.testing.AsyncTestCase');
 goog.require('goog.testing.jsunit');
 goog.require('lf.Global');
 goog.require('lf.proc.TableAccessFullStep');
@@ -23,36 +22,26 @@ goog.require('lf.testing.MockEnv');
 goog.require('lf.testing.getSchemaBuilder');
 
 
-/** @type {!goog.testing.AsyncTestCase} */
-var asyncTestCase = goog.testing.AsyncTestCase.createAndInstall(
-    'TableAccessFullStepTest');
-
-
 /** @type {!lf.schema.Database} */
 var schema;
 
 
 function setUp() {
-  asyncTestCase.waitForAsync('setUp');
-
   schema = lf.testing.getSchemaBuilder().getSchema();
   var env = new lf.testing.MockEnv(schema);
-  env.init().then(function() {
+  return env.init().then(function() {
     return env.addSampleData();
-  }).then(function() {
-    asyncTestCase.continueTesting();
-  }, fail);
+  });
 }
 
 
 function testTableAccessFullStep() {
-  checkTableAccessFullStep('testTableAccessFullStep', schema.table('tableA'));
+  return checkTableAccessFullStep(schema.table('tableA'));
 }
 
 
 function testTableAccessFullStep_Alias() {
-  checkTableAccessFullStep(
-      'testTableAccessFullStep_Alias',
+  return checkTableAccessFullStep(
       schema.table('tableA').as('SomeTableAlias'));
 }
 
@@ -60,19 +49,16 @@ function testTableAccessFullStep_Alias() {
 /**
  * Checks that a TableAccessFullStep that refers to the given table produces
  * the expected results.
- * @param {string} description
  * @param {!lf.schema.Table} table
+ * @return {!IThenable}
  */
-function checkTableAccessFullStep(description, table) {
-  asyncTestCase.waitForAsync(description);
-
+function checkTableAccessFullStep(table) {
   var step = new lf.proc.TableAccessFullStep(lf.Global.get(), table);
-  step.exec().then(
+  return step.exec().then(
       function(relations) {
         var relation = relations[0];
         assertFalse(relation.isPrefixApplied());
         assertArrayEquals([table.getEffectiveName()], relation.getTables());
         assertTrue(relation.entries.length > 0);
-        asyncTestCase.continueTesting();
-      }, fail);
+      });
 }

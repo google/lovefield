@@ -15,7 +15,6 @@
  * limitations under the License.
  */
 goog.setTestOnly();
-goog.require('goog.testing.AsyncTestCase');
 goog.require('goog.testing.jsunit');
 goog.require('lf.op');
 goog.require('lf.proc.IndexRangeScanStep');
@@ -30,11 +29,6 @@ goog.require('lf.schema.DataStoreType');
 goog.require('lf.testing.hrSchema.getSchemaBuilder');
 goog.require('lf.testing.proc.MockKeyRangeCalculator');
 goog.require('lf.testing.treeutil');
-
-
-/** @type {!goog.testing.AsyncTestCase} */
-var asyncTestCase = goog.testing.AsyncTestCase.createAndInstall(
-    'MultiColumnOrPassTest');
 
 
 /** @type {!lf.schema.Database} */
@@ -58,18 +52,15 @@ var global;
 
 
 function setUp() {
-  asyncTestCase.waitForAsync('setUp');
   var builder = lf.testing.hrSchema.getSchemaBuilder();
   global = builder.getGlobal();
-  builder.connect(
+  return builder.connect(
       {storeType: lf.schema.DataStoreType.MEMORY}).then(function(db) {
     schema = db.getSchema();
     e = schema.table('Employee');
     j = schema.table('Job');
     pass = new lf.proc.MultiColumnOrPass(global);
-  }).then(function() {
-    asyncTestCase.continueTesting();
-  }, fail);
+  });
 }
 
 

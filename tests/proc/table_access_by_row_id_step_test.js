@@ -15,7 +15,6 @@
  * limitations under the License.
  */
 goog.setTestOnly();
-goog.require('goog.testing.AsyncTestCase');
 goog.require('goog.testing.jsunit');
 goog.require('lf.Global');
 goog.require('lf.proc.NoOpStep');
@@ -25,36 +24,26 @@ goog.require('lf.testing.MockEnv');
 goog.require('lf.testing.getSchemaBuilder');
 
 
-/** @type {!goog.testing.AsyncTestCase} */
-var asyncTestCase = goog.testing.AsyncTestCase.createAndInstall(
-    'TableAccessByRowIdStepTest');
-
-
 /** @type {!lf.schema.Database} */
 var schema;
 
 
 function setUp() {
-  asyncTestCase.waitForAsync('setUp');
-
   schema = lf.testing.getSchemaBuilder().getSchema();
   var env = new lf.testing.MockEnv(schema);
-  env.init().then(function() {
+  return env.init().then(function() {
     return env.addSampleData();
-  }).then(function() {
-    asyncTestCase.continueTesting();
-  }, fail);
+  });
 }
 
 
 function testTableAccessByRowId() {
-  checkTableAccessByRowId('testTableAccessByRowId', schema.table('tableA'));
+  return checkTableAccessByRowId(schema.table('tableA'));
 }
 
 
 function testTableAccessByRowId_Alias() {
-  checkTableAccessByRowId(
-      'testTableAccessByRowId_Alias',
+  return checkTableAccessByRowId(
       schema.table('tableA').as('SomeTableAlias'));
 }
 
@@ -62,12 +51,10 @@ function testTableAccessByRowId_Alias() {
 /**
  * Checks that a TableAccessByRowIdStep that refers to the given table produces
  * the expected results.
- * @param {string} description
  * @param {!lf.schema.Table} table
+ * @return {!IThenable}
  */
-function checkTableAccessByRowId(description, table) {
-  asyncTestCase.waitForAsync(description);
-
+function checkTableAccessByRowId(table) {
   var step = new lf.proc.TableAccessByRowIdStep(lf.Global.get(), table);
 
   // Creating a "dummy" child step that will return only two row IDs.
@@ -80,7 +67,7 @@ function checkTableAccessByRowId(description, table) {
   step.addChild(new lf.proc.NoOpStep(
       [lf.proc.Relation.fromRows(rows, [table.getName()])]));
 
-  step.exec().then(
+  return step.exec().then(
       function(relations) {
         var relation = relations[0];
         assertFalse(relation.isPrefixApplied());
@@ -92,15 +79,11 @@ function checkTableAccessByRowId(description, table) {
           assertEquals(rowId, entry.row.id());
           assertEquals('dummyName' + rowId, entry.row.payload().name);
         });
-
-        asyncTestCase.continueTesting();
-      }, fail);
+      });
 }
 
 
 function testTableAccessByRowId_Empty() {
-  asyncTestCase.waitForAsync('testTableAccessByRowId_Empty');
-
   var table = schema.table('tableB');
   var step = new lf.proc.TableAccessByRowIdStep(lf.Global.get(), table);
 
@@ -108,9 +91,8 @@ function testTableAccessByRowId_Empty() {
   step.addChild(
       new lf.proc.NoOpStep([lf.proc.Relation.createEmpty()]));
 
-  step.exec().then(
+  return step.exec().then(
       function(relations) {
         assertEquals(0, relations[0].entries.length);
-        asyncTestCase.continueTesting();
-      }, fail);
+      });
 }

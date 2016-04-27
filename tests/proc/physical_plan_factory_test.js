@@ -15,7 +15,6 @@
  * limitations under the License.
  */
 goog.setTestOnly();
-goog.require('goog.testing.AsyncTestCase');
 goog.require('goog.testing.PropertyReplacer');
 goog.require('goog.testing.jsunit');
 goog.require('lf.Global');
@@ -33,11 +32,6 @@ goog.require('lf.testing.util');
 goog.require('lf.tree');
 
 
-/** @type {!goog.testing.AsyncTestCase} */
-var asyncTestCase = goog.testing.AsyncTestCase.createAndInstall(
-    'PhysicalPlanFactoryTest');
-
-
 /** @type {!lf.proc.PhysicalPlanFactory} */
 var physicalPlanFactory;
 
@@ -51,14 +45,12 @@ var propertyReplacer;
 
 
 function setUp() {
-  asyncTestCase.waitForAsync('setUp');
   propertyReplacer = new goog.testing.PropertyReplacer();
 
   env = new lf.testing.MockEnv(lf.testing.getSchemaBuilder().getSchema());
-  env.init().then(function() {
+  return env.init().then(function() {
     physicalPlanFactory = new lf.proc.PhysicalPlanFactory(lf.Global.get());
-    asyncTestCase.continueTesting();
-  }, fail);
+  });
 }
 
 

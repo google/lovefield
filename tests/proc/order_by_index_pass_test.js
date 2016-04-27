@@ -15,7 +15,6 @@
  * limitations under the License.
  */
 goog.setTestOnly();
-goog.require('goog.testing.AsyncTestCase');
 goog.require('goog.testing.jsunit');
 goog.require('lf.Order');
 goog.require('lf.Type');
@@ -34,11 +33,6 @@ goog.require('lf.schema');
 goog.require('lf.schema.DataStoreType');
 goog.require('lf.testing.proc.MockKeyRangeCalculator');
 goog.require('lf.testing.treeutil');
-
-
-/** @type {!goog.testing.AsyncTestCase} */
-var asyncTestCase = goog.testing.AsyncTestCase.createAndInstall(
-    'OrderByIndexPassTest');
 
 
 /** @type {!lf.Database} */
@@ -62,19 +56,16 @@ var pass;
 
 
 function setUp() {
-  asyncTestCase.waitForAsync('setUp');
-
   var schemaBuilder = getSchemaBuilder();
   global = schemaBuilder.getGlobal();
-  schemaBuilder.connect({
+  return schemaBuilder.connect({
     storeType: lf.schema.DataStoreType.MEMORY
   }).then(function(database) {
     db = database;
     simpleTable = db.getSchema().table('SimpleTable');
     crossColumnTable = db.getSchema().table('CrossColumnTable');
     pass = new lf.proc.OrderByIndexPass(global);
-    asyncTestCase.continueTesting();
-  }, fail);
+  });
 }
 
 

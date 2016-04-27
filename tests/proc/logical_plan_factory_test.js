@@ -15,7 +15,6 @@
  * limitations under the License.
  */
 goog.setTestOnly();
-goog.require('goog.testing.AsyncTestCase');
 goog.require('goog.testing.jsunit');
 goog.require('lf.Global');
 goog.require('lf.op');
@@ -28,11 +27,6 @@ goog.require('lf.testing.getSchemaBuilder');
 goog.require('lf.tree');
 
 
-/** @type {!goog.testing.AsyncTestCase} */
-var asyncTestCase = goog.testing.AsyncTestCase.createAndInstall(
-    'LogicalPlanFactoryTest');
-
-
 /** @type {!lf.proc.LogicalPlanFactory} */
 var logicalPlanFactory;
 
@@ -42,12 +36,10 @@ var env;
 
 
 function setUp() {
-  asyncTestCase.waitForAsync('setUp');
   env = new lf.testing.MockEnv(lf.testing.getSchemaBuilder().getSchema());
-  env.init().then(function() {
+  return env.init().then(function() {
     logicalPlanFactory = new lf.proc.LogicalPlanFactory();
-    asyncTestCase.continueTesting();
-  }, fail);
+  });
 }
 
 

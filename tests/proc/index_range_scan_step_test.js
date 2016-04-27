@@ -15,7 +15,6 @@
  * limitations under the License.
  */
 goog.setTestOnly();
-goog.require('goog.testing.AsyncTestCase');
 goog.require('goog.testing.jsunit');
 goog.require('lf.Global');
 goog.require('lf.Order');
@@ -27,26 +26,16 @@ goog.require('lf.testing.getSchemaBuilder');
 goog.require('lf.testing.proc.MockKeyRangeCalculator');
 
 
-/** @type {!goog.testing.AsyncTestCase} */
-var asyncTestCase = goog.testing.AsyncTestCase.createAndInstall(
-    'PhysicalQueryPlanTest');
-
-
 /** @type {!lf.schema.Database} */
 var schema;
 
 
 function setUp() {
-  asyncTestCase.waitForAsync('setUp');
-
   var env = new lf.testing.MockEnv(lf.testing.getSchemaBuilder().getSchema());
-  env.init().then(function() {
+  return env.init().then(function() {
     schema = env.schema;
-
     return env.addSampleData();
-  }).then(function() {
-    asyncTestCase.continueTesting();
-  }, fail);
+  });
 }
 
 
@@ -64,10 +53,9 @@ function testIndexRangeScan_Descending() {
  * Checks that an IndexRangeScanStep returns results in the expected order.
  * @param {!lf.Order} order The expected order.
  * @param {string} description A description of this test.
+ * @return {!IThenable}
  */
 function checkIndexRangeScan(order, description) {
-  asyncTestCase.waitForAsync(description);
-
   var table = schema.table('tableA');
   var index = order == lf.Order.ASC ?
       table.getIndices()[0] : table.getIndices()[1];
@@ -79,7 +67,7 @@ function checkIndexRangeScan(order, description) {
       lf.Global.get(), index,
       new lf.testing.proc.MockKeyRangeCalculator([keyRange]), false);
 
-  step.exec().then(
+  return step.exec().then(
       function(relations) {
         var relation = relations[0];
         assertEquals(4, relation.entries.length);
@@ -94,28 +82,19 @@ function checkIndexRangeScan(order, description) {
           assertTrue(comparator *
               (entry.row.id() - relation.entries[j - 1].row.id()) > 0);
         });
-
-        asyncTestCase.continueTesting();
-      }, fail);
+      });
 }
 
 
 function testMultiIndexRangeScan_Empty() {
-  asyncTestCase.waitForAsync('testMultiIndexRangeScan_Empty');
-
   var idKeyRange = new lf.index.SingleKeyRange(20, 21, false, false);
   var nameKeyRange = new lf.index.SingleKeyRange(
       'dummyName' + 200, 'dummyName' + 205, false, false);
-  assertMultiIndexRangeScanResult(
-      idKeyRange, nameKeyRange, []).then(function() {
-    asyncTestCase.continueTesting();
-  }, fail);
+  return assertMultiIndexRangeScanResult(idKeyRange, nameKeyRange, []);
 }
 
 
 function testMultiIndexRangeScan() {
-  asyncTestCase.waitForAsync('testMultiIndexRangeScan');
-
   var idKeyRange = new lf.index.SingleKeyRange(5, 8, false, false);
   var nameKeyRange = new lf.index.SingleKeyRange(
       'dummyName' + 3, 'dummyName' + 5, false, false);
@@ -123,10 +102,8 @@ function testMultiIndexRangeScan() {
   // Expecting the nameKeyRange to find rows with rowIDs 3, 4, 5.
   var expectedRowIds = [3, 4, 5, 6, 7, 8];
 
-  assertMultiIndexRangeScanResult(
-      idKeyRange, nameKeyRange, expectedRowIds).then(function() {
-    asyncTestCase.continueTesting();
-  }, fail);
+  return assertMultiIndexRangeScanResult(
+      idKeyRange, nameKeyRange, expectedRowIds);
 }
 
 
