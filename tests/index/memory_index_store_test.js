@@ -17,7 +17,6 @@
 goog.setTestOnly();
 
 goog.require('goog.functions');
-goog.require('goog.testing.AsyncTestCase');
 goog.require('goog.testing.PropertyReplacer');
 goog.require('goog.testing.jsunit');
 goog.require('lf.index.BTree');
@@ -26,11 +25,6 @@ goog.require('lf.index.MemoryIndexStore');
 goog.require('lf.index.NullableIndex');
 goog.require('lf.index.RowId');
 goog.require('lf.testing.getSchemaBuilder');
-
-
-/** @type {!goog.testing.AsyncTestCase} */
-var asyncTestCase = goog.testing.AsyncTestCase.createAndInstall(
-    'MemoryIndexStore');
 
 
 /** @type {!goog.testing.PropertyReplacer} */
@@ -58,8 +52,6 @@ function tearDown() {
 
 
 function testMemoryIndexStore() {
-  asyncTestCase.waitForAsync('testMemoryIndexStore');
-
   var tableA = schema.table('tableA');
   var tableB = schema.table('tableB');
   var tableF = schema.table('tableF');
@@ -69,7 +61,7 @@ function testMemoryIndexStore() {
   assertTrue(tableB.persistentIndex());
   assertFalse(tableF.persistentIndex());
 
-  indexStore.init(schema).then(function() {
+  return indexStore.init(schema).then(function() {
     // Table A index names.
     var tableAPkIndex = 'tableA.pkTableA';
     var tableANameIndex = 'tableA.idxName';
@@ -103,9 +95,7 @@ function testMemoryIndexStore() {
     assertIndicesType([tableFNameIndex], lf.index.NullableIndex);
     // Cross-column nullable index is typed BTree.
     assertIndicesType([tableJIdIndex], lf.index.BTree);
-
-    asyncTestCase.continueTesting();
-  }, fail);
+  });
 }
 
 
@@ -125,17 +115,15 @@ function assertIndicesType(indexNames, expectedType) {
 
 /**
  * Tests the case of calling getTableIndices() for a table that has no indices.
+ * @return {!IThenable}
  */
 function testGetTableIndices_NoIndices() {
-  asyncTestCase.waitForAsync('testGetTableIndices');
-
-  indexStore.init(schema).then(function() {
+  return indexStore.init(schema).then(function() {
     var tableWithNoIndexName = schema.table('tableC');
     // There should be at least one row id index.
     assertEquals(1,
         indexStore.getTableIndices(tableWithNoIndexName.getName()).length);
     assertNotNull(indexStore.get(tableWithNoIndexName.getRowIdIndexName()));
-    asyncTestCase.continueTesting();
   });
 }
 
@@ -161,14 +149,13 @@ function testGetTableIndices_Prefix() {
 
 /**
  * Tests that set() is correctly replacing any existing indices.
+ * @return {!IThenable}
  */
 function testSet() {
-  asyncTestCase.waitForAsync('testSet');
-
   var tableSchema = schema.table('tableA');
   var indexSchema = tableSchema.getIndices()[0];
 
-  indexStore.init(schema).then(function() {
+  return indexStore.init(schema).then(function() {
     var indexBefore = indexStore.get(indexSchema.getNormalizedName());
     var comparator = lf.index.ComparatorFactory.create(indexSchema);
     var newIndex = new lf.index.BTree(
@@ -180,7 +167,5 @@ function testSet() {
     var indexAfter = indexStore.get(indexSchema.getNormalizedName());
     assertTrue(indexBefore != indexAfter);
     assertTrue(newIndex == indexAfter);
-
-    asyncTestCase.continueTesting();
   });
 }
