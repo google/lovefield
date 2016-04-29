@@ -16,7 +16,6 @@
  */
 goog.setTestOnly();
 goog.require('goog.Promise');
-goog.require('goog.testing.AsyncTestCase');
 goog.require('goog.testing.jsunit');
 goog.require('lf.Type');
 goog.require('lf.fn');
@@ -24,10 +23,6 @@ goog.require('lf.schema');
 goog.require('lf.schema.DataStoreType');
 
 goog.forwardDeclare('lf.schema.ConnectOption');
-
-
-/** @type {!goog.testing.AsyncTestCase} */
-var asyncTestCase = goog.testing.AsyncTestCase.createAndInstall('delete');
 
 
 /** @type {!lf.Database} */
@@ -38,22 +33,28 @@ var db;
 var t1;
 
 
+// TODO(arthurhsu): Remove this once setUpPage supports Promise.
+/** @type {!IThenable} */
+var whenReady;
+
+
 function setUpPage() {
   var options = /** @type {!lf.schema.ConnectOption} */ ({
     storeType: lf.schema.DataStoreType.MEMORY
   });
 
-  asyncTestCase.waitForAsync('setUpPage');
-
   var builder = lf.schema.create('delete', 1);
   builder.createTable('t1').
       addColumn('f1', lf.Type.INTEGER).
       addColumn('f2', lf.Type.INTEGER);
-  builder.connect(options).then(function(database) {
+  whenReady = builder.connect(options).then(function(database) {
     db = database;
     t1 = db.getSchema().table('t1');
-    asyncTestCase.continueTesting();
   });
+}
+
+function setUp() {
+  return whenReady;
 }
 
 
@@ -74,8 +75,6 @@ function checkFlatten(expected, rows, fields) {
 
 
 function testDelete3() {
-  asyncTestCase.waitForAsync('testDelete3');
-
   // 3.1
   var rows = [];
   for (var i = 1; i <= 4; ++i) {
@@ -83,7 +82,7 @@ function testDelete3() {
   }
 
   // 3.1.1
-  db.insert().into(t1).values(rows).exec().then(function() {
+  return db.insert().into(t1).values(rows).exec().then(function() {
     return db.select().from(t1).orderBy(t1['f1']).exec();
   }).then(function(results) {
     checkFlatten('1 2 2 4 3 8 4 16', results, ['f1', 'f2']);
@@ -114,17 +113,13 @@ function testDelete3() {
     return db.select().from(t1).orderBy(t1['f1']).exec();
   }).then(function(results) {
     checkFlatten('1 2 4 16', results, ['f1', 'f2']);
-    asyncTestCase.continueTesting();
-  }, fail);
+  });
 }
 
 
 function testDelete5() {
-  asyncTestCase.waitForAsync('testDelete5');
-
   // 5.1.1
-  db.delete().from(t1).exec().then(function() {
-
+  return db.delete().from(t1).exec().then(function() {
     // 5.1.2
     return db.select(lf.fn.count()).from(t1).exec();
   }).then(function(results) {
@@ -232,8 +227,7 @@ function testDelete5() {
   }).then(function(results) {
     checkFlatten('48', results, ['f1']);
 
-    asyncTestCase.continueTesting();
-  }, fail);
+  });
 }
 
 

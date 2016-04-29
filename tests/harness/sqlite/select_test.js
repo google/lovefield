@@ -16,17 +16,12 @@
  */
 goog.setTestOnly();
 goog.require('goog.Promise');
-goog.require('goog.testing.AsyncTestCase');
 goog.require('goog.testing.jsunit');
 goog.require('lf.Type');
 goog.require('lf.schema');
 goog.require('lf.schema.DataStoreType');
 
 goog.forwardDeclare('lf.schema.ConnectOption');
-
-
-/** @type {!goog.testing.AsyncTestCase} */
-var asyncTestCase = goog.testing.AsyncTestCase.createAndInstall('delete');
 
 
 /** @type {!lf.Database} */
@@ -41,12 +36,15 @@ var t1;
 var t2;
 
 
+// TODO(arthurhsu): Remove this once setUpPage supports Promise.
+/** @type {!IThenable} */
+var whenReady;
+
+
 function setUpPage() {
   var options = /** @type {!lf.schema.ConnectOption} */ ({
     storeType: lf.schema.DataStoreType.MEMORY
   });
-
-  asyncTestCase.waitForAsync('setUpPage');
 
   var builder = lf.schema.create('delete', 1);
   builder.createTable('t1').
@@ -55,12 +53,15 @@ function setUpPage() {
   builder.createTable('t2').
       addColumn('r1', lf.Type.NUMBER).
       addColumn('r2', lf.Type.NUMBER);
-  builder.connect(options).then(function(database) {
+  whenReady = builder.connect(options).then(function(database) {
     db = database;
     t1 = db.getSchema().table('t1');
     t2 = db.getSchema().table('t2');
-    asyncTestCase.continueTesting();
   });
+}
+
+function setUp() {
+  return whenReady;
 }
 
 
@@ -84,12 +85,10 @@ function checkFlatten(expected, rows, fields, opt_tablePrefix) {
 
 
 function testSelect1_1() {
-  asyncTestCase.waitForAsync('testSelect1_1');
-
   var table1Row = t1.createRow({'f1': 11, 'f2': 22});
   var table2Row = t2.createRow({'r1': 1.1, 'r2': 2.2});
 
-  db.createTransaction().exec([
+  return db.createTransaction().exec([
     db.insert().into(t1).values([table1Row]),
     db.insert().into(t2).values([table2Row])
   ]).then(function() {
@@ -156,7 +155,5 @@ function testSelect1_1() {
 
     // 1-1.12 not applicable
     // 1-1.13 not applicable
-
-    asyncTestCase.continueTesting();
-  }, fail);
+  });
 }
