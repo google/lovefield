@@ -16,7 +16,6 @@
  */
 goog.setTestOnly();
 goog.require('goog.Promise');
-goog.require('goog.testing.AsyncTestCase');
 goog.require('goog.testing.jsunit');
 goog.require('lf.Global');
 goog.require('lf.Row');
@@ -31,16 +30,6 @@ goog.require('lf.structs.map');
 goog.require('lf.structs.set');
 goog.require('lf.testing.getSchemaBuilder');
 goog.require('lf.testing.util');
-
-
-/** @type {!goog.testing.AsyncTestCase} */
-var asyncTestCase = goog.testing.AsyncTestCase.createAndInstall('Firebase');
-
-
-// Firebase WebSocket timeout is 30 seconds, so make sure this timeout is
-// greater than that value, otherwise it can flake.
-/** @type {number} */
-asyncTestCase.stepTimeout = 40000;  // Raise the timeout to 40 seconds
 
 
 /** @type {!Firebase} */
@@ -69,6 +58,11 @@ var schema;
 
 /** @type {boolean} */
 var manualMode;
+
+
+// TODO(arthurhsu): remove this workaround once Closure fixes the setUpPage bug.
+/** @type {!IThenable} */
+var whenReady;
 
 
 /** @return {!IThenable<!Firebase>} */
@@ -103,10 +97,12 @@ function setUpPage() {
     return;
   }
 
-  asyncTestCase.waitForAsync('setUpPage');
-  getFirebaseRef().then(function(ref) {
+  // Firebase WebSocket timeout is 30 seconds, so make sure this timeout is
+  // greater than that value, otherwise it can flake.
+  goog.testing.TestCase.getActiveTestCase().promiseTimeout = 40 * 1000;  // 40s
+
+  whenReady = getFirebaseRef().then(function(ref) {
     fb = ref;
-    asyncTestCase.continueTesting();
   });
 }
 
@@ -124,8 +120,6 @@ function setUp() {
     return;
   }
 
-  asyncTestCase.waitForAsync('setUp');
-
   indexStore = new lf.index.MemoryIndexStore();
   var schemaName = 'msfb' + Date.now().toString() +
       Math.floor(Math.random() * 1000).toString();
@@ -137,10 +131,10 @@ function setUp() {
   global.registerService(lf.service.INDEX_STORE, indexStore);
   global.registerService(lf.service.SCHEMA, schema);
 
-  db = new lf.backstore.Firebase(schema, fb);
-  db.init().then(function() {
-    asyncTestCase.continueTesting();
-  }, fail);
+  return whenReady.then(function() {
+    db = new lf.backstore.Firebase(schema, fb);
+    return db.init();
+  });
 }
 
 
@@ -179,8 +173,6 @@ function testSCUD() {
     return;
   }
 
-  asyncTestCase.waitForAsync('testSCUD');
-
   // Use tableC, which has no indices.
   var t2 = schema.table('tableC');
   var rowIdIndex = new lf.index.RowId(t2.getRowIdIndexName());
@@ -211,7 +203,7 @@ function testSCUD() {
   var journal = createJournal([t2]);
   journal.insertOrReplace(t2, [row0, row1]);
   var tx = db.createTx(lf.TransactionType.READ_WRITE, [t2.getName()], journal);
-  tx.commit().then(function() {
+  return tx.commit().then(function() {
     checkRows([row0, row1]);
     journal = createJournal([t2]);
     journal.update(t2, [new lf.Row(2, CONTENTS2)]);
@@ -240,7 +232,6 @@ function testSCUD() {
     return tx.commit();
   }).then(function() {
     checkRows([]);
-    asyncTestCase.continueTesting();
   });
 }
 
@@ -278,8 +269,6 @@ function testExternalChange() {
   if (!manualMode) {
     return;
   }
-
-  asyncTestCase.waitForAsync('testExternalChange');
 
   var CONTENTS0 = {'id': 'hello0', 'name': 'world0'};
   var CONTENTS1 = {'id': 'hello1', 'name': 'world1'};
@@ -358,7 +347,7 @@ function testExternalChange() {
     return resolver.promise;
   };
 
-  testAdd().then(function() {
+  return testAdd().then(function() {
     db.unsubscribe();
     return testModify();
   }).then(function() {
@@ -366,7 +355,6 @@ function testExternalChange() {
     return testDelete();
   }).then(function() {
     db.unsubscribe();
-    asyncTestCase.continueTesting();
   });
 }
 
@@ -374,8 +362,6 @@ function testReload() {
   if (!manualMode) {
     return;
   }
-
-  asyncTestCase.waitForAsync('testReload');
 
   // Remove the DB created by setUp because we don't need it.
   fb.child(schema.name()).remove();
@@ -394,7 +380,7 @@ function testReload() {
   var builder = lf.testing.getSchemaBuilder(schemaName);
   schema = builder.getSchema();  // So that it can be properly cleared.
 
-  builder.connect(options).then(function(database) {
+  return builder.connect(options).then(function(database) {
     mydb = database;
     t = mydb.getSchema().table('tableA');
     var row0 = t.createRow(CONTENTS0);
@@ -417,7 +403,5 @@ function testReload() {
     var row0 = t.createRow({'id': 'hello0', 'name': 'world0'});
     var q = mydb.insert().into(t).values([row0]);
     return lf.testing.util.assertPromiseReject(201, q.exec());
-  }).then(function() {
-    asyncTestCase.continueTesting();
   });
 }

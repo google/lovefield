@@ -15,8 +15,8 @@
  * limitations under the License.
  */
 goog.setTestOnly();
+goog.require('goog.Promise');
 goog.require('goog.string');
-goog.require('goog.testing.AsyncTestCase');
 goog.require('goog.testing.PropertyReplacer');
 goog.require('goog.testing.jsunit');
 goog.require('hr.bdb');
@@ -28,10 +28,6 @@ goog.require('lf.cache.DefaultCache');
 goog.require('lf.service');
 goog.require('lf.structs.map');
 goog.require('lf.structs.set');
-
-
-/** @type {!goog.testing.AsyncTestCase} */
-var asyncTestCase = goog.testing.AsyncTestCase.createAndInstall('IndexedDB');
 
 
 /** @type {!goog.testing.PropertyReplacer} */
@@ -90,20 +86,17 @@ function testInit_IndexedDB_Bundled() {
  *
  * @param {!lf.schema.Database} schema
  * @param {!lf.Global} global
+ * @return {!IThenable}
  */
 function checkInit_IndexedDB(schema, global)  {
   if (!capability.indexedDb) {
-    return;
+    return goog.Promise.resolve();
   }
-
-  var description = 'testInit_IndexedDB_' +
-      schema.pragma().enableBundledMode ? 'Bundled' : 'NonBundled';
-  asyncTestCase.waitForAsync(description);
 
   assertTrue(schema.getHoliday().persistentIndex());
 
   var indexedDb = new lf.backstore.IndexedDB(global, schema);
-  indexedDb.init().then(
+  return indexedDb.init().then(
       /** @suppress {accessControls} */
       function() {
         var createdTableNames = lf.structs.set.create();
@@ -113,28 +106,23 @@ function checkInit_IndexedDB(schema, global)  {
         assertUserTables(schema, createdTableNames);
         assertIndexTables(schema, createdTableNames);
 
-        asyncTestCase.continueTesting();
-      }, fail);
+      });
 }
 
 
 function testInit_Memory() {
-  asyncTestCase.waitForAsync('testInit_Memory');
-
   var schema = randomizeSchemaName(hr.db.getSchema());
   assertTrue(schema.getHoliday().persistentIndex());
 
   var memoryDb = new lf.backstore.Memory(schema);
-  memoryDb.init().then(
+  return memoryDb.init().then(
       /** @suppress {accessControls} */
       function() {
         var createdTableNames = lf.structs.set.create(
             lf.structs.map.keys(memoryDb.tables_));
         assertUserTables(schema, createdTableNames);
         assertIndexTables(schema, createdTableNames);
-
-        asyncTestCase.continueTesting();
-      }, fail);
+      });
 }
 
 

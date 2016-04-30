@@ -16,7 +16,7 @@
  */
 goog.setTestOnly();
 goog.require('goog.Promise');
-goog.require('goog.testing.AsyncTestCase');
+goog.require('goog.testing.TestCase');
 goog.require('goog.testing.jsunit');
 goog.require('goog.testing.recordFunction');
 goog.require('lf.Global');
@@ -26,17 +26,6 @@ goog.require('lf.cache.DefaultCache');
 goog.require('lf.index.MemoryIndexStore');
 goog.require('lf.service');
 goog.require('lf.testing.backstore.MockSchema');
-
-
-/** @type {!goog.testing.AsyncTestCase} */
-var asyncTestCase = goog.testing.AsyncTestCase.createAndInstall(
-    'FirebaseRawBackStore');
-
-
-// Firebase WebSocket timeout is 30 seconds, so make sure this timeout is
-// greater than that value, otherwise it can flake.
-/** @type {number} */
-asyncTestCase.stepTimeout = 40000;  // Raise the timeout to 40 seconds
 
 
 /** @type {!Firebase} */
@@ -71,6 +60,11 @@ var CONTENTS = {'id': 'hello', 'name': 'world'};
 var CONTENTS2 = {'id': 'hello2', 'name': 'world2'};
 
 
+// TODO(arthurhsu): remove this workaround once Closure fixes the setUpPage bug.
+/** @type {!IThenable} */
+var whenReady;
+
+
 /** @return {!IThenable<!Firebase>} */
 function getFirebaseRef() {
   var resolver = goog.Promise.withResolver();
@@ -94,10 +88,12 @@ function setUpPage() {
     return;
   }
 
-  asyncTestCase.waitForAsync('setUpPage');
-  getFirebaseRef().then(function(ref) {
+  // Firebase WebSocket timeout is 30 seconds, so make sure this timeout is
+  // greater than that value, otherwise it can flake.
+  goog.testing.TestCase.getActiveTestCase().promiseTimeout = 40 * 1000;  // 40s
+
+  whenReady = getFirebaseRef().then(function(ref) {
     fb = ref;
-    asyncTestCase.continueTesting();
   });
 }
 
@@ -117,6 +113,7 @@ function setUp() {
   global.registerService(lf.service.CACHE, cache);
   global.registerService(lf.service.INDEX_STORE, indexStore);
   global.registerService(lf.service.SCHEMA, schema);
+  return whenReady;
 }
 
 
@@ -136,8 +133,6 @@ function testNewDBInstance() {
     return;
   }
 
-  asyncTestCase.waitForAsync('testNewDBInstance');
-
   /**
    * @param {!lf.raw.BackStore} rawDb
    * @return {!IThenable}
@@ -148,9 +143,8 @@ function testNewDBInstance() {
   });
 
   var db = new lf.backstore.Firebase(schema, fb);
-  db.init(onUpgrade).then(function() {
+  return db.init(onUpgrade).then(function() {
     onUpgrade.assertCallCount(1);
-    asyncTestCase.continueTesting();
   });
 }
 
@@ -161,8 +155,6 @@ function testAddTable() {
     return;
   }
 
-  asyncTestCase.waitForAsync('testAddTable');
-
   var db = new lf.backstore.Firebase(schema, fb);
   var validate = function(tables) {
     var tableNames = schema.tables().map(function(table) {
@@ -172,7 +164,7 @@ function testAddTable() {
   };
   var numTables = 0;
 
-  db.init().then(function() {
+  return db.init().then(function() {
     return lf.backstore.FirebaseRawBackStore.getValue(db.getRef(), '@table');
   }).then(function(tables) {
     numTables = Object.keys(tables).length;
@@ -187,7 +179,6 @@ function testAddTable() {
   }).then(function(tables) {
     assertEquals(numTables + 1, Object.keys(tables).length);
     validate(tables);
-    asyncTestCase.continueTesting();
   });
 }
 
@@ -197,7 +188,6 @@ function testDump() {
     return;
   }
 
-  asyncTestCase.waitForAsync('testDump');
   var dump;
   var onUpgrade = function(rawDb) {
     assertEquals(1, rawDb.getVersion());
@@ -207,7 +197,7 @@ function testDump() {
   };
 
   var db = new lf.backstore.Firebase(schema, fb);
-  db.init().then(function() {
+  return db.init().then(function() {
     var row1 = { 'R': 1, 'T': 0, 'P': CONTENTS };
     var row2 = { 'R': 1, 'T': 1, 'P': CONTENTS2 };
     return goog.Promise.all([
@@ -222,7 +212,6 @@ function testDump() {
   }).then(function() {
     assertObjectEquals(dump['tableA'][0], CONTENTS);
     assertObjectEquals(dump['tableB'][0], CONTENTS2);
-    asyncTestCase.continueTesting();
   });
 }
 
@@ -265,14 +254,13 @@ function testDropTable() {
     return;
   }
 
-  asyncTestCase.waitForAsync('testDropTable');
   var onUpgrade = function(rawDb) {
     assertEquals(1, rawDb.getVersion());
     return rawDb.dropTable('tableA');
   };
 
   var db;
-  commonSetUp().then(function(instance) {
+  return commonSetUp().then(function(instance) {
     db = instance;
     db.close();
     schema.setVersion(2);
@@ -285,7 +273,6 @@ function testDropTable() {
       assertFalse(snapshot.hasChild('2'));
       assertTrue(snapshot.hasChild('@table'));
       assertFalse(snapshot.child('@table').hasChild('tableA'));
-      asyncTestCase.continueTesting();
     });
   });
 }
@@ -296,7 +283,6 @@ function testAddTableColumn() {
     return;
   }
 
-  asyncTestCase.waitForAsync('testAddTableColumn');
   var onUpgrade = function(rawDb) {
     assertEquals(1, rawDb.getVersion());
     return rawDb.addTableColumn('tableA', 'foo', 23);
@@ -316,7 +302,7 @@ function testAddTableColumn() {
     assertEquals(expected['name'], row['P']['name']);
   };
 
-  commonSetUp().then(function(instance) {
+  return commonSetUp().then(function(instance) {
     db = instance;
     db.close();
     schema.setVersion(2);
@@ -324,7 +310,7 @@ function testAddTableColumn() {
     return db.init(onUpgrade);
   }).then(function() {
     return commonVerify(db, verify);
-  }).then(asyncTestCase.continueTesting.bind(asyncTestCase));
+  });
 }
 
 
@@ -333,7 +319,6 @@ function testDropTableColumn() {
     return;
   }
 
-  asyncTestCase.waitForAsync('testDropTableColumn');
   var onUpgrade = function(rawDb) {
     assertEquals(1, rawDb.getVersion());
     return rawDb.dropTableColumn('tableA', 'name');
@@ -352,7 +337,7 @@ function testDropTableColumn() {
     assertEquals(undefined, row['P']['name']);
   };
 
-  commonSetUp().then(function(instance) {
+  return commonSetUp().then(function(instance) {
     db = instance;
     db.close();
     schema.setVersion(2);
@@ -360,7 +345,7 @@ function testDropTableColumn() {
     return db.init(onUpgrade);
   }).then(function() {
     return commonVerify(db, verify);
-  }).then(asyncTestCase.continueTesting.bind(asyncTestCase));
+  });
 }
 
 
@@ -369,7 +354,6 @@ function testRenameTableColumn() {
     return;
   }
 
-  asyncTestCase.waitForAsync('testAddTableColumn');
   var onUpgrade = function(rawDb) {
     assertEquals(1, rawDb.getVersion());
     return rawDb.renameTableColumn('tableA', 'name', 'nick');
@@ -388,7 +372,7 @@ function testRenameTableColumn() {
     assertEquals(expected['name'], row['P']['nick']);
   };
 
-  commonSetUp().then(function(instance) {
+  return commonSetUp().then(function(instance) {
     db = instance;
     db.close();
     schema.setVersion(2);
@@ -396,5 +380,5 @@ function testRenameTableColumn() {
     return db.init(onUpgrade);
   }).then(function() {
     return commonVerify(db, verify);
-  }).then(asyncTestCase.continueTesting.bind(asyncTestCase));
+  });
 }

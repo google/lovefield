@@ -16,7 +16,6 @@
  */
 goog.setTestOnly();
 goog.require('goog.Promise');
-goog.require('goog.testing.AsyncTestCase');
 goog.require('goog.testing.jsunit');
 goog.require('hr.db');
 goog.require('lf.TransactionType');
@@ -28,11 +27,7 @@ goog.require('lf.service');
 goog.require('lf.structs.set');
 goog.require('lf.testing.backstore.MockStore');
 goog.require('lf.testing.hrSchema.MockDataGenerator');
-
-
-/** @type {!goog.testing.AsyncTestCase} */
-var asyncTestCase = goog.testing.AsyncTestCase.createAndInstall(
-    'ExternalChangeObserverTest');
+goog.require('lf.testing.util');
 
 
 /** @type {!lf.Database} */
@@ -52,30 +47,28 @@ var mockStore;
 
 
 function setUp() {
-  asyncTestCase.waitForAsync('setUp');
-  hr.db.connect({storeType: lf.schema.DataStoreType.OBSERVABLE_STORE}).then(
-      function(database) {
-        db = database;
-        j = db.getSchema().getJob();
+  return hr.db.connect({
+    storeType: lf.schema.DataStoreType.OBSERVABLE_STORE
+  }).then(function(database) {
+    db = database;
+    j = db.getSchema().getJob();
 
-        var dataGenerator = new lf.testing.hrSchema.MockDataGenerator(
-            /** @type {!hr.db.schema.Database} */ (db.getSchema()));
-        dataGenerator.generate(
-            /* jobCount */ 10,
-            /* employeeCount */ 10,
-            /* departmentCount */ 0);
-        sampleJobs = dataGenerator.sampleJobs;
+    var dataGenerator = new lf.testing.hrSchema.MockDataGenerator(
+        /** @type {!hr.db.schema.Database} */ (db.getSchema()));
+    dataGenerator.generate(
+        /* jobCount */ 10,
+        /* employeeCount */ 10,
+        /* departmentCount */ 0);
+    sampleJobs = dataGenerator.sampleJobs;
 
-        var backStore = /** @type {!lf.backstore.ObservableStore} */ (
-            hr.db.getGlobal().getService(lf.service.BACK_STORE));
-        mockStore = new lf.testing.backstore.MockStore(backStore);
+    var backStore = /** @type {!lf.backstore.ObservableStore} */ (
+        hr.db.getGlobal().getService(lf.service.BACK_STORE));
+    mockStore = new lf.testing.backstore.MockStore(backStore);
 
-        var externalChangeObserver = new lf.backstore.ExternalChangeObserver(
-            hr.db.getGlobal());
-        externalChangeObserver.startObserving();
-
-        asyncTestCase.continueTesting();
-      }, fail);
+    var externalChangeObserver = new lf.backstore.ExternalChangeObserver(
+        hr.db.getGlobal());
+    externalChangeObserver.startObserving();
+  });
 }
 
 
@@ -85,8 +78,6 @@ function tearDown() {
 
 
 function testExternalChangesApplied() {
-  asyncTestCase.waitForAsync('testExternalChangesApplied');
-
   var initialRows = sampleJobs;
   var notDeletedRows = sampleJobs.slice(0, sampleJobs.length / 2);
   var deletedRows = sampleJobs.slice(sampleJobs.length / 2);
@@ -104,7 +95,7 @@ function testExternalChangesApplied() {
   };
 
   // Simulate an external insertion of rows.
-  simulateInsertionModification(j, sampleJobs).then(
+  return simulateInsertionModification(j, sampleJobs).then(
       function() {
         return db.select().from(j).orderBy(j.id).exec();
       }).then(
@@ -141,14 +132,11 @@ function testExternalChangesApplied() {
         assertEquals(modifiedRow.getId(), results[0][j.id.getName()]);
 
         // Attempt to insert a row with an existing primary key.
-        return db.insert().into(j).values([modifiedRow]).exec();
-      }).thenCatch(
-      function(e) {
         // Expecting a constraint error. This ensures that indices are updated
         // as a result of external changes.
-        // 201: Duplicate keys are not allowed.
-        assertEquals(201, e.code);
-        asyncTestCase.continueTesting();
+        return lf.testing.util.assertPromiseReject(
+            201,  // 201: Duplicate keys are not allowed.
+            db.insert().into(j).values([modifiedRow]).exec());
       });
 }
 
@@ -156,9 +144,10 @@ function testExternalChangesApplied() {
 /**
  * Tests that Lovefield's observers are firing as a result of an external
  * backstore change.
+ * @return {!IThenable}
  */
 function testDbObserversFired() {
-  asyncTestCase.waitForAsync('testDbObserversFired');
+  var resolver = goog.Promise.withResolver();
 
   var query = db.select().from(j);
   db.observe(query, function(changes) {
@@ -166,19 +155,21 @@ function testDbObserversFired() {
     changes.forEach(function(changeEvent) {
       assertEquals(1, changeEvent.addedCount);
     });
-    asyncTestCase.continueTesting();
+    resolver.resolve();
   });
 
   simulateInsertionModification(j, sampleJobs);
+  return resolver.promise;
 }
 
 
 /**
  * Ensures that even in the case of an external change, Lovefield observers are
  * fired after every READ_WRITE transaction.
+ * @return {!IThenable}
  */
 function testOrder_Observer_ExternalChange() {
-  asyncTestCase.waitForAsync('testOrder_Observer_ExternalChange');
+  var resolver = goog.Promise.withResolver();
 
   var sampleJobs1 = sampleJobs.slice(0, sampleJobs.length / 2 - 1);
   var sampleJobs2 = sampleJobs.slice(sampleJobs.length / 2 - 1);
@@ -193,7 +184,7 @@ function testOrder_Observer_ExternalChange() {
       assertEquals(sampleJobs1.length, changes.length);
     } else if (counter == 2) {
       assertEquals(sampleJobs2.length, changes.length);
-      asyncTestCase.continueTesting();
+      resolver.resolve();
     }
   });
 
@@ -201,6 +192,7 @@ function testOrder_Observer_ExternalChange() {
     db.insert().into(j).values(sampleJobs1).exec(),
     simulateInsertionModification(j, sampleJobs2)
   ]);
+  return resolver.promise;
 }
 
 
