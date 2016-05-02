@@ -1,3 +1,9 @@
+Version: 2.1.8<br>
+Publish date: 20160502<br>
+Changes:
+ - Fixed missing semicolon at the end of dist/ files.
+ - Fixed lf.Exception to handle null/undefined arguments.
+
 Version: 2.1.7<br>
 Publish date: 20160307<br>
 Changes:
