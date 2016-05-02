@@ -380,7 +380,6 @@ function createTestFile(script) {
       '          \'../' + prefix + script + '\',\r\n' +
       '          [\'' + fakeName + '\'],\r\n' +
       '          [' + extractRequires(scriptPath) + '], false);\r\n' +
-      '      goog.require(\'goog.testing.AsyncTestCase\');\r\n' +
       '      goog.require(\'goog.testing.jsunit\');\r\n' +
       '      goog.require(\'' + fakeName + '\');\r\n' +
       '    </script>\r\n' +
