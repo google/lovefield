@@ -17,7 +17,6 @@
 goog.setTestOnly();
 goog.require('goog.Promise');
 goog.require('goog.functions');
-goog.require('goog.testing.AsyncTestCase');
 goog.require('goog.testing.PropertyReplacer');
 goog.require('goog.testing.jsunit');
 goog.require('lf.Capability');
@@ -34,10 +33,6 @@ goog.require('lf.structs.set');
 goog.require('lf.testing.backstore.MockSchema');
 goog.require('lf.testing.backstore.ScudTester');
 goog.require('lf.testing.util');
-
-
-/** @type {!goog.testing.AsyncTestCase} */
-var asyncTestCase = goog.testing.AsyncTestCase.createAndInstall('IndexedDB');
 
 
 /** @type {!goog.testing.PropertyReplacer} */
@@ -91,8 +86,6 @@ function tearDown() {
   }
 
   propertyReplacer.reset();
-  asyncTestCase.waitForAsync('tearDown');
-
   // Clearing all tables.
   var promises = schema.tables().map(
       function(table) {
@@ -108,10 +101,7 @@ function tearDown() {
         return tx.commit();
       });
 
-  goog.Promise.all(promises).then(
-      function() {
-        asyncTestCase.continueTesting();
-      }, fail);
+  return goog.Promise.all(promises);
 }
 
 
@@ -132,11 +122,7 @@ function testSCUD() {
   db = new lf.backstore.IndexedDB(lf.Global.get(), schema);
   var scudTester = new lf.testing.backstore.ScudTester(db, lf.Global.get());
 
-  scudTester.run().then(function() {
-    asyncTestCase.continueTesting();
-  });
-
-  asyncTestCase.waitForAsync('testSCUD');
+  return scudTester.run();
 }
 
 
@@ -150,11 +136,7 @@ function testSCUD_Bundled() {
   db = new lf.backstore.IndexedDB(lf.Global.get(), schema);
   var scudTester = new lf.testing.backstore.ScudTester(db, lf.Global.get());
 
-  scudTester.run().then(function() {
-    asyncTestCase.continueTesting();
-  });
-
-  asyncTestCase.waitForAsync('testSCUD_Bundled');
+  return scudTester.run();
 }
 
 
@@ -203,7 +185,6 @@ function testTwoTableInserts_Bundled() {
         lf.backstore.TableType.DATA));
   };
 
-  asyncTestCase.waitForAsync('testTwoTableInserts_Bundled');
   return db.init().then(function() {
     var tx = db.createTx(
         lf.TransactionType.READ_WRITE, [tableA], createJournal([tableA]));
@@ -263,15 +244,17 @@ function testTwoTableInserts_Bundled() {
     assertEquals(1, results.length);
     assertEquals(row4.id(), results[0].id());
     assertObjectEquals(CONTENTS2, results[0].payload());
-    asyncTestCase.continueTesting();
   });
 }
 
 
-/** @suppress {accessControls} */
+/**
+ * @suppress {accessControls}
+ * @return {!IThenable}
+ */
 function testScanRowId() {
   if (!capability.indexedDb) {
-    return;
+    return goog.Promise.resolve();
   }
 
   /**
@@ -308,7 +291,7 @@ function testScanRowId() {
 
   db = new lf.backstore.IndexedDB(lf.Global.get(), schema);
   var rows = generateRows();
-  db.init().then(function() {
+  return db.init().then(function() {
     assertEquals(lf.Row.nextId_, 1);
     return insertIntoTable(rows);
   }).then(function() {
@@ -316,36 +299,34 @@ function testScanRowId() {
     return db.init();
   }).then(function() {
     assertEquals(lf.Row.nextId_, rows[0].id() + 1);
-    asyncTestCase.continueTesting();
   });
-
-  asyncTestCase.waitForAsync('testScanRowId');
 }
 
 
 /**
  * Tests scanRowId() for the case where all tables are empty.
  * @suppress {accessControls}
+ * @return {!IThenable}
  */
 function testScanRowId_Empty() {
   if (!capability.indexedDb) {
-    return;
+    return goog.Promise.resolve();
   }
 
   db = new lf.backstore.IndexedDB(lf.Global.get(), schema);
-  db.init().then(function() {
+  return db.init().then(function() {
     assertEquals(1, lf.Row.nextId_);
-    asyncTestCase.continueTesting();
   });
-
-  asyncTestCase.waitForAsync('testScanRowId');
 }
 
 
-/** @suppress {accessControls} */
+/**
+ * @suppress {accessControls}
+ * @return {!IThenable}
+ */
 function testScanRowId_BundledDB() {
   if (!capability.indexedDb) {
-    return;
+    return goog.Promise.resolve();
   }
 
   /** @return {!IThenable} */
@@ -371,16 +352,13 @@ function testScanRowId_BundledDB() {
 
   schema.setBundledMode(true);
   db = new lf.backstore.IndexedDB(lf.Global.get(), schema);
-  db.init().then(function() {
+  return db.init().then(function() {
     return insertIntoTable();
   }).then(function() {
     return db.scanRowId_();
   }).then(function(rowId) {
     assertEquals(2048, rowId);
-    asyncTestCase.continueTesting();
   });
-
-  asyncTestCase.waitForAsync('testScanRowId_BundledDB');
 }
 
 
@@ -414,7 +392,7 @@ function testUpgrade() {
       schema.table('tableA'), 'persistentIndex', goog.functions.TRUE);
 
   db = new lf.backstore.IndexedDB(lf.Global.get(), schema);
-  db.init().then(function() {
+  return db.init().then(function() {
     // Verify that index tables are created.
     var tables = filterTableA();
     assertTrue(tables.length > 1);
@@ -438,8 +416,5 @@ function testUpgrade() {
             table.deserializeRow.bind(table),
             lf.backstore.TableType.DATA));
     assertNotNull(store);
-    asyncTestCase.continueTesting();
   });
-
-  asyncTestCase.waitForAsync('testUpgrade');
 }

@@ -15,7 +15,6 @@
  * limitations under the License.
  */
 goog.setTestOnly();
-goog.require('goog.testing.AsyncTestCase');
 goog.require('goog.testing.jsunit');
 goog.require('lf.Global');
 goog.require('lf.backstore.Memory');
@@ -24,11 +23,6 @@ goog.require('lf.index.MemoryIndexStore');
 goog.require('lf.service');
 goog.require('lf.testing.backstore.ScudTester');
 goog.require('lf.testing.getSchemaBuilder');
-
-
-/** @type {!goog.testing.AsyncTestCase} */
-var asyncTestCase = goog.testing.AsyncTestCase.createAndInstall(
-    'MemoryBackStore');
 
 
 /** @type {!lf.backstore.Memory} */
@@ -44,8 +38,6 @@ var schema;
 
 
 function setUp() {
-  asyncTestCase.waitForAsync('setUp');
-
   var indexStore = new lf.index.MemoryIndexStore();
   schema = lf.testing.getSchemaBuilder().getSchema();
   cache = new lf.cache.DefaultCache(schema);
@@ -57,9 +49,7 @@ function setUp() {
 
   db = new lf.backstore.Memory(schema);
 
-  db.init().then(function() {
-    asyncTestCase.continueTesting();
-  }, fail);
+  return db.init();
 }
 
 
@@ -86,9 +76,5 @@ function testGetTable_NonExisting() {
 function testSCUD() {
   var scudTester = new lf.testing.backstore.ScudTester(db, lf.Global.get());
 
-  scudTester.run().then(function() {
-    asyncTestCase.continueTesting();
-  });
-
-  asyncTestCase.waitForAsync('testSCUD');
+  return scudTester.run();
 }

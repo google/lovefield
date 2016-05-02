@@ -15,7 +15,6 @@
  * limitations under the License.
  */
 goog.setTestOnly();
-goog.require('goog.testing.AsyncTestCase');
 goog.require('goog.testing.jsunit');
 goog.require('lf.Global');
 goog.require('lf.backstore.LocalStorage');
@@ -24,10 +23,6 @@ goog.require('lf.index.MemoryIndexStore');
 goog.require('lf.service');
 goog.require('lf.testing.backstore.ScudTester');
 goog.require('lf.testing.getSchemaBuilder');
-
-
-/** @type {!goog.testing.AsyncTestCase} */
-var asyncTestCase = goog.testing.AsyncTestCase.createAndInstall('LocalStorage');
 
 
 /** @type {!lf.backstore.LocalStorage} */
@@ -43,8 +38,6 @@ var schema;
 
 
 function setUp() {
-  asyncTestCase.waitForAsync('setUp');
-
   var indexStore = new lf.index.MemoryIndexStore();
   schema = lf.testing.getSchemaBuilder().getSchema();
   cache = new lf.cache.DefaultCache(schema);
@@ -57,9 +50,7 @@ function setUp() {
   window.localStorage.clear();
   db = new lf.backstore.LocalStorage(schema);
 
-  db.init().then(function() {
-    asyncTestCase.continueTesting();
-  }, fail);
+  return db.init();
 }
 
 
@@ -93,9 +84,5 @@ function testSCUD() {
         return newDb;
       });
 
-  scudTester.run().then(function() {
-    asyncTestCase.continueTesting();
-  });
-
-  asyncTestCase.waitForAsync('testSCUD');
+  return scudTester.run();
 }

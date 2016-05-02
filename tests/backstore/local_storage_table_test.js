@@ -15,24 +15,14 @@
  * limitations under the License.
  */
 goog.setTestOnly();
-goog.require('goog.testing.AsyncTestCase');
 goog.require('goog.testing.jsunit');
 goog.require('lf.backstore.LocalStorageTable');
 goog.require('lf.testing.backstore.TableTester');
 
 
-/** @type {!goog.testing.AsyncTestCase} */
-var asyncTestCase =
-    goog.testing.AsyncTestCase.createAndInstall('LocalStorageTable');
-
-
 function testLocalStorageTable() {
-  asyncTestCase.waitForAsync('testLocalStorageTable');
-
   var tester = new lf.testing.backstore.TableTester(function() {
     return new lf.backstore.LocalStorageTable('foo.bar');
   });
-  tester.run().then(function() {
-    asyncTestCase.continueTesting();
-  }, fail);
+  return tester.run();
 }

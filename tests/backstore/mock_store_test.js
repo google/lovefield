@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 goog.setTestOnly();
-goog.require('goog.testing.AsyncTestCase');
+goog.require('goog.Promise');
 goog.require('goog.testing.jsunit');
 goog.require('lf.Global');
 goog.require('lf.TransactionType');
@@ -29,11 +29,6 @@ goog.require('lf.structs.set');
 goog.require('lf.testing.backstore.MockStore');
 goog.require('lf.testing.backstore.ScudTester');
 goog.require('lf.testing.getSchemaBuilder');
-
-
-/** @type {!goog.testing.AsyncTestCase} */
-var asyncTestCase = goog.testing.AsyncTestCase.createAndInstall(
-    'MockStoreTest');
 
 
 /** @type {!lf.backstore.ObservableStore} */
@@ -53,8 +48,6 @@ var schema;
 
 
 function setUp() {
-  asyncTestCase.waitForAsync('setUp');
-
   var indexStore = new lf.index.MemoryIndexStore();
   schema = lf.testing.getSchemaBuilder().getSchema();
   cache = new lf.cache.DefaultCache(schema);
@@ -67,9 +60,7 @@ function setUp() {
   actualStore = new lf.backstore.ObservableStore(schema);
   mockStore = new lf.testing.backstore.MockStore(actualStore);
 
-  mockStore.init().then(function() {
-    asyncTestCase.continueTesting();
-  }, fail);
+  return mockStore.init();
 }
 
 
@@ -98,11 +89,7 @@ function testSCUD() {
   var scudTester = new lf.testing.backstore.ScudTester(
       mockStore, lf.Global.get());
 
-  scudTester.run().then(function() {
-    asyncTestCase.continueTesting();
-  });
-
-  asyncTestCase.waitForAsync('testSCUD');
+  return scudTester.run();
 }
 
 
@@ -110,9 +97,10 @@ function testSCUD() {
  * Tests that when a backstore change is submitted via the MockStore interface,
  * observers of the actual backstore (the one registered in lf.Global) are
  * notified.
+ * @return {!IThenable}
  */
 function testSimulateExternalChange() {
-  asyncTestCase.waitForAsync('testSimulateExternalChange');
+  var resolver = goog.Promise.withResolver();
 
   var tableSchema = schema.table('tableA');
   var rows = new Array(10);
@@ -132,7 +120,7 @@ function testSimulateExternalChange() {
     assertEquals(0, tableDiffs[0].getModified().size);
     assertEquals(0, tableDiffs[0].getDeleted().size);
 
-    asyncTestCase.continueTesting();
+    resolver.resolve();
   });
 
   // Using the MockStore to simulate an external backstore change. Changes that
@@ -156,5 +144,9 @@ function testSimulateExternalChange() {
     return table.remove(rowIds);
   }).then(function() {
     tx.commit();
+  }, function(e) {
+    resolver.reject(e);
   });
+
+  return resolver.promise;
 }

@@ -16,7 +16,6 @@
  */
 goog.setTestOnly();
 goog.require('goog.Promise');
-goog.require('goog.testing.AsyncTestCase');
 goog.require('goog.testing.jsunit');
 goog.require('goog.testing.recordFunction');
 goog.require('lf.Capability');
@@ -33,10 +32,6 @@ goog.require('lf.schema.Database');
 goog.require('lf.schema.Info');
 goog.require('lf.schema.Table');
 goog.require('lf.service');
-
-
-/** @type {!goog.testing.AsyncTestCase} */
-var asyncTestCase = goog.testing.AsyncTestCase.createAndInstall('IndexedDBRaw');
 
 
 /** @type {!lf.schema.Database} */
@@ -107,8 +102,6 @@ function testNewDBInstance() {
     return;
   }
 
-  asyncTestCase.waitForAsync('testNewDBInstance');
-
   /**
    * @param {!lf.raw.BackStore} rawDb
    * @return {!IThenable}
@@ -119,9 +112,8 @@ function testNewDBInstance() {
   });
 
   var db = new lf.backstore.IndexedDB(lf.Global.get(), schema);
-  db.init(onUpgrade).then(function() {
+  return db.init(onUpgrade).then(function() {
     onUpgrade.assertCallCount(1);
-    asyncTestCase.continueTesting();
   });
 }
 
@@ -231,12 +223,10 @@ function testAddTableColumn() {
     return;
   }
 
-  asyncTestCase.waitForAsync('testAddTableColumn');
-
   var db = new lf.backstore.IndexedDB(lf.Global.get(), schema);
   var date = new Date();
 
-  db.init().then(function(rawDb) {
+  return db.init().then(function(rawDb) {
     return prepareTxForTableA(rawDb);
   }).then(function() {
     db.close();
@@ -250,8 +240,7 @@ function testAddTableColumn() {
     assertEquals(2, results.length);
     assertEquals(date.getTime(), results[0].payload()['dob']);
     assertEquals(date.getTime(), results[1].payload()['dob']);
-    asyncTestCase.continueTesting();
-  }, fail);
+  });
 }
 
 
@@ -260,13 +249,11 @@ function testAddTableColumn_Bundled() {
     return;
   }
 
-  asyncTestCase.waitForAsync('testAddTableColumn_Bundled');
-
   schema.setBundledMode(true);
   var db = new lf.backstore.IndexedDB(lf.Global.get(), schema);
   var date = new Date();
 
-  db.init().then(function(rawDb) {
+  return db.init().then(function(rawDb) {
     return prepareBundledTxForTableA(rawDb);
   }).then(function() {
     db.close();
@@ -282,8 +269,7 @@ function testAddTableColumn_Bundled() {
     var newRow2 = lf.Row.deserialize(results[1].getPayload()[MAGIC]);
     assertEquals(date.getTime(), newRow.payload()['dob']);
     assertEquals(date.getTime(), newRow2.payload()['dob']);
-    asyncTestCase.continueTesting();
-  }, fail);
+  });
 }
 
 
@@ -304,10 +290,8 @@ function testDropTableColumn() {
     return;
   }
 
-  asyncTestCase.waitForAsync('testDropTableColumn');
-
   var db = new lf.backstore.IndexedDB(lf.Global.get(), schema);
-  db.init().then(function(rawDb) {
+  return db.init().then(function(rawDb) {
     return prepareTxForTableA(rawDb);
   }).then(function() {
     db.close();
@@ -321,7 +305,6 @@ function testDropTableColumn() {
     assertEquals(2, results.length);
     assertFalse(results[0].payload().hasOwnProperty('name'));
     assertFalse(results[1].payload().hasOwnProperty('name'));
-    asyncTestCase.continueTesting();
   });
 }
 
@@ -331,11 +314,9 @@ function testDropTableColumn_Bundled() {
     return;
   }
 
-  asyncTestCase.waitForAsync('testDropTableColumn_Bundled');
-
   schema.setBundledMode(true);
   var db = new lf.backstore.IndexedDB(lf.Global.get(), schema);
-  db.init().then(function(rawDb) {
+  return db.init().then(function(rawDb) {
     return prepareBundledTxForTableA(rawDb);
   }).then(function() {
     db.close();
@@ -351,7 +332,6 @@ function testDropTableColumn_Bundled() {
     var newRow2 = lf.Row.deserialize(results[1].getPayload()[MAGIC]);
     assertFalse(newRow.hasOwnProperty('name'));
     assertFalse(newRow2.hasOwnProperty('name'));
-    asyncTestCase.continueTesting();
   });
 }
 
@@ -373,10 +353,8 @@ function testRenameTableColumn() {
     return;
   }
 
-  asyncTestCase.waitForAsync('testRenameTableColumn');
-
   var db = new lf.backstore.IndexedDB(lf.Global.get(), schema);
-  db.init().then(function(rawDb) {
+  return db.init().then(function(rawDb) {
     return prepareTxForTableA(rawDb);
   }).then(function() {
     db.close();
@@ -392,7 +370,6 @@ function testRenameTableColumn() {
     assertFalse(results[1].payload().hasOwnProperty('name'));
     assertEquals('world', results[0].payload()['username']);
     assertEquals('world2', results[1].payload()['username']);
-    asyncTestCase.continueTesting();
   });
 }
 
@@ -402,11 +379,9 @@ function testRenameTableColumn_Bundled() {
     return;
   }
 
-  asyncTestCase.waitForAsync('testRenameTableColumn_Bundled');
-
   schema.setBundledMode(true);
   var db = new lf.backstore.IndexedDB(lf.Global.get(), schema);
-  db.init().then(function(rawDb) {
+  return db.init().then(function(rawDb) {
     return prepareBundledTxForTableA(rawDb);
   }).then(function() {
     db.close();
@@ -424,7 +399,6 @@ function testRenameTableColumn_Bundled() {
     assertFalse(newRow2.hasOwnProperty('name'));
     assertEquals('world', newRow.payload()['username']);
     assertEquals('world2', newRow2.payload()['username']);
-    asyncTestCase.continueTesting();
   });
 }
 
@@ -446,20 +420,17 @@ function testDropTable() {
     return;
   }
 
-  asyncTestCase.waitForAsync('testDropTable');
-
   var db = new lf.backstore.IndexedDB(lf.Global.get(), schema);
-  db.init().then(function(rawDb) {
+  return db.init().then(function(rawDb) {
     assertEquals(2, rawDb.objectStoreNames.length);
     db.close();
     db = null;
     schema.setVersion(2);
     db = new lf.backstore.IndexedDB(lf.Global.get(), schema);
     return db.init(upgradeDropTable);
-  }, fail).then(function(rawDb) {
+  }).then(function(rawDb) {
     assertEquals(1, rawDb.objectStoreNames.length);
-    asyncTestCase.continueTesting();
-  }, fail);
+  });
 }
 
 
@@ -483,20 +454,16 @@ function testDump() {
     return;
   }
 
-  asyncTestCase.waitForAsync('testDump');
-
   var db = new lf.backstore.IndexedDB(lf.Global.get(), schema);
-  db.init().then(function(rawDb) {
+  return db.init().then(function(rawDb) {
     return prepareTxForTableA(rawDb);
-  }, fail).then(function() {
+  }).then(function() {
     db.close();
     db = null;
     schema.setVersion(2);
     db = new lf.backstore.IndexedDB(lf.Global.get(), schema);
     return db.init(upgradeDumping);
-  }, fail).then(function() {
-    asyncTestCase.continueTesting();
-  }, fail);
+  });
 }
 
 
@@ -505,21 +472,17 @@ function testDump_Bundled() {
     return;
   }
 
-  asyncTestCase.waitForAsync('testDump_Bundled');
-
   schema.setBundledMode(true);
   var db = new lf.backstore.IndexedDB(lf.Global.get(), schema);
-  db.init().then(function(rawDb) {
+  return db.init().then(function(rawDb) {
     return prepareBundledTxForTableA(rawDb);
-  }, fail).then(function() {
+  }).then(function() {
     db.close();
     db = null;
     schema.setVersion(2);
     db = new lf.backstore.IndexedDB(lf.Global.get(), schema);
     return db.init(upgradeDumping);
-  }, fail).then(function() {
-    asyncTestCase.continueTesting();
-  }, fail);
+  });
 }
 
 

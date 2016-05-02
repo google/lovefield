@@ -24,16 +24,11 @@ goog.setTestOnly();
 goog.require('goog.Promise');
 goog.require('goog.dom.iframe');
 goog.require('goog.html.testing');
-goog.require('goog.testing.AsyncTestCase');
 goog.require('goog.testing.jsunit');
 goog.require('lf.Capability');
 goog.require('lf.Row');
 goog.require('lf.backstore.LocalStorage');
 goog.require('lf.testing.getSchemaBuilder');
-
-
-/** @type {!goog.testing.AsyncTestCase} */
-var asyncTestCase = goog.testing.AsyncTestCase.createAndInstall('LocalStorage');
 
 
 /** @type {!lf.schema.Database} */
@@ -75,8 +70,6 @@ function testSubscribe() {
     return;
   }
 
-  asyncTestCase.waitForAsync('testSubscribe');
-
   // Set up database, create 6 rows in tableC.
   var db = new lf.backstore.LocalStorage(schema);
   db.initSync();
@@ -109,5 +102,5 @@ function testSubscribe() {
       /* opt_headContents */ undefined,
       iframeContents);
 
-  resolver.promise.then(asyncTestCase.continueTesting.bind(asyncTestCase));
+  return resolver.promise;
 }

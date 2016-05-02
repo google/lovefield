@@ -26,7 +26,6 @@
  */
 goog.setTestOnly();
 goog.require('goog.Promise');
-goog.require('goog.testing.AsyncTestCase');
 goog.require('goog.testing.PropertyReplacer');
 goog.require('goog.testing.jsunit');
 goog.require('goog.testing.recordFunction');
@@ -40,10 +39,6 @@ goog.require('lf.schema');
 goog.require('lf.schema.DataStoreType');
 goog.require('lf.service');
 goog.require('lf.service.ServiceId');
-
-
-/** @type {!goog.testing.AsyncTestCase} */
-var asyncTestCase = goog.testing.AsyncTestCase.createAndInstall('WebSqlRaw');
 
 
 /** @type {!lf.Capability} */
@@ -125,8 +120,6 @@ function testNewDBInstance() {
     return;
   }
 
-  asyncTestCase.waitForAsync('testNewDBInstance');
-
   var schema = getOldSchema();
   lf.Global.get().registerService(lf.service.SCHEMA, schema);
   lf.Global.get().registerService(lf.service.CACHE,
@@ -142,9 +135,8 @@ function testNewDBInstance() {
   });
 
   var db = new lf.backstore.WebSql(lf.Global.get(), getOldSchema());
-  db.init(onUpgrade).then(function() {
+  return db.init(onUpgrade).then(function() {
     onUpgrade.assertCallCount(1);
-    asyncTestCase.continueTesting();
   });
 }
 
@@ -232,7 +224,6 @@ function test1AddTableColumn() {
     return;
   }
 
-  asyncTestCase.waitForAsync('test1AddTableColumn');
   var builder = lf.schema.create(upgradeDbName, 2);
   builder.createTable('A').
       addColumn('id', lf.Type.STRING).
@@ -247,10 +238,10 @@ function test1AddTableColumn() {
     return store.addTableColumn('A', 'something', 'nothing');
   };
 
-  runTest(builder, onUpgrade, function(results) {
+  return runTest(builder, onUpgrade, function(results) {
     assertEquals(2, results.length);
     assertEquals('nothing', results[0]['something']);
-  }, true).then(asyncTestCase.continueTesting.bind(asyncTestCase), fail);
+  }, true);
 }
 
 
@@ -259,7 +250,6 @@ function test2DropTableColumn() {
     return;
   }
 
-  asyncTestCase.waitForAsync('test1AddTableColumn');
   var builder = lf.schema.create(upgradeDbName, 3);
   builder.createTable('A').
       addColumn('id', lf.Type.STRING).
@@ -273,13 +263,13 @@ function test2DropTableColumn() {
     return store.dropTableColumn('A', 'something');
   };
 
-  runTest(builder, onUpgrade, function(results) {
+  return runTest(builder, onUpgrade, function(results) {
     assertEquals(2, results.length);
     var payload = results[0];
     assertTrue(payload.hasOwnProperty('id'));
     assertTrue(payload.hasOwnProperty('name'));
     assertFalse(payload.hasOwnProperty('something'));
-  }).then(asyncTestCase.continueTesting.bind(asyncTestCase), fail);
+  });
 }
 
 
@@ -288,7 +278,6 @@ function test3RenameTableColumn() {
     return;
   }
 
-  asyncTestCase.waitForAsync('test3RenameTableColumn');
   var builder = lf.schema.create(upgradeDbName, 4);
   builder.createTable('A').
       addColumn('id', lf.Type.STRING).
@@ -302,10 +291,10 @@ function test3RenameTableColumn() {
     return store.renameTableColumn('A', 'name', 'lastName');
   };
 
-  runTest(builder, onUpgrade, function(results) {
+  return runTest(builder, onUpgrade, function(results) {
     assertEquals(2, results.length);
     assertEquals('world', results[0]['lastName']);
-  }).then(asyncTestCase.continueTesting.bind(asyncTestCase), fail);
+  });
 }
 
 
@@ -314,7 +303,6 @@ function test4Dump() {
     return;
   }
 
-  asyncTestCase.waitForAsync('test4Dump');
   var builder = lf.schema.create(upgradeDbName, 5);
   builder.createTable('A').
       addColumn('id', lf.Type.STRING).
@@ -332,11 +320,11 @@ function test4Dump() {
     });
   };
 
-  runTest(builder, onUpgrade, function(results) {
+  return runTest(builder, onUpgrade, function(results) {
     var rowsA = dumpResult['A'];
     assertEquals(2, rowsA.length);
     assertObjectEquals('world', rowsA[0]['value']['lastName']);
-  }).then(asyncTestCase.continueTesting.bind(asyncTestCase), fail);
+  });
 }
 
 
@@ -345,7 +333,6 @@ function test5DropTable() {
     return;
   }
 
-  asyncTestCase.waitForAsync('test5DropTable');
   var builder = lf.schema.create(upgradeDbName, 6);
   builder.createTable('B').
       addColumn('id', lf.Type.STRING).
@@ -359,7 +346,7 @@ function test5DropTable() {
     return store.dropTable('A');
   };
 
-  runTest(builder, onUpgrade, function(results) {
+  return runTest(builder, onUpgrade, function(results) {
     var resolver = goog.Promise.withResolver();
     upgradeDb.readTransaction(function(tx) {
       tx.executeSql(
@@ -377,5 +364,5 @@ function test5DropTable() {
           resolver.reject.bind(resolver));
     });
     return resolver.promise;
-  }).then(asyncTestCase.continueTesting.bind(asyncTestCase), fail);
+  });
 }

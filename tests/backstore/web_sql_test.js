@@ -15,7 +15,8 @@
  * limitations under the License.
  */
 goog.setTestOnly();
-goog.require('goog.testing.AsyncTestCase');
+goog.require('goog.Promise');
+goog.require('goog.testing.TestCase');
 goog.require('goog.testing.jsunit');
 goog.require('lf.Capability');
 goog.require('lf.Global');
@@ -28,14 +29,6 @@ goog.require('lf.schema.DataStoreType');
 goog.require('lf.service');
 goog.require('lf.testing.backstore.ScudTester');
 goog.require('lf.testing.getSchemaBuilder');
-
-
-/** @type {!goog.testing.AsyncTestCase} */
-var asyncTestCase = goog.testing.AsyncTestCase.createAndInstall('WebSql');
-
-
-/** @type {number} */
-asyncTestCase.stepTimeout = 5000;  // Raise the timeout to 5 seconds.
 
 
 /** @type {string} */
@@ -57,6 +50,8 @@ var capability;
 function setUpPage() {
   capability = lf.Capability.get();
   schemaName = 'wsql' + goog.now();
+
+  goog.testing.TestCase.getActiveTestCase().promiseTimeout = 5 * 1000;  // 5s
 }
 
 function setUp() {
@@ -87,26 +82,23 @@ function testSCUD() {
   db = new lf.backstore.WebSql(lf.Global.get(), schema);
   var scudTester = new lf.testing.backstore.ScudTester(db, lf.Global.get());
 
-  scudTester.run().then(function() {
-    asyncTestCase.continueTesting();
-  }, fail);
-
-  asyncTestCase.waitForAsync('testSCUD');
+  return scudTester.run();
 }
 
 
-/** Tests scanRowId() for the case where all tables are empty. */
+/**
+ * Tests scanRowId() for the case where all tables are empty.
+ * @return {!IThenable}
+ */
 function testRowId_Empty() {
   if (!capability.webSql) {
-    return;
+    return goog.Promise.resolve();
   }
 
-  asyncTestCase.waitForAsync('testRowId_Empty');
-  lf.schema.create('foo' + goog.now(), 1).connect({
+  return lf.schema.create('foo' + goog.now(), 1).connect({
     storeType: lf.schema.DataStoreType.WEB_SQL
   }).then(function(db) {
     assertEquals(1, lf.Row.getNextId());
-    asyncTestCase.continueTesting();
   });
 }
 
@@ -122,24 +114,22 @@ function getSchemaBuilder() {
 /**
  * The following two tests test scanRowId() for non-empty database.
  * The test name is crafted so that it makes sure it runs one after the other.
+ * @return {!IThenable}
  */
 function test1_AddRow() {
   if (!capability.webSql) {
-    return;
+    return goog.Promise.resolve();
   }
 
   var builder = getSchemaBuilder();
-  asyncTestCase.waitForAsync('test1_AddRow');
-  builder.connect({
+  return builder.connect({
     storeType: lf.schema.DataStoreType.WEB_SQL
   }).then(function(db) {
     var t = db.getSchema().table('foo');
     var row = t.createRow({'id': 1});
 
     return db.insert().into(t).values([row]).exec();
-  }).then(function() {
-    asyncTestCase.continueTesting();
-  }, fail);
+  });
 }
 
 function test2_ScanRowId() {
@@ -147,15 +137,12 @@ function test2_ScanRowId() {
     return;
   }
 
-  asyncTestCase.waitForAsync('test2_RowId');
-
   var builder = getSchemaBuilder();
-  builder.connect({
+  return builder.connect({
     storeType: lf.schema.DataStoreType.WEB_SQL
   }).then(function(db) {
     assertEquals(2, lf.Row.getNextId());
-    asyncTestCase.continueTesting();
-  }, fail);
+  });
 }
 
 
@@ -164,12 +151,8 @@ function testPersistentIndex() {
     return;
   }
 
-  asyncTestCase.waitForAsync('testPersistentIndex');
   var builder = lf.testing.getSchemaBuilder('foo' + goog.now(), true);
-  builder.connect({storeType: lf.schema.DataStoreType.WEB_SQL}).then(
-      function(db) {
-        asyncTestCase.continueTesting();
-      });
+  return builder.connect({storeType: lf.schema.DataStoreType.WEB_SQL});
 }
 
 
@@ -178,13 +161,12 @@ function testReservedWordAsTableName() {
     return;
   }
 
-  asyncTestCase.waitForAsync('testReservedWordAsTableName');
   var builder = lf.schema.create('foo' + goog.now(), 1);
   builder.createTable('Group').
       addColumn('id', lf.Type.INTEGER);
   var db;
   var g;
-  builder.connect({storeType: lf.schema.DataStoreType.WEB_SQL}).then(
+  return builder.connect({storeType: lf.schema.DataStoreType.WEB_SQL}).then(
       function(instance) {
         db = instance;
         g = db.getSchema().table('Group');
@@ -195,7 +177,5 @@ function testReservedWordAsTableName() {
     assertEquals(1, results.length);
     assertEquals(1, results[0]['id']);
     return db.delete().from(g).exec();
-  }).then(function() {
-    asyncTestCase.continueTesting();
-  }, fail);
+  });
 }
