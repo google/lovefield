@@ -16,7 +16,6 @@
  */
 goog.setTestOnly();
 goog.require('goog.Promise');
-goog.require('goog.testing.AsyncTestCase');
 goog.require('goog.testing.jsunit');
 goog.require('hr.db');
 goog.require('lf.TransactionType');
@@ -25,10 +24,6 @@ goog.require('lf.schema.DataStoreType');
 goog.require('lf.service');
 goog.require('lf.structs.set');
 goog.require('lf.testing.MockTask');
-
-
-/** @type {!goog.testing.AsyncTestCase} */
-var asyncTestCase = goog.testing.AsyncTestCase.createAndInstall('RunnerTest');
 
 
 /** @type {!lf.Database} */
@@ -44,15 +39,12 @@ var j;
 
 
 function setUp() {
-  asyncTestCase.waitForAsync('setUp');
-  hr.db.connect({storeType: lf.schema.DataStoreType.MEMORY}).then(function(
-      database) {
+  return hr.db.connect({storeType: lf.schema.DataStoreType.MEMORY}).then(
+      function(database) {
         db = database;
         runner = hr.db.getGlobal().getService(lf.service.RUNNER);
         j = db.getSchema().getJob();
-      }).then(function() {
-    asyncTestCase.continueTesting();
-  }, fail);
+      });
 }
 
 
@@ -72,10 +64,9 @@ function createScope() {
 /**
  * Tests that SELECT queries are executed after overlapping write transaction
  * finishes.
+ * @return {!IThenable}
  */
 function testTransaction_Read() {
-  asyncTestCase.waitForAsync('testTransaction_Read');
-
   var executionOrder = [];
 
   // Creating two tasks refering to the same scope.
@@ -95,23 +86,20 @@ function testTransaction_Read() {
         return runner.scheduleTask(queryTask);
       });
 
-  goog.Promise.all(promises).then(
-      function(results) {
-        // Ensuring that the READ_ONLY task was executed after the READ_WRITE
-        // task finished.
-        assertArrayEquals(['query1', 'query2'], executionOrder);
-
-        asyncTestCase.continueTesting();
-      });
+  return goog.Promise.all(promises).then(function() {
+    // Ensuring that the READ_ONLY task was executed after the READ_WRITE
+    // task finished.
+    assertArrayEquals(['query1', 'query2'], executionOrder);
+  });
 }
 
 
 /**
  * Tests that multiple overlapping READ_WRITE transactions are executed in the
  * expected order.
+ * @return {!IThenable}
  */
 function testTransaction_Write() {
-  asyncTestCase.waitForAsync('testTransaction_Write');
   var actualExecutionOrder = [];
   var expectedExecutionOrder = [];
 
@@ -132,17 +120,13 @@ function testTransaction_Write() {
     return runner.scheduleTask(task);
   });
 
-  goog.Promise.all(promises).then(
-      function(results) {
-        assertArrayEquals(expectedExecutionOrder, actualExecutionOrder);
-        asyncTestCase.continueTesting();
-      });
+  return goog.Promise.all(promises).then(function() {
+    assertArrayEquals(expectedExecutionOrder, actualExecutionOrder);
+  });
 }
 
 
 function testTask_Success() {
-  asyncTestCase.waitForAsync('testTask_Success');
-
   var expectedResult = 'dummyResult';
 
   var queryTask = new lf.testing.MockTask(
@@ -151,17 +135,14 @@ function testTask_Success() {
       function() { return expectedResult; },
       lf.proc.TaskPriority.USER_QUERY_TASK);
 
-  runner.scheduleTask(queryTask).then(
+  return runner.scheduleTask(queryTask).then(
       function(result) {
         assertEquals(expectedResult, result);
-        asyncTestCase.continueTesting();
-      }, fail);
+      });
 }
 
 
 function testTask_Failure() {
-  asyncTestCase.waitForAsync('testTask_Failure');
-
   var expectedError = new Error('dummyError');
 
   var queryTask = new lf.testing.MockTask(
@@ -170,21 +151,19 @@ function testTask_Failure() {
       function() { throw expectedError; },
       lf.proc.TaskPriority.USER_QUERY_TASK);
 
-  runner.scheduleTask(queryTask).then(
+  return runner.scheduleTask(queryTask).then(
       fail,
       function(error) {
         assertEquals(expectedError, error);
-        asyncTestCase.continueTesting();
       });
 }
 
 
 /**
  * Tests that prioritized tasks are placed in the front of the queue.
+ * @return {!IThenable}
  */
 function testScheduleTask_Prioritize() {
-  asyncTestCase.waitForAsync('testScheduleTask_Prioritize');
-
   var resolver = goog.Promise.withResolver();
   var executionOrder = [];
 
@@ -213,25 +192,21 @@ function testScheduleTask_Prioritize() {
   var p2 = runner.scheduleTask(task2);
   var p3 = runner.scheduleTask(task3);
   var p4 = runner.scheduleTask(task4);
-
-  goog.Promise.all([p1, p2, p3, p4]).then(
-      function(results) {
-        // Ensuring that the prioritized task3 executed before task2.
-        assertArrayEquals(['task4', 'task3', 'task2'], executionOrder);
-        asyncTestCase.continueTesting();
-      });
-
   resolver.resolve();
+
+  return goog.Promise.all([p1, p2, p3, p4]).then(function() {
+    // Ensuring that the prioritized task3 executed before task2.
+    assertArrayEquals(['task4', 'task3', 'task2'], executionOrder);
+  });
 }
 
 
 /**
  * Tests that a READ_WRITE transaction will wait for an alreday running
  * READ_ONLY transaction with overlapping scope to finish.
+ * @return {!IThenable}
  */
 function testTransaction_WriteWhileReading() {
-  asyncTestCase.waitForAsync('testTransaction_WriteWhileReading');
-
   var resolver = goog.Promise.withResolver();
   var executionOrder = [];
 
@@ -260,16 +235,12 @@ function testTransaction_WriteWhileReading() {
         return runner.scheduleTask(queryTask);
       });
 
-  goog.Promise.all(promises).then(
-      function(results) {
-        // Ensuring that the READ_ONLY task completed before the READ_WRITE task
-        // started.
-        assertArrayEquals(
-            ['q1 start', 'q1 end', 'q2 start', 'q2 end'],
-            executionOrder);
-
-        asyncTestCase.continueTesting();
-      });
-
   resolver.resolve();
+  return goog.Promise.all(promises).then(function() {
+    // Ensuring that the READ_ONLY task completed before the READ_WRITE task
+    // started.
+    assertArrayEquals(
+        ['q1 start', 'q1 end', 'q2 start', 'q2 end'],
+        executionOrder);
+  });
 }

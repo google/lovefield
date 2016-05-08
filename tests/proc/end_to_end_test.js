@@ -15,8 +15,8 @@
  * limitations under the License.
  */
 goog.setTestOnly();
-goog.require('goog.testing.AsyncTestCase');
 goog.require('goog.testing.PropertyReplacer');
+goog.require('goog.testing.TestCase');
 goog.require('goog.testing.jsunit');
 goog.require('goog.userAgent.product');
 goog.require('hr.bdb');
@@ -27,15 +27,6 @@ goog.require('lf.schema.DataStoreType');
 goog.require('lf.service.ServiceId');
 goog.require('lf.testing.EndToEndTester');
 goog.require('lf.testing.hrSchema.getSchemaBuilder');
-
-
-/** @type {!goog.testing.AsyncTestCase} */
-var asyncTestCase = goog.testing.AsyncTestCase.createAndInstall(
-    'EndToEndTest');
-
-
-/** @type {number} */
-asyncTestCase.stepTimeout = 30 * 1000;  // 30 seconds
 
 
 /** @type {!lf.Capability} */
@@ -49,6 +40,7 @@ var stub;
 function setUpPage() {
   capability = lf.Capability.get();
   stub = new goog.testing.PropertyReplacer();
+  goog.testing.TestCase.getActiveTestCase().promiseTimeout = 30 * 1000;  // 30s
 }
 
 function tearDown() {
@@ -56,15 +48,12 @@ function tearDown() {
 }
 
 function testEndToEnd_StaticSchema() {
-  asyncTestCase.waitForAsync('testEndToEnd_StaticSchema');
   var tester = new lf.testing.EndToEndTester(
       hr.db.getGlobal.bind(hr.db),
       hr.db.connect.bind(hr.db, {
         storeType: lf.schema.DataStoreType.MEMORY
       }));
-  tester.run().then(function() {
-    asyncTestCase.continueTesting();
-  }, fail);
+  return tester.run();
 }
 
 function testEndToEnd_StaticSchemaBundled() {
@@ -75,7 +64,6 @@ function testEndToEnd_StaticSchemaBundled() {
     return;
   }
 
-  asyncTestCase.waitForAsync('testEndToEnd_StaticSchemaBundled');
   var dbGlobal = new lf.Global();
   var globalFn = function() {
     return dbGlobal;
@@ -102,22 +90,17 @@ function testEndToEnd_StaticSchemaBundled() {
   };
 
   var tester = new lf.testing.EndToEndTester(globalFn, connectFn);
-  tester.run().then(function() {
-    asyncTestCase.continueTesting();
-  }, fail);
+  return tester.run();
 }
 
 function testEndToEnd_DynamicSchema() {
-  asyncTestCase.waitForAsync('testEndToEnd_DynamicSchema');
   var builder = lf.testing.hrSchema.getSchemaBuilder();
   var tester = new lf.testing.EndToEndTester(
       builder.getGlobal.bind(builder),
       builder.connect.bind(builder, {
         storeType: lf.schema.DataStoreType.MEMORY
       }));
-  tester.run().then(function() {
-    asyncTestCase.continueTesting();
-  }, fail);
+  return tester.run();
 }
 
 function testEndToEnd_DynamicSchemaBundled() {
@@ -125,7 +108,6 @@ function testEndToEnd_DynamicSchemaBundled() {
     return;
   }
 
-  asyncTestCase.waitForAsync('testEndToEnd_DynamicSchemaBundled');
   /** @type {!lf.schema.Builder} */
   var builder;
   var globalFn = function() {
@@ -139,7 +121,5 @@ function testEndToEnd_DynamicSchemaBundled() {
   };
 
   var tester = new lf.testing.EndToEndTester(globalFn, connectFn);
-  tester.run().then(function() {
-    asyncTestCase.continueTesting();
-  }, fail);
+  return tester.run();
 }

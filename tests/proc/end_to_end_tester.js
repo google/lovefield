@@ -834,8 +834,6 @@ lf.testing.EndToEndTester.prototype.testDelete_All = function() {
  * @return {!IThenable}
  */
 lf.testing.EndToEndTester.prototype.testObserve_MultipleObservers = function() {
-  asyncTestCase.waitForAsync('testObserve_MultipleObservers');
-
   var schema = this.db_.getSchema();
   var jobGenerator = new lf.testing.hrSchema.JobDataGenerator(schema);
 
