@@ -83,7 +83,7 @@ goog.addDependency = function(relPath, provides, requires, opt_loadFlags) {
     var provide, require, path = relPath.replace(/\\/g, "/"), deps = goog.dependencies_;
     opt_loadFlags && "boolean" !== typeof opt_loadFlags || (opt_loadFlags = opt_loadFlags ? {module:"goog"} : {});
     for (var i = 0;provide = provides[i];i++) {
-      deps.nameToPath[provide] = path, deps.pathIsModule[path] = "goog" == opt_loadFlags.module;
+      deps.nameToPath[provide] = path, deps.loadFlags[path] = opt_loadFlags;
     }
     for (var j = 0;require = requires[j];j++) {
       path in deps.requires || (deps.requires[path] = {}), deps.requires[path][require] = !0;
@@ -117,7 +117,9 @@ goog.LOAD_MODULE_USING_EVAL = !0;
 goog.SEAL_MODULE_EXPORTS = goog.DEBUG;
 goog.loadedModules_ = {};
 goog.DEPENDENCIES_ENABLED = !1;
-goog.DEPENDENCIES_ENABLED && (goog.dependencies_ = {pathIsModule:{}, nameToPath:{}, requires:{}, visited:{}, written:{}, deferred:{}}, goog.inHtmlDocument_ = function() {
+goog.ALWAYS_TRANSPILE = !1;
+goog.NEVER_TRANSPILE = !1;
+goog.DEPENDENCIES_ENABLED && (goog.dependencies_ = {loadFlags:{}, nameToPath:{}, requires:{}, visited:{}, written:{}, deferred:{}}, goog.inHtmlDocument_ = function() {
   var doc = goog.global.document;
   return null != doc && "write" in doc;
 }, goog.findBasePath_ = function() {
@@ -137,8 +139,8 @@ goog.DEPENDENCIES_ENABLED && (goog.dependencies_ = {pathIsModule:{}, nameToPath:
 }, goog.importScript_ = function(src, opt_sourceText) {
   var importScript = goog.global.CLOSURE_IMPORT_SCRIPT || goog.writeScriptTag_;
   importScript(src, opt_sourceText) && (goog.dependencies_.written[src] = !0);
-}, goog.IS_OLD_IE_ = !(goog.global.atob || !goog.global.document || !goog.global.document.all), goog.importModule_ = function(src) {
-  var bootstrap = 'goog.retrieveAndExecModule_("' + src + '");';
+}, goog.IS_OLD_IE_ = !(goog.global.atob || !goog.global.document || !goog.global.document.all), goog.importProcessedScript_ = function(src, isModule, needsTranspile) {
+  var bootstrap = 'goog.retrieveAndExec_("' + src + '", ' + isModule + ", " + needsTranspile + ");";
   goog.importScript_("", bootstrap);
 }, goog.queuedModules_ = [], goog.wrapModule_ = function(srcUrl, scriptText) {
   return goog.LOAD_MODULE_USING_EVAL && goog.isDef(goog.global.JSON) ? "goog.loadModule(" + goog.global.JSON.stringify(scriptText + "\n//# sourceURL=" + srcUrl + "\n") + ");" : 'goog.loadModule(function(exports) {"use strict";' + scriptText + "\n;return exports});\n//# sourceURL=" + srcUrl + "\n";
@@ -158,8 +160,8 @@ goog.DEPENDENCIES_ENABLED && (goog.dependencies_ = {pathIsModule:{}, nameToPath:
     goog.maybeProcessDeferredPath_(goog.basePath + path);
   }
 }, goog.isDeferredModule_ = function(name) {
-  var path = goog.getPathFromDeps_(name);
-  if (path && goog.dependencies_.pathIsModule[path]) {
+  var path = goog.getPathFromDeps_(name), loadFlags = path && goog.dependencies_.loadFlags[path] || {};
+  if (path && ("goog" == loadFlags.module || goog.needsTranspile_(loadFlags.lang))) {
     var abspath = goog.basePath + path;
     return abspath in goog.dependencies_.deferred;
   }
@@ -181,7 +183,7 @@ goog.DEPENDENCIES_ENABLED && (goog.dependencies_ = {pathIsModule:{}, nameToPath:
     goog.globalEval(src);
   }
 }, goog.loadModuleFromUrl = function(url) {
-  goog.retrieveAndExecModule_(url);
+  goog.retrieveAndExec_(url, !0, !1);
 }, goog.loadModule = function(moduleDef) {
   var previousState = goog.moduleLoaderState_;
   try {
@@ -228,9 +230,8 @@ goog.DEPENDENCIES_ENABLED && (goog.dependencies_ = {pathIsModule:{}, nameToPath:
       }
       throw Error('Cannot write "' + src + '" after document load');
     }
-    var isOldIE = goog.IS_OLD_IE_;
     if (void 0 === opt_sourceText) {
-      if (isOldIE) {
+      if (goog.IS_OLD_IE_) {
         var state = " onreadystatechange='goog.onScriptLoad_(this, " + ++goog.lastNonModuleScriptIndex_ + ")' ";
         doc.write('<script type="text/javascript" src="' + src + '"' + state + ">\x3c/script>");
       } else {
@@ -242,7 +243,25 @@ goog.DEPENDENCIES_ENABLED && (goog.dependencies_ = {pathIsModule:{}, nameToPath:
     return !0;
   }
   return !1;
-}, goog.lastNonModuleScriptIndex_ = 0, goog.onScriptLoad_ = function(script, scriptIndex) {
+}, goog.needsTranspile_ = function(lang) {
+  if (goog.ALWAYS_TRANSPILE) {
+    return !0;
+  }
+  if (goog.NEVER_TRANSPILE) {
+    return !1;
+  }
+  if (!goog.transpiledLanguages_) {
+    goog.transpiledLanguages_ = {es5:!0, es6:!0, "es6-impl":!0};
+    try {
+      goog.transpiledLanguages_.es5 = eval("[1,].length!=1");
+      var es6implTest = "let a={};const X=class{constructor(){}x(z){return new Map([...arguments]).get(z[0])==3}};return new X().x([a,3])", es6fullTest = "class X{constructor(){if(new.target!=String)throw 1;this.x=42}}let q=Reflect.construct(X,[],String);if(q.x!=42||!(q instanceof String))throw 1;for(const a of[2,3]){if(a==2)continue;function f(z={a}){let a=0;return z.a}{function f(){return 0;}}return f()==3}";
+      eval('(()=>{"use strict";' + es6implTest + "})()") && (goog.transpiledLanguages_["es6-impl"] = !1);
+      eval('(()=>{"use strict";' + es6fullTest + "})()") && (goog.transpiledLanguages_.es6 = !1);
+    } catch (err) {
+    }
+  }
+  return !!goog.transpiledLanguages_[lang];
+}, goog.transpiledLanguages_ = null, goog.lastNonModuleScriptIndex_ = 0, goog.onScriptLoad_ = function(script, scriptIndex) {
   "complete" == script.readyState && goog.lastNonModuleScriptIndex_ == scriptIndex && goog.loadQueuedModules_();
   return !0;
 }, goog.writeScripts_ = function(pathToLoad) {
@@ -273,7 +292,8 @@ goog.DEPENDENCIES_ENABLED && (goog.dependencies_ = {pathIsModule:{}, nameToPath:
   goog.moduleLoaderState_ = null;
   for (i = 0;i < scripts.length;i++) {
     if (path$$0 = scripts[i]) {
-      deps.pathIsModule[path$$0] ? goog.importModule_(goog.basePath + path$$0) : goog.importScript_(goog.basePath + path$$0);
+      var loadFlags = deps.loadFlags[path$$0] || {}, needsTranspile = goog.needsTranspile_(loadFlags.lang);
+      "goog" == loadFlags.module || needsTranspile ? goog.importProcessedScript_(goog.basePath + path$$0, "goog" == loadFlags.module, needsTranspile) : goog.importScript_(goog.basePath + path$$0);
     } else {
       throw goog.moduleLoaderState_ = moduleState, Error("Undefined script input");
     }
@@ -295,9 +315,25 @@ goog.loadFileSync_ = function(src) {
   var xhr = new goog.global.XMLHttpRequest;
   xhr.open("get", src, !1);
   xhr.send();
-  return xhr.responseText;
+  return 200 == xhr.status ? xhr.responseText : null;
 };
-goog.retrieveAndExecModule_ = function() {
+goog.retrieveAndExec_ = function() {
+};
+goog.transpile_ = function(code$$0, path$$0) {
+  var jscomp = goog.global.$jscomp;
+  jscomp || (goog.global.$jscomp = jscomp = {});
+  var transpile = jscomp.transpile;
+  if (!transpile) {
+    var transpilerPath = goog.basePath + "transpile.js", transpilerCode = goog.loadFileSync_(transpilerPath);
+    transpilerCode && (eval(transpilerCode + "\n//# sourceURL=" + transpilerPath), jscomp = goog.global.$jscomp, transpile = jscomp.transpile);
+  }
+  if (!transpile) {
+    var suffix = " requires transpilation but no transpiler was found.", suffix = suffix + ' Please add "//javascript/closure:transpiler" as a data dependency to ensure it is included.', transpile = jscomp.transpile = function(code, path) {
+      goog.logToConsole_(path + suffix);
+      return code;
+    }
+  }
+  return transpile(code$$0, path$$0);
 };
 goog.typeOf = function(value) {
   var s = typeof value;

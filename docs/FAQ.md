@@ -5,9 +5,11 @@
 
 ### Is Lovefield production quality?
 
-Yes. [Google Play Movies & TV](
+Yes. As of May 2016, [Inbox by GMail](inbox.google.com) heavily relies on
+Lovefield to perform complex client-side structural data queries.
+[Google Play Movies & TV](
 https://chrome.google.com/webstore/detail/google-play-movies-tv/gdijeikdkaembjbdobgfkoidjkpbmlkd)
-has shipped with Lovefield for more than a year as of September 2015.
+has shipped with Lovefield for almost two years.
 
 ### Lovefield looks similar to XYZ, are you related?
 
