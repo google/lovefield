@@ -43,8 +43,7 @@ goog.module = function(name) {
   }
   goog.moduleLoaderState_.moduleName = name;
 };
-goog.module.get = function(name) {
-  return goog.module.getInternal_(name);
+goog.module.get = function() {
 };
 goog.module.getInternal_ = function() {
 };
@@ -182,8 +181,7 @@ goog.DEPENDENCIES_ENABLED && (goog.dependencies_ = {loadFlags:{}, nameToPath:{},
     delete goog.dependencies_.deferred[abspath];
     goog.globalEval(src);
   }
-}, goog.loadModuleFromUrl = function(url) {
-  goog.retrieveAndExec_(url, !0, !1);
+}, goog.loadModuleFromUrl = function() {
 }, goog.loadModule = function(moduleDef) {
   var previousState = goog.moduleLoaderState_;
   try {
@@ -312,10 +310,14 @@ goog.loadFileSync_ = function(src) {
   if (goog.global.CLOSURE_LOAD_FILE_SYNC) {
     return goog.global.CLOSURE_LOAD_FILE_SYNC(src);
   }
-  var xhr = new goog.global.XMLHttpRequest;
-  xhr.open("get", src, !1);
-  xhr.send();
-  return 200 == xhr.status ? xhr.responseText : null;
+  try {
+    var xhr = new goog.global.XMLHttpRequest;
+    xhr.open("get", src, !1);
+    xhr.send();
+    return 0 == xhr.status || 200 == xhr.status ? xhr.responseText : null;
+  } catch (err) {
+    return null;
+  }
 };
 goog.retrieveAndExec_ = function() {
 };
@@ -894,7 +896,7 @@ goog.string.escapeChar = function(c) {
   if (c in goog.string.specialEscapeChars_) {
     return goog.string.jsEscapeCache_[c] = goog.string.specialEscapeChars_[c];
   }
-  var rv = c, cc = c.charCodeAt(0);
+  var rv, cc = c.charCodeAt(0);
   if (31 < cc && 127 > cc) {
     rv = c;
   } else {
@@ -2311,7 +2313,7 @@ goog.DEBUG && (goog.async.run.resetQueue = function() {
   goog.async.run.workQueue_ = new goog.async.WorkQueue;
 });
 goog.async.run.processWorkQueue = function() {
-  for (var item = null;item = goog.async.run.workQueue_.remove();) {
+  for (var item;item = goog.async.run.workQueue_.remove();) {
     try {
       item.fn.call(item.scope);
     } catch (e) {
@@ -2596,7 +2598,7 @@ goog.Promise.prototype.popEntry_ = function() {
   return entry;
 };
 goog.Promise.prototype.executeCallbacks_ = function() {
-  for (var entry = null;entry = this.popEntry_();) {
+  for (var entry;entry = this.popEntry_();) {
     goog.Promise.LONG_STACK_TRACES && this.currentStep_++, this.executeCallback_(entry, this.state_, this.result_);
   }
   this.executing_ = !1;
@@ -3665,9 +3667,6 @@ lf.Row.prototype.id = function() {
 lf.Row.prototype.assignRowId = function(id) {
   this.id_ = id;
 };
-lf.Row.prototype.payload = function() {
-  return this.payload_;
-};
 lf.Row.prototype.defaultPayload = function() {
   return {};
 };
@@ -3755,9 +3754,6 @@ lf.backstore.BaseTx = function(txType, opt_journal) {
   this.success_ = !1;
   this.stats_ = null;
 };
-lf.backstore.BaseTx.prototype.getJournal = function() {
-  return this.journal_;
-};
 lf.backstore.BaseTx.prototype.commit = function() {
   var promise = this.txType == lf.TransactionType.READ_ONLY ? this.commitInternal() : this.commitReadWrite_();
   return promise.then(function(results) {
@@ -3782,15 +3778,15 @@ lf.backstore.BaseTx.prototype.mergeIntoBackstore_ = function() {
   return this.commitInternal();
 };
 lf.backstore.BaseTx.prototype.mergeTableChanges_ = function() {
-  var diff = this.journal_.getDiff();
+  var diff = this.journal_.tableDiffs_;
   diff.forEach(function(tableDiff, tableName) {
-    var tableSchema = this.journal_.getScope().get(tableName), table = this.getTable(tableSchema.getName(), tableSchema.deserializeRow.bind(tableSchema), lf.backstore.TableType.DATA), toDeleteRowIds = lf.structs.map.values(tableDiff.getDeleted()).map(function(row) {
+    var tableSchema = this.journal_.getScope().get(tableName), table = this.getTable(tableSchema.getName(), tableSchema.deserializeRow.bind(tableSchema), lf.backstore.TableType.DATA), toDeleteRowIds = lf.structs.map.values(tableDiff.deleted_).map(function(row) {
       return row.id();
     });
     0 < toDeleteRowIds.length && table.remove(toDeleteRowIds).thenCatch(this.handleError_, this);
-    var toPut = lf.structs.map.values(tableDiff.getModified()).map(function(modification) {
+    var toPut = lf.structs.map.values(tableDiff.modified_).map(function(modification) {
       return modification[1];
-    }).concat(lf.structs.map.values(tableDiff.getAdded()));
+    }).concat(lf.structs.map.values(tableDiff.added_));
     table.put(toPut).thenCatch(this.handleError_, this);
   }, this);
 };
@@ -3811,12 +3807,12 @@ lf.backstore.BaseTx.prototype.stats = function() {
       if (this.txType == lf.TransactionType.READ_ONLY) {
         this.stats_ = new lf.TransactionStats(!0, 0, 0, 0, 0);
       } else {
-        var diff = this.journal_.getDiff(), insertedRows = 0, deletedRows = 0, updatedRows = 0, tablesChanged = 0;
+        var diff = this.journal_.tableDiffs_, insertedRows = 0, deletedRows = 0, updatedRows = 0, tablesChanged = 0;
         diff.forEach(function(tableDiff) {
           tablesChanged++;
-          insertedRows += tableDiff.getAdded().size;
-          updatedRows += tableDiff.getModified().size;
-          deletedRows += tableDiff.getDeleted().size;
+          insertedRows += tableDiff.added_.size;
+          updatedRows += tableDiff.modified_.size;
+          deletedRows += tableDiff.deleted_.size;
         });
         this.stats_ = new lf.TransactionStats(!0, insertedRows, updatedRows, deletedRows, tablesChanged);
       }
@@ -4117,9 +4113,6 @@ lf.backstore.Page.getPageRange = function(pageId) {
 lf.backstore.Page.prototype.getId = function() {
   return this.id_;
 };
-lf.backstore.Page.prototype.getPayload = function() {
-  return this.payload_;
-};
 lf.backstore.Page.prototype.setRows = function(rows) {
   rows.forEach(function(row) {
     this.payload_[row.id()] = row.serialize();
@@ -4150,7 +4143,7 @@ lf.backstore.BundledObjectStore.prototype.get = function(ids) {
     return ids.map(function(id) {
       var page = pages.get(lf.backstore.Page.toPageId(id));
       goog.asserts.assert(page, "Containing page is empty");
-      return deserializeFn(page.getPayload()[id]);
+      return deserializeFn(page.payload_[id]);
     });
   });
 };
@@ -4190,7 +4183,7 @@ lf.backstore.BundledObjectStore.prototype.getAll_ = function() {
     request.onsuccess = function() {
       var cursor = request.result;
       if (cursor) {
-        var page = lf.backstore.Page.deserialize(cursor.value), data = page.getPayload(), key;
+        var page = lf.backstore.Page.deserialize(cursor.value), data = page.payload_, key;
         for (key in data) {
           rows.push(this.deserializeFn_(data[key]));
         }
@@ -4247,7 +4240,7 @@ lf.backstore.BundledObjectStore.prototype.remove = function(ids) {
   }, this);
   var promises = lf.structs.map.values(pages).map(function(page) {
     return this.performWriteOp_(function() {
-      return 0 == Object.keys(page.getPayload()).length ? this.store_.delete(page.getId()) : this.store_.put(page.serialize());
+      return 0 == Object.keys(page.payload_).length ? this.store_.delete(page.getId()) : this.store_.put(page.serialize());
     }.bind(this));
   }, this);
   return goog.Promise.all(promises);
@@ -4284,13 +4277,13 @@ lf.cache.InMemoryUpdater.prototype.update = function(tableDiffs) {
 };
 lf.cache.InMemoryUpdater.prototype.updateCacheForDiff_ = function(diff) {
   var tableName = diff.getName();
-  diff.getDeleted().forEach(function(row, rowId) {
+  diff.deleted_.forEach(function(row, rowId) {
     this.cache_.remove(tableName, rowId);
   }, this);
-  diff.getAdded().forEach(function(row) {
+  diff.added_.forEach(function(row) {
     this.cache_.set(tableName, row);
   }, this);
-  diff.getModified().forEach(function(modification) {
+  diff.modified_.forEach(function(modification) {
     this.cache_.set(tableName, modification[1]);
   }, this);
 };
@@ -4443,7 +4436,7 @@ lf.cache.ConstraintChecker = function(global) {
   this.foreignKeysParentIndices_ = null;
 };
 lf.cache.ConstraintChecker.prototype.findExistingRowIdInPkIndex = function(table, row) {
-  var pkIndexSchema = table.getConstraint().getPrimaryKey();
+  var pkIndexSchema = table.constraint_.primaryKey_;
   return goog.isNull(pkIndexSchema) ? null : this.findExistingRowIdInIndex_(pkIndexSchema, row);
 };
 lf.cache.ConstraintChecker.prototype.findExistingRowIdInIndex_ = function(indexSchema, row) {
@@ -4451,17 +4444,17 @@ lf.cache.ConstraintChecker.prototype.findExistingRowIdInIndex_ = function(indexS
   return 0 == rowIds.length ? null : rowIds[0];
 };
 lf.cache.ConstraintChecker.prototype.checkNotNullable = function(table, rows) {
-  var notNullable = table.getConstraint().getNotNullable();
+  var notNullable = table.constraint_.notNullable_;
   rows.forEach(function(row) {
     notNullable.forEach(function(column) {
-      if (!goog.isDefAndNotNull(row.payload()[column.getName()])) {
+      if (!goog.isDefAndNotNull(row.payload_[column.getName()])) {
         throw new lf.Exception(202, column.getNormalizedName());
       }
     }, this);
   }, this);
 };
 lf.cache.ConstraintChecker.prototype.checkReferredKeys_ = function(table, modifications, constraintTiming) {
-  var foreignKeySpecs = table.getConstraint().getForeignKeys();
+  var foreignKeySpecs = table.constraint_.foreignKeys_;
   foreignKeySpecs.forEach(function(foreignKeySpec) {
     foreignKeySpec.timing == constraintTiming && this.checkReferredKey_(foreignKeySpec, modifications);
   }, this);
@@ -4583,15 +4576,6 @@ lf.cache.TableDiff = function(name) {
 lf.cache.TableDiff.prototype.getName = function() {
   return this.name_;
 };
-lf.cache.TableDiff.prototype.getAdded = function() {
-  return this.added_;
-};
-lf.cache.TableDiff.prototype.getModified = function() {
-  return this.modified_;
-};
-lf.cache.TableDiff.prototype.getDeleted = function() {
-  return this.deleted_;
-};
 lf.cache.TableDiff.prototype.add = function(row) {
   if (this.deleted_.has(row.id())) {
     var modification = [this.deleted_.get(row.id()), row];
@@ -4685,9 +4669,6 @@ lf.cache.Journal = function(global, scope) {
   this.pendingRollback_ = this.terminated_ = !1;
   this.tableDiffs_ = lf.structs.map.create();
 };
-lf.cache.Journal.prototype.getDiff = function() {
-  return this.tableDiffs_;
-};
 lf.cache.Journal.prototype.getIndexDiff = function() {
   var tableSchemas = lf.structs.map.keys(this.tableDiffs_).map(function(tableName) {
     return this.scope_.get(tableName);
@@ -4774,7 +4755,7 @@ lf.cache.Journal.prototype.updateByCascade_ = function(table$$0, modifications) 
       var updates = cascadedUpdates.get(rowId);
       updates.forEach(function(update) {
         var table = this.schema_.table(update.fkSpec.childTable), rowBefore = this.cache_.get(rowId), rowAfter = table.deserializeRow(rowBefore.serialize());
-        rowAfter.payload()[update.fkSpec.childColumn] = update.originalUpdatedRow.payload()[update.fkSpec.parentColumn];
+        rowAfter.payload_[update.fkSpec.childColumn] = update.originalUpdatedRow.payload_[update.fkSpec.parentColumn];
         this.modifyRow_(table, [rowBefore, rowAfter]);
       }, this);
     }, this);
@@ -4798,9 +4779,9 @@ lf.cache.Journal.prototype.removeByCascade_ = function(table$$0, rows$$0) {
 lf.cache.Journal.prototype.checkDeferredConstraints = function() {
   this.tableDiffs_.forEach(function(tableDiff) {
     var table = this.scope_.get(tableDiff.getName());
-    this.constraintChecker_.checkForeignKeysForInsert(table, lf.structs.map.values(tableDiff.getAdded()), lf.ConstraintTiming.DEFERRABLE);
-    this.constraintChecker_.checkForeignKeysForDelete(table, lf.structs.map.values(tableDiff.getDeleted()), lf.ConstraintTiming.DEFERRABLE);
-    this.constraintChecker_.checkForeignKeysForUpdate(table, lf.structs.map.values(tableDiff.getModified()), lf.ConstraintTiming.DEFERRABLE);
+    this.constraintChecker_.checkForeignKeysForInsert(table, lf.structs.map.values(tableDiff.added_), lf.ConstraintTiming.DEFERRABLE);
+    this.constraintChecker_.checkForeignKeysForDelete(table, lf.structs.map.values(tableDiff.deleted_), lf.ConstraintTiming.DEFERRABLE);
+    this.constraintChecker_.checkForeignKeysForUpdate(table, lf.structs.map.values(tableDiff.modified_), lf.ConstraintTiming.DEFERRABLE);
   }, this);
 };
 lf.cache.Journal.prototype.commit = function() {
@@ -5012,7 +4993,7 @@ lf.proc.Relation.prototype.isPrefixApplied = function() {
 };
 lf.proc.Relation.prototype.getPayloads = function() {
   return this.entries.map(function(entry) {
-    return entry.row.payload();
+    return entry.row.payload_;
   });
 };
 lf.proc.Relation.prototype.getRowIds = function() {
@@ -5089,32 +5070,32 @@ lf.proc.RelationEntry.getNextId_ = function() {
   return lf.proc.RelationEntry.id_++;
 };
 lf.proc.RelationEntry.prototype.getField = function(column) {
-  var alias = column.getAlias();
-  return !goog.isNull(alias) && this.row.payload().hasOwnProperty(alias) ? this.row.payload()[alias] : this.isPrefixApplied_ ? this.row.payload()[column.getTable().getEffectiveName()][column.getName()] : this.row.payload()[column.getName()];
+  var alias = column.alias_;
+  return !goog.isNull(alias) && this.row.payload_.hasOwnProperty(alias) ? this.row.payload_[alias] : this.isPrefixApplied_ ? this.row.payload_[column.getTable().getEffectiveName()][column.getName()] : this.row.payload_[column.getName()];
 };
 lf.proc.RelationEntry.prototype.setField = function(column, value) {
-  var alias = column.getAlias();
+  var alias = column.alias_;
   if (goog.isDefAndNotNull(alias)) {
-    this.row.payload()[alias] = value;
+    this.row.payload_[alias] = value;
   } else {
     if (this.isPrefixApplied_) {
-      var tableName = column.getTable().getEffectiveName(), containerObj = this.row.payload()[tableName];
-      goog.isDefAndNotNull(containerObj) || (containerObj = {}, this.row.payload()[tableName] = containerObj);
+      var tableName = column.getTable().getEffectiveName(), containerObj = this.row.payload_[tableName];
+      goog.isDefAndNotNull(containerObj) || (containerObj = {}, this.row.payload_[tableName] = containerObj);
       containerObj[column.getName()] = value;
     } else {
-      this.row.payload()[column.getName()] = value;
+      this.row.payload_[column.getName()] = value;
     }
   }
 };
 lf.proc.RelationEntry.combineEntries = function(leftEntry, leftEntryTables, rightEntry, rightEntryTables) {
   var result = {}, mergeEntry = function(entry, entryTables) {
     if (entry.isPrefixApplied_) {
-      var payload = entry.row.payload(), prefix;
+      var payload = entry.row.payload_, prefix;
       for (prefix in payload) {
         result[prefix] = payload[prefix];
       }
     } else {
-      goog.asserts.assert(!result.hasOwnProperty(entryTables[0]), "Attempted to join table with itself, without using table alias, or same alias " + entryTables[0] + "is reused for multiple tables."), result[entryTables[0]] = entry.row.payload();
+      goog.asserts.assert(!result.hasOwnProperty(entryTables[0]), "Attempted to join table with itself, without using table alias, or same alias " + entryTables[0] + "is reused for multiple tables."), result[entryTables[0]] = entry.row.payload_;
     }
   };
   mergeEntry(leftEntry, leftEntryTables);
@@ -5596,9 +5577,6 @@ lf.proc.QueryTask.prototype.getType = function() {
 lf.proc.QueryTask.prototype.getScope = function() {
   return this.combinedScope_;
 };
-lf.proc.QueryTask.prototype.getResolver = function() {
-  return this.resolver_;
-};
 lf.proc.QueryTask.prototype.getId = function() {
   return goog.getUid(this);
 };
@@ -5645,9 +5623,6 @@ lf.proc.ExternalChangeTask.prototype.getType = function() {
 };
 lf.proc.ExternalChangeTask.prototype.getScope = function() {
   return this.scope_;
-};
-lf.proc.ExternalChangeTask.prototype.getResolver = function() {
-  return this.resolver_;
 };
 lf.proc.ExternalChangeTask.prototype.getId = function() {
   return goog.getUid(this);
@@ -5821,26 +5796,26 @@ lf.backstore.FirebaseTx.prototype.commitInternal = function() {
   if (this.txType == lf.TransactionType.READ_ONLY) {
     return this.resolver.resolve(), this.resolver.promise;
   }
-  var diffs = this.getJournal().getDiff(), numTableAffected = diffs.size;
+  var diffs = this.journal_.tableDiffs_, numTableAffected = diffs.size;
   if (0 == numTableAffected) {
     this.resolver.resolve();
   } else {
-    var rev = this.db_.getRevision() + 1;
+    var rev = this.db_.revision_ + 1;
     this.db_.setRevision(rev);
     var update = {"@rev":{R:rev}};
     diffs.forEach(function(diff, tableName) {
       var tid = this.db_.getTableId(tableName);
-      diff.getAdded().forEach(function(row, rowId) {
-        update[rowId] = {R:rev, T:tid, P:row.payload()};
+      diff.added_.forEach(function(row, rowId) {
+        update[rowId] = {R:rev, T:tid, P:row.payload_};
       });
-      diff.getModified().forEach(function(rowPair, rowId) {
-        update[rowId] = {R:rev, T:tid, P:rowPair[1].payload()};
+      diff.modified_.forEach(function(rowPair, rowId) {
+        update[rowId] = {R:rev, T:tid, P:rowPair[1].payload_};
       });
-      diff.getDeleted().forEach(function(row, rowId) {
+      diff.deleted_.forEach(function(row, rowId) {
         update[rowId] = null;
       });
     }, this);
-    this.db_.getRef().update(update, function(e) {
+    this.db_.db_.update(update, function(e) {
       if (goog.isNull(e)) {
         this.resolver.resolve();
       } else {
@@ -5905,9 +5880,6 @@ lf.backstore.Firebase = function(schema, fb) {
   this.tables_ = lf.structs.map.create();
   this.tableIds_ = lf.structs.map.create();
   this.changeHandler_ = null;
-};
-lf.backstore.Firebase.prototype.getRevision = function() {
-  return this.revision_;
 };
 lf.backstore.Firebase.prototype.setRevision = function(revision) {
   this.revision_ = revision;
@@ -5983,10 +5955,10 @@ lf.backstore.Firebase.prototype.onChange_ = function(snapshot) {
     this.revision_ = rev;
     var diffs = this.generateDiff_(snapshot);
     diffs.forEach(function(diff) {
-      var table = this.tables_.get(diff.getName()), toRemove = lf.structs.map.keys(diff.getDeleted());
+      var table = this.tables_.get(diff.getName()), toRemove = lf.structs.map.keys(diff.deleted_);
       0 < toRemove.length && table.removeSync(toRemove);
-      var rows = lf.structs.map.values(diff.getAdded());
-      diff.getModified().forEach(function(rowPair) {
+      var rows = lf.structs.map.values(diff.added_);
+      diff.modified_.forEach(function(rowPair) {
         rows.push(rowPair[1]);
       });
       table.putSync(rows);
@@ -6063,9 +6035,6 @@ lf.backstore.Firebase.prototype.getTableInternal = function(tableName) {
   }
   throw new lf.Exception(101, tableName);
 };
-lf.backstore.Firebase.prototype.getRef = function() {
-  return this.db_;
-};
 lf.backstore.Firebase.prototype.close = function() {
 };
 lf.backstore.Firebase.prototype.subscribe = function(handler) {
@@ -6119,7 +6088,7 @@ lf.backstore.IndexedDBRawBackStore.prototype.openCursorForWrite_ = function(tabl
   }, this);
 };
 lf.backstore.IndexedDBRawBackStore.convert = function(value) {
-  var ret = null;
+  var ret;
   return ret = value instanceof ArrayBuffer ? lf.Row.binToHex(value) : value instanceof Date ? value.getTime() : value;
 };
 lf.backstore.IndexedDBRawBackStore.prototype.transformRows_ = function(tableName, rowFn) {
@@ -6128,7 +6097,7 @@ lf.backstore.IndexedDBRawBackStore.prototype.transformRows_ = function(tableName
     rowFn(row);
     cursor.update(row.serialize());
   }, loopFuncBundle = function(cursor) {
-    var page = lf.backstore.Page.deserialize(cursor.value), data = page.getPayload(), rowId;
+    var page = lf.backstore.Page.deserialize(cursor.value), data = page.payload_, rowId;
     for (rowId in data) {
       var row = lf.Row.deserialize(data[rowId]);
       rowFn(row);
@@ -6142,20 +6111,20 @@ lf.backstore.IndexedDBRawBackStore.prototype.transformRows_ = function(tableName
 lf.backstore.IndexedDBRawBackStore.prototype.addTableColumn = function(tableName, columnName, defaultValue) {
   var value = lf.backstore.IndexedDBRawBackStore.convert(defaultValue);
   return this.transformRows_(tableName, function(row) {
-    row.payload()[columnName] = value;
+    row.payload_[columnName] = value;
   });
 };
 goog.exportProperty(lf.backstore.IndexedDBRawBackStore.prototype, "addTableColumn", lf.backstore.IndexedDBRawBackStore.prototype.addTableColumn);
 lf.backstore.IndexedDBRawBackStore.prototype.dropTableColumn = function(tableName, columnName) {
   return this.transformRows_(tableName, function(row) {
-    delete row.payload()[columnName];
+    delete row.payload_[columnName];
   });
 };
 goog.exportProperty(lf.backstore.IndexedDBRawBackStore.prototype, "dropTableColumn", lf.backstore.IndexedDBRawBackStore.prototype.dropTableColumn);
 lf.backstore.IndexedDBRawBackStore.prototype.renameTableColumn = function(tableName, oldColumnName, newColumnName) {
   return this.transformRows_(tableName, function(row) {
-    row.payload()[newColumnName] = row.payload()[oldColumnName];
-    delete row.payload()[oldColumnName];
+    row.payload_[newColumnName] = row.payload_[oldColumnName];
+    delete row.payload_[oldColumnName];
   });
 };
 goog.exportProperty(lf.backstore.IndexedDBRawBackStore.prototype, "renameTableColumn", lf.backstore.IndexedDBRawBackStore.prototype.renameTableColumn);
@@ -6173,7 +6142,7 @@ lf.backstore.IndexedDBRawBackStore.prototype.getTableRows_ = function(tableName)
       var cursor = req.result;
       if (cursor) {
         if (this.bundleMode_) {
-          var page = lf.backstore.Page.deserialize(cursor.value), data = page.getPayload(), rowId;
+          var page = lf.backstore.Page.deserialize(cursor.value), data = page.payload_, rowId;
           for (rowId in data) {
             results.push(data[rowId]);
           }
@@ -6345,7 +6314,7 @@ lf.backstore.IndexedDBTx.prototype.commitInternal = function() {
 lf.backstore.IndexedDB = function(global, schema) {
   this.global_ = global;
   this.schema_ = schema;
-  this.bundledMode_ = schema.pragma().enableBundledMode || !1;
+  this.bundledMode_ = schema.pragma_.enableBundledMode || !1;
 };
 lf.backstore.IndexedDB.prototype.init = function(opt_onUpgrade) {
   var indexedDB = window.indexedDB || window.mozIndexedDB || window.webkitIndexedDB || window.msIndexedDB;
@@ -6438,7 +6407,7 @@ lf.backstore.IndexedDB.prototype.scanRowId_ = function(opt_tx) {
   }), db = this.db_, maxRowId = 0, extractRowId = function(cursor) {
     if (this.bundledMode_) {
       var page = lf.backstore.Page.deserialize(cursor.value);
-      return Object.keys(page.getPayload()).reduce(function(prev, cur) {
+      return Object.keys(page.payload_).reduce(function(prev, cur) {
         return Math.max(prev, cur);
       }, 0);
     }
@@ -6503,7 +6472,7 @@ lf.backstore.LocalStorageTable.prototype.get = function(ids) {
 };
 lf.backstore.LocalStorageTable.prototype.put = function(rows) {
   rows.forEach(function(row) {
-    this.data_[row.id().toString()] = row.payload();
+    this.data_[row.id().toString()] = row.payload_;
   }, this);
   return goog.Promise.resolve();
 };
@@ -6706,7 +6675,7 @@ lf.backstore.WebSqlTable.prototype.put = function(rows) {
   }
   var sql = "INSERT OR REPLACE INTO " + this.name_ + "(id, value) VALUES (?, ?)";
   rows.forEach(function(row) {
-    this.tx_.queue(sql, [row.id(), JSON.stringify(row.payload())]);
+    this.tx_.queue(sql, [row.id(), JSON.stringify(row.payload_)]);
   }, this);
   return goog.Promise.resolve();
 };
@@ -7431,7 +7400,7 @@ lf.index.BTreeNode_.prototype.delete_ = function(key, parentPos, opt_value) {
   return !0;
 };
 lf.index.BTreeNode_.prototype.steal_ = function() {
-  var from = null, fromIndex, fromChildIndex, toIndex;
+  var from, fromIndex, fromChildIndex, toIndex;
   if (this.next_ && this.next_.keys_.length > lf.index.BTreeNode_.MIN_KEY_LEN_) {
     from = this.next_, fromChildIndex = fromIndex = 0, toIndex = this.keys_.length + 1;
   } else {
@@ -7443,7 +7412,7 @@ lf.index.BTreeNode_.prototype.steal_ = function() {
   }
   this.keys_.splice(toIndex, 0, from.keys_[fromIndex]);
   from.keys_.splice(fromIndex, 1);
-  var child = this.isLeaf_() ? this.values_ : this.children_, fromChild = null;
+  var child = this.isLeaf_() ? this.values_ : this.children_, fromChild;
   this.isLeaf_() ? fromChild = from.values_ : (fromChild = from.children_, fromChild[fromChildIndex].parent_ = this);
   child.splice(toIndex, 0, fromChild[fromChildIndex]);
   fromChild.splice(fromChildIndex, 1);
@@ -7473,7 +7442,7 @@ lf.index.BTreeNode_.prototype.insert = function(key, value, opt_replace) {
         this.tree_.stats().remove(key, this.tree_.isUniqueKey() ? 1 : this.values_[pos].length), this.values_[pos] = this.tree_.isUniqueKey() ? value : [value];
       } else {
         if (this.tree_.isUniqueKey()) {
-          throw new lf.Exception(201);
+          throw new lf.Exception(201, this.tree_.getName(), JSON.stringify(key));
         }
         if (!lf.structs.array.binaryInsert(this.values_[pos], value)) {
           throw new lf.Exception(109);
@@ -7662,8 +7631,8 @@ lf.index.BTreeNode_.serialize = function(start) {
 lf.index.BTreeNode_.deserialize = function(rows, tree) {
   for (var stats = tree.stats(), leaves = rows.map(function(row) {
     var node = new lf.index.BTreeNode_(row.id(), tree);
-    node.keys_ = row.payload()[0];
-    node.values_ = row.payload()[1];
+    node.keys_ = row.payload_[0];
+    node.values_ = row.payload_[1];
     node.keys_.forEach(function(key, index) {
       stats.add(key, tree.isUniqueKey() ? 1 : node.values_[index].length);
     });
@@ -7950,7 +7919,7 @@ lf.index.NullableIndex.deserialize = function(deserializeFn, rows) {
   if (-1 == index) {
     throw new lf.Exception(102);
   }
-  var nulls = rows[index].payload(), newRows = rows.slice(0);
+  var nulls = rows[index].payload_, newRows = rows.slice(0);
   newRows.splice(index, 1);
   var tree = deserializeFn(newRows), nullableIndex = new lf.index.NullableIndex(tree);
   nulls.forEach(function(rowId) {
@@ -8024,7 +7993,7 @@ lf.index.RowId.prototype.comparator = function() {
   return this.comparator_;
 };
 lf.index.RowId.deserialize = function(name, rows) {
-  var index = new lf.index.RowId(name), rowIds = rows[0].payload();
+  var index = new lf.index.RowId(name), rowIds = rows[0].payload_;
   rowIds.forEach(function(rowId) {
     index.add(rowId, rowId);
   });
@@ -8385,7 +8354,7 @@ lf.pred.JoinPredicate.prototype.reverseSelf_ = function() {
   var temp = this.leftColumn;
   this.leftColumn = this.rightColumn;
   this.rightColumn = temp;
-  var evaluatorType = this.evaluatorType;
+  var evaluatorType;
   switch(this.evaluatorType) {
     case lf.eval.Type.GT:
       evaluatorType = lf.eval.Type.LT;
@@ -8422,7 +8391,7 @@ lf.pred.JoinPredicate.prototype.appliesToRight_ = function(relation) {
   return -1 != relation.getTables().indexOf(this.rightColumn.getTable().getEffectiveName());
 };
 lf.pred.JoinPredicate.prototype.detectLeftRight_ = function(relation1, relation2) {
-  var left = null, right = null;
+  var left, right;
   this.appliesToLeft_(relation1) ? (this.assertRelationsApply_(relation1, relation2), left = relation1, right = relation2) : (this.assertRelationsApply_(relation2, relation1), left = relation2, right = relation1);
   return left.entries.length > right.entries.length ? (this.reverseSelf_(), this.assertRelationsApply_(right, left), [right, left]) : [left, right];
 };
@@ -8559,9 +8528,6 @@ lf.schema.Table.prototype.getName = function() {
   return this.name_;
 };
 goog.exportProperty(lf.schema.Table.prototype, "getName", lf.schema.Table.prototype.getName);
-lf.schema.Table.prototype.getAlias = function() {
-  return this.alias_;
-};
 lf.schema.Table.prototype.getEffectiveName = function() {
   return this.alias_ || this.name_;
 };
@@ -8612,9 +8578,6 @@ lf.fn.AggregatedColumn.prototype.toString = function() {
 lf.fn.AggregatedColumn.prototype.getType = function() {
   return this.child.getType();
 };
-lf.fn.AggregatedColumn.prototype.getAlias = function() {
-  return this.alias_;
-};
 lf.fn.AggregatedColumn.prototype.getIndices = function() {
   return [];
 };
@@ -8653,9 +8616,6 @@ lf.fn.StarColumn.prototype.getTable = function() {
 };
 lf.fn.StarColumn.prototype.getType = function() {
   return lf.Type.NUMBER;
-};
-lf.fn.StarColumn.prototype.getAlias = function() {
-  return this.alias_;
 };
 lf.fn.StarColumn.prototype.getIndices = function() {
   return [];
@@ -8922,7 +8882,7 @@ lf.proc.TableAccessNode = function(table) {
 goog.inherits(lf.proc.TableAccessNode, lf.proc.LogicalQueryPlanNode);
 lf.proc.TableAccessNode.prototype.toString = function() {
   var out = "table_access(" + this.table.getName();
-  goog.isNull(this.table.getAlias()) || (out += " as " + this.table.getAlias());
+  goog.isNull(this.table.alias_) || (out += " as " + this.table.alias_);
   return out += ")";
 };
 lf.proc.CrossProductNode = function() {
@@ -9236,7 +9196,7 @@ lf.query.insertToSql_ = function(query, stripValueInfo) {
     return col.getName();
   }).join(", "), prefix = prefix + ") VALUES (", sqls = query.values.map(function(row) {
     var values = columns.map(function(col) {
-      var rawVal = row.payload()[col.getName()];
+      var rawVal = row.payload_[col.getName()];
       return stripValueInfo ? goog.isDefAndNotNull(rawVal) ? "#" : "NULL" : lf.query.escapeSqlValue_(col.getType(), rawVal);
     });
     return prefix + values.join(", ") + ");";
@@ -9330,7 +9290,7 @@ lf.query.updateToSql_ = function(query, stripValueInfo) {
 lf.query.selectToSql_ = function(query, stripValueInfo) {
   var colList = "*";
   query.columns.length && (colList = query.columns.map(function(col) {
-    return col.getAlias() ? col.getNormalizedName() + " AS " + col.getAlias() : col.getNormalizedName();
+    return col.alias_ ? col.getNormalizedName() + " AS " + col.alias_ : col.getNormalizedName();
   }).join(", "));
   var sql = "SELECT " + colList + " FROM ";
   goog.isDefAndNotNull(query.outerJoinPredicates) && 0 != query.outerJoinPredicates.size ? sql += lf.query.getFromListForOuterJoin_(query, stripValueInfo) : (sql += lf.query.getFromListForInnerJoin_(query, stripValueInfo), query.where && (sql += lf.query.predicateToSql_(query.where, stripValueInfo)));
@@ -9422,9 +9382,6 @@ lf.query.BaseBuilder.prototype.assertExecPreconditions = function() {
 lf.query.BaseBuilder.prototype.getQuery = function() {
   return this.query.clone();
 };
-lf.query.BaseBuilder.prototype.getObservableQuery = function() {
-  return this.query;
-};
 lf.query.BaseBuilder.prototype.getPlan_ = function() {
   goog.isDefAndNotNull(this.plan_) || (this.plan_ = this.queryEngine_.getPlan(this.query));
   return this.plan_;
@@ -9433,7 +9390,7 @@ lf.query.BaseBuilder.prototype.getTaskItem = function() {
   return {context:this.getQuery(), plan:this.getPlan_()};
 };
 lf.query.BaseBuilder.prototype.getObservableTaskItem = function() {
-  return {context:this.getObservableQuery(), plan:this.getPlan_()};
+  return {context:this.query, plan:this.getPlan_()};
 };
 lf.query.DeleteBuilder = function(global) {
   lf.query.BaseBuilder.call(this, global, new lf.query.DeleteContext(global.getService(lf.service.SCHEMA)));
@@ -9483,7 +9440,7 @@ lf.query.InsertBuilder.prototype.assertExecPreconditions = function() {
   if (!goog.isDefAndNotNull(context.into) || !goog.isDefAndNotNull(context.values)) {
     throw new lf.Exception(518);
   }
-  if (context.allowReplace && goog.isNull(context.into.getConstraint().getPrimaryKey())) {
+  if (context.allowReplace && goog.isNull(context.into.constraint_.primaryKey_)) {
     throw new lf.Exception(519);
   }
 };
@@ -10004,7 +9961,7 @@ lf.proc.LogicalPlanFactory = function() {
   this.deleteOptimizationPasses_ = [new lf.proc.AndPredicatePass];
 };
 lf.proc.LogicalPlanFactory.prototype.create = function(query) {
-  var generator = null;
+  var generator;
   if (query instanceof lf.query.InsertContext) {
     generator = new lf.proc.InsertLogicalPlanGenerator(query);
   } else {
@@ -10063,7 +10020,7 @@ lf.proc.TableAccessFullStep = function(global, table) {
 goog.inherits(lf.proc.TableAccessFullStep, lf.proc.PhysicalQueryPlanNode);
 lf.proc.TableAccessFullStep.prototype.toString = function() {
   var out = "table_access(" + this.table.getName();
-  goog.isNull(this.table.getAlias()) || (out += " as " + this.table.getAlias());
+  goog.isNull(this.table.alias_) || (out += " as " + this.table.alias_);
   return out += ")";
 };
 lf.proc.TableAccessFullStep.prototype.execInternal = function() {
@@ -10494,11 +10451,11 @@ lf.proc.InsertStep.prototype.execInternal = function(relations, journal, context
   return [lf.proc.Relation.fromRows(queryContext.values, [this.table_.getName()])];
 };
 lf.proc.InsertStep.assignAutoIncrementPks_ = function(table, values, indexStore) {
-  var pkIndexSchema = table.getConstraint().getPrimaryKey(), autoIncrement = goog.isNull(pkIndexSchema) ? !1 : pkIndexSchema.columns[0].autoIncrement;
+  var pkIndexSchema = table.constraint_.primaryKey_, autoIncrement = goog.isNull(pkIndexSchema) ? !1 : pkIndexSchema.columns[0].autoIncrement;
   if (autoIncrement) {
     var pkColumnName = pkIndexSchema.columns[0].schema.getName(), index = indexStore.get(pkIndexSchema.getNormalizedName()), max = index.stats().maxKeyEncountered, maxKey = goog.isNull(max) ? 0 : max;
     values.forEach(function(row) {
-      0 != row.payload()[pkColumnName] && goog.isDefAndNotNull(row.payload()[pkColumnName]) || (maxKey++, row.payload()[pkColumnName] = maxKey);
+      0 != row.payload_[pkColumnName] && goog.isDefAndNotNull(row.payload_[pkColumnName]) || (maxKey++, row.payload_[pkColumnName] = maxKey);
     });
   }
 };
@@ -10560,10 +10517,13 @@ lf.proc.OrderByStep.prototype.findDistinctColumn_ = function(relation) {
   return distinctColumn;
 };
 lf.proc.OrderByStep.prototype.comparator_ = function(getLeftPayload, getRightPayload) {
-  var order = null, leftPayload = null, rightPayload = null, comparisonIndex = -1;
+  var order, leftPayload, rightPayload, comparisonIndex = -1;
   do {
     comparisonIndex++;
-    var column = this.orderBy[comparisonIndex].column, order = this.orderBy[comparisonIndex].order, leftPayload = getLeftPayload(column), rightPayload = getRightPayload(column);
+    var column = this.orderBy[comparisonIndex].column;
+    order = this.orderBy[comparisonIndex].order;
+    leftPayload = getLeftPayload(column);
+    rightPayload = getRightPayload(column);
   } while (leftPayload == rightPayload && comparisonIndex + 1 < this.orderBy.length);
   var result = leftPayload < rightPayload ? -1 : leftPayload > rightPayload ? 1 : 0;
   return result = order == lf.Order.ASC ? result : -result;
@@ -10715,7 +10675,7 @@ lf.proc.MultiColumnOrPass.prototype.rewrite = function(rootNode, queryContext) {
   if (0 == orSelectSteps.length) {
     return this.rootNode;
   }
-  var indexRangeCandidates = null, orSelectStep = null, i = 0;
+  var indexRangeCandidates, orSelectStep, i = 0;
   do {
     orSelectStep = orSelectSteps[i++], indexRangeCandidates = this.findIndexRangeCandidates_(orSelectStep, queryContext);
   } while (goog.isNull(indexRangeCandidates) && i < orSelectSteps.length);
@@ -10871,7 +10831,7 @@ lf.proc.UpdateStep.prototype.execInternal = function(relations, journal, context
   var rows = relations[0].entries.map(function(entry) {
     var clone = this.table_.deserializeRow(entry.row.serialize());
     context.set.forEach(function(update) {
-      clone.payload()[update.column.getName()] = update.value;
+      clone.payload_[update.column.getName()] = update.value;
     }, this);
     return clone;
   }, this);
@@ -11029,11 +10989,11 @@ lf.proc.Runner.prototype.scheduleTask = function(task) {
   (task.getPriority() < lf.proc.TaskPriority.USER_QUERY_TASK || task.getPriority() < lf.proc.TaskPriority.TRANSACTION_TASK) && this.lockManager_.clearReservedLocks(task.getScope());
   this.queue_.insert(task);
   this.consumePending_();
-  return task.getResolver().promise;
+  return task.resolver_.promise;
 };
 lf.proc.Runner.prototype.consumePending_ = function() {
   for (var queue = this.queue_.getValues(), i = 0;i < queue.length;i++) {
-    var task = queue[i], acquiredLock = !1;
+    var task = queue[i], acquiredLock;
     if (acquiredLock = task.getType() == lf.TransactionType.READ_ONLY ? this.requestTwoPhaseLock_(task, lf.proc.LockType.RESERVED_READ_ONLY, lf.proc.LockType.SHARED) : this.requestTwoPhaseLock_(task, lf.proc.LockType.RESERVED_READ_WRITE, lf.proc.LockType.EXCLUSIVE)) {
       this.queue_.remove(task), this.execTask_(task);
     }
@@ -11049,12 +11009,12 @@ lf.proc.Runner.prototype.execTask_ = function(task) {
 };
 lf.proc.Runner.prototype.onTaskSuccess_ = function(task, results) {
   this.lockManager_.releaseLock(task.getId(), task.getScope());
-  task.getResolver().resolve(results);
+  task.resolver_.resolve(results);
   this.consumePending_();
 };
 lf.proc.Runner.prototype.onTaskError_ = function(task, error) {
   this.lockManager_.releaseLock(task.getId(), task.getScope());
-  task.getResolver().reject(error);
+  task.resolver_.reject(error);
   this.consumePending_();
 };
 lf.proc.Runner.TaskQueue_ = function() {
@@ -11150,7 +11110,7 @@ lf.debug.inspectTable_ = function(dbName, tableName, opt_limit, opt_skip) {
     if (goog.isDefAndNotNull(table)) {
       var indexStore = global.getService(lf.service.INDEX_STORE), cache = global.getService(lf.service.CACHE), rowIds = indexStore.get(table.getRowIdIndexName()).getRange(void 0, !1, opt_limit, opt_skip);
       rowIds.length && (contents = cache.getMany(rowIds).map(function(row) {
-        return row.payload();
+        return row.payload_;
       }));
     }
   }
@@ -11195,7 +11155,7 @@ lf.DiffCalculator.prototype.applyDiff = function(oldResults, newResults) {
   for (var longestCommonSubsequenceRight = goog.math.longestCommonSubsequence(oldEntries, newResults.entries, this.comparator_.bind(this), function(indexLeft, indexRight) {
     return newResults.entries[indexRight];
   }), i = commonIndex = 0;i < newResults.entries.length;i++) {
-    entry = newResults.entries[i], longestCommonSubsequenceRight[commonIndex] == entry ? commonIndex++ : (this.observableResults_.splice(i, 0, entry.row.payload()), changeRecord = lf.DiffCalculator.createChangeRecord_(i, [], 1, this.observableResults_), changeRecords.push(changeRecord));
+    entry = newResults.entries[i], longestCommonSubsequenceRight[commonIndex] == entry ? commonIndex++ : (this.observableResults_.splice(i, 0, entry.row.payload_), changeRecord = lf.DiffCalculator.createChangeRecord_(i, [], 1, this.observableResults_), changeRecords.push(changeRecord));
   }
   return changeRecords;
 };
@@ -11209,12 +11169,12 @@ lf.ObserverRegistry.prototype.getQueryId_ = function(query) {
   return goog.getUid(query).toString();
 };
 lf.ObserverRegistry.prototype.addObserver = function(rawBuilder, callback) {
-  var builder = rawBuilder, queryId = this.getQueryId_(builder.getObservableQuery()), entry = this.entries_.get(queryId) || null;
+  var builder = rawBuilder, queryId = this.getQueryId_(builder.query), entry = this.entries_.get(queryId) || null;
   goog.isNull(entry) && (entry = new lf.ObserverRegistry.Entry_(builder), this.entries_.set(queryId, entry));
   entry.addObserver(callback);
 };
 lf.ObserverRegistry.prototype.removeObserver = function(builder, callback) {
-  var query = builder.getObservableQuery(), queryId = this.getQueryId_(query), entry = this.entries_.get(queryId) || null;
+  var query = builder.query, queryId = this.getQueryId_(query), entry = this.entries_.get(queryId) || null;
   goog.asserts.assert(goog.isDefAndNotNull(entry), "Attempted to unobserve a query that was not observed.");
   var didRemove = entry.removeObserver(callback);
   goog.asserts.assert(didRemove, "removeObserver: Inconsistent state detected.");
@@ -11243,7 +11203,7 @@ lf.ObserverRegistry.Entry_ = function(builder) {
   this.observers_ = lf.structs.set.create();
   this.observable_ = [];
   this.lastResults_ = null;
-  this.diffCalculator_ = new lf.DiffCalculator(builder.getObservableQuery(), this.observable_);
+  this.diffCalculator_ = new lf.DiffCalculator(builder.query, this.observable_);
 };
 lf.ObserverRegistry.Entry_.prototype.addObserver = function(callback) {
   this.observers_.has(callback) ? goog.asserts.fail("Attempted to register observer twice.") : this.observers_.add(callback);
@@ -11343,7 +11303,7 @@ lf.proc.ExportTask.prototype.execSync = function() {
   var indexStore = this.global_.getService(lf.service.INDEX_STORE), cache = this.global_.getService(lf.service.CACHE), tables = {};
   this.schema_.tables().forEach(function(table) {
     var rowIds = indexStore.get(table.getRowIdIndexName()).getRange(), payloads = cache.getMany(rowIds).map(function(row) {
-      return row.payload();
+      return row.payload_;
     });
     tables[table.getName()] = payloads;
   });
@@ -11358,9 +11318,6 @@ lf.proc.ExportTask.prototype.getType = function() {
 };
 lf.proc.ExportTask.prototype.getScope = function() {
   return this.scope_;
-};
-lf.proc.ExportTask.prototype.getResolver = function() {
-  return this.resolver_;
 };
 lf.proc.ExportTask.prototype.getId = function() {
   return goog.getUid(this);
@@ -11398,9 +11355,6 @@ lf.proc.ImportTask.prototype.getType = function() {
 };
 lf.proc.ImportTask.prototype.getScope = function() {
   return this.scope_;
-};
-lf.proc.ImportTask.prototype.getResolver = function() {
-  return this.resolver_;
 };
 lf.proc.ImportTask.prototype.getId = function() {
   return goog.getUid(this);
@@ -11455,9 +11409,6 @@ lf.proc.TransactionTask.prototype.getType = function() {
 };
 lf.proc.TransactionTask.prototype.getScope = function() {
   return this.scope_;
-};
-lf.proc.TransactionTask.prototype.getResolver = function() {
-  return this.resolver_;
 };
 lf.proc.TransactionTask.prototype.getId = function() {
   return goog.getUid(this);
@@ -11686,9 +11637,6 @@ lf.proc.Database.prototype.import = function(data) {
   });
 };
 goog.exportProperty(lf.proc.Database.prototype, "import", lf.proc.Database.prototype.import);
-lf.proc.Database.prototype.isOpen = function() {
-  return this.isActive_;
-};
 lf.schema.BaseColumn = function(table, name, isUnique, isNullable, type, opt_alias) {
   this.table_ = table;
   this.name_ = name;
@@ -11714,9 +11662,6 @@ lf.schema.BaseColumn.prototype.getType = function() {
   return this.type_;
 };
 goog.exportProperty(lf.schema.BaseColumn.prototype, "getType", lf.schema.BaseColumn.prototype.getType);
-lf.schema.BaseColumn.prototype.getAlias = function() {
-  return this.alias_;
-};
 lf.schema.BaseColumn.prototype.getIndices = function() {
   goog.isDefAndNotNull(this.indices_) || (this.indices_ = [], this.getTable().getIndices().forEach(function(index) {
     var colNames = index.columns.map(function(col) {
@@ -11805,7 +11750,7 @@ lf.schema.Info = function(dbSchema) {
 lf.schema.Info.prototype.init_ = function() {
   this.schema_.tables().forEach(function(table) {
     var tableName = table.getName();
-    table.getConstraint().getForeignKeys().forEach(function(fkSpec) {
+    table.constraint_.foreignKeys_.forEach(function(fkSpec) {
       this.parents_.set(tableName, this.schema_.table(fkSpec.parentTable));
       this.children_.set(fkSpec.parentTable, table);
       fkSpec.action == lf.ConstraintAction.RESTRICT ? (this.restrictReferringFk_.set(fkSpec.parentTable, fkSpec), this.restrictChildren_.set(fkSpec.parentTable, table)) : (this.cascadeReferringFk_.set(fkSpec.parentTable, fkSpec), this.cascadeChildren_.set(fkSpec.parentTable, table));
@@ -11866,9 +11811,6 @@ lf.schema.Constraint.prototype.getPrimaryKey = function() {
   return this.primaryKey_;
 };
 goog.exportProperty(lf.schema.Constraint.prototype, "getPrimaryKey", lf.schema.Constraint.prototype.getPrimaryKey);
-lf.schema.Constraint.prototype.getNotNullable = function() {
-  return this.notNullable_;
-};
 lf.schema.Constraint.prototype.getForeignKeys = function() {
   return this.foreignKeys_;
 };
@@ -12054,9 +11996,6 @@ lf.schema.TableBuilder.prototype.getSchema = function() {
   return new tableClass;
 };
 goog.exportProperty(lf.schema.TableBuilder.prototype, "getSchema", lf.schema.TableBuilder.prototype.getSchema);
-lf.schema.TableBuilder.prototype.getFkSpecs = function() {
-  return this.fkSpecs_;
-};
 lf.schema.TableBuilder.prototype.normalizeColumns_ = function(columns, checkIndexable, opt_order, opt_autoInc) {
   var normalized = columns, normalized = "string" == typeof columns[0] ? columns.map(function(col) {
     return new lf.schema.TableBuilder.IndexedColumn_({name:col, order:goog.isDefAndNotNull(opt_order) ? opt_order : lf.Order.ASC, autoIncrement:opt_autoInc || !1});
@@ -12092,7 +12031,7 @@ lf.schema.TableBuilder.prototype.generateTableClass_ = function() {
     var pk = goog.isNull(that.pkName_) ? null : new lf.schema.Index(that.name_, that.pkName_, !0, generateIndexedColumns.call(this, that.pkName_)), notNullable = columns.filter(function(col) {
       return !that.nullable_.has(col.getName());
     });
-    this.constraint_ = new lf.schema.Constraint(pk, notNullable, that.getFkSpecs());
+    this.constraint_ = new lf.schema.Constraint(pk, notNullable, that.fkSpecs_);
     this.rowClass_ = that.generateRowClass_(columns, indices);
   };
   goog.inherits(tableClass, lf.schema.Table);
@@ -12132,7 +12071,7 @@ lf.schema.TableBuilder.prototype.generateRowClass_ = function(columns$$0, indice
   rowClass.prototype.toDbPayload = function() {
     var obj = {};
     this.columns_.forEach(function(col) {
-      var key = col.getName(), type = col.getType(), value = this.payload()[key];
+      var key = col.getName(), type = col.getType(), value = this.payload_[key];
       obj[key] = type == lf.Type.ARRAY_BUFFER ? goog.isDefAndNotNull(value) ? lf.Row.binToHex(value) : null : type == lf.Type.DATE_TIME ? goog.isDefAndNotNull(value) ? value.getTime() : null : type == lf.Type.OBJECT ? goog.isDefAndNotNull(value) ? value : null : value;
     }, this);
     return obj;
@@ -12158,7 +12097,7 @@ lf.schema.TableBuilder.prototype.generateRowClass_ = function(columns$$0, indice
     functionMap[key] = JSCompiler_inline_result;
   });
   rowClass.prototype.keyOfIndex = function(indexName) {
-    return -1 != indexName.indexOf("#") ? this.id() : functionMap.hasOwnProperty(indexName) ? functionMap[indexName](this.payload()) : null;
+    return -1 != indexName.indexOf("#") ? this.id() : functionMap.hasOwnProperty(indexName) ? functionMap[indexName](this.payload_) : null;
   };
   return rowClass;
 };
@@ -12170,7 +12109,7 @@ lf.schema.Builder = function(dbName, dbVersion) {
 };
 goog.exportSymbol("lf.schema.Builder", lf.schema.Builder);
 lf.schema.Builder.prototype.checkForeignKeyValidity_ = function(builder) {
-  var fkSpecArray = builder.getFkSpecs();
+  var fkSpecArray = builder.fkSpecs_;
   fkSpecArray.forEach(function(specs) {
     var parentTableName = specs.parentTable;
     if (!this.tableBuilders_.has(parentTableName)) {
@@ -12190,10 +12129,10 @@ lf.schema.Builder.prototype.checkForeignKeyValidity_ = function(builder) {
   }, this);
 };
 lf.schema.Builder.prototype.checkForeignKeyChain_ = function(builder) {
-  var fkSpecArray = builder.getFkSpecs();
+  var fkSpecArray = builder.fkSpecs_;
   fkSpecArray.forEach(function(specs) {
     var parentBuilder = this.tableBuilders_.get(specs.parentTable);
-    parentBuilder.getFkSpecs().forEach(function(parentSpecs) {
+    parentBuilder.fkSpecs_.forEach(function(parentSpecs) {
       if (parentSpecs.childColumn == specs.parentColumn) {
         throw new lf.Exception(534, specs.name);
       }
@@ -12225,7 +12164,7 @@ lf.schema.Builder.prototype.checkFkCycle_ = function() {
     nodeMap.set(tableName, new lf.schema.GraphNode_(tableName));
   }, this);
   this.tableBuilders_.forEach(function(builder, tableName) {
-    builder.getFkSpecs().forEach(function(spec) {
+    builder.fkSpecs_.forEach(function(spec) {
       var parentNode = nodeMap.get(spec.parentTable);
       parentNode.edges.add(tableName);
     });
@@ -12245,13 +12184,13 @@ lf.schema.Builder.prototype.getSchema = function() {
 };
 goog.exportProperty(lf.schema.Builder.prototype, "getSchema", lf.schema.Builder.prototype.getSchema);
 lf.schema.Builder.prototype.getGlobal = function() {
-  var namespacedGlobalId = new lf.service.ServiceId("ns_" + this.schema_.name()), global = lf.Global.get(), namespacedGlobal = null;
+  var namespacedGlobalId = new lf.service.ServiceId("ns_" + this.schema_.name()), global = lf.Global.get(), namespacedGlobal;
   global.isRegistered(namespacedGlobalId) ? namespacedGlobal = global.getService(namespacedGlobalId) : (namespacedGlobal = new lf.Global, global.registerService(namespacedGlobalId, namespacedGlobal));
   return namespacedGlobal;
 };
 goog.exportProperty(lf.schema.Builder.prototype, "getGlobal", lf.schema.Builder.prototype.getGlobal);
 lf.schema.Builder.prototype.connect = function(opt_options) {
-  if (!goog.isNull(this.db_) && this.db_.isOpen()) {
+  if (!goog.isNull(this.db_) && this.db_.isActive_) {
     throw new lf.Exception(113);
   }
   if (goog.isNull(this.db_)) {

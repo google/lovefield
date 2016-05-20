@@ -24,7 +24,7 @@
   "113": "Attempt to call connect() on an already opened DB connection.",
 
   "200": "Constraint error",
-  "201": "Duplicate keys are not allowed.",
+  "201": "Duplicate keys are not allowed, index: {0}, key: {1}",
   "202": "Attempted to insert NULL value to non-nullable field {0}.",
   "203": "Foreign key constraint violation on constraint {0}.",
 

@@ -49,7 +49,7 @@ function getMessage(data) {
         typeof(category) == 'string' && typeof(message) == 'string') {
       message = category + ': (' + code.toString() + ') ' + message;
       return message.replace(/{([^}]+)}/g, function(match, pattern) {
-        return input['p' + pattern] || '';
+        return decodeURIComponent(input['p' + pattern] || '');
       });
     }
   }
