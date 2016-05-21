@@ -6,10 +6,11 @@
   "license": "http://www.apache.org/licenses/LICENSE-2.0",
   "devDependencies": {
     "gulp": "^3.9.0",
-    "gulp-tsd": "^0.0.4",
-    "gulp-typescript": "^2.10.0",
+    "gulp-typescript": "^2.13.0",
+    "gulp-typings": "^2.0.0",
     "gulp-webserver": "^0.9.1",
+    "lovefield": "^2.1.8",
     "nopt": "^3.0.6",
-    "tsd": "^0.6.5"
+    "typings": "^1.0.4"
   }
 }

@@ -17,19 +17,16 @@
 var gulp = require('gulp');
 var nopt = require('nopt');
 var ts = require('gulp-typescript');
-var tsd = require('gulp-tsd');
+var typings = require('gulp-typings');
 var webserver = require('gulp-webserver');
 
 
-gulp.task('tsd', function(callback) {
-  tsd({
-    command: 'reinstall',
-    config: 'tsd.json'
-  }, callback);
+gulp.task('typings', function() {
+  return gulp.src('typings.json').pipe(typings());
 });
 
 
-gulp.task('build', ['tsd'], function() {
+gulp.task('build', ['typings'], function() {
   var tsResult = gulp.src('todo.ts')
       .pipe(ts({
         noEmitOnError: true,

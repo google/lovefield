@@ -14,7 +14,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/// <reference path="./typings/lovefield/lovefield.d.ts"/>
+/// <reference path="./typings/globals/es6-promise/index.d.ts" />
+/// <reference path="./typings/globals/lovefield/index.d.ts" />
 
 
 function main(): void {
