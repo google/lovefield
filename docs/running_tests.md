@@ -1,13 +1,30 @@
 # Running Unit Tests of Lovefield
 
+## Type of Tests
+
+There are three different type of tests in Lovefield:
+
+* Unit tests: tests used to validate correctness of the library.
+* SPAC tests: tests used to validate correctness of SPAC, most users won't use
+  it.
+* Performance tests: tests used for monitoring Lovefield performance, mainly
+  designed to be run by test bots.
+
 ## Manual Testing
 
-Lovefield has two different set of unit tests: SPAC and lib. The SPAC tests are written in Jasmine and shall be tested via node.js; the lib tests are written in JUnit and needs to run a test server.
+To perform manual testing, you need to run the following command line
 
-tools/run_test_server.js provides a test server that can be used to host either normal unit tests or the performance tests. Please run it to see the usage.
+```bash
+gulp debug
+```
 
-TBA: SPAC test steps
+This will start a server with unit tests by default. Type `gulp` for detailed
+usage regarding how to run server for performance tests.
+
+You then need to start a browser and browse to `localhost:8000`. It is
+*STRONGLY SUGGESTED* that you use a test profile for your browser.
 
 ## Automatic Testing
 
-TBA
+Automatic testing is detailed in [Developer Setup](dev_setup.md).
+

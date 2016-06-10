@@ -2542,7 +2542,7 @@ goog.Promise.prototype.unblockAndReject_ = function(reason) {
 };
 goog.Promise.prototype.resolve_ = function(state, x) {
   if (this.state_ == goog.Promise.State_.PENDING) {
-    this == x && (state = goog.Promise.State_.REJECTED, x = new TypeError("Promise cannot resolve to itself"));
+    this === x && (state = goog.Promise.State_.REJECTED, x = new TypeError("Promise cannot resolve to itself"));
     this.state_ = goog.Promise.State_.BLOCKED;
     var isThenable = goog.Promise.maybeThen_(x, this.unblockAndFulfill_, this.unblockAndReject_, this);
     isThenable || (this.result_ = x, this.state_ = state, this.parent_ = null, this.scheduleCallbacks_(), state != goog.Promise.State_.REJECTED || x instanceof goog.Promise.CancellationError || goog.Promise.addUnhandledRejection_(this, x));
