@@ -182,33 +182,6 @@ goog.DEPENDENCIES_ENABLED && (goog.dependencies_ = {loadFlags:{}, nameToPath:{},
     goog.globalEval(src);
   }
 }, goog.loadModuleFromUrl = function() {
-}, goog.loadModule = function(moduleDef) {
-  var previousState = goog.moduleLoaderState_;
-  try {
-    goog.moduleLoaderState_ = {moduleName:void 0, declareLegacyNamespace:!1};
-    var exports;
-    if (goog.isFunction(moduleDef)) {
-      exports = moduleDef.call(goog.global, {});
-    } else {
-      if (goog.isString(moduleDef)) {
-        exports = goog.loadModuleFromSource_.call(goog.global, moduleDef);
-      } else {
-        throw Error("Invalid module definition");
-      }
-    }
-    var moduleName = goog.moduleLoaderState_.moduleName;
-    if (!goog.isString(moduleName) || !moduleName) {
-      throw Error('Invalid module name "' + moduleName + '"');
-    }
-    goog.moduleLoaderState_.declareLegacyNamespace ? goog.constructNamespace_(moduleName, exports) : goog.SEAL_MODULE_EXPORTS && Object.seal && Object.seal(exports);
-    goog.loadedModules_[moduleName] = exports;
-  } finally {
-    goog.moduleLoaderState_ = previousState;
-  }
-}, goog.loadModuleFromSource_ = function(JSCompiler_OptimizeArgumentsArray_p0) {
-  var exports = {};
-  eval(JSCompiler_OptimizeArgumentsArray_p0);
-  return exports;
 }, goog.writeScriptSrcNode_ = function(src) {
   goog.global.document.write('<script type="text/javascript" src="' + src + '">\x3c/script>');
 }, goog.appendScriptSrcNode_ = function(src) {
@@ -300,6 +273,35 @@ goog.DEPENDENCIES_ENABLED && (goog.dependencies_ = {loadFlags:{}, nameToPath:{},
 }, goog.getPathFromDeps_ = function(rule) {
   return rule in goog.dependencies_.nameToPath ? goog.dependencies_.nameToPath[rule] : null;
 }, goog.findBasePath_(), goog.global.CLOSURE_NO_DEPS || goog.importScript_(goog.basePath + "deps.js"));
+goog.loadModule = function(moduleDef) {
+  var previousState = goog.moduleLoaderState_;
+  try {
+    goog.moduleLoaderState_ = {moduleName:void 0, declareLegacyNamespace:!1};
+    var exports;
+    if (goog.isFunction(moduleDef)) {
+      exports = moduleDef.call(goog.global, {});
+    } else {
+      if (goog.isString(moduleDef)) {
+        exports = goog.loadModuleFromSource_.call(goog.global, moduleDef);
+      } else {
+        throw Error("Invalid module definition");
+      }
+    }
+    var moduleName = goog.moduleLoaderState_.moduleName;
+    if (!goog.isString(moduleName) || !moduleName) {
+      throw Error('Invalid module name "' + moduleName + '"');
+    }
+    goog.moduleLoaderState_.declareLegacyNamespace ? goog.constructNamespace_(moduleName, exports) : goog.SEAL_MODULE_EXPORTS && Object.seal && Object.seal(exports);
+    goog.loadedModules_[moduleName] = exports;
+  } finally {
+    goog.moduleLoaderState_ = previousState;
+  }
+};
+goog.loadModuleFromSource_ = function(JSCompiler_OptimizeArgumentsArray_p0) {
+  var exports = {};
+  eval(JSCompiler_OptimizeArgumentsArray_p0);
+  return exports;
+};
 goog.normalizePath_ = function(path) {
   for (var components = path.split("/"), i = 0;i < components.length;) {
     "." == components[i] ? components.splice(i, 1) : i && ".." == components[i] && components[i - 1] && ".." != components[i - 1] ? components.splice(--i, 2) : i++;
