@@ -1,6 +1,6 @@
 /**
  * @license
- * Copyright 2014 Google Inc. All Rights Reserved.
+ * Copyright 2014 The Lovefield Project Authors. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -48,24 +48,30 @@ var range = {
 var query;
 
 
+function handleYearChange() {
+  if (range.from && range.to) {
+    query.bind([range.from, range.to]).exec().then(function() {
+      $('#num_movies').text(model.count.toString());
+    });
+  }
+}
+
+
 // When the page loads.
 $(function() {
   main().then(function() {
     // Simulate Controller/Model bindings.
     setUpBinding();
 
-    // View Layer logic here.
-    Object.observe(model, function(change) {
-      $('#num_movies').text(model.count.toString());
-    });
-
     populateDropdown('#from_year', 1992);
     $('#from_year').change(function(e) {
       range.from = parseInt(e.target.value, 10);
       populateDropdown('#to_year', range.from);
+      handleYearChange();
     });
     $('#to_year').change(function(e) {
       range.to = parseInt(e.target.value, 10);
+      handleYearChange();
     });
     $('#from_year').val('1992').change();
     $('#to_year').val('2003').change();
@@ -82,15 +88,13 @@ function setUpBinding() {
   db.observe(query, function(changes) {
     model.count = changes[0].object[0]['num'];
   });
-
-  Object.observe(range, function(changes) {
-    query.bind([range.from, range.to]).exec();
-  });
 }
 
 
 function main() {
-  return movie.db.connect().then(function(database) {
+  return movie.db.getSchemaBuilder().connect({
+    storeType: lf.schema.DataStoreType.INDEXED_DB
+  }).then(function(database) {
     db = database;
     return checkForExistingData();
   }).then(function(dataExist) {
@@ -129,7 +133,10 @@ function addSampleData() {
     insertData('movieactor.json', db.getSchema().table('MovieActor')),
     insertData('moviedirector.json', db.getSchema().table('MovieDirector')),
     insertData('moviegenre.json', db.getSchema().table('MovieGenre'))
-  ]);
+  ]).then(function(queries) {
+    var tx = db.createTransaction();
+    return tx.exec(queries);
+  });
 }
 
 
@@ -138,7 +145,7 @@ function addSampleData() {
  * @param {string} filename The name of the file holding JSON data.
  * @param {!lf.schema.Table} tableSchema The schema of the table corresponding
  *     to the data.
- * @return {!IThenable}
+ * @return {!IThenable<!lf.query.Insert>}
  */
 function insertData(filename, tableSchema) {
   return getSampleData(filename).then(
@@ -146,7 +153,7 @@ function insertData(filename, tableSchema) {
         var rows = data.map(function(obj) {
           return tableSchema.createRow(obj);
         });
-        return db.insert().into(tableSchema).values(rows).exec();
+        return db.insert().into(tableSchema).values(rows);
       });
 }
 
@@ -172,7 +179,7 @@ function convertDate(rawDate) {
  * @param {string} filename The name of the file holding JSON data.
  * @param {!movie.db.schema.Actor|!movie.db.schema.Director} tableSchema The
  *     schema of the table corresponding to the data.
- * @return {!IThenable}
+ * @return {!IThenable<!lf.query.Insert>}
  */
 function insertPersonData(filename, tableSchema) {
   return getSampleData(filename).then(
@@ -182,7 +189,7 @@ function insertPersonData(filename, tableSchema) {
           obj.dateOfDeath = convertDate(obj.dateOfDeath);
           return tableSchema.createRow(obj);
         });
-        return db.insert().into(tableSchema).values(rows).exec();
+        return db.insert().into(tableSchema).values(rows);
       });
 }
 
