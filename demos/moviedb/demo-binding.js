@@ -48,24 +48,30 @@ var range = {
 var query;
 
 
+function handleYearChange() {
+  if (range.from && range.to) {
+    query.bind([range.from, range.to]).exec().then(function() {
+      $('#num_movies').text(model.count.toString());
+    });
+  }
+}
+
+
 // When the page loads.
 $(function() {
   main().then(function() {
     // Simulate Controller/Model bindings.
     setUpBinding();
 
-    // View Layer logic here.
-    Object.observe(model, function(change) {
-      $('#num_movies').text(model.count.toString());
-    });
-
     populateDropdown('#from_year', 1992);
     $('#from_year').change(function(e) {
       range.from = parseInt(e.target.value, 10);
       populateDropdown('#to_year', range.from);
+      handleYearChange();
     });
     $('#to_year').change(function(e) {
       range.to = parseInt(e.target.value, 10);
+      handleYearChange();
     });
     $('#from_year').val('1992').change();
     $('#to_year').val('2003').change();
@@ -81,10 +87,6 @@ function setUpBinding() {
 
   db.observe(query, function(changes) {
     model.count = changes[0].object[0]['num'];
-  });
-
-  Object.observe(range, function(changes) {
-    query.bind([range.from, range.to]).exec();
   });
 }
 
