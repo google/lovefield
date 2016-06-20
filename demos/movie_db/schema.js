@@ -1,6 +1,6 @@
 /**
  * @license
- * Copyright 2015 Google Inc. All Rights Reserved.
+ * Copyright 2015 The Lovefield Project Authors. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,19 +14,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-goog.provide('movie.db');
-goog.provide('movie.db.schema.Actor');
-goog.provide('movie.db.schema.Director');
-
-goog.require('lf.Type');
-goog.require('lf.schema');
+// Define movie.db namespace
+var movie = { db: {} };
 
 
-/**
- * @return {!lf.schema.Builder}
- * @private
- */
-movie.db.createSchema_ = function() {
+/** @return {!lf.schema.Builder} */
+movie.db.getSchemaBuilder = function() {
   var ds = lf.schema.create('mvdb', 1);
   ds.createTable('Movie').
       addColumn('id', lf.Type.INTEGER).
@@ -58,26 +51,35 @@ movie.db.createSchema_ = function() {
   ds.createTable('MovieGenre').
       addColumn('movieId', lf.Type.INTEGER).
       addColumn('genre', lf.Type.STRING).
-      addForeignKey('fk_MovieId', 'movieId', 'Movie', 'id');
+      addForeignKey('fk_MovieId', {
+        local: 'movieId',
+        ref: 'Movie.id'
+      });
 
   ds.createTable('MovieDirector').
       addColumn('movieId', lf.Type.INTEGER).
       addColumn('directorId', lf.Type.INTEGER).
-      addForeignKey('fk_MovieId', 'movieId', 'Movie', 'id').
-      addForeignKey('fk_DirectorId', 'directorId', 'Director', 'id');
+      addForeignKey('fk_MovieId', {
+        local: 'movieId',
+        ref: 'Movie.id'
+      }).
+      addForeignKey('fk_DirectorId', {
+        local: 'directorId',
+        ref: 'Director.id'
+      });
 
   ds.createTable('MovieActor').
       addColumn('movieId', lf.Type.INTEGER).
       addColumn('actorId', lf.Type.INTEGER).
       addColumn('role', lf.Type.STRING).
-      addForeignKey('fk_MovieId', 'movieId', 'Movie', 'id').
-      addForeignKey('fk_ActorId', 'actorId', 'Actor', 'id');
+      addForeignKey('fk_MovieId', {
+        local: 'movieId',
+        ref: 'Movie.id'
+      }).
+      addForeignKey('fk_ActorId', {
+        local: 'actorId',
+        ref: 'Actor.id'
+      });
 
   return ds;
-};
-
-
-/** @return {!IThenable.<!lf.Database>} */
-movie.db.connect = function() {
-  return movie.db.createSchema_().connect();
 };
