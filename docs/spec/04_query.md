@@ -602,9 +602,8 @@ db.delete().from(order).where(order.id.eq(lf.bind(0)));
 
 ### 4.6 Observers
 
-Lovefield supports data observation for select queries, and the syntax is very
-similar to ES7 Array.observe(). The observers are created using
-`lf.Database#observe`, For example:
+Lovefield supports data observation for select queries. The observers are
+created using `lf.Database#observe`, For example:
 
 ```js
 var p = db.getSchema().table('Photo');
@@ -639,13 +638,21 @@ var query = db.
     where(order.date.between(lf.bind(0), lf.bind(1)));
 db.observe(query, populateChanges);
 
-// Say we have two text boxes on screen, whose values are bound to an in-memory
-// object named dataRange. When the dataRange changes, we want to update the
-// query binding so that the query results are updated.
-var handler = function(changes) {
+// Say we have two text boxes on screen, whose values are used for query.
+// When the values change, we want to update the query binding so that the query
+// results are updated.
+var range = {};
+var handler = function() {
   // Update query binding and run query. Since the query results are already
   // bound to UI, the UI will reflect the new data.
-  query.bind([changes.object.dateFrom, changes.object.dateTo]).exec();
+  query.bind([range.dateFrom, range.dateTo]).exec();
 };
-Object.observe(dataRange, handler);
+$('textBox1').change(function(ev) {
+  range.dateFrom = ev.target.value;
+  handler();
+});
+$('textBox2').change(function(ev) {
+  range.dateTo = ev.target.value;
+  handler();
+});
 ```
