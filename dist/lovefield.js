@@ -9525,24 +9525,10 @@ lf.query.SelectBuilder.prototype.checkProjectionList_ = function() {
   goog.isDefAndNotNull(this.query.groupBy) ? this.checkGroupByColumns_() : this.checkProjectionListNotMixed_();
 };
 lf.query.SelectBuilder.prototype.checkGroupByColumns_ = function() {
-  var nonAggregatedColumns = this.query.columns.filter(function(column) {
-    return !(column instanceof lf.fn.AggregatedColumn);
-  }).map(function(column) {
-    return column.getNormalizedName();
-  }), isInvalid = !1;
-  if (0 == this.query.groupBy.length || 0 == this.query.columns.length) {
-    isInvalid = !0;
-  } else {
-    var groupByColumns = this.query.groupBy.map(function(column) {
-      return column.getNormalizedName();
-    });
-    (isInvalid = nonAggregatedColumns.some(function(column) {
-      return -1 == groupByColumns.indexOf(column);
-    })) || (isInvalid = this.query.groupBy.some(function(column) {
-      var type = column.getType();
-      return type == lf.Type.OBJECT || type == lf.Type.ARRAY_BUFFER;
-    }));
-  }
+  var isInvalid = this.query.groupBy.some(function(column) {
+    var type = column.getType();
+    return type == lf.Type.OBJECT || type == lf.Type.ARRAY_BUFFER;
+  });
   if (isInvalid) {
     throw new lf.Exception(525);
   }

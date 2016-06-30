@@ -71,21 +71,6 @@ function testExec_ThrowsInvalidProjectionList() {
 
 
 /**
- * Tests that constructing a query involving Select#groupBy() fails if an
- * invalid combination of projection and groupBy list is requested.
- * @return {!IThenable}
- */
-function testExec_ThrowsInvalidProjectionList_GroupBy() {
-  var e = db.getSchema().getEmployee();
-  var query = new lf.query.SelectBuilder(
-      hr.db.getGlobal(), [e.email, e.salary]);
-  return lf.testing.util.assertPromiseReject(
-      525,  // 525: Invalid projection list or groupBy columns.
-      query.from(e).groupBy(e.jobId).exec());
-}
-
-
-/**
  * Tests that groupBy on non-indexable fields will fail.
  * @return {!IThenable}
  */

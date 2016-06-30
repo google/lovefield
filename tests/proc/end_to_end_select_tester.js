@@ -108,6 +108,8 @@ lf.testing.EndToEndSelectTester = function(connectFn) {
     this.testOrderBy_NonProjectedAggregate.bind(this),
     this.testGroupBy.bind(this),
     this.testGroupByWithLimit.bind(this),
+    this.testGroupByMixedColumn.bind(this),
+    this.testGroupByComplexJoin.bind(this),
     this.testAggregatorsOnly.bind(this),
     this.testCount_Empty.bind(this),
     this.testMin_EmptyTable.bind(this),
@@ -1287,7 +1289,9 @@ lf.testing.EndToEndSelectTester.prototype.testGroupBy = function() {
         var expectedResultCount = this.dataGenerator_.employeeGroundTruth.
             employeesPerJob.getKeys().length;
         assertEquals(expectedResultCount, results.length);
-        this.assertGroupByResults_(results);
+        this.assertGroupByResults_(
+            results,
+            [e.jobId.getName(), lf.fn.avg(e.salary).getName()]);
       }.bind(this));
 };
 
@@ -1305,8 +1309,80 @@ lf.testing.EndToEndSelectTester.prototype.testGroupByWithLimit = function() {
   return queryBuilder.exec().then(
       function(results) {
         assertEquals(limit, results.length);
-        this.assertGroupByResults_(results);
+        this.assertGroupByResults_(
+            results,
+            [e.jobId.getName(), lf.fn.avg(e.salary).getName()]);
       }.bind(this));
+};
+
+
+/** @return {!IThenable} */
+lf.testing.EndToEndSelectTester.prototype.testGroupByMixedColumn = function() {
+  var e = this.e_;
+  var queryBuilder = /** @type {!lf.query.SelectBuilder} */ (
+      this.db_.select(e.jobId, e.salary, lf.fn.count(e.id)).
+      from(e).
+      groupBy(e.jobId));
+  return queryBuilder.exec().then(function(results) {
+    var expectedResultCount = this.dataGenerator_.employeeGroundTruth.
+        employeesPerJob.getKeys().length;
+    assertEquals(expectedResultCount, results.length);
+    this.assertGroupByResults_(
+        results,
+        [e.jobId.getName(), e.salary.getName()]);
+  }.bind(this));
+};
+
+
+/** @return {!IThenable} */
+lf.testing.EndToEndSelectTester.prototype.testGroupByComplexJoin = function() {
+  var e = this.e_;
+  var c = this.c_;
+  var d = this.d_;
+  var l = this.l_;
+
+  // The query author knows that there's only one country, so abuse it.
+  var queryBuilder = /** @type {!lf.query.SelectBuilder} */ (
+      this.db_.select(
+          e.jobId.as('jid'), c.name.as('c'), lf.fn.count(e.id).as('idc')).
+      from(e, c, d, l).
+      where(lf.op.and(
+          e.departmentId.eq(d.id),
+          d.locationId.eq(l.id),
+          l.countryId.eq(c.id))).
+      groupBy(e.jobId));
+  return queryBuilder.exec().then(function(results) {
+    var expectedResultCount = this.dataGenerator_.employeeGroundTruth.
+        employeesPerJob.getKeys().length;
+    assertEquals(expectedResultCount, results.length);
+    this.assertGroupByComplex_(results);
+  }.bind(this));
+};
+
+
+/**
+ * Helper function for performing assertions on the results of
+ * testSelect_GroupBy and testSelect_GroupByWithLimit.
+ * @param {!Array<Object>} results
+ * @param {!Array<string>} columnNames
+ * @private
+ */
+lf.testing.EndToEndSelectTester.prototype.assertGroupByResults_ =
+    function(results, columnNames) {
+  var e = this.e_;
+  assertEquals(2, columnNames.length);
+  results.forEach(function(obj) {
+    assertEquals(3, goog.object.getCount(obj));
+    assertTrue(goog.isDefAndNotNull(obj[columnNames[0]]));
+    assertTrue(goog.isDefAndNotNull(obj[columnNames[1]]));
+
+    // Verifying that each group has the correct count of employees.
+    var employeesPerJobCount = obj[lf.fn.count(e.id).getName()];
+    var expectedEmployeesPerJobCount = this.dataGenerator_.
+        employeeGroundTruth.employeesPerJob.get(
+            obj[e.jobId.getName()]).length;
+    assertEquals(expectedEmployeesPerJobCount, employeesPerJobCount);
+  }, this);
 };
 
 
@@ -1316,20 +1392,17 @@ lf.testing.EndToEndSelectTester.prototype.testGroupByWithLimit = function() {
  * @param {!Array<Object>} results
  * @private
  */
-lf.testing.EndToEndSelectTester.prototype.assertGroupByResults_ =
+lf.testing.EndToEndSelectTester.prototype.assertGroupByComplex_ =
     function(results) {
-  var e = this.e_;
   results.forEach(function(obj) {
     assertEquals(3, goog.object.getCount(obj));
-    assertTrue(goog.isDefAndNotNull(obj[e.jobId.getName()]));
-    assertTrue(goog.isDefAndNotNull(
-        obj[lf.fn.avg(e.salary).getName()]));
+    assertTrue(goog.isDefAndNotNull(obj['jid']));
+    assertEquals('dummyCountryName', obj['c']);
 
     // Verifying that each group has the correct count of employees.
-    var employeesPerJobCount = obj[lf.fn.count(e.id).getName()];
+    var employeesPerJobCount = obj['idc'];
     var expectedEmployeesPerJobCount = this.dataGenerator_.
-        employeeGroundTruth.employeesPerJob.get(
-            obj[e.jobId.getName()]).length;
+        employeeGroundTruth.employeesPerJob.get(obj['jid']).length;
     assertEquals(expectedEmployeesPerJobCount, employeesPerJobCount);
   }, this);
 };
