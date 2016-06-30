@@ -11506,6 +11506,11 @@ lf.proc.Transaction.prototype.begin = function(scope) {
 goog.exportProperty(lf.proc.Transaction.prototype, "begin", lf.proc.Transaction.prototype.begin);
 lf.proc.Transaction.prototype.attach = function(query) {
   this.stateTransition_(lf.proc.TransactionState_.EXECUTING_QUERY);
+  try {
+    query.assertExecPreconditions();
+  } catch (e) {
+    return this.stateTransition_(lf.proc.TransactionState_.FINALIZED), goog.Promise.reject(e);
+  }
   return this.task_.attachQuery(query).then(function(result) {
     this.stateTransition_(lf.proc.TransactionState_.ACQUIRED_SCOPE);
     return result;

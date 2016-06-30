@@ -472,3 +472,32 @@ function testAttach_WithObservers() {
   });
   return promiseResolver.promise;
 }
+
+
+/**
+ * Tests executing an invalid query will fail the transaction.
+ * @return {!IThenable}
+ */
+function testExec_FailsOnInvalidQuery() {
+  var q = db.insert().into(j);  // an invalid query
+
+  // 518: Invalid usage of insert().
+  return lf.testing.util.assertPromiseReject(518, tx.exec([q]));
+}
+
+
+/**
+ * Tests attaching an invalid query will fail the transaction.
+ * @return {!IThenable}
+ */
+function testAttach_FailsOnInvalidQuery() {
+  var q = db.insert().into(j);  // an invalid query
+  var scope = [j];
+
+  var promise = tx.begin(scope).then(function() {
+    return tx.attach(q);
+  });
+
+  // 518: Invalid usage of insert().
+  return lf.testing.util.assertPromiseReject(518, promise);
+}
