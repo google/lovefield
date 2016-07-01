@@ -306,7 +306,7 @@ The results of aggregated functions are named after the function itself. For
 example:
 
 ```js
-db.select(lf.fn.count(order.id)).from(order).exec.then(function(results) {
+db.select(lf.fn.count(order.id)).from(order).exec().then(function(results) {
   // Results contains only one row with one column, 'COUNT(id)'
   console.log(results[0]['COUNT(id)']);
 });
@@ -318,6 +318,22 @@ db.select(customer.name, lf.fn.count(order.id)).
       // Results are grouped in nested objects, see 4.1.8
       var row0 = results[0];
       console.log(row0['Customer']['name'], row0['Order']['COUNT(id)']);
+    });
+```
+
+You can only `groupBy()` columns of indexable data type, which means that
+columns of type lf.Type.OBJECT or lf.Type.ARRAY_BUFFER are not allowed in
+the `groupBy()` column list. Non-aggregated columns in the projection list
+that do not appear in the `groupBy()` list will be populated by selecting
+an arbitary row from within the group.
+
+```js
+db.select(customer.country, customer.name, lf.fn.count(order.id)).
+    from(order, customer).
+    where(order.customerId.eq(customer.id)).
+    groupBy(customer.name).exec(function(results) {
+        // Lovefield will pick a row in the groupBy operations to fill in
+        // the column customer.country.
     });
 ```
 
