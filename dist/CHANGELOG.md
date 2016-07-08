@@ -1,3 +1,11 @@
+Version: 2.1.9<br>
+Publish date: 20160708<br>
+Changes:
+ - Include more information for lf.Exception 201 (duplicate key).
+ - Remove Object.observe usage from spec sample code.
+ - Relax groupBy projection list limitations.
+ - Perform missing query validity checks for transaction attach().
+
 Version: 2.1.8<br>
 Publish date: 20160502<br>
 Changes:
