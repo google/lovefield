@@ -18,6 +18,8 @@ goog.setTestOnly();
 goog.require('goog.testing.jsunit');
 goog.require('hr.db');
 goog.require('lf.Capability');
+goog.require('lf.testing.hrSchema.getSchemaBuilder');
+goog.require('lf.testing.util');
 
 
 /** @type {!lf.Capability} */
@@ -26,6 +28,27 @@ var capability;
 
 function setUpPage() {
   capability = lf.Capability.get();
+}
+
+
+function testConnectTwiceThrows_SchemaBuilder() {
+  return lf.testing.util.assertThrowsError(
+      113 /* Connection operation was already in progress. */,
+      function() {
+        var schemaBuilder = lf.testing.hrSchema.getSchemaBuilder();
+        schemaBuilder.connect({storeType: lf.schema.DataStoreType.MEMORY});
+        schemaBuilder.connect({storeType: lf.schema.DataStoreType.MEMORY});
+      });
+}
+
+
+function testConnectTwiceThrows_SPAC() {
+  return lf.testing.util.assertThrowsError(
+      113 /* Connection operation was already in progress. */,
+      function() {
+        hr.db.connect({storeType: lf.schema.DataStoreType.MEMORY});
+        hr.db.connect({storeType: lf.schema.DataStoreType.MEMORY});
+      });
 }
 
 
@@ -46,5 +69,6 @@ function testClose() {
     return hr.db.connect();
   }).then(function(database) {
     assertNotNull(database);
+    database.close();
   });
 }

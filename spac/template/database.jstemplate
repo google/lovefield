@@ -48,21 +48,38 @@ goog.require('lf.service.ServiceId');
 
 
 /**
+ * Whether a DB connection operation is in progress.
+ * @private {boolean}
+ */
+#namespace.connectInProgress_ = false;
+
+
+/**
  * @param {!lf.schema.ConnectOptions=} opt_options
  * @return {!IThenable<!lf.proc.Database>}
  */
 #namespace.connect = function(opt_options) {
-  if (!goog.isNull(#namespace.db_) && #namespace.db_.isOpen()) {
-    // 113: Attempt to call connect() on an already opened DB connection.
+  if (#namespace.connectInProgress_ ||
+      (!goog.isNull(#namespace.db_) && #namespace.db_.isOpen())) {
+    // 113: Attempt to connect() to an already connected/connecting database.
     throw new lf.Exception(113);
   }
+  #namespace.connectInProgress_ = true;
 
   if (goog.isNull(#namespace.db_)) {
     #namespace.getSchema();
     #namespace.db_ = new lf.proc.Database(#namespace.getGlobal());
   }
 
-  return #namespace.db_.init(opt_options);
+  return #namespace.db_.init(opt_options).then(
+      function(db) {
+        #namespace.connectInProgress_ = false;
+        return db;
+      },
+      function(e) {
+        #namespace.connectInProgress_ = false;
+        throw e;
+      });
 };
 
 

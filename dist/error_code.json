@@ -21,7 +21,7 @@
   "110": "Attempt to import into a non-empty database.",
   "111": "Database name/version mismatch for import.",
   "112": "Import data not found.",
-  "113": "Attempt to call connect() on an already opened DB connection.",
+  "113": "Attempt to connect() to an already connected/connecting database.",
 
   "200": "Constraint error",
   "201": "Duplicate keys are not allowed, index: {0}, key: {1}",

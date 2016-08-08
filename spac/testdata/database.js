@@ -44,21 +44,38 @@ lovefield.db.getSchema = function() {
 
 
 /**
+ * Whether a DB connection operation is in progress.
+ * @private {boolean}
+ */
+lovefield.db.connectInProgress_ = false;
+
+
+/**
  * @param {!lf.schema.ConnectOptions=} opt_options
  * @return {!IThenable<!lf.proc.Database>}
  */
 lovefield.db.connect = function(opt_options) {
-  if (!goog.isNull(lovefield.db.db_) && lovefield.db.db_.isOpen()) {
-    // 113: Attempt to call connect() on an already opened DB connection.
+  if (lovefield.db.connectInProgress_ ||
+      (!goog.isNull(lovefield.db.db_) && lovefield.db.db_.isOpen())) {
+    // 113: Attempt to connect() to an already connected/connecting database.
     throw new lf.Exception(113);
   }
+  lovefield.db.connectInProgress_ = true;
 
   if (goog.isNull(lovefield.db.db_)) {
     lovefield.db.getSchema();
     lovefield.db.db_ = new lf.proc.Database(lovefield.db.getGlobal());
   }
 
-  return lovefield.db.db_.init(opt_options);
+  return lovefield.db.db_.init(opt_options).then(
+      function(db) {
+        lovefield.db.connectInProgress_ = false;
+        return db;
+      },
+      function(e) {
+        lovefield.db.connectInProgress_ = false;
+        throw e;
+      });
 };
 
 
