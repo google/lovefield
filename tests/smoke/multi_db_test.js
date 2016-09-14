@@ -20,17 +20,10 @@ goog.require('goog.testing.TestCase');
 goog.require('goog.testing.jsunit');
 goog.require('hr.db');
 goog.require('lf.Capability');
+goog.require('lf.schema');
 goog.require('lf.schema.DataStoreType');
 goog.require('lf.testing.SmokeTester');
 goog.require('order.db');
-
-
-/** @type {!lf.testing.SmokeTester} */
-var hrTester;
-
-
-/** @type {!lf.testing.SmokeTester} */
-var orderTester;
 
 
 /** @type {!lf.Capability} */
@@ -39,27 +32,78 @@ var capability;
 
 function setUpPage() {
   goog.testing.TestCase.getActiveTestCase().promiseTimeout = 5 * 1000;  // 5s
+  capability = lf.Capability.get();
 }
 
-function setUp() {
-  capability = lf.Capability.get();
-
+function runTestsForDb(database) {
   var options = {
     storeType: !capability.indexedDb ? lf.schema.DataStoreType.MEMORY :
         lf.schema.DataStoreType.INDEXED_DB
   };
-  return goog.Promise.all([
-    hr.db.connect(options),
-    order.db.connect(options)
-  ]).then(function(dbs) {
-    hrTester = new lf.testing.SmokeTester(hr.db.getGlobal(), dbs[0]);
-    orderTester = new lf.testing.SmokeTester(order.db.getGlobal(), dbs[1]);
 
-    return goog.Promise.all([hrTester.clearDb(), orderTester.clearDb()]);
+  var tester = null;
+  return database.connect(options).then(function(db) {
+    tester = new lf.testing.SmokeTester(database.getGlobal(), db);
+    return tester.clearDb();
+  }).then(function() {
+    return tester.testCRUD();
   });
 }
 
 
+/** @return {!IThenable} */
 function testCRUD() {
-  return goog.Promise.all([hrTester.testCRUD(), orderTester.testCRUD()]);
+  // Running both tests in parallel on purpose, since this simulates closer a
+  // real-world scenario.
+  return goog.Promise.all([
+    runTestsForDb(hr.db), runTestsForDb(order.db)
+  ]);
+}
+
+
+/**
+ * Tests that connecting to a 2nd database does not cause lf.Row.nextId_ to be
+ * overwritten with a smaller value (which guarantees that row IDs will remain
+ * unique).
+ * @return {!IThenable}
+ * @suppress {accessControls}
+ */
+function testRowIdsUnique() {
+  if (!capability.indexedDb)
+    return Promise.resolve();
+
+  lf.Row.setNextId(0);
+
+  var schemaBuilder1 = lf.schema.create('db1', 1);
+  schemaBuilder1.createTable('TableA').
+      addColumn('name', lf.Type.STRING);
+
+  var schemaBuilder2 = lf.schema.create('db2', 1);
+  schemaBuilder2.createTable('TableB').
+      addColumn('name', lf.Type.STRING);
+
+  /** @return {!Array<!lf.Row>} */
+  function createNewTableARows() {
+    var rows = [];
+    var tableA = schemaBuilder1.getSchema().table('TableA');
+    for (var i = 0; i < 3; i++) {
+      rows.push(tableA.createRow({'name': 'name_' + i}));
+    }
+    return rows;
+  }
+
+  var options = {storeType: lf.schema.DataStoreType.INDEXED_DB};
+  return schemaBuilder1.connect(options).then(function() {
+    var rows = createNewTableARows();
+    assertArrayEquals(
+        [1, 2, 3],
+        rows.map(function(r) { return r.id(); }));
+  }).then(function() {
+    return schemaBuilder2.connect(options);
+  }).then(function() {
+    var rows = createNewTableARows();
+    assertArrayEquals(
+        [4, 5, 6],
+        rows.map(function(r) { return r.id(); }));
+  });
 }

@@ -77,6 +77,7 @@ function setUp() {
   global.registerService(lf.service.CACHE, cache);
   global.registerService(lf.service.INDEX_STORE, indexStore);
   global.registerService(lf.service.SCHEMA, schema);
+  lf.Row.setNextId(0);
 }
 
 

@@ -2422,8 +2422,9 @@ goog.async.run = function(callback, opt_context) {
   goog.async.run.workQueue_.add(callback, opt_context);
 };
 goog.async.run.initializeRunner_ = function() {
-  if (goog.global.Promise && goog.global.Promise.resolve) {
-    var promise = goog.global.Promise.resolve(void 0);
+  var Promise = goog.global.Promise;
+  if (-1 != String(Promise).indexOf("[native code]")) {
+    var promise = Promise.resolve(void 0);
     goog.async.run.schedule_ = function() {
       promise.then(goog.async.run.processWorkQueue);
     };
@@ -2850,7 +2851,7 @@ goog.math.angleDifference = function(startAngle, endAngle) {
   180 < d ? d -= 360 : -180 >= d && (d = 360 + d);
   return d;
 };
-goog.math.sign = Math.sign || function(x) {
+goog.math.sign = function(x) {
   return 0 < x ? 1 : 0 > x ? -1 : x;
 };
 goog.math.longestCommonSubsequence = function(array1, array2, opt_compareFn, opt_collectorFn) {
@@ -3675,7 +3676,8 @@ goog.userAgent.isDocumentModeOrHigher = function(documentMode) {
   return Number(goog.userAgent.DOCUMENT_MODE) >= documentMode;
 };
 goog.userAgent.isDocumentMode = goog.userAgent.isDocumentModeOrHigher;
-var JSCompiler_inline_result$$0, doc$$inline_2 = goog.global.document, mode$$inline_3 = goog.userAgent.getDocumentMode_();
+var JSCompiler_inline_result$$0;
+var doc$$inline_2 = goog.global.document, mode$$inline_3 = goog.userAgent.getDocumentMode_();
 JSCompiler_inline_result$$0 = doc$$inline_2 && goog.userAgent.IE ? mode$$inline_3 || ("CSS1Compat" == doc$$inline_2.compatMode ? parseInt(goog.userAgent.VERSION, 10) : 5) : void 0;
 goog.userAgent.DOCUMENT_MODE = JSCompiler_inline_result$$0;
 goog.userAgent.product = {};
@@ -3818,6 +3820,9 @@ lf.Row.getNextId = function() {
 };
 lf.Row.setNextId = function(nextId) {
   lf.Row.nextId_ = nextId;
+};
+lf.Row.setNextIdIfGreater = function(nextId) {
+  lf.Row.nextId_ = Math.max(lf.Row.nextId_, nextId);
 };
 lf.Row.prototype.id = function() {
   return this.id_;
@@ -6511,7 +6516,7 @@ lf.backstore.IndexedDB.prototype.init = function(opt_onUpgrade) {
     request.onsuccess = function(ev) {
       this.db_ = ev.target.result;
       this.scanRowId_().then(function(rowId) {
-        lf.Row.setNextId(rowId + 1);
+        lf.Row.setNextIdIfGreater(rowId + 1);
         resolve(this.db_);
       }.bind(this));
     }.bind(this);
@@ -7113,7 +7118,7 @@ lf.backstore.WebSql.prototype.scanRowId_ = function() {
     return selectIdFromTable(table.getName());
   });
   goog.Promise.all(promises).then(function() {
-    lf.Row.setNextId(maxRowId + 1);
+    lf.Row.setNextIdIfGreater(maxRowId + 1);
     resolver.resolve();
   }, function(e) {
     resolver.reject(e);
