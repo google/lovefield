@@ -1,3 +1,10 @@
+Version: 2.1.10<br>
+Publish date: 20160922<br>
+Changes:
+ - Fix case where rowIDs where corrupted when multiple databases co-exist.
+ - Fix mobile Safari detection, such that WebSQL is used by default.
+ - Remove race condition from the logic that throws lf.Exception 113.
+
 Version: 2.1.9<br>
 Publish date: 20160708<br>
 Changes:
