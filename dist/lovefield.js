@@ -3720,10 +3720,10 @@ goog.userAgent.product.SAFARI = goog.userAgent.product.PRODUCT_KNOWN_ ? goog.use
  limitations under the License.
 */
 var lf = {Capability:function() {
-  this.safariWebView_ = goog.userAgent.product.SAFARI || goog.userAgent.product.IPAD || goog.userAgent.product.IPHONE;
+  this.safariWebView_ = goog.labs.userAgent.browser.isSafari() || goog.userAgent.product.IPAD || goog.userAgent.product.IPHONE;
   this.indexedDb = !(this.safariWebView_ || goog.userAgent.product.IE && !goog.userAgent.isVersionOrHigher(10));
   !goog.userAgent.product.IE || goog.userAgent.isVersionOrHigher(11);
-  this.webSql = goog.userAgent.product.CHROME || goog.userAgent.product.SAFARI;
+  this.webSql = goog.labs.userAgent.browser.isChrome() || goog.labs.userAgent.browser.isSafari();
   this.nativeMap = goog.isDef(window.Map) && goog.isDef(window.Map.prototype.values) && goog.isDef(window.Map.prototype.forEach) && !this.safariWebView_;
   this.nativeSet = goog.isDef(window.Set) && goog.isDef(window.Set.prototype.values) && goog.isDef(window.Set.prototype.forEach) && !this.safariWebView_;
 }};
