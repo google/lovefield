@@ -159,8 +159,8 @@ goog.DEPENDENCIES_ENABLED && (goog.dependencies_ = {loadFlags:{}, nameToPath:{},
     goog.maybeProcessDeferredPath_(goog.basePath + path);
   }
 }, goog.isDeferredModule_ = function(name) {
-  var path = goog.getPathFromDeps_(name), loadFlags = path && goog.dependencies_.loadFlags[path] || {};
-  if (path && ("goog" == loadFlags.module || goog.needsTranspile_(loadFlags.lang))) {
+  var path = goog.getPathFromDeps_(name), loadFlags = path && goog.dependencies_.loadFlags[path] || {}, languageLevel = loadFlags.lang || "es3";
+  if (path && ("goog" == loadFlags.module || goog.needsTranspile_(languageLevel))) {
     var abspath = goog.basePath + path;
     return abspath in goog.dependencies_.deferred;
   }
@@ -221,17 +221,40 @@ goog.DEPENDENCIES_ENABLED && (goog.dependencies_ = {loadFlags:{}, nameToPath:{},
   if ("never" == goog.TRANSPILE) {
     return !1;
   }
-  if (!goog.transpiledLanguages_) {
-    goog.transpiledLanguages_ = {es5:!0, es6:!0, "es6-impl":!0};
+  goog.requiresTranspilation_ || (goog.requiresTranspilation_ = goog.createRequiresTranspilation_());
+  if (lang in goog.requiresTranspilation_) {
+    return goog.requiresTranspilation_[lang];
+  }
+  throw Error("Unknown language mode: " + lang);
+}, goog.createRequiresTranspilation_ = function() {
+  function addNewerLanguageTranspilationCheck(modeName, isSupported) {
+    transpilationRequiredForAllLaterModes ? requiresTranspilation[modeName] = !0 : isSupported() ? requiresTranspilation[modeName] = !1 : transpilationRequiredForAllLaterModes = requiresTranspilation[modeName] = !0;
+  }
+  function evalCheck(code) {
     try {
-      goog.transpiledLanguages_.es5 = eval("[1,].length!=1");
-      var es6fullTest = "class X{constructor(){if(new.target!=String)throw 1;this.x=42}}let q=Reflect.construct(X,[],String);if(q.x!=42||!(q instanceof String))throw 1;for(const a of[2,3]){if(a==2)continue;function f(z={a}){let a=0;return z.a}{function f(){return 0;}}return f()==3}";
-      eval('(()=>{"use strict";' + es6fullTest + "})()") && (goog.transpiledLanguages_.es6 = !1, goog.transpiledLanguages_["es6-impl"] = !1);
-    } catch (err) {
+      return !!eval(code);
+    } catch (ignored) {
+      return !1;
     }
   }
-  return !!goog.transpiledLanguages_[lang];
-}, goog.transpiledLanguages_ = null, goog.lastNonModuleScriptIndex_ = 0, goog.onScriptLoad_ = function(script, scriptIndex) {
+  var requiresTranspilation = {es3:!1}, transpilationRequiredForAllLaterModes = !1;
+  addNewerLanguageTranspilationCheck("es5", function() {
+    return evalCheck("[1,].length==1");
+  });
+  addNewerLanguageTranspilationCheck("es6", function() {
+    return evalCheck('(()=>{"use strict";class X{constructor(){if(new.target!=String)throw 1;this.x=42}}let q=Reflect.construct(X,[],String);if(q.x!=42||!(q instanceof String))throw 1;for(const a of[2,3]){if(a==2)continue;function f(z={a}){let a=0;return z.a}{function f(){return 0;}}return f()==3}})()');
+  });
+  addNewerLanguageTranspilationCheck("es6-impl", function() {
+    return !0;
+  });
+  addNewerLanguageTranspilationCheck("es7", function() {
+    return evalCheck("2 ** 2 == 4");
+  });
+  addNewerLanguageTranspilationCheck("es8", function() {
+    return evalCheck("async () => 1, true");
+  });
+  return requiresTranspilation;
+}, goog.requiresTranspilation_ = null, goog.lastNonModuleScriptIndex_ = 0, goog.onScriptLoad_ = function(script, scriptIndex) {
   "complete" == script.readyState && goog.lastNonModuleScriptIndex_ == scriptIndex && goog.loadQueuedModules_();
   return !0;
 }, goog.writeScripts_ = function(pathToLoad) {
@@ -255,15 +278,15 @@ goog.DEPENDENCIES_ENABLED && (goog.dependencies_ = {loadFlags:{}, nameToPath:{},
   var scripts = [], seenScript = {}, deps = goog.dependencies_;
   visitNode(pathToLoad);
   for (var i = 0;i < scripts.length;i++) {
-    var path$$0 = scripts[i];
-    goog.dependencies_.written[path$$0] = !0;
+    var path$jscomp$0 = scripts[i];
+    goog.dependencies_.written[path$jscomp$0] = !0;
   }
   var moduleState = goog.moduleLoaderState_;
   goog.moduleLoaderState_ = null;
   for (i = 0;i < scripts.length;i++) {
-    if (path$$0 = scripts[i]) {
-      var loadFlags = deps.loadFlags[path$$0] || {}, needsTranspile = goog.needsTranspile_(loadFlags.lang);
-      "goog" == loadFlags.module || needsTranspile ? goog.importProcessedScript_(goog.basePath + path$$0, "goog" == loadFlags.module, needsTranspile) : goog.importScript_(goog.basePath + path$$0);
+    if (path$jscomp$0 = scripts[i]) {
+      var loadFlags = deps.loadFlags[path$jscomp$0] || {}, languageLevel = loadFlags.lang || "es3", needsTranspile = goog.needsTranspile_(languageLevel);
+      "goog" == loadFlags.module || needsTranspile ? goog.importProcessedScript_(goog.basePath + path$jscomp$0, "goog" == loadFlags.module, needsTranspile) : goog.importScript_(goog.basePath + path$jscomp$0);
     } else {
       throw goog.moduleLoaderState_ = moduleState, Error("Undefined script input");
     }
@@ -322,21 +345,29 @@ goog.loadFileSync_ = function(src) {
 };
 goog.retrieveAndExec_ = function() {
 };
-goog.transpile_ = function(code$$0, path$$0) {
+goog.transpile_ = function(code$jscomp$0, path$jscomp$0) {
   var jscomp = goog.global.$jscomp;
   jscomp || (goog.global.$jscomp = jscomp = {});
   var transpile = jscomp.transpile;
   if (!transpile) {
     var transpilerPath = goog.basePath + goog.TRANSPILER, transpilerCode = goog.loadFileSync_(transpilerPath);
-    transpilerCode && (eval(transpilerCode + "\n//# sourceURL=" + transpilerPath), jscomp = goog.global.$jscomp, transpile = jscomp.transpile);
+    if (transpilerCode) {
+      eval(transpilerCode + "\n//# sourceURL=" + transpilerPath);
+      if (goog.global.$gwtExport && goog.global.$gwtExport.$jscomp && !goog.global.$gwtExport.$jscomp.transpile) {
+        throw Error('The transpiler did not properly export the "transpile" method. $gwtExport: ' + JSON.stringify(goog.global.$gwtExport));
+      }
+      goog.global.$jscomp.transpile = goog.global.$gwtExport.$jscomp.transpile;
+      jscomp = goog.global.$jscomp;
+      transpile = jscomp.transpile;
+    }
   }
   if (!transpile) {
     var suffix = " requires transpilation but no transpiler was found.", suffix = suffix + ' Please add "//javascript/closure:transpiler" as a data dependency to ensure it is included.', transpile = jscomp.transpile = function(code, path) {
       goog.logToConsole_(path + suffix);
       return code;
-    }
+    };
   }
-  return transpile(code$$0, path$$0);
+  return transpile(code$jscomp$0, path$jscomp$0);
 };
 goog.typeOf = function(value) {
   var s = typeof value;
@@ -930,9 +961,8 @@ goog.string.removeAt = function(s, index, stringLength) {
   0 <= index && index < s.length && 0 < stringLength && (resultStr = s.substr(0, index) + s.substr(index + stringLength, s.length - index - stringLength));
   return resultStr;
 };
-goog.string.remove = function(s, ss) {
-  var re = new RegExp(goog.string.regExpEscape(ss), "");
-  return s.replace(re, "");
+goog.string.remove = function(str, substr) {
+  return str.replace(substr, "");
 };
 goog.string.removeAll = function(s, ss) {
   var re = new RegExp(goog.string.regExpEscape(ss), "g");
@@ -1077,7 +1107,7 @@ goog.asserts.errorHandler_ = goog.asserts.DEFAULT_ERROR_HANDLER;
 goog.asserts.doAssertFailure_ = function(defaultMessage, defaultArgs, givenMessage, givenArgs) {
   var message = "Assertion failed";
   if (givenMessage) {
-    var message = message + (": " + givenMessage), args = givenArgs
+    var message = message + (": " + givenMessage), args = givenArgs;
   } else {
     defaultMessage && (message += ": " + defaultMessage, args = defaultArgs);
   }
@@ -1539,8 +1569,8 @@ goog.array.reduce = goog.NATIVE_ARRAY_PROTOTYPES && (goog.array.ASSUME_NATIVE_FU
   goog.asserts.assert(null != arr.length);
   opt_obj && (f = goog.bind(f, opt_obj));
   return Array.prototype.reduce.call(arr, f, val);
-} : function(arr, f, val$$0, opt_obj) {
-  var rval = val$$0;
+} : function(arr, f, val$jscomp$0, opt_obj) {
+  var rval = val$jscomp$0;
   goog.array.forEach(arr, function(val, index) {
     rval = f.call(opt_obj, rval, val, index, arr);
   });
@@ -1551,8 +1581,8 @@ goog.array.reduceRight = goog.NATIVE_ARRAY_PROTOTYPES && (goog.array.ASSUME_NATI
   goog.asserts.assert(null != f);
   opt_obj && (f = goog.bind(f, opt_obj));
   return Array.prototype.reduceRight.call(arr, f, val);
-} : function(arr, f, val$$0, opt_obj) {
-  var rval = val$$0;
+} : function(arr, f, val$jscomp$0, opt_obj) {
+  var rval = val$jscomp$0;
   goog.array.forEachRight(arr, function(val, index) {
     rval = f.call(opt_obj, rval, val, index, arr);
   });
@@ -1580,9 +1610,9 @@ goog.array.every = goog.NATIVE_ARRAY_PROTOTYPES && (goog.array.ASSUME_NATIVE_FUN
   }
   return !0;
 };
-goog.array.count = function(arr$$0, f, opt_obj) {
+goog.array.count = function(arr$jscomp$0, f, opt_obj) {
   var count = 0;
-  goog.array.forEach(arr$$0, function(element, index, arr) {
+  goog.array.forEach(arr$jscomp$0, function(element, index, arr) {
     f.call(opt_obj, element, index, arr) && ++count;
   }, opt_obj);
   return count;
@@ -2466,7 +2496,7 @@ goog.Thenable.prototype.then = function() {
 };
 goog.Thenable.IMPLEMENTED_BY_PROP = "$goog_Thenable";
 goog.Thenable.addImplementation = function(ctor) {
-  goog.exportProperty(ctor.prototype, "then", ctor.prototype.then);
+  ctor.prototype.then = ctor.prototype.then;
   ctor.prototype[goog.Thenable.IMPLEMENTED_BY_PROP] = !0;
 };
 goog.Thenable.isImplementedBy = function(object) {
@@ -3019,8 +3049,8 @@ goog.iter.map = function(iterable, f, opt_obj) {
   };
   return newIter;
 };
-goog.iter.reduce = function(iterable, f, val$$0, opt_obj) {
-  var rval = val$$0;
+goog.iter.reduce = function(iterable, f, val$jscomp$0, opt_obj) {
+  var rval = val$jscomp$0;
   goog.iter.forEach(iterable, function(val) {
     rval = f.call(opt_obj, rval, val);
   });
@@ -3676,10 +3706,10 @@ goog.userAgent.isDocumentModeOrHigher = function(documentMode) {
   return Number(goog.userAgent.DOCUMENT_MODE) >= documentMode;
 };
 goog.userAgent.isDocumentMode = goog.userAgent.isDocumentModeOrHigher;
-var JSCompiler_inline_result$$0;
-var doc$$inline_2 = goog.global.document, mode$$inline_3 = goog.userAgent.getDocumentMode_();
-JSCompiler_inline_result$$0 = doc$$inline_2 && goog.userAgent.IE ? mode$$inline_3 || ("CSS1Compat" == doc$$inline_2.compatMode ? parseInt(goog.userAgent.VERSION, 10) : 5) : void 0;
-goog.userAgent.DOCUMENT_MODE = JSCompiler_inline_result$$0;
+var JSCompiler_inline_result$jscomp$0;
+var doc$jscomp$inline_2 = goog.global.document, mode$jscomp$inline_3 = goog.userAgent.getDocumentMode_();
+JSCompiler_inline_result$jscomp$0 = doc$jscomp$inline_2 && goog.userAgent.IE ? mode$jscomp$inline_3 || ("CSS1Compat" == doc$jscomp$inline_2.compatMode ? parseInt(goog.userAgent.VERSION, 10) : 5) : void 0;
+goog.userAgent.DOCUMENT_MODE = JSCompiler_inline_result$jscomp$0;
 goog.userAgent.product = {};
 goog.userAgent.product.ASSUME_FIREFOX = !1;
 goog.userAgent.product.ASSUME_IPHONE = !1;
@@ -3853,7 +3883,7 @@ lf.Row.binToHex = function(buffer) {
     return null;
   }
   for (var uint8Array = new Uint8Array(buffer), s = "", i = 0;i < uint8Array.length;++i) {
-    var chr = uint8Array[i].toString(16), s = s + (2 > chr.length ? "0" + chr : chr)
+    var chr = uint8Array[i].toString(16), s = s + (2 > chr.length ? "0" + chr : chr);
   }
   return s;
 };
@@ -4460,9 +4490,9 @@ lf.cache.InMemoryUpdater.prototype.updateIndicesForDiff_ = function(diff) {
 };
 lf.cache.InMemoryUpdater.prototype.updateTableIndicesForRow = function(table, modification) {
   var indices = this.indexStore_.getTableIndices(table.getName()), updatedIndices = 0;
-  indices.forEach(function(index$$0) {
+  indices.forEach(function(index$jscomp$0) {
     try {
-      this.updateTableIndexForRow_(index$$0, modification), updatedIndices++;
+      this.updateTableIndexForRow_(index$jscomp$0, modification), updatedIndices++;
     } catch (e) {
       throw indices.slice(0, updatedIndices).forEach(function(index) {
         this.updateTableIndexForRow_(index, [modification[1], modification[0]]);
@@ -4713,9 +4743,9 @@ lf.cache.ConstraintChecker.prototype.checkForeignKeysForDelete = function(table,
     this.checkReferringKeys_(table, modifications, constraintTiming, lf.ConstraintAction.RESTRICT);
   }
 };
-lf.cache.ConstraintChecker.prototype.detectCascadeDeletion = function(table$$0, rows) {
+lf.cache.ConstraintChecker.prototype.detectCascadeDeletion = function(table$jscomp$0, rows) {
   var result = {tableOrder:[], rowIdsPerTable:new lf.structs.MapSet}, lastRowIdsToDelete = new lf.structs.MapSet;
-  lastRowIdsToDelete.setMany(table$$0.getName(), rows.map(function(row) {
+  lastRowIdsToDelete.setMany(table$jscomp$0.getName(), rows.map(function(row) {
     return row.id();
   }));
   do {
@@ -4912,10 +4942,10 @@ lf.cache.Journal.prototype.remove = function(table, rows) {
     this.modifyRow_(table, [rows[i], null]);
   }
 };
-lf.cache.Journal.prototype.updateByCascade_ = function(table$$0, modifications) {
-  var foreignKeySpecs = this.schema_.info().getReferencingForeignKeys(table$$0.getName(), lf.ConstraintAction.CASCADE);
+lf.cache.Journal.prototype.updateByCascade_ = function(table$jscomp$0, modifications) {
+  var foreignKeySpecs = this.schema_.info().getReferencingForeignKeys(table$jscomp$0.getName(), lf.ConstraintAction.CASCADE);
   if (!goog.isNull(foreignKeySpecs)) {
-    var cascadedUpdates = this.constraintChecker_.detectCascadeUpdates(table$$0, modifications, foreignKeySpecs);
+    var cascadedUpdates = this.constraintChecker_.detectCascadeUpdates(table$jscomp$0, modifications, foreignKeySpecs);
     cascadedUpdates.keys().forEach(function(rowId) {
       var updates = cascadedUpdates.get(rowId);
       updates.forEach(function(update) {
@@ -4926,10 +4956,10 @@ lf.cache.Journal.prototype.updateByCascade_ = function(table$$0, modifications) 
     }, this);
   }
 };
-lf.cache.Journal.prototype.removeByCascade_ = function(table$$0, rows$$0) {
-  var foreignKeySpecs = this.schema_.info().getReferencingForeignKeys(table$$0.getName(), lf.ConstraintAction.CASCADE);
+lf.cache.Journal.prototype.removeByCascade_ = function(table$jscomp$0, rows$jscomp$0) {
+  var foreignKeySpecs = this.schema_.info().getReferencingForeignKeys(table$jscomp$0.getName(), lf.ConstraintAction.CASCADE);
   if (!goog.isNull(foreignKeySpecs)) {
-    var cascadeDeletion = this.constraintChecker_.detectCascadeDeletion(table$$0, rows$$0), cascadeRowIds = cascadeDeletion.rowIdsPerTable;
+    var cascadeDeletion = this.constraintChecker_.detectCascadeDeletion(table$jscomp$0, rows$jscomp$0), cascadeRowIds = cascadeDeletion.rowIdsPerTable;
     cascadeDeletion.tableOrder.forEach(function(tableName) {
       var table = this.schema_.table(tableName), rows = cascadeRowIds.get(tableName).map(function(rowId) {
         return this.cache_.get(rowId);
@@ -5566,9 +5596,9 @@ lf.pred.ValuePredicate.prototype.bind = function(values) {
     }
   };
   if (this.binder_ instanceof lf.Binder) {
-    var index$$0 = this.binder_.getIndex();
-    checkIndexWithinRange(index$$0);
-    this.value = values[index$$0];
+    var index$jscomp$0 = this.binder_.getIndex();
+    checkIndexWithinRange(index$jscomp$0);
+    this.value = values[index$jscomp$0];
   } else {
     goog.isArray(this.binder_) && (this.value = this.binder_.map(function(val) {
       return val instanceof lf.Binder ? (checkIndexWithinRange(val.getIndex()), values[val.getIndex()]) : val;
@@ -5603,7 +5633,7 @@ lf.pred.ValuePredicate.prototype.toKeyRange = function() {
       });
       return new lf.index.SingleKeyRangeSet(this.isComplement_ ? lf.index.SingleKeyRange.complement(keyRanges) : keyRanges);
     }
-    var value$$0 = this.getValueAsKey_(this.value), keyRange = this.evaluatorType == lf.eval.Type.EQ ? lf.index.SingleKeyRange.only(value$$0) : this.evaluatorType == lf.eval.Type.GTE ? lf.index.SingleKeyRange.lowerBound(value$$0) : this.evaluatorType == lf.eval.Type.GT ? lf.index.SingleKeyRange.lowerBound(value$$0, !0) : this.evaluatorType == lf.eval.Type.LTE ? lf.index.SingleKeyRange.upperBound(value$$0) : lf.index.SingleKeyRange.upperBound(value$$0, !0);
+    var value$jscomp$0 = this.getValueAsKey_(this.value), keyRange = this.evaluatorType == lf.eval.Type.EQ ? lf.index.SingleKeyRange.only(value$jscomp$0) : this.evaluatorType == lf.eval.Type.GTE ? lf.index.SingleKeyRange.lowerBound(value$jscomp$0) : this.evaluatorType == lf.eval.Type.GT ? lf.index.SingleKeyRange.lowerBound(value$jscomp$0, !0) : this.evaluatorType == lf.eval.Type.LTE ? lf.index.SingleKeyRange.upperBound(value$jscomp$0) : lf.index.SingleKeyRange.upperBound(value$jscomp$0, !0);
   }
   return new lf.index.SingleKeyRangeSet(this.isComplement_ ? keyRange.complement() : [keyRange]);
 };
@@ -7166,9 +7196,9 @@ lf.cache.DefaultCache.prototype.getRange = function(tableName, fromId, toId) {
   } else {
     for (var i = min;i <= max;++i) {
       if (tableSet.has(i)) {
-        var value$$0 = this.map_.get(i);
-        goog.asserts.assert(goog.isDefAndNotNull(value$$0), "Inconsistent cache");
-        data.push(value$$0);
+        var value$jscomp$0 = this.map_.get(i);
+        goog.asserts.assert(goog.isDefAndNotNull(value$jscomp$0), "Inconsistent cache");
+        data.push(value$jscomp$0);
       }
     }
   }
@@ -7424,14 +7454,14 @@ lf.index.BTreeNode_.prototype.isRoot_ = function() {
 lf.index.BTreeNode_.prototype.next = function() {
   return this.next_;
 };
-lf.index.BTreeNode_.dumpLevel_ = function(node$$0) {
-  var key = node$$0.id_ + "[" + node$$0.keys_.join("|") + "]", childrenIds = node$$0.children_.map(function(n) {
+lf.index.BTreeNode_.dumpLevel_ = function(node$jscomp$0) {
+  var key = node$jscomp$0.id_ + "[" + node$jscomp$0.keys_.join("|") + "]", childrenIds = node$jscomp$0.children_.map(function(n) {
     return n.id_;
-  }), children = childrenIds.join("|"), values = node$$0.values_.join("/"), getNodeId = function(node) {
+  }), children = childrenIds.join("|"), values = node$jscomp$0.values_.join("/"), getNodeId = function(node) {
     return goog.isDefAndNotNull(node) ? node.id_.toString() : "_";
-  }, contents = getNodeId(node$$0.prev_) + "{", contents = node$$0.isLeaf_() ? contents + values : contents + children, contents = contents + "}" + getNodeId(node$$0.parent_);
-  if (node$$0.next_) {
-    var next = lf.index.BTreeNode_.dumpLevel_(node$$0.next_), key = key + "  " + next[0], contents = contents + "  " + next[1]
+  }, contents = getNodeId(node$jscomp$0.prev_) + "{", contents = node$jscomp$0.isLeaf_() ? contents + values : contents + children, contents = contents + "}" + getNodeId(node$jscomp$0.parent_);
+  if (node$jscomp$0.next_) {
+    var next = lf.index.BTreeNode_.dumpLevel_(node$jscomp$0.next_), key = key + "  " + next[0], contents = contents + "  " + next[1];
   }
   return [key, contents];
 };
@@ -7969,9 +7999,9 @@ lf.index.MultiKeyComparator.prototype.isFirstKeyInRange = function(key, range) {
 lf.index.MultiKeyComparator.prototype.sortKeyRanges = function(keyRanges) {
   for (var outputKeyRanges = keyRanges.filter(function(range) {
     return range.every(goog.isDefAndNotNull);
-  }), keysPerDimensions = Array(this.comparators.length), i$$0 = 0;i$$0 < keysPerDimensions.length;i$$0++) {
-    keysPerDimensions[i$$0] = outputKeyRanges.map(function(range) {
-      return range[i$$0];
+  }), keysPerDimensions = Array(this.comparators.length), i$jscomp$0 = 0;i$jscomp$0 < keysPerDimensions.length;i$jscomp$0++) {
+    keysPerDimensions[i$jscomp$0] = outputKeyRanges.map(function(range) {
+      return range[i$jscomp$0];
     });
   }
   keysPerDimensions.forEach(function(keys, i) {
@@ -7979,9 +8009,9 @@ lf.index.MultiKeyComparator.prototype.sortKeyRanges = function(keyRanges) {
       return this.comparators[i].orderKeyRange(lhs, rhs);
     }.bind(this));
   }, this);
-  for (var finalKeyRanges = Array(outputKeyRanges.length), i$$0 = 0;i$$0 < finalKeyRanges.length;i$$0++) {
-    finalKeyRanges[i$$0] = keysPerDimensions.map(function(keys) {
-      return keys[i$$0];
+  for (var finalKeyRanges = Array(outputKeyRanges.length), i$jscomp$0 = 0;i$jscomp$0 < finalKeyRanges.length;i$jscomp$0++) {
+    finalKeyRanges[i$jscomp$0] = keysPerDimensions.map(function(keys) {
+      return keys[i$jscomp$0];
     });
   }
   return finalKeyRanges.sort(function(lhs, rhs) {
@@ -8137,10 +8167,10 @@ lf.index.RowId.prototype.minMax_ = function(compareFn) {
   if (0 == this.rows_.size) {
     return null;
   }
-  var key$$0 = lf.structs.set.values(this.rows_).reduce(function(keySoFar, key) {
+  var key$jscomp$0 = lf.structs.set.values(this.rows_).reduce(function(keySoFar, key) {
     return goog.isNull(keySoFar) || compareFn(key, keySoFar) == lf.index.Favor.LHS ? key : keySoFar;
   }, null);
-  return [key$$0, [key$$0]];
+  return [key$jscomp$0, [key$jscomp$0]];
 };
 lf.index.RowId.prototype.cost = function() {
   return this.rows_.size;
@@ -8257,9 +8287,9 @@ lf.index.MemoryIndexStore.prototype.init = function(schema) {
     this.tableIndices_.set(table.getName(), tableIndices);
     var rowIdIndexName = table.getRowIdIndexName(), rowIdIndex = this.get(rowIdIndexName);
     if (goog.isNull(rowIdIndex)) {
-      var index$$0 = new lf.index.RowId(rowIdIndexName);
-      tableIndices.push(index$$0);
-      this.store_.set(rowIdIndexName, index$$0);
+      var index$jscomp$0 = new lf.index.RowId(rowIdIndexName);
+      tableIndices.push(index$jscomp$0);
+      this.store_.set(rowIdIndexName, index$jscomp$0);
     }
     table.getIndices().forEach(function(indexSchema) {
       var index = lf.index.MemoryIndexStore.createIndex_(indexSchema);
@@ -8310,8 +8340,8 @@ lf.tree.map = function(original, mapFn) {
   });
   return copyRoot;
 };
-lf.tree.getLeafNodes = function(node$$0) {
-  return lf.tree.find(node$$0, function(node) {
+lf.tree.getLeafNodes = function(node$jscomp$0) {
+  return lf.tree.find(node$jscomp$0, function(node) {
     return node.isLeaf();
   });
 };
@@ -9080,7 +9110,7 @@ lf.proc.ProjectNode.prototype.toString = function() {
   if (!goog.isNull(this.groupByColumns)) {
     var groupBy = this.groupByColumns.map(function(col) {
       return col.getNormalizedName();
-    }).join(", "), string = string + (", groupBy(" + groupBy + ")")
+    }).join(", "), string = string + (", groupBy(" + groupBy + ")");
   }
   return string += ")";
 };
@@ -9194,8 +9224,8 @@ lf.proc.CrossProductPass.prototype.traverse_ = function(rootNode) {
   if (rootNode instanceof lf.proc.CrossProductNode) {
     for (;2 < rootNode.getChildCount();) {
       for (var crossProduct = new lf.proc.CrossProductNode, i = 0;2 > i;i++) {
-        var child$$0 = rootNode.removeChildAt(0);
-        crossProduct.addChild(child$$0);
+        var child$jscomp$0 = rootNode.removeChildAt(0);
+        crossProduct.addChild(child$jscomp$0);
       }
       rootNode.addChildAt(crossProduct, 0);
     }
@@ -9360,7 +9390,6 @@ lf.query.escapeSqlValue_ = function(type, value) {
     case lf.Type.BOOLEAN:
       return value ? 1 : 0;
     case lf.Type.INTEGER:
-    ;
     case lf.Type.NUMBER:
       return value;
     case lf.Type.ARRAY_BUFFER:
@@ -9475,12 +9504,12 @@ lf.query.selectToSql_ = function(query, stripValueInfo) {
   if (query.orderBy) {
     var orderBy = query.orderBy.map(function(order) {
       return order.column.getNormalizedName() + (order.order == lf.Order.DESC ? " DESC" : " ASC");
-    }).join(", "), sql = sql + (" ORDER BY " + orderBy)
+    }).join(", "), sql = sql + (" ORDER BY " + orderBy);
   }
   if (query.groupBy) {
     var groupBy = query.groupBy.map(function(col) {
       return col.getNormalizedName();
-    }).join(", "), sql = sql + (" GROUP BY " + groupBy)
+    }).join(", "), sql = sql + (" GROUP BY " + groupBy);
   }
   query.limit && (sql += " LIMIT " + query.limit.toString());
   query.skip && (sql += " SKIP " + query.skip.toString());
@@ -9493,7 +9522,7 @@ lf.query.getFromListForOuterJoin_ = function(query, stripValueInfo) {
   for (var retrievedNodes = lf.tree.find(query.where, function(node) {
     return node instanceof lf.pred.JoinPredicate;
   }), predicateString = retrievedNodes.map(lf.query.joinPredicateToSql_), fromList = lf.query.getTableNameToSql_(query.from[0]), i = 1;i < query.from.length;i++) {
-    var fromName = lf.query.getTableNameToSql_(query.from[i]), fromList = query.outerJoinPredicates.has(retrievedNodes[predicateString.length - i].getId()) ? fromList + (" LEFT OUTER JOIN " + fromName) : fromList + (" INNER JOIN " + fromName), fromList = fromList + (" ON (" + predicateString[predicateString.length - i] + ")")
+    var fromName = lf.query.getTableNameToSql_(query.from[i]), fromList = query.outerJoinPredicates.has(retrievedNodes[predicateString.length - i].getId()) ? fromList + (" LEFT OUTER JOIN " + fromName) : fromList + (" INNER JOIN " + fromName), fromList = fromList + (" ON (" + predicateString[predicateString.length - i] + ")");
   }
   var leftChild = query.where.getChildAt(0);
   leftChild instanceof lf.pred.JoinPredicate || (fromList += " WHERE " + lf.query.parseSearchCondition_(leftChild, stripValueInfo));
@@ -9837,19 +9866,14 @@ goog.exportProperty(lf.query.SelectBuilder.prototype, "groupBy", lf.query.Select
 lf.query.SelectBuilder.isAggregationValid_ = function(aggregatorType, columnType) {
   switch(aggregatorType) {
     case lf.fn.Type.COUNT:
-    ;
     case lf.fn.Type.DISTINCT:
       return !0;
     case lf.fn.Type.AVG:
-    ;
     case lf.fn.Type.GEOMEAN:
-    ;
     case lf.fn.Type.STDDEV:
-    ;
     case lf.fn.Type.SUM:
       return columnType == lf.Type.NUMBER || columnType == lf.Type.INTEGER;
     case lf.fn.Type.MAX:
-    ;
     case lf.fn.Type.MIN:
       return columnType == lf.Type.NUMBER || columnType == lf.Type.INTEGER || columnType == lf.Type.STRING || columnType == lf.Type.DATE_TIME;
   }
@@ -9962,10 +9986,10 @@ lf.proc.ImplicitJoinsPass.prototype.rewrite = function(rootNode, queryContext) {
 lf.proc.ImplicitJoinsPass.prototype.traverse_ = function(rootNode, queryContext) {
   if (rootNode instanceof lf.proc.SelectNode && rootNode.predicate instanceof lf.pred.JoinPredicate) {
     goog.asserts.assert(1 == rootNode.getChildCount(), "SelectNode must have exactly one child.");
-    var predicateId = rootNode.predicate.getId(), child$$0 = rootNode.getChildAt(0);
-    if (child$$0 instanceof lf.proc.CrossProductNode) {
+    var predicateId = rootNode.predicate.getId(), child$jscomp$0 = rootNode.getChildAt(0);
+    if (child$jscomp$0 instanceof lf.proc.CrossProductNode) {
       var isOuterJoin = goog.isDefAndNotNull(queryContext.outerJoinPredicates) && queryContext.outerJoinPredicates.has(predicateId), joinNode = new lf.proc.JoinNode(rootNode.predicate, isOuterJoin);
-      lf.tree.replaceChainWithNode(rootNode, child$$0, joinNode);
+      lf.tree.replaceChainWithNode(rootNode, child$jscomp$0, joinNode);
       rootNode == this.rootNode && (this.rootNode = joinNode);
       rootNode = joinNode;
     }
@@ -10010,17 +10034,17 @@ lf.proc.PushDownSelectionsPass.prototype.traverse_ = function(rootNode, queryCon
   }.bind(this);
   processNodeRec(rootNode);
 };
-lf.proc.PushDownSelectionsPass.prototype.pushDownNodeRec_ = function(queryContext, node$$0, shouldPushDownFn) {
-  var newRoot = node$$0;
-  if (this.shouldSwapWithChild_(queryContext, node$$0)) {
-    newRoot = lf.tree.swapNodeWithChild(node$$0), this.pushDownNodeRec_(queryContext, node$$0, shouldPushDownFn);
+lf.proc.PushDownSelectionsPass.prototype.pushDownNodeRec_ = function(queryContext, node$jscomp$0, shouldPushDownFn) {
+  var newRoot = node$jscomp$0;
+  if (this.shouldSwapWithChild_(queryContext, node$jscomp$0)) {
+    newRoot = lf.tree.swapNodeWithChild(node$jscomp$0), this.pushDownNodeRec_(queryContext, node$jscomp$0, shouldPushDownFn);
   } else {
-    if (this.shouldPushBelowChild_(node$$0)) {
+    if (this.shouldPushBelowChild_(node$jscomp$0)) {
       var newNodes = [], cloneFn = function(node) {
         var newNode = new lf.proc.SelectNode(node.predicate);
         newNodes.push(newNode);
         return newNode;
-      }, newRoot = lf.tree.pushNodeBelowChild(node$$0, shouldPushDownFn, cloneFn);
+      }, newRoot = lf.tree.pushNodeBelowChild(node$jscomp$0, shouldPushDownFn, cloneFn);
       newNodes.forEach(function(newNode) {
         this.pushDownNodeRec_(queryContext, newNode, shouldPushDownFn);
       }, this);
@@ -10726,12 +10750,12 @@ lf.proc.RelationTransformer.prototype.handleAggregatedColumns_ = function() {
     }, this);
     return new lf.proc.Relation(newEntries, []);
   }
-  var entry$$0 = new lf.proc.RelationEntry(new lf.Row(lf.Row.DUMMY_ID, {}), this.relation_.isPrefixApplied());
+  var entry$jscomp$0 = new lf.proc.RelationEntry(new lf.Row(lf.Row.DUMMY_ID, {}), this.relation_.isPrefixApplied());
   this.columns_.forEach(function(column) {
     var value = column instanceof lf.fn.AggregatedColumn ? this.relation_.getAggregationResult(column) : this.relation_.entries[0].getField(column);
-    entry$$0.setField(column, value);
+    entry$jscomp$0.setField(column, value);
   }, this);
-  return new lf.proc.Relation([entry$$0], this.relation_.getTables());
+  return new lf.proc.Relation([entry$jscomp$0], this.relation_.getTables());
 };
 lf.proc.RelationTransformer.prototype.handleNonAggregatedColumns_ = function() {
   var transformedEntries = Array(this.relation_.entries.length), isPrefixApplied = this.relation_.isPrefixApplied();
@@ -10761,7 +10785,7 @@ lf.proc.ProjectStep.prototype.toString = function() {
   if (!goog.isNull(this.groupByColumns)) {
     var groupBy = this.groupByColumns.map(function(col) {
       return col.getNormalizedName();
-    }).join(", "), string = string + (", groupBy(" + groupBy + ")")
+    }).join(", "), string = string + (", groupBy(" + groupBy + ")");
   }
   return string += ")";
 };
@@ -11024,7 +11048,7 @@ lf.proc.PhysicalPlanFactory.prototype.create = function(logicalQueryPlan, queryC
 lf.proc.PhysicalPlanFactory.prototype.createPlan_ = function(logicalPlan, queryContext, opt_rewritePasses) {
   var rootStep = lf.tree.map(logicalPlan.getRoot(), this.mapFn_.bind(this));
   if (goog.isDefAndNotNull(opt_rewritePasses)) {
-    var planRewriter = new lf.proc.PhysicalPlanRewriter(rootStep, queryContext, opt_rewritePasses), rootStep = planRewriter.generate()
+    var planRewriter = new lf.proc.PhysicalPlanRewriter(rootStep, queryContext, opt_rewritePasses), rootStep = planRewriter.generate();
   }
   return new lf.proc.PhysicalQueryPlan(rootStep, logicalPlan.getScope());
 };
@@ -11422,7 +11446,7 @@ lf.base.init = function(global, opt_options) {
         observeExternalChanges = !0;
         break;
       default:
-        throw new lf.Exception(300);;
+        throw new lf.Exception(300);
     }
   }
   global.registerService(lf.service.BACK_STORE, backStore);
@@ -12224,9 +12248,9 @@ lf.schema.TableBuilder.prototype.generateTableClass_ = function() {
   goog.exportProperty(tableClass.prototype, "getConstraint", tableClass.prototype.getConstraint);
   return tableClass;
 };
-lf.schema.TableBuilder.prototype.generateRowClass_ = function(columns$$0, indices) {
+lf.schema.TableBuilder.prototype.generateRowClass_ = function(columns$jscomp$0, indices) {
   var rowClass = function(rowId, opt_payload) {
-    this.columns_ = columns$$0;
+    this.columns_ = columns$jscomp$0;
     this.indices_ = indices;
     lf.Row.call(this, rowId, opt_payload);
   };
@@ -12261,8 +12285,8 @@ lf.schema.TableBuilder.prototype.generateRowClass_ = function(columns$$0, indice
       });
     };
   }.bind(this), functionMap = {};
-  indices.forEach(function(index$$0) {
-    var key = index$$0.getNormalizedName(), JSCompiler_inline_result, index = index$$0;
+  indices.forEach(function(index$jscomp$0) {
+    var key = index$jscomp$0.getNormalizedName(), JSCompiler_inline_result, index = index$jscomp$0;
     JSCompiler_inline_result = 1 == index.columns.length ? getSingleKeyFn(index.columns[0].schema) : getMultiKeyFn(index.columns);
     functionMap[key] = JSCompiler_inline_result;
   });
