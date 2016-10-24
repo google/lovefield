@@ -226,34 +226,6 @@ goog.DEPENDENCIES_ENABLED && (goog.dependencies_ = {loadFlags:{}, nameToPath:{},
     return goog.requiresTranspilation_[lang];
   }
   throw Error("Unknown language mode: " + lang);
-}, goog.createRequiresTranspilation_ = function() {
-  function addNewerLanguageTranspilationCheck(modeName, isSupported) {
-    transpilationRequiredForAllLaterModes ? requiresTranspilation[modeName] = !0 : isSupported() ? requiresTranspilation[modeName] = !1 : transpilationRequiredForAllLaterModes = requiresTranspilation[modeName] = !0;
-  }
-  function evalCheck(code) {
-    try {
-      return !!eval(code);
-    } catch (ignored) {
-      return !1;
-    }
-  }
-  var requiresTranspilation = {es3:!1}, transpilationRequiredForAllLaterModes = !1;
-  addNewerLanguageTranspilationCheck("es5", function() {
-    return evalCheck("[1,].length==1");
-  });
-  addNewerLanguageTranspilationCheck("es6", function() {
-    return evalCheck('(()=>{"use strict";class X{constructor(){if(new.target!=String)throw 1;this.x=42}}let q=Reflect.construct(X,[],String);if(q.x!=42||!(q instanceof String))throw 1;for(const a of[2,3]){if(a==2)continue;function f(z={a}){let a=0;return z.a}{function f(){return 0;}}return f()==3}})()');
-  });
-  addNewerLanguageTranspilationCheck("es6-impl", function() {
-    return !0;
-  });
-  addNewerLanguageTranspilationCheck("es7", function() {
-    return evalCheck("2 ** 2 == 4");
-  });
-  addNewerLanguageTranspilationCheck("es8", function() {
-    return evalCheck("async () => 1, true");
-  });
-  return requiresTranspilation;
 }, goog.requiresTranspilation_ = null, goog.lastNonModuleScriptIndex_ = 0, goog.onScriptLoad_ = function(script, scriptIndex) {
   "complete" == script.readyState && goog.lastNonModuleScriptIndex_ == scriptIndex && goog.loadQueuedModules_();
   return !0;
@@ -659,6 +631,35 @@ goog.defineClass.applyProperties_ = function(target, source) {
 goog.tagUnsealableClass = function() {
 };
 goog.UNSEALABLE_CONSTRUCTOR_PROPERTY_ = "goog_defineClass_legacy_unsealable";
+goog.createRequiresTranspilation_ = function() {
+  function addNewerLanguageTranspilationCheck(modeName, isSupported) {
+    transpilationRequiredForAllLaterModes ? requiresTranspilation[modeName] = !0 : isSupported() ? requiresTranspilation[modeName] = !1 : transpilationRequiredForAllLaterModes = requiresTranspilation[modeName] = !0;
+  }
+  function evalCheck(code) {
+    try {
+      return !!eval(code);
+    } catch (ignored) {
+      return !1;
+    }
+  }
+  var requiresTranspilation = {es3:!1}, transpilationRequiredForAllLaterModes = !1;
+  addNewerLanguageTranspilationCheck("es5", function() {
+    return evalCheck("[1,].length==1");
+  });
+  addNewerLanguageTranspilationCheck("es6", function() {
+    return evalCheck('(()=>{"use strict";class X{constructor(){if(new.target!=String)throw 1;this.x=42}}let q=Reflect.construct(X,[],String);if(q.x!=42||!(q instanceof String))throw 1;for(const a of[2,3]){if(a==2)continue;function f(z={a}){let a=0;return z.a}{function f(){return 0;}}return f()==3}})()');
+  });
+  addNewerLanguageTranspilationCheck("es6-impl", function() {
+    return !0;
+  });
+  addNewerLanguageTranspilationCheck("es7", function() {
+    return evalCheck("2 ** 2 == 4");
+  });
+  addNewerLanguageTranspilationCheck("es8", function() {
+    return evalCheck("async () => 1, true");
+  });
+  return requiresTranspilation;
+};
 goog.debug = {};
 goog.debug.Error = function(opt_msg) {
   if (Error.captureStackTrace) {
@@ -967,6 +968,10 @@ goog.string.remove = function(str, substr) {
 goog.string.removeAll = function(s, ss) {
   var re = new RegExp(goog.string.regExpEscape(ss), "g");
   return s.replace(re, "");
+};
+goog.string.replaceAll = function(s, ss, replacement) {
+  var re = new RegExp(goog.string.regExpEscape(ss), "g");
+  return s.replace(re, replacement.replace(/\$/g, "$$$$"));
 };
 goog.string.regExpEscape = function(s) {
   return String(s).replace(/([-()\[\]{}+?*.$\^|,:#<!\\])/g, "\\$1").replace(/\x08/g, "\\x08");
@@ -3658,6 +3663,7 @@ goog.userAgent.ANDROID = goog.userAgent.PLATFORM_KNOWN_ ? goog.userAgent.ASSUME_
 goog.userAgent.IPHONE = goog.userAgent.PLATFORM_KNOWN_ ? goog.userAgent.ASSUME_IPHONE : goog.labs.userAgent.platform.isIphone();
 goog.userAgent.IPAD = goog.userAgent.PLATFORM_KNOWN_ ? goog.userAgent.ASSUME_IPAD : goog.labs.userAgent.platform.isIpad();
 goog.userAgent.IPOD = goog.userAgent.PLATFORM_KNOWN_ ? goog.userAgent.ASSUME_IPOD : goog.labs.userAgent.platform.isIpod();
+goog.userAgent.IOS = goog.userAgent.PLATFORM_KNOWN_ ? goog.userAgent.ASSUME_IPHONE || goog.userAgent.ASSUME_IPAD || goog.userAgent.ASSUME_IPOD : goog.labs.userAgent.platform.isIos();
 goog.userAgent.determineVersion_ = function() {
   var version = "", arr = goog.userAgent.getVersionRegexResult_();
   arr && (version = arr ? arr[1] : "");
