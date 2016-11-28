@@ -209,11 +209,13 @@ goog.DEPENDENCIES_ENABLED && (goog.dependencies_ = {loadFlags:{}, nameToPath:{},
         goog.ENABLE_CHROME_APP_SAFE_SCRIPT_LOADING ? goog.appendScriptSrcNode_(src) : goog.writeScriptSrcNode_(src);
       }
     } else {
-      doc.write('<script type="text/javascript">' + opt_sourceText + "\x3c/script>");
+      doc.write('<script type="text/javascript">' + goog.protectScriptTag_(opt_sourceText) + "\x3c/script>");
     }
     return !0;
   }
   return !1;
+}, goog.protectScriptTag_ = function(str) {
+  return str.replace(/<\/(SCRIPT)/ig, "\\x3c\\$1");
 }, goog.needsTranspile_ = function(lang) {
   if ("always" == goog.TRANSPILE) {
     return !0;
@@ -3968,8 +3970,6 @@ lf.backstore.BaseTx = function(txType, opt_journal) {
   this.success_ = !1;
   this.stats_ = null;
 };
-lf.backstore.BaseTx.prototype.getTable = goog.abstractMethod;
-lf.backstore.BaseTx.prototype.commitInternal = goog.abstractMethod;
 lf.backstore.BaseTx.prototype.commit = function() {
   var promise = this.txType == lf.TransactionType.READ_ONLY ? this.commitInternal() : this.commitReadWrite_();
   return promise.then(function(results) {
@@ -4652,7 +4652,7 @@ lf.cache.ConstraintChecker = function(global) {
   this.foreignKeysParentIndices_ = null;
 };
 lf.cache.ConstraintChecker.prototype.findExistingRowIdInPkIndex = function(table, row) {
-  var pkIndexSchema = table.getConstraint().primaryKey_;
+  var pkIndexSchema = table.constraint_.primaryKey_;
   return goog.isNull(pkIndexSchema) ? null : this.findExistingRowIdInIndex_(pkIndexSchema, row);
 };
 lf.cache.ConstraintChecker.prototype.findExistingRowIdInIndex_ = function(indexSchema, row) {
@@ -4660,7 +4660,7 @@ lf.cache.ConstraintChecker.prototype.findExistingRowIdInIndex_ = function(indexS
   return 0 == rowIds.length ? null : rowIds[0];
 };
 lf.cache.ConstraintChecker.prototype.checkNotNullable = function(table, rows) {
-  var notNullable = table.getConstraint().notNullable_;
+  var notNullable = table.constraint_.notNullable_;
   rows.forEach(function(row) {
     notNullable.forEach(function(column) {
       if (!goog.isDefAndNotNull(row.payload_[column.getName()])) {
@@ -4670,7 +4670,7 @@ lf.cache.ConstraintChecker.prototype.checkNotNullable = function(table, rows) {
   }, this);
 };
 lf.cache.ConstraintChecker.prototype.checkReferredKeys_ = function(table, modifications, constraintTiming) {
-  var foreignKeySpecs = table.getConstraint().foreignKeys_;
+  var foreignKeySpecs = table.constraint_.foreignKeys_;
   foreignKeySpecs.forEach(function(foreignKeySpec) {
     foreignKeySpec.timing == constraintTiming && this.checkReferredKey_(foreignKeySpec, modifications);
   }, this);
@@ -5549,11 +5549,6 @@ lf.pred.PredicateNode = function() {
 };
 goog.inherits(lf.pred.PredicateNode, lf.structs.TreeNode);
 lf.pred.PredicateNode.nextId_ = 0;
-lf.pred.PredicateNode.prototype.eval = goog.abstractMethod;
-lf.pred.PredicateNode.prototype.setComplement = goog.abstractMethod;
-lf.pred.PredicateNode.prototype.copy = goog.abstractMethod;
-lf.pred.PredicateNode.prototype.getColumns = goog.abstractMethod;
-lf.pred.PredicateNode.prototype.getTables = goog.abstractMethod;
 lf.pred.PredicateNode.prototype.getId = function() {
   return this.id_;
 };
@@ -5679,8 +5674,6 @@ lf.query.Context.buildPredicateMap_ = function(rootPredicate) {
   });
   return predicateMap;
 };
-lf.query.Context.prototype.getScope = goog.abstractMethod;
-lf.query.Context.prototype.clone = goog.abstractMethod;
 lf.query.Context.prototype.cloneBase = function(context) {
   context.where && (this.where = context.where.copy());
   this.clonedFrom = context;
@@ -5803,7 +5796,6 @@ lf.proc.QueryTask.prototype.getScope = function() {
 lf.proc.QueryTask.prototype.getId = function() {
   return goog.getUid(this);
 };
-lf.proc.QueryTask.prototype.getPriority = goog.abstractMethod;
 lf.proc.QueryTask.prototype.onSuccess = function() {
 };
 lf.proc.QueryTask.prototype.stats = function() {
@@ -8762,9 +8754,7 @@ lf.schema.Table.prototype.as = function(name) {
   return clone;
 };
 goog.exportProperty(lf.schema.Table.prototype, "as", lf.schema.Table.prototype.as);
-lf.schema.Table.prototype.createRow = goog.abstractMethod;
 goog.exportProperty(lf.schema.Table.prototype, "createRow", lf.schema.Table.prototype.createRow);
-lf.schema.Table.prototype.deserializeRow = goog.abstractMethod;
 goog.exportProperty(lf.schema.Table.prototype, "deserializeRow", lf.schema.Table.prototype.deserializeRow);
 lf.schema.Table.prototype.getIndices = function() {
   return this.indices_;
@@ -8774,7 +8764,6 @@ lf.schema.Table.prototype.getColumns = function() {
   return this.columns_;
 };
 goog.exportProperty(lf.schema.Table.prototype, "getColumns", lf.schema.Table.prototype.getColumns);
-lf.schema.Table.prototype.getConstraint = goog.abstractMethod;
 goog.exportProperty(lf.schema.Table.prototype, "getConstraint", lf.schema.Table.prototype.getConstraint);
 lf.schema.Table.prototype.persistentIndex = function() {
   return this.persistentIndex_;
@@ -8895,7 +8884,6 @@ lf.proc.PhysicalQueryPlanNode = function(numRelations, type) {
 goog.inherits(lf.proc.PhysicalQueryPlanNode, lf.structs.TreeNode);
 lf.proc.PhysicalQueryPlanNode.ExecType = {NO_CHILD:-1, ALL:0, FIRST_CHILD:1};
 lf.proc.PhysicalQueryPlanNode.ANY = -1;
-lf.proc.PhysicalQueryPlanNode.prototype.execInternal = goog.abstractMethod;
 lf.proc.PhysicalQueryPlanNode.prototype.exec = function(opt_journal, opt_context) {
   switch(this.execType_) {
     case lf.proc.PhysicalQueryPlanNode.ExecType.FIRST_CHILD:
@@ -9186,7 +9174,6 @@ lf.proc.JoinNode.prototype.toString = function() {
 };
 lf.proc.RewritePass = function() {
 };
-lf.proc.RewritePass.prototype.rewrite = goog.abstractMethod;
 lf.proc.AndPredicatePass = function() {
 };
 goog.inherits(lf.proc.AndPredicatePass, lf.proc.RewritePass);
@@ -9668,7 +9655,7 @@ lf.query.InsertBuilder.prototype.assertExecPreconditions = function() {
   if (!goog.isDefAndNotNull(context.into) || !goog.isDefAndNotNull(context.values)) {
     throw new lf.Exception(518);
   }
-  if (context.allowReplace && goog.isNull(context.into.getConstraint().primaryKey_)) {
+  if (context.allowReplace && goog.isNull(context.into.constraint_.primaryKey_)) {
     throw new lf.Exception(519);
   }
 };
@@ -9954,7 +9941,6 @@ lf.proc.BaseLogicalPlanGenerator.prototype.generate = function() {
   goog.isNull(this.rootNode_) && (this.rootNode_ = this.generateInternal());
   return this.rootNode_;
 };
-lf.proc.BaseLogicalPlanGenerator.prototype.generateInternal = goog.abstractMethod;
 lf.proc.InsertLogicalPlanGenerator = function(query) {
   lf.proc.BaseLogicalPlanGenerator.call(this, query);
 };
@@ -10661,7 +10647,7 @@ lf.proc.InsertStep.prototype.execInternal = function(relations, journal, context
   return [lf.proc.Relation.fromRows(queryContext.values, [this.table_.getName()])];
 };
 lf.proc.InsertStep.assignAutoIncrementPks_ = function(table, values, indexStore) {
-  var pkIndexSchema = table.getConstraint().primaryKey_, autoIncrement = goog.isNull(pkIndexSchema) ? !1 : pkIndexSchema.columns[0].autoIncrement;
+  var pkIndexSchema = table.constraint_.primaryKey_, autoIncrement = goog.isNull(pkIndexSchema) ? !1 : pkIndexSchema.columns[0].autoIncrement;
   if (autoIncrement) {
     var pkColumnName = pkIndexSchema.columns[0].schema.getName(), index = indexStore.get(pkIndexSchema.getNormalizedName()), max = index.stats().maxKeyEncountered, maxKey = goog.isNull(max) ? 0 : max;
     values.forEach(function(row) {
@@ -11965,7 +11951,7 @@ lf.schema.Info = function(dbSchema) {
 lf.schema.Info.prototype.init_ = function() {
   this.schema_.tables().forEach(function(table) {
     var tableName = table.getName();
-    table.getConstraint().foreignKeys_.forEach(function(fkSpec) {
+    table.constraint_.foreignKeys_.forEach(function(fkSpec) {
       this.parents_.set(tableName, this.schema_.table(fkSpec.parentTable));
       this.children_.set(fkSpec.parentTable, table);
       fkSpec.action == lf.ConstraintAction.RESTRICT ? (this.restrictReferringFk_.set(fkSpec.parentTable, fkSpec), this.restrictChildren_.set(fkSpec.parentTable, table)) : (this.cascadeReferringFk_.set(fkSpec.parentTable, fkSpec), this.cascadeChildren_.set(fkSpec.parentTable, table));
