@@ -73,7 +73,7 @@ var Config = function() {
       'visibility'
     ],
     jscomp_off: 'deprecated',
-    language_in: 'ECMASCRIPT5_STRICT',
+    language_out: 'ECMASCRIPT5_STRICT',
     output_wrapper: '(function(){%output%}.bind(window))()',
     warning_level: 'VERBOSE'
   };

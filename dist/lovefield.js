@@ -418,7 +418,7 @@ goog.removeUid = function(obj) {
   } catch (ex) {
   }
 };
-goog.UID_PROPERTY_ = "closure_uid_" + (1E9 * Math.random() >>> 0);
+goog.UID_PROPERTY_ = "closure_uid_" + (1e9 * Math.random() >>> 0);
 goog.uidCounter_ = 0;
 goog.getHashCode = goog.getUid;
 goog.removeHashCode = goog.removeUid;
@@ -1475,28 +1475,34 @@ goog.functions.once = function(f) {
   };
 };
 goog.functions.debounce = function(f, interval, opt_scope) {
-  opt_scope && (f = goog.bind(f, opt_scope));
-  var timeout = null;
+  var timeout = 0;
   return function(var_args) {
     goog.global.clearTimeout(timeout);
     var args = arguments;
     timeout = goog.global.setTimeout(function() {
-      f.apply(null, args);
+      f.apply(opt_scope, args);
     }, interval);
   };
 };
 goog.functions.throttle = function(f, interval, opt_scope) {
-  opt_scope && (f = goog.bind(f, opt_scope));
-  var timeout = null, shouldFire = !1, args = [], handleTimeout = function() {
-    timeout = null;
+  var timeout = 0, shouldFire = !1, args = [], handleTimeout = function() {
+    timeout = 0;
     shouldFire && (shouldFire = !1, fire());
   }, fire = function() {
     timeout = goog.global.setTimeout(handleTimeout, interval);
-    f.apply(null, args);
+    f.apply(opt_scope, args);
   };
   return function(var_args) {
     args = arguments;
     timeout ? shouldFire = !0 : fire();
+  };
+};
+goog.functions.rateLimit = function(f, interval, opt_scope) {
+  var timeout = 0, handleTimeout = function() {
+    timeout = 0;
+  };
+  return function(var_args) {
+    timeout || (timeout = goog.global.setTimeout(handleTimeout, interval), f.apply(opt_scope, arguments));
   };
 };
 goog.array = {};
@@ -2875,7 +2881,7 @@ goog.math.lerp = function(a, b, x) {
   return a + x * (b - a);
 };
 goog.math.nearlyEquals = function(a, b, opt_tolerance) {
-  return Math.abs(a - b) <= (opt_tolerance || 1E-6);
+  return Math.abs(a - b) <= (opt_tolerance || 0.000001);
 };
 goog.math.standardAngle = function(angle) {
   return goog.math.modulo(angle, 360);
@@ -2966,11 +2972,11 @@ goog.math.log10Floor = function(num) {
 };
 goog.math.safeFloor = function(num, opt_epsilon) {
   goog.asserts.assert(!goog.isDef(opt_epsilon) || 0 < opt_epsilon);
-  return Math.floor(num + (opt_epsilon || 2E-15));
+  return Math.floor(num + (opt_epsilon || 2e-15));
 };
 goog.math.safeCeil = function(num, opt_epsilon) {
   goog.asserts.assert(!goog.isDef(opt_epsilon) || 0 < opt_epsilon);
-  return Math.ceil(num - (opt_epsilon || 2E-15));
+  return Math.ceil(num - (opt_epsilon || 2e-15));
 };
 goog.iter = {};
 goog.iter.StopIteration = "StopIteration" in goog.global ? goog.global.StopIteration : {message:"StopIteration", stack:""};
@@ -3021,9 +3027,9 @@ goog.iter.forEach = function(iterable, f, opt_obj) {
       for (;;) {
         f.call(opt_obj, iterable.next(), void 0, iterable);
       }
-    } catch (ex) {
-      if (ex !== goog.iter.StopIteration) {
-        throw ex;
+    } catch (ex$0) {
+      if (ex$0 !== goog.iter.StopIteration) {
+        throw ex$0;
       }
     }
   }
@@ -3729,10 +3735,10 @@ goog.userAgent.isDocumentModeOrHigher = function(documentMode) {
   return Number(goog.userAgent.DOCUMENT_MODE) >= documentMode;
 };
 goog.userAgent.isDocumentMode = goog.userAgent.isDocumentModeOrHigher;
-var JSCompiler_inline_result$jscomp$0;
-var doc$jscomp$inline_2 = goog.global.document, mode$jscomp$inline_3 = goog.userAgent.getDocumentMode_();
-JSCompiler_inline_result$jscomp$0 = doc$jscomp$inline_2 && goog.userAgent.IE ? mode$jscomp$inline_3 || ("CSS1Compat" == doc$jscomp$inline_2.compatMode ? parseInt(goog.userAgent.VERSION, 10) : 5) : void 0;
-goog.userAgent.DOCUMENT_MODE = JSCompiler_inline_result$jscomp$0;
+var JSCompiler_inline_result$jscomp$1;
+var doc$jscomp$inline_3 = goog.global.document, mode$jscomp$inline_4 = goog.userAgent.getDocumentMode_();
+JSCompiler_inline_result$jscomp$1 = doc$jscomp$inline_3 && goog.userAgent.IE ? mode$jscomp$inline_4 || ("CSS1Compat" == doc$jscomp$inline_3.compatMode ? parseInt(goog.userAgent.VERSION, 10) : 5) : void 0;
+goog.userAgent.DOCUMENT_MODE = JSCompiler_inline_result$jscomp$1;
 goog.userAgent.product = {};
 goog.userAgent.product.ASSUME_FIREFOX = !1;
 goog.userAgent.product.ASSUME_IPHONE = !1;
@@ -10423,7 +10429,7 @@ lf.proc.IndexCostEstimator = function(global, tableSchema) {
   this.tableSchema_ = tableSchema;
   this.indexStore_ = global.getService(lf.service.INDEX_STORE);
 };
-$jscomp.scope.INDEX_QUERY_THRESHOLD_PERCENT = .02;
+$jscomp.scope.INDEX_QUERY_THRESHOLD_PERCENT = 0.02;
 lf.proc.IndexCostEstimator.prototype.getIndexQueryThreshold_ = function() {
   var rowIdIndex = this.indexStore_.get(this.tableSchema_.getRowIdIndexName());
   return Math.floor(rowIdIndex.stats().totalRows * $jscomp.scope.INDEX_QUERY_THRESHOLD_PERCENT);
