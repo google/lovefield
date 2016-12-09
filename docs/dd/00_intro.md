@@ -30,7 +30,8 @@ The supported data stores are:
 
 There are several experimental data stores:
 
-* WebSQL - Provided to fill in the gap of Safari lacking IndexedDB support.
+* WebSQL - (DEPRECATED) Provided to fill in the gap of legacy Safari lacking
+  IndexedDB support.
 * LocalStorage - Provided for proof of concept for handling external changes.
 
 Each storage technology has different limitations and constraints. Lovefield

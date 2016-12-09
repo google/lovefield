@@ -36,6 +36,9 @@ var db;
 
 function setUpPage() {
   capability = lf.Capability.get();
+
+  // Need longer timeout for Safari on SauceLabs.
+  goog.testing.TestCase.getActiveTestCase().promiseTimeout = 40 * 1000;  // 40s
 }
 
 

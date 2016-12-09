@@ -62,6 +62,9 @@ var capability;
 function setUpPage() {
   propertyReplacer = new goog.testing.PropertyReplacer();
   capability = lf.Capability.get();
+
+  // Need longer timeout for Safari on SauceLabs.
+  goog.testing.TestCase.getActiveTestCase().promiseTimeout = 40 * 1000;  // 40s
 }
 
 

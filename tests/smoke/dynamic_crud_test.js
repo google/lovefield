@@ -42,6 +42,12 @@ function createSchemaBuilder() {
 }
 
 
+function setUpPage() {
+  // Need longer timeout for Safari on SauceLabs.
+  goog.testing.TestCase.getActiveTestCase().promiseTimeout = 40 * 1000;  // 40s
+}
+
+
 function setUp() {
   capability = lf.Capability.get();
 

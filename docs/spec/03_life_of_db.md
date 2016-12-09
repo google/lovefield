@@ -60,16 +60,15 @@ The `storeType` property allows the user to specify what data store to use.
   `firebase` to provide an already connected and authenticated Firebase
   instance. Field `firebase` will be ignored for all other data store types.
 
-* `lf.schema.DataStoreType.WEB_SQL`: uses browser-provided WebSQL as data store.
-  This is provided to work around issues on Safari and iOS Chrome, see
-  [Design Doc](../dd/02_data_store.md#25-websql-store) for details.
+* `lf.schema.DataStoreType.WEB_SQL`: (DEPRECATED) uses browser-provided WebSQL
+  as data store. This option will be removed in near future.
 
 If `storeType` is not defined, the following algorithm will be used to select
 a store type:
 
 * If browser supports IndexedDB, use `lf.schema.DataStoreType.INDEXED_DB`.
-* If browser does not support IndexedDB, but supports WebSQL, use
-  `lf.schema.DataStoreType.WEB_SQL`.
+* (DEPRECATED) If browser does not support IndexedDB, but supports WebSQL, use
+  `lf.schema.DataStoreType.WEB_SQL`. Will fall back to next step in near future.
 * If neither IndexedDB nor WebSQL is supported, use
   `lf.schema.DataStoreType.MEMORY`.
 

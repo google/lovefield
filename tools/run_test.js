@@ -204,7 +204,7 @@ function getRemoteWebDriver(browser) {
     case 'safari':
       caps['browserName'] = 'safari';
       caps['platform'] = 'OS X 10.11';
-      caps['version'] = '9.0';
+      caps['version'] = '10.0';
       break;
 
     case 'ie':

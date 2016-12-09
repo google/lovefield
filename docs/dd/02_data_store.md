@@ -204,14 +204,7 @@ abbreviated to ensure optimal over-the-wire transmission.
 
 ### 2.5 WebSQL Store
 
-As of August, 2015, tests show that Lovefield's IndexedDB backstore could
-not be run on Safari 8 or Safari 9 beta. Safari simply throws mysterious DOM
-errors that did not happen on IE, Firefox and Chrome. This had been reported
-to WebKit/Apple but there's no word about ETA of fix.
-
-A WebSQL-based back store is created to fill this gap. The WebSQL backstore
-shall be considered a gap-stopping patch and will be removed as soon as Apple
-fixes IndexedDB bugs in Safari.
+DEPRECATED. Please upgrade to Safari 10 and stop using this data store.
 
 #### 2.5.1 Storage Format
 

@@ -10,7 +10,7 @@ data stores:
 |`lf.schema.DataStoreType.INDEXED_DB`|Yes (in browser)|Released|Data store using IndexedDB that persists data between sessions.|
 |`lf.schema.DataStoreType.MEMORY`|No|Released|Volatile store that only works for current session.|
 |`lf.schema.DataStoreType.FIREBASE`|Yes (in the cloud)|Released|Data store using Firebase that persists data in the cloud.|
-|`lf.schema.DataStoreType.WEB_SQL`|Yes (in browser)|Experimental|Data store using WebSQL to workaround iOS/Safari IndexedDB issue.|
+|`lf.schema.DataStoreType.WEB_SQL`|Yes (in browser)|Deprecated||
 
 ### 2.1 Row
 
@@ -51,15 +51,9 @@ enough storage quota since it may require UI interactions.
 
 ### 2.3 Experimental Stores
 
-As of August, 2015, tests show that Lovefield's IndexedDB backstore could
-not be run on Safari 8 on both OSX/iOS, neither can it run on Safari 9 beta on
-iOS. Safari simply throws mysterious DOM errors that did not happen on IE,
-Firefox and Chrome. This had been reported to WebKit/Apple but there's no word
-regarding ETA of fix.
-
-A WebSQL-based back store is created to fill this gap. The WebSQL backstore
-shall be considered a gap-stopping patch and will be removed as soon as Apple
-fixes IndexedDB bugs in Safari.
+The deprecated WebSQL back store was created for legacy Safari. As of Safari 10,
+everything is fully supported. Please move away from WebSQL backstore since it
+will be removed from Lovefield in near future.
 
 There is a LocalStorage-based store for Lovefield testing and will not be public
 unless sufficient interests arisen.

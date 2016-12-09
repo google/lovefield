@@ -44,8 +44,10 @@ goog.module = function(name) {
   goog.moduleLoaderState_.moduleName = name;
 };
 goog.module.get = function() {
+  return null;
 };
 goog.module.getInternal_ = function() {
+  return null;
 };
 goog.moduleLoaderState_ = null;
 goog.isInModuleLoader_ = function() {
@@ -3739,6 +3741,20 @@ var JSCompiler_inline_result$jscomp$1;
 var doc$jscomp$inline_3 = goog.global.document, mode$jscomp$inline_4 = goog.userAgent.getDocumentMode_();
 JSCompiler_inline_result$jscomp$1 = doc$jscomp$inline_3 && goog.userAgent.IE ? mode$jscomp$inline_4 || ("CSS1Compat" == doc$jscomp$inline_3.compatMode ? parseInt(goog.userAgent.VERSION, 10) : 5) : void 0;
 goog.userAgent.DOCUMENT_MODE = JSCompiler_inline_result$jscomp$1;
+goog.userAgent.platform = {};
+goog.userAgent.platform.determineVersion_ = function() {
+  var re;
+  if (goog.userAgent.WINDOWS) {
+    re = /Windows NT ([0-9.]+)/;
+    var match = re.exec(goog.userAgent.getUserAgentString());
+    return match ? match[1] : "0";
+  }
+  return goog.userAgent.MAC ? (re = /10[_.][0-9_.]+/, (match = re.exec(goog.userAgent.getUserAgentString())) ? match[0].replace(/_/g, ".") : "10") : goog.userAgent.ANDROID ? (re = /Android\s+([^\);]+)(\)|;)/, (match = re.exec(goog.userAgent.getUserAgentString())) ? match[1] : "") : goog.userAgent.IPHONE || goog.userAgent.IPAD || goog.userAgent.IPOD ? (re = /(?:iPhone|CPU)\s+OS\s+(\S+)/, (match = re.exec(goog.userAgent.getUserAgentString())) ? match[1].replace(/_/g, ".") : "") : "";
+};
+goog.userAgent.platform.VERSION = goog.userAgent.platform.determineVersion_();
+goog.userAgent.platform.isVersion = function(version) {
+  return 0 <= goog.string.compareVersions(goog.userAgent.platform.VERSION, version);
+};
 goog.userAgent.product = {};
 goog.userAgent.product.ASSUME_FIREFOX = !1;
 goog.userAgent.product.ASSUME_IPHONE = !1;
@@ -3779,12 +3795,12 @@ goog.userAgent.product.SAFARI = goog.userAgent.product.PRODUCT_KNOWN_ ? goog.use
  limitations under the License.
 */
 var lf = {Capability:function() {
-  this.safariWebView_ = goog.labs.userAgent.browser.isSafari() || goog.userAgent.product.IPAD || goog.userAgent.product.IPHONE;
-  this.indexedDb = !(this.safariWebView_ || goog.userAgent.product.IE && !goog.userAgent.isVersionOrHigher(10));
+  this.legacySafari_ = goog.labs.userAgent.browser.isSafari() && !goog.userAgent.isVersionOrHigher(10) || (goog.userAgent.product.IPAD || goog.userAgent.product.IPHONE) && !goog.userAgent.platform.isVersion(10);
+  this.indexedDb = !(this.legacySafari_ || goog.userAgent.product.IE && !goog.userAgent.isVersionOrHigher(10));
   !goog.userAgent.product.IE || goog.userAgent.isVersionOrHigher(11);
   this.webSql = goog.labs.userAgent.browser.isChrome() || goog.labs.userAgent.browser.isSafari();
-  this.nativeMap = goog.isDef(window.Map) && goog.isDef(window.Map.prototype.values) && goog.isDef(window.Map.prototype.forEach) && !this.safariWebView_;
-  this.nativeSet = goog.isDef(window.Set) && goog.isDef(window.Set.prototype.values) && goog.isDef(window.Set.prototype.forEach) && !this.safariWebView_;
+  this.nativeMap = goog.isDef(window.Map) && goog.isDef(window.Map.prototype.values) && goog.isDef(window.Map.prototype.forEach) && !this.legacySafari_;
+  this.nativeSet = goog.isDef(window.Set) && goog.isDef(window.Set.prototype.values) && goog.isDef(window.Set.prototype.forEach) && !this.legacySafari_;
 }};
 lf.Capability.get = function() {
   goog.isDef(lf.Capability.instance_) || (lf.Capability.instance_ = new lf.Capability);
