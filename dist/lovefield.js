@@ -2482,9 +2482,8 @@ goog.async.run = function(callback, opt_context) {
   goog.async.run.workQueue_.add(callback, opt_context);
 };
 goog.async.run.initializeRunner_ = function() {
-  var Promise = goog.global.Promise;
-  if (-1 != String(Promise).indexOf("[native code]")) {
-    var promise = Promise.resolve(void 0);
+  if (-1 != String(goog.global.Promise).indexOf("[native code]")) {
+    var promise = goog.global.Promise.resolve(void 0);
     goog.async.run.schedule_ = function() {
       promise.then(goog.async.run.processWorkQueue);
     };

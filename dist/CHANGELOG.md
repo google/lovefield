@@ -1,3 +1,8 @@
+Version: 2.1.11<br>
+Publish date: 20161212<br>
+Changes:
+ - Support Safari 10+. Update code, document, and infrastructure for it.
+
 Version: 2.1.10<br>
 Publish date: 20160922<br>
 Changes:
