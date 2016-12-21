@@ -235,7 +235,19 @@ function testSelectToSql_Join() {
       query.toSql());
 }
 
-function testSelectToSql_OuterJoin() {
+function testSelectToSql_SingleOuterJoin() {
+  var e = db.getSchema().getEmployee();
+  var pred = j.id.eq(e.jobId);
+  var query = db.select(e.firstName, j.title).
+      from(e).
+      leftOuterJoin(j, pred);
+  assertEquals(
+      'SELECT Employee.firstName, Job.title' +
+      ' FROM Employee LEFT OUTER JOIN Job ON (Employee.jobId = Job.id);',
+      query.toSql());
+}
+
+function testSelectToSql_MultipleOuterJoin() {
   var e = db.getSchema().getEmployee();
   var d = db.getSchema().getDepartment();
   var jh = db.getSchema().getJobHistory();

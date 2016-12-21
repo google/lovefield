@@ -105,6 +105,7 @@ goog.abstractMethod = function() {
   throw Error("unimplemented abstract method");
 };
 goog.addSingletonGetter = function(ctor) {
+  ctor.instance_ = void 0;
   ctor.getInstance = function() {
     if (ctor.instance_) {
       return ctor.instance_;
@@ -9553,7 +9554,7 @@ lf.query.getFromListForOuterJoin_ = function(query, stripValueInfo) {
   }), predicateString = retrievedNodes.map(lf.query.joinPredicateToSql_), fromList = lf.query.getTableNameToSql_(query.from[0]), i = 1;i < query.from.length;i++) {
     var fromName = lf.query.getTableNameToSql_(query.from[i]), fromList = query.outerJoinPredicates.has(retrievedNodes[predicateString.length - i].getId()) ? fromList + (" LEFT OUTER JOIN " + fromName) : fromList + (" INNER JOIN " + fromName), fromList = fromList + (" ON (" + predicateString[predicateString.length - i] + ")");
   }
-  var leftChild = query.where.getChildAt(0);
+  var node$jscomp$0 = query.where, leftChild = 0 < node$jscomp$0.getChildCount() ? node$jscomp$0.getChildAt(0) : node$jscomp$0;
   leftChild instanceof lf.pred.JoinPredicate || (fromList += " WHERE " + lf.query.parseSearchCondition_(leftChild, stripValueInfo));
   return fromList;
 };
