@@ -8,7 +8,7 @@ goog.exportPath_ = function(name, opt_object, opt_objectToExportTo) {
   var parts = name.split("."), cur = opt_objectToExportTo || goog.global;
   parts[0] in cur || !cur.execScript || cur.execScript("var " + parts[0]);
   for (var part;parts.length && (part = parts.shift());) {
-    !parts.length && goog.isDef(opt_object) ? cur[part] = opt_object : cur = cur[part] ? cur[part] : cur[part] = {};
+    !parts.length && goog.isDef(opt_object) ? cur[part] = opt_object : cur = cur[part] && Object.prototype.hasOwnProperty.call(cur, part) ? cur[part] : cur[part] = {};
   }
 };
 goog.define = function(name, defaultValue) {
