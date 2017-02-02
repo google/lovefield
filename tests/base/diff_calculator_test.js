@@ -223,3 +223,65 @@ function performMutations(rowsPerVersion, query, callback) {
 
   updateResultsToNextVersion();
 }
+
+
+/**
+ * Tests the case where the observed table has an lf.type.OBJECT column.
+ */
+function testDiffCalculation_ObjectColumn() {
+  var schemaBuilder = lf.schema.create('object_diff', 1);
+  schemaBuilder.createTable('myTable').
+      addColumn('id', lf.Type.STRING).
+      addColumn('obj', lf.Type.OBJECT).
+      addColumn('arraybuffer', lf.Type.ARRAY_BUFFER).
+      addPrimaryKey(['id']);
+
+  var schema = schemaBuilder.getSchema();
+  var myTable = schema.table('myTable');
+
+  var builder = new lf.query.SelectBuilder(lf.Global.get(), []);
+  builder.from(myTable);
+  var diffCalculator = new lf.DiffCalculator(builder.getQuery(), []);
+
+  // Simulate insertion.
+  var rowBefore = myTable.createRow({
+    'id': 'dummyId',
+    'obj': {hello: 'world'},
+    'arraybuffer': null,
+  });
+
+  var oldResults = lf.proc.Relation.createEmpty();
+  var newResults = lf.proc.Relation.fromRows([rowBefore], [myTable.getName()]);
+
+  var changes = /** @type {!Array<!lf.DiffCalculator.ChangeRecord>} */ (
+      diffCalculator.applyDiff(oldResults, newResults));
+  assertEquals(1, changes.length);
+  assertEquals(1, changes[0].object.length);
+  assertEquals(1, changes[0]['addedCount']);
+  assertEquals(0, changes[0].index);
+
+  // Simulate a change in the 'obj' field.
+  var rowAfter = myTable.createRow({
+    'id': 'dummyId',
+    'obj': {hola: 'mundo'},
+    'arraybuffer': null,
+  });
+  rowAfter.assignRowId(rowBefore.id());
+
+  oldResults = newResults;
+  newResults = lf.proc.Relation.fromRows([rowAfter], [myTable.getName()]);
+
+  changes = /** @type {!Array<!lf.DiffCalculator.ChangeRecord>} */ (
+      diffCalculator.applyDiff(oldResults, newResults));
+  assertEquals(2, changes.length);
+
+  assertEquals(1, changes[0].object.length);
+  assertEquals(0, changes[0]['addedCount']);
+  assertEquals(1, changes[0].removed.length);
+  assertEquals(0, changes[0].index);
+
+  assertEquals(1, changes[1].object.length);
+  assertEquals(1, changes[1]['addedCount']);
+  assertEquals(0, changes[1].removed.length);
+  assertEquals(0, changes[1].index);
+}

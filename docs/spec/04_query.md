@@ -640,6 +640,13 @@ db.update(p).set(p.title, 'New Title').where(p.id.eq('1')).exec();
 db.unobserve(query, handler);
 ```
 
+Note that observing a query with columns of `lf.Type.OBJECT` or
+`lf.Type.ARRAY_BUFFER` will trigger observers ONLY IF the reference to those
+objects changed (assuming no other column changed). If the `lf.Type.OBJECT`
+object was updated in place, observers will not be triggered, since Lovefield
+does not know the structure of such objects to compare before and after (and
+doing so would hurt performance).
+
 Combining parametrized query with Observers can be used to handle a common
 scenario of updating data in MVC environment, for example:
 

@@ -11354,6 +11354,9 @@ lf.DiffCalculator.prototype.detectColumns_ = function() {
 };
 lf.DiffCalculator.prototype.comparator_ = function(left, right) {
   return this.columns_.every(function(column) {
+    if (column.getType() == lf.Type.OBJECT || column.getType() == lf.Type.ARRAY_BUFFER) {
+      return left.getField(column) === right.getField(column);
+    }
     var evalFn = this.evalRegistry_.getEvaluator(column.getType(), lf.eval.Type.EQ);
     return evalFn(left.getField(column), right.getField(column));
   }, this);
