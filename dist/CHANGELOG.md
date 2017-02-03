@@ -1,3 +1,11 @@
+Version: 2.1.12<br>
+Publish date: 20170203<br>
+Changes:
+ - Fix error that was thrown when a query with columns of lf.Type.OBJECT or
+   lf.Type.ARRAY_BUFFER was observed.
+ - Fix toSql() for case where a single leftOuterJoin exists with no where
+   clause.
+
 Version: 2.1.11<br>
 Publish date: 20161212<br>
 Changes:
