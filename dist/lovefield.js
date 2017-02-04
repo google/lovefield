@@ -272,29 +272,6 @@ goog.DEPENDENCIES_ENABLED && (goog.dependencies_ = {loadFlags:{}, nameToPath:{},
 }, goog.getPathFromDeps_ = function(rule) {
   return rule in goog.dependencies_.nameToPath ? goog.dependencies_.nameToPath[rule] : null;
 }, goog.findBasePath_(), goog.global.CLOSURE_NO_DEPS || goog.importScript_(goog.basePath + "deps.js"));
-goog.hasBadLetScoping = null;
-goog.useSafari10Workaround_ = function() {
-  if (null == goog.hasBadLetScoping) {
-    var result;
-    try {
-      result = !!eval('"use strict";let x = 1; function f() { return typeof x; };f() == "number";');
-    } catch (e) {
-      result = !1;
-    }
-    goog.hasBadLetScoping = result;
-  }
-  return goog.hasBadLetScoping;
-};
-goog.workaroundSafari10EvalBug = function(moduleDef) {
-  var srcUrlRE = /\/\/# sourceURL.*\n/g, srcMapUrlRE = /\/\/# sourceMappingURL.*\n/g, srcUrlLine = goog.getLastREMatch_(moduleDef, srcUrlRE), srcMapUrlLine = goog.getLastREMatch_(moduleDef, srcMapUrlRE);
-  moduleDef = moduleDef.replace(srcUrlRE, "");
-  moduleDef = moduleDef.replace(srcMapUrlRE, "");
-  return moduleDef = "(function(){" + moduleDef + "\n;})();\n" + srcMapUrlLine + srcUrlLine;
-};
-goog.getLastREMatch_ = function(str, re) {
-  var matches = str.match(re);
-  return matches ? matches[matches.length - 1] : "";
-};
 goog.loadModule = function(moduleDef) {
   var previousState = goog.moduleLoaderState_;
   try {
@@ -304,7 +281,7 @@ goog.loadModule = function(moduleDef) {
       exports = moduleDef.call(void 0, {});
     } else {
       if (goog.isString(moduleDef)) {
-        goog.useSafari10Workaround_ && (moduleDef = goog.workaroundSafari10EvalBug(moduleDef)), exports = goog.loadModuleFromSource_.call(void 0, moduleDef);
+        exports = goog.loadModuleFromSource_.call(void 0, moduleDef);
       } else {
         throw Error("Invalid module definition");
       }
