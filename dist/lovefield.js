@@ -272,6 +272,22 @@ goog.DEPENDENCIES_ENABLED && (goog.dependencies_ = {loadFlags:{}, nameToPath:{},
 }, goog.getPathFromDeps_ = function(rule) {
   return rule in goog.dependencies_.nameToPath ? goog.dependencies_.nameToPath[rule] : null;
 }, goog.findBasePath_(), goog.global.CLOSURE_NO_DEPS || goog.importScript_(goog.basePath + "deps.js"));
+goog.hasBadLetScoping = null;
+goog.useSafari10Workaround = function() {
+  if (null == goog.hasBadLetScoping) {
+    var hasBadLetScoping;
+    try {
+      hasBadLetScoping = !eval('"use strict";let x = 1; function f() { return typeof x; };f() == "number";');
+    } catch (e) {
+      hasBadLetScoping = !1;
+    }
+    goog.hasBadLetScoping = hasBadLetScoping;
+  }
+  return goog.hasBadLetScoping;
+};
+goog.workaroundSafari10EvalBug = function(moduleDef) {
+  return "(function(){" + moduleDef + "\n;})();\n";
+};
 goog.loadModule = function(moduleDef) {
   var previousState = goog.moduleLoaderState_;
   try {
@@ -281,7 +297,7 @@ goog.loadModule = function(moduleDef) {
       exports = moduleDef.call(void 0, {});
     } else {
       if (goog.isString(moduleDef)) {
-        exports = goog.loadModuleFromSource_.call(void 0, moduleDef);
+        goog.useSafari10Workaround() && (moduleDef = goog.workaroundSafari10EvalBug(moduleDef)), exports = goog.loadModuleFromSource_.call(void 0, moduleDef);
       } else {
         throw Error("Invalid module definition");
       }
