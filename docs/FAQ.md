@@ -5,7 +5,7 @@
 
 ### Is Lovefield production quality?
 
-Yes. As of May 2016, [Inbox by GMail](inbox.google.com) heavily relies on
+Yes. As of May 2016, [Inbox by GMail](https://inbox.google.com) heavily relies on
 Lovefield to perform complex client-side structural data queries.
 [Google Play Movies & TV](
 https://chrome.google.com/webstore/detail/google-play-movies-tv/gdijeikdkaembjbdobgfkoidjkpbmlkd)
