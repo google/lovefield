@@ -21,7 +21,8 @@
     "spac/lovefield-spac",
     "spac/parser.js",
     "spac/spac.js",
-    "spac/template"
+    "spac/template",
+    "tools/node_bootstrap.js"
   ],
   "bin": {
     "lovefield-spac": "spac/lovefield-spac"
