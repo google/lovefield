@@ -78,7 +78,7 @@ performance tweaking for real-world usage, ... etc.
 B+ Tree is a very complicated data structure and some argues the complexity
 of it makes physical optimization very hard. However, past experiences regarding
 physical plan optimization do not apply to Lovefield since they are under the
-assumption of using page-based disk I/O, which is irrelavant for most data
+assumption of using page-based disk I/O, which is irrelevant for most data
 stores of Lovefield.
 
 Lovefield's B+ tree has following tweaks:
