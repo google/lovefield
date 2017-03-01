@@ -158,10 +158,10 @@ declare module lf {
 
   module schema {
     export enum DataStoreType {
-      FIREBASE,
       INDEXED_DB,
-      LOCAL_STORAGE,
       MEMORY,
+      LOCAL_STORAGE,
+      FIREBASE,
       WEB_SQL
     }
 
