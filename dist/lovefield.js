@@ -218,7 +218,7 @@ goog.DEPENDENCIES_ENABLED && (goog.dependencies_ = {loadFlags:{}, nameToPath:{},
   }
   return !1;
 }, goog.protectScriptTag_ = function(str) {
-  return str.replace(/<\/(SCRIPT)/ig, "\\x3c\\$1");
+  return str.replace(/<\/(SCRIPT)/ig, "\\x3c/$1");
 }, goog.needsTranspile_ = function(lang) {
   if ("always" == goog.TRANSPILE) {
     return !0;
