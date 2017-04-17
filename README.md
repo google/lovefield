@@ -28,5 +28,5 @@ Lovefield is
 This is a quick 7-minute video filmed in August 2015.
 
 Live 30min overview presentation at JS.LA (February 2015): Watch on
-[YouTube](https://www.youtube.com/watch?v=wRiI4p5Uk4E) or
+[YouTube](https://www.youtube.com/watch?v=pwCzMFoheGw) or
 [Vimeo](https://vimeo.com/118934273).
