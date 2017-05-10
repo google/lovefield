@@ -6,10 +6,19 @@ goog.global = this;
 goog.isDef = function(val) {
   return void 0 !== val;
 };
+goog.isString = function(val) {
+  return "string" == typeof val;
+};
+goog.isBoolean = function(val) {
+  return "boolean" == typeof val;
+};
+goog.isNumber = function(val) {
+  return "number" == typeof val;
+};
 goog.exportPath_ = function(name, opt_object, opt_objectToExportTo) {
   var parts = name.split("."), cur = opt_objectToExportTo || goog.global;
   parts[0] in cur || !cur.execScript || cur.execScript("var " + parts[0]);
-  for (var part;parts.length && (part = parts.shift());) {
+  for (var part; parts.length && (part = parts.shift());) {
     !parts.length && goog.isDef(opt_object) ? cur[part] = opt_object : cur = cur[part] && cur[part] !== Object.prototype[part] ? cur[part] : cur[part] = {};
   }
 };
@@ -66,7 +75,7 @@ goog.setTestOnly = function(opt_message) {
 goog.forwardDeclare = function() {
 };
 goog.getObjectByName = function(name, opt_obj) {
-  for (var parts = name.split("."), cur = opt_obj || goog.global, part;part = parts.shift();) {
+  for (var parts = name.split("."), cur = opt_obj || goog.global, part; part = parts.shift();) {
     if (goog.isDefAndNotNull(cur[part])) {
       cur = cur[part];
     } else {
@@ -85,10 +94,10 @@ goog.addDependency = function(relPath, provides, requires, opt_loadFlags) {
   if (goog.DEPENDENCIES_ENABLED) {
     var provide, require, path = relPath.replace(/\\/g, "/"), deps = goog.dependencies_;
     opt_loadFlags && "boolean" !== typeof opt_loadFlags || (opt_loadFlags = opt_loadFlags ? {module:"goog"} : {});
-    for (var i = 0;provide = provides[i];i++) {
+    for (var i = 0; provide = provides[i]; i++) {
       deps.nameToPath[provide] = path, deps.loadFlags[path] = opt_loadFlags;
     }
-    for (var j = 0;require = requires[j];j++) {
+    for (var j = 0; require = requires[j]; j++) {
       path in deps.requires || (deps.requires[path] = {}), deps.requires[path][require] = !0;
     }
   }
@@ -127,11 +136,13 @@ goog.DEPENDENCIES_ENABLED && (goog.dependencies_ = {loadFlags:{}, nameToPath:{},
   var doc = goog.global.document;
   return null != doc && "write" in doc;
 }, goog.findBasePath_ = function() {
-  if (goog.isDef(goog.global.CLOSURE_BASE_PATH)) {
+  if (goog.isDef(goog.global.CLOSURE_BASE_PATH) && goog.isString(goog.global.CLOSURE_BASE_PATH)) {
     goog.basePath = goog.global.CLOSURE_BASE_PATH;
   } else {
     if (goog.inHtmlDocument_()) {
-      for (var doc = goog.global.document, scripts = doc.getElementsByTagName("SCRIPT"), i = scripts.length - 1;0 <= i;--i) {
+      var doc = goog.global.document, currentScript = doc.currentScript;
+      var scripts = currentScript ? [currentScript] : doc.getElementsByTagName("SCRIPT");
+      for (var i = scripts.length - 1; 0 <= i; --i) {
         var script = scripts[i], src = script.src, qmark = src.lastIndexOf("?"), l = -1 == qmark ? src.length : qmark;
         if ("base.js" == src.substr(l - 7, 7)) {
           goog.basePath = src.substr(0, l - 7);
@@ -153,7 +164,7 @@ goog.DEPENDENCIES_ENABLED && (goog.dependencies_ = {loadFlags:{}, nameToPath:{},
   if (0 < count) {
     var queue = goog.queuedModules_;
     goog.queuedModules_ = [];
-    for (var i = 0;i < count;i++) {
+    for (var i = 0; i < count; i++) {
       var path = queue[i];
       goog.maybeProcessDeferredPath_(path);
     }
@@ -258,13 +269,13 @@ goog.DEPENDENCIES_ENABLED && (goog.dependencies_ = {loadFlags:{}, nameToPath:{},
   }
   var scripts = [], seenScript = {}, deps = goog.dependencies_;
   visitNode(pathToLoad);
-  for (var i = 0;i < scripts.length;i++) {
+  for (var i = 0; i < scripts.length; i++) {
     var path$jscomp$0 = scripts[i];
     goog.dependencies_.written[path$jscomp$0] = !0;
   }
   var moduleState = goog.moduleLoaderState_;
   goog.moduleLoaderState_ = null;
-  for (i = 0;i < scripts.length;i++) {
+  for (i = 0; i < scripts.length; i++) {
     if (path$jscomp$0 = scripts[i]) {
       var loadFlags = deps.loadFlags[path$jscomp$0] || {}, languageLevel = loadFlags.lang || "es3", needsTranspile = goog.needsTranspile_(languageLevel);
       "goog" == loadFlags.module || needsTranspile ? goog.importProcessedScript_(goog.basePath + path$jscomp$0, "goog" == loadFlags.module, needsTranspile) : goog.importScript_(goog.basePath + path$jscomp$0);
@@ -279,9 +290,8 @@ goog.DEPENDENCIES_ENABLED && (goog.dependencies_ = {loadFlags:{}, nameToPath:{},
 goog.hasBadLetScoping = null;
 goog.useSafari10Workaround = function() {
   if (null == goog.hasBadLetScoping) {
-    var hasBadLetScoping;
     try {
-      hasBadLetScoping = !eval('"use strict";let x = 1; function f() { return typeof x; };f() == "number";');
+      var hasBadLetScoping = !eval('"use strict";let x = 1; function f() { return typeof x; };f() == "number";');
     } catch (e) {
       hasBadLetScoping = !1;
     }
@@ -296,9 +306,8 @@ goog.loadModule = function(moduleDef) {
   var previousState = goog.moduleLoaderState_;
   try {
     goog.moduleLoaderState_ = {moduleName:void 0, declareLegacyNamespace:!1};
-    var exports;
     if (goog.isFunction(moduleDef)) {
-      exports = moduleDef.call(void 0, {});
+      var exports = moduleDef.call(void 0, {});
     } else {
       if (goog.isString(moduleDef)) {
         goog.useSafari10Workaround() && (moduleDef = goog.workaroundSafari10EvalBug(moduleDef)), exports = goog.loadModuleFromSource_.call(void 0, moduleDef);
@@ -322,7 +331,7 @@ goog.loadModuleFromSource_ = function(JSCompiler_OptimizeArgumentsArray_p0) {
   return exports;
 };
 goog.normalizePath_ = function(path) {
-  for (var components = path.split("/"), i = 0;i < components.length;) {
+  for (var components = path.split("/"), i = 0; i < components.length;) {
     "." == components[i] ? components.splice(i, 1) : i && ".." == components[i] && components[i - 1] && ".." != components[i - 1] ? components.splice(--i, 2) : i++;
   }
   return components.join("/");
@@ -411,15 +420,6 @@ goog.isArrayLike = function(val) {
 };
 goog.isDateLike = function(val) {
   return goog.isObject(val) && "function" == typeof val.getFullYear;
-};
-goog.isString = function(val) {
-  return "string" == typeof val;
-};
-goog.isBoolean = function(val) {
-  return "boolean" == typeof val;
-};
-goog.isNumber = function(val) {
-  return "number" == typeof val;
 };
 goog.isFunction = function(val) {
   return "function" == goog.typeOf(val);
@@ -537,12 +537,12 @@ goog.getCssName = function(className, opt_modifier) {
   var getMapping = function(cssName) {
     return goog.cssNameMapping_[cssName] || cssName;
   }, renameByParts = function(cssName) {
-    for (var parts = cssName.split("-"), mapped = [], i = 0;i < parts.length;i++) {
+    for (var parts = cssName.split("-"), mapped = [], i = 0; i < parts.length; i++) {
       mapped.push(getMapping(parts[i]));
     }
     return mapped.join("-");
-  }, rename;
-  rename = goog.cssNameMapping_ ? "BY_WHOLE" == goog.cssNameMappingStyle_ ? getMapping : renameByParts : function(a) {
+  };
+  var rename = goog.cssNameMapping_ ? "BY_WHOLE" == goog.cssNameMappingStyle_ ? getMapping : renameByParts : function(a) {
     return a;
   };
   var result = opt_modifier ? className + "-" + rename(opt_modifier) : rename(className);
@@ -575,7 +575,7 @@ goog.inherits = function(childCtor, parentCtor) {
   childCtor.prototype = new tempCtor;
   childCtor.prototype.constructor = childCtor;
   childCtor.base = function(me, methodName, var_args) {
-    for (var args = Array(arguments.length - 2), i = 2;i < arguments.length;i++) {
+    for (var args = Array(arguments.length - 2), i = 2; i < arguments.length; i++) {
       args[i - 2] = arguments[i];
     }
     return parentCtor.prototype[methodName].apply(me, args);
@@ -587,15 +587,15 @@ goog.base = function(me, opt_methodName, var_args) {
     throw Error("arguments.caller not defined.  goog.base() cannot be used with strict mode code. See http://www.ecma-international.org/ecma-262/5.1/#sec-C");
   }
   if (caller.superClass_) {
-    for (var ctorArgs = Array(arguments.length - 1), i = 1;i < arguments.length;i++) {
+    for (var ctorArgs = Array(arguments.length - 1), i = 1; i < arguments.length; i++) {
       ctorArgs[i - 1] = arguments[i];
     }
     return caller.superClass_.constructor.apply(me, ctorArgs);
   }
-  for (var args = Array(arguments.length - 2), i = 2;i < arguments.length;i++) {
+  for (var args = Array(arguments.length - 2), i = 2; i < arguments.length; i++) {
     args[i - 2] = arguments[i];
   }
-  for (var foundCaller = !1, ctor = me.constructor;ctor;ctor = ctor.superClass_ && ctor.superClass_.constructor) {
+  for (var foundCaller = !1, ctor = me.constructor; ctor; ctor = ctor.superClass_ && ctor.superClass_.constructor) {
     if (ctor.prototype[opt_methodName] === caller) {
       foundCaller = !0;
     } else {
@@ -649,7 +649,7 @@ goog.defineClass.applyProperties_ = function(target, source) {
   for (var key in source) {
     Object.prototype.hasOwnProperty.call(source, key) && (target[key] = source[key]);
   }
-  for (var i = 0;i < goog.defineClass.OBJECT_PROTOTYPE_FIELDS_.length;i++) {
+  for (var i = 0; i < goog.defineClass.OBJECT_PROTOTYPE_FIELDS_.length; i++) {
     key = goog.defineClass.OBJECT_PROTOTYPE_FIELDS_[i], Object.prototype.hasOwnProperty.call(source, key) && (target[key] = source[key]);
   }
 };
@@ -721,7 +721,7 @@ goog.string.caseInsensitiveEquals = function(str1, str2) {
   return str1.toLowerCase() == str2.toLowerCase();
 };
 goog.string.subs = function(str, var_args) {
-  for (var splitParts = str.split("%s"), returnString = "", subsArguments = Array.prototype.slice.call(arguments, 1);subsArguments.length && 1 < splitParts.length;) {
+  for (var splitParts = str.split("%s"), returnString = "", subsArguments = Array.prototype.slice.call(arguments, 1); subsArguments.length && 1 < splitParts.length;) {
     returnString += splitParts.shift() + subsArguments.shift();
   }
   return returnString + splitParts.join("%s");
@@ -798,7 +798,7 @@ goog.string.numberAwareCompare_ = function(str1, str2, tokenizerRegExp) {
   if (!str2) {
     return 1;
   }
-  for (var tokens1 = str1.toLowerCase().match(tokenizerRegExp), tokens2 = str2.toLowerCase().match(tokenizerRegExp), count = Math.min(tokens1.length, tokens2.length), i = 0;i < count;i++) {
+  for (var tokens1 = str1.toLowerCase().match(tokenizerRegExp), tokens2 = str2.toLowerCase().match(tokenizerRegExp), count = Math.min(tokens1.length, tokens2.length), i = 0; i < count; i++) {
     var a = tokens1[i], b = tokens2[i];
     if (a != b) {
       var num1 = parseInt(a, 10);
@@ -861,8 +861,8 @@ goog.string.unescapeEntitiesWithDocument = function(str, document) {
   return goog.string.contains(str, "&") ? goog.string.unescapeEntitiesUsingDom_(str, document) : str;
 };
 goog.string.unescapeEntitiesUsingDom_ = function(str, opt_document) {
-  var seen = {"&amp;":"&", "&lt;":"<", "&gt;":">", "&quot;":'"'}, div;
-  div = opt_document ? opt_document.createElement("div") : goog.global.document.createElement("div");
+  var seen = {"&amp;":"&", "&lt;":"<", "&gt;":">", "&quot;":'"'};
+  var div = opt_document ? opt_document.createElement("div") : goog.global.document.createElement("div");
   return str.replace(goog.string.HTML_ENTITY_PATTERN_, function(s, entity) {
     var value = seen[s];
     if (value) {
@@ -906,7 +906,7 @@ goog.string.preserveSpaces = function(str) {
   return str.replace(/(^|[\n ]) /g, "$1" + goog.string.Unicode.NBSP);
 };
 goog.string.stripQuotes = function(str, quoteChars) {
-  for (var length = quoteChars.length, i = 0;i < length;i++) {
+  for (var length = quoteChars.length, i = 0; i < length; i++) {
     var quoteChar = 1 == length ? quoteChars : quoteChars.charAt(i);
     if (str.charAt(0) == quoteChar && str.charAt(str.length - 1) == quoteChar) {
       return str.substring(1, str.length - 1);
@@ -939,7 +939,7 @@ goog.string.specialEscapeChars_ = {"\x00":"\\0", "\b":"\\b", "\f":"\\f", "\n":"\
 goog.string.jsEscapeCache_ = {"'":"\\'"};
 goog.string.quote = function(s) {
   s = String(s);
-  for (var sb = ['"'], i = 0;i < s.length;i++) {
+  for (var sb = ['"'], i = 0; i < s.length; i++) {
     var ch = s.charAt(i), cc = ch.charCodeAt(0);
     sb[i + 1] = goog.string.specialEscapeChars_[ch] || (31 < cc && 127 > cc ? ch : goog.string.escapeChar(ch));
   }
@@ -947,7 +947,7 @@ goog.string.quote = function(s) {
   return sb.join("");
 };
 goog.string.escapeString = function(str) {
-  for (var sb = [], i = 0;i < str.length;i++) {
+  for (var sb = [], i = 0; i < str.length; i++) {
     sb[i] = goog.string.escapeChar(str.charAt(i));
   }
   return sb.join("");
@@ -959,9 +959,9 @@ goog.string.escapeChar = function(c) {
   if (c in goog.string.specialEscapeChars_) {
     return goog.string.jsEscapeCache_[c] = goog.string.specialEscapeChars_[c];
   }
-  var rv, cc = c.charCodeAt(0);
+  var cc = c.charCodeAt(0);
   if (31 < cc && 127 > cc) {
-    rv = c;
+    var rv = c;
   } else {
     if (256 > cc) {
       if (rv = "\\x", 16 > cc || 256 < cc) {
@@ -1022,7 +1022,7 @@ goog.string.getRandomString = function() {
   return Math.floor(2147483648 * Math.random()).toString(36) + Math.abs(Math.floor(2147483648 * Math.random()) ^ goog.now()).toString(36);
 };
 goog.string.compareVersions = function(version1, version2) {
-  for (var order = 0, v1Subs = goog.string.trim(String(version1)).split("."), v2Subs = goog.string.trim(String(version2)).split("."), subCount = Math.max(v1Subs.length, v2Subs.length), subIdx = 0;0 == order && subIdx < subCount;subIdx++) {
+  for (var order = 0, v1Subs = goog.string.trim(String(version1)).split("."), v2Subs = goog.string.trim(String(version2)).split("."), subCount = Math.max(v1Subs.length, v2Subs.length), subIdx = 0; 0 == order && subIdx < subCount; subIdx++) {
     var v1Sub = v1Subs[subIdx] || "", v2Sub = v2Subs[subIdx] || "";
     do {
       var v1Comp = /(\d*)(\D*)(.*)/.exec(v1Sub) || ["", "", "", ""], v2Comp = /(\d*)(\D*)(.*)/.exec(v2Sub) || ["", "", "", ""];
@@ -1038,7 +1038,7 @@ goog.string.compareElements_ = function(left, right) {
   return left < right ? -1 : left > right ? 1 : 0;
 };
 goog.string.hashCode = function(str) {
-  for (var result = 0, i = 0;i < str.length;++i) {
+  for (var result = 0, i = 0; i < str.length; ++i) {
     result = 31 * result + str.charCodeAt(i) >>> 0;
   }
   return result;
@@ -1079,7 +1079,7 @@ goog.string.parseInt = function(value) {
   return goog.isString(value) ? /^\s*-?0x/i.test(value) ? parseInt(value, 16) : parseInt(value, 10) : NaN;
 };
 goog.string.splitLimit = function(str, separator, limit) {
-  for (var parts = str.split(separator), returnVal = [];0 < limit && parts.length;) {
+  for (var parts = str.split(separator), returnVal = []; 0 < limit && parts.length;) {
     returnVal.push(parts.shift()), limit--;
   }
   parts.length && returnVal.push(parts.join(separator));
@@ -1091,7 +1091,7 @@ goog.string.lastComponent = function(str, separators) {
   } else {
     return str;
   }
-  for (var lastSeparatorIndex = -1, i = 0;i < separators.length;i++) {
+  for (var lastSeparatorIndex = -1, i = 0; i < separators.length; i++) {
     if ("" != separators[i]) {
       var currentSeparatorIndex = str.lastIndexOf(separators[i]);
       currentSeparatorIndex > lastSeparatorIndex && (lastSeparatorIndex = currentSeparatorIndex);
@@ -1107,16 +1107,16 @@ goog.string.editDistance = function(a, b) {
   if (!a.length || !b.length) {
     return Math.max(a.length, b.length);
   }
-  for (var i = 0;i < b.length + 1;i++) {
+  for (var i = 0; i < b.length + 1; i++) {
     v0[i] = i;
   }
-  for (i = 0;i < a.length;i++) {
+  for (i = 0; i < a.length; i++) {
     v1[0] = i + 1;
-    for (var j = 0;j < b.length;j++) {
+    for (var j = 0; j < b.length; j++) {
       var cost = Number(a[i] != b[j]);
       v1[j + 1] = Math.min(v1[j] + 1, v0[j + 1] + 1, v0[j] + cost);
     }
-    for (j = 0;j < v0.length;j++) {
+    for (j = 0; j < v0.length; j++) {
       v0[j] = v1[j];
     }
   }
@@ -1138,7 +1138,8 @@ goog.asserts.errorHandler_ = goog.asserts.DEFAULT_ERROR_HANDLER;
 goog.asserts.doAssertFailure_ = function(defaultMessage, defaultArgs, givenMessage, givenArgs) {
   var message = "Assertion failed";
   if (givenMessage) {
-    var message = message + (": " + givenMessage), args = givenArgs;
+    message += ": " + givenMessage;
+    var args = givenArgs;
   } else {
     defaultMessage && (message += ": " + defaultMessage, args = defaultArgs);
   }
@@ -1210,7 +1211,7 @@ goog.array.indexOf = goog.NATIVE_ARRAY_PROTOTYPES && (goog.array.ASSUME_NATIVE_F
   if (goog.isString(arr)) {
     return goog.isString(obj) && 1 == obj.length ? arr.indexOf(obj, fromIndex) : -1;
   }
-  for (var i = fromIndex;i < arr.length;i++) {
+  for (var i = fromIndex; i < arr.length; i++) {
     if (i in arr && arr[i] === obj) {
       return i;
     }
@@ -1227,7 +1228,7 @@ goog.array.lastIndexOf = goog.NATIVE_ARRAY_PROTOTYPES && (goog.array.ASSUME_NATI
   if (goog.isString(arr)) {
     return goog.isString(obj) && 1 == obj.length ? arr.lastIndexOf(obj, fromIndex) : -1;
   }
-  for (var i = fromIndex;0 <= i;i--) {
+  for (var i = fromIndex; 0 <= i; i--) {
     if (i in arr && arr[i] === obj) {
       return i;
     }
@@ -1238,12 +1239,12 @@ goog.array.forEach = goog.NATIVE_ARRAY_PROTOTYPES && (goog.array.ASSUME_NATIVE_F
   goog.asserts.assert(null != arr.length);
   Array.prototype.forEach.call(arr, f, opt_obj);
 } : function(arr, f, opt_obj) {
-  for (var l = arr.length, arr2 = goog.isString(arr) ? arr.split("") : arr, i = 0;i < l;i++) {
+  for (var l = arr.length, arr2 = goog.isString(arr) ? arr.split("") : arr, i = 0; i < l; i++) {
     i in arr2 && f.call(opt_obj, arr2[i], i, arr);
   }
 };
 goog.array.forEachRight = function(arr, f, opt_obj) {
-  for (var l = arr.length, arr2 = goog.isString(arr) ? arr.split("") : arr, i = l - 1;0 <= i;--i) {
+  for (var l = arr.length, arr2 = goog.isString(arr) ? arr.split("") : arr, i = l - 1; 0 <= i; --i) {
     i in arr2 && f.call(opt_obj, arr2[i], i, arr);
   }
 };
@@ -1251,7 +1252,7 @@ goog.array.filter = goog.NATIVE_ARRAY_PROTOTYPES && (goog.array.ASSUME_NATIVE_FU
   goog.asserts.assert(null != arr.length);
   return Array.prototype.filter.call(arr, f, opt_obj);
 } : function(arr, f, opt_obj) {
-  for (var l = arr.length, res = [], resLength = 0, arr2 = goog.isString(arr) ? arr.split("") : arr, i = 0;i < l;i++) {
+  for (var l = arr.length, res = [], resLength = 0, arr2 = goog.isString(arr) ? arr.split("") : arr, i = 0; i < l; i++) {
     if (i in arr2) {
       var val = arr2[i];
       f.call(opt_obj, val, i, arr) && (res[resLength++] = val);
@@ -1263,7 +1264,7 @@ goog.array.map = goog.NATIVE_ARRAY_PROTOTYPES && (goog.array.ASSUME_NATIVE_FUNCT
   goog.asserts.assert(null != arr.length);
   return Array.prototype.map.call(arr, f, opt_obj);
 } : function(arr, f, opt_obj) {
-  for (var l = arr.length, res = Array(l), arr2 = goog.isString(arr) ? arr.split("") : arr, i = 0;i < l;i++) {
+  for (var l = arr.length, res = Array(l), arr2 = goog.isString(arr) ? arr.split("") : arr, i = 0; i < l; i++) {
     i in arr2 && (res[i] = f.call(opt_obj, arr2[i], i, arr));
   }
   return res;
@@ -1295,7 +1296,7 @@ goog.array.some = goog.NATIVE_ARRAY_PROTOTYPES && (goog.array.ASSUME_NATIVE_FUNC
   goog.asserts.assert(null != arr.length);
   return Array.prototype.some.call(arr, f, opt_obj);
 } : function(arr, f, opt_obj) {
-  for (var l = arr.length, arr2 = goog.isString(arr) ? arr.split("") : arr, i = 0;i < l;i++) {
+  for (var l = arr.length, arr2 = goog.isString(arr) ? arr.split("") : arr, i = 0; i < l; i++) {
     if (i in arr2 && f.call(opt_obj, arr2[i], i, arr)) {
       return !0;
     }
@@ -1306,7 +1307,7 @@ goog.array.every = goog.NATIVE_ARRAY_PROTOTYPES && (goog.array.ASSUME_NATIVE_FUN
   goog.asserts.assert(null != arr.length);
   return Array.prototype.every.call(arr, f, opt_obj);
 } : function(arr, f, opt_obj) {
-  for (var l = arr.length, arr2 = goog.isString(arr) ? arr.split("") : arr, i = 0;i < l;i++) {
+  for (var l = arr.length, arr2 = goog.isString(arr) ? arr.split("") : arr, i = 0; i < l; i++) {
     if (i in arr2 && !f.call(opt_obj, arr2[i], i, arr)) {
       return !1;
     }
@@ -1325,7 +1326,7 @@ goog.array.find = function(arr, f, opt_obj) {
   return 0 > i ? null : goog.isString(arr) ? arr.charAt(i) : arr[i];
 };
 goog.array.findIndex = function(arr, f, opt_obj) {
-  for (var l = arr.length, arr2 = goog.isString(arr) ? arr.split("") : arr, i = 0;i < l;i++) {
+  for (var l = arr.length, arr2 = goog.isString(arr) ? arr.split("") : arr, i = 0; i < l; i++) {
     if (i in arr2 && f.call(opt_obj, arr2[i], i, arr)) {
       return i;
     }
@@ -1337,7 +1338,7 @@ goog.array.findRight = function(arr, f, opt_obj) {
   return 0 > i ? null : goog.isString(arr) ? arr.charAt(i) : arr[i];
 };
 goog.array.findIndexRight = function(arr, f, opt_obj) {
-  for (var l = arr.length, arr2 = goog.isString(arr) ? arr.split("") : arr, i = l - 1;0 <= i;i--) {
+  for (var l = arr.length, arr2 = goog.isString(arr) ? arr.split("") : arr, i = l - 1; 0 <= i; i--) {
     if (i in arr2 && f.call(opt_obj, arr2[i], i, arr)) {
       return i;
     }
@@ -1352,7 +1353,7 @@ goog.array.isEmpty = function(arr) {
 };
 goog.array.clear = function(arr) {
   if (!goog.isArray(arr)) {
-    for (var i = arr.length - 1;0 <= i;i--) {
+    for (var i = arr.length - 1; 0 <= i; i--) {
       delete arr[i];
     }
   }
@@ -1404,7 +1405,7 @@ goog.array.join = function(var_args) {
 goog.array.toArray = function(object) {
   var length = object.length;
   if (0 < length) {
-    for (var rv = Array(length), i = 0;i < length;i++) {
+    for (var rv = Array(length), i = 0; i < length; i++) {
       rv[i] = object[i];
     }
     return rv;
@@ -1413,12 +1414,12 @@ goog.array.toArray = function(object) {
 };
 goog.array.clone = goog.array.toArray;
 goog.array.extend = function(arr1, var_args) {
-  for (var i = 1;i < arguments.length;i++) {
+  for (var i = 1; i < arguments.length; i++) {
     var arr2 = arguments[i];
     if (goog.isArrayLike(arr2)) {
       var len1 = arr1.length || 0, len2 = arr2.length || 0;
       arr1.length = len1 + len2;
-      for (var j = 0;j < len2;j++) {
+      for (var j = 0; j < len2; j++) {
         arr1[len1 + j] = arr2[j];
       }
     } else {
@@ -1437,7 +1438,7 @@ goog.array.slice = function(arr, start, opt_end) {
 goog.array.removeDuplicates = function(arr, opt_rv, opt_hashFn) {
   for (var returnArray = opt_rv || arr, defaultHashFn = function(item) {
     return goog.isObject(item) ? "o" + goog.getUid(item) : (typeof item).charAt(0) + item;
-  }, hashFn = opt_hashFn || defaultHashFn, seen = {}, cursorInsert = 0, cursorRead = 0;cursorRead < arr.length;) {
+  }, hashFn = opt_hashFn || defaultHashFn, seen = {}, cursorInsert = 0, cursorRead = 0; cursorRead < arr.length;) {
     var current = arr[cursorRead++], key = hashFn(current);
     Object.prototype.hasOwnProperty.call(seen, key) || (seen[key] = !0, returnArray[cursorInsert++] = current);
   }
@@ -1450,9 +1451,9 @@ goog.array.binarySelect = function(arr, evaluator, opt_obj) {
   return goog.array.binarySearch_(arr, evaluator, !0, void 0, opt_obj);
 };
 goog.array.binarySearch_ = function(arr, compareFn, isEvaluator, opt_target, opt_selfObj) {
-  for (var left = 0, right = arr.length, found;left < right;) {
-    var middle = left + right >> 1, compareResult;
-    compareResult = isEvaluator ? compareFn.call(opt_selfObj, arr[middle], middle, arr) : compareFn(opt_target, arr[middle]);
+  for (var left = 0, right = arr.length, found; left < right;) {
+    var middle = left + right >> 1;
+    var compareResult = isEvaluator ? compareFn.call(opt_selfObj, arr[middle], middle, arr) : compareFn(opt_target, arr[middle]);
     0 < compareResult ? left = middle + 1 : (right = middle, found = !compareResult);
   }
   return found ? left : ~left;
@@ -1464,12 +1465,12 @@ goog.array.stableSort = function(arr, opt_compareFn) {
   function stableCompareFn(obj1, obj2) {
     return valueCompareFn(obj1.value, obj2.value) || obj1.index - obj2.index;
   }
-  for (var compArr = Array(arr.length), i = 0;i < arr.length;i++) {
+  for (var compArr = Array(arr.length), i = 0; i < arr.length; i++) {
     compArr[i] = {index:i, value:arr[i]};
   }
   var valueCompareFn = opt_compareFn || goog.array.defaultCompare;
   goog.array.sort(compArr, stableCompareFn);
-  for (i = 0;i < arr.length;i++) {
+  for (i = 0; i < arr.length; i++) {
     arr[i] = compArr[i].value;
   }
 };
@@ -1485,7 +1486,7 @@ goog.array.sortObjectsByKey = function(arr, key, opt_compareFn) {
   }, opt_compareFn);
 };
 goog.array.isSorted = function(arr, opt_compareFn, opt_strict) {
-  for (var compare = opt_compareFn || goog.array.defaultCompare, i = 1;i < arr.length;i++) {
+  for (var compare = opt_compareFn || goog.array.defaultCompare, i = 1; i < arr.length; i++) {
     var compareResult = compare(arr[i - 1], arr[i]);
     if (0 < compareResult || 0 == compareResult && opt_strict) {
       return !1;
@@ -1497,7 +1498,7 @@ goog.array.equals = function(arr1, arr2, opt_equalsFn) {
   if (!goog.isArrayLike(arr1) || !goog.isArrayLike(arr2) || arr1.length != arr2.length) {
     return !1;
   }
-  for (var l = arr1.length, equalsFn = opt_equalsFn || goog.array.defaultCompareEquality, i = 0;i < l;i++) {
+  for (var l = arr1.length, equalsFn = opt_equalsFn || goog.array.defaultCompareEquality, i = 0; i < l; i++) {
     if (!equalsFn(arr1[i], arr2[i])) {
       return !1;
     }
@@ -1505,7 +1506,7 @@ goog.array.equals = function(arr1, arr2, opt_equalsFn) {
   return !0;
 };
 goog.array.compare3 = function(arr1, arr2, opt_compareFn) {
-  for (var compare = opt_compareFn || goog.array.defaultCompare, l = Math.min(arr1.length, arr2.length), i = 0;i < l;i++) {
+  for (var compare = opt_compareFn || goog.array.defaultCompare, l = Math.min(arr1.length, arr2.length), i = 0; i < l; i++) {
     var result = compare(arr1[i], arr2[i]);
     if (0 != result) {
       return result;
@@ -1531,7 +1532,7 @@ goog.array.binaryRemove = function(array, value, opt_compareFn) {
   return 0 <= index ? goog.array.removeAt(array, index) : !1;
 };
 goog.array.bucket = function(array, sorter, opt_obj) {
-  for (var buckets = {}, i = 0;i < array.length;i++) {
+  for (var buckets = {}, i = 0; i < array.length; i++) {
     var value = array[i], key = sorter.call(opt_obj, value, i, array);
     if (goog.isDef(key)) {
       var bucket = buckets[key] || (buckets[key] = []);
@@ -1554,28 +1555,28 @@ goog.array.range = function(startOrEnd, opt_end, opt_step) {
     return [];
   }
   if (0 < step) {
-    for (var i = start;i < end;i += step) {
+    for (var i = start; i < end; i += step) {
       array.push(i);
     }
   } else {
-    for (i = start;i > end;i += step) {
+    for (i = start; i > end; i += step) {
       array.push(i);
     }
   }
   return array;
 };
 goog.array.repeat = function(value, n) {
-  for (var array = [], i = 0;i < n;i++) {
+  for (var array = [], i = 0; i < n; i++) {
     array[i] = value;
   }
   return array;
 };
 goog.array.flatten = function(var_args) {
-  for (var result = [], i = 0;i < arguments.length;i++) {
+  for (var result = [], i = 0; i < arguments.length; i++) {
     var element = arguments[i];
     if (goog.isArray(element)) {
-      for (var c = 0;c < element.length;c += 8192) {
-        for (var chunk = goog.array.slice(element, c, c + 8192), recurseResult = goog.array.flatten.apply(null, chunk), r = 0;r < recurseResult.length;r++) {
+      for (var c = 0; c < element.length; c += 8192) {
+        for (var chunk = goog.array.slice(element, c, c + 8192), recurseResult = goog.array.flatten.apply(null, chunk), r = 0; r < recurseResult.length; r++) {
           result.push(recurseResult[r]);
         }
       }
@@ -1600,11 +1601,11 @@ goog.array.zip = function(var_args) {
   if (!arguments.length) {
     return [];
   }
-  for (var result = [], minLen = arguments[0].length, i = 1;i < arguments.length;i++) {
+  for (var result = [], minLen = arguments[0].length, i = 1; i < arguments.length; i++) {
     arguments[i].length < minLen && (minLen = arguments[i].length);
   }
-  for (i = 0;i < minLen;i++) {
-    for (var value = [], j = 0;j < arguments.length;j++) {
+  for (i = 0; i < minLen; i++) {
+    for (var value = [], j = 0; j < arguments.length; j++) {
       value.push(arguments[j][i]);
     }
     result.push(value);
@@ -1612,7 +1613,7 @@ goog.array.zip = function(var_args) {
   return result;
 };
 goog.array.shuffle = function(arr, opt_randFn) {
-  for (var randFn = opt_randFn || Math.random, i = arr.length - 1;0 < i;i--) {
+  for (var randFn = opt_randFn || Math.random, i = arr.length - 1; 0 < i; i--) {
     var j = Math.floor(randFn() * (i + 1)), tmp = arr[i];
     arr[i] = arr[j];
     arr[j] = tmp;
@@ -1637,8 +1638,14 @@ goog.async.FreeList = function(create, reset, limit) {
   this.head_ = null;
 };
 goog.async.FreeList.prototype.get = function() {
-  var item;
-  0 < this.occupants_ ? (this.occupants_--, item = this.head_, this.head_ = item.next, item.next = null) : item = this.create_();
+  if (0 < this.occupants_) {
+    this.occupants_--;
+    var item = this.head_;
+    this.head_ = item.next;
+    item.next = null;
+  } else {
+    item = this.create_();
+  }
   return item;
 };
 goog.async.FreeList.prototype.put = function(item) {
@@ -1654,14 +1661,14 @@ goog.debug.entryPointRegistry.monitorsMayExist_ = !1;
 goog.debug.entryPointRegistry.register = function(callback) {
   goog.debug.entryPointRegistry.refList_[goog.debug.entryPointRegistry.refList_.length] = callback;
   if (goog.debug.entryPointRegistry.monitorsMayExist_) {
-    for (var monitors = goog.debug.entryPointRegistry.monitors_, i = 0;i < monitors.length;i++) {
+    for (var monitors = goog.debug.entryPointRegistry.monitors_, i = 0; i < monitors.length; i++) {
       callback(goog.bind(monitors[i].wrap, monitors[i]));
     }
   }
 };
 goog.debug.entryPointRegistry.monitorAll = function(monitor) {
   goog.debug.entryPointRegistry.monitorsMayExist_ = !0;
-  for (var transformer = goog.bind(monitor.wrap, monitor), i = 0;i < goog.debug.entryPointRegistry.refList_.length;i++) {
+  for (var transformer = goog.bind(monitor.wrap, monitor), i = 0; i < goog.debug.entryPointRegistry.refList_.length; i++) {
     goog.debug.entryPointRegistry.refList_[i](transformer);
   }
   goog.debug.entryPointRegistry.monitors_.push(monitor);
@@ -1669,7 +1676,7 @@ goog.debug.entryPointRegistry.monitorAll = function(monitor) {
 goog.debug.entryPointRegistry.unmonitorAllIfPossible = function(monitor) {
   var monitors = goog.debug.entryPointRegistry.monitors_;
   goog.asserts.assert(monitor == monitors[monitors.length - 1], "Only the most recent monitor can be unwrapped.");
-  for (var transformer = goog.bind(monitor.unwrap, monitor), i = 0;i < goog.debug.entryPointRegistry.refList_.length;i++) {
+  for (var transformer = goog.bind(monitor.unwrap, monitor), i = 0; i < goog.debug.entryPointRegistry.refList_.length; i++) {
     goog.debug.entryPointRegistry.refList_[i](transformer);
   }
   monitors.length--;
@@ -1860,7 +1867,7 @@ goog.functions.compose = function(fn, var_args) {
   return function() {
     var result;
     length && (result = functions[length - 1].apply(this, arguments));
-    for (var i = length - 2;0 <= i;i--) {
+    for (var i = length - 2; 0 <= i; i--) {
       result = functions[i].call(this, result);
     }
     return result;
@@ -1869,7 +1876,7 @@ goog.functions.compose = function(fn, var_args) {
 goog.functions.sequence = function(var_args) {
   var functions = arguments, length = functions.length;
   return function() {
-    for (var result, i = 0;i < length;i++) {
+    for (var result, i = 0; i < length; i++) {
       result = functions[i].apply(this, arguments);
     }
     return result;
@@ -1878,7 +1885,7 @@ goog.functions.sequence = function(var_args) {
 goog.functions.and = function(var_args) {
   var functions = arguments, length = functions.length;
   return function() {
-    for (var i = 0;i < length;i++) {
+    for (var i = 0; i < length; i++) {
       if (!functions[i].apply(this, arguments)) {
         return !1;
       }
@@ -1889,7 +1896,7 @@ goog.functions.and = function(var_args) {
 goog.functions.or = function(var_args) {
   var functions = arguments, length = functions.length;
   return function() {
-    for (var i = 0;i < length;i++) {
+    for (var i = 0; i < length; i++) {
       if (functions[i].apply(this, arguments)) {
         return !0;
       }
@@ -1994,7 +2001,7 @@ goog.labs.userAgent.util.matchUserAgentIgnoreCase = function(str) {
   return goog.string.caseInsensitiveContains(userAgent, str);
 };
 goog.labs.userAgent.util.extractVersionTuples = function(userAgent) {
-  for (var versionRegExp = /(\w[\w ]+)\/([^\s]+)\s*(?:\((.*?)\))?/g, data = [], match;match = versionRegExp.exec(userAgent);) {
+  for (var versionRegExp = /(\w[\w ]+)\/([^\s]+)\s*(?:\((.*?)\))?/g, data = [], match; match = versionRegExp.exec(userAgent);) {
     data.push([match[1], match[2], match[3] || void 0]);
   }
   return data;
@@ -2073,7 +2080,7 @@ goog.object.getKeys = function(obj) {
   return res;
 };
 goog.object.getValueByKeys = function(obj, var_args) {
-  for (var isArrayLike = goog.isArrayLike(var_args), keys = isArrayLike ? var_args : arguments, i = isArrayLike ? 0 : 1;i < keys.length && (obj = obj[keys[i]], goog.isDef(obj));i++) {
+  for (var isArrayLike = goog.isArrayLike(var_args), keys = isArrayLike ? var_args : arguments, i = isArrayLike ? 0 : 1; i < keys.length && (obj = obj[keys[i]], goog.isDef(obj)); i++) {
   }
   return obj;
 };
@@ -2180,12 +2187,12 @@ goog.object.transpose = function(obj) {
 };
 goog.object.PROTOTYPE_FIELDS_ = "constructor hasOwnProperty isPrototypeOf propertyIsEnumerable toLocaleString toString valueOf".split(" ");
 goog.object.extend = function(target, var_args) {
-  for (var key, source, i = 1;i < arguments.length;i++) {
+  for (var key, source, i = 1; i < arguments.length; i++) {
     source = arguments[i];
     for (key in source) {
       target[key] = source[key];
     }
-    for (var j = 0;j < goog.object.PROTOTYPE_FIELDS_.length;j++) {
+    for (var j = 0; j < goog.object.PROTOTYPE_FIELDS_.length; j++) {
       key = goog.object.PROTOTYPE_FIELDS_[j], Object.prototype.hasOwnProperty.call(source, key) && (target[key] = source[key]);
     }
   }
@@ -2198,7 +2205,7 @@ goog.object.create = function(var_args) {
   if (argLength % 2) {
     throw Error("Uneven number of arguments");
   }
-  for (var rv = {}, i = 0;i < argLength;i += 2) {
+  for (var rv = {}, i = 0; i < argLength; i += 2) {
     rv[arguments[i]] = arguments[i + 1];
   }
   return rv;
@@ -2208,7 +2215,7 @@ goog.object.createSet = function(var_args) {
   if (1 == argLength && goog.isArray(arguments[0])) {
     return goog.object.createSet.apply(null, arguments[0]);
   }
-  for (var rv = {}, i = 0;i < argLength;i++) {
+  for (var rv = {}, i = 0; i < argLength; i++) {
     rv[arguments[i]] = !0;
   }
   return rv;
@@ -2228,8 +2235,8 @@ goog.object.getAllPropertyNames = function(obj, opt_includeObjectPrototype, opt_
   if (!Object.getOwnPropertyNames || !Object.getPrototypeOf) {
     return goog.object.getKeys(obj);
   }
-  for (var visitedSet = {}, proto = obj;proto && (proto !== Object.prototype || opt_includeObjectPrototype) && (proto !== Function.prototype || opt_includeFunctionPrototype);) {
-    for (var names = Object.getOwnPropertyNames(proto), i = 0;i < names.length;i++) {
+  for (var visitedSet = {}, proto = obj; proto && (proto !== Object.prototype || opt_includeObjectPrototype) && (proto !== Function.prototype || opt_includeFunctionPrototype);) {
+    for (var names = Object.getOwnPropertyNames(proto), i = 0; i < names.length; i++) {
       visitedSet[names[i]] = !0;
     }
     proto = Object.getPrototypeOf(proto);
@@ -2375,7 +2382,7 @@ goog.labs.userAgent.engine.getEngineTuple_ = function(tuples) {
   if (!goog.labs.userAgent.engine.isEdge()) {
     return tuples[1];
   }
-  for (var i = 0;i < tuples.length;i++) {
+  for (var i = 0; i < tuples.length; i++) {
     var tuple = tuples[i];
     if ("Edge" == tuple[0]) {
       return tuple;
@@ -2528,7 +2535,7 @@ goog.DEBUG && (goog.async.run.resetQueue = function() {
   goog.async.run.workQueue_ = new goog.async.WorkQueue;
 });
 goog.async.run.processWorkQueue = function() {
-  for (var item;item = goog.async.run.workQueue_.remove();) {
+  for (var item; item = goog.async.run.workQueue_.remove();) {
     try {
       item.fn.call(item.scope);
     } catch (e) {
@@ -2636,7 +2643,7 @@ goog.Promise.resolveThen_ = function(value, onFulfilled, onRejected) {
 goog.Promise.race = function(promises) {
   return new goog.Promise(function(resolve, reject) {
     promises.length || resolve(void 0);
-    for (var i = 0, promise;i < promises.length;i++) {
+    for (var i = 0, promise; i < promises.length; i++) {
       promise = promises[i], goog.Promise.resolveThen_(promise, resolve, reject);
     }
   });
@@ -2651,7 +2658,7 @@ goog.Promise.all = function(promises) {
         0 == toFulfill && resolve(values);
       }, onReject = function(reason) {
         reject(reason);
-      }, i = 0, promise;i < promises.length;i++) {
+      }, i = 0, promise; i < promises.length; i++) {
         promise = promises[i], goog.Promise.resolveThen_(promise, goog.partial(onFulfill, i), onReject);
       }
     } else {
@@ -2667,7 +2674,7 @@ goog.Promise.allSettled = function(promises) {
         toSettle--;
         results[index] = fulfilled ? {fulfilled:!0, value:result} : {fulfilled:!1, reason:result};
         0 == toSettle && resolve(results);
-      }, i = 0, promise;i < promises.length;i++) {
+      }, i = 0, promise; i < promises.length; i++) {
         promise = promises[i], goog.Promise.resolveThen_(promise, goog.partial(onSettled, i, !0), goog.partial(onSettled, i, !1));
       }
     } else {
@@ -2685,7 +2692,7 @@ goog.Promise.firstFulfilled = function(promises) {
         toReject--;
         reasons[index] = reason;
         0 == toReject && reject(reasons);
-      }, i = 0, promise;i < promises.length;i++) {
+      }, i = 0, promise; i < promises.length; i++) {
         promise = promises[i], goog.Promise.resolveThen_(promise, onFulfill, goog.partial(onReject, i));
       }
     } else {
@@ -2813,7 +2820,7 @@ goog.Promise.prototype.popEntry_ = function() {
   return entry;
 };
 goog.Promise.prototype.executeCallbacks_ = function() {
-  for (var entry;entry = this.popEntry_();) {
+  for (var entry; entry = this.popEntry_();) {
     goog.Promise.LONG_STACK_TRACES && this.currentStep_++, this.executeCallback_(entry, this.state_, this.result_);
   }
   this.executing_ = !1;
@@ -2842,8 +2849,8 @@ goog.Promise.prototype.addStackTrace_ = function(err) {
 };
 goog.Promise.prototype.appendLongStack_ = function(err) {
   if (goog.Promise.LONG_STACK_TRACES && err && goog.isString(err.stack) && this.stack_.length) {
-    for (var longTrace = ["Promise trace:"], promise = this;promise;promise = promise.parent_) {
-      for (var i = this.currentStep_;0 <= i;i--) {
+    for (var longTrace = ["Promise trace:"], promise = this; promise; promise = promise.parent_) {
+      for (var i = this.currentStep_; 0 <= i; i--) {
         longTrace.push(promise.stack_[i]);
       }
       longTrace.push("Value: [" + (promise.state_ == goog.Promise.State_.REJECTED ? "REJECTED" : "FULFILLED") + "] <" + String(promise.result_) + ">");
@@ -2853,12 +2860,12 @@ goog.Promise.prototype.appendLongStack_ = function(err) {
 };
 goog.Promise.prototype.removeUnhandledRejection_ = function() {
   if (0 < goog.Promise.UNHANDLED_REJECTION_DELAY) {
-    for (var p = this;p && p.unhandledRejectionId_;p = p.parent_) {
+    for (var p = this; p && p.unhandledRejectionId_; p = p.parent_) {
       goog.global.clearTimeout(p.unhandledRejectionId_), p.unhandledRejectionId_ = 0;
     }
   } else {
     if (0 == goog.Promise.UNHANDLED_REJECTION_DELAY) {
-      for (p = this;p && p.hadUnhandledRejection_;p = p.parent_) {
+      for (p = this; p && p.hadUnhandledRejection_; p = p.parent_) {
         p.hadUnhandledRejection_ = !1;
       }
     }
@@ -2940,18 +2947,18 @@ goog.math.longestCommonSubsequence = function(array1, array2, opt_compareFn, opt
     return a == b;
   }, collect = opt_collectorFn || function(i1) {
     return array1[i1];
-  }, length1 = array1.length, length2 = array2.length, arr = [], i = 0;i < length1 + 1;i++) {
+  }, length1 = array1.length, length2 = array2.length, arr = [], i = 0; i < length1 + 1; i++) {
     arr[i] = [], arr[i][0] = 0;
   }
-  for (var j = 0;j < length2 + 1;j++) {
+  for (var j = 0; j < length2 + 1; j++) {
     arr[0][j] = 0;
   }
-  for (i = 1;i <= length1;i++) {
-    for (j = 1;j <= length2;j++) {
+  for (i = 1; i <= length1; i++) {
+    for (j = 1; j <= length2; j++) {
       compare(array1[i - 1], array2[j - 1]) ? arr[i][j] = arr[i - 1][j - 1] + 1 : arr[i][j] = Math.max(arr[i - 1][j], arr[i][j - 1]);
     }
   }
-  for (var result = [], i = length1, j = length2;0 < i && 0 < j;) {
+  for (var result = [], i = length1, j = length2; 0 < i && 0 < j;) {
     compare(array1[i - 1], array2[j - 1]) ? (result.unshift(collect(i - 1, j - 1)), i--, j--) : arr[i - 1][j] > arr[i][j - 1] ? i-- : j--;
   }
   return result;
@@ -3222,7 +3229,7 @@ goog.iter.product = function(var_args) {
     if (indicies) {
       for (var retVal = goog.array.map(indicies, function(valueIndex, arrayIndex) {
         return arrays[arrayIndex][valueIndex];
-      }), i = indicies.length - 1;0 <= i;i--) {
+      }), i = indicies.length - 1; 0 <= i; i--) {
         goog.asserts.assert(indicies);
         if (indicies[i] < arrays[i].length - 1) {
           indicies[i]++;
@@ -3300,9 +3307,9 @@ goog.iter.zipLongest = function(fillValue, var_args) {
     var iterators = goog.array.map(args, goog.iter.toIterator);
     iter.next = function() {
       var iteratorsHaveValues = !1, arr = goog.array.map(iterators, function(it) {
-        var returnValue;
         try {
-          returnValue = it.next(), iteratorsHaveValues = !0;
+          var returnValue = it.next();
+          iteratorsHaveValues = !0;
         } catch (ex) {
           if (ex !== goog.iter.StopIteration) {
             throw ex;
@@ -3331,14 +3338,14 @@ goog.iter.GroupByIterator_ = function(iterable, opt_keyFunc) {
 };
 goog.inherits(goog.iter.GroupByIterator_, goog.iter.Iterator);
 goog.iter.GroupByIterator_.prototype.next = function() {
-  for (;this.currentKey == this.targetKey;) {
+  for (; this.currentKey == this.targetKey;) {
     this.currentValue = this.iterator.next(), this.currentKey = this.keyFunc(this.currentValue);
   }
   this.targetKey = this.currentKey;
   return [this.currentKey, this.groupItems_(this.targetKey)];
 };
 goog.iter.GroupByIterator_.prototype.groupItems_ = function(targetKey) {
-  for (var arr = [];this.currentKey == targetKey;) {
+  for (var arr = []; this.currentKey == targetKey;) {
     arr.push(this.currentValue);
     try {
       this.currentValue = this.iterator.next();
@@ -3398,7 +3405,7 @@ goog.iter.limit = function(iterable, limitSize) {
 };
 goog.iter.consume = function(iterable, count) {
   goog.asserts.assert(goog.math.isInt(count) && 0 <= count);
-  for (var iterator = goog.iter.toIterator(iterable);0 < count--;) {
+  for (var iterator = goog.iter.toIterator(iterable); 0 < count--;) {
     goog.iter.nextOrValue(iterator, null);
   }
   return iterator;
@@ -3454,7 +3461,7 @@ goog.structs.Map = function(opt_map, var_args) {
     if (argLength % 2) {
       throw Error("Uneven number of arguments");
     }
-    for (var i = 0;i < argLength;i += 2) {
+    for (var i = 0; i < argLength; i += 2) {
       this.set(arguments[i], arguments[i + 1]);
     }
   } else {
@@ -3466,7 +3473,7 @@ goog.structs.Map.prototype.getCount = function() {
 };
 goog.structs.Map.prototype.getValues = function() {
   this.cleanupKeysArray_();
-  for (var rv = [], i = 0;i < this.keys_.length;i++) {
+  for (var rv = [], i = 0; i < this.keys_.length; i++) {
     var key = this.keys_[i];
     rv.push(this.map_[key]);
   }
@@ -3480,7 +3487,7 @@ goog.structs.Map.prototype.containsKey = function(key) {
   return goog.structs.Map.hasKey_(this.map_, key);
 };
 goog.structs.Map.prototype.containsValue = function(val) {
-  for (var i = 0;i < this.keys_.length;i++) {
+  for (var i = 0; i < this.keys_.length; i++) {
     var key = this.keys_[i];
     if (goog.structs.Map.hasKey_(this.map_, key) && this.map_[key] == val) {
       return !0;
@@ -3497,7 +3504,7 @@ goog.structs.Map.prototype.equals = function(otherMap, opt_equalityFn) {
   }
   var equalityFn = opt_equalityFn || goog.structs.Map.defaultEquals;
   this.cleanupKeysArray_();
-  for (var key, i = 0;key = this.keys_[i];i++) {
+  for (var key, i = 0; key = this.keys_[i]; i++) {
     if (!equalityFn(this.get(key), otherMap.get(key))) {
       return !1;
     }
@@ -3518,8 +3525,9 @@ goog.structs.Map.prototype.remove = function(key) {
   return goog.structs.Map.hasKey_(this.map_, key) ? (delete this.map_[key], this.count_--, this.version_++, this.keys_.length > 2 * this.count_ && this.cleanupKeysArray_(), !0) : !1;
 };
 goog.structs.Map.prototype.cleanupKeysArray_ = function() {
+  var destIndex, srcIndex;
   if (this.count_ != this.keys_.length) {
-    for (var srcIndex = 0, destIndex = 0;srcIndex < this.keys_.length;) {
+    for (destIndex = srcIndex = 0; srcIndex < this.keys_.length;) {
       var key = this.keys_[srcIndex];
       goog.structs.Map.hasKey_(this.map_, key) && (this.keys_[destIndex++] = key);
       srcIndex++;
@@ -3527,7 +3535,8 @@ goog.structs.Map.prototype.cleanupKeysArray_ = function() {
     this.keys_.length = destIndex;
   }
   if (this.count_ != this.keys_.length) {
-    for (var seen = {}, destIndex = srcIndex = 0;srcIndex < this.keys_.length;) {
+    var seen = {};
+    for (destIndex = srcIndex = 0; srcIndex < this.keys_.length;) {
       key = this.keys_[srcIndex], goog.structs.Map.hasKey_(seen, key) || (this.keys_[destIndex++] = key, seen[key] = 1), srcIndex++;
     }
     this.keys_.length = destIndex;
@@ -3541,14 +3550,18 @@ goog.structs.Map.prototype.set = function(key, value) {
   this.map_[key] = value;
 };
 goog.structs.Map.prototype.addAll = function(map) {
-  var keys, values;
-  map instanceof goog.structs.Map ? (keys = map.getKeys(), values = map.getValues()) : (keys = goog.object.getKeys(map), values = goog.object.getValues(map));
-  for (var i = 0;i < keys.length;i++) {
+  if (map instanceof goog.structs.Map) {
+    var keys = map.getKeys();
+    var values = map.getValues();
+  } else {
+    keys = goog.object.getKeys(map), values = goog.object.getValues(map);
+  }
+  for (var i = 0; i < keys.length; i++) {
     this.set(keys[i], values[i]);
   }
 };
 goog.structs.Map.prototype.forEach = function(f, opt_obj) {
-  for (var keys = this.getKeys(), i = 0;i < keys.length;i++) {
+  for (var keys = this.getKeys(), i = 0; i < keys.length; i++) {
     var key = keys[i], value = this.get(key);
     f.call(opt_obj, value, key, this);
   }
@@ -3557,7 +3570,7 @@ goog.structs.Map.prototype.clone = function() {
   return new goog.structs.Map(this);
 };
 goog.structs.Map.prototype.transpose = function() {
-  for (var transposed = new goog.structs.Map, i = 0;i < this.keys_.length;i++) {
+  for (var transposed = new goog.structs.Map, i = 0; i < this.keys_.length; i++) {
     var key = this.keys_[i], value = this.map_[key];
     transposed.set(value, key);
   }
@@ -3565,7 +3578,7 @@ goog.structs.Map.prototype.transpose = function() {
 };
 goog.structs.Map.prototype.toObject = function() {
   this.cleanupKeysArray_();
-  for (var obj = {}, i = 0;i < this.keys_.length;i++) {
+  for (var obj = {}, i = 0; i < this.keys_.length; i++) {
     var key = this.keys_[i];
     obj[key] = this.map_[key];
   }
@@ -3618,10 +3631,10 @@ goog.labs.userAgent.platform.isChromeOS = function() {
   return goog.labs.userAgent.util.matchUserAgent("CrOS");
 };
 goog.labs.userAgent.platform.getVersion = function() {
-  var userAgentString = goog.labs.userAgent.util.getUserAgent(), version = "", re;
+  var match, userAgentString = goog.labs.userAgent.util.getUserAgent(), version = "";
   if (goog.labs.userAgent.platform.isWindows()) {
-    re = /Windows (?:NT|Phone) ([0-9.]+)/;
-    var match = re.exec(userAgentString), version = match ? match[1] : "0.0";
+    var re = /Windows (?:NT|Phone) ([0-9.]+)/;
+    version = (match = re.exec(userAgentString)) ? match[1] : "0.0";
   } else {
     goog.labs.userAgent.platform.isIos() ? (re = /(?:iPhone|iPod|iPad|CPU)\s+OS\s+(\S+)/, version = (match = re.exec(userAgentString)) && match[1].replace(/_/g, ".")) : goog.labs.userAgent.platform.isMacintosh() ? (re = /Mac OS X ([0-9_.]+)/, version = (match = re.exec(userAgentString)) ? match[1].replace(/_/g, ".") : "10") : goog.labs.userAgent.platform.isAndroid() ? (re = /Android\s+([^\);]+)(\)|;)/, version = (match = re.exec(userAgentString)) && match[1]) : goog.labs.userAgent.platform.isChromeOS() && 
     (re = /(?:CrOS\s+(?:i686|x86_64)\s+([0-9.]+))/, version = (match = re.exec(userAgentString)) && match[1]);
@@ -3764,11 +3777,10 @@ JSCompiler_inline_result$jscomp$1 = doc$jscomp$inline_3 && goog.userAgent.IE ? m
 goog.userAgent.DOCUMENT_MODE = JSCompiler_inline_result$jscomp$1;
 goog.userAgent.platform = {};
 goog.userAgent.platform.determineVersion_ = function() {
-  var re;
+  var match;
   if (goog.userAgent.WINDOWS) {
-    re = /Windows NT ([0-9.]+)/;
-    var match = re.exec(goog.userAgent.getUserAgentString());
-    return match ? match[1] : "0";
+    var re = /Windows NT ([0-9.]+)/;
+    return (match = re.exec(goog.userAgent.getUserAgentString())) ? match[1] : "0";
   }
   return goog.userAgent.MAC ? (re = /10[_.][0-9_.]+/, (match = re.exec(goog.userAgent.getUserAgentString())) ? match[0].replace(/_/g, ".") : "10") : goog.userAgent.ANDROID ? (re = /Android\s+([^\);]+)(\)|;)/, (match = re.exec(goog.userAgent.getUserAgentString())) ? match[1] : "") : goog.userAgent.IPHONE || goog.userAgent.IPAD || goog.userAgent.IPOD ? (re = /(?:iPhone|CPU)\s+OS\s+(\S+)/, (match = re.exec(goog.userAgent.getUserAgentString())) ? match[1].replace(/_/g, ".") : "") : "";
 };
@@ -3948,7 +3960,7 @@ lf.Row.binToHex = function(buffer) {
   if (!goog.isDefAndNotNull(buffer)) {
     return null;
   }
-  for (var uint8Array = new Uint8Array(buffer), s = "", i = 0;i < uint8Array.length;++i) {
+  for (var uint8Array = new Uint8Array(buffer), s = "", i = 0; i < uint8Array.length; ++i) {
     var chr = uint8Array[i].toString(16), s = s + (2 > chr.length ? "0" + chr : chr);
   }
   return s;
@@ -3958,7 +3970,7 @@ lf.Row.hexToBin = function(hex) {
     return null;
   }
   0 != hex.length % 2 && (hex = "0" + hex);
-  for (var buffer = new ArrayBuffer(hex.length / 2), uint8Array = new Uint8Array(buffer), i = 0, j = 0;i < hex.length;i += 2) {
+  for (var buffer = new ArrayBuffer(hex.length / 2), uint8Array = new Uint8Array(buffer), i = 0, j = 0; i < hex.length; i += 2) {
     uint8Array[j++] = parseInt(hex.substr(i, 2), 16);
   }
   return buffer;
@@ -4110,7 +4122,7 @@ goog.structs.getValues = function(col) {
     return col.split("");
   }
   if (goog.isArrayLike(col)) {
-    for (var rv = [], l = col.length, i = 0;i < l;i++) {
+    for (var rv = [], l = col.length, i = 0; i < l; i++) {
       rv.push(col[i]);
     }
     return rv;
@@ -4123,7 +4135,7 @@ goog.structs.getKeys = function(col) {
   }
   if (!col.getValues || "function" != typeof col.getValues) {
     if (goog.isArrayLike(col) || goog.isString(col)) {
-      for (var rv = [], l = col.length, i = 0;i < l;i++) {
+      for (var rv = [], l = col.length, i = 0; i < l; i++) {
         rv.push(i);
       }
       return rv;
@@ -4147,7 +4159,7 @@ goog.structs.forEach = function(col, f, opt_obj) {
     if (goog.isArrayLike(col) || goog.isString(col)) {
       goog.array.forEach(col, f, opt_obj);
     } else {
-      for (var keys = goog.structs.getKeys(col), values = goog.structs.getValues(col), l = values.length, i = 0;i < l;i++) {
+      for (var keys = goog.structs.getKeys(col), values = goog.structs.getValues(col), l = values.length, i = 0; i < l; i++) {
         f.call(opt_obj, values[i], keys && keys[i], col);
       }
     }
@@ -4160,14 +4172,14 @@ goog.structs.filter = function(col, f, opt_obj) {
   if (goog.isArrayLike(col) || goog.isString(col)) {
     return goog.array.filter(col, f, opt_obj);
   }
-  var rv, keys = goog.structs.getKeys(col), values = goog.structs.getValues(col), l = values.length;
+  var keys = goog.structs.getKeys(col), values = goog.structs.getValues(col), l = values.length;
   if (keys) {
-    rv = {};
-    for (var i = 0;i < l;i++) {
+    var rv = {};
+    for (var i = 0; i < l; i++) {
       f.call(opt_obj, values[i], keys[i], col) && (rv[keys[i]] = values[i]);
     }
   } else {
-    for (rv = [], i = 0;i < l;i++) {
+    for (rv = [], i = 0; i < l; i++) {
       f.call(opt_obj, values[i], void 0, col) && rv.push(values[i]);
     }
   }
@@ -4180,14 +4192,14 @@ goog.structs.map = function(col, f, opt_obj) {
   if (goog.isArrayLike(col) || goog.isString(col)) {
     return goog.array.map(col, f, opt_obj);
   }
-  var rv, keys = goog.structs.getKeys(col), values = goog.structs.getValues(col), l = values.length;
+  var keys = goog.structs.getKeys(col), values = goog.structs.getValues(col), l = values.length;
   if (keys) {
-    rv = {};
-    for (var i = 0;i < l;i++) {
+    var rv = {};
+    for (var i = 0; i < l; i++) {
       rv[keys[i]] = f.call(opt_obj, values[i], keys[i], col);
     }
   } else {
-    for (rv = [], i = 0;i < l;i++) {
+    for (rv = [], i = 0; i < l; i++) {
       rv[i] = f.call(opt_obj, values[i], void 0, col);
     }
   }
@@ -4200,7 +4212,7 @@ goog.structs.some = function(col, f, opt_obj) {
   if (goog.isArrayLike(col) || goog.isString(col)) {
     return goog.array.some(col, f, opt_obj);
   }
-  for (var keys = goog.structs.getKeys(col), values = goog.structs.getValues(col), l = values.length, i = 0;i < l;i++) {
+  for (var keys = goog.structs.getKeys(col), values = goog.structs.getValues(col), l = values.length, i = 0; i < l; i++) {
     if (f.call(opt_obj, values[i], keys && keys[i], col)) {
       return !0;
     }
@@ -4214,7 +4226,7 @@ goog.structs.every = function(col, f, opt_obj) {
   if (goog.isArrayLike(col) || goog.isString(col)) {
     return goog.array.every(col, f, opt_obj);
   }
-  for (var keys = goog.structs.getKeys(col), values = goog.structs.getValues(col), l = values.length, i = 0;i < l;i++) {
+  for (var keys = goog.structs.getKeys(col), values = goog.structs.getValues(col), l = values.length, i = 0; i < l; i++) {
     if (!f.call(opt_obj, values[i], keys && keys[i], col)) {
       return !1;
     }
@@ -4236,12 +4248,12 @@ goog.structs.Set.prototype.add = function(element) {
   this.map_.set(goog.structs.Set.getKey_(element), element);
 };
 goog.structs.Set.prototype.addAll = function(col) {
-  for (var values = goog.structs.getValues(col), l = values.length, i = 0;i < l;i++) {
+  for (var values = goog.structs.getValues(col), l = values.length, i = 0; i < l; i++) {
     this.add(values[i]);
   }
 };
 goog.structs.Set.prototype.removeAll = function(col) {
-  for (var values = goog.structs.getValues(col), l = values.length, i = 0;i < l;i++) {
+  for (var values = goog.structs.getValues(col), l = values.length, i = 0; i < l; i++) {
     this.remove(values[i]);
   }
 };
@@ -4409,9 +4421,8 @@ lf.backstore.BundledObjectStore.prototype.get = function(ids) {
 lf.backstore.BundledObjectStore.prototype.getPagesByRowIds_ = function(rowIds) {
   var results = lf.structs.map.create(), resolver = goog.Promise.withResolver(), pageIds = lf.backstore.Page.toPageIds(rowIds), promises = pageIds.map(function(id) {
     return new goog.Promise(function(resolve, reject) {
-      var request;
       try {
-        request = this.store_.get(id);
+        var request = this.store_.get(id);
       } catch (e) {
         reject(e);
         return;
@@ -4431,9 +4442,9 @@ lf.backstore.BundledObjectStore.prototype.getPagesByRowIds_ = function(rowIds) {
 };
 lf.backstore.BundledObjectStore.prototype.getAll_ = function() {
   return new goog.Promise(function(resolve, reject) {
-    var rows = [], request;
+    var rows = [];
     try {
-      request = this.store_.openCursor();
+      var request = this.store_.openCursor();
     } catch (e) {
       reject(e);
       return;
@@ -4455,9 +4466,8 @@ lf.backstore.BundledObjectStore.prototype.getAll_ = function() {
 };
 lf.backstore.BundledObjectStore.prototype.performWriteOp_ = function(reqFactory) {
   return new goog.Promise(function(resolve, reject) {
-    var request;
     try {
-      request = reqFactory();
+      var request = reqFactory();
     } catch (e) {
       reject(e);
       return;
@@ -4627,7 +4637,7 @@ lf.Exception = function(code, var_args) {
   this.code = code;
   this.message = "http://google.github.io/lovefield/error_lookup/src/error_lookup.html?c=" + code;
   if (1 < arguments.length) {
-    for (var i = 1;i <= Math.min(4, arguments.length - 1);++i) {
+    for (var i = 1; i <= Math.min(4, arguments.length - 1); ++i) {
       this.message += "&p" + (i - 1) + "=" + encodeURIComponent(String(arguments[i]).slice(0, 64));
     }
   }
@@ -4951,7 +4961,7 @@ lf.cache.Journal.prototype.insert = function(table, rows) {
   this.checkScope_(table);
   this.constraintChecker_.checkNotNullable(table, rows);
   this.constraintChecker_.checkForeignKeysForInsert(table, rows, lf.ConstraintTiming.IMMEDIATE);
-  for (var i = 0;i < rows.length;i++) {
+  for (var i = 0; i < rows.length; i++) {
     this.modifyRow_(table, [null, rows[i]]);
   }
 };
@@ -4984,7 +4994,7 @@ lf.cache.Journal.prototype.insertOrReplace = function(table, rows) {
   this.assertJournalWritable_();
   this.checkScope_(table);
   this.constraintChecker_.checkNotNullable(table, rows);
-  for (var i = 0;i < rows.length;i++) {
+  for (var i = 0; i < rows.length; i++) {
     var rowNow = rows[i], rowBefore = null, existingRowId = this.constraintChecker_.findExistingRowIdInPkIndex(table, rowNow);
     if (goog.isDefAndNotNull(existingRowId)) {
       rowBefore = this.cache_.get(existingRowId);
@@ -5002,7 +5012,7 @@ lf.cache.Journal.prototype.remove = function(table, rows) {
   this.checkScope_(table);
   this.removeByCascade_(table, rows);
   this.constraintChecker_.checkForeignKeysForDelete(table, rows, lf.ConstraintTiming.IMMEDIATE);
-  for (var i = 0;i < rows.length;i++) {
+  for (var i = 0; i < rows.length; i++) {
     this.modifyRow_(table, [rows[i], null]);
   }
 };
@@ -5159,8 +5169,11 @@ lf.index.SingleKeyRange.and = function(r1, r2) {
   var r = lf.index.SingleKeyRange.all(), favor = lf.index.SingleKeyRange.compareKey_(r1.from, r2.from, !0), left = favor == lf.index.Favor.TIE ? r1.excludeLower ? r1 : r2 : favor != lf.index.Favor.RHS ? r1 : r2;
   r.from = left.from;
   r.excludeLower = left.excludeLower;
-  var right;
-  lf.index.SingleKeyRange.isUnbound(r1.to) || lf.index.SingleKeyRange.isUnbound(r2.to) ? right = lf.index.SingleKeyRange.isUnbound(r1.to) ? r2 : r1 : (favor = lf.index.SingleKeyRange.compareKey_(r1.to, r2.to, !1), right = favor == lf.index.Favor.TIE ? r1.excludeUpper ? r1 : r2 : favor == lf.index.Favor.RHS ? r1 : r2);
+  if (lf.index.SingleKeyRange.isUnbound(r1.to) || lf.index.SingleKeyRange.isUnbound(r2.to)) {
+    var right = lf.index.SingleKeyRange.isUnbound(r1.to) ? r2 : r1;
+  } else {
+    favor = lf.index.SingleKeyRange.compareKey_(r1.to, r2.to, !1), right = favor == lf.index.Favor.TIE ? r1.excludeUpper ? r1 : r2 : favor == lf.index.Favor.RHS ? r1 : r2;
+  }
   r.to = right.to;
   r.excludeUpper = right.excludeUpper;
   return r;
@@ -5170,7 +5183,7 @@ lf.index.SingleKeyRange.complement = function(keyRanges) {
     return [];
   }
   keyRanges.sort(lf.index.SingleKeyRange.compare);
-  for (var complementKeyRanges = Array(keyRanges.length + 1), i = 0;i < complementKeyRanges.length;i++) {
+  for (var complementKeyRanges = Array(keyRanges.length + 1), i = 0; i < complementKeyRanges.length; i++) {
     complementKeyRanges[i] = 0 == i ? lf.index.SingleKeyRange.upperBound(keyRanges[i].from, !0) : i == complementKeyRanges.length - 1 ? lf.index.SingleKeyRange.lowerBound(keyRanges[i - 1].to, !0) : new lf.index.SingleKeyRange(keyRanges[i - 1].to, keyRanges[i].from, !0, !0);
   }
   return complementKeyRanges;
@@ -5199,7 +5212,7 @@ lf.index.SingleKeyRangeSet.prototype.add = function(keyRanges) {
       this.ranges_ = ranges;
     } else {
       ranges.sort(lf.index.SingleKeyRange.compare);
-      for (var results = [], start = ranges[0], i = 1;i < ranges.length;++i) {
+      for (var results = [], start = ranges[0], i = 1; i < ranges.length; ++i) {
         start.overlaps(ranges[i]) ? start = lf.index.SingleKeyRange.getBoundingRange(start, ranges[i]) : (results.push(start), start = ranges[i]);
       }
       results.push(start);
@@ -5292,7 +5305,7 @@ lf.proc.Relation.intersect = function(relations) {
       map.set(entry.id, entry);
     });
     return map;
-  }), intersection = lf.structs.map.create(), i = 0;i < allEntries.length;i++) {
+  }), intersection = lf.structs.map.create(), i = 0; i < allEntries.length; i++) {
     var existsInAll = relationMaps.every(function(relation) {
       return relation.has(allEntries[i].id);
     });
@@ -5527,13 +5540,13 @@ lf.structs.TreeNode.prototype.setParent = function(parentNode) {
   this.parent_ = parentNode;
 };
 lf.structs.TreeNode.prototype.getRoot = function() {
-  for (var root = this;!goog.isNull(root.getParent());) {
+  for (var root = this; !goog.isNull(root.getParent());) {
     root = root.getParent();
   }
   return root;
 };
 lf.structs.TreeNode.prototype.getDepth = function() {
-  for (var depth = 0, node = this;!goog.isNull(node.getParent());) {
+  for (var depth = 0, node = this; !goog.isNull(node.getParent());) {
     depth++, node = node.getParent();
   }
   return depth;
@@ -6331,10 +6344,9 @@ lf.backstore.IndexedDBRawBackStore.prototype.dropTable = function(tableName) {
 goog.exportProperty(lf.backstore.IndexedDBRawBackStore.prototype, "dropTable", lf.backstore.IndexedDBRawBackStore.prototype.dropTable);
 lf.backstore.IndexedDBRawBackStore.prototype.openCursorForWrite_ = function(tableName, loopFunc, endFunc) {
   return new goog.Promise(function(resolve, reject) {
-    var req;
     try {
       var store = this.tx_.objectStore(tableName);
-      req = store.openCursor();
+      var req = store.openCursor();
     } catch (e) {
       reject(e);
       return;
@@ -6390,9 +6402,8 @@ goog.exportProperty(lf.backstore.IndexedDBRawBackStore.prototype, "renameTableCo
 lf.backstore.IndexedDBRawBackStore.prototype.getTableRows_ = function(tableName) {
   var results = [];
   return new goog.Promise(function(resolve, reject) {
-    var req;
     try {
-      req = this.tx_.objectStore(tableName).openCursor();
+      var req = this.tx_.objectStore(tableName).openCursor();
     } catch (e) {
       reject(e);
       return;
@@ -6429,7 +6440,7 @@ lf.backstore.IndexedDBRawBackStore.prototype.getVersion = function() {
 };
 goog.exportProperty(lf.backstore.IndexedDBRawBackStore.prototype, "getVersion", lf.backstore.IndexedDBRawBackStore.prototype.getVersion);
 lf.backstore.IndexedDBRawBackStore.prototype.dump = function() {
-  for (var tables = this.db_.objectStoreNames, promises = [], i = 0;i < tables.length;++i) {
+  for (var tables = this.db_.objectStoreNames, promises = [], i = 0; i < tables.length; ++i) {
     var tableName = tables.item(i);
     promises.push(this.dumpTable_(tableName));
   }
@@ -6459,9 +6470,8 @@ lf.backstore.ObjectStore.prototype.get = function(ids) {
   }
   var promises = ids.map(function(id) {
     return new goog.Promise(function(resolve, reject) {
-      var request;
       try {
-        request = this.store_.get(id);
+        var request = this.store_.get(id);
       } catch (e) {
         reject(e);
         return;
@@ -6476,9 +6486,9 @@ lf.backstore.ObjectStore.prototype.get = function(ids) {
 };
 lf.backstore.ObjectStore.prototype.getAllWithCursor_ = function() {
   return new goog.Promise(function(resolve, reject) {
-    var rows = [], request;
+    var rows = [];
     try {
-      request = this.store_.openCursor();
+      var request = this.store_.openCursor();
     } catch (e) {
       reject(e);
       return;
@@ -6492,9 +6502,8 @@ lf.backstore.ObjectStore.prototype.getAllWithCursor_ = function() {
 };
 lf.backstore.ObjectStore.prototype.getAllBulk_ = function() {
   return new goog.Promise(function(resolve, reject) {
-    var request;
     try {
-      request = this.store_.getAll();
+      var request = this.store_.getAll();
     } catch (e) {
       reject(e);
       return;
@@ -6510,9 +6519,8 @@ lf.backstore.ObjectStore.prototype.getAllBulk_ = function() {
 };
 lf.backstore.ObjectStore.prototype.performWriteOp_ = function(reqFactory) {
   return new goog.Promise(function(resolve, reject) {
-    var request;
     try {
-      request = reqFactory();
+      var request = reqFactory();
     } catch (e) {
       reject(e);
       return;
@@ -6584,9 +6592,8 @@ lf.backstore.IndexedDB.prototype.init = function(opt_onUpgrade) {
     return goog.Promise.resolve();
   };
   return new goog.Promise(function(resolve, reject) {
-    var request;
     try {
-      request = indexedDB.open(this.schema_.name(), this.schema_.version());
+      var request = indexedDB.open(this.schema_.name(), this.schema_.version());
     } catch (e) {
       reject(e);
       return;
@@ -6615,7 +6622,7 @@ lf.backstore.IndexedDB.prototype.onUpgradeNeeded_ = function(onUpgrade, ev) {
   return onUpgrade(rawDb);
 };
 lf.backstore.IndexedDB.prototype.removeIndexTables_ = function(db) {
-  for (var storeNames = [], i = 0;i < db.objectStoreNames.length;++i) {
+  for (var storeNames = [], i = 0; i < db.objectStoreNames.length; ++i) {
     var name = db.objectStoreNames.item(i);
     -1 != name.indexOf(".") && storeNames.push(name);
   }
@@ -6673,10 +6680,9 @@ lf.backstore.IndexedDB.prototype.scanRowId_ = function(opt_tx) {
     return cursor.key;
   }.bind(this), scanTableRowId = function(tableName) {
     return new goog.Promise(function(resolve, reject) {
-      var req;
       try {
         var tx = opt_tx || db.transaction([tableName]);
-        req = tx.objectStore(tableName).openCursor(null, "prev");
+        var req = tx.objectStore(tableName).openCursor(null, "prev");
       } catch (e) {
         reject(e);
         return;
@@ -6720,13 +6726,16 @@ lf.backstore.LocalStorageTable = function(tableKey) {
   goog.isDefAndNotNull(rawData) && (this.data_ = JSON.parse(rawData));
 };
 lf.backstore.LocalStorageTable.prototype.get = function(ids) {
-  var results;
-  0 == ids.length ? results = Object.keys(this.data_).map(function(key) {
-    var id = parseInt(key, 10);
-    return new lf.Row(id, this.data_[key]);
-  }, this) : (results = [], ids.forEach(function(id) {
-    this.data_.hasOwnProperty(id.toString()) && results.push(new lf.Row(id, this.data_[id.toString()]));
-  }, this));
+  if (0 == ids.length) {
+    var results = Object.keys(this.data_).map(function(key) {
+      var id = parseInt(key, 10);
+      return new lf.Row(id, this.data_[key]);
+    }, this);
+  } else {
+    results = [], ids.forEach(function(id) {
+      this.data_.hasOwnProperty(id.toString()) && results.push(new lf.Row(id, this.data_[id.toString()]));
+    }, this);
+  }
   return goog.Promise.resolve(results);
 };
 lf.backstore.LocalStorageTable.prototype.put = function(rows) {
@@ -6921,7 +6930,7 @@ lf.backstore.WebSqlTable = function(tx, name, deserializeFn) {
 };
 lf.backstore.WebSqlTable.prototype.get = function(ids) {
   var where = 0 == ids.length ? "" : "WHERE id IN (" + ids.join(",") + ")", sql = "SELECT id, value FROM " + this.name_ + " " + where, deserializeFn = this.deserializeFn_, transformer = function(results) {
-    for (var length = results.rows.length, rows = Array(length), i = 0;i < length;++i) {
+    for (var length = results.rows.length, rows = Array(length), i = 0; i < length; ++i) {
       rows[i] = deserializeFn({id:results.rows.item(i).id, value:JSON.parse(results.rows.item(i).value)});
     }
     return rows;
@@ -7012,7 +7021,7 @@ lf.backstore.WebSqlRawBackStore.prototype.dumpTable_ = function(tableName) {
   var tx = this.createTx_();
   tx.queue("SELECT id, value FROM " + tableName, []);
   return tx.commit().then(function(results) {
-    for (var length = results[0].rows.length, rows = Array(length), i = 0;i < length;++i) {
+    for (var length = results[0].rows.length, rows = Array(length), i = 0; i < length; ++i) {
       rows[i] = {id:results[0].rows.item(i).id, value:JSON.parse(results[0].rows.item(i).value)};
     }
     return goog.Promise.resolve(rows);
@@ -7065,7 +7074,7 @@ lf.backstore.WebSqlRawBackStore.prototype.getVersion = function() {
 goog.exportProperty(lf.backstore.WebSqlRawBackStore.prototype, "getVersion", lf.backstore.WebSqlRawBackStore.prototype.getVersion);
 lf.backstore.WebSqlRawBackStore.queueListTables = function(tx) {
   tx.queue('SELECT tbl_name FROM sqlite_master WHERE type="table"', [], function(results) {
-    for (var tableNames = Array(results.rows.length), i = 0;i < tableNames.length;++i) {
+    for (var tableNames = Array(results.rows.length), i = 0; i < tableNames.length; ++i) {
       tableNames[i] = results.rows.item(i).tbl_name;
     }
     return tableNames;
@@ -7250,7 +7259,7 @@ lf.cache.DefaultCache.prototype.getRange = function(tableName, fromId, toId) {
       }
     }, this);
   } else {
-    for (var i = min;i <= max;++i) {
+    for (var i = min; i <= max; ++i) {
       if (tableSet.has(i)) {
         var value$jscomp$0 = this.map_.get(i);
         goog.asserts.assert(goog.isDefAndNotNull(value$jscomp$0), "Inconsistent cache");
@@ -7273,7 +7282,7 @@ lf.cache.DefaultCache.prototype.clear = function() {
 };
 lf.structs.array = {};
 lf.structs.array.binarySearch_ = function(arr, value, opt_comparator) {
-  for (var left = 0, right = arr.length, comparator = opt_comparator || lf.structs.array.defaultComparator_;left < right;) {
+  for (var left = 0, right = arr.length, comparator = opt_comparator || lf.structs.array.defaultComparator_; left < right;) {
     var middle = left + right >> 1;
     0 > comparator(arr[middle], value) ? left = middle + 1 : right = middle;
   }
@@ -7295,7 +7304,7 @@ lf.structs.array.binaryRemove = function(arr, value, opt_comparator) {
   return !0;
 };
 lf.index.hashCode = function(value) {
-  for (var hash = 0, i = 0;i < value.length;++i) {
+  for (var hash = 0, i = 0; i < value.length; ++i) {
     hash = (hash << 5) - hash + value.charCodeAt(i), hash &= hash;
   }
   return hash;
@@ -7400,7 +7409,7 @@ lf.index.BTree.prototype.getRange = function(opt_keyRanges, opt_reverseOrder, op
   }
   var sortedKeyRanges = this.comparator_.sortKeyRanges(opt_keyRanges), results = Array(reverse ? this.stats_.totalRows : maxCount), params = {count:0, limit:results.length, reverse:reverse, skip:skip}, useFilter = 1 < this.comparator().keyDimensions();
   sortedKeyRanges.forEach(function(range) {
-    for (var keys = this.comparator_.rangeToKeys(range), key = this.comparator_.isLeftOpen(range) ? leftMostKey : keys[0], start = this.root_.getContainingLeaf(key), strikeCount = 0;goog.isDefAndNotNull(start) && params.count < params.limit;) {
+    for (var keys = this.comparator_.rangeToKeys(range), key = this.comparator_.isLeftOpen(range) ? leftMostKey : keys[0], start = this.root_.getContainingLeaf(key), strikeCount = 0; goog.isDefAndNotNull(start) && params.count < params.limit;) {
       useFilter ? start.getRangeWithFilter(range, params, results) : start.getRange(range, params, results), 0 != params.skip || start.isFirstKeyInRange(range) ? strikeCount = 0 : strikeCount++, start = 2 == strikeCount ? null : start.next();
     }
   }, this);
@@ -7541,7 +7550,7 @@ lf.index.BTreeNode_.calcNodeLen_ = function(remaining) {
   return remaining >= maxLen + minLen ? maxLen : remaining >= minLen && remaining <= maxLen ? remaining : minLen;
 };
 lf.index.BTreeNode_.createLeaves_ = function(tree, data) {
-  for (var remaining = data.length, dataIndex = 0, curNode = lf.index.BTreeNode_.create(tree), node = curNode;0 < remaining;) {
+  for (var remaining = data.length, dataIndex = 0, curNode = lf.index.BTreeNode_.create(tree), node = curNode; 0 < remaining;) {
     var nodeLen = lf.index.BTreeNode_.calcNodeLen_(remaining), target = data.slice(dataIndex, dataIndex + nodeLen);
     curNode.keys_ = target.map(function(e) {
       return e.key;
@@ -7563,7 +7572,7 @@ lf.index.BTreeNode_.createParent_ = function(nodes) {
   var node = nodes[0], root = lf.index.BTreeNode_.create(node.tree_);
   root.height_ = node.height_ + 1;
   root.children_ = nodes;
-  for (var i = 0;i < nodes.length;++i) {
+  for (var i = 0; i < nodes.length; ++i) {
     nodes[i].parent_ = root, 0 < i && root.keys_.push(nodes[i].keys_[0]);
   }
   return root;
@@ -7573,13 +7582,12 @@ lf.index.BTreeNode_.createInternals_ = function(node) {
   do {
     data.push(curNode), curNode = curNode.next_;
   } while (curNode);
-  var root;
   if (data.length <= lf.index.BTreeNode_.MAX_KEY_LEN_ + 1) {
-    root = lf.index.BTreeNode_.createParent_(data);
+    var root = lf.index.BTreeNode_.createParent_(data);
   } else {
     var remaining = data.length, dataIndex = 0;
     root = lf.index.BTreeNode_.create(node.tree_);
-    for (root.height_ = node.height_ + 2;0 < remaining;) {
+    for (root.height_ = node.height_ + 2; 0 < remaining;) {
       var nodeLen = lf.index.BTreeNode_.calcNodeLen_(remaining), target = data.slice(dataIndex, dataIndex + nodeLen), newNode = lf.index.BTreeNode_.createParent_(target);
       newNode.parent_ = root;
       root.children_.length && (root.keys_.push(target[0].keys_[0]), lf.index.BTreeNode_.associate_(root.children_[root.children_.length - 1], newNode));
@@ -7626,7 +7634,7 @@ lf.index.BTreeNode_.leftMostKey_ = function(node) {
 };
 lf.index.BTreeNode_.prototype.fix_ = function() {
   this.keys_ = [];
-  for (var i = 1;i < this.children_.length;++i) {
+  for (var i = 1; i < this.children_.length; ++i) {
     this.keys_.push(lf.index.BTreeNode_.leftMostKey_(this.children_[i]));
   }
 };
@@ -7659,9 +7667,11 @@ lf.index.BTreeNode_.prototype.delete_ = function(key, parentPos, opt_value) {
   return !0;
 };
 lf.index.BTreeNode_.prototype.steal_ = function() {
-  var from, fromIndex, fromChildIndex, toIndex;
+  var fromIndex;
   if (this.next_ && this.next_.keys_.length > lf.index.BTreeNode_.MIN_KEY_LEN_) {
-    from = this.next_, fromChildIndex = fromIndex = 0, toIndex = this.keys_.length + 1;
+    var from = this.next_;
+    var fromChildIndex = fromIndex = 0;
+    var toIndex = this.keys_.length + 1;
   } else {
     if (this.prev_ && this.prev_.keys_.length > lf.index.BTreeNode_.MIN_KEY_LEN_) {
       from = this.prev_, fromIndex = this.prev_.keys_.length - 1, fromChildIndex = this.isLeaf_() ? fromIndex : fromIndex + 1, toIndex = 0;
@@ -7671,16 +7681,25 @@ lf.index.BTreeNode_.prototype.steal_ = function() {
   }
   this.keys_.splice(toIndex, 0, from.keys_[fromIndex]);
   from.keys_.splice(fromIndex, 1);
-  var child = this.isLeaf_() ? this.values_ : this.children_, fromChild;
-  this.isLeaf_() ? fromChild = from.values_ : (fromChild = from.children_, fromChild[fromChildIndex].parent_ = this);
+  var child = this.isLeaf_() ? this.values_ : this.children_;
+  if (this.isLeaf_()) {
+    var fromChild = from.values_;
+  } else {
+    fromChild = from.children_, fromChild[fromChildIndex].parent_ = this;
+  }
   child.splice(toIndex, 0, fromChild[fromChildIndex]);
   fromChild.splice(fromChildIndex, 1);
   from.isLeaf_() || (from.fix_(), this.fix_());
   return !0;
 };
 lf.index.BTreeNode_.prototype.merge_ = function(parentPos) {
-  var mergeTo, keyOffset, childOffset;
-  this.next_ && this.next_.keys_.length < lf.index.BTreeNode_.MAX_KEY_LEN_ ? (mergeTo = this.next_, childOffset = keyOffset = 0) : this.prev_ && (mergeTo = this.prev_, keyOffset = mergeTo.keys_.length, childOffset = mergeTo.isLeaf_() ? mergeTo.values_.length : mergeTo.children_.length);
+  var keyOffset;
+  if (this.next_ && this.next_.keys_.length < lf.index.BTreeNode_.MAX_KEY_LEN_) {
+    var mergeTo = this.next_;
+    var childOffset = keyOffset = 0;
+  } else {
+    this.prev_ && (mergeTo = this.prev_, keyOffset = mergeTo.keys_.length, childOffset = mergeTo.isLeaf_() ? mergeTo.values_.length : mergeTo.children_.length);
+  }
   var args = [keyOffset, 0].concat(this.keys_);
   Array.prototype.splice.apply(mergeTo.keys_, args);
   var myChildren = null;
@@ -7753,7 +7772,7 @@ lf.index.BTreeNode_.prototype.splitInternal_ = function() {
   return root;
 };
 lf.index.BTreeNode_.prototype.searchKey_ = function(key) {
-  for (var left = 0, right = this.keys_.length, c = this.tree_.comparator();left < right;) {
+  for (var left = 0, right = this.keys_.length, c = this.tree_.comparator(); left < right;) {
     var middle = left + right >> 1;
     c.compare(this.keys_[middle], key) == lf.index.Favor.RHS ? left = middle + 1 : right = middle;
   }
@@ -7831,35 +7850,35 @@ lf.index.BTreeNode_.prototype.appendResultsAt_ = function(params, results, i) {
   if (this.tree_.isUniqueKey()) {
     !params.reverse && params.skip ? params.skip-- : results[params.count++] = this.values_[i];
   } else {
-    for (var j = 0;j < this.values_[i].length && params.count < results.length;++j) {
+    for (var j = 0; j < this.values_[i].length && params.count < results.length; ++j) {
       !params.reverse && params.skip ? params.skip-- : results[params.count++] = this.values_[i][j];
     }
   }
 };
 lf.index.BTreeNode_.prototype.appendResults_ = function(params, results, from, to) {
-  for (var i = from;i < to && (params.reverse || !(params.count >= params.limit));++i) {
+  for (var i = from; i < to && (params.reverse || !(params.count >= params.limit)); ++i) {
     this.appendResultsAt_(params, results, i);
   }
 };
 lf.index.BTreeNode_.prototype.getRangeWithFilter = function(keyRange, params, results) {
-  for (var c = this.tree_.comparator(), start = -1, i = 0;i < this.keys_.length;++i) {
+  for (var c = this.tree_.comparator(), start = -1, i = 0; i < this.keys_.length; ++i) {
     if (c.isInRange(this.keys_[i], keyRange)) {
       start = i;
       break;
     }
   }
   if (-1 != start) {
-    for (i = start;i < this.keys_.length && params.count < params.limit;++i) {
+    for (i = start; i < this.keys_.length && params.count < params.limit; ++i) {
       c.isInRange(this.keys_[i], keyRange) && this.appendResultsAt_(params, results, i);
     }
   }
 };
 lf.index.BTreeNode_.prototype.fill = function(params, results) {
   if (this.isLeaf_()) {
-    for (var i = 0;i < this.values_.length && 0 < params.count;++i) {
+    for (var i = 0; i < this.values_.length && 0 < params.count; ++i) {
       if (0 < params.offset) {
         if (params.offset -= this.tree_.isUniqueKey() ? 1 : this.values_[i].length, 0 > params.offset) {
-          for (var j = this.values_[i].length + params.offset;j < this.values_[i].length && 0 < params.count;++j) {
+          for (var j = this.values_[i].length + params.offset; j < this.values_[i].length && 0 < params.count; ++j) {
             results[params.startIndex++] = this.values_[i][j], params.count--;
           }
         }
@@ -7867,20 +7886,20 @@ lf.index.BTreeNode_.prototype.fill = function(params, results) {
         if (this.tree_.isUniqueKey()) {
           results[params.startIndex++] = this.values_[i], params.count--;
         } else {
-          for (j = 0;j < this.values_[i].length && 0 < params.count;++j) {
+          for (j = 0; j < this.values_[i].length && 0 < params.count; ++j) {
             results[params.startIndex++] = this.values_[i][j], params.count--;
           }
         }
       }
     }
   } else {
-    for (i = 0;i < this.children_.length && 0 < params.count;++i) {
+    for (i = 0; i < this.children_.length && 0 < params.count; ++i) {
       this.children_[i].fill(params, results);
     }
   }
 };
 lf.index.BTreeNode_.serialize = function(start) {
-  for (var rows = [], node = start;node;) {
+  for (var rows = [], node = start; node;) {
     var payload = [node.keys_, node.values_];
     rows.push(new lf.Row(node.id_, payload));
     node = node.next_;
@@ -7896,7 +7915,7 @@ lf.index.BTreeNode_.deserialize = function(rows, tree) {
       stats.add(key, tree.isUniqueKey() ? 1 : node.values_[index].length);
     });
     return node;
-  }), i = 0;i < leaves.length - 1;++i) {
+  }), i = 0; i < leaves.length - 1; ++i) {
     lf.index.BTreeNode_.associate_(leaves[i], leaves[i + 1]);
   }
   return 1 < leaves.length ? lf.index.BTreeNode_.createInternals_(leaves[0]) : leaves[0];
@@ -8009,13 +8028,13 @@ lf.index.MultiKeyComparator = function(orders) {
   });
 };
 lf.index.MultiKeyComparator.createOrders = function(numKeys, order) {
-  for (var orders = Array(numKeys), i = 0;i < numKeys;++i) {
+  for (var orders = Array(numKeys), i = 0; i < numKeys; ++i) {
     orders[i] = order;
   }
   return orders;
 };
 lf.index.MultiKeyComparator.prototype.forEach_ = function(lhs, rhs, fn) {
-  for (var favor = lf.index.Favor.TIE, i = 0;i < this.comparators.length && favor == lf.index.Favor.TIE;++i) {
+  for (var favor = lf.index.Favor.TIE, i = 0; i < this.comparators.length && favor == lf.index.Favor.TIE; ++i) {
     favor = fn(this.comparators[i], lhs[i], rhs[i]);
   }
   return favor;
@@ -8036,7 +8055,7 @@ lf.index.MultiKeyComparator.prototype.max = function(lhs, rhs) {
   });
 };
 lf.index.MultiKeyComparator.prototype.compareRange = function(key, range) {
-  for (var results = [!0, !0], i = 0;i < this.comparators.length && (results[0] || results[1]);++i) {
+  for (var results = [!0, !0], i = 0; i < this.comparators.length && (results[0] || results[1]); ++i) {
     var dimensionResults = this.comparators[i].compareRange(key[i], range[i]);
     results[0] = results[0] && dimensionResults[0];
     results[1] = results[1] && dimensionResults[1];
@@ -8044,7 +8063,7 @@ lf.index.MultiKeyComparator.prototype.compareRange = function(key, range) {
   return results;
 };
 lf.index.MultiKeyComparator.prototype.isInRange = function(key, range) {
-  for (var isInRange = !0, i = 0;i < this.comparators.length && isInRange;++i) {
+  for (var isInRange = !0, i = 0; i < this.comparators.length && isInRange; ++i) {
     isInRange = this.comparators[i].isInRange(key[i], range[i]);
   }
   return isInRange;
@@ -8055,7 +8074,7 @@ lf.index.MultiKeyComparator.prototype.isFirstKeyInRange = function(key, range) {
 lf.index.MultiKeyComparator.prototype.sortKeyRanges = function(keyRanges) {
   for (var outputKeyRanges = keyRanges.filter(function(range) {
     return range.every(goog.isDefAndNotNull);
-  }), keysPerDimensions = Array(this.comparators.length), i$jscomp$0 = 0;i$jscomp$0 < keysPerDimensions.length;i$jscomp$0++) {
+  }), keysPerDimensions = Array(this.comparators.length), i$jscomp$0 = 0; i$jscomp$0 < keysPerDimensions.length; i$jscomp$0++) {
     keysPerDimensions[i$jscomp$0] = outputKeyRanges.map(function(range) {
       return range[i$jscomp$0];
     });
@@ -8065,13 +8084,13 @@ lf.index.MultiKeyComparator.prototype.sortKeyRanges = function(keyRanges) {
       return this.comparators[i].orderKeyRange(lhs, rhs);
     }.bind(this));
   }, this);
-  for (var finalKeyRanges = Array(outputKeyRanges.length), i$jscomp$0 = 0;i$jscomp$0 < finalKeyRanges.length;i$jscomp$0++) {
+  for (var finalKeyRanges = Array(outputKeyRanges.length), i$jscomp$0 = 0; i$jscomp$0 < finalKeyRanges.length; i$jscomp$0++) {
     finalKeyRanges[i$jscomp$0] = keysPerDimensions.map(function(keys) {
       return keys[i$jscomp$0];
     });
   }
   return finalKeyRanges.sort(function(lhs, rhs) {
-    for (var favor = lf.index.Favor.TIE, i = 0;i < this.comparators.length && favor == lf.index.Favor.TIE;++i) {
+    for (var favor = lf.index.Favor.TIE, i = 0; i < this.comparators.length && favor == lf.index.Favor.TIE; ++i) {
       favor = this.comparators[i].orderKeyRange(lhs[i], rhs[i]);
     }
     return favor;
@@ -8169,7 +8188,7 @@ lf.index.NullableIndex.prototype.comparator = function() {
   return this.index_.comparator();
 };
 lf.index.NullableIndex.deserialize = function(deserializeFn, rows) {
-  for (var index = -1, i = 0;i < rows.length;++i) {
+  for (var index = -1, i = 0; i < rows.length; ++i) {
     if (rows[i].id() == lf.index.NullableIndex.NULL_ROW_ID_) {
       index = i;
       break;
@@ -8365,7 +8384,7 @@ lf.index.MemoryIndexStore.prototype.get = function(name) {
 lf.index.MemoryIndexStore.prototype.set = function(tableName, index) {
   var tableIndices = this.tableIndices_.get(tableName) || null;
   goog.isNull(tableIndices) && (tableIndices = [], this.tableIndices_.set(tableName, tableIndices));
-  for (var existsAt = null, i = 0;i < tableIndices.length;i++) {
+  for (var existsAt = null, i = 0; i < tableIndices.length; i++) {
     if (tableIndices[i].getName() == index.getName()) {
       existsAt = i;
       break;
@@ -8480,7 +8499,7 @@ lf.tree.toString = function(rootNode, opt_stringFn) {
     return node.toString() + "\n";
   }, out = "";
   rootNode.traverse(function(node) {
-    for (var i = 0;i < node.getDepth();i++) {
+    for (var i = 0; i < node.getDepth(); i++) {
       out += "-";
     }
     out += stringFn(node);
@@ -8613,10 +8632,9 @@ lf.pred.JoinPredicate.prototype.reverseSelf_ = function() {
   var temp = this.leftColumn;
   this.leftColumn = this.rightColumn;
   this.rightColumn = temp;
-  var evaluatorType;
   switch(this.evaluatorType) {
     case lf.eval.Type.GT:
-      evaluatorType = lf.eval.Type.LT;
+      var evaluatorType = lf.eval.Type.LT;
       break;
     case lf.eval.Type.LT:
       evaluatorType = lf.eval.Type.GT;
@@ -8650,8 +8668,13 @@ lf.pred.JoinPredicate.prototype.appliesToRight_ = function(relation) {
   return -1 != relation.getTables().indexOf(this.rightColumn.getTable().getEffectiveName());
 };
 lf.pred.JoinPredicate.prototype.detectLeftRight_ = function(relation1, relation2) {
-  var left, right;
-  this.appliesToLeft_(relation1) ? (this.assertRelationsApply_(relation1, relation2), left = relation1, right = relation2) : (this.assertRelationsApply_(relation2, relation1), left = relation2, right = relation1);
+  if (this.appliesToLeft_(relation1)) {
+    this.assertRelationsApply_(relation1, relation2);
+    var left = relation1;
+    var right = relation2;
+  } else {
+    this.assertRelationsApply_(relation2, relation1), left = relation2, right = relation1;
+  }
   return left.entries.length > right.entries.length ? (this.reverseSelf_(), this.assertRelationsApply_(right, left), [right, left]) : [left, right];
 };
 lf.pred.JoinPredicate.prototype.assertRelationsApply_ = function(leftRelation, rightRelation) {
@@ -8675,11 +8698,11 @@ lf.pred.JoinPredicate.prototype.evalRelationsNestedLoopJoin = function(leftRelat
   isOuterJoin || (leftRightRelations = this.detectLeftRight_(leftRelation, rightRelation));
   leftRelation = leftRightRelations[0];
   rightRelation = leftRightRelations[1];
-  for (var combinedEntries = [], leftRelationTables = leftRelation.getTables(), rightRelationTables = rightRelation.getTables(), leftEntriesLength = leftRelation.entries.length, rightEntriesLength = rightRelation.entries.length, blockNumBits = lf.pred.JoinPredicate.BLOCK_SIZE_EXPONENT_, blockCount = rightEntriesLength + (1 << blockNumBits) - 1 >> blockNumBits, currentBlock = 0;currentBlock < blockCount;) {
-    for (var i = 0;i < leftEntriesLength;i++) {
+  for (var combinedEntries = [], leftRelationTables = leftRelation.getTables(), rightRelationTables = rightRelation.getTables(), leftEntriesLength = leftRelation.entries.length, rightEntriesLength = rightRelation.entries.length, blockNumBits = lf.pred.JoinPredicate.BLOCK_SIZE_EXPONENT_, blockCount = rightEntriesLength + (1 << blockNumBits) - 1 >> blockNumBits, currentBlock = 0; currentBlock < blockCount;) {
+    for (var i = 0; i < leftEntriesLength; i++) {
       var matchFound = !1, leftValue = leftRelation.entries[i].getField(this.leftColumn);
       if (!goog.isNull(leftValue)) {
-        for (var rightLimit = Math.min(currentBlock + 1 << blockNumBits, rightEntriesLength), j = currentBlock << blockNumBits;j < rightLimit;j++) {
+        for (var rightLimit = Math.min(currentBlock + 1 << blockNumBits, rightEntriesLength), j = currentBlock << blockNumBits; j < rightLimit; j++) {
           var predicateResult = this.evaluatorFn_(leftValue, rightRelation.entries[j].getField(this.rightColumn));
           if (predicateResult) {
             var matchFound = !0, combinedEntry = lf.proc.RelationEntry.combineEntries(leftRelation.entries[i], leftRelationTables, rightRelation.entries[j], rightRelationTables);
@@ -8852,7 +8875,7 @@ lf.fn.AggregatedColumn.prototype.as = function(name) {
 };
 goog.exportProperty(lf.fn.AggregatedColumn.prototype, "as", lf.fn.AggregatedColumn.prototype.as);
 lf.fn.AggregatedColumn.prototype.getColumnChain = function() {
-  for (var columnChain = [this], currentColumn = this;currentColumn instanceof lf.fn.AggregatedColumn;) {
+  for (var columnChain = [this], currentColumn = this; currentColumn instanceof lf.fn.AggregatedColumn;) {
     columnChain.push(currentColumn.child), currentColumn = currentColumn.child;
   }
   return columnChain;
@@ -8964,7 +8987,7 @@ lf.proc.PhysicalQueryPlanNode.prototype.execAllChildren_ = function(opt_journal,
   return goog.Promise.all(promises).then(function(results) {
     var relations = [];
     results.forEach(function(result) {
-      for (var i = 0;i < result.length;++i) {
+      for (var i = 0; i < result.length; ++i) {
         relations.push(result[i]);
       }
     });
@@ -8996,7 +9019,7 @@ lf.proc.AggregationStep.Calculator_ = function(relation, columns) {
 };
 lf.proc.AggregationStep.Calculator_.prototype.calculate = function() {
   this.columns_.forEach(function(column) {
-    for (var reverseColumnChain = column.getColumnChain().reverse(), i = 1;i < reverseColumnChain.length;i++) {
+    for (var reverseColumnChain = column.getColumnChain().reverse(), i = 1; i < reverseColumnChain.length; i++) {
       var currentColumn = reverseColumnChain[i], leafColumn = currentColumn.getColumnChain().slice(-1)[0], inputRelation = this.getInputRelationFor_(currentColumn);
       if (inputRelation.hasAggregationResult(currentColumn)) {
         break;
@@ -9273,8 +9296,8 @@ lf.proc.CrossProductPass.prototype.rewrite = function(rootNode, queryContext) {
 };
 lf.proc.CrossProductPass.prototype.traverse_ = function(rootNode) {
   if (rootNode instanceof lf.proc.CrossProductNode) {
-    for (;2 < rootNode.getChildCount();) {
-      for (var crossProduct = new lf.proc.CrossProductNode, i = 0;2 > i;i++) {
+    for (; 2 < rootNode.getChildCount();) {
+      for (var crossProduct = new lf.proc.CrossProductNode, i = 0; 2 > i; i++) {
         var child$jscomp$0 = rootNode.removeChildAt(0);
         crossProduct.addChild(child$jscomp$0);
       }
@@ -9296,8 +9319,8 @@ lf.proc.CrossProductStep.prototype.execInternal = function(relations) {
   return lf.proc.CrossProductStep.crossProduct_(relations[0], relations[1]);
 };
 lf.proc.CrossProductStep.crossProduct_ = function(leftRelation, rightRelation) {
-  for (var combinedEntries = [], leftRelationTableNames = leftRelation.getTables(), rightRelationTableNames = rightRelation.getTables(), i = 0;i < leftRelation.entries.length;i++) {
-    for (var j = 0;j < rightRelation.entries.length;j++) {
+  for (var combinedEntries = [], leftRelationTableNames = leftRelation.getTables(), rightRelationTableNames = rightRelation.getTables(), i = 0; i < leftRelation.entries.length; i++) {
+    for (var j = 0; j < rightRelation.entries.length; j++) {
       var combinedEntry = lf.proc.RelationEntry.combineEntries(leftRelation.entries[i], leftRelationTableNames, rightRelation.entries[j], rightRelationTableNames);
       combinedEntries.push(combinedEntry);
     }
@@ -9572,7 +9595,7 @@ lf.query.getTableNameToSql_ = function(table) {
 lf.query.getFromListForOuterJoin_ = function(query, stripValueInfo) {
   for (var retrievedNodes = lf.tree.find(query.where, function(node) {
     return node instanceof lf.pred.JoinPredicate;
-  }), predicateString = retrievedNodes.map(lf.query.joinPredicateToSql_), fromList = lf.query.getTableNameToSql_(query.from[0]), i = 1;i < query.from.length;i++) {
+  }), predicateString = retrievedNodes.map(lf.query.joinPredicateToSql_), fromList = lf.query.getTableNameToSql_(query.from[0]), i = 1; i < query.from.length; i++) {
     var fromName = lf.query.getTableNameToSql_(query.from[i]), fromList = query.outerJoinPredicates.has(retrievedNodes[predicateString.length - i].getId()) ? fromList + (" LEFT OUTER JOIN " + fromName) : fromList + (" INNER JOIN " + fromName), fromList = fromList + (" ON (" + predicateString[predicateString.length - i] + ")");
   }
   var node$jscomp$0 = query.where, leftChild = 0 < node$jscomp$0.getChildCount() ? node$jscomp$0.getChildAt(0) : node$jscomp$0;
@@ -10151,7 +10174,7 @@ lf.proc.SelectLogicalPlanGenerator.prototype.generateNodes_ = function() {
   this.generateProjectNode_();
 };
 lf.proc.SelectLogicalPlanGenerator.prototype.connectNodes_ = function() {
-  for (var parentOrder = [this.limitNode_, this.skipNode_, this.projectNode_, this.orderByNode_, this.aggregationNode_, this.groupByNode_, this.selectNode_, this.crossProductNode_], lastExistingParentIndex = -1, rootNode = null, i = 0;i < parentOrder.length;i++) {
+  for (var parentOrder = [this.limitNode_, this.skipNode_, this.projectNode_, this.orderByNode_, this.aggregationNode_, this.groupByNode_, this.selectNode_, this.crossProductNode_], lastExistingParentIndex = -1, rootNode = null, i = 0; i < parentOrder.length; i++) {
     var node = parentOrder[i];
     goog.isNull(node) || (goog.isNull(rootNode) ? rootNode = node : parentOrder[lastExistingParentIndex].addChild(node), lastExistingParentIndex = i);
   }
@@ -10200,9 +10223,8 @@ lf.proc.LogicalPlanFactory = function() {
   this.deleteOptimizationPasses_ = [new lf.proc.AndPredicatePass];
 };
 lf.proc.LogicalPlanFactory.prototype.create = function(query) {
-  var generator;
   if (query instanceof lf.query.InsertContext) {
-    generator = new lf.proc.InsertLogicalPlanGenerator(query);
+    var generator = new lf.proc.InsertLogicalPlanGenerator(query);
   } else {
     if (query instanceof lf.query.DeleteContext) {
       generator = new lf.proc.DeleteLogicalPlanGenerator(query, this.deleteOptimizationPasses_);
@@ -10431,7 +10453,7 @@ lf.proc.BoundKeyRangeCalculator.prototype.calculateKeyRangeMap_ = function(query
   return keyRangeMap;
 };
 lf.proc.BoundKeyRangeCalculator.prototype.fillMissingKeyRanges_ = function(keyRangeMap) {
-  for (var i = this.indexSchema_.columns.length - 1;0 <= i;i--) {
+  for (var i = this.indexSchema_.columns.length - 1; 0 <= i; i--) {
     var column = this.indexSchema_.columns[i], keyRangeSet = keyRangeMap.get(column.schema.getName()) || null;
     if (!goog.isNull(keyRangeSet)) {
       break;
@@ -10538,7 +10560,7 @@ lf.proc.IndexRangeCandidate.prototype.isUsable = function() {
   if (goog.isNull(this.predicateMap_)) {
     return !1;
   }
-  for (var unboundColumnFound = !1, isUsable = !0, i = 0;i < this.indexSchema.columns.length;i++) {
+  for (var unboundColumnFound = !1, isUsable = !0, i = 0; i < this.indexSchema.columns.length; i++) {
     var column = this.indexSchema.columns[i], isBound = this.predicateMap_.has(column.schema.getName());
     if (unboundColumnFound && isBound) {
       isUsable = !1;
@@ -10573,8 +10595,8 @@ lf.proc.IndexRangeScanStep.prototype.toContextString = function(context) {
   return string;
 };
 lf.proc.IndexRangeScanStep.prototype.execInternal = function(relations, opt_journal, opt_context) {
-  var context = opt_context, keyRanges = this.keyRangeCalculator.getKeyRangeCombinations(context), index = this.indexStore_.get(this.index.getNormalizedName()), rowIds;
-  rowIds = 1 == keyRanges.length && keyRanges[0] instanceof lf.index.SingleKeyRange && keyRanges[0].isOnly() ? lf.index.slice(index.get(keyRanges[0].from), !1, this.useLimit ? context.limit : void 0, this.useSkip ? context.skip : void 0) : index.getRange(keyRanges, this.reverseOrder, this.useLimit ? context.limit : void 0, this.useSkip ? context.skip : void 0);
+  var context = opt_context, keyRanges = this.keyRangeCalculator.getKeyRangeCombinations(context), index = this.indexStore_.get(this.index.getNormalizedName());
+  var rowIds = 1 == keyRanges.length && keyRanges[0] instanceof lf.index.SingleKeyRange && keyRanges[0].isOnly() ? lf.index.slice(index.get(keyRanges[0].from), !1, this.useLimit ? context.limit : void 0, this.useSkip ? context.skip : void 0) : index.getRange(keyRanges, this.reverseOrder, this.useLimit ? context.limit : void 0, this.useSkip ? context.skip : void 0);
   var rows = rowIds.map(function(rowId) {
     return new lf.Row(rowId, {});
   }, this);
@@ -10652,7 +10674,7 @@ lf.proc.IndexRangeScanPass.prototype.rewrite = function(rootNode, queryContext) 
   return this.rootNode;
 };
 lf.proc.IndexRangeScanPass.prototype.findSelectSteps_ = function(startNode) {
-  for (var selectSteps = [], node = startNode.getParent();node;) {
+  for (var selectSteps = [], node = startNode.getParent(); node;) {
     if (node instanceof lf.proc.SelectStep) {
       selectSteps.push(node);
     } else {
@@ -10746,7 +10768,7 @@ lf.proc.OrderByStep.prototype.execInternal = function(relations) {
   return relations;
 };
 lf.proc.OrderByStep.prototype.findDistinctColumn_ = function(relation) {
-  for (var distinctColumn = null, i = 0;i < this.orderBy.length;i++) {
+  for (var distinctColumn = null, i = 0; i < this.orderBy.length; i++) {
     var tempDistinctColumn = lf.fn.distinct(this.orderBy[i].column);
     if (relation.hasAggregationResult(tempDistinctColumn)) {
       distinctColumn = tempDistinctColumn;
@@ -10756,13 +10778,13 @@ lf.proc.OrderByStep.prototype.findDistinctColumn_ = function(relation) {
   return distinctColumn;
 };
 lf.proc.OrderByStep.prototype.comparator_ = function(getLeftPayload, getRightPayload) {
-  var order, leftPayload, rightPayload, comparisonIndex = -1;
+  var comparisonIndex = -1;
   do {
     comparisonIndex++;
     var column = this.orderBy[comparisonIndex].column;
-    order = this.orderBy[comparisonIndex].order;
-    leftPayload = getLeftPayload(column);
-    rightPayload = getRightPayload(column);
+    var order = this.orderBy[comparisonIndex].order;
+    var leftPayload = getLeftPayload(column);
+    var rightPayload = getRightPayload(column);
   } while (leftPayload == rightPayload && comparisonIndex + 1 < this.orderBy.length);
   var result = leftPayload < rightPayload ? -1 : leftPayload > rightPayload ? 1 : 0;
   return result = order == lf.Order.ASC ? result : -result;
@@ -10914,9 +10936,10 @@ lf.proc.MultiColumnOrPass.prototype.rewrite = function(rootNode, queryContext) {
   if (0 == orSelectSteps.length) {
     return this.rootNode;
   }
-  var indexRangeCandidates, orSelectStep, i = 0;
+  var i = 0;
   do {
-    orSelectStep = orSelectSteps[i++], indexRangeCandidates = this.findIndexRangeCandidates_(orSelectStep, queryContext);
+    var orSelectStep = orSelectSteps[i++];
+    var indexRangeCandidates = this.findIndexRangeCandidates_(orSelectStep, queryContext);
   } while (goog.isNull(indexRangeCandidates) && i < orSelectSteps.length);
   if (goog.isNull(indexRangeCandidates)) {
     return this.rootNode;
@@ -11023,7 +11046,7 @@ lf.proc.OrderByIndexPass.findOrderByStep_ = function(rootNode, queryContext) {
   })[0] : null;
 };
 lf.proc.OrderByIndexPass.findIndexCandidateForOrderBy_ = function(tableSchema, orderBy) {
-  for (var indexCandidate = null, indexSchemas = tableSchema.getIndices(), i = 0;i < indexSchemas.length && goog.isNull(indexCandidate);i++) {
+  for (var indexCandidate = null, indexSchemas = tableSchema.getIndices(), i = 0; i < indexSchemas.length && goog.isNull(indexCandidate); i++) {
     indexCandidate = lf.proc.OrderByIndexPass.getIndexCandidateForIndexSchema_(indexSchemas[i], orderBy);
   }
   return indexCandidate;
@@ -11231,7 +11254,7 @@ lf.proc.Runner.prototype.scheduleTask = function(task) {
   return task.resolver_.promise;
 };
 lf.proc.Runner.prototype.consumePending_ = function() {
-  for (var queue = this.queue_.getValues(), i = 0;i < queue.length;i++) {
+  for (var queue = this.queue_.getValues(), i = 0; i < queue.length; i++) {
     var task = queue[i], acquiredLock;
     if (acquiredLock = task.getType() == lf.TransactionType.READ_ONLY ? this.requestTwoPhaseLock_(task, lf.proc.LockType.RESERVED_READ_ONLY, lf.proc.LockType.SHARED) : this.requestTwoPhaseLock_(task, lf.proc.LockType.RESERVED_READ_WRITE, lf.proc.LockType.EXCLUSIVE)) {
       this.queue_.remove(task), this.execTask_(task);
@@ -11383,20 +11406,14 @@ lf.DiffCalculator.prototype.comparator_ = function(left, right) {
   }, this);
 };
 lf.DiffCalculator.prototype.applyDiff = function(oldResults, newResults) {
-  for (var oldEntries = goog.isNull(oldResults) ? [] : oldResults.entries, longestCommonSubsequenceLeft = goog.math.longestCommonSubsequence(oldEntries, newResults.entries, this.comparator_.bind(this), function(indexLeft) {
+  for (var removed, changeRecord, entry, oldEntries = goog.isNull(oldResults) ? [] : oldResults.entries, longestCommonSubsequenceLeft = goog.math.longestCommonSubsequence(oldEntries, newResults.entries, this.comparator_.bind(this), function(indexLeft) {
     return oldEntries[indexLeft];
-  }), changeRecords = [], commonIndex = 0, i = 0;i < oldEntries.length;i++) {
-    var entry = oldEntries[i];
-    if (longestCommonSubsequenceLeft[commonIndex] == entry) {
-      commonIndex++;
-    } else {
-      var removed = this.observableResults_.splice(commonIndex, 1), changeRecord = lf.DiffCalculator.createChangeRecord_(i, removed, 0, this.observableResults_);
-      changeRecords.push(changeRecord);
-    }
+  }), changeRecords = [], commonIndex = 0, i = 0; i < oldEntries.length; i++) {
+    entry = oldEntries[i], longestCommonSubsequenceLeft[commonIndex] == entry ? commonIndex++ : (removed = this.observableResults_.splice(commonIndex, 1), changeRecord = lf.DiffCalculator.createChangeRecord_(i, removed, 0, this.observableResults_), changeRecords.push(changeRecord));
   }
   for (var longestCommonSubsequenceRight = goog.math.longestCommonSubsequence(oldEntries, newResults.entries, this.comparator_.bind(this), function(indexLeft, indexRight) {
     return newResults.entries[indexRight];
-  }), i = commonIndex = 0;i < newResults.entries.length;i++) {
+  }), i = commonIndex = 0; i < newResults.entries.length; i++) {
     entry = newResults.entries[i], longestCommonSubsequenceRight[commonIndex] == entry ? commonIndex++ : (this.observableResults_.splice(i, 0, entry.row.payload_), changeRecord = lf.DiffCalculator.createChangeRecord_(i, [], 1, this.observableResults_), changeRecords.push(changeRecord));
   }
   return changeRecords;
@@ -11474,9 +11491,8 @@ lf.base.init = function(global, opt_options) {
   if (lf.Flags.MEMORY_ONLY) {
     backStore = new lf.backstore.Memory(schema);
   } else {
-    var dataStoreType;
     if (goog.isDefAndNotNull(options.storeType)) {
-      dataStoreType = options.storeType;
+      var dataStoreType = options.storeType;
     } else {
       var capability = lf.Capability.get();
       dataStoreType = capability.indexedDb ? lf.schema.DataStoreType.INDEXED_DB : capability.webSql ? lf.schema.DataStoreType.WEB_SQL : lf.schema.DataStoreType.MEMORY;
@@ -11605,7 +11621,7 @@ lf.proc.ImportTask.prototype.getPriority = function() {
   return lf.proc.TaskPriority.IMPORT_TASK;
 };
 lf.proc.ImportTask.prototype.isEmptyDB_ = function() {
-  for (var tables = this.schema_.tables(), i = 0;i < tables.length;++i) {
+  for (var tables = this.schema_.tables(), i = 0; i < tables.length; ++i) {
     var index = this.indexStore_.get(tables[i].getRowIdIndexName());
     if (0 < index.stats().totalRows) {
       return !1;
@@ -12339,8 +12355,8 @@ lf.schema.TableBuilder.prototype.generateRowClass_ = function(columns$jscomp$0, 
     };
   }.bind(this), functionMap = {};
   indices.forEach(function(index$jscomp$0) {
-    var key = index$jscomp$0.getNormalizedName(), JSCompiler_inline_result, index = index$jscomp$0;
-    JSCompiler_inline_result = 1 == index.columns.length ? getSingleKeyFn(index.columns[0].schema) : getMultiKeyFn(index.columns);
+    var key = index$jscomp$0.getNormalizedName(), index = index$jscomp$0;
+    var JSCompiler_inline_result = 1 == index.columns.length ? getSingleKeyFn(index.columns[0].schema) : getMultiKeyFn(index.columns);
     functionMap[key] = JSCompiler_inline_result;
   });
   rowClass.prototype.keyOfIndex = function(indexName) {
@@ -12432,8 +12448,12 @@ lf.schema.Builder.prototype.getSchema = function() {
 };
 goog.exportProperty(lf.schema.Builder.prototype, "getSchema", lf.schema.Builder.prototype.getSchema);
 lf.schema.Builder.prototype.getGlobal = function() {
-  var namespacedGlobalId = new lf.service.ServiceId("ns_" + this.schema_.name()), global = lf.Global.get(), namespacedGlobal;
-  global.isRegistered(namespacedGlobalId) ? namespacedGlobal = global.getService(namespacedGlobalId) : (namespacedGlobal = new lf.Global, global.registerService(namespacedGlobalId, namespacedGlobal));
+  var namespacedGlobalId = new lf.service.ServiceId("ns_" + this.schema_.name()), global = lf.Global.get();
+  if (global.isRegistered(namespacedGlobalId)) {
+    var namespacedGlobal = global.getService(namespacedGlobalId);
+  } else {
+    namespacedGlobal = new lf.Global, global.registerService(namespacedGlobalId, namespacedGlobal);
+  }
   return namespacedGlobal;
 };
 goog.exportProperty(lf.schema.Builder.prototype, "getGlobal", lf.schema.Builder.prototype.getGlobal);
