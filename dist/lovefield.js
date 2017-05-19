@@ -1681,6 +1681,8 @@ goog.debug.entryPointRegistry.unmonitorAllIfPossible = function(monitor) {
   }
   monitors.length--;
 };
+goog.dom.HtmlElement = function() {
+};
 goog.dom.TagName = function(tagName) {
   this.tagName_ = tagName;
 };
@@ -11406,10 +11408,16 @@ lf.DiffCalculator.prototype.comparator_ = function(left, right) {
   }, this);
 };
 lf.DiffCalculator.prototype.applyDiff = function(oldResults, newResults) {
-  for (var removed, changeRecord, entry, oldEntries = goog.isNull(oldResults) ? [] : oldResults.entries, longestCommonSubsequenceLeft = goog.math.longestCommonSubsequence(oldEntries, newResults.entries, this.comparator_.bind(this), function(indexLeft) {
+  for (var changeRecord, entry, oldEntries = goog.isNull(oldResults) ? [] : oldResults.entries, longestCommonSubsequenceLeft = goog.math.longestCommonSubsequence(oldEntries, newResults.entries, this.comparator_.bind(this), function(indexLeft) {
     return oldEntries[indexLeft];
   }), changeRecords = [], commonIndex = 0, i = 0; i < oldEntries.length; i++) {
-    entry = oldEntries[i], longestCommonSubsequenceLeft[commonIndex] == entry ? commonIndex++ : (removed = this.observableResults_.splice(commonIndex, 1), changeRecord = lf.DiffCalculator.createChangeRecord_(i, removed, 0, this.observableResults_), changeRecords.push(changeRecord));
+    if (entry = oldEntries[i], longestCommonSubsequenceLeft[commonIndex] == entry) {
+      commonIndex++;
+    } else {
+      var removed = this.observableResults_.splice(commonIndex, 1);
+      changeRecord = lf.DiffCalculator.createChangeRecord_(i, removed, 0, this.observableResults_);
+      changeRecords.push(changeRecord);
+    }
   }
   for (var longestCommonSubsequenceRight = goog.math.longestCommonSubsequence(oldEntries, newResults.entries, this.comparator_.bind(this), function(indexLeft, indexRight) {
     return newResults.entries[indexRight];
