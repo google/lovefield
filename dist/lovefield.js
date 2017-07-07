@@ -368,7 +368,9 @@ goog.transpile_ = function(code$jscomp$0, path$jscomp$0) {
     }
   }
   if (!transpile) {
-    var suffix = " requires transpilation but no transpiler was found.", suffix = suffix + ' Please add "//javascript/closure:transpiler" as a data dependency to ensure it is included.', transpile = jscomp.transpile = function(code, path) {
+    var suffix = " requires transpilation but no transpiler was found.";
+    suffix += ' Please add "//javascript/closure:transpiler" as a data dependency to ensure it is included.';
+    transpile = jscomp.transpile = function(code, path) {
       goog.logToConsole_(path + suffix);
       return code;
     };
@@ -592,7 +594,8 @@ goog.base = function(me, opt_methodName, var_args) {
     }
     return caller.superClass_.constructor.apply(me, ctorArgs);
   }
-  for (var args = Array(arguments.length - 2), i = 2; i < arguments.length; i++) {
+  var args = Array(arguments.length - 2);
+  for (i = 2; i < arguments.length; i++) {
     args[i - 2] = arguments[i];
   }
   for (var foundCaller = !1, ctor = me.constructor; ctor; ctor = ctor.superClass_ && ctor.superClass_.constructor) {
@@ -928,7 +931,8 @@ goog.string.truncateMiddle = function(str, chars, opt_protectEscapedCharacters, 
     str = str.substring(0, startPoint) + "..." + str.substring(endPoint);
   } else {
     if (str.length > chars) {
-      var half = Math.floor(chars / 2), endPos = str.length - half, half = half + chars % 2;
+      var half = Math.floor(chars / 2), endPos = str.length - half;
+      half += chars % 2;
       str = str.substring(0, half) + "..." + str.substring(endPos);
     }
   }
@@ -1029,7 +1033,10 @@ goog.string.compareVersions = function(version1, version2) {
       if (0 == v1Comp[0].length && 0 == v2Comp[0].length) {
         break;
       }
-      var v1CompNum = 0 == v1Comp[1].length ? 0 : parseInt(v1Comp[1], 10), v2CompNum = 0 == v2Comp[1].length ? 0 : parseInt(v2Comp[1], 10), order = goog.string.compareElements_(v1CompNum, v2CompNum) || goog.string.compareElements_(0 == v1Comp[2].length, 0 == v2Comp[2].length) || goog.string.compareElements_(v1Comp[2], v2Comp[2]), v1Sub = v1Comp[3], v2Sub = v2Comp[3];
+      var v1CompNum = 0 == v1Comp[1].length ? 0 : parseInt(v1Comp[1], 10), v2CompNum = 0 == v2Comp[1].length ? 0 : parseInt(v2Comp[1], 10);
+      order = goog.string.compareElements_(v1CompNum, v2CompNum) || goog.string.compareElements_(0 == v1Comp[2].length, 0 == v2Comp[2].length) || goog.string.compareElements_(v1Comp[2], v2Comp[2]);
+      v1Sub = v1Comp[3];
+      v2Sub = v2Comp[3];
     } while (0 == order);
   }
   return order;
@@ -1066,7 +1073,9 @@ goog.string.toSelectorCase = function(str) {
   return String(str).replace(/([A-Z])/g, "-$1").toLowerCase();
 };
 goog.string.toTitleCase = function(str, opt_delimiters) {
-  var delimiters = goog.isString(opt_delimiters) ? goog.string.regExpEscape(opt_delimiters) : "\\s", delimiters = delimiters ? "|[" + delimiters + "]+" : "", regexp = new RegExp("(^" + delimiters + ")([a-z])", "g");
+  var delimiters = goog.isString(opt_delimiters) ? goog.string.regExpEscape(opt_delimiters) : "\\s";
+  delimiters = delimiters ? "|[" + delimiters + "]+" : "";
+  var regexp = new RegExp("(^" + delimiters + ")([a-z])", "g");
   return str.replace(regexp, function(all, p1, p2) {
     return p1 + p2.toUpperCase();
   });
@@ -1967,7 +1976,7 @@ goog.functions.rateLimit = function(f, interval, opt_scope) {
   var timeout = 0, handleTimeout = function() {
     timeout = 0;
   };
-  return function(var_args) {
+  return function() {
     timeout || (timeout = goog.global.setTimeout(handleTimeout, interval), f.apply(opt_scope, arguments));
   };
 };
@@ -2845,7 +2854,8 @@ goog.Promise.invokeCallback_ = function(callbackEntry, state, result) {
 };
 goog.Promise.prototype.addStackTrace_ = function(err) {
   if (goog.Promise.LONG_STACK_TRACES && goog.isString(err.stack)) {
-    var trace = err.stack.split("\n", 4)[3], message = err.message, message = message + Array(11 - message.length).join(" ");
+    var trace = err.stack.split("\n", 4)[3], message = err.message;
+    message += Array(11 - message.length).join(" ");
     this.stack_.push(message + trace);
   }
 };
@@ -2960,7 +2970,9 @@ goog.math.longestCommonSubsequence = function(array1, array2, opt_compareFn, opt
       compare(array1[i - 1], array2[j - 1]) ? arr[i][j] = arr[i - 1][j - 1] + 1 : arr[i][j] = Math.max(arr[i - 1][j], arr[i][j - 1]);
     }
   }
-  for (var result = [], i = length1, j = length2; 0 < i && 0 < j;) {
+  var result = [];
+  i = length1;
+  for (j = length2; 0 < i && 0 < j;) {
     compare(array1[i - 1], array2[j - 1]) ? (result.unshift(collect(i - 1, j - 1)), i--, j--) : arr[i - 1][j] > arr[i][j - 1] ? i-- : j--;
   }
   return result;
@@ -3963,7 +3975,8 @@ lf.Row.binToHex = function(buffer) {
     return null;
   }
   for (var uint8Array = new Uint8Array(buffer), s = "", i = 0; i < uint8Array.length; ++i) {
-    var chr = uint8Array[i].toString(16), s = s + (2 > chr.length ? "0" + chr : chr);
+    var chr = uint8Array[i].toString(16);
+    s += 2 > chr.length ? "0" + chr : chr;
   }
   return s;
 };
@@ -5707,7 +5720,8 @@ lf.pred.ValuePredicate.prototype.toKeyRange = function() {
       });
       return new lf.index.SingleKeyRangeSet(this.isComplement_ ? lf.index.SingleKeyRange.complement(keyRanges) : keyRanges);
     }
-    var value$jscomp$0 = this.getValueAsKey_(this.value), keyRange = this.evaluatorType == lf.eval.Type.EQ ? lf.index.SingleKeyRange.only(value$jscomp$0) : this.evaluatorType == lf.eval.Type.GTE ? lf.index.SingleKeyRange.lowerBound(value$jscomp$0) : this.evaluatorType == lf.eval.Type.GT ? lf.index.SingleKeyRange.lowerBound(value$jscomp$0, !0) : this.evaluatorType == lf.eval.Type.LTE ? lf.index.SingleKeyRange.upperBound(value$jscomp$0) : lf.index.SingleKeyRange.upperBound(value$jscomp$0, !0);
+    var value$jscomp$0 = this.getValueAsKey_(this.value);
+    keyRange = this.evaluatorType == lf.eval.Type.EQ ? lf.index.SingleKeyRange.only(value$jscomp$0) : this.evaluatorType == lf.eval.Type.GTE ? lf.index.SingleKeyRange.lowerBound(value$jscomp$0) : this.evaluatorType == lf.eval.Type.GT ? lf.index.SingleKeyRange.lowerBound(value$jscomp$0, !0) : this.evaluatorType == lf.eval.Type.LTE ? lf.index.SingleKeyRange.upperBound(value$jscomp$0) : lf.index.SingleKeyRange.upperBound(value$jscomp$0, !0);
   }
   return new lf.index.SingleKeyRangeSet(this.isComplement_ ? keyRange.complement() : [keyRange]);
 };
@@ -7526,14 +7540,19 @@ lf.index.BTreeNode_.dumpLevel_ = function(node$jscomp$0) {
     return n.id_;
   }), children = childrenIds.join("|"), values = node$jscomp$0.values_.join("/"), getNodeId = function(node) {
     return goog.isDefAndNotNull(node) ? node.id_.toString() : "_";
-  }, contents = getNodeId(node$jscomp$0.prev_) + "{", contents = node$jscomp$0.isLeaf_() ? contents + values : contents + children, contents = contents + "}" + getNodeId(node$jscomp$0.parent_);
+  }, contents = getNodeId(node$jscomp$0.prev_) + "{";
+  contents = node$jscomp$0.isLeaf_() ? contents + values : contents + children;
+  contents = contents + "}" + getNodeId(node$jscomp$0.parent_);
   if (node$jscomp$0.next_) {
-    var next = lf.index.BTreeNode_.dumpLevel_(node$jscomp$0.next_), key = key + "  " + next[0], contents = contents + "  " + next[1];
+    var next = lf.index.BTreeNode_.dumpLevel_(node$jscomp$0.next_);
+    key = key + "  " + next[0];
+    contents = contents + "  " + next[1];
   }
   return [key, contents];
 };
 lf.index.BTreeNode_.prototype.toString = function() {
-  var result = "", level = lf.index.BTreeNode_.dumpLevel_(this), result = result + (level[0] + "\n" + level[1] + "\n");
+  var result = "", level = lf.index.BTreeNode_.dumpLevel_(this);
+  result += level[0] + "\n" + level[1] + "\n";
   this.children_.length && (result += this.children_[0].toString());
   return result;
 };
@@ -7601,7 +7620,8 @@ lf.index.BTreeNode_.createInternals_ = function(node) {
   return root;
 };
 lf.index.BTreeNode_.fromData = function(tree, data) {
-  var max = lf.index.BTreeNode_.MAX_KEY_LEN_, max = max * max * max;
+  var max = lf.index.BTreeNode_.MAX_KEY_LEN_;
+  max *= max * max;
   if (data.length >= max) {
     throw new lf.Exception(6, max);
   }
@@ -7736,7 +7756,8 @@ lf.index.BTreeNode_.prototype.insert = function(key, value, opt_replace) {
     this.tree_.stats().add(key, 1);
     return this.keys_.length == lf.index.BTreeNode_.MAX_COUNT_ ? this.splitLeaf_() : this;
   }
-  var pos = this.tree_.eq(this.keys_[pos], key) ? pos + 1 : pos, node = this.children_[pos].insert(key, value, opt_replace);
+  pos = this.tree_.eq(this.keys_[pos], key) ? pos + 1 : pos;
+  var node = this.children_[pos].insert(key, value, opt_replace);
   node.isLeaf_() || 1 != node.keys_.length || (this.keys_.splice(pos, 0, node.keys_[0]), node.children_[1].parent_ = this, node.children_[0].parent_ = this, this.children_.splice(pos, 1, node.children_[1]), this.children_.splice(pos, 0, node.children_[0]));
   return this.keys_.length == lf.index.BTreeNode_.MAX_COUNT_ ? this.splitInternal_() : this;
 };
@@ -8086,7 +8107,8 @@ lf.index.MultiKeyComparator.prototype.sortKeyRanges = function(keyRanges) {
       return this.comparators[i].orderKeyRange(lhs, rhs);
     }.bind(this));
   }, this);
-  for (var finalKeyRanges = Array(outputKeyRanges.length), i$jscomp$0 = 0; i$jscomp$0 < finalKeyRanges.length; i$jscomp$0++) {
+  var finalKeyRanges = Array(outputKeyRanges.length);
+  for (i$jscomp$0 = 0; i$jscomp$0 < finalKeyRanges.length; i$jscomp$0++) {
     finalKeyRanges[i$jscomp$0] = keysPerDimensions.map(function(keys) {
       return keys[i$jscomp$0];
     });
@@ -8707,7 +8729,8 @@ lf.pred.JoinPredicate.prototype.evalRelationsNestedLoopJoin = function(leftRelat
         for (var rightLimit = Math.min(currentBlock + 1 << blockNumBits, rightEntriesLength), j = currentBlock << blockNumBits; j < rightLimit; j++) {
           var predicateResult = this.evaluatorFn_(leftValue, rightRelation.entries[j].getField(this.rightColumn));
           if (predicateResult) {
-            var matchFound = !0, combinedEntry = lf.proc.RelationEntry.combineEntries(leftRelation.entries[i], leftRelationTables, rightRelation.entries[j], rightRelationTables);
+            matchFound = !0;
+            var combinedEntry = lf.proc.RelationEntry.combineEntries(leftRelation.entries[i], leftRelationTables, rightRelation.entries[j], rightRelationTables);
             combinedEntries.push(combinedEntry);
           }
         }
@@ -9187,7 +9210,8 @@ lf.proc.ProjectNode.prototype.toString = function() {
   if (!goog.isNull(this.groupByColumns)) {
     var groupBy = this.groupByColumns.map(function(col) {
       return col.getNormalizedName();
-    }).join(", "), string = string + (", groupBy(" + groupBy + ")");
+    }).join(", ");
+    string += ", groupBy(" + groupBy + ")";
   }
   return string += ")";
 };
@@ -9475,9 +9499,13 @@ lf.query.escapeSqlValue_ = function(type, value) {
   }
 };
 lf.query.insertToSql_ = function(query, stripValueInfo) {
-  var prefix = query.allowReplace ? "INSERT OR REPLACE" : "INSERT", columns = query.into.getColumns(), prefix = prefix + (" INTO " + query.into.getName() + "("), prefix = prefix + columns.map(function(col) {
+  var prefix = query.allowReplace ? "INSERT OR REPLACE" : "INSERT", columns = query.into.getColumns();
+  prefix += " INTO " + query.into.getName() + "(";
+  prefix += columns.map(function(col) {
     return col.getName();
-  }).join(", "), prefix = prefix + ") VALUES (", sqls = query.values.map(function(row) {
+  }).join(", ");
+  prefix += ") VALUES (";
+  var sqls = query.values.map(function(row) {
     var values = columns.map(function(col) {
       var rawVal = row.payload_[col.getName()];
       return stripValueInfo ? goog.isDefAndNotNull(rawVal) ? "#" : "NULL" : lf.query.escapeSqlValue_(col.getType(), rawVal);
@@ -9563,7 +9591,8 @@ lf.query.deleteToSql_ = function(query, stripValueInfo) {
   return sql += ";";
 };
 lf.query.updateToSql_ = function(query, stripValueInfo) {
-  var sql = "UPDATE " + query.table.getName() + " SET ", sql = sql + query.set.map(function(set) {
+  var sql = "UPDATE " + query.table.getName() + " SET ";
+  sql += query.set.map(function(set) {
     var setter = set.column.getNormalizedName() + " = ";
     return -1 != set.binding ? setter + "?" + set.binding.toString() : setter + lf.query.escapeSqlValue_(set.column.getType(), set.value).toString();
   }).join(", ");
@@ -9580,12 +9609,14 @@ lf.query.selectToSql_ = function(query, stripValueInfo) {
   if (query.orderBy) {
     var orderBy = query.orderBy.map(function(order) {
       return order.column.getNormalizedName() + (order.order == lf.Order.DESC ? " DESC" : " ASC");
-    }).join(", "), sql = sql + (" ORDER BY " + orderBy);
+    }).join(", ");
+    sql += " ORDER BY " + orderBy;
   }
   if (query.groupBy) {
     var groupBy = query.groupBy.map(function(col) {
       return col.getNormalizedName();
-    }).join(", "), sql = sql + (" GROUP BY " + groupBy);
+    }).join(", ");
+    sql += " GROUP BY " + groupBy;
   }
   query.limit && (sql += " LIMIT " + query.limit.toString());
   query.skip && (sql += " SKIP " + query.skip.toString());
@@ -9598,7 +9629,9 @@ lf.query.getFromListForOuterJoin_ = function(query, stripValueInfo) {
   for (var retrievedNodes = lf.tree.find(query.where, function(node) {
     return node instanceof lf.pred.JoinPredicate;
   }), predicateString = retrievedNodes.map(lf.query.joinPredicateToSql_), fromList = lf.query.getTableNameToSql_(query.from[0]), i = 1; i < query.from.length; i++) {
-    var fromName = lf.query.getTableNameToSql_(query.from[i]), fromList = query.outerJoinPredicates.has(retrievedNodes[predicateString.length - i].getId()) ? fromList + (" LEFT OUTER JOIN " + fromName) : fromList + (" INNER JOIN " + fromName), fromList = fromList + (" ON (" + predicateString[predicateString.length - i] + ")");
+    var fromName = lf.query.getTableNameToSql_(query.from[i]);
+    fromList = query.outerJoinPredicates.has(retrievedNodes[predicateString.length - i].getId()) ? fromList + (" LEFT OUTER JOIN " + fromName) : fromList + (" INNER JOIN " + fromName);
+    fromList += " ON (" + predicateString[predicateString.length - i] + ")";
   }
   var node$jscomp$0 = query.where, leftChild = 0 < node$jscomp$0.getChildCount() ? node$jscomp$0.getChildAt(0) : node$jscomp$0;
   leftChild instanceof lf.pred.JoinPredicate || (fromList += " WHERE " + lf.query.parseSearchCondition_(leftChild, stripValueInfo));
@@ -10119,7 +10152,8 @@ lf.proc.PushDownSelectionsPass.prototype.pushDownNodeRec_ = function(queryContex
         var newNode = new lf.proc.SelectNode(node.predicate);
         newNodes.push(newNode);
         return newNode;
-      }, newRoot = lf.tree.pushNodeBelowChild(node$jscomp$0, shouldPushDownFn, cloneFn);
+      };
+      newRoot = lf.tree.pushNodeBelowChild(node$jscomp$0, shouldPushDownFn, cloneFn);
       newNodes.forEach(function(newNode) {
         this.pushDownNodeRec_(queryContext, newNode, shouldPushDownFn);
       }, this);
@@ -10591,7 +10625,8 @@ lf.proc.IndexRangeScanStep.prototype.toString = function() {
   return "index_range_scan(" + this.index.getNormalizedName() + ", ?, " + (this.reverseOrder ? "reverse" : "natural") + (this.useLimit ? ", limit:?" : "") + (this.useSkip ? ", skip:?" : "") + ")";
 };
 lf.proc.IndexRangeScanStep.prototype.toContextString = function(context) {
-  var string = this.toString(), keyRanges = this.keyRangeCalculator.getKeyRangeCombinations(context), string = string.replace("?", keyRanges.toString());
+  var string = this.toString(), keyRanges = this.keyRangeCalculator.getKeyRangeCombinations(context);
+  string = string.replace("?", keyRanges.toString());
   this.useLimit && (string = string.replace("?", context.limit.toString()));
   this.useSkip && (string = string.replace("?", context.skip.toString()));
   return string;
@@ -10859,7 +10894,8 @@ lf.proc.ProjectStep.prototype.toString = function() {
   if (!goog.isNull(this.groupByColumns)) {
     var groupBy = this.groupByColumns.map(function(col) {
       return col.getNormalizedName();
-    }).join(", "), string = string + (", groupBy(" + groupBy + ")");
+    }).join(", ");
+    string += ", groupBy(" + groupBy + ")";
   }
   return string += ")";
 };
@@ -11123,7 +11159,8 @@ lf.proc.PhysicalPlanFactory.prototype.create = function(logicalQueryPlan, queryC
 lf.proc.PhysicalPlanFactory.prototype.createPlan_ = function(logicalPlan, queryContext, opt_rewritePasses) {
   var rootStep = lf.tree.map(logicalPlan.getRoot(), this.mapFn_.bind(this));
   if (goog.isDefAndNotNull(opt_rewritePasses)) {
-    var planRewriter = new lf.proc.PhysicalPlanRewriter(rootStep, queryContext, opt_rewritePasses), rootStep = planRewriter.generate();
+    var planRewriter = new lf.proc.PhysicalPlanRewriter(rootStep, queryContext, opt_rewritePasses);
+    rootStep = planRewriter.generate();
   }
   return new lf.proc.PhysicalQueryPlan(rootStep, logicalPlan.getScope());
 };
@@ -11419,9 +11456,10 @@ lf.DiffCalculator.prototype.applyDiff = function(oldResults, newResults) {
       changeRecords.push(changeRecord);
     }
   }
-  for (var longestCommonSubsequenceRight = goog.math.longestCommonSubsequence(oldEntries, newResults.entries, this.comparator_.bind(this), function(indexLeft, indexRight) {
+  var longestCommonSubsequenceRight = goog.math.longestCommonSubsequence(oldEntries, newResults.entries, this.comparator_.bind(this), function(indexLeft, indexRight) {
     return newResults.entries[indexRight];
-  }), i = commonIndex = 0; i < newResults.entries.length; i++) {
+  });
+  for (i = commonIndex = 0; i < newResults.entries.length; i++) {
     entry = newResults.entries[i], longestCommonSubsequenceRight[commonIndex] == entry ? commonIndex++ : (this.observableResults_.splice(i, 0, entry.row.payload_), changeRecord = lf.DiffCalculator.createChangeRecord_(i, [], 1, this.observableResults_), changeRecords.push(changeRecord));
   }
   return changeRecords;
@@ -12268,7 +12306,8 @@ lf.schema.TableBuilder.prototype.getSchema = function() {
 };
 goog.exportProperty(lf.schema.TableBuilder.prototype, "getSchema", lf.schema.TableBuilder.prototype.getSchema);
 lf.schema.TableBuilder.prototype.normalizeColumns_ = function(columns, checkIndexable, opt_order, opt_autoInc) {
-  var normalized = columns, normalized = "string" == typeof columns[0] ? columns.map(function(col) {
+  var normalized = columns;
+  normalized = "string" == typeof columns[0] ? columns.map(function(col) {
     return new lf.schema.TableBuilder.IndexedColumn_({name:col, order:goog.isDefAndNotNull(opt_order) ? opt_order : lf.Order.ASC, autoIncrement:opt_autoInc || !1});
   }) : columns.map(function(col) {
     return new lf.schema.TableBuilder.IndexedColumn_(col);

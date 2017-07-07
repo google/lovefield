@@ -56,3 +56,8 @@ TestReporter.prototype.getReport = function() {
 TestReporter.prototype.getRunTime = function() {
   return 0;
 };
+
+/** @return {string} */
+TestReporter.prototype.getUniqueId = function() {
+  return 'id';
+};
