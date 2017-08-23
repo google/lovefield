@@ -75,10 +75,8 @@ goog.setTestOnly = function(opt_message) {
 goog.forwardDeclare = function() {
 };
 goog.getObjectByName = function(name, opt_obj) {
-  for (var parts = name.split("."), cur = opt_obj || goog.global, part; part = parts.shift();) {
-    if (goog.isDefAndNotNull(cur[part])) {
-      cur = cur[part];
-    } else {
+  for (var parts = name.split("."), cur = opt_obj || goog.global, i = 0; i < parts.length; i++) {
+    if (cur = cur[parts[i]], !goog.isDefAndNotNull(cur)) {
       return null;
     }
   }
@@ -140,9 +138,7 @@ goog.DEPENDENCIES_ENABLED && (goog.dependencies_ = {loadFlags:{}, nameToPath:{},
     goog.basePath = goog.global.CLOSURE_BASE_PATH;
   } else {
     if (goog.inHtmlDocument_()) {
-      var doc = goog.global.document, currentScript = doc.currentScript;
-      var scripts = currentScript ? [currentScript] : doc.getElementsByTagName("SCRIPT");
-      for (var i = scripts.length - 1; 0 <= i; --i) {
+      for (var doc = goog.global.document, currentScript = doc.currentScript, scripts = currentScript ? [currentScript] : doc.getElementsByTagName("SCRIPT"), i = scripts.length - 1; 0 <= i; --i) {
         var script = scripts[i], src = script.src, qmark = src.lastIndexOf("?"), l = -1 == qmark ? src.length : qmark;
         if ("base.js" == src.substr(l - 7, 7)) {
           goog.basePath = src.substr(0, l - 7);
@@ -1976,7 +1972,7 @@ goog.functions.rateLimit = function(f, interval, opt_scope) {
   var timeout = 0, handleTimeout = function() {
     timeout = 0;
   };
-  return function() {
+  return function(var_args) {
     timeout || (timeout = goog.global.setTimeout(handleTimeout, interval), f.apply(opt_scope, arguments));
   };
 };
@@ -2091,7 +2087,11 @@ goog.object.getKeys = function(obj) {
   return res;
 };
 goog.object.getValueByKeys = function(obj, var_args) {
-  for (var isArrayLike = goog.isArrayLike(var_args), keys = isArrayLike ? var_args : arguments, i = isArrayLike ? 0 : 1; i < keys.length && (obj = obj[keys[i]], goog.isDef(obj)); i++) {
+  for (var isArrayLike = goog.isArrayLike(var_args), keys = isArrayLike ? var_args : arguments, i = isArrayLike ? 0 : 1; i < keys.length; i++) {
+    if (null == obj) {
+      return;
+    }
+    obj = obj[keys[i]];
   }
   return obj;
 };
@@ -3539,9 +3539,8 @@ goog.structs.Map.prototype.remove = function(key) {
   return goog.structs.Map.hasKey_(this.map_, key) ? (delete this.map_[key], this.count_--, this.version_++, this.keys_.length > 2 * this.count_ && this.cleanupKeysArray_(), !0) : !1;
 };
 goog.structs.Map.prototype.cleanupKeysArray_ = function() {
-  var destIndex, srcIndex;
   if (this.count_ != this.keys_.length) {
-    for (destIndex = srcIndex = 0; srcIndex < this.keys_.length;) {
+    for (var srcIndex = 0, destIndex = 0; srcIndex < this.keys_.length;) {
       var key = this.keys_[srcIndex];
       goog.structs.Map.hasKey_(this.map_, key) && (this.keys_[destIndex++] = key);
       srcIndex++;
@@ -3645,10 +3644,11 @@ goog.labs.userAgent.platform.isChromeOS = function() {
   return goog.labs.userAgent.util.matchUserAgent("CrOS");
 };
 goog.labs.userAgent.platform.getVersion = function() {
-  var match, userAgentString = goog.labs.userAgent.util.getUserAgent(), version = "";
+  var userAgentString = goog.labs.userAgent.util.getUserAgent(), version = "";
   if (goog.labs.userAgent.platform.isWindows()) {
     var re = /Windows (?:NT|Phone) ([0-9.]+)/;
-    version = (match = re.exec(userAgentString)) ? match[1] : "0.0";
+    var match = re.exec(userAgentString);
+    version = match ? match[1] : "0.0";
   } else {
     goog.labs.userAgent.platform.isIos() ? (re = /(?:iPhone|iPod|iPad|CPU)\s+OS\s+(\S+)/, version = (match = re.exec(userAgentString)) && match[1].replace(/_/g, ".")) : goog.labs.userAgent.platform.isMacintosh() ? (re = /Mac OS X ([0-9_.]+)/, version = (match = re.exec(userAgentString)) ? match[1].replace(/_/g, ".") : "10") : goog.labs.userAgent.platform.isAndroid() ? (re = /Android\s+([^\);]+)(\)|;)/, version = (match = re.exec(userAgentString)) && match[1]) : goog.labs.userAgent.platform.isChromeOS() && 
     (re = /(?:CrOS\s+(?:i686|x86_64)\s+([0-9.]+))/, version = (match = re.exec(userAgentString)) && match[1]);
@@ -3791,10 +3791,10 @@ JSCompiler_inline_result$jscomp$1 = doc$jscomp$inline_3 && goog.userAgent.IE ? m
 goog.userAgent.DOCUMENT_MODE = JSCompiler_inline_result$jscomp$1;
 goog.userAgent.platform = {};
 goog.userAgent.platform.determineVersion_ = function() {
-  var match;
   if (goog.userAgent.WINDOWS) {
     var re = /Windows NT ([0-9.]+)/;
-    return (match = re.exec(goog.userAgent.getUserAgentString())) ? match[1] : "0";
+    var match = re.exec(goog.userAgent.getUserAgentString());
+    return match ? match[1] : "0";
   }
   return goog.userAgent.MAC ? (re = /10[_.][0-9_.]+/, (match = re.exec(goog.userAgent.getUserAgentString())) ? match[0].replace(/_/g, ".") : "10") : goog.userAgent.ANDROID ? (re = /Android\s+([^\);]+)(\)|;)/, (match = re.exec(goog.userAgent.getUserAgentString())) ? match[1] : "") : goog.userAgent.IPHONE || goog.userAgent.IPAD || goog.userAgent.IPOD ? (re = /(?:iPhone|CPU)\s+OS\s+(\S+)/, (match = re.exec(goog.userAgent.getUserAgentString())) ? match[1].replace(/_/g, ".") : "") : "";
 };
@@ -11445,14 +11445,14 @@ lf.DiffCalculator.prototype.comparator_ = function(left, right) {
   }, this);
 };
 lf.DiffCalculator.prototype.applyDiff = function(oldResults, newResults) {
-  for (var changeRecord, entry, oldEntries = goog.isNull(oldResults) ? [] : oldResults.entries, longestCommonSubsequenceLeft = goog.math.longestCommonSubsequence(oldEntries, newResults.entries, this.comparator_.bind(this), function(indexLeft) {
+  for (var oldEntries = goog.isNull(oldResults) ? [] : oldResults.entries, longestCommonSubsequenceLeft = goog.math.longestCommonSubsequence(oldEntries, newResults.entries, this.comparator_.bind(this), function(indexLeft) {
     return oldEntries[indexLeft];
   }), changeRecords = [], commonIndex = 0, i = 0; i < oldEntries.length; i++) {
-    if (entry = oldEntries[i], longestCommonSubsequenceLeft[commonIndex] == entry) {
+    var entry = oldEntries[i];
+    if (longestCommonSubsequenceLeft[commonIndex] == entry) {
       commonIndex++;
     } else {
-      var removed = this.observableResults_.splice(commonIndex, 1);
-      changeRecord = lf.DiffCalculator.createChangeRecord_(i, removed, 0, this.observableResults_);
+      var removed = this.observableResults_.splice(commonIndex, 1), changeRecord = lf.DiffCalculator.createChangeRecord_(i, removed, 0, this.observableResults_);
       changeRecords.push(changeRecord);
     }
   }
