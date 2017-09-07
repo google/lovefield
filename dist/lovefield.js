@@ -1,5 +1,6 @@
 if(!self.window){window=self;}
-(function(){'use strict';var $jscomp = $jscomp || {};
+(function(){'use strict';
+var $jscomp = $jscomp || {};
 $jscomp.scope = {};
 var goog = goog || {};
 goog.global = this;
