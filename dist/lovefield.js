@@ -12527,6 +12527,7 @@ lf.schema.Builder.prototype.connect = function(opt_options) {
     return db;
   }.bind(this), function(e) {
     this.connectInProgress_ = !1;
+    this.db_.close();
     throw e;
   }.bind(this));
 };
