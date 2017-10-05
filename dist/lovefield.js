@@ -503,10 +503,14 @@ goog.globalEval = function(script) {
   } else {
     if (goog.global.eval) {
       if (null == goog.evalWorksForGlobals_) {
-        if (goog.global.eval("var _evalTest_ = 1;"), "undefined" != typeof goog.global._evalTest_) {
+        try {
+          goog.global.eval("var _evalTest_ = 1;");
+        } catch (ignore) {
+        }
+        if ("undefined" != typeof goog.global._evalTest_) {
           try {
             delete goog.global._evalTest_;
-          } catch (ignore) {
+          } catch (ignore$0) {
           }
           goog.evalWorksForGlobals_ = !0;
         } else {
@@ -520,8 +524,8 @@ goog.globalEval = function(script) {
         scriptElt.type = "text/javascript";
         scriptElt.defer = !1;
         scriptElt.appendChild(doc.createTextNode(script));
-        doc.body.appendChild(scriptElt);
-        doc.body.removeChild(scriptElt);
+        doc.head.appendChild(scriptElt);
+        doc.head.removeChild(scriptElt);
       }
     } else {
       throw Error("goog.globalEval not available");
@@ -1192,6 +1196,10 @@ goog.asserts.assertElement = function(value, opt_message, var_args) {
 };
 goog.asserts.assertInstanceof = function(value, type, opt_message, var_args) {
   !goog.asserts.ENABLE_ASSERTS || value instanceof type || goog.asserts.doAssertFailure_("Expected instanceof %s but got %s.", [goog.asserts.getType_(type), goog.asserts.getType_(value)], opt_message, Array.prototype.slice.call(arguments, 3));
+  return value;
+};
+goog.asserts.assertFinite = function(value, opt_message, var_args) {
+  !goog.asserts.ENABLE_ASSERTS || "number" == typeof value && isFinite(value) || goog.asserts.doAssertFailure_("Expected %s to be a finite number but it is not.", [value], opt_message, Array.prototype.slice.call(arguments, 2));
   return value;
 };
 goog.asserts.assertObjectPrototypeIsIntact = function() {
@@ -3072,9 +3080,9 @@ goog.iter.forEach = function(iterable, f, opt_obj) {
       for (;;) {
         f.call(opt_obj, iterable.next(), void 0, iterable);
       }
-    } catch (ex$0) {
-      if (ex$0 !== goog.iter.StopIteration) {
-        throw ex$0;
+    } catch (ex$1) {
+      if (ex$1 !== goog.iter.StopIteration) {
+        throw ex$1;
       }
     }
   }
@@ -3786,10 +3794,10 @@ goog.userAgent.isDocumentModeOrHigher = function(documentMode) {
   return Number(goog.userAgent.DOCUMENT_MODE) >= documentMode;
 };
 goog.userAgent.isDocumentMode = goog.userAgent.isDocumentModeOrHigher;
-var JSCompiler_inline_result$jscomp$1;
-var doc$jscomp$inline_3 = goog.global.document, mode$jscomp$inline_4 = goog.userAgent.getDocumentMode_();
-JSCompiler_inline_result$jscomp$1 = doc$jscomp$inline_3 && goog.userAgent.IE ? mode$jscomp$inline_4 || ("CSS1Compat" == doc$jscomp$inline_3.compatMode ? parseInt(goog.userAgent.VERSION, 10) : 5) : void 0;
-goog.userAgent.DOCUMENT_MODE = JSCompiler_inline_result$jscomp$1;
+var JSCompiler_inline_result$jscomp$2;
+var doc$jscomp$inline_4 = goog.global.document, mode$jscomp$inline_5 = goog.userAgent.getDocumentMode_();
+JSCompiler_inline_result$jscomp$2 = doc$jscomp$inline_4 && goog.userAgent.IE ? mode$jscomp$inline_5 || ("CSS1Compat" == doc$jscomp$inline_4.compatMode ? parseInt(goog.userAgent.VERSION, 10) : 5) : void 0;
+goog.userAgent.DOCUMENT_MODE = JSCompiler_inline_result$jscomp$2;
 goog.userAgent.platform = {};
 goog.userAgent.platform.determineVersion_ = function() {
   if (goog.userAgent.WINDOWS) {
@@ -4069,11 +4077,10 @@ lf.backstore.BaseTx.prototype.mergeTableChanges_ = function() {
   diff.forEach(function(tableDiff, tableName) {
     var tableSchema = this.journal_.getScope().get(tableName), table = this.getTable(tableSchema.getName(), tableSchema.deserializeRow.bind(tableSchema), lf.backstore.TableType.DATA), toDeleteRowIds = lf.structs.map.values(tableDiff.deleted_).map(function(row) {
       return row.id();
-    });
-    0 < toDeleteRowIds.length && table.remove(toDeleteRowIds).thenCatch(this.handleError_, this);
-    var toPut = lf.structs.map.values(tableDiff.modified_).map(function(modification) {
+    }), toPut = lf.structs.map.values(tableDiff.modified_).map(function(modification) {
       return modification[1];
-    }).concat(lf.structs.map.values(tableDiff.added_));
+    }).concat(lf.structs.map.values(tableDiff.added_)), shouldDisableClearTableOptimization = 0 < toPut.length;
+    0 < toDeleteRowIds.length && table.remove(toDeleteRowIds, shouldDisableClearTableOptimization).thenCatch(this.handleError_, this);
     table.put(toPut).thenCatch(this.handleError_, this);
   }, this);
 };
@@ -6557,24 +6564,24 @@ lf.backstore.ObjectStore.prototype.put = function(rows) {
   }, this);
   return goog.Promise.all(promises);
 };
-lf.backstore.ObjectStore.prototype.remove = function(ids) {
-  return new goog.Promise(function(resolve, reject) {
-    var request = this.store_.count();
+lf.backstore.ObjectStore.prototype.remove = function(ids, disableClearTableOptimization) {
+  var $jscomp$this = this, deleteByIdsFn = function() {
+    var promises = ids.map(function(id) {
+      return $jscomp$this.performWriteOp_(function() {
+        return $jscomp$this.store_.delete(id);
+      });
+    });
+    return goog.Promise.all(promises);
+  };
+  return disableClearTableOptimization ? deleteByIdsFn() : new goog.Promise(function(resolve, reject) {
+    var request = $jscomp$this.store_.count();
     request.onsuccess = function(ev) {
-      if (0 == ids.length || ev.target.result == ids.length) {
-        return this.performWriteOp_(function() {
-          return this.store_.clear();
-        }.bind(this)).then(resolve, reject);
-      }
-      var promises = ids.map(function(id) {
-        return this.performWriteOp_(function() {
-          return this.store_.delete(id);
-        }.bind(this));
-      }, this);
-      goog.Promise.all(promises).then(resolve, reject);
-    }.bind(this);
+      0 == ids.length || ev.target.result == ids.length ? $jscomp$this.performWriteOp_(function() {
+        return $jscomp$this.store_.clear();
+      }).then(resolve, reject) : deleteByIdsFn().then(resolve, reject);
+    };
     request.onerror = reject;
-  }, this);
+  });
 };
 lf.backstore.IndexedDBTx = function(global, transaction, txType, bundleMode, opt_journal) {
   lf.backstore.BaseTx.call(this, txType, opt_journal);

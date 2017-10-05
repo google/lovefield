@@ -18,8 +18,10 @@ goog.setTestOnly();
 goog.require('goog.testing.jsunit');
 goog.require('hr.db');
 goog.require('lf.Capability');
+goog.require('lf.TransactionType');
 goog.require('lf.schema.DataStoreType');
 goog.require('lf.testing.SmokeTester');
+goog.require('lf.testing.util');
 
 
 /** @type {!lf.testing.SmokeTester} */
@@ -99,4 +101,57 @@ function testSerialization() {
   };
   assertObjectEquals(expected, row.toDbPayload());
   assertObjectEquals(expected, dummy.deserializeRow(row.serialize()).payload());
+}
+
+
+function testReplaceRow() {
+  // This is a regression test for a bug that lovefield had with IndexedDb
+  // backstore. The bug manifested when a single transaction had a delete for
+  // an entire table, along with an insert to the same table. The bug was that
+  // the insert would not stick, because the remove/put calls were racing and
+  // the remove would result in a clear call for the entire object store after
+  // the put happened.
+
+  capability = lf.Capability.get();
+  // The test is only relevant for indexedDb.
+  if (!capability.indexedDb) {
+    return;
+  }
+
+  var table = db.getSchema().table('Region');
+  var originalRow = table.createRow({id: '1', name: 'North America'});
+  var replacementRow = table.createRow({id: '2', name: 'Central America'});
+
+  // First insert a single record into a table.
+  var tx = db.createTransaction(lf.TransactionType.READ_WRITE);
+  var insert = db.insert().into(table).values([originalRow]);
+  return tx
+      .exec([insert])
+      // Read the entire table directly from IndexedDb and verify that the
+      // original record is in place.
+      .then(() => {
+        return lf.testing.util.selectAll(hr.db.getGlobal(), table);
+      })
+      .then((results) => {
+        assertEquals(1, results.length);
+        assertObjectEquals(originalRow.payload(), results[0].payload());
+      })
+      // Now execute a transaction that removes the single row and inserts a
+      // replacement.
+      .then(() => {
+        var tx = db.createTransaction(lf.TransactionType.READ_WRITE);
+        return tx.exec([
+          db.delete().from(table),
+          db.insert().into(table).values([replacementRow])
+        ]);
+      })
+      // Read the entire table, verify that we have a single row present (not
+      // zero rows), and that it is the replacement, not the original.
+      .then(() => {
+        return lf.testing.util.selectAll(hr.db.getGlobal(), table);
+      })
+      .then((results) => {
+        assertEquals(1, results.length);
+        assertObjectEquals(replacementRow.payload(), results[0].payload());
+      });
 }
