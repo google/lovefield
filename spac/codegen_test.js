@@ -31,12 +31,12 @@ function bundleModeChecker(fileName, expected) {
   var schemaYaml = fs.readFileSync(testdata[fileName]);
   var schema = validate(schemaYaml);
   var codegen = new CodeGenerator('bundled.db', schema);
-  var codeTemplate = fs.readFileSync(template['database.jstemplate']);
-  var contents = codegen.generate('database.js', codeTemplate);
+  var codeTemplate = fs.readFileSync(template['schema.jstemplate']);
+  var contents = codegen.generate('schema.js', codeTemplate);
 
-  // There should be either true or false between lf.base.init and then.
-  var string = contents.slice(contents.indexOf('lf.base.init'));
-  string = string.slice(0, string.indexOf('then'));
+  // There should be either true or false after enableBundledMode option.
+  var string = contents.slice(contents.indexOf('enableBundledMode:'));
+  string = string.slice(0, string.indexOf('\n'));
   return string.indexOf(expected.toString()) != -1;
 }
 
@@ -70,8 +70,8 @@ describe('Generator Test', function() {
   });
 
   it('should honor enableBundledMode', function() {
-    expect(bundleModeChecker('bundled_mode.yaml', true));
-    expect(bundleModeChecker('bundled_mode_disabled.yaml', false));
+    expect(bundleModeChecker('bundled_mode.yaml', true)).toBe(true);
+    expect(bundleModeChecker('bundled_mode_disabled.yaml', false)).toBe(true);
   });
 
   it('should handle index persistence correctly', function() {
