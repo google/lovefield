@@ -15,8 +15,10 @@
  * limitations under the License.
  */
 goog.setTestOnly();
+goog.require('goog.testing.PropertyReplacer');
 goog.require('goog.testing.jsunit');
 goog.require('lf.Exception');
+goog.require('lf.Flags');
 
 
 function testException() {
@@ -50,4 +52,13 @@ function testException() {
 
   var e5 = new lf.Exception(999, 3, undefined);
   assertEquals(BASE_URL + '999&p0=3&p1=undefined', e5.message);
+}
+
+
+function testBaseUrlOverride() {
+  var propertyReplacer = new goog.testing.PropertyReplacer();
+  propertyReplacer.replace(lf.Flags, 'EXCEPTION_URL', '');
+  var e = new lf.Exception(999, 'a', 'b', 'c', 'd', 'e', 'f', 'g');
+  assertEquals('999|a|b|c|d', e.message);
+  propertyReplacer.reset();
 }

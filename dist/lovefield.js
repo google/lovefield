@@ -190,6 +190,8 @@ goog.DEPENDENCIES_ENABLED && (goog.inHtmlDocument_ = function() {
     return this.requiresTranspilation_[lang];
   }
   throw Error("Unknown language mode: " + lang);
+}, goog.Transpiler.prototype.transpile = function(code, path) {
+  return goog.transpile_(code, path);
 }, goog.transpiler_ = new goog.Transpiler, goog.DebugLoader = function() {
   this.dependencies_ = {loadFlags:{}, nameToPath:{}, requires:{}, visited:{}, written:{}, deferred:{}};
 }, goog.DebugLoader.IS_OLD_IE_ = !(goog.global.atob || !goog.global.document || !goog.global.document.all), goog.DebugLoader.prototype.earlyProcessLoad = function(name) {
@@ -319,6 +321,34 @@ goog.loadFileSync_ = function(src) {
   } catch (err) {
     return null;
   }
+};
+goog.transpile_ = function(code$jscomp$0, path$jscomp$0) {
+  var jscomp = goog.global.$jscomp;
+  jscomp || (goog.global.$jscomp = jscomp = {});
+  var transpile = jscomp.transpile;
+  if (!transpile) {
+    var transpilerPath = goog.basePath + goog.TRANSPILER, transpilerCode = goog.loadFileSync_(transpilerPath);
+    if (transpilerCode) {
+      (function() {
+        eval(transpilerCode + "\n//# sourceURL=" + transpilerPath);
+      }).call(goog.global);
+      if (goog.global.$gwtExport && goog.global.$gwtExport.$jscomp && !goog.global.$gwtExport.$jscomp.transpile) {
+        throw Error('The transpiler did not properly export the "transpile" method. $gwtExport: ' + JSON.stringify(goog.global.$gwtExport));
+      }
+      goog.global.$jscomp.transpile = goog.global.$gwtExport.$jscomp.transpile;
+      jscomp = goog.global.$jscomp;
+      transpile = jscomp.transpile;
+    }
+  }
+  if (!transpile) {
+    var suffix = " requires transpilation but no transpiler was found.";
+    suffix += ' Please add "//javascript/closure:transpiler" as a data dependency to ensure it is included.';
+    transpile = jscomp.transpile = function(code, path) {
+      goog.logToConsole_(path + suffix);
+      return code;
+    };
+  }
+  return transpile(code$jscomp$0, path$jscomp$0);
 };
 goog.typeOf = function(value) {
   var s = typeof value;
@@ -3783,6 +3813,7 @@ lf.Capability.get = function() {
 lf.Flags = {};
 lf.Flags.MEMORY_ONLY = !1;
 lf.Flags.NATIVE_ES6 = !1;
+lf.Flags.EXCEPTION_URL = "http://google.github.io/lovefield/error_lookup/src/error_lookup.html?c=";
 lf.structs = {};
 lf.structs.map = {};
 $jscomp.scope.detectUseNative = function() {
@@ -4576,10 +4607,11 @@ lf.type.DEFAULT_VALUES = {0:null, 1:!1, 2:Object.freeze(new Date(0)), 3:0, 4:0, 
 goog.exportSymbol("lf.type.DEFAULT_VALUES", lf.type.DEFAULT_VALUES);
 lf.Exception = function(code, var_args) {
   this.code = code;
-  this.message = "http://google.github.io/lovefield/error_lookup/src/error_lookup.html?c=" + code;
+  this.message = lf.Flags.EXCEPTION_URL + code;
   if (1 < arguments.length) {
     for (var i = 1; i <= Math.min(4, arguments.length - 1); ++i) {
-      this.message += "&p" + (i - 1) + "=" + encodeURIComponent(String(arguments[i]).slice(0, 64));
+      var arg = String(arguments[i]).slice(0, 64);
+      this.message = 0 < lf.Flags.EXCEPTION_URL.length ? this.message + ("&p" + (i - 1) + "=" + encodeURIComponent(arg)) : this.message + ("|" + arg);
     }
   }
 };
