@@ -2,6 +2,7 @@
   "name": "lovefield",
   "version": "2.1.12",
   "main": "dist/lovefield.min.js",
+  "types": "dist/lovefield.d.ts",
   "description": "Lovefield - A relational database for web apps",
   "keywords": [
     "lovefield"
