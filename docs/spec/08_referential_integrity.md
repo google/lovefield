@@ -56,7 +56,7 @@ necessary to maintain data integrity.
 `INSERT`/`INSERT_OR_REPLACE`
 
   * Same as in the `RESTRICT` mode. Note that for `insertOrReplace()` queries,
-    there is no cascading. If cascading is desrired an `update()` query should
+    there is no cascading. If cascading is desired an `update()` query should
     be used instead.
 
 `DELETE`
