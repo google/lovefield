@@ -56,7 +56,7 @@ necessary to maintain data integrity.
 `INSERT`/`INSERT_OR_REPLACE`
 
   * Same as in the `RESTRICT` mode. Note that for `insertOrReplace()` queries,
-    there is no cascading. If cascading is desrired an `update()` query should
+    there is no cascading. If cascading is desired an `update()` query should
     be used instead.
 
 `DELETE`
@@ -81,7 +81,7 @@ When in `RESTRICT` constraint mode, constraints can be marked as `DEFERRABLE` or
 therefore `IMMEDIATE` will be used.
 
 Timing enforcement should be exposed via the schema creation API as an optional
-enum parameter. The enum is named `lf.ConstraintTiming` The default value, if
+enum parameter. The enum is named `lf.ConstraintTiming`. The default value, if
 such parameter is not provided, is `IMMEDIATE`.
 
 #### 8.3.1 DEFERRABLE
