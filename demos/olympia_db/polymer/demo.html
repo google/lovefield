@@ -5,11 +5,14 @@
   <title>Polymer Lovefield Demo</title>
   <script src="bower_components/webcomponentsjs/webcomponents-lite.js"></script>
   <link rel="import" href="bower_components/iron-ajax/iron-ajax.html">
-  <link rel="import" href="bower_components/iron-flex-layout/classes/iron-flex-layout.html">
+  <link rel="import" href="bower_components/iron-flex-layout/iron-flex-layout-classes.html">
   <link rel="import" href="olympia_query.html">
 
 </head>
 <body>
+  <custom-style>
+    <style is="custom-style" include="iron-flex iron-positioning"></style>
+  </custom-style>
 
   <template is="dom-bind" id="demo">
       <style>
