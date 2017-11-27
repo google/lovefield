@@ -1,7 +1,7 @@
 # Travis CI configuration file for Lovefield.
 language: node_js
 node_js:
-  - "4.3"
+  - "8.9.1"
 
 sudo: false
 
@@ -19,12 +19,14 @@ env:
     - SELENIUM_BROWSER=ie
     - SELENIUM_BROWSER=safari
     - SELENIUM_BROWSER=firefox
+      #    - SELENIUM_BROWSER=edge
 
 addons:
   sauce_connect:
     direct_domains: firebase.com,firebaseio.com
 
 before_script:
+  - unset _JAVA_OPTIONS
   - npm install -g gulp
   - npm install
   - export FIREBASE_TOKEN=`cat tools/firebase_token.enc | openssl enc -aes-128-cbc -a -d -salt -pass pass:$FIREBASE_PWD`

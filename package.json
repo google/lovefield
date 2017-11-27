@@ -28,28 +28,28 @@
     "lovefield-spac": "spac/lovefield-spac"
   },
   "dependencies": {
-    "js-yaml": "~3.1.0",
-    "nopt": "~2.2.1"
+    "js-yaml": ">=3.1.0",
+    "nopt": ">=2.2.1"
   },
   "devDependencies": {
-    "chalk": "^0.5.1",
+    "chalk": ">=0.5.1",
     "firebase-token-generator": "*",
-    "fs-extra": "^0.18.2",
-    "glob": "~3.2.6",
+    "fs-extra": ">=0.18.2",
+    "glob": ">=3.2.6",
     "google-closure-compiler": "latest",
     "google-closure-library": "latest",
-    "gulp": "^3.9.0",
-    "gulp-closure-compiler": "0.3.1",
-    "gulp-connect": "^2.2.0",
-    "gulp-gjslint": "^0.1.4",
+    "gulp": ">=3.9.0",
+    "gulp-closure-compiler": ">=0.3.1",
+    "gulp-connect": ">=2.2.0",
+    "gulp-gjslint": ">=0.1.4",
     "jasmine": "^2.3.2",
-    "mkdirp": "^0.5.0",
+    "mkdirp": ">=0.5.0",
     "request": "^2.55.0",
     "selenium-webdriver": "2.47.0",
-    "temporary": "^0.0.8",
-    "toposort-class": "^0.3.1"
+    "temporary": ">=0.0.8",
+    "toposort-class": ">=0.3.1"
   },
   "engines": {
-    "node": ">=4.3"
+    "node": ">=8.9.1"
   }
 }
