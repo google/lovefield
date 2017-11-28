@@ -25,10 +25,10 @@ goog.require('goog.Promise');
 goog.require('goog.dom.iframe');
 goog.require('goog.html.testing');
 goog.require('goog.testing.jsunit');
-goog.require('lf.Capability');
 goog.require('lf.Row');
 goog.require('lf.backstore.LocalStorage');
 goog.require('lf.testing.getSchemaBuilder');
+goog.require('lf.testing.util');
 
 
 /** @type {!lf.schema.Database} */
@@ -40,7 +40,7 @@ var resolver;
 
 
 function setUp() {
-  if (!lf.Capability.get().localStorageEvent) {
+  if (!lf.testing.util.isLocalStorageTestingSupported()) {
     return;
   }
 
@@ -66,7 +66,7 @@ function sampleHandler(diffs) {
 
 
 function testSubscribe() {
-  if (!lf.Capability.get().localStorageEvent) {
+  if (!lf.testing.util.isLocalStorageTestingSupported()) {
     return;
   }
 

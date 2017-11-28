@@ -17,6 +17,7 @@
 goog.provide('lf.testing.util');
 
 goog.require('goog.Promise');
+goog.require('goog.userAgent.product');
 goog.require('lf.TransactionType');
 goog.require('lf.backstore.TableType');
 goog.require('lf.service');
@@ -138,3 +139,16 @@ lf.testing.util.simulateIndexStats = function(
   propertyReplacer.replace(
       index, 'stats', function() { return indexStats; });
 };
+
+
+/**
+ * IE/Edge does not support LocalStorage from locally loaded HTML file.
+ * Add proper detection to handle it.
+ * @return {boolean}
+ */
+lf.testing.util.isLocalStorageTestingSupported = function() {
+  return !(
+      goog.userAgent.product.IE ||
+      goog.userAgent.product.EDGE);
+};
+

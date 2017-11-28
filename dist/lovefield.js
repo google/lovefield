@@ -3873,7 +3873,6 @@ goog.userAgent.product.SAFARI = goog.userAgent.product.PRODUCT_KNOWN_ ? goog.use
 var lf = {Capability:function() {
   this.legacySafari_ = goog.labs.userAgent.browser.isSafari() && !goog.userAgent.isVersionOrHigher(10) || (goog.userAgent.product.IPAD || goog.userAgent.product.IPHONE) && !goog.userAgent.platform.isVersion(10);
   this.indexedDb = !(this.legacySafari_ || goog.userAgent.product.IE && !goog.userAgent.isVersionOrHigher(10));
-  !goog.userAgent.product.IE || goog.userAgent.isVersionOrHigher(11);
   this.webSql = goog.labs.userAgent.browser.isChrome() || goog.labs.userAgent.browser.isSafari();
   this.nativeMap = goog.isDef(window.Map) && goog.isDef(window.Map.prototype.values) && goog.isDef(window.Map.prototype.forEach) && !this.legacySafari_;
   this.nativeSet = goog.isDef(window.Set) && goog.isDef(window.Set.prototype.values) && goog.isDef(window.Set.prototype.forEach) && !this.legacySafari_;

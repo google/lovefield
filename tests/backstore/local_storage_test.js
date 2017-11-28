@@ -23,6 +23,7 @@ goog.require('lf.index.MemoryIndexStore');
 goog.require('lf.service');
 goog.require('lf.testing.backstore.ScudTester');
 goog.require('lf.testing.getSchemaBuilder');
+goog.require('lf.testing.util');
 
 
 /** @type {!lf.backstore.LocalStorage} */
@@ -38,6 +39,10 @@ var schema;
 
 
 function setUp() {
+  if (!lf.testing.util.isLocalStorageTestingSupported()) {
+    return;
+  }
+
   var indexStore = new lf.index.MemoryIndexStore();
   schema = lf.testing.getSchemaBuilder().getSchema();
   cache = new lf.cache.DefaultCache(schema);
@@ -59,6 +64,10 @@ function setUp() {
  * instance that is passed into its constructor.
  */
 function testConstruction() {
+  if (!lf.testing.util.isLocalStorageTestingSupported()) {
+    return;
+  }
+
   assertTrue(schema.tables().length > 0);
 
   schema.tables().forEach(
@@ -69,12 +78,20 @@ function testConstruction() {
 
 
 function testGetTable_NonExisting() {
+  if (!lf.testing.util.isLocalStorageTestingSupported()) {
+    return;
+  }
+
   assertThrows(
       goog.bind(db.getTableInternal, db, 'nonExistingTableName'));
 }
 
 
 function testSCUD() {
+  if (!lf.testing.util.isLocalStorageTestingSupported()) {
+    return;
+  }
+
   var scudTester = new lf.testing.backstore.ScudTester(
       db,
       lf.Global.get(),

@@ -7,7 +7,7 @@ https://travis-ci.org/google/lovefield)
 
 Lovefield is a relational database written in pure JavaScript.
 It provides SQL-like syntax and works cross-browser (currently supporting
-Chrome 37+, Firefox 31+, IE 10+, and Safari 10+).
+Chrome 37+, Firefox 31+, IE 11+, Edge, and Safari 10+).
 
 Please visit our
 [public forum](https://groups.google.com/forum/#!forum/lovefield-users) for

@@ -18,9 +18,14 @@ goog.setTestOnly();
 goog.require('goog.testing.jsunit');
 goog.require('lf.backstore.LocalStorageTable');
 goog.require('lf.testing.backstore.TableTester');
+goog.require('lf.testing.util');
 
 
 function testLocalStorageTable() {
+  if (!lf.testing.util.isLocalStorageTestingSupported()) {
+    return;
+  }
+
   var tester = new lf.testing.backstore.TableTester(function() {
     return new lf.backstore.LocalStorageTable('foo.bar');
   });
