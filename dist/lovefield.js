@@ -145,7 +145,7 @@ goog.workaroundSafari10EvalBug = function(moduleDef) {
 goog.loadModule = function(moduleDef) {
   var previousState = goog.moduleLoaderState_;
   try {
-    goog.moduleLoaderState_ = {moduleName:void 0, declareLegacyNamespace:!1};
+    goog.moduleLoaderState_ = {moduleName:"", declareLegacyNamespace:!1};
     if (goog.isFunction(moduleDef)) {
       var exports = moduleDef.call(void 0, {});
     } else {
@@ -156,11 +156,11 @@ goog.loadModule = function(moduleDef) {
       }
     }
     var moduleName = goog.moduleLoaderState_.moduleName;
-    if (!goog.isString(moduleName) || !moduleName) {
+    if (goog.isString(moduleName) && moduleName) {
+      goog.moduleLoaderState_.declareLegacyNamespace ? goog.constructNamespace_(moduleName, exports) : goog.SEAL_MODULE_EXPORTS && Object.seal && "object" == typeof exports && null != exports && Object.seal(exports), goog.loadedModules_[moduleName] = exports;
+    } else {
       throw Error('Invalid module name "' + moduleName + '"');
     }
-    goog.moduleLoaderState_.declareLegacyNamespace ? goog.constructNamespace_(moduleName, exports) : goog.SEAL_MODULE_EXPORTS && Object.seal && "object" == typeof exports && null != exports && Object.seal(exports);
-    goog.loadedModules_[moduleName] = exports;
   } finally {
     goog.moduleLoaderState_ = previousState;
   }
@@ -554,6 +554,9 @@ if (goog.DEPENDENCIES_ENABLED) {
     });
     addNewerLanguageTranspilationCheck("es8", function() {
       return evalCheck("async () => 1, true");
+    });
+    addNewerLanguageTranspilationCheck("es_next", function() {
+      return evalCheck("({...rest} = {}), true");
     });
     return requiresTranspilation;
   };
@@ -3593,13 +3596,13 @@ goog.structs.Map.prototype.set = function(key, value) {
 };
 goog.structs.Map.prototype.addAll = function(map) {
   if (map instanceof goog.structs.Map) {
-    var keys = map.getKeys();
-    var values = map.getValues();
+    for (var keys = map.getKeys(), i = 0; i < keys.length; i++) {
+      this.set(keys[i], map.get(keys[i]));
+    }
   } else {
-    keys = goog.object.getKeys(map), values = goog.object.getValues(map);
-  }
-  for (var i = 0; i < keys.length; i++) {
-    this.set(keys[i], values[i]);
+    for (var key in map) {
+      this.set(key, map[key]);
+    }
   }
 };
 goog.structs.Map.prototype.forEach = function(f, opt_obj) {
@@ -3671,6 +3674,9 @@ goog.labs.userAgent.platform.isWindows = function() {
 };
 goog.labs.userAgent.platform.isChromeOS = function() {
   return goog.labs.userAgent.util.matchUserAgent("CrOS");
+};
+goog.labs.userAgent.platform.isChromecast = function() {
+  return goog.labs.userAgent.util.matchUserAgent("CrKey");
 };
 goog.labs.userAgent.platform.getVersion = function() {
   var userAgentString = goog.labs.userAgent.util.getUserAgent(), version = "";
@@ -4677,7 +4683,6 @@ goog.exportProperty(lf.Type, "OBJECT", lf.Type.OBJECT);
 lf.type.DEFAULT_VALUES = {0:null, 1:!1, 2:Object.freeze(new Date(0)), 3:0, 4:0, 5:"", 6:null};
 goog.exportSymbol("lf.type.DEFAULT_VALUES", lf.type.DEFAULT_VALUES);
 lf.Exception = function(code, var_args) {
-  this.code = code;
   this.message = lf.Flags.EXCEPTION_URL + code;
   if (1 < arguments.length) {
     for (var i = 1; i <= Math.min(4, arguments.length - 1); ++i) {
