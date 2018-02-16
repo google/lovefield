@@ -3127,7 +3127,7 @@ goog.iter.filterFalse = function(iterable, f, opt_obj) {
 };
 goog.iter.range = function(startOrStop, opt_stop, opt_step) {
   var start = 0, stop = startOrStop, step = opt_step || 1;
-  1 < arguments.length && (start = startOrStop, stop = opt_stop);
+  1 < arguments.length && (start = startOrStop, stop = +opt_stop);
   if (0 == step) {
     throw Error("Range step argument must not be zero");
   }
@@ -6365,6 +6365,9 @@ lf.backstore.Firebase.prototype.subscribe = function(handler) {
 lf.backstore.Firebase.prototype.notify = function(changes) {
   goog.isDefAndNotNull(this.changeHandler_) && this.changeHandler_(changes);
 };
+lf.backstore.Firebase.prototype.supportsImport = function() {
+  return !1;
+};
 lf.backstore.IndexedDBRawBackStore = function(version, db, tx, bundledMode) {
   this.db_ = db;
   this.tx_ = tx;
@@ -6769,6 +6772,9 @@ lf.backstore.IndexedDB.prototype.subscribe = function() {
 };
 lf.backstore.IndexedDB.prototype.notify = function() {
 };
+lf.backstore.IndexedDB.prototype.supportsImport = function() {
+  return !0;
+};
 lf.backstore.LocalStorageTable = function(tableKey) {
   this.key_ = tableKey;
   this.data_ = {};
@@ -6907,6 +6913,9 @@ lf.backstore.LocalStorage.prototype.onStorageEvent_ = function(raw) {
     table && this.changeHandler_([table.diff(newData)]);
   }
 };
+lf.backstore.LocalStorage.prototype.supportsImport = function() {
+  return !1;
+};
 lf.backstore.MemoryTx = function(store, type, opt_journal) {
   lf.backstore.BaseTx.call(this, type, opt_journal);
   this.store_ = store;
@@ -6962,6 +6971,9 @@ lf.backstore.Memory.prototype.subscribe = function() {
 };
 lf.backstore.Memory.prototype.notify = function() {
 };
+lf.backstore.Memory.prototype.supportsImport = function() {
+  return !0;
+};
 lf.backstore.ObservableStore = function(schema) {
   lf.backstore.Memory.call(this, schema);
   this.observer_ = null;
@@ -6972,6 +6984,9 @@ lf.backstore.ObservableStore.prototype.subscribe = function(observer) {
 };
 lf.backstore.ObservableStore.prototype.notify = function(changes) {
   goog.isNull(this.observer_) || this.observer_(changes);
+};
+lf.backstore.ObservableStore.prototype.supportsImport = function() {
+  return !1;
 };
 lf.backstore.WebSqlTable = function(tx, name, deserializeFn) {
   this.tx_ = tx;
@@ -7269,6 +7284,9 @@ lf.backstore.WebSql.prototype.scanRowId_ = function() {
     resolver.reject(e);
   });
   return resolver.promise;
+};
+lf.backstore.WebSql.prototype.supportsImport = function() {
+  return !0;
 };
 lf.cache.Cache = function() {
 };
@@ -11674,7 +11692,7 @@ lf.proc.ImportTask = function(global, data) {
   this.indexStore_ = global.getService(lf.service.INDEX_STORE);
 };
 lf.proc.ImportTask.prototype.exec = function() {
-  if (!(this.backStore_ instanceof lf.backstore.IndexedDB || this.backStore_ instanceof lf.backstore.Memory || this.backStore_ instanceof lf.backstore.WebSql)) {
+  if (!this.backStore_.supportsImport()) {
     throw new lf.Exception(300);
   }
   if (!this.isEmptyDB_()) {

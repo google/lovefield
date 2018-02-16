@@ -86,3 +86,8 @@ lf.testing.backstore.MockStore.prototype.unsubscribe = goog.abstractMethod;
 lf.testing.backstore.MockStore.prototype.notify = function(changes) {
   this.store_.notify(changes);
 };
+
+/** @override */
+lf.testing.backstore.MockStore.prototype.supportsImport = function() {
+  return false;
+};
