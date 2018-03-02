@@ -3072,14 +3072,14 @@ goog.iter.toIterator = function(iterable) {
     return iterable.__iterator__(!1);
   }
   if (goog.isArrayLike(iterable)) {
-    var i = 0, newIter = new goog.iter.Iterator;
+    var like = iterable, i = 0, newIter = new goog.iter.Iterator;
     newIter.next = function() {
       for (;;) {
-        if (i >= iterable.length) {
+        if (i >= like.length) {
           throw goog.iter.StopIteration;
         }
-        if (i in iterable) {
-          return iterable[i++];
+        if (i in like) {
+          return like[i++];
         }
         i++;
       }
@@ -3931,24 +3931,10 @@ lf.structs.map.create = function() {
   return $jscomp.scope.USE_NATIVE ? new window.Map : new lf.structs.MapPolyFill_;
 };
 lf.structs.map.keys = function(map) {
-  if (map instanceof lf.structs.MapPolyFill_) {
-    return map.map_.getKeys();
-  }
-  var i = 0, array = Array(map.size);
-  map.forEach(function(v, k) {
-    array[i++] = k;
-  });
-  return array;
+  return map instanceof lf.structs.MapPolyFill_ ? map.map_.getKeys() : Array.from(map.keys());
 };
 lf.structs.map.values = function(map) {
-  if (map instanceof lf.structs.MapPolyFill_) {
-    return map.map_.getValues();
-  }
-  var i = 0, array = Array(map.size);
-  map.forEach(function(v) {
-    array[i++] = v;
-  });
-  return array;
+  return map instanceof lf.structs.MapPolyFill_ ? map.map_.getValues() : Array.from(map.values());
 };
 /*
 
@@ -4379,14 +4365,7 @@ lf.structs.set.create = function(opt_iterable) {
   return $jscomp.scope.USE_NATIVE$jscomp$1 ? goog.isDef(opt_iterable) ? new window.Set(opt_iterable) : new window.Set : new lf.structs.SetPolyFill_(opt_iterable);
 };
 lf.structs.set.values = function(set) {
-  if (set instanceof lf.structs.SetPolyFill_) {
-    return set.set_.getValues();
-  }
-  var i = 0, array = Array(set.size);
-  set.forEach(function(v) {
-    array[i++] = v;
-  });
-  return array;
+  return set instanceof lf.structs.SetPolyFill_ ? set.set_.getValues() : Array.from(set);
 };
 lf.structs.set.diff = function(set1, set2) {
   if (set1 instanceof lf.structs.SetPolyFill_) {
