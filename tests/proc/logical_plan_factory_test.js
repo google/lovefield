@@ -17,6 +17,7 @@
 goog.setTestOnly();
 goog.require('goog.testing.jsunit');
 goog.require('lf.Global');
+goog.require('lf.bind');
 goog.require('lf.op');
 goog.require('lf.proc.LogicalPlanFactory');
 goog.require('lf.query.DeleteBuilder');
@@ -126,6 +127,50 @@ function testCreate_SelectPlan_SkipZero() {
   var expectedTree =
       'project()\n' +
       '-table_access(tableA)\n';
+
+  var logicalPlan = logicalPlanFactory.create(query);
+  assertEquals(expectedTree, lf.tree.toString(logicalPlan.getRoot()));
+}
+
+
+/**
+ * Tests that the generated logical query plan for a SELECT query with "SKIP ?"
+ * includes a "skip" node.
+ */
+function testCreate_SelectPlan_Skip_WithBind() {
+  var table = env.schema.table('tableA');
+  var queryBuilder = new lf.query.SelectBuilder(lf.Global.get(), []);
+  queryBuilder.from(table).skip(lf.bind(0));
+
+  var query = queryBuilder.bind([3]).getQuery();
+
+  var expectedTree =
+      'skip(3)\n' +
+      '-project()\n' +
+      '--table_access(tableA)\n';
+
+  var logicalPlan = logicalPlanFactory.create(query);
+  assertEquals(expectedTree, lf.tree.toString(logicalPlan.getRoot()));
+}
+
+
+/**
+ * Tests that the generated logical query plan for a SELECT query with "SKIP ?"
+ * when the value is bound to zero includes a "skip" node. Although skipping 0
+ * has no effect on query results, the bound value may change on subsequent
+ * invocations.
+ */
+function testCreate_SelectPlan_SkipZero_WithBind() {
+  var table = env.schema.table('tableA');
+  var queryBuilder = new lf.query.SelectBuilder(lf.Global.get(), []);
+  queryBuilder.from(table).skip(lf.bind(0));
+
+  var query = queryBuilder.bind([0]).getQuery();
+
+  var expectedTree =
+      'skip(0)\n' +
+      '-project()\n' +
+      '--table_access(tableA)\n';
 
   var logicalPlan = logicalPlanFactory.create(query);
   assertEquals(expectedTree, lf.tree.toString(logicalPlan.getRoot()));

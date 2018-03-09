@@ -18,7 +18,7 @@ goog.isNumber = function(val) {
 };
 goog.exportPath_ = function(name, opt_object, opt_objectToExportTo) {
   var parts = name.split("."), cur = opt_objectToExportTo || goog.global;
-  parts[0] in cur || !cur.execScript || cur.execScript("var " + parts[0]);
+  parts[0] in cur || "undefined" == typeof cur.execScript || cur.execScript("var " + parts[0]);
   for (var part; parts.length && (part = parts.shift());) {
     !parts.length && goog.isDef(opt_object) ? cur[part] = opt_object : cur = cur[part] && cur[part] !== Object.prototype[part] ? cur[part] : cur[part] = {};
   }
@@ -290,7 +290,7 @@ goog.removeHashCode = goog.removeUid;
 goog.cloneObject = function(obj) {
   var type = goog.typeOf(obj);
   if ("object" == type || "array" == type) {
-    if (obj.clone) {
+    if ("function" === typeof obj.clone) {
       return obj.clone();
     }
     var clone = "array" == type ? [] : {}, key;
@@ -432,7 +432,7 @@ goog.base = function(me, opt_methodName, var_args) {
   if (goog.STRICT_MODE_COMPATIBLE || goog.DEBUG && !caller) {
     throw Error("arguments.caller not defined.  goog.base() cannot be used with strict mode code. See http://www.ecma-international.org/ecma-262/5.1/#sec-C");
   }
-  if (caller.superClass_) {
+  if ("undefined" !== typeof caller.superClass_) {
     for (var ctorArgs = Array(arguments.length - 1), i = 1; i < arguments.length; i++) {
       ctorArgs[i - 1] = arguments[i];
     }
@@ -3728,8 +3728,11 @@ goog.userAgent.BROWSER_KNOWN_ = goog.userAgent.ASSUME_IE || goog.userAgent.ASSUM
 goog.userAgent.getUserAgentString = function() {
   return goog.labs.userAgent.util.getUserAgent();
 };
-goog.userAgent.getNavigator = function() {
+goog.userAgent.getNavigatorTyped = function() {
   return goog.global.navigator || null;
+};
+goog.userAgent.getNavigator = function() {
+  return goog.userAgent.getNavigatorTyped();
 };
 goog.userAgent.OPERA = goog.userAgent.BROWSER_KNOWN_ ? goog.userAgent.ASSUME_OPERA : goog.labs.userAgent.browser.isOpera();
 goog.userAgent.IE = goog.userAgent.BROWSER_KNOWN_ ? goog.userAgent.ASSUME_IE : goog.labs.userAgent.browser.isIE();
@@ -3743,7 +3746,7 @@ goog.userAgent.isMobile_ = function() {
 goog.userAgent.MOBILE = goog.userAgent.ASSUME_MOBILE_WEBKIT || goog.userAgent.isMobile_();
 goog.userAgent.SAFARI = goog.userAgent.WEBKIT;
 goog.userAgent.determinePlatform_ = function() {
-  var navigator = goog.userAgent.getNavigator();
+  var navigator = goog.userAgent.getNavigatorTyped();
   return navigator && navigator.platform || "";
 };
 goog.userAgent.PLATFORM = goog.userAgent.determinePlatform_();
@@ -3763,7 +3766,7 @@ goog.userAgent.isLegacyLinux_ = function() {
 };
 goog.userAgent.LINUX = goog.userAgent.PLATFORM_KNOWN_ ? goog.userAgent.ASSUME_LINUX : goog.userAgent.isLegacyLinux_();
 goog.userAgent.isX11_ = function() {
-  var navigator = goog.userAgent.getNavigator();
+  var navigator = goog.userAgent.getNavigatorTyped();
   return !!navigator && goog.string.contains(navigator.appVersion || "", "X11");
 };
 goog.userAgent.X11 = goog.userAgent.PLATFORM_KNOWN_ ? goog.userAgent.ASSUME_X11 : goog.userAgent.isX11_();
@@ -10268,7 +10271,9 @@ lf.proc.SelectLogicalPlanGenerator.prototype.generateLimitNode_ = function() {
   goog.isDefAndNotNull(this.query.limit) && (this.limitNode_ = new lf.proc.LimitNode(this.query.limit));
 };
 lf.proc.SelectLogicalPlanGenerator.prototype.generateSkipNode_ = function() {
-  goog.isDefAndNotNull(this.query.skip) && 0 < this.query.skip && (this.skipNode_ = new lf.proc.SkipNode(this.query.skip));
+  if (goog.isDefAndNotNull(this.query.skip) && 0 < this.query.skip || goog.isDefAndNotNull(this.query.skipBinder)) {
+    this.skipNode_ = new lf.proc.SkipNode(this.query.skip);
+  }
 };
 lf.proc.SelectLogicalPlanGenerator.prototype.generateGroupByNode_ = function() {
   goog.isDefAndNotNull(this.query.groupBy) && (this.groupByNode_ = new lf.proc.GroupByNode(this.query.groupBy));

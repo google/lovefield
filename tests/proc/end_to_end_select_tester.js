@@ -77,6 +77,7 @@ lf.testing.EndToEndSelectTester = function(connectFn) {
     this.testSkipZero.bind(this),
     this.testSkipIndex.bind(this),
     this.testSkipIndexZero.bind(this),
+    this.testSkipBinder.bind(this),
     this.testPredicate.bind(this),
     this.testPredicate_IsNull.bind(this),
     this.testAs.bind(this),
@@ -367,6 +368,25 @@ lf.testing.EndToEndSelectTester.prototype.testSkipIndex = function() {
  */
 lf.testing.EndToEndSelectTester.prototype.testSkipIndexZero = function() {
   return this.checkSelectIndex_Skip_(0);
+};
+
+
+/**
+ * Tests that a SELECT query that uses a binder for SKIP works correctly.
+ * @return {!IThenable}
+ */
+lf.testing.EndToEndSelectTester.prototype.testSkipBinder = function() {
+  var queryBuilder = /** @type {!lf.query.SelectBuilder} */ (
+      this.db_.select().from(this.j_).skip(lf.bind(0)));
+
+  return queryBuilder.bind([0]).exec().then(
+      function(results) {
+        assertEquals(this.dataGenerator_.sampleJobs.length, results.length);
+        return queryBuilder.bind([2]).exec();
+      }.bind(this)).then(
+      function(results) {
+        assertEquals(this.dataGenerator_.sampleJobs.length - 2, results.length);
+      }.bind(this));
 };
 
 
