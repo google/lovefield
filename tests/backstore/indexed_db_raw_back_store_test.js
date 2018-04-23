@@ -584,10 +584,10 @@ Schema_.prototype.info = function() {
  * @param {string} tableName The name of this table.
  */
 var Table_ = function(tableName) {
-  /** @type {!lf.schema.Column.<string>} */
+  /** @type {!lf.schema.Column} */
   this.id = new lf.schema.BaseColumn(this, 'id', false, false, lf.Type.STRING);
 
-  /** @type {!lf.schema.Column.<string>} */
+  /** @type {!lf.schema.Column} */
   this.name = new lf.schema.BaseColumn(
       this, 'name', false, false, lf.Type.STRING);
 

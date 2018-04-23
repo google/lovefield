@@ -34,13 +34,30 @@ goog.STRICT_MODE_COMPATIBLE = !1;
 goog.DISALLOW_TEST_ONLY_CODE = !goog.DEBUG;
 goog.ENABLE_CHROME_APP_SAFE_SCRIPT_LOADING = !1;
 goog.provide = function(name) {
-  if (goog.isInModuleLoader_()) {
-    throw Error("goog.provide can not be used within a module.");
+  if (goog.isInGoogModuleLoader_()) {
+    throw Error("goog.provide cannot be used within a module.");
   }
+  goog.isInEs6ModuleLoader_() && goog.logToConsole_("goog.provide should not be used within a module.");
   goog.constructNamespace_(name);
 };
 goog.constructNamespace_ = function(name, opt_obj) {
   goog.exportPath_(name, opt_obj);
+};
+goog.getScriptNonce = function() {
+  null === goog.cspNonce_ && (goog.cspNonce_ = goog.getScriptNonce_(goog.global.document) || "");
+  return goog.cspNonce_;
+};
+goog.NONCE_PATTERN_ = /^[\w+/_-]+[=]{0,2}$/;
+goog.cspNonce_ = null;
+goog.getScriptNonce_ = function(doc) {
+  var script = doc.querySelector("script[nonce]");
+  if (script) {
+    var nonce = script.nonce || script.getAttribute("nonce");
+    if (nonce && goog.NONCE_PATTERN_.test(nonce)) {
+      return nonce;
+    }
+  }
+  return null;
 };
 goog.VALID_MODULE_RE_ = /^[a-zA-Z_$][a-zA-Z0-9._$]*$/;
 goog.module = function(name) {
@@ -70,7 +87,12 @@ goog.isInGoogModuleLoader_ = function() {
   return !!goog.moduleLoaderState_ && goog.moduleLoaderState_.type == goog.ModuleType.GOOG;
 };
 goog.isInEs6ModuleLoader_ = function() {
-  return !!goog.moduleLoaderState_ && goog.moduleLoaderState_.type == goog.ModuleType.ES6;
+  var inLoader = !!goog.moduleLoaderState_ && goog.moduleLoaderState_.type == goog.ModuleType.ES6;
+  if (inLoader) {
+    return !0;
+  }
+  var jscomp = goog.global.$jscomp;
+  return jscomp ? "function" != typeof jscomp.getCurrentModulePath ? !1 : !!jscomp.getCurrentModulePath() : !1;
 };
 goog.getModulePath_ = function() {
   return goog.moduleLoaderState_ && goog.moduleLoaderState_.path;
@@ -109,13 +131,13 @@ goog.logToConsole_ = function(msg) {
 goog.isPath_ = function(requireOrPath) {
   return 0 == requireOrPath.indexOf("./") || 0 == requireOrPath.indexOf("../");
 };
-goog.require = function(name) {
-  if (goog.isPath_(name)) {
+goog.require = function(nameOrPath) {
+  if (goog.isPath_(nameOrPath)) {
     if (goog.isInGoogModuleLoader_()) {
       if (!goog.getModulePath_()) {
         throw Error("Current module has no path information. Was it loaded via goog.loadModule without a path argument?");
       }
-      goog.normalizePath_(goog.getModulePath_() + "/../" + name);
+      goog.normalizePath_(goog.getModulePath_() + "/../" + nameOrPath);
     } else {
       throw Error("Cannot require by path outside of goog.modules.");
     }

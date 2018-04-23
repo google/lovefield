@@ -80,7 +80,7 @@ var SEQUENCE = [
   10, 12, 16];
 
 
-/** @const {!Array<!Array<number, string>>} */
+/** @const {!Array<!Array<number|string>>} */
 var SEQUENCE2 = [
   [13, '13'], [9, '09'], [21, '21'], [17, '17'],
   [5, '05'],
@@ -124,7 +124,7 @@ function insertToTree2(index, comparator, opt_duplicate) {
   var tree = new lf.index.BTree('test', comparator, unique);
   var i = 0;
   while (i < index) {
-    tree.add(SEQUENCE2[i], SEQUENCE2[i][0]);
+    tree.add(SEQUENCE2[i], /** @type {number} */ (SEQUENCE2[i][0]));
     if (opt_duplicate) {
       tree.add(SEQUENCE[i], SEQUENCE[i][0] * 1000);
     }
