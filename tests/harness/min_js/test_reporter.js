@@ -61,3 +61,11 @@ TestReporter.prototype.getRunTime = function() {
 TestReporter.prototype.getUniqueId = function() {
   return 'id';
 };
+
+/**
+ * Unsupported runner: Provide result-returning function used by JsTestRunner.
+ * @return {string}
+ * */
+TestReporter.prototype.getTestResultsAsJson = function() {
+  return '';
+};
