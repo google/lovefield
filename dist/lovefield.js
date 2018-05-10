@@ -100,6 +100,18 @@ goog.getModulePath_ = function() {
 goog.module.declareLegacyNamespace = function() {
   goog.moduleLoaderState_.declareLegacyNamespace = !0;
 };
+goog.module.declareNamespace = function(namespace) {
+  if (goog.moduleLoaderState_) {
+    goog.moduleLoaderState_.moduleName = namespace;
+  } else {
+    var jscomp = goog.global.$jscomp;
+    if (!jscomp || "function" != typeof jscomp.getCurrentModulePath) {
+      throw Error('Module with namespace "' + namespace + '" has been loaded incorrectly.');
+    }
+    var exports = jscomp.require(jscomp.getCurrentModulePath());
+    goog.loadedModules_[namespace] = {exports:exports, type:goog.ModuleType.ES6, moduleId:namespace};
+  }
+};
 goog.setTestOnly = function(opt_message) {
   if (goog.DISALLOW_TEST_ONLY_CODE) {
     throw opt_message = opt_message || "", Error("Importing test-only code into non-debug environment" + (opt_message ? ": " + opt_message : "."));
@@ -128,20 +140,7 @@ goog.ENABLE_DEBUG_LOADER = !0;
 goog.logToConsole_ = function(msg) {
   goog.global.console && goog.global.console.error(msg);
 };
-goog.isPath_ = function(requireOrPath) {
-  return 0 == requireOrPath.indexOf("./") || 0 == requireOrPath.indexOf("../");
-};
-goog.require = function(nameOrPath) {
-  if (goog.isPath_(nameOrPath)) {
-    if (goog.isInGoogModuleLoader_()) {
-      if (!goog.getModulePath_()) {
-        throw Error("Current module has no path information. Was it loaded via goog.loadModule without a path argument?");
-      }
-      goog.normalizePath_(goog.getModulePath_() + "/../" + nameOrPath);
-    } else {
-      throw Error("Cannot require by path outside of goog.modules.");
-    }
-  }
+goog.require = function() {
 };
 goog.basePath = "";
 goog.nullFunction = function() {

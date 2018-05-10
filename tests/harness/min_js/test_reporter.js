@@ -67,5 +67,15 @@ TestReporter.prototype.getUniqueId = function() {
  * @return {string}
  * */
 TestReporter.prototype.getTestResultsAsJson = function() {
-  return '';
+  var result = {'lovefield-test': []};
+  if (!goog.global['G_testRunner']['isSuccess']()) {
+    result = {
+      'lovefield-test': [{
+          'source':'',
+          'message': goog.global['G_testRunner']['getReport'](),
+          'stacktrace':'',
+      }]
+    };
+  }
+  return JSON.stringify(result);
 };
