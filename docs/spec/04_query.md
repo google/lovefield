@@ -190,13 +190,13 @@ db.select(p.id, a.id, a.name).
 
 Search conditions is the condition combinations used inside `where()`. In SQL,
 it’s actually a boolean value expression, whose grammar can be found
-[here](http://savage.net.au/SQL/sql-2003-2.bnf.html#boolean%20value%20expression
+[here](https://ronsavage.github.io/SQL/sql-2003-2.bnf.html#boolean%20value%20expression
 ). Lovefield provides following building blocks to help users construct their
 search conditions.
 
 Search conditions are orchestrated by predicates. Lovefield uses various
 predicates to provide a subset of [nonparenthesized value expression primary](
-http://savage.net.au/SQL/sql-2003-2.bnf.html#nonparenthesized%20value%20expression%20primary)
+https://ronsavage.github.io/SQL/sql-2003-2.bnf.html#nonparenthesized%20value%20expression%20primary)
 in SQL grammar. These predicates are generated from predicate providers:
 
 |Function   |Number of parameters |SQL equivalent |
