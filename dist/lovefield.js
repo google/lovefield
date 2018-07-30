@@ -6348,7 +6348,7 @@ lf.backstore.ObjectStore = function(store, deserializeFn) {
 };
 lf.backstore.ObjectStore.prototype.get = function(ids) {
   if (0 == ids.length) {
-    return goog.isDefAndNotNull(this.store_.getAll) ? this.getAllBulk_() : this.getAllWithCursor_();
+    return this.getAllWithCursor_();
   }
   var promises = ids.map(function(id) {
     return new goog.Promise(function(resolve, reject) {
@@ -6379,23 +6379,6 @@ lf.backstore.ObjectStore.prototype.getAllWithCursor_ = function() {
     request.onsuccess = function() {
       var cursor = request.result;
       cursor ? (rows.push(this.deserializeFn_(cursor.value)), cursor.continue()) : resolve(rows);
-    }.bind(this);
-  }, this);
-};
-lf.backstore.ObjectStore.prototype.getAllBulk_ = function() {
-  return new goog.Promise(function(resolve, reject) {
-    try {
-      var request = this.store_.getAll();
-    } catch (e) {
-      reject(e);
-      return;
-    }
-    request.onerror = reject;
-    request.onsuccess = function() {
-      var rows = request.result.map(function(rawRow) {
-        return this.deserializeFn_(rawRow);
-      }, this);
-      resolve(rows);
     }.bind(this);
   }, this);
 };
