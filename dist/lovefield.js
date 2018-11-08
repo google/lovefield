@@ -2452,7 +2452,6 @@ goog.Thenable.prototype.then = function() {
 };
 goog.Thenable.IMPLEMENTED_BY_PROP = "$goog_Thenable";
 goog.Thenable.addImplementation = function(ctor) {
-  ctor.prototype.then = ctor.prototype.then;
   ctor.prototype[goog.Thenable.IMPLEMENTED_BY_PROP] = !0;
 };
 goog.Thenable.isImplementedBy = function(object) {
