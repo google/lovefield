@@ -3753,6 +3753,7 @@ lf.Flags = {};
 lf.Flags.MEMORY_ONLY = !1;
 lf.Flags.NATIVE_ES6 = !1;
 lf.Flags.EXCEPTION_URL = "http://google.github.io/lovefield/error_lookup/src/error_lookup.html?c=";
+lf.Flags.IDB_GETALL_OPTIMIZATION = !0;
 lf.structs = {};
 lf.structs.map = {};
 $jscomp.scope.detectUseNative = function() {
@@ -6361,7 +6362,7 @@ lf.backstore.ObjectStore = function(store, deserializeFn) {
 };
 lf.backstore.ObjectStore.prototype.get = function(ids) {
   if (0 == ids.length) {
-    return goog.isDefAndNotNull(this.store_.getAll) ? this.getAllBulk_() : this.getAllWithCursor_();
+    return lf.Flags.IDB_GETALL_OPTIMIZATION && goog.isDefAndNotNull(this.store_.getAll) ? this.getAllBulk_() : this.getAllWithCursor_();
   }
   var promises = ids.map(function(id) {
     return new goog.Promise(function(resolve, reject) {
