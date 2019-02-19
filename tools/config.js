@@ -24,7 +24,7 @@ var Config = function() {
   this.CLOSURE_COMPILER_PATH =
       pathMod.resolve(pathMod.join(
           __dirname,
-          '../node_modules/google-closure-compiler/compiler.jar'));
+          '../node_modules/google-closure-compiler-java/compiler.jar'));
 
   // Root of Closure library git repo checkout.
   this.CLOSURE_LIBRARY_PATH =

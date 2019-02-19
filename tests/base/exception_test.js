@@ -50,7 +50,7 @@ function testException() {
   var e4 = new lf.Exception(999, longString);
   assertEquals(BASE_URL + '999&p0=' + expected, e4.message);
 
-  var e5 = new lf.Exception(999, 3, undefined);
+  var e5 = new lf.Exception(999, 3);
   assertEquals(BASE_URL + '999&p0=3&p1=undefined', e5.message);
 }
 
