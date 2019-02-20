@@ -53,16 +53,22 @@ function testGetReferencingForeignKeys() {
 
   [dynamicInfo, staticInfo].forEach(function(info) {
     assertNull(getRefs(info, 'DummyTable'));
-    assertSameElements(['Country.fk_RegionId'], getRefs(info, 'Region'));
     assertSameElements(
         ['Country.fk_RegionId'],
-        getRefs(info, 'Region', lf.ConstraintAction.RESTRICT));
+        /** @type {!Array<string>} */ (getRefs(info, 'Region')));
+    assertSameElements(
+        ['Country.fk_RegionId'],
+        /** @type {!Array<string>} */
+        (getRefs(info, 'Region', lf.ConstraintAction.RESTRICT)));
     assertNull(getRefs(info, 'Region', lf.ConstraintAction.CASCADE));
 
-    assertSameElements(['Location.fk_CountryId'], getRefs(info, 'Country'));
     assertSameElements(
         ['Location.fk_CountryId'],
-        getRefs(info, 'Country', lf.ConstraintAction.RESTRICT));
+        /** @type {!Array<string>} */ (getRefs(info, 'Country')));
+    assertSameElements(
+        ['Location.fk_CountryId'],
+        /** @type {!Array<string>} */
+        (getRefs(info, 'Country', lf.ConstraintAction.RESTRICT)));
     assertNull(getRefs(info, 'Country', lf.ConstraintAction.CASCADE));
   });
 }
