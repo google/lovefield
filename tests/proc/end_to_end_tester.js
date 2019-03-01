@@ -850,7 +850,6 @@ lf.testing.EndToEndTester.prototype.testObserve_MultipleObservers = function() {
 
   /**
    * @return {!lf.query.Select}
-   * @this {!lf.testing.EndToEndTester}
    */
   var getQuery = (function() {
     return this.db_.select().from(this.j_);

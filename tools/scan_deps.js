@@ -306,11 +306,11 @@ function scanDeps() {
   var edgesClosure = closureRequire.getTopoSortEntry(
       closureProvide, closureProvide, closureDeps);
 
-  var topoSorter = new Toposort();
+  var topoSorter = /** @type {?} */ (new Toposort());
   edges.forEach(function(entry) {
     topoSorter.add(entry.name, entry.depends);
   });
-  var topoSorterClosure = new Toposort();
+  var topoSorterClosure = /** @type {?} */ (new Toposort());
   edgesClosure.forEach(function(entry) {
     topoSorterClosure.add(entry.name, entry.depends);
   });

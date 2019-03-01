@@ -133,19 +133,19 @@ function testNewDBInstance() {
     return;
   }
 
-  /**
-   * @param {!lf.raw.BackStore} rawDb
-   * @return {!IThenable}
-   */
+  /** @type {!goog.testing.recordFunction.Type} */
   var onUpgrade = goog.testing.recordFunction(function(rawDb) {
     assertEquals(0, rawDb.getVersion());
     return goog.Promise.resolve();
   });
 
   var db = new lf.backstore.Firebase(schema, fb);
-  return db.init(onUpgrade).then(function() {
-    onUpgrade.assertCallCount(1);
-  });
+  // cast onUpgrade because it's now typed as goog.testing.recordFunction.Type
+  return db
+      .init(/** @type {function(!lf.raw.BackStore): !IThenable} */ (onUpgrade))
+      .then(function() {
+        onUpgrade.assertCallCount(1);
+      });
 }
 
 

@@ -22,7 +22,10 @@ var nopt = /** @type {!Function} */ (require('nopt'));
 
 
 
-/** @constructor */
+/**
+ * @param {?} token
+ * @constructor
+ */
 var FirebaseTokenGenerator = /** @type {!Function} */ (
     require('firebase-token-generator'));
 

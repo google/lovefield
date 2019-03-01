@@ -105,19 +105,17 @@ function testNewDBInstance() {
     return;
   }
 
-  /**
-   * @param {!lf.raw.BackStore} rawDb
-   * @return {!IThenable}
-   */
   var onUpgrade = goog.testing.recordFunction(function(rawDb) {
     assertEquals(0, rawDb.getVersion());
     return goog.Promise.resolve();
   });
 
   var db = new lf.backstore.IndexedDB(lf.Global.get(), schema);
-  return db.init(onUpgrade).then(function() {
-    onUpgrade.assertCallCount(1);
-  });
+  return db
+      .init(/** @type {function(!lf.raw.BackStore): !IThenable} */ (onUpgrade))
+      .then(function() {
+        onUpgrade.assertCallCount(1);
+      });
 }
 
 

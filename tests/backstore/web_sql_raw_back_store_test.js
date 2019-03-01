@@ -125,19 +125,17 @@ function testNewDBInstance() {
   lf.Global.get().registerService(lf.service.CACHE,
       new lf.cache.DefaultCache(schema));
 
-  /**
-   * @param {!lf.raw.BackStore} rawDb
-   * @return {!IThenable}
-   */
   var onUpgrade = goog.testing.recordFunction(function(rawDb) {
     assertEquals(0, rawDb.getVersion());
     return goog.Promise.resolve();
   });
 
   var db = new lf.backstore.WebSql(lf.Global.get(), getOldSchema());
-  return db.init(onUpgrade).then(function() {
-    onUpgrade.assertCallCount(1);
-  });
+  return db
+      .init(/** @type {function(!lf.raw.BackStore): !IThenable} */ (onUpgrade))
+      .then(function() {
+        onUpgrade.assertCallCount(1);
+      });
 }
 
 
