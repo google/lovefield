@@ -491,12 +491,12 @@ goog.base = function(me, opt_methodName, var_args) {
   for (i = 2; i < arguments.length; i++) {
     args[i - 2] = arguments[i];
   }
-  for (var foundCaller = !1, ctor = me.constructor; ctor; ctor = ctor.superClass_ && ctor.superClass_.constructor) {
-    if (ctor.prototype[opt_methodName] === caller) {
+  for (var foundCaller = !1, proto = me.constructor.prototype; proto; proto = Object.getPrototypeOf(proto)) {
+    if (proto[opt_methodName] === caller) {
       foundCaller = !0;
     } else {
       if (foundCaller) {
-        return ctor.prototype[opt_methodName].apply(me, args);
+        return proto[opt_methodName].apply(me, args);
       }
     }
   }
