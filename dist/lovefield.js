@@ -4933,8 +4933,8 @@ goog.userAgent.isDocumentModeOrHigher = function(documentMode) {
 };
 goog.userAgent.isDocumentMode = goog.userAgent.isDocumentModeOrHigher;
 var JSCompiler_inline_result$jscomp$2;
-var doc$jscomp$inline_4 = goog.global.document, mode$jscomp$inline_5 = goog.userAgent.getDocumentMode_();
-JSCompiler_inline_result$jscomp$2 = doc$jscomp$inline_4 && goog.userAgent.IE ? mode$jscomp$inline_5 || ("CSS1Compat" == doc$jscomp$inline_4.compatMode ? parseInt(goog.userAgent.VERSION, 10) : 5) : void 0;
+var doc$jscomp$inline_4 = goog.global.document;
+JSCompiler_inline_result$jscomp$2 = doc$jscomp$inline_4 && goog.userAgent.IE ? goog.userAgent.getDocumentMode_() : void 0;
 goog.userAgent.DOCUMENT_MODE = JSCompiler_inline_result$jscomp$2;
 goog.userAgent.platform = {};
 goog.userAgent.platform.determineVersion_ = function() {
