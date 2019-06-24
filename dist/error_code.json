@@ -40,6 +40,7 @@
   "359": "LocalStorage is not supported by platform.",
   "360": "Not implemented yet.",
   "361": "Unable to open IndexedDB database: {0}, {1}. See https://github.com/google/lovefield/blob/master/docs/FAQ.md for possible explanation.",
+  "362": "Error deserializing row from IndexedDB: {0}, {1}",
 
   "500": "Syntax error",
   "501": "Value is not bounded.",

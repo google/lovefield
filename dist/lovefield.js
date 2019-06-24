@@ -4932,10 +4932,10 @@ goog.userAgent.isDocumentModeOrHigher = function(documentMode) {
   return Number(goog.userAgent.DOCUMENT_MODE) >= documentMode;
 };
 goog.userAgent.isDocumentMode = goog.userAgent.isDocumentModeOrHigher;
-var JSCompiler_inline_result$jscomp$2;
-var doc$jscomp$inline_4 = goog.global.document;
-JSCompiler_inline_result$jscomp$2 = doc$jscomp$inline_4 && goog.userAgent.IE ? goog.userAgent.getDocumentMode_() : void 0;
-goog.userAgent.DOCUMENT_MODE = JSCompiler_inline_result$jscomp$2;
+var JSCompiler_inline_result$jscomp$3;
+var doc$jscomp$inline_5 = goog.global.document;
+JSCompiler_inline_result$jscomp$3 = doc$jscomp$inline_5 && goog.userAgent.IE ? goog.userAgent.getDocumentMode_() : void 0;
+goog.userAgent.DOCUMENT_MODE = JSCompiler_inline_result$jscomp$3;
 goog.userAgent.platform = {};
 goog.userAgent.platform.determineVersion_ = function() {
   if (goog.userAgent.WINDOWS) {
@@ -7656,10 +7656,14 @@ lf.backstore.ObjectStore.prototype.getAllBulk_ = function() {
     }
     request.onerror = reject;
     request.onsuccess = function() {
-      var rows = request.result.map(function(rawRow) {
-        return this.deserializeFn_(rawRow);
-      }, this);
-      resolve(rows);
+      try {
+        var rows = request.result.map(function(rawRow) {
+          return this.deserializeFn_(rawRow);
+        }, this);
+        resolve(rows);
+      } catch (e$2) {
+        reject(new lf.Exception(362, e$2.name, e$2.message));
+      }
     }.bind(this);
   }, this);
 };
