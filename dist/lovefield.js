@@ -7651,7 +7651,7 @@ lf.backstore.ObjectStore.prototype.getAllBulk_ = function() {
     try {
       var request = this.store_.getAll();
     } catch (e) {
-      reject(e);
+      reject(new lf.Exception(363, e.name, e.message));
       return;
     }
     request.onerror = reject;
