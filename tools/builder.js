@@ -120,8 +120,10 @@ function buildMinJsTest_(testFile) {
   var dir = pathMod.dirname(testFile);
   var apiTester = pathMod.join(dir, 'api_tester.js');
   var testReporter = pathMod.join(dir, 'test_reporter.js');
+  var base = pathMod.resolve(
+      pathMod.join(config.CLOSURE_LIBRARY_PATH, 'closure/goog/base.js'));
   return new Promise(function(resolve, reject) {
-    gulp.src([apiTester, testReporter, testFile]).pipe(closureCompiler({
+    gulp.src([apiTester, testReporter, base, testFile]).pipe(closureCompiler({
       compilerPath: config.CLOSURE_COMPILER_PATH,
       fileName: new temporary.File().path,
       compilerFlags: compilerFlags
