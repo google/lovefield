@@ -5,6 +5,6 @@
   "main": "devtools.js",
   "devDependencies": {
     "gulp-zip": "^3.0.2",
-    "jquery": "^2.1.4"
+    "jquery": "^3.4.1"
   }
 }
