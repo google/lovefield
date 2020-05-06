@@ -90,7 +90,6 @@ gulp.task('build', function() {
   } else {
     return builder.buildAllTests(options).then(function() {
       log('Everything built');
-      process.exit(0);
     });
   }
 });
@@ -115,7 +114,7 @@ gulp.task('debug', function() {
 });
 
 
-gulp.task('test', ['debug'], function() {
+gulp.task('test', gulp.series('debug', function() {
   var knownOpts = {
     'browser': [Array, String, null],
     'filter': [Array, String, null],
@@ -172,4 +171,4 @@ gulp.task('test', ['debug'], function() {
         function() { finalize(); }, finalize);
   }
   return whenTestsDone;
-});
+}));

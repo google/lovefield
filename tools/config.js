@@ -45,7 +45,6 @@ var Config = function() {
     generate_exports: null,
     jscomp_error: [
       'accessControls',
-      'ambiguousFunctionDecl',
       'checkDebuggerStatement',
       'checkRegExp',
       'checkTypes',
@@ -55,9 +54,7 @@ var Config = function() {
       'duplicate',
       'es5Strict',
       'externsValidation',
-      'fileoverviewTags',
       'globalThis',
-      'internetExplorerChecks',
       'invalidCasts',
       'missingProperties',
       'missingProvide',

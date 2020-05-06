@@ -294,7 +294,7 @@ function testExternalChange() {
       data['1'] = { 'R': rev + 1, 'T': 2, 'P': CONTENTS0 };
       data['2'] = { 'R': rev + 1, 'T': 2, 'P': CONTENTS1 };
       return data;
-    }).thenCatch(resolver.reject.bind(resolver));
+    }).then(null, resolver.reject.bind(resolver));
 
     return resolver.promise;
   };
@@ -317,7 +317,7 @@ function testExternalChange() {
       data['@rev']['R'] = rev + 1;
       data['2'] = { 'R': rev + 1, 'T': 2, 'P': CONTENTS2 };
       return data;
-    }).thenCatch(resolver.reject.bind(resolver));
+    }).then(null, resolver.reject.bind(resolver));
 
     return resolver.promise;
   };
@@ -342,7 +342,7 @@ function testExternalChange() {
       data['1'] = null;
       data['2'] = null;
       return data;
-    }).thenCatch(resolver.reject.bind(resolver));
+    }).then(null, resolver.reject.bind(resolver));
 
     return resolver.promise;
   };

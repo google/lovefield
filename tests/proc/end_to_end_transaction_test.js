@@ -343,7 +343,7 @@ function testAttach_Error() {
     // Attempting to add an employee row that already exists.
     var q4 = db.insert().into(e).values([sampleEmployees[0]]);
     return tx.attach(q4);
-  }).thenCatch(function(e) {
+  }).then(null, function(e) {
     // 201: Duplicate keys are not allowed.
     assertEquals(201, e.code);
 

@@ -146,7 +146,7 @@ ApiTester.prototype.getDbConnection_ = function() {
       function(db) {
         this.db_ = db;
         this.table_ = db.getSchema().table('DummyTable');
-      }.bind(this)).catch(function(e) {
+      }.bind(this)).then(null, function(e) {
         // Shall not be here
       }.bind(this));
 };
