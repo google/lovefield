@@ -60,7 +60,7 @@ var outputDir = pathMod.resolve(args.outputdir);
 var templateDir = args.templatedir || __dirname + '/template';
 
 // Ensure output directory.
-mkdirp(outputDir);
+mkdirp.sync(outputDir);
 
 // Scan all templates
 var configPath = pathMod.resolve(templateDir + '/templates.json');

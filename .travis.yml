@@ -1,7 +1,7 @@
 # Travis CI configuration file for Lovefield.
 language: node_js
 node_js:
-  - "8.9.1"
+  - "12.16.3"
 
 sudo: false
 

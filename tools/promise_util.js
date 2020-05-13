@@ -72,9 +72,9 @@ function batchRun(tasks, maxRunners, opt_onStart) {
 
   return new Promise(function(resolve, reject) {
     var runBatch = function() {
-      var runnerCount = Math.min(maxRunners, tasks.length);
-      if (runnerCount <= 0) {
-        resolve(results);
+      var runnerCount = Math.round(Math.min(maxRunners, tasks.length));
+      if (runnerCount == 0) {
+        return results;
       }
 
       var runners = new Array(runnerCount);
@@ -92,10 +92,10 @@ function batchRun(tasks, maxRunners, opt_onStart) {
         for (var j = 0; j < res.length; ++j) {
           results[counter++] = res[j];
         }
-        runBatch();
+        return runBatch();
       }, reject);
     };
-    runBatch();
+    resolve(runBatch());
   });
 }
 

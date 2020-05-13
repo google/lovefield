@@ -114,7 +114,7 @@ gulp.task('debug', function() {
 });
 
 
-gulp.task('test', gulp.series('debug', function() {
+gulp.task('test', function() {
   var knownOpts = {
     'browser': [Array, String, null],
     'filter': [Array, String, null],
@@ -171,4 +171,4 @@ gulp.task('test', gulp.series('debug', function() {
         function() { finalize(); }, finalize);
   }
   return whenTestsDone;
-}));
+});

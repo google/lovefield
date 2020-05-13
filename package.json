@@ -50,6 +50,6 @@
     "toposort-class": ">=0.3.1"
   },
   "engines": {
-    "node": ">=8.9.1"
+    "node": ">=12.16.3"
   }
 }
