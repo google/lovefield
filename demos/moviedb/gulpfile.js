@@ -37,15 +37,15 @@ gulp.task('copy_dependencies', function() {
 
   var filesToCopy = [
     // JS dependencies
-    'bower_components/bootstrap/dist/js/bootstrap.min.js',
-    'bower_components/bootstrap-table/dist/bootstrap-table.min.js',
-    'bower_components/jquery/dist/jquery.min.js',
-    'bower_components/lovefield/dist/lovefield.js',
-    'bower_components/lovefield/dist/lovefield.min.js',
+    'node_modules/bootstrap/dist/js/bootstrap.min.js',
+    'node_modules/bootstrap-table/dist/bootstrap-table.min.js',
+    'node_modules/jquery/dist/jquery.min.js',
+    'node_modules/lovefield/dist/lovefield.js',
+    'node_modules/lovefield/dist/lovefield.min.js',
 
     // CSS dependencies
-    'bower_components/bootstrap/dist/css/bootstrap.min.css',
-    'bower_components/bootstrap-table/src/bootstrap-table.css'
+    'node_modules/bootstrap/dist/css/bootstrap.min.css',
+    'node_modules/bootstrap-table/dist/bootstrap-table.css'
   ];
 
   filesToCopy.forEach(function(file) {
