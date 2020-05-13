@@ -133,7 +133,6 @@ gulp.task('test', function() {
       log('Error detected:', message);
       exitCode = 1;
     }
-    process.exit(exitCode);
   };
 
   var whenTestsDone = null;
@@ -148,6 +147,8 @@ gulp.task('test', function() {
     // Run only SPAC.
     whenTestsDone = runner.runSpacTests();
   } else {
+    var port = options.port || 8000;
+    testServer.runUnitTestServer(port);
     // Run only JSUnit tests.
     var testBrowser = function(browser) {
       return runner.runJsUnitTests(options.filter, browser).then(
