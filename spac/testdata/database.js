@@ -56,13 +56,13 @@ lovefield.db.connectInProgress_ = false;
  */
 lovefield.db.connect = function(opt_options) {
   if (lovefield.db.connectInProgress_ ||
-      (!goog.isNull(lovefield.db.db_) && lovefield.db.db_.isOpen())) {
+      (lovefield.db.db_ !== null && lovefield.db.db_.isOpen())) {
     // 113: Attempt to connect() to an already connected/connecting database.
     throw new lf.Exception(113);
   }
   lovefield.db.connectInProgress_ = true;
 
-  if (goog.isNull(lovefield.db.db_)) {
+  if (lovefield.db.db_ === null) {
     lovefield.db.getSchema();
     lovefield.db.db_ = new lf.proc.Database(lovefield.db.getGlobal());
   }

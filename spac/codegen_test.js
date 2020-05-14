@@ -65,6 +65,9 @@ describe('Generator Test', function() {
   it('should generate schema.js', function() {
     var codeTemplate = fs.readFileSync(template['schema.jstemplate']);
     var expected = fs.readFileSync(testdata['schema.js']);
+var e = String(expected);
+var a = codegen.generate('schema.js', codeTemplate);
+console.error(`ACTUAL\n${a}\n\nEXPECTED\n${e}\n\n`);
     expect(expected.toString().replace(/\r/gm, '')).toEqual(
         codegen.generate('schema.js', codeTemplate).replace(/\r/gm, ''));
   });

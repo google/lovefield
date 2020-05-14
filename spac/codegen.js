@@ -354,14 +354,14 @@ CodeGenerator.prototype.genToDbPayload_ = function(table, prefix) {
         return lhs + ' lf.Row.binToHex(this.payload().' + col.getName() + ');';
       case lf.Type.DATE_TIME:
         if (col.isNullable()) {
-          return lhs + '\n      goog.isDefAndNotNull(this.payload().' +
-              col.getName() + ') ?\n' +
+          return lhs + '\n      this.payload().' +
+              col.getName() + ' != null ?\n' +
               '      this.payload().' + col.getName() + '.getTime() : null;';
         }
         return lhs + ' this.payload().' + col.getName() + '.getTime();';
       case lf.Type.OBJECT:
-        return lhs + '\n      goog.isDefAndNotNull(this.payload().' +
-            col.getName() + ') ?\n' +
+        return lhs + '\n      this.payload().' +
+            col.getName() + ' != null ?\n' +
             '      this.payload().' + col.getName() + ' : null;';
       default:
         return lhs + ' this.payload().' + col.getName() + ';';
@@ -397,7 +397,7 @@ CodeGenerator.columnToKey_ = function(
     case lf.Type.DATE_TIME:
       if (column.isNullable()) {
         pushLine('var value = this.payload().' + column.getName());
-        pushLine('return goog.isDefAndNotNull(value) ? value.getTime() : null');
+        pushLine('return value != null ? value.getTime() : null');
       } else {
         pushLine(
             (includeSemicolonAndReturn ? 'return ' : '') +
@@ -414,7 +414,7 @@ CodeGenerator.columnToKey_ = function(
     case lf.Type.BOOLEAN:
       if (column.isNullable()) {
         pushLine('var value = this.payload().' + column.getName());
-        pushLine('return goog.isDefAndNotNull(value) ? (value ? 1 : 0) : null');
+        pushLine('return value != null ? (value ? 1 : 0) : null');
       } else {
         pushLine(
             (includeSemicolonAndReturn ? 'return ' : '') +
@@ -518,7 +518,7 @@ CodeGenerator.prototype.genDeserializeRow_ = function(table, target, record) {
       case lf.Type.DATE_TIME:
         var temp = 'data.' + col.getName();
         if (col.isNullable()) {
-          body.push(prefix + 'goog.isDefAndNotNull(' + temp + ') ?\n' +
+          body.push(prefix + temp + ' != null ?\n' +
               '      new Date(' + temp + ') : null;');
         } else {
           body.push(prefix + 'new Date(' + temp + ');');

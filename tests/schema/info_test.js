@@ -46,7 +46,7 @@ function testGetReferencingForeignKeys() {
    */
   var getRefs = function(info, tableName, opt_constraintAction) {
     var refs = info.getReferencingForeignKeys(tableName, opt_constraintAction);
-    return goog.isNull(refs) ? null : refs.map(function(ref) {
+    return refs === null ? null : refs.map(function(ref) {
       return ref.name;
     });
   };

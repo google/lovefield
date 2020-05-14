@@ -89,7 +89,7 @@ lf.testing.perf.DefaultBenchmark_.prototype.close = function(opt_skipDeletion) {
 
 /** @return {!IThenable} */
 lf.testing.perf.DefaultBenchmark_.prototype.generateTestData = function() {
-  if (goog.isDefAndNotNull(this.data_)) {
+  if (this.data_ != null) {
     return goog.Promise.resolve();
   }
 

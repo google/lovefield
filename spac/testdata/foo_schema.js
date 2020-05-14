@@ -150,7 +150,7 @@ foo.db.schema.Location.prototype.deserializeRow =
 
 /** @override */
 foo.db.schema.Location.prototype.getConstraint = function() {
-  if (goog.isDefAndNotNull(this.constraint_)) {
+  if (this.constraint_ != null) {
     return this.constraint_;
   }
 
@@ -327,7 +327,7 @@ foo.db.schema.Foo.prototype.deserializeRow =
 
 /** @override */
 foo.db.schema.Foo.prototype.getConstraint = function() {
-  if (goog.isDefAndNotNull(this.constraint_)) {
+  if (this.constraint_ != null) {
     return this.constraint_;
   }
 

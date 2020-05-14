@@ -142,7 +142,7 @@ goog.inherits(#namespace.schema.#table#pascal, lf.schema.Table);
 
 /** @override */
 #namespace.schema.#table#pascal.prototype.getConstraint = function() {
-  if (goog.isDefAndNotNull(this.constraint_)) {
+  if (this.constraint_ != null) {
     return this.constraint_;
   }
 

@@ -256,7 +256,7 @@ lovefield.db.schema.Album.prototype.deserializeRow =
 
 /** @override */
 lovefield.db.schema.Album.prototype.getConstraint = function() {
-  if (goog.isDefAndNotNull(this.constraint_)) {
+  if (this.constraint_ != null) {
     return this.constraint_;
   }
 
@@ -359,7 +359,7 @@ lovefield.db.row.Album.prototype.toDbPayload = function() {
   payload.timestamp = this.payload().timestamp.getTime();
   payload.tacotownJspb = lf.Row.binToHex(this.payload().tacotownJspb);
   payload.proto =
-      goog.isDefAndNotNull(this.payload().proto) ?
+      this.payload().proto != null ?
       this.payload().proto : null;
   return payload;
 };
@@ -575,7 +575,7 @@ lovefield.db.schema.Photo.prototype.deserializeRow =
     function(dbRecord) {
   var data = dbRecord['value'];
   data.timestamp = new Date(data.timestamp);
-  data.accessTimestamp = goog.isDefAndNotNull(data.accessTimestamp) ?
+  data.accessTimestamp = data.accessTimestamp != null ?
       new Date(data.accessTimestamp) : null;
   data.tacotownJspb = lf.Row.hexToBin(data.tacotownJspb);
   return new lovefield.db.row.Photo(dbRecord['id'], data);
@@ -584,7 +584,7 @@ lovefield.db.schema.Photo.prototype.deserializeRow =
 
 /** @override */
 lovefield.db.schema.Photo.prototype.getConstraint = function() {
-  if (goog.isDefAndNotNull(this.constraint_)) {
+  if (this.constraint_ != null) {
     return this.constraint_;
   }
 
@@ -716,13 +716,13 @@ lovefield.db.row.Photo.prototype.toDbPayload = function() {
   payload.createdByAction = this.payload().createdByAction;
   payload.timestamp = this.payload().timestamp.getTime();
   payload.accessTimestamp =
-      goog.isDefAndNotNull(this.payload().accessTimestamp) ?
+      this.payload().accessTimestamp != null ?
       this.payload().accessTimestamp.getTime() : null;
   payload.albumId = this.payload().albumId;
   payload.isCoverPhoto = this.payload().isCoverPhoto;
   payload.tacotownJspb = lf.Row.binToHex(this.payload().tacotownJspb);
   payload.proto =
-      goog.isDefAndNotNull(this.payload().proto) ?
+      this.payload().proto != null ?
       this.payload().proto : null;
   return payload;
 };
@@ -987,7 +987,7 @@ lovefield.db.schema.Details.prototype.deserializeRow =
 
 /** @override */
 lovefield.db.schema.Details.prototype.getConstraint = function() {
-  if (goog.isDefAndNotNull(this.constraint_)) {
+  if (this.constraint_ != null) {
     return this.constraint_;
   }
 
@@ -1267,7 +1267,7 @@ lovefield.db.schema.Curator.prototype.deserializeRow =
 
 /** @override */
 lovefield.db.schema.Curator.prototype.getConstraint = function() {
-  if (goog.isDefAndNotNull(this.constraint_)) {
+  if (this.constraint_ != null) {
     return this.constraint_;
   }
 
@@ -1486,7 +1486,7 @@ lovefield.db.schema.PhotoCurator.prototype.deserializeRow =
 
 /** @override */
 lovefield.db.schema.PhotoCurator.prototype.getConstraint = function() {
-  if (goog.isDefAndNotNull(this.constraint_)) {
+  if (this.constraint_ != null) {
     return this.constraint_;
   }
 
@@ -1730,7 +1730,7 @@ lovefield.db.schema.NullableTable.prototype.createRow = function(opt_value) {
 lovefield.db.schema.NullableTable.prototype.deserializeRow =
     function(dbRecord) {
   var data = dbRecord['value'];
-  data.datetime = goog.isDefAndNotNull(data.datetime) ?
+  data.datetime = data.datetime != null ?
       new Date(data.datetime) : null;
   return new lovefield.db.row.NullableTable(dbRecord['id'], data);
 };
@@ -1738,7 +1738,7 @@ lovefield.db.schema.NullableTable.prototype.deserializeRow =
 
 /** @override */
 lovefield.db.schema.NullableTable.prototype.getConstraint = function() {
-  if (goog.isDefAndNotNull(this.constraint_)) {
+  if (this.constraint_ != null) {
     return this.constraint_;
   }
 
@@ -1829,7 +1829,7 @@ lovefield.db.row.NullableTable.prototype.toDbPayload = function() {
   var payload = new lovefield.db.row.NullableTableDbType();
   payload.boolean = this.payload().boolean;
   payload.datetime =
-      goog.isDefAndNotNull(this.payload().datetime) ?
+      this.payload().datetime != null ?
       this.payload().datetime.getTime() : null;
   payload.integer = this.payload().integer;
   payload.number = this.payload().number;
@@ -1843,10 +1843,10 @@ lovefield.db.row.NullableTable.prototype.keyOfIndex = function(indexName) {
   switch (indexName) {
     case 'NullableTable.idx_boolean':
       var value = this.payload().boolean;
-      return goog.isDefAndNotNull(value) ? (value ? 1 : 0) : null;
+      return value != null ? (value ? 1 : 0) : null;
     case 'NullableTable.idx_datetime':
       var value = this.payload().datetime;
-      return goog.isDefAndNotNull(value) ? value.getTime() : null;
+      return value != null ? value.getTime() : null;
     case 'NullableTable.idx_integer':
       return this.payload().integer;
     case 'NullableTable.idx_number':
@@ -1997,7 +1997,7 @@ lovefield.db.schema.SelfLoop.prototype.deserializeRow =
 
 /** @override */
 lovefield.db.schema.SelfLoop.prototype.getConstraint = function() {
-  if (goog.isDefAndNotNull(this.constraint_)) {
+  if (this.constraint_ != null) {
     return this.constraint_;
   }
 

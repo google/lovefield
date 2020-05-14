@@ -108,7 +108,7 @@ function setUpPage() {
 
 function tearDown() {
   manualMode = window['MANUAL_MODE'] || false;
-  if (!manualMode || !goog.isDefAndNotNull(fb)) {
+  if (!manualMode || fb == null) {
     return;
   }
 

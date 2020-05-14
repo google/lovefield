@@ -60,13 +60,13 @@ goog.require('lf.service.ServiceId');
  */
 #namespace.connect = function(opt_options) {
   if (#namespace.connectInProgress_ ||
-      (!goog.isNull(#namespace.db_) && #namespace.db_.isOpen())) {
+      (#namespace.db_ !== null && #namespace.db_.isOpen())) {
     // 113: Attempt to connect() to an already connected/connecting database.
     throw new lf.Exception(113);
   }
   #namespace.connectInProgress_ = true;
 
-  if (goog.isNull(#namespace.db_)) {
+  if (#namespace.db_ === null) {
     #namespace.getSchema();
     #namespace.db_ = new lf.proc.Database(#namespace.getGlobal());
   }

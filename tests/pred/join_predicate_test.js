@@ -475,11 +475,9 @@ function checkEvalRelations_OuterJoin_NullableKeys(evalFn) {
 function hasNullEntry(entry, tableName) {
   var keys = Object.keys(entry.row.payload()[tableName]);
   assertTrue(keys.length > 0);
-  return Object.keys(entry.row.payload()[tableName]).every(
-      function(key) {
-        return goog.isNull(entry.row.payload()[tableName][key]);
-      }
-  );
+  return Object.keys(entry.row.payload()[tableName]).every(function(key) {
+    return entry.row.payload()[tableName][key] === null;
+  });
 }
 
 
@@ -494,11 +492,9 @@ function hasNonNullEntry(entry, tableName) {
   var payload = entry.row.payload()[tableName];
   var keys = Object.keys(payload);
   assertTrue(keys.length > 0);
-  return Object.keys(payload).every(
-      function(key) {
-        return !goog.isNull(payload[key]);
-      }
-  );
+  return Object.keys(payload).every(function(key) {
+    return payload[key] !== null;
+  });
 }
 
 

@@ -549,8 +549,8 @@ lf.testing.EndToEndSelectTester.prototype.testColumnFiltering = function() {
         assertEquals(this.dataGenerator_.sampleJobs.length, results.length);
         results.forEach(function(result) {
           assertEquals(2, goog.object.getCount(result));
-          assertTrue(goog.isDefAndNotNull(result.id));
-          assertTrue(goog.isDefAndNotNull(result['Job Title']));
+          assertTrue(result.id != null);
+          assertTrue(result['Job Title'] != null);
         });
       }.bind(this));
 };
@@ -708,9 +708,9 @@ lf.testing.EndToEndSelectTester.prototype.checkMultiJoin_ =
             this.dataGenerator_.sampleEmployees.length, results.length);
         results.forEach(function(obj) {
           assertEquals(3, goog.object.getCount(obj));
-          assertTrue(goog.isDefAndNotNull(obj[e.getName()]));
-          assertTrue(goog.isDefAndNotNull(obj[j.getName()]));
-          assertTrue(goog.isDefAndNotNull(obj[d.getName()]));
+          assertTrue(obj[e.getName()] != null);
+          assertTrue(obj[j.getName()] != null);
+          assertTrue(obj[d.getName()] != null);
 
           var employeeJobId = obj[e.getName()][e.jobId.getName()];
           var employeeDepartmentId = obj[e.getName()][e.departmentId.getName()];
@@ -1137,9 +1137,9 @@ lf.testing.EndToEndSelectTester.prototype.
             this.dataGenerator_.sampleEmployees.length, results.length);
         results.forEach(function(obj) {
           assertEquals(3, goog.object.getCount(obj));
-          assertTrue(goog.isDefAndNotNull(obj[e.getName()]));
-          assertTrue(goog.isDefAndNotNull(obj[j.getName()]));
-          assertTrue(goog.isDefAndNotNull(obj[d.getName()]));
+          assertTrue(obj[e.getName()] != null);
+          assertTrue(obj[j.getName()] != null);
+          assertTrue(obj[d.getName()] != null);
 
           var departmentId = obj[d.getName()][d.id.getName()];
           assertEquals(expectedDepartmentId, departmentId);
@@ -1393,8 +1393,8 @@ lf.testing.EndToEndSelectTester.prototype.assertGroupByResults_ =
   assertEquals(2, columnNames.length);
   results.forEach(function(obj) {
     assertEquals(3, goog.object.getCount(obj));
-    assertTrue(goog.isDefAndNotNull(obj[columnNames[0]]));
-    assertTrue(goog.isDefAndNotNull(obj[columnNames[1]]));
+    assertTrue(obj[columnNames[0]] != null);
+    assertTrue(obj[columnNames[1]] != null);
 
     // Verifying that each group has the correct count of employees.
     var employeesPerJobCount = obj[lf.fn.count(e.id).getName()];
@@ -1416,7 +1416,7 @@ lf.testing.EndToEndSelectTester.prototype.assertGroupByComplex_ =
     function(results) {
   results.forEach(function(obj) {
     assertEquals(3, goog.object.getCount(obj));
-    assertTrue(goog.isDefAndNotNull(obj['jid']));
+    assertTrue(obj['jid'] != null);
     assertEquals('dummyCountryName', obj['c']);
 
     // Verifying that each group has the correct count of employees.

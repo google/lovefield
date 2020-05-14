@@ -139,7 +139,7 @@ lf.testing.backstore.ScudTester.prototype.selectAll_ = function() {
  * @private
  */
 lf.testing.backstore.ScudTester.prototype.assertOnlyRows_ = function(rows) {
-  if (!goog.isNull(this.reload_)) {
+  if (this.reload_ !== null) {
     this.db_ = this.reload_();
   }
   return this.selectAll_().then(function(results) {

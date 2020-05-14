@@ -203,7 +203,7 @@ function testGetBounded() {
   var range = new lf.index.SingleKeyRange(1, 10, true, true);
   var bound = function(min, max) {
     var r = range.getBounded(min, max);
-    return goog.isNull(r) ? 'null' : r.toString();
+    return r === null ? 'null' : r.toString();
   };
 
   assertEquals('(1, 10)', bound(0, 11));

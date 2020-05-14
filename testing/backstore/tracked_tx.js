@@ -58,7 +58,7 @@ goog.inherits(lf.testing.backstore.TrackedTx, lf.backstore.BaseTx);
 lf.testing.backstore.TrackedTx.prototype.getTable = function(
     tableName, deserializeFn) {
   var table = this.tables_.get(tableName) || null;
-  if (goog.isNull(table)) {
+  if (table === null) {
     table = new lf.testing.backstore.TrackedTable(
         this.store_.getTableInternal(tableName), tableName);
     this.tables_.set(tableName, table);

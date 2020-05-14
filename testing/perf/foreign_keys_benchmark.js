@@ -316,7 +316,7 @@ lf.testing.perf.ForeignKeysBenchmark.getSuffix_ = function(constraintTiming) {
     return '_immediate';
   } else if (constraintTiming == lf.ConstraintTiming.DEFERRABLE) {
     return '_deferrable';
-  } else { // Case of goog.isNull(this.constraintTiming_).
+  } else {  // Case of (this.constraintTiming_ === null).
     return '_nofk';
   }
 };
@@ -344,7 +344,7 @@ lf.testing.perf.ForeignKeysBenchmark.getSchemaBuilder =
       addColumn('name', lf.Type.STRING).
       addPrimaryKey(['id']);
 
-  if (!goog.isNull(constraintTiming)) {
+  if (constraintTiming !== null) {
     childBuilder.addForeignKey('fk_parentId', {
       local: 'parentId',
       ref: 'Parent.id',

@@ -578,8 +578,8 @@ lf.testing.perf.SelectBenchmark.prototype.verifyOrderByIndexed =
   }
 
   for (var i = 1; i < results.length; i++) {
-    assertTrue(goog.isDefAndNotNull(results[i].salary));
-    assertTrue(goog.isDefAndNotNull(results[i - 1].salary));
+    assertTrue(results[i].salary != null);
+    assertTrue(results[i - 1].salary != null);
     if (results[i].salary > results[i - 1].salary) {
       return goog.Promise.resolve(false);
     }
@@ -643,8 +643,8 @@ lf.testing.perf.SelectBenchmark.prototype.verifyOrderByNonIndexed =
   }
 
   for (var i = 1; i < results.length; i++) {
-    assertTrue(goog.isDefAndNotNull(results[i].commissionPercent));
-    assertTrue(goog.isDefAndNotNull(results[i - 1].commissionPercent));
+    assertTrue(results[i].commissionPercent != null);
+    assertTrue(results[i - 1].commissionPercent != null);
     if (results[i].commissionPercent > results[i - 1].commissionPercent) {
       return goog.Promise.resolve(false);
     }
@@ -716,9 +716,8 @@ lf.testing.perf.SelectBenchmark.prototype.verifyProjectNonAggregatedColumns =
   }
 
   var validated = results.every(function(obj) {
-    return goog.object.getCount(obj) == 2 &&
-        goog.isDefAndNotNull(obj.email) &&
-        goog.isDefAndNotNull(obj.salary);
+    return goog.object.getCount(obj) == 2 && obj.email != null &&
+        obj.salary != null;
   }, this);
 
   return goog.Promise.resolve(validated);
@@ -815,9 +814,8 @@ lf.testing.perf.SelectBenchmark.prototype.verifyJoinEqui = function(results) {
   }
 
   var validated = results.every(function(obj) {
-    return goog.object.getCount(obj) == 2 &&
-        goog.isDefAndNotNull(obj[this.e_.getName()]) &&
-        goog.isDefAndNotNull(obj[this.j_.getName()]) &&
+    return goog.object.getCount(obj) == 2 && obj[this.e_.getName()] != null &&
+        obj[this.j_.getName()] != null &&
         obj[this.e_.getName()][this.e_.jobId.getName()] ==
             obj[this.j_.getName()][this.j_.id.getName()];
   }, this);

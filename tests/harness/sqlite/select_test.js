@@ -72,14 +72,18 @@ function setUp() {
  * @param {string=} opt_tablePrefix
  */
 function checkFlatten(expected, rows, fields, opt_tablePrefix) {
-  var actual = rows.map(function(obj) {
-    var objToCheck = goog.isDefAndNotNull(opt_tablePrefix) ?
-        obj[opt_tablePrefix] : obj;
+  var actual =
+      rows.map(function(obj) {
+            var objToCheck =
+                opt_tablePrefix != null ? obj[opt_tablePrefix] : obj;
     assertEquals(fields.length, Object.keys(objToCheck).length);
-    return fields.map(function(name) {
+            return fields
+                .map(function(name) {
       return objToCheck[name].toString();
-    }).join(' ');
-  }).join(' ');
+                })
+                .join(' ');
+          })
+          .join(' ');
   assertEquals(expected, actual);
 }
 

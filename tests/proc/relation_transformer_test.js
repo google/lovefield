@@ -235,7 +235,7 @@ function assertColumnsPopulated(columns, relation) {
       function(entry, index) {
         columns.forEach(function(column) {
           // Checking that all requested columns are populated.
-          assertTrue(goog.isDefAndNotNull(entry.getField(column)));
+          assertTrue(entry.getField(column) != null);
         });
       });
 }
