@@ -237,7 +237,7 @@ function testSCUD() {
 
 
 /**
- * @param {!function(!Object): !Object} callback
+ * @param {function(!Object): !Object} callback
  * @return {!IThenable}
  */
 function updateFirebase(callback) {

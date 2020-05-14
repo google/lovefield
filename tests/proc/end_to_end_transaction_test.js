@@ -318,10 +318,12 @@ function testAttach_Error() {
   var scope = [j, e];
   var newJobId = 'SomeUniqueId';
 
-  return tx.begin(scope).then(function() {
+  return tx.begin(scope)
+      .then(function() {
     var q0 = db.select().from(j);
     return tx.attach(q0);
-  }).then(function(results) {
+      })
+      .then(function(results) {
     assertEquals(sampleJobs.length, results.length);
 
     // Adding a new job row.
@@ -355,15 +357,17 @@ function testAttach_Error() {
     lf.testing.util.assertThrowsError(107, beginFn);
 
     return lf.testing.util.selectAll(global, j);
-  }).then(function(results) {
-    // Checking that the entire transaction was rolled back, and therefore that
-    // Job row that had been added does not appear on disk.
+          })
+      .then(function(results) {
+        // Checking that the entire transaction was rolled back, and therefore
+        // that Job row that had been added does not appear on disk.
     assertEquals(sampleJobs.length, results.length);
 
     // Checking that all locks have been released, which will allow other
     // transactions referring to the same scope to execute successfully.
     return db.select().from(j).exec();
-  }).then(function(results) {
+      })
+      .then(function(results) {
     assertEquals(sampleJobs.length, results.length);
   });
 }
