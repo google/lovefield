@@ -85,10 +85,10 @@ lf.testing.index.TestIndex.prototype.testMultiRange = goog.abstractMethod;
  *     keyRange
  * @param {!Array} expectedResult
  */
-lf.testing.index.TestIndex.assertGetRangeCost =
-    function(index, keyRange, expectedResult) {
-  var actualResult = index.getRange(
-      goog.isDef(keyRange) ? [keyRange] : undefined);
+lf.testing.index.TestIndex.assertGetRangeCost = function(
+    index, keyRange, expectedResult) {
+  var actualResult =
+      index.getRange(keyRange !== undefined ? [keyRange] : undefined);
   assertArrayEquals(expectedResult, actualResult);
   assertEquals(actualResult.length, index.cost(keyRange));
 };

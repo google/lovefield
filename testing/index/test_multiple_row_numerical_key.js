@@ -152,14 +152,12 @@ lf.testing.index.TestMultiRowNumericalKey.prototype.populateIndex_ =
     index.add(key, value2);
 
     // Detecting min key and corresponding value to be used later in assertions.
-    if (goog.isNull(this.minKeyValuePair_) ||
-        key < this.minKeyValuePair_[0]) {
+    if (this.minKeyValuePair_ === null || key < this.minKeyValuePair_[0]) {
       this.minKeyValuePair_ = [key, [value1, value2]];
     }
 
     // Detecting max key and corresponding value to be used later in assertions.
-    if (goog.isNull(this.maxKeyValuePair_) ||
-        key > this.maxKeyValuePair_[0]) {
+    if (this.maxKeyValuePair_ === null || key > this.maxKeyValuePair_[0]) {
       this.maxKeyValuePair_ = [key, [value1, value2]];
     }
   }
