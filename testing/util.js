@@ -22,11 +22,11 @@ goog.require('lf.TransactionType');
 goog.require('lf.backstore.TableType');
 goog.require('lf.service');
 
-goog.forwardDeclare('goog.testing.PropertyReplacer');
-goog.forwardDeclare('lf.Global');
-goog.forwardDeclare('lf.Row');
-goog.forwardDeclare('lf.index.Stats');
-goog.forwardDeclare('lf.schema.Index');
+goog.requireType('goog.testing.PropertyReplacer');
+goog.requireType('lf.Global');
+goog.requireType('lf.Row');
+goog.requireType('lf.index.Stats');
+goog.requireType('lf.schema.Index');
 
 
 /**
