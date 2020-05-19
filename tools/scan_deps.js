@@ -217,7 +217,8 @@ function scanFiles(filePaths, provideMap, requireMap) {
     var realPath = pathMod.resolve(path);
     var contents = fsMod.readFileSync(realPath).toString().split('\n');
     contents.forEach(function(line) {
-      var ns = extractNamespace(line, 'goog.require');
+      var ns = extractNamespace(line, 'goog.requireType') ||
+               extractNamespace(line, 'goog.require');
       if (ns) {
         requireMap.set(realPath, ns);
       }
