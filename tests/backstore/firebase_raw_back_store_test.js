@@ -216,7 +216,7 @@ function testDump() {
 }
 
 
-/** @return {IThenable<!lf.backstore.Firebase>} */
+/** @return {!IThenable<!lf.backstore.Firebase>} */
 function commonSetUp() {
   var db = new lf.backstore.Firebase(schema, fb);
   return db.init().then(function() {
@@ -235,7 +235,7 @@ function commonSetUp() {
 /**
  * @param {!lf.backstore.Firebase} db
  * @param {!function(number, !Object)} verify
- * @return {IThenable}
+ * @return {!IThenable}
  */
 function commonVerify(db, verify) {
   return goog.Promise.all([
