@@ -28,7 +28,7 @@
     "lovefield-spac": "spac/lovefield-spac"
   },
   "dependencies": {
-    "js-yaml": ">=3.1.0",
+    "js-yaml": "^3.13.0",
     "nopt": ">=2.2.1"
   },
   "devDependencies": {
