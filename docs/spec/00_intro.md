@@ -53,7 +53,7 @@ optimization.
 ## API Style
 
 1. All Lovefield API and source code must follow [Google JavaScript Style Guide
-   ](https://google-styleguide.googlecode.com/svn/trunk/javascriptguide.xml)
+   ](https://google.github.io/styleguide/jsguide.html)
    and pass Closure compiler compilation. This implies that all APIs and
    source code are annotated with [Closure-style annotations](
    https://developers.google.com/closure/compiler/docs/js-for-compiler).
