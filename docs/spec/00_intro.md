@@ -69,4 +69,4 @@ optimization.
    https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise).
 
 3. All DDL (data definition language) APIs are synchronous.
-   All DML (data manipulation lauguage) APIs are asynchronous.
+   All DML (data manipulation language) APIs are asynchronous.
