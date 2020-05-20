@@ -39,7 +39,7 @@ other relational databases. The difference is that Lovefield does not accept raw
 SQL statements; instead, it has a builder-pattern API to build queries.
 
 Lovefield executes queries inside your browser. For more details, checkout
-[this video](https://youtu.be/wRiI4p5Uk4E?t=750) or our
+[this video](https://www.youtube.com/watch?v=S1AUIq8GA1k) or our
 [design doc](https://github.com/google/lovefield/blob/master/docs/dd/04_query_engine.md).
 
 ### What are the relationships between Lovefield and IndexedDB/WebSQL/Firebase?
