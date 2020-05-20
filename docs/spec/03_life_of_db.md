@@ -23,8 +23,8 @@ It will do the following:
 `connect()` shall be called only once each session. In rare circumstances,
 one can call `close()` on the opened connection first, then call `connect()`
 again. However, this is not guaranteed to work due to IndexedDB limitations,
-see [Data Store](02_data_store.md) for details. Calling `connect()` when an
-open connection exists will result in an exception.
+see [IndexedDB Store](02_data_store.md#23-indexeddb-store) for details. 
+Calling `connect()` when an open connection exists will result in an exception.
 
 Users are free to connect to two or more databases simultaneously in the same
 session. Users shall not connect to the same database more than once in the same
