@@ -8,7 +8,7 @@ Lovefield is designed to provide a relational query engine for web apps.
 * Lovefield is designed to handle databases whose data set is smaller than X
   (current bound is 2GB) but large enough to need a structural query engine.
 * Lovefield provides a limited subset of [SQL-03](
-  http://savage.net.au/SQL/sql-2003-2.bnf.html) functionalities.
+  https://ronsavage.github.io/SQL/sql-2003-2.bnf.html) functionalities.
 * Lovefield uses existing storage technologies (e.g. IndexedDB) to persist data
   if requested. Developers are responsible to ensure that any data accessed
   from Lovefield query engine shall be treated as 'unsafe' and sanitized in some
