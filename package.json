@@ -36,7 +36,7 @@
     "firebase-token-generator": "*",
     "fs-extra": ">=0.18.2",
     "glob": ">=3.2.6",
-    "google-closure-compiler-java": "latest",
+    "google-closure-compiler-java": "20200504.0.0",
     "google-closure-library": "20190618.0.0",
     "gulp": "4.0.2",
     "gulp-closure-compiler": ">=0.3.1",
