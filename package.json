@@ -33,7 +33,7 @@
     "nopt": "2.2.1"
   },
   "scripts": {
-    "build": "gulp build --target=lib --mode=debug"
+    "build": "gulp build --target=lib --mode=opt && mv ./dist/lf.js ./dist/lovefield.min.js"
   },
   "devDependencies": {
     "chalk": "0.5.1",
