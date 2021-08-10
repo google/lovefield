@@ -1,6 +1,7 @@
 {
   "name": "lovefield",
   "version": "2.1.12",
+  "types": "dist/lovefield.d.ts",
   "main": "dist/lovefield.min.js",
   "description": "Lovefield - A relational database for web apps",
   "keywords": [
@@ -28,26 +29,29 @@
     "lovefield-spac": "spac/lovefield-spac"
   },
   "dependencies": {
-    "js-yaml": ">=3.13.1",
-    "nopt": ">=2.2.1"
+    "js-yaml": "3.13.1",
+    "nopt": "2.2.1"
+  },
+  "scripts": {
+    "build": "gulp build --target=lib --mode=debug"
   },
   "devDependencies": {
-    "chalk": ">=0.5.1",
+    "chalk": "0.5.1",
     "firebase-token-generator": "*",
-    "fs-extra": ">=0.18.2",
-    "glob": ">=3.2.6",
+    "fs-extra": "0.30.0",
+    "glob": "3.2.6",
     "google-closure-compiler-java": "20200504.0.0",
     "google-closure-library": "20190618.0.0",
     "gulp": "4.0.2",
-    "gulp-closure-compiler": ">=0.3.1",
-    "gulp-connect": "^5.7.0",
-    "gulp-gjslint": ">=0.1.4",
+    "gulp-closure-compiler": "0.3.1",
+    "gulp-connect": "5.7.0",
+    "gulp-gjslint": "0.1.4",
     "jasmine": "^2.3.2",
-    "mkdirp": ">=0.5.0",
+    "mkdirp": "0.5.0",
     "request": "^2.88.0",
-    "selenium-webdriver": "^3.6.0",
-    "temporary": ">=0.0.8",
-    "toposort-class": ">=0.3.1"
+    "selenium-webdriver": "3.6.0",
+    "temporary": "0.0.8",
+    "toposort-class": "0.3.1"
   },
   "engines": {
     "node": ">=12.16.3"
